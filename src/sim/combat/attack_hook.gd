@@ -1,6 +1,6 @@
 class_name AttackHook
 extends RefCounted
-## v0.6.0 MX1 (MODIFIER_ENGINE §1–§2; SIM_CONTRACTS §5b): an attack a spec spawns. On its trigger (AttackSpec.Trigger)
+## MODIFIER_ENGINE §1–§2; SIM_CONTRACTS §5b: an attack a spec spawns. On its trigger (AttackSpec.Trigger)
 ## it launches `child`, a full spec the build's modifiers also rewrote (Modifiers.compile), with this damage: flat
 ## `damage`, or `damage_permille` of the parent's base damage (at least 1). Attacks.run_hook guards the recursion:
 ## depth at most Attacks.hook_depth (the loop's), the proc coefficient halving at each level (100 → 50 → 25), a hook
@@ -8,7 +8,7 @@ extends RefCounted
 
 const WHEN_ALWAYS := 0
 const WHEN_OVERCLOCK := 1
-const WHEN_COUNTER := 2  # v0.6.5 WN4: only on a slash that counters (BladeForms.countering)
+const WHEN_COUNTER := 2  # Only on a slash that counters (BladeForms.countering)
 
 ## The modifier that added it (its ancestry key: a hook never runs inside a chain it already opened).
 var id := &""
@@ -19,11 +19,11 @@ var every := 0
 var damage := 0
 var damage_permille := 0
 var child: AttackSpec
-## v0.6.0 MX4: ticks between the trigger and the launch (ModifierRuntime queues it; 0 = at once), and when it may
+## Ticks between the trigger and the launch (ModifierRuntime queues it; 0 = at once), and when it may
 ## fire (WHEN_ALWAYS, or WHEN_OVERCLOCK: only while the heat is at Overclock).
 var delay_ticks := 0
 var when := 0
-## v0.8.0 RM (owner O91; Remnants): a REMNANT op's hook: the remnant it leaves (null: a plain hook, which launches its
+## A REMNANT op's hook: the remnant it leaves (null: a plain hook, which launches its
 ## child), its card's wand slot and trigger section (the slots between two triggers: Grand Finale's reach), and on a
 ## FINISHER remnant whether this spec extracts (the combo's finisher) or lodges (the other steps). Run by
 ## Remnants.on_hook instead of a launch; its child is what an activation casts.
@@ -44,7 +44,7 @@ func hash_into(h: StateHasher) -> void:
 	h.add_string(String(id))
 	for v in [trigger, every, damage, damage_permille, delay_ticks, when]:
 		h.add_int(v)
-	if remnant != null:  # v0.8.0 RM: only a remnant's (a build without one hashes as before)
+	if remnant != null:  # Only a remnant's (a build without one hashes as before)
 		remnant.digest_into(h)
 		for v in [slot, section, 1 if extract else 0]:
 			h.add_int(v)

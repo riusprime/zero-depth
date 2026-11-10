@@ -1,19 +1,19 @@
 class_name HudBar
 extends Control
-## A thin fill bar in the HudStyle look (v0.3.5 F15; v0.10.5 W3-O17: one continuous fill in a hairline frame,
+## A thin fill bar in the HudStyle look (one continuous fill in a hairline frame,
 ## AstralHudParts.bar), and behind it the damage chunk. `warn` pulses the fill toward the warning (the low-HP warning,
 ## L24). It shows the fraction it is given and decides nothing.
-## v0.8.0 N4 (owner O56): the chunk and the fill move by the shared HealthBarTrail: the chunk holds from the burst's
+## The chunk and the fill move by the shared HealthBarTrail: the chunk holds from the burst's
 ## first hit, then drains; a heal grows the fill instead of jumping. The boss bar uses one too (BossBar).
 
-## v0.10.5 W3-O17: the chunk (the damage just taken; brighter while a big hit's light lasts): silver-white leaning rose,
+## The chunk (the damage just taken; brighter while a big hit's light lasts): silver-white leaning rose,
 ## apart from the moon-blue fill.
 const A_CHUNK := Color("#E2ACC4", 0.42)
 const A_CHUNK_BIG := Color("#E3C2DA", 0.8)
 
 var color := Color.WHITE
 var warn := false
-## v0.10.5 W3-O17: a small star past the bar's end.
+## A small star past the bar's end.
 var end_star := true
 var trail := HealthBarTrail.new()
 var _t := 0.0
@@ -70,7 +70,7 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var w := size.x
 	var h := size.y
-	# v0.10.5 W3-O17: one continuous fill in a hairline frame (AstralHudParts)
+	# One continuous fill in a hairline frame (AstralHudParts)
 	var f0 := w * trail.fill
 	AstralHudParts.bar(
 		self,

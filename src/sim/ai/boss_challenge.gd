@@ -5,7 +5,7 @@ extends RefCounted
 ## - Punish: staying beyond the punish distance for long enough makes the boss perform its punish attack (a pull, a
 ##   chain of leaps, a room-wide shockwave), started from BossAi.think through punish_due().
 ## - Weak point: the recovery of some attacks opens it for a while; hits from up close deal more
-##   (hit_mult; TAG_EXPOSED; v0.9.5 BH1: they no longer fill a stagger meter, bosses have none).
+##   (hit_mult; TAG_EXPOSED; they no longer fill a stagger meter, bosses have none).
 ## - Closing arena: a damaging band creeps in from the boss room's walls in marked steps (band, touches_band,
 ##   resolve_arena), capped so the room's centre stays safe.
 ## - Summoning the boss dissolves every normal enemy on the floor (dissolve_floor; ENEMY_DISSOLVED).
@@ -31,8 +31,8 @@ static func edge_distance(w: World, i: int) -> float:
 
 
 ## [per mille, tags] for a hit the player lands on boss i: the open weak point up close, else the ranged armour.
-## v0.10.5 O3: the Prism's open core while she kneels, up close (BossPrismLast).
-## v0.11.0 O3 (owner Q9 a): times the Gatekeeper's stun after a broken quake pillar (BossQuake.taken_permille, +50 %),
+## The Prism's open core while she kneels, up close (BossPrismLast).
+## Times the Gatekeeper's stun after a broken quake pillar (BossQuake.taken_permille, +50 %),
 ## tagged exposed.
 static func hit_mult(w: World, i: int) -> Array[int]:
 	var m := _base_mult(w, i)
@@ -96,7 +96,7 @@ static func _closing_starts(w: World, b: int, t: BossTable) -> bool:
 	return t.close_after_ticks > 0 and w.bosses.fight_t[b] >= t.close_after_ticks
 
 
-## v0.3.5 AI (F3): the gap-closer's clock (the player out of reach), and the last dash's landing point.
+## The gap-closer's clock (the player out of reach), and the last dash's landing point.
 static func _read_player(w: World, i: int, b: int, t: BossTable) -> void:
 	var bs := w.bosses
 	if t.gap_attack >= 0 and not w.player_dead() and edge_distance(w, i) > t.gap_distance_m:
@@ -135,7 +135,7 @@ static func punish_due(w: World, b: int, t: BossTable) -> int:
 
 
 ## Where an attack aims: the player, led by the boss's lead time at the player's velocity for aimed moves; for
-## dash_read_ticks after a dash (v0.3.5 AI, F3), aimed moves go at that dash's landing point instead.
+## dash_read_ticks after a dash, aimed moves go at that dash's landing point instead.
 static func aim_point(w: World, b: int, move: int) -> Vector2:
 	var p := w.player_pos()
 	var t: BossTable = w.boss_tables[w.bosses.table[b]]

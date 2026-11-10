@@ -1,6 +1,6 @@
 class_name PackLooks
 extends RefCounted
-## v0.10.0 VX2 (docs/roadmap/v0.9.5/VFX_PACK.md R1-R13): which pack effect (data/vfx/pack_fx_vx2.tres) draws a hero
+## Which pack effect (data/vfx/pack_fx_vx2.tres) draws a hero
 ## shot or form of an element, and the colours it is given. The one place the hero's views read it, so a bolt, a
 ## needle, a wisp, a lance ball and a laser of one element are coloured alike. Presentation only (EI-07): constants
 ## and look-ups.

@@ -12,7 +12,7 @@ extends RefCounted
 ##   current level (SpawnDirector.unlocked; `ai:room:k`), spots among the room's spawn points at least
 ##   min_spawn_distance_m from the player (shuffled from `combat:room:k`; rings around them when the room has fewer
 ##   spots), each scaled on arrival like any spawn (SpawnDirector.scale_arrival: tier HP and power, the Overrun's x1.5),
-##   (v0.9.0 EL: no elite roll any more: the Marked curse is gone). The next wave is due wave_gap_ticks after no
+##   (no elite roll any more: the Marked curse is gone). The next wave is due wave_gap_ticks after no
 ##   enemy is left alive in the room (Splitlings still waiting to arrive count as alive).
 ## - v0.9.0 CF (owner: "the enemies that spawn at the same time should be proportional to the room size"): a wave's
 ##   members are drawn as above, but only as many as the room holds at once (at_once: its floor area over the table's
@@ -44,7 +44,7 @@ static func is_arena(w: World, room: int) -> bool:
 		return false
 	if room == f.overrun_room and Overrun.enabled(w):
 		return true
-	return f.arena_rooms.has(room) and not Lockdowns.takes_arenas(w)  # v0.9.5 DR: rules 20+ seal them as locked rooms
+	return f.arena_rooms.has(room) and not Lockdowns.takes_arenas(w)  # Rules 20+ seal them as locked rooms
 
 
 static func is_cleared(w: World, room: int) -> bool:
@@ -76,7 +76,7 @@ static func advance(w: World) -> void:
 		if w.tick >= s.next_wave_tick:
 			_spawn_wave(w)
 		return
-	if not s.later_kinds.is_empty():  # v0.9.0 CF: the wave's rest comes in as earlier ones die
+	if not s.later_kinds.is_empty():  # The wave's rest comes in as earlier ones die
 		_refill(w)
 		return
 	if alive_in_room(w) > 0 or w.has_pending_enemies():
@@ -92,7 +92,7 @@ static func alive_in_room(w: World) -> int:
 	return _in_room(w, false)
 
 
-## v0.9.0 CF: the living enemies inside the sealed room, by weight (ClosedFights.weight: an elite counts more).
+## The living enemies inside the sealed room, by weight (ClosedFights.weight: an elite counts more).
 static func weight_in_room(w: World) -> int:
 	return _in_room(w, true)
 
@@ -113,7 +113,7 @@ static func _in_room(w: World, weighed: bool) -> int:
 	return n
 
 
-## v0.9.0 CF: how many enemies (by weight) the sealed room holds at once: its floor area over the arena's (or the
+## How many enemies (by weight) the sealed room holds at once: its floor area over the arena's (or the
 ## Overrun's) area_per_enemy_m2.
 static func at_once(w: World) -> int:
 	var s := w.arenas
@@ -128,7 +128,7 @@ static func locked(w: World, i: int) -> bool:
 	if w.floor_layout == null:
 		return false
 	var room := w.floor_layout.room_of(w.rewards.pos(i))
-	if Lockdowns.takes_arenas(w) and w.floor_layout.arena_rooms.has(room):  # v0.9.5 DR: a locked room's, till it opens
+	if Lockdowns.takes_arenas(w) and w.floor_layout.arena_rooms.has(room):  # A locked room's, till it opens
 		return not Lockdowns.is_open(w, room)
 	return is_arena(w, room) and not is_cleared(w, room)
 
@@ -202,7 +202,7 @@ static func _spawn_wave(w: World) -> void:
 		if pick < 0:
 			break
 		kinds.append(w.spawner.kinds[open[pick]])
-	# v0.9.0 CF: as many as the room holds at once (in a big room the whole wave); the rest wait (_refill)
+	# As many as the room holds at once (in a big room the whole wave); the rest wait (_refill)
 	var now := ClosedFights.first_batch(w, kinds, at_once(w))
 	for k in kinds.size():
 		if k < now:
@@ -212,7 +212,7 @@ static func _spawn_wave(w: World) -> void:
 			s.later_pos.append(spots[k])
 
 
-## v0.9.0 CF: the wave's waiting members come in, in order, while the room holds them (ClosedFights).
+## The wave's waiting members come in, in order, while the room holds them (ClosedFights).
 static func _refill(w: World) -> void:
 	if w.has_pending_enemies():  # a Splitling's halves count once they stand
 		return
@@ -306,7 +306,7 @@ static func read(w: World) -> Dictionary:
 	var f := w.floor_layout
 	var rooms := PackedInt32Array()
 	if f != null:
-		if not Lockdowns.takes_arenas(w):  # v0.9.5 DR: rules 20+ list them as locked rooms (Lockdowns.read)
+		if not Lockdowns.takes_arenas(w):  # Rules 20+ list them as locked rooms (Lockdowns.read)
 			rooms = f.arena_rooms.duplicate()
 		if Overrun.enabled(w):
 			rooms.append(f.overrun_room)
@@ -320,7 +320,7 @@ static func read(w: World) -> Dictionary:
 		"wave": s.wave,
 		"waves": s.waves,
 		"alive": alive_in_room(w),
-		"waiting": s.later_kinds.size(),  # v0.9.0 CF: the wave's members still to come in
+		"waiting": s.later_kinds.size(),  # The wave's members still to come in
 		"next_wave_tick": s.next_wave_tick,
 		"sealed_tick": s.sealed_tick,
 		"clear_tick": s.clear_tick,

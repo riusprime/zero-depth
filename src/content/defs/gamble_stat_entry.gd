@@ -1,6 +1,6 @@
 class_name GambleStatEntry
 extends Resource
-## One line of the gamble shrine's pool (v0.3.0 L19): a stat, how much one win adds, its draw weight, and how many
+## One line of the gamble shrine's pool: a stat, how much one win adds, its draw weight, and how many
 ## wins it can take (its cap). Units: max_hp in HP; regen in % of max HP per second; every other stat in %.
 
 ## The stats the sim knows (GambleTable.Stat, same order).
@@ -19,6 +19,6 @@ const STATS: Array[StringName] = [
 @export var amount := 1.0
 @export var weight := 1
 @export var max_stacks := 1
-## The weapon the stat feeds (v0.3.0 L15): &"blade", &"gun", or empty for any. A run whose build lacks it never
+## The weapon the stat feeds: &"blade", &"gun", or empty for any. A run whose build lacks it never
 ## draws the stat.
 @export var requires_weapon: StringName = &""

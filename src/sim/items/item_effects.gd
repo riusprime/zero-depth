@@ -2,7 +2,7 @@ class_name ItemEffects
 extends RefCounted
 ## What the owned items do to the attacks (v0.2.0 PLAN, Items). Each effect still fires at most once per root chain
 ## per target, and burn ticks are DoT (DAMAGE with TAG_DOT, proc 0, no HIT).
-## v0.6.0 MX1: the numbers come from the compiled specs (Modifiers; the items' modifiers rewrote them): the reach
+## The numbers come from the compiled specs (Modifiers; the items' modifiers rewrote them): the reach
 ## bonus, the shot period, the split, Overcharge's Nth step and shockwave, Twin Arc's repeat, the burn a step feeds.
 ## These functions keep their v0.5 names, so the views and the other systems read the same numbers as before.
 
@@ -25,20 +25,20 @@ static func swing_reach_m(w: World, step: int = -1) -> float:
 	return Attacks.arc_reach_m(w, Modifiers.step(w, s))
 
 
-## Ticks between bolts while shooting (v0.8.0 SG, owner O91): the bolt spec's period at one rate, the attack speed
+## Ticks between bolts while shooting: the bolt spec's period at one rate, the attack speed
 ## stat plus its wand rate bonus (Rapid Fire, Rapid Coil ...; a negative one counts) through the curve, then Heavy
 ## Hands (AttackRate.rate), rounded half up; never under AttackRate.MIN_SHOT_TICKS once changed.
 static func shot_period_ticks(w: World) -> int:
 	return shot_period_of(w, Modifiers.bolt(w))
 
 
-## v0.10.5 O13: shot_period_ticks for any compiled bolt spec (WandForecast reads a wand not held yet with it).
-## v0.10.5 W3-P9: shot_period_milli_of rounded half up (what the HUD shows; the shots average the exact period).
+## shot_period_ticks for any compiled bolt spec (WandForecast reads a wand not held yet with it).
+## shot_period_milli_of rounded half up (what the HUD shows; the shots average the exact period).
 static func shot_period_of(w: World, spec: AttackSpec) -> int:
 	return (shot_period_milli_of(w, spec) + 500) / 1000
 
 
-## v0.10.5 W3-P9 (owner: "lets do only A then"): the cooldown a shot fired now sets (PlayerKit, GunForms): the exact
+## The cooldown a shot fired now sets (PlayerKit, GunForms): the exact
 ## period in thousandths of a tick plus the carried remainder (w.shot_carry), in whole ticks, the new remainder kept,
 ## so a 6.62-tick period fires at 7, 7, 6, 7, 6 … ticks and averages 6.62.
 static func next_shot_cd(w: World) -> int:
@@ -54,20 +54,20 @@ static func last_shot_cd(w: World) -> int:
 	return maxi(1, (p + before) / 1000)
 
 
-## v0.10.5 W3-P9: the period between shots of `spec`, in thousandths of a tick (exact: not rounded to whole ticks);
+## The period between shots of `spec`, in thousandths of a tick (exact: not rounded to whole ticks);
 ## the forms' own periods, the rate (AttackRate.rate, form_rate) and Rapid Fire's quickening (LaserMods).
 static func shot_period_milli_of(w: World, spec: AttackSpec) -> int:
-	var base := BombMods.period(w, spec, spec.period_ticks)  # v0.9.5 FC2: the Bomb's Rapid Fire (0.6 s)
-	base = VoidMods.period(w, spec, base)  # v0.9.5 FC3: the Void's Rapid Fire (0.4 s)
-	base = RuneMods.period(w, spec, base)  # v0.9.5 FC5: the Rune Explosion's Big Shot (90) and Rapid Fire (42)
-	base = GlaiveMods.period(w, spec, base)  # v0.9.5 FC6: the Glaive's Rapid Fire (0.45 s)
-	base = WaveMods.period(w, spec, base)  # v0.9.5 FC8: the Wave's Rapid Fire (0.55 s)
-	var r := AttackRate.rate(w, spec.rate_bonus_permille + FireRhythm.shot_bonus(w, spec))  # v0.8.0 MR: the ramp
-	r = AttackRate.form_rate(spec, r)  # v0.9.0 LZ: the Laser's ticks at half the bonus
+	var base := BombMods.period(w, spec, spec.period_ticks)  # The Bomb's Rapid Fire (0.6 s)
+	base = VoidMods.period(w, spec, base)  # The Void's Rapid Fire (0.4 s)
+	base = RuneMods.period(w, spec, base)  # The Rune Explosion's Big Shot (90) and Rapid Fire (42)
+	base = GlaiveMods.period(w, spec, base)  # The Glaive's Rapid Fire (0.45 s)
+	base = WaveMods.period(w, spec, base)  # The Wave's Rapid Fire (0.55 s)
+	var r := AttackRate.rate(w, spec.rate_bonus_permille + FireRhythm.shot_bonus(w, spec))  # The ramp
+	r = AttackRate.form_rate(spec, r)  # The Laser's ticks at half the bonus
 	var milli := base * 1000
 	if r != 1000:
 		milli = maxi(mini(base, AttackRate.MIN_SHOT_TICKS) * 1000, base * 1000000 / maxi(1, r))
-	return LaserMods.rapid_period(w, spec, milli, 1000)  # v0.9.5 FC1: Rapid Fire's tick quickens while held
+	return LaserMods.rapid_period(w, spec, milli, 1000)  # Rapid Fire's tick quickens while held
 
 
 ## Damage of each bolt in a shot: the full bolt, or a Splinter share (rounded down, at least 1).
@@ -81,7 +81,7 @@ static func shot_offsets(w: World) -> PackedInt32Array:
 
 
 ## Called when a swing starts (w.combo_step is already the new step): Overcharge marks every Nth swing of the
-## combo, so with N = 4 and the four-slash combo it is always the finisher (v0.3.0 L11). swing_count still counts
+## combo, so with N = 4 and the four-slash combo it is always the finisher. swing_count still counts
 ## the swings started while it is owned.
 static func on_swing_start(w: World) -> void:
 	var every := Modifiers.step(w, w.combo_step).nth_every
@@ -153,13 +153,13 @@ static func on_melee_hit(w: World, i: int, root: int, stacks: int = 1) -> void:
 	if lit:
 		a.burn_cd[i] = m.burn_period_ticks
 	a.burn_stacks[i] = mini(a.burn_stacks[i] + stacks, ElementLevels.burn_cap(w))
-	a.burn_t[i] = Affinities.burn_ticks(w, m.burn_duration_ticks)  # v0.9.0 RB: A1 Ember
+	a.burn_t[i] = Affinities.burn_ticks(w, m.burn_duration_ticks)  # A1 Ember
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[0], a.ids[0], a.ids[i], a.pos(i))
 	e.root_id = root
 	e.amount = a.burn_stacks[i]
 	e.effect_id = EFFECT_EMBER_EDGE
 	if lit and w.pair_mask != 0:
-		ElementPairs.on_burn_start(w, i)  # v0.9.5 EE3: Toxic Fumes
+		ElementPairs.on_burn_start(w, i)  # Toxic Fumes
 
 
 ## Phase 8: burns tick. Every period each burning actor takes burn_damage × stacks as DoT; when the burn runs
@@ -257,7 +257,7 @@ static func collect_pickups(w: World) -> void:
 	var at := w.player_pos()
 	var i := 0
 	while i < p.size():
-		if Kin.length(p.pos(i) - at) > Stats.reach(w, w.tuning.pickup_radius_m):  # v0.4.0: pickup range
+		if Kin.length(p.pos(i) - at) > Stats.reach(w, w.tuning.pickup_radius_m):  # Pickup range
 			i += 1
 			continue
 		var idx := p.item[i]
@@ -265,7 +265,7 @@ static func collect_pickups(w: World) -> void:
 			SimEvent.Kind.PICKUP, p.ids[i], w.actors.ids[0], w.actors.ids[0], p.pos(i)
 		)
 		e.amount = idx
-		Offers.apply(w, idx)  # v0.6.0 MX2: a modifier with the six slots full asks for a swap
+		Offers.apply(w, idx)  # A modifier with the six slots full asks for a swap
 		p.remove_at(i)
 		if BuildSlots.swapping(w):
 			return  # one swap at a time: the next pickup waits for the next tick

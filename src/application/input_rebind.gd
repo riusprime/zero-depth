@@ -1,6 +1,6 @@
 class_name InputRebind
 extends RefCounted
-## Rebinding for the Options screen (v0.3.0 O): each action has one keyboard/mouse binding and one pad binding
+## Rebinding for the Options screen: each action has one keyboard/mouse binding and one pad binding
 ## (InputDefaults specs). A new binding that another action already uses on the same device swaps the two, so no
 ## input is ever left doing two things or nothing. Bindings live in the profile (InputRemap) and apply to InputMap
 ## at once.

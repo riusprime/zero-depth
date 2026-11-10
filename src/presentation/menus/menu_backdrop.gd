@@ -7,7 +7,7 @@ extends ColorRect
 ##   `own_scene` is set): its own scene, a dark ember-lit stone floor
 ##   (slow mottled slabs with carved seams and cracks), a warm glow breathing up from below, a vignette.
 ## - Both: a few sparks drifting up from the embers.
-## v0.8.0 TX3: the owner's textures replace the code looks where installed (EmberStone.wall, SPARKS_TEX): the main
+## The owner's textures replace the code looks where installed (EmberStone.wall, SPARKS_TEX): the main
 ## menu's scene is the owner's ember-lit stone wall (`tex_menu_stone_wall`, dimmed, the glow still breathing over
 ## it) and each spark is one of the owner's four ember sprites (`fx_ember_sparks`, 2 x 2). Still one pass on one
 ## rect; without the textures the code-made floor and round sparks stay.
@@ -21,7 +21,7 @@ const DARK_RIGHT := 0.5
 const BLUR_LOD := 2.6
 ## The sparks' strength (starting value).
 const SPARKS := 1.0
-## v0.8.0 TX3: the owner's ember sprites, and how bright the owner's wall is drawn under the glow (starting value).
+## The owner's ember sprites, and how bright the owner's wall is drawn under the glow (starting value).
 const SPARKS_TEX := "res://assets/textures/vfx/fx_ember_sparks.png"
 const WALL_GAIN := 0.62
 
@@ -182,8 +182,8 @@ var own_scene := false:
 	set(v):
 		own_scene = v
 		_mat.set_shader_parameter(&"scene", 1.0 if v else 0.0)
-## v0.10.5 W3-O16 (the Swap in the Astral style): the game blurred and sunk into Astral's cool ink, evenly from top
-## to bottom: no ember glow, no sparks, never the ember scene. v0.10.5 W3-O18 (the menus in Astral): with nothing
+## The Swap in the Astral style: the game blurred and sunk into Astral's cool ink, evenly from top
+## to bottom: no ember glow, no sparks, never the ember scene. the menus in Astral: with nothing
 ## behind, Astral's own night instead (the owner's wall sunk to a cool shadow, a faint veil, a few slow stars).
 var astral := false:
 	set(v):

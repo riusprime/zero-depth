@@ -1,6 +1,6 @@
 class_name EnemyLooks
 extends RefCounted
-## v0.8.0 HR (owner O89: "lag mostly comes from shooting hordes with multiple modifiers"): the horde enemies' materials,
+## The horde enemies' materials,
 ## made once and shared by every enemy of a look, so the renderer draws a crowd's identical pieces as one instanced draw
 ## instead of one draw per piece per enemy (docs/roadmap/v0.4.0/evidence/HORDES.md: ~7,000 draws at 120 enemies).
 ## - body(): a body plate. The shading is StandardMaterial3D's as the horde built it (BaseMaterial3D's generated code
@@ -8,7 +8,7 @@ extends RefCounted
 ##   for the owner's models), reduced to the same arithmetic (the default textures it sampled are constants). The
 ##   rest glow (ActorViews N1 role glow, or none) is the material's; the hit flash and the status tints are an
 ##   `instance uniform` (HIT) each enemy sets on its own pieces (GeometryInstance3D.set_instance_shader_parameter), so
-##   a flash changes no material and no shader. A body plate has no stencil and no outline pass (v0.9.5 PF4).
+##   a flash changes no material and no shader. A body plate has no stencil and no outline pass.
 ## - accent(): the glowing eye, seam, crystal, scope or muzzle: the same shading, its energy an `instance uniform`
 ##   (GLOW; < 0: the material's), never flashed.
 ## Presentation only (EI-07).

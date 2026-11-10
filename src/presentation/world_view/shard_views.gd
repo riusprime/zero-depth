@@ -1,11 +1,11 @@
 class_name ShardViews
 extends Node3D
-## Shard gems (v0.3.0 E): when a kill pays shards (a SHARDS event), up to MAX_PER_KILL small violet crystals burst
+## Shard gems: when a kill pays shards (a SHARDS event), up to MAX_PER_KILL small violet crystals burst
 ## from the body, hang for a moment, then fly into the player and vanish. Cosmetic and in frame time: the sim
 ## already counted the shards. Jitter comes from a presentation RNG seeded per event, so shots look the same.
-## v0.6.1 SW (owner R3, the shard look): each gem is an outlined faceted shard (ShardMesh) lit by the scene with its
+## Each gem is an outlined faceted shard (ShardMesh) lit by the scene with its
 ## own violet emission, instead of a flat unshaded crystal. The chest's price gem keeps shared_material().
-## v0.10.5 O7b (owner P6, "make the shards stay on the floor instead of flying around"): a normal kill's shards lie on
+## A normal kill's shards lie on
 ## the floor in the sim (ShardDrops); each drop is a small glowing cluster of the same gems on the ground (more gems
 ## for a bigger drop, DROP_GEMS_MAX at most), turning slowly. When the hero takes one (it leaves the reader with a
 ## pickup SHARDS event at its spot) the cluster is pulled into the hero over PULL_S and vanishes; a drop that left by
@@ -31,7 +31,7 @@ var _last_seq := 0
 var _target := Vector3.ZERO
 ## Each gem: [node, velocity, age].
 var _gems: Array[Array] = []
-## v0.10.5 O7b: the drops on the floor by sequence number: [node, gem count]; the pulled ones: [node, from, age].
+## The drops on the floor by sequence number: [node, gem count]; the pulled ones: [node, from, age].
 var _drops := {}
 var _pulled: Array[Array] = []
 
@@ -48,7 +48,7 @@ static func shared_material() -> StandardMaterial3D:
 	return _material
 
 
-## v0.6.1 SW: the flying gems' material: the shard look (lit, toned facets, emission on from creation).
+## The flying gems' material: the shard look (lit, toned facets, emission on from creation).
 static func gem_material() -> StandardMaterial3D:
 	if _gem_material == null:
 		_gem_material = ShardMesh.crystal_material(COLOR, 1.6)

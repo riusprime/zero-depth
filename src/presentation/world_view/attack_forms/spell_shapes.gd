@@ -1,6 +1,6 @@
 class_name SpellShapes
 extends Node3D
-## v0.11.0 O11 (SPELLS.md "Readability"): a pool of plain unshaded strips and orbs the spells' looks are drawn from,
+## SPELLS.md "Readability": a pool of plain unshaded strips and orbs the spells' looks are drawn from,
 ## each frame anew (begin, strip/orb, finish). Each strip and orb has its own material, so it takes any colour and
 ## fade. Past the pool a shape is skipped (never an error). Presentation only (EI-07).
 

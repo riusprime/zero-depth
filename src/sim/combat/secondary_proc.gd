@@ -28,7 +28,7 @@ static func of_projectile(w: World, pi: int) -> int:
 	return permille(w) if w.projectiles.second_of(pi) != 0 else 1000
 
 
-## The proc a launch with `ctx` hits at, per mille. v0.11.0 O1 (owner Q5: "3 hits worth"): times ctx.feed_x, the hits
+## The proc a launch with `ctx` hits at, per mille. times ctx.feed_x, the hits
 ## of statuses one hit feeds (the Lance-Laser's 3; above 1000 the stacks multiply, the remainder carried as below).
 static func of_ctx(w: World, ctx: AttackContext) -> int:
 	return (permille(w) if ctx.secondary else 1000) * maxi(1, ctx.feed_x)

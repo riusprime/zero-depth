@@ -1,6 +1,6 @@
 class_name AttackFormPool
 extends MultiMeshInstance3D
-## v0.6.0 MX3: one MultiMesh pool of an attack form's layer (or a particle kind): a fixed number of instances,
+## One MultiMesh pool of an attack form's layer (or a particle kind): a fixed number of instances,
 ## refilled every drawn frame (begin → add → finish) and shown up to the count added. One draw call per pool however
 ## many attacks are on screen; a pool never grows, so a crowd of attacks costs no allocation (PRESENTATION §7).
 

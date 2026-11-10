@@ -1,6 +1,6 @@
 class_name HudFrame
 extends PanelContainer
-## A HUD group (v0.3.5 F15). The HUD is unboxed (HudStyle, v0.10.5 W3-O17), so the frame draws nothing: it pads its
+## A HUD group. The HUD is unboxed (HudStyle, v0.10.5 W3-O17), so the frame draws nothing: it pads its
 ## content by `margin` and lays its children out like any PanelContainer.
 
 

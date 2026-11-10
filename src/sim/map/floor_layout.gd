@@ -2,7 +2,7 @@ class_name FloorLayout
 extends RefCounted
 ## One generated floor (FloorGenerator.generate). Plain data in sim metres; angles in 1/4096 turns.
 ## Rooms sit on a grid of cells (the floor's drawn cell size plus the walls between cells). Room 0 is the start
-## hall; the others are numbered in the order they were attached. Walls have thickness (v0.3.0 L1): each room
+## hall; the others are numbered in the order they were attached. Walls have thickness: each room
 ## side is inset from its grid line by its own drawn half, so a partition is as thick as the two halves beside it.
 
 ## Interior templates (room_template). Each is scaled to the room's size by RoomInterior.
@@ -30,7 +30,7 @@ const GATE_WIDTH := 2.4
 const GATE_HALF_DEPTH := 0.4
 ## Side of the square kept clear in front of the gate.
 const GATE_FRONT := 3.0
-## v0.9.0 PT (owner: "there should be an space between the wall and the portals"; starting value): the portal's oval
+## The portal's oval
 ## (OVAL_HALF_W either side of portal_pos, across its facing; the view's PortalGate.OVAL_W) keeps GATE_WALL_CLEAR m from
 ## every wall: it stands that far out from the wall it backs onto (portal_pos = the wall face + facing ×
 ## GATE_WALL_CLEAR), and its sides and the gap behind it are kept clear of the room's walls and interior pieces.
@@ -38,7 +38,7 @@ const GATE_WALL_CLEAR := 1.5
 const OVAL_HALF_W := 0.8
 ## How far the gate's zone reaches either side of its centre line (the oval's clearance; at least the old 2.2 m).
 const GATE_ZONE_HALF_W := OVAL_HALF_W + GATE_WALL_CLEAR
-## v0.9.0 PT: before PT a gate's zone reached this far past its frame's sides (GATE_WIDTH / 2 + 1.0 = 2.2 m).
+## Before PT a gate's zone reached this far past its frame's sides (GATE_WIDTH / 2 + 1.0 = 2.2 m).
 const LEGACY_ZONE_SIDE := 1.0
 
 ## The templates' names (for tools and evidence).
@@ -93,16 +93,16 @@ var portal_room := 0
 var start_pos := Vector2.ZERO
 ## The centre of the gate's footprint; the gate faces portal_angle (into the room).
 var portal_pos := Vector2.ZERO
-## v0.9.0 PT: a floor built under floor rules 1-9 (saved before v0.9.0) keeps its gates against the wall, as it was
+## A floor built under floor rules 1-9 (saved before v0.9.0) keeps its gates against the wall, as it was
 ## saved (FloorParams.legacy_gate); otherwise they stand GATE_WALL_CLEAR out from it.
 var legacy_gate := false
 var portal_angle := 0
-## v0.5.0 RT: the Deep gate (Routes.place_deep_gate; only on a run's floors before the last), beside the gate in the
+## The Deep gate (Routes.place_deep_gate; only on a run's floors before the last), beside the gate in the
 ## boss room. has_deep_portal is false until it is placed.
 var has_deep_portal := false
 var deep_portal_pos := Vector2.ZERO
 var deep_portal_angle := 0
-## v0.8.0 P2 (owner O28): the Loop device on a loop's last floor (Ascension.place_loop_device; FloorScenario), a pad
+## The Loop device on a loop's last floor (Ascension.place_loop_device; FloorScenario), a pad
 ## beside the Ascension portal: its centre and the way it faces. has_loop_device is false until it is placed.
 var has_loop_device := false
 var loop_pos := Vector2.ZERO
@@ -110,22 +110,22 @@ var loop_angle := 0
 ## Item spots: 1 in a 1 x 1 room, 1-2 in bigger rooms, none in the start hall. Grouped by room in room order;
 ## item_rooms[i] is spot i's room.
 var item_spots := PackedVector2Array()
-## v0.5.9 L8: the kit piece a themed room's piece is drawn with, keyed by its footprint (piece_key). Presentation
+## The kit piece a themed room's piece is drawn with, keyed by its footprint (piece_key). Presentation
 ## only: the sim never reads it.
 var piece_tags := {}
 var item_rooms := PackedInt32Array()
-## v0.8.0 RT (owner O12): each room's designed layout (RoomLayoutTable.id; &"" for a rule-built room), its quarter
+## Each room's designed layout (RoomLayoutTable.id; &"" for a rule-built room), its quarter
 ## turn and whether it is mirrored (FloorGenerator, RoomLayouts). Plain data for tools and tests; the walls already
 ## hold its blockers.
 var room_layout: Array[StringName] = []
 var room_turn := PackedInt32Array()
 var room_mirror := PackedInt32Array()
-## v0.8.0 RT: a designed room's drawn-only pieces, presentation only (the sim never reads them): [piece, centre:
+## A designed room's drawn-only pieces, presentation only (the sim never reads them): [piece, centre:
 ## Vector2, angle (1/4096), size: Vector2 (m), height (m; 0 = the kit's own), the piece_key of the blocker it stands on
-## or "" for decoration on open floor]; v0.11.0 O15: a 7th field, when present, is the piece's base height (m; a
+## or "" for decoration on open floor]; a 7th field, when present, is the piece's base height (m; a
 ## purpose room's lintel resting on its stones).
 var layout_props: Array = []
-## v0.8.0 RT: a designed room's blockers, keyed by piece_key: their drawn height (m; 0 = the kit's own). Presentation
+## A designed room's blockers, keyed by piece_key: their drawn height (m; 0 = the kit's own). Presentation
 ## only; a wall listed here is a designed room's piece (the biome's swap rules apply to it, StageDresser).
 var piece_heights := {}
 ## Open spots per room (index = room).
@@ -151,14 +151,14 @@ var boss_spawn := Vector2.ZERO
 ## (-1 = none on this floor) and the doorways into it (indices into the doorway arrays: their red frames).
 var overrun_room := -1
 var overrun_doors := PackedInt32Array()
-## v0.5.5 AR: the sealed arenas (ArenaRooms.mark, after the Overrun room; ascending; empty without an arena table).
+## The sealed arenas (ArenaRooms.mark, after the Overrun room; ascending; empty without an arena table).
 ## The Overrun room is the hardest arena but is listed on its own (overrun_room).
 var arena_rooms := PackedInt32Array()
 ## The shop (v0.5.0 SH; ShopPlacement.pick, -1 before it runs): its room, the terminal's centre and its facing.
 var shop_room := -1
 var shop_pos := Vector2.ZERO
 var shop_angle := 0
-## v0.8.0 SR (owner O13): the shop room's layout (ShopRoomTable.id; &"" for the terminal of a floor built before SR,
+## The shop room's layout (ShopRoomTable.id; &"" for the terminal of a floor built before SR,
 ## or when the stall found no spot). With one, shop_pos is the counter's centre and shop_angle the way its front
 ## faces; shop_solids are the stall's footprints (and any shop_* solid of the dressing), walls the world adds
 ## (FloorScenario.add_shop) and the dresser never draws; shop_props are every shop_* piece for ShopStallView, as
@@ -167,7 +167,7 @@ var shop_angle := 0
 var shop_layout := &""
 var shop_solids: Array[Obb] = []
 var shop_props: Array = []
-## v0.8.0 N19 (owner O80): the curse room as a room type of its own (CurseRoom.furnish, from Events.place; -1 on a
+## The curse room as a room type of its own (CurseRoom.furnish, from Events.place; -1 on a
 ## floor without one, or one built under older rules, whose curse room kept its interior): its room, and the solids
 ## the world adds as walls: the altar's footprint first, then each crystal cluster's (CurseRoomView draws them).
 var curse_room := -1
@@ -175,7 +175,7 @@ var curse_solids: Array[Obb] = []
 ## The floor's footprint, for drawing ground: each room's cells (interior, walls and doorways up to its grid
 ## lines), then the outer half of each outer wall.
 var ground: Array[Rect2] = []
-## v0.9.0 FA (owner C §3, Q18): the final approach (FinalArena.approach_layout; empty elsewhere): the walls of light
+## The final approach (FinalArena.approach_layout; empty elsewhere): the walls of light
 ## that close the plateau when the buildup ends (World adds them then), the two rune pylons and the altar at the
 ## plateau's centre, the causeway's foot and its top (where it meets the plateau's ring).
 var light_walls: Array[Obb] = []
@@ -184,19 +184,19 @@ var altar_pos := Vector2.ZERO
 var causeway_foot := Vector2.ZERO
 var causeway_top := Vector2.ZERO
 var causeway_half_w := 0.0
-## v0.9.0 TD (owner W §2, Q20, Q23; TimedDoorRooms.mark, -1 / empty on a floor without one): the secret room behind the
+## The secret room behind the
 ## timed door, the room before it (the host, which holds the two switches), the door (an index into the doorway arrays),
 ## the switches' spots and the slab that shuts the doorway (TimedDoor adds it as a barrier in play).
 var timed_room := -1
 var timed_host := -1
 var timed_door := -1
 var timed_switches := PackedVector2Array()
-## v0.9.5 TS (owner Q7): the rooms holding the two switches (empty before TS: both in the host) and the lever just
+## The rooms holding the two switches (empty before TS: both in the host) and the lever just
 ## inside the secret room (ZERO before TS).
 var timed_switch_rooms := PackedInt32Array()
 var timed_lever := Vector2.ZERO
 var timed_door_wall: Obb
-## v0.9.0 RA (owner W §4 A, Q22; RuneRooms.mark, -1 / empty on a floor without one): the rune puzzle's hidden room, the
+## The rune puzzle's hidden room, the
 ## room before it (the host: the three pillars and the carving), its sealed doorway (a doorway index) and the slab that
 ## seals it, the pillars' spots, the faces to match (0..3 each, the carving's symbols) and the faces they start on.
 var rune_room := -1
@@ -206,14 +206,14 @@ var rune_pillars := PackedVector2Array()
 var rune_target := PackedInt32Array()
 var rune_start := PackedInt32Array()
 var rune_door_wall: Obb
-## v0.9.0 DX (owner W §4 C, Q23; CrackedRooms.mark, -1 / null on a floor without one): the hidden room behind the
+## The hidden room behind the
 ## cracked wall, the room before it, the doorway the wall fills and the wall itself (Breakables adds it as a barrier
 ## in play).
 var crack_room := -1
 var crack_host := -1
 var crack_door := -1
 var crack_wall: Obb
-## v0.11.0 O14b (owner Q-O14b "Both"; FinalArena.add_heart_room, -1 on every other floor): the hidden room under the
+## The hidden room under the
 ## Hollow Crown's throne on the final approach: its room index, the first of its walls (pieces, from slab_first on:
 ## the arena's stage leaves them to the heart's view), its pedestal, its rune slab (the lore lines, on its far wall),
 ## and its sealed door (on the far wall, facing heart_door_angle into the room). Its cracked wall is crack_*.
@@ -223,15 +223,15 @@ var heart_pedestal := Vector2.ZERO
 var heart_slab := Vector2.ZERO
 var heart_door := Vector2.ZERO
 var heart_door_angle := 0
-## v0.9.0 DP (owner Q26b; PurpleRooms.mark, -1 on a floor without one): the purple-rune room (a big room off the
+## The purple-rune room (a big room off the
 ## way) and its dais's spot.
 var purple_room := -1
 var purple_pos := Vector2.ZERO
-## v0.9.0 LK (owner Q21; LockdownRooms.mark, empty on a floor without any): the Lockdown rooms, in the order taken,
+## The Lockdown rooms, in the order taken,
 ## and each one's kind (LockdownTable.Kind).
 var lockdown_rooms := PackedInt32Array()
 var lockdown_kinds := PackedInt32Array()
-## v0.11.0 O15 (PLAN P1; RoomPurposes.lay, after the room kinds are marked): each room's purpose (a
+## PLAN P1; RoomPurposes.lay, after the room kinds are marked: each room's purpose (a
 ## RoomPurposeTable id: a large combat room furnished as a camp, a collapsed hall or a quarry), &"" for none; empty on
 ## a floor without purposes.
 var room_purpose: Array[StringName] = []
@@ -249,12 +249,12 @@ func room_of(p: Vector2) -> int:
 	return -1
 
 
-## v0.11.0 O15: the purpose of `room` (&"" for none).
+## The purpose of `room` (&"" for none).
 func purpose_of(room: int) -> StringName:
 	return room_purpose[room] if room >= 0 and room < room_purpose.size() else &""
 
 
-## v0.11.0 O15: the rooms with a purpose, ascending.
+## The rooms with a purpose, ascending.
 func purpose_rooms() -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for room in room_purpose.size():
@@ -323,7 +323,7 @@ func gate_zone() -> Rect2:
 	return GateClearance.zone(self, portal_pos, portal_angle)
 
 
-## v0.9.0 PT: the rectangle that must stay free of walls round a gate's oval at `pos` facing `angle` (the oval's
+## The rectangle that must stay free of walls round a gate's oval at `pos` facing `angle` (the oval's
 ## segment across the facing, grown by GATE_WALL_CLEAR; axis-aligned: gates face a grid axis).
 static func oval_clear_rect(pos: Vector2, angle: int) -> Rect2:
 	var n := Kin.dir(angle)
@@ -397,11 +397,11 @@ func piece_tag(o: Obb) -> StringName:
 	return piece_tags.get(piece_key(o), &"")
 
 
-## v0.8.0 RT: a designed room's blocker's drawn height (m; 0 = the kit's own), or -1.0 for any other wall.
+## A designed room's blocker's drawn height (m; 0 = the kit's own), or -1.0 for any other wall.
 func piece_height(o: Obb) -> float:
 	return float(piece_heights.get(piece_key(o), -1.0))
 
 
-## v0.8.0 RT: room `room`'s designed layout id (&"" for none, or a room added after the generator, like the boss's).
+## Room `room`'s designed layout id (&"" for none, or a room added after the generator, like the boss's).
 func layout_of(room: int) -> StringName:
 	return room_layout[room] if room >= 0 and room < room_layout.size() else &""

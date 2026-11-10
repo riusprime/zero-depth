@@ -26,7 +26,7 @@ const LIGHT_OPEN := 1.6
 const FLARE_ENERGY := 4.0
 const FLARE_SECONDS := 1.0
 const ARROW_SPEED := 0.35
-## v0.8.0 MI: the owner's model of the device.
+## The owner's model of the device.
 const MODEL_PATH := "res://assets/models/devices/loop_device.glb"
 
 static var _model_cache := {}
@@ -46,7 +46,7 @@ var calm := false
 var radius := 0.9
 ## How far round the arrowheads have chased (turns; tests read it).
 var chase := 0.0
-## v0.8.0 MI: the owner's pad (null: the code-made one; _model_width: its width as prepared, m).
+## The owner's pad (null: the code-made one; _model_width: its width as prepared, m).
 var model: MeshInstance3D
 var _sealed := true
 var _flare := 0.0
@@ -70,11 +70,11 @@ func setup(sim_pos: Vector2, facing_angle: int, pad_radius: float) -> void:
 	(pad.mesh as CylinderMesh).bottom_radius = radius + 0.06
 	(rim.mesh as TorusMesh).inner_radius = radius - 0.07
 	(rim.mesh as TorusMesh).outer_radius = radius
-	if model != null:  # v0.8.0 MI: the owner's pad spans the sim's pad
+	if model != null:  # The owner's pad spans the sim's pad
 		model.scale = Vector3.ONE * (radius * 2.0 / maxf(_model_width, 0.0001))
 
 
-## v0.8.0 MI: reads the owner's pad into its cache once (ViewWarmup does it on the load's worker).
+## Reads the owner's pad into its cache once (ViewWarmup does it on the load's worker).
 static func warm_model() -> void:
 	if not _model_cache.has(MODEL_PATH):
 		_model_cache[MODEL_PATH] = (
@@ -84,9 +84,9 @@ static func warm_model() -> void:
 		)
 
 
-## v0.8.0 MI: the owner's Loop device (MODEL_PATH, mi_prep.py: 8k triangles, 0.9 m tall as prepared) in place of the
+## The owner's Loop device (MODEL_PATH, mi_prep.py: 8k triangles, 0.9 m tall as prepared) in place of the
 ## code-made stone pad; the rim's glow, the upright ring, its chasing arrowheads, the veil and the light stay on top
-## of it, animated as before. Missing: the code-made pad (L15).
+## of it, animated as before. Missing: the code-made pad.
 func _build_model() -> void:
 	warm_model()
 	var surface: Dictionary = _model_cache[MODEL_PATH]

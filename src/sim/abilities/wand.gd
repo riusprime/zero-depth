@@ -1,6 +1,6 @@
 class_name Wand
 extends RefCounted
-## v0.6.5 WN1 (docs/design/WAND.md; owner W3, W6; SIM_CONTRACTS §8e): the wand is the build's modifier slots in their
+## docs/design/WAND.md; owner W3, W6; SIM_CONTRACTS §8e: the wand is the build's modifier slots in their
 ## order (World.mod_slots), read left to right by the compile (WandCompile). This holds what the slots mean as a wand:
 ## - how many slots it has now: 4 on floor 1, 6 after the first boss, 8 after the second (WandTable, data; a world
 ##   without the table, a lab, keeps v0.6.0's six). With every slot full a new card opens the Swap (BuildSlots).
@@ -19,13 +19,13 @@ const TRIGGER_KEYS := {
 	AttackSpec.Trigger.ON_FINISHER: &"WAND_READ_ON_FINISHER",
 	AttackSpec.Trigger.ON_CRIT: &"WAND_READ_ON_CRIT",
 }
-## v0.8.0 MR (owner O91: "Clearly flag incompatible placements"): why a card can't act where it sits (flags()): right
+## Why a card can't act where it sits (flags()): right
 ## of a trigger a repeat or a hold (WandTable.after_trigger_dead), or past the third trigger (too deep to cast).
 const DEAD_AFTER_TRIGGER := &"UI_WAND_DEAD_TRIGGER"
 const DEAD_TOO_DEEP := &"UI_WAND_DEAD_DEEP"
-## v0.11.0 S6 (owner, PIERCE P2): a held item card the run's form does not compile (AttackSlots.compiles).
+## A held item card the run's form does not compile (AttackSlots.compiles).
 const DEAD_FORM := &"UI_WAND_DEAD_FORM"
-## v0.8.0 RM: what a card's remnant does (remnant_of; the read-back's lines).
+## What a card's remnant does (remnant_of; the read-back's lines).
 const REMNANT_NONE := 0
 const REMNANT_CASTS := 1
 const REMNANT_PULLS := 2
@@ -34,7 +34,7 @@ const REMNANT_CONSUMES := 3
 static var _defaults := WandTable.new()
 
 
-## The wand's slot count now (the floor's, WandTable.slots_at; six without a table). v0.7.5 AP: by the run's floor
+## The wand's slot count now (the floor's, WandTable.slots_at; six without a table). by the run's floor
 ## across loops (World.run_floor_index), so a wand never shrinks when a new loop starts.
 static func slots(w: World) -> int:
 	if w.wand_table == null:
@@ -76,12 +76,12 @@ static func move(w: World, from: int, to: int) -> bool:
 	return true
 
 
-## v0.6.5 WN2: whether a move from slot `from` to slot `to` changes a wand of `n` cards (both held, not the same).
+## Whether a move from slot `from` to slot `to` changes a wand of `n` cards (both held, not the same).
 static func can_move(n: int, from: int, to: int) -> bool:
 	return from >= 0 and to >= 0 and from < n and to < n and from != to
 
 
-## v0.6.5 WN2: `order` with the card in slot `from` moved to slot `to` (a copy; the cards between shift by one): the
+## `order` with the card in slot `from` moved to slot `to` (a copy; the cards between shift by one): the
 ## one rule move() applies, so the Build page's preview and the sim's outcome are the same function (EI-07). A move
 ## that changes nothing (can_move) gives an unchanged copy.
 static func moved_order(order: PackedInt32Array, from: int, to: int) -> PackedInt32Array:
@@ -94,7 +94,7 @@ static func moved_order(order: PackedInt32Array, from: int, to: int) -> PackedIn
 	return out
 
 
-## v0.6.5 WN2: a wand read (read()) with the card in slot `from` moved to slot `to` (moved_order's rule), its cuts
+## A wand read (read()) with the card in slot `from` moved to slot `to` (moved_order's rule), its cuts
 ## found again: what read() gives after the move, for the Build page's live preview and read-back (describe).
 static func moved_read(wand: Dictionary, from: int, to: int) -> Dictionary:
 	var cards: Array = wand.get("cards", [])
@@ -120,7 +120,7 @@ static func _with_cards(wand: Dictionary, cards: Array[Dictionary]) -> Dictionar
 	return out
 
 
-## v0.6.5 WN2 (the Swap panel): a wand read (read(), with its "incoming" card) after the swap answer "the card in
+## The Swap panel: a wand read (read(), with its "incoming" card) after the swap answer "the card in
 ## slot `leave` leaves" and then the move of the new card from that slot to `at`: BuildSlots.take's rule (the new card
 ## takes the slot it replaces) and moved_order's, so the panel's preview is what the sim will hold. `at` = `leave` is a
 ## plain replace; another `at` inserts the new card there. An unchanged copy without an incoming card or a held `leave`.
@@ -139,7 +139,7 @@ static func swapped_read(wand: Dictionary, leave: int, at: int) -> Dictionary:
 	return moved_read(out, leave, clampi(at, 0, cards.size() - 1))
 
 
-## v0.6.5 WN2: the picks (in order, one per tick) that give swapped_read(leave, at): the answer that replaces slot
+## The picks (in order, one per tick) that give swapped_read(leave, at): the answer that replaces slot
 ## `leave`, then the move of the new card to `at` when it goes elsewhere.
 static func swap_picks(leave: int, at: int) -> PackedInt32Array:
 	var out := PackedInt32Array([InputFrame.PICK_SWAP_BASE + leave])
@@ -148,7 +148,7 @@ static func swap_picks(leave: int, at: int) -> PackedInt32Array:
 	return out
 
 
-## v0.6.5 WN2: the fewest wand moves (pick values, InputFrame.wand_move) that turn the order `from` into `to` (the
+## The fewest wand moves (pick values, InputFrame.wand_move) that turn the order `from` into `to` (the
 ## same cards; each card's code appears once): at most one per slot, applied in turn by move(). Empty when they are
 ## already equal or hold different cards.
 static func plan_moves(from: PackedInt32Array, to: PackedInt32Array) -> PackedInt32Array:
@@ -187,7 +187,7 @@ static func trigger_of(w: World, code: int) -> int:
 
 ## The wand as the views read it (WorldReader.wand): the weapon (&"gun" or &"blade": what the spell is), the slot
 ## count, every card in slot order (code, id, name_key, type, level, trigger: -1 or the AttackSpec.Trigger it cuts
-## on) and the cuts (the slots holding a trigger, in order). v0.6.5 WN2: while a swap waits, "incoming" is the card
+## on) and the cuts (the slots holding a trigger, in order). while a swap waits, "incoming" is the card
 ## offered, in the same shape (level 1; empty otherwise), so the Swap panel can preview it in the row.
 static func read(w: World) -> Dictionary:
 	var out: Array[Dictionary] = []
@@ -205,12 +205,12 @@ static func read(w: World) -> Dictionary:
 		"cards": out,
 		"cuts": cuts,
 		"incoming": incoming,
-		# v0.9.0 AS: the form fired now (&"" on a Blade run) and per limited slot category [category, held, limit]
+		# The form fired now (&"" on a Blade run) and per limited slot category [category, held, limit]
 		"form": AttackSlots.form_id(w),
 		"slot_counts": AttackSlots.counts(w),
-		# v0.9.0 AS2: the slot category the waiting swap is limited to (AttackSlots.choice_category; 0: any slot)
+		# The slot category the waiting swap is limited to (AttackSlots.choice_category; 0: any slot)
 		"swap_slot": AttackSlots.choice_category(w, w.swap_code) if BuildSlots.swapping(w) else 0,
-		# v0.10.5 W3-P10a (owner W7, G1 A5): the deepest hook level the compile builds (the loop's; flags, describe)
+		# The deepest hook level the compile builds (the loop's; flags, describe)
 		"depth": Attacks.hook_depth(w),
 	}
 
@@ -224,17 +224,17 @@ static func _card(w: World, code: int, level: int) -> Dictionary:
 		"type": info["type"],
 		"level": level,
 		"trigger": trigger_of(w, code),
-		"wand": bool(info.get("wand", false)),  # v0.7.5 SM: a wand card (it has a level, 1–5)
+		"wand": bool(info.get("wand", false)),  # A wand card (it has a level, 1–5)
 		"max_level": int(info.get("max_level", 1)),  # v0.9.5 CLV
-		"order": order_of(w, code),  # v0.8.0 AO: what it does to the cards to its left
-		"after_trigger_dead": dead_after_trigger(w, info["id"]),  # v0.8.0 MR: it does nothing right of a trigger
-		"remnant": remnant_of(w, code),  # v0.8.0 RM: what its remnant does (REMNANT_*)
-		"form_dead": not AttackSlots.compiles(w, code),  # v0.11.0 S6: the form fired now does not use it
-		"slot": AttackSlots.tag(w, code),  # v0.9.0 AS: its slot tag on this run (AttackSlots; 0 none)
+		"order": order_of(w, code),  # What it does to the cards to its left
+		"after_trigger_dead": dead_after_trigger(w, info["id"]),  # It does nothing right of a trigger
+		"remnant": remnant_of(w, code),  # What its remnant does (REMNANT_*)
+		"form_dead": not AttackSlots.compiles(w, code),  # The form fired now does not use it
+		"slot": AttackSlots.tag(w, code),  # Its slot tag on this run (AttackSlots; 0 none)
 	}
 
 
-## v0.8.0 RM (owner O91; Remnants): what card `code`'s remnant does, for the read-back: REMNANT_NONE, REMNANT_CASTS
+## What card `code`'s remnant does, for the read-back: REMNANT_NONE, REMNANT_CASTS
 ## (its activation casts a spell the cards to its right shape), REMNANT_PULLS (an anchor's pull) or REMNANT_CONSUMES
 ## (Grand Finale: it releases the remnants to its left).
 static func remnant_of(w: World, code: int) -> int:
@@ -253,17 +253,17 @@ static func remnant_of(w: World, code: int) -> int:
 	return REMNANT_NONE
 
 
-## v0.8.0 MR: card `id` does nothing right of a trigger (WandTable.after_trigger_dead).
+## Card `id` does nothing right of a trigger (WandTable.after_trigger_dead).
 static func dead_after_trigger(w: World, id: Variant) -> bool:
 	var t := w.wand_table if w.wand_table != null else _defaults
 	return t.after_trigger_dead.has(StringName(str(id)))
 
 
-## v0.8.0 MR (owner O91): per card of a wand read (read(), or a preview from WorldReader.wand_moved), in slot order,
+## Per card of a wand read (read(), or a preview from WorldReader.wand_moved), in slot order,
 ## why it can't act where it sits: DEAD_AFTER_TRIGGER (a card that does nothing right of a trigger, there),
 ## DEAD_TOO_DEEP (past the third trigger: the compile casts nothing that deep), or &"" (it acts). A trigger card is
 ## never flagged. The wand's tiles dim a flagged card and show the reason; describe() leaves its effect out.
-## v0.10.5 W3-P10a (owner W7, G1 A5): "too deep" is past the read's "depth" (the loop's: a trigger more a loop).
+## "too deep" is past the read's "depth" (the loop's: a trigger more a loop).
 static func flags(wand: Dictionary) -> Array[StringName]:
 	var out: Array[StringName] = []
 	var cuts := 0
@@ -283,7 +283,7 @@ static func flags(wand: Dictionary) -> Array[StringName]:
 	return out
 
 
-## v0.8.0 AO (owner O37): card `code`'s ModifierTable.OrderKind (its first modifier that has one; FREE otherwise): the
+## Card `code`'s ModifierTable.OrderKind (its first modifier that has one; FREE otherwise): the
 ## wand's tiles mark a shape, a count and a motion card (it changes what is left of it).
 static func order_of(w: World, code: int) -> int:
 	if Offers.type_of(code) == Offers.ABILITY or code < 0 or code >= w.item_tables.size():
@@ -298,13 +298,13 @@ static func order_of(w: World, code: int) -> int:
 ## arguments}, where an argument is a line of the same shape, an Array of them (a list, joined) or a plain value.
 ## The first line is the spell you fire (the weapon's attack, and the cards that shape it); each trigger adds a line
 ## for the child spell it casts (a small copy, shaped by the cards to its right); cards past a third trigger (deeper
-## than the compile casts) are listed as unused; v0.8.0 MR: a card that does nothing right of a trigger (flags()) is
+## than the compile casts) are listed as unused; a card that does nothing right of a trigger (flags()) is
 ## left out of its spell and listed last ("Does nothing after a trigger: Echo.").
 static func describe(wand: Dictionary) -> Array[Dictionary]:
 	var gun: bool = wand.get("weapon", &"blade") == &"gun"
 	var segments: Array = [[]]
 	var triggers: Array[int] = []
-	var dead: Array = []  # v0.8.0 MR: the cards that do nothing right of a trigger (flags())
+	var dead: Array = []  # The cards that do nothing right of a trigger (flags())
 	var why := flags(wand)
 	var cards: Array = wand.get("cards", [])
 	for n in cards.size():
@@ -334,12 +334,12 @@ static func describe(wand: Dictionary) -> Array[Dictionary]:
 	return lines
 
 
-## v0.10.5 W3-P10a: a wand read's deepest hook level (its "depth"; loop 1's WandCompile.MAX_DEPTH without one).
+## A wand read's deepest hook level (its "depth"; loop 1's WandCompile.MAX_DEPTH without one).
 static func depth_of(wand: Dictionary) -> int:
 	return int(wand.get("depth", WandCompile.MAX_DEPTH))
 
 
-## v0.8.0 RM (owner O91): a line per remnant card that acts where it sits: what it leaves and what its remnants release
+## A line per remnant card that acts where it sits: what it leaves and what its remnants release
 ## (a burst shaped by the cards right of it in its trigger section), or that it pulls, or (Grand Finale) that it
 ## releases the remnants to its left.
 static func _remnant_lines(cards: Array, why: Array[StringName], deepest: int) -> Array[Dictionary]:

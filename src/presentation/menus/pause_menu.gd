@@ -1,10 +1,10 @@
 class_name PauseMenu
 extends MenuPanel
-## Resume, restart the run, Options (v0.3.0 O), or return to the main menu (v0.3.0 B). Shown over the stage; the
+## Resume, restart the run, Options, or return to the main menu. Shown over the stage; the
 ## sim is paused (no ticks) while it's open. Keyboard, mouse and pad all work through the focus (MenuPanel).
-## v0.8.0 MU (Ember stone): the game blurred behind, the list on a stone slab on the left, the run's line and
-## the key hint under it; no build cards beside it (owner: not needed). v0.6.5 WN2: a Build row under Resume opens the
-## Build page (BuildPage: the wand's order, rearranged here). v0.7.5 CX: a Codex row after Options opens the Codex
+## Ember stone: the game blurred behind, the list on a stone slab on the left, the run's line and
+## the key hint under it; no build cards beside it (owner: not needed). a Build row under Resume opens the
+## Build page (BuildPage: the wand's order, rearranged here). a Codex row after Options opens the Codex
 ## (CodexView) over the paused game.
 ## v0.9.0 HB (owner 2026-10-23, "To the hub (Recommended)"): in a run the last row leaves to the Rune Ring hub, the run
 ## saved for Continue (the end panel's words, UI_TO_HUB); the dev Playground keeps Main menu.
@@ -15,22 +15,22 @@ signal options_pressed
 signal codex_pressed
 signal restart_pressed
 signal main_menu_pressed
-signal hub_pressed  # v0.9.0 HB: the in-run exit
+signal hub_pressed  # The in-run exit
 
 var run_line: Label
-## v0.10.5 O6, v0.11.0 F12: the depths' answer (the HUD's skull and multiplier, no sentence), shown only above ×1.
+## The depths' answer (the HUD's skull and multiplier, no sentence), shown only above ×1.
 var depths_line: DepthsTag
-## v0.10.5 O5b: the loop rules' line under the run's (hidden on loop 1).
+## The loop rules' line under the run's (hidden on loop 1).
 var rules_line: Label
-## The run line's numbers, so a language switch (Options opened from here) words it again (v0.6.0 UP).
+## The run line's numbers, so a language switch (Options opened from here) words it again.
 var _run := []
 var _loop := 1  # v0.7.5 AP
-## v0.10.5 O5b: the loop rules' name keys.
+## The loop rules' name keys.
 var _rules := PackedStringArray()
 
 
 func _init(to_hub: bool = true) -> void:
-	super()  # v0.10.5 W3-O18: in Astral (MenuPanel)
+	super()  # In Astral (MenuPanel)
 	name = "PauseMenu"
 	add_backdrop()
 	add_title("UI_PAUSED")
@@ -56,7 +56,7 @@ func _init(to_hub: bool = true) -> void:
 
 
 ## The run so far under the list: "Floor 1 · 03:42 · 87 kills · 146 shards" (Main passes the recap's numbers).
-## v0.7.5 AP: `loop` > 1 puts "Loop N · " first.
+## `loop` > 1 puts "Loop N · " first.
 func show_run(floor_index: int, seconds: float, kills: int, shards: int, loop: int = 1) -> void:
 	var secs := int(seconds)
 	_run = [floor_index, secs / 60, secs % 60, kills, shards]
@@ -66,7 +66,7 @@ func show_run(floor_index: int, seconds: float, kills: int, shards: int, loop: i
 
 
 ## Main's recap (Main.run_recap: floor, seconds, kills, shards, loop, v0.10.5 O5b rules; empty: no run line) and,
-## on a floor, the depths' answer from `reader` (v0.10.5 O6).
+## on a floor, the depths' answer from `reader`.
 func show_recap(recap: Dictionary, reader: WorldReader = null) -> void:
 	if not recap.is_empty():
 		show_run(
@@ -81,12 +81,12 @@ func show_recap(recap: Dictionary, reader: WorldReader = null) -> void:
 		show_depths(reader.catch_up_permille())
 
 
-## v0.10.5 O6, v0.11.0 F12: the skull and "×1.41" when the floor's m is above ×1; hidden otherwise.
+## The skull and "×1.41" when the floor's m is above ×1; hidden otherwise.
 func show_depths(m_permille: int) -> void:
 	depths_line.set_multiplier(m_permille)
 
 
-## v0.10.5 O5b: "Loop rules: Quickened · Shielded" (name keys; none: the line hides).
+## "Loop rules: Quickened · Shielded" (name keys; none: the line hides).
 func show_rules(keys: PackedStringArray) -> void:
 	_rules = keys
 	rules_line.visible = not keys.is_empty()

@@ -1,6 +1,6 @@
 class_name HubPauseMenu
 extends MenuPanel
-## v0.9.0 HB: the hub's pause (Esc / Start in the hub): Resume, Options, Main menu. Ember stone over the blurred hub
+## The hub's pause (Esc / Start in the hub): Resume, Options, Main menu. Ember stone over the blurred hub
 ## (MenuPanel). Esc, pad B or Start again resumes.
 
 signal resume_pressed
@@ -9,7 +9,7 @@ signal main_menu_pressed
 
 
 func _init() -> void:
-	super()  # v0.10.5 W3-O18: in Astral (MenuPanel)
+	super()  # In Astral (MenuPanel)
 	name = "HubPauseMenu"
 	add_backdrop()
 	add_title("HUB_TITLE")

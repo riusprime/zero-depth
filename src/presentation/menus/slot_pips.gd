@@ -1,6 +1,6 @@
 class_name SlotPips
 extends HBoxContainer
-## v0.9.0 AS2 (owner, step AS's G2: "B: ribbon + pips"; PLAN "Owner decisions" AS): the wand's slot categories as a row
+## The wand's slot categories as a row
 ## of pips over the wand, on the Build page and the Swap panel: per limited category its mark (SlotGlyph), its tag and
 ## one pip per card it may hold, lit for each held ("Pattern ●", "Secondary ●●", "Element ●○"); the Form first with the
 ## form fired now ("Form: Orbs ●"). The limits are data (data/wand/attack_slots.tres: on a Gun run Form 1, Pattern 1,

@@ -1,6 +1,6 @@
 class_name InteractPromptHud
 extends Control
-## v0.9.0 IX (owner W34, W13 §13): the one shared prompt for the shared interactables (the final approach's rune
+## The one shared prompt for the shared interactables (the final approach's rune
 ## pylons, the timed doors' switches, the puzzles to come), as the boss door's (BossDoorHud). It shows the prompt key
 ## of the entry the interact press would reach now (WorldReader.interact_prompt_key: the sim's own pick, so the prompt
 ## never names what the press won't do). Short, no explanation (the owner's style): "Awaken", "Activate". Reads only;

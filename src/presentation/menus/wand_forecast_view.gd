@@ -1,6 +1,6 @@
 class_name WandForecastView
 extends Control
-## v0.10.5 O13 (owner P10), v0.11.0 F11 (owner, G2 F10 "option A but simpler, use the icons from the cards"): the wand
+## v0.10.5 O13, v0.11.0 F11 (owner, G2 F10 "option A but simpler, use the icons from the cards"): the wand
 ## forecast under the wand's row on the Build page and the Swap panel. One row of the cards' own icons
 ## (AstralMedallion.show_card, what the cards draw) in firing order: what fires and in what order, with a thin arrow
 ## after each trigger card, which is lit. A card that does nothing where it sits (Wand.flags, through

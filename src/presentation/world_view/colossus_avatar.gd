@@ -1,6 +1,6 @@
 class_name ColossusAvatar
 extends FinalBodyAvatar
-## v0.8.0 FB1 (owner O17: "big stone hands … a fast moving pace fight"; FINAL_BOSS.md F4): the final boss's first body,
+## The final boss's first body,
 ## the owner's model assets/models/bosses/final_boss_colossus.glb (split from the owner's file; one mesh), its fists
 ## cut in code as the separate pieces they are (BossRig: body, chest, halo, fist_l, fist_r) and animated by
 ## ColossusClips. Its own layer after the clips (_pose_final): the halo turns slowly round its crown (still with reduced

@@ -1,12 +1,12 @@
 class_name InteractPrompt
 extends Control
-## v0.9.5 PR (owner L15, Q10 a): the one interaction prompt every interactable shows. It sits under the hero (40 px
+## The one interaction prompt every interactable shows. It sits under the hero (40 px
 ## below the feet at 1080p, scaled with the viewport height), one line, centred: the interact button drawn in code
 ## for the device last used, then a short verb, then a cost only when there is one ("[X] Open", "[X] Open · 40 ◆").
 ## A string key's text splits at its first " · ": the verb before, the cost (or other short tail) after it.
 ## Fades in 0.12 s when shown, out when hidden. Reads only (WorldReader); the press goes out as input.
 ## The device follows the last event as AbilitySquares tracks it (AbilitySquares.pad_after).
-## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): Astral's look: the verb and the cost in
+## Astral's look: the verb and the cost in
 ## letter-spaced Cinzel capitals in Astral's text colour (a price you can't pay in its muted rose); the key an Astral
 ## chip (an ink fill, a 1 px frame and an inner frame, square corners), a pad button an ink disc in a 1 px ring with
 ## a faint inner ring, its letter or shape in the face's colour softened toward Astral's silver.
@@ -52,7 +52,7 @@ var _has_hero := false
 
 func _init() -> void:
 	name = "InteractPrompt"
-	add_to_group(&"interact_prompt")  # v0.9.5 MC2: GameCursor shows INTERACT while one is shown
+	add_to_group(&"interact_prompt")  # GameCursor shows INTERACT while one is shown
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -64,7 +64,7 @@ func _init() -> void:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		HudStyle.style_label(l, FONT_PX, true)
-		l.uppercase = true  # v0.10.5 W3-O19: Cinzel capitals
+		l.uppercase = true  # Cinzel capitals
 		l.add_theme_font_override("font", AstralUi.serif(700, FONT_PX))
 		l.add_theme_constant_override("outline_size", 6)
 		l.add_theme_color_override("font_outline_color", Color(AstralChrome.INK, 0.85))
@@ -232,14 +232,14 @@ class GlyphView:
 		var rad := minf(r.size.x, r.size.y) * 0.5
 		var fnt := get_theme_default_font()
 		var col: Color = spec["color"]
-		if spec["style"] == &"key":  # v0.10.5 W3-O19: an Astral chip
+		if spec["style"] == &"key":  # An Astral chip
 			var o := Rect2(r.position.round(), r.size.round())
 			draw_rect(o, Color(AstralChrome.INK, 0.9))
 			draw_rect(o.grow(-0.5), AstralCardArt.METAL, false, 1.0)
 			draw_rect(o.grow(-3.5), Color(AstralCardArt.METAL, 0.28), false, 1.0)
 			_centered(fnt, String(spec["label"]), c, int(rad * 1.0), AstralCardArt.TEXT)
 			return
-		col = col.lerp(AstralCardArt.METAL, 0.35)  # v0.10.5 W3-O19: the face's colour softened
+		col = col.lerp(AstralCardArt.METAL, 0.35)  # The face's colour softened
 		draw_circle(c, rad, Color(AstralChrome.INK, 0.9))
 		draw_arc(c, rad - 0.5, 0.0, TAU, 48, AstralCardArt.METAL, 1.0, true)
 		draw_arc(c, rad - 3.5, 0.0, TAU, 48, Color(AstralCardArt.METAL, 0.28), 1.0, true)

@@ -47,7 +47,7 @@ func pos(k: int) -> Vector2:
 func remove_sorted(indices: PackedInt32Array) -> void:
 	if indices.is_empty():
 		return
-	# v0.4.0 SC: in place, last first, with the arrays' own remove_at (as ActorStore and ProjectileStore).
+	# In place, last first, with the arrays' own remove_at (as ActorStore and ProjectileStore).
 	for f in INT_FIELDS:
 		var ai: PackedInt32Array = get(f)
 		for k in range(indices.size() - 1, -1, -1):

@@ -1,6 +1,5 @@
 class_name HeroPulseViews
 extends Node3D
-## v0.8.0 GF1 (owner O19: "transform the square that comes out into a pulse, like a fireball, but it will be blue"):
 ## the hero's plain shots (team 0, no fireball look, not a kill shard: the Gun's bolts, their splits, echoes and the
 ## other bolt cards) drawn as a lit 3D pulse, the way FireballViews draws the bosses' orbs: a bright pale core that
 ## falls off to the shot's own colour at the rim (FireballShaders.core: noise swirl and flicker inside), a soft additive
@@ -11,7 +10,7 @@ extends Node3D
 ##   (ActorViews.bolt_color: the player's core cyan, a card's tint such as Cinder Shot's orange or Splinter's green,
 ##   the heat tier's orange or red from Hot up) and keeps it while it flies, as the darts did. Never a hostile colour
 ##   (a test pins the distance to every hostile look's core and trail).
-## - Size: what you see is what hits (owner O18). The core's radius is the shot's own hit radius (WorldReader.
+## - Size: what you see is what hits. The core's radius is the shot's own hit radius (WorldReader.
 ##   projectile_radius: Big Shot, Rapid Fire, Charge and the splits all scale it) times CORE_SCALE; the glow reaches
 ##   GLOW_SCALE of it and fades out. A faster-firing look (ActorViews.bolt_look "size": Rapid Coil's long dart) is
 ##   drawn a little drawn-out along the flight and with a longer trail.
@@ -44,9 +43,9 @@ const BLUE := Color("#2F6BFF")
 const BLUE_LEAN := 0.35
 ## The plain dart's length (AttackView.PLAIN_BOLT_SIZE.x): a look's "size" over it stretches the pulse.
 const PLAIN_LENGTH := 0.38
-## v0.10.0 VX2: the pack draws the hero's shots in flight (false: the pulses of GF1, for before/after shots).
+## The pack draws the hero's shots in flight (false: the pulses of GF1, for before/after shots).
 const PACK_BOLTS := true
-## v0.10.5 S10 (owner, on the VFX pack): a shot with no element is drawn by the pulse (GF1's look, as before VX2); the
+## A shot with no element is drawn by the pulse (GF1's look, as before VX2); the
 ## element shots keep the pack's projectiles. Starting value: true.
 const PLAIN_BOLT_IS_PULSE := true
 ## The Lance's ball (the pack's big orb) per metre of its radius.
@@ -83,7 +82,7 @@ static var _glow_shader: Shader
 
 ## The bolt view the shots' colour and stretch come from (WorldViewRoot sets it).
 var actors: ActorViews
-## v0.10.0 VX2: the attack-form view (the look of a shot's spec gives its elements) and the pack the shots draw with.
+## The attack-form view (the look of a shot's spec gives its elements) and the pack the shots draw with.
 var forms: AttackFormView = null
 var pack_fx: PackFx = null:
 	set(v):
@@ -104,7 +103,7 @@ var _before := {}
 var _vel := {}
 var _radius := {}
 var _key := {}
-## v0.10.0 VX2: by projectile id, [table id, colours, drawn size per metre of radius] the pack draws it with.
+## By projectile id, [table id, colours, drawn size per metre of radius] the pack draws it with.
 var _pk := {}
 ## The ids drawn per look this tick.
 var _drawn := {}
@@ -122,22 +121,22 @@ var _new_of: Array = []
 
 func sync(reader: WorldReader) -> void:
 	_before = _now
-	var latched := reader as LatchedReader  # v0.10.5 W3-Q7: the places a tick before (a frame of several ticks)
+	var latched := reader as LatchedReader  # The places a tick before (a frame of several ticks)
 	_now = {}
 	_drawn = {}
 	var lance := hold.active() and reader.lance_active()
 	for i in reader.projectile_count():
 		if (
 			reader.projectile_team(i) != 0
-			or reader.projectile_is_wave(i)  # v0.9.0 AF3: WaveView draws the Wave shots
+			or reader.projectile_is_wave(i)  # WaveView draws the Wave shots
 			or reader.projectile_look(i) != ""
 			or reader.projectile_is_shard(i)
 			or reader.projectile_is_bomb(i)
 			or reader.projectile_is_void(i)
 			or reader.projectile_is_pellet(i)
-			or reader.projectile_is_disc(i)  # v0.9.0 AF2: GlaiveView the discs, SeekersView the darts
+			or reader.projectile_is_disc(i)  # GlaiveView the discs, SeekersView the darts
 			or reader.projectile_is_dart(i)
-		):  # v0.9.0 BM: BombView draws the bombs; v0.9.0 VP: VoidView the Void shots; AF1: ScatterView the pellets
+		):  # BombView draws the bombs; VoidView the Void shots; AF1: ScatterView the pellets
 			continue
 		var id := reader.projectile_id(i)
 		var p := reader.projectile_pos(i)
@@ -146,7 +145,7 @@ func sync(reader: WorldReader) -> void:
 		_radius[id] = reader.projectile_radius(i)
 		var was: Variant = latched.projectile_pos_before(id) if latched != null else null
 		if was != null:
-			_before[id] = was  # v0.10.5 W3-Q7: drawn between the last two ticks, not from the last sync
+			_before[id] = was  # Drawn between the last two ticks, not from the last sync
 		elif not _before.has(id):
 			_before[id] = p  # a new shot appears where it was fired
 		if not _key.has(id):
@@ -226,7 +225,7 @@ static func colors(c: Color) -> Array[Color]:
 	return [c.lerp(Color.WHITE, CORE_WHITE), body, body.lerp(c, 0.5), body]
 
 
-## v0.10.0 VX2: shot `i`'s pack effect: [table id, colours, drawn size per metre of radius]. The Lance's ball is the big
+## Shot `i`'s pack effect: [table id, colours, drawn size per metre of radius]. The Lance's ball is the big
 ## orb; every other shot is the element's projectile (PackLooks).
 func _pack_of(reader: WorldReader, i: int, lance: bool) -> Array:
 	var elements := PackedStringArray()
@@ -236,14 +235,14 @@ func _pack_of(reader: WorldReader, i: int, lance: bool) -> Array:
 			elements = PackedStringArray(look["elements"])
 	var first := ElementLooks.first(elements)
 	if lance and not reader.projectile_is_wisp(i):
-		return CandidateLooks.lance_pack(first, PackLooks.colors(elements), BIG_PER_RADIUS)  # v0.10.5 W3-O7 (G2)
+		return CandidateLooks.lance_pack(first, PackLooks.colors(elements), BIG_PER_RADIUS)  # v0.10.5 W3-O7
 	if first == &"" and PLAIN_BOLT_IS_PULSE:
-		return []  # v0.10.5 S10 (owner): the plain Pulse bolt keeps its pulse look (no pack effect)
+		return []  # The plain Pulse bolt keeps its pulse look (no pack effect)
 	var k: float = PackLooks.BOLT_PER_RADIUS[PackLooks.shaped(first)]
 	return [PackLooks.id_of("bolt", first), PackLooks.colors(elements), k]
 
 
-## v0.10.0 VX2: whether the pack draws shot `id` now (at `p` on the plane, flying along `d`, core radius `r`): its pack
+## Whether the pack draws shot `id` now (at `p` on the plane, flying along `d`, core radius `r`): its pack
 ## projectile is kept on it, facing its flight. False: the pulse draws it (no pack, or the family was full).
 func _pack_draws(id: int, p: Vector2, d: Vector2, r: float) -> bool:
 	if not hold.active() or not _pk.has(id) or (_pk[id] as Array).is_empty():
@@ -277,7 +276,7 @@ func _fresh_key() -> String:
 	return _new_key
 
 
-## v0.8.0 GF1 (the PF budget): the buffers are written in place, one 12-float row per shot and part, with the basis
+## The PF budget: the buffers are written in place, one 12-float row per shot and part, with the basis
 ## worked out by hand (the flight's x along the plane, y up, z across), so a crowd of shots costs no Transform3D, Basis
 ## or temporary array each.
 func _draw(f: float) -> void:
@@ -308,7 +307,7 @@ func _draw(f: float) -> void:
 			var v: Vector2 = _vel.get(id, Vector2.RIGHT)
 			var d := v.normalized() if v.length() > 0.00001 else Vector2.RIGHT
 			if _pack_draws(id, p, d, r):
-				continue  # v0.10.0 VX2: the pack's projectile draws this shot
+				continue  # The pack's projectile draws this shot
 			_put(cores, rows, d, r * tip, r, p.x, -p.y)
 			var g := r * GLOW_SCALE / CORE_SCALE
 			_put(glows, rows, d, g * tip, g, p.x, -p.y)

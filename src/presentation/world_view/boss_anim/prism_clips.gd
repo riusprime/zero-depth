@@ -1,6 +1,6 @@
 class_name PrismClips
 extends RefCounted
-## v0.8.0 FB2 (owner Q4: code clips first, the owner's animated model replaces them by name; FINAL_BOSS.md F5): the
+## The
 ## Prism's placeholder clips over her rig (BossRig: the body and her floating shards, each its own bone; PrismAvatar
 ## orbits the shards and flares them). Whole-body motion here (BossClip.BODY) plus named parameters the avatar reads:
 ## - idle: the float (a slow bob and sway), "spin" 0.25 (the shards' slow orbit);
@@ -12,7 +12,7 @@ extends RefCounted
 ## - shielded: braced, "shield" 1; flinch: a hit; stagger, roar, rise (from the Colossus's shards), death;
 ## - shatter: the crack-up between bodies, "tremble" climbing (the avatar's own layer, as FinalBodyAvatar trembles);
 ## - bolt_fan: a lone bolt (only when the dev panel starts her bolt attack by itself; in her fight it fires in a Cross).
-## - pattern (v0.8.0 PR, owner O84): an orb spell: she gathers through its telegraph ("charge"), then rises and holds
+## - pattern: an orb spell: she gathers through its telegraph ("charge"), then rises and holds
 ##   aloft with the shards racing round ("spin") while her orbs pour out of her, and sinks back to the float.
 ## Presentation only.
 
@@ -50,7 +50,7 @@ const NAMES: Array[StringName] = [
 	&"shatter",
 	&"bolt_fan",
 	&"pattern",
-	&"lances",  # v0.10.5 O3: her last phase
+	&"lances",  # Her last phase
 	&"kneel",
 ]
 
@@ -147,7 +147,7 @@ static func library() -> Dictionary:
 		bolt.shift(B, UP, [[0, 0], [0.42, 0.1, BACK], [0.5, 0.04, IN3], [1, 0]])
 		bolt.turn(B, Z, [[0, 0], [0.42, 0.06], [0.5, -0.06, IN3], [1, 0]])
 		bolt.param(&"flare", [[0, 0], [0.42, 0.6], [0.5, 1.0, IN3], [1, 0]])
-		var orbs := BossClip.new(&"pattern")  # v0.8.0 PR: an orb spell
+		var orbs := BossClip.new(&"pattern")  # An orb spell
 		orbs.strike = 0.12
 		orbs.hold = 0.9
 		orbs.shift(B, UP, [[0, 0], [0.1, -0.1, IO], [0.12, 0.45, BACK], [0.9, 0.4], [1, 0, IO]])
@@ -172,11 +172,11 @@ static func library() -> Dictionary:
 			_lib[c.name] = c
 		for c: BossClip in _last_phase():
 			_lib[c.name] = c
-		BossClip.loosen(_lib, 0.0, 1.25)  # v0.11.0 O16: the wind-up, the recoil, the idle sway
+		BossClip.loosen(_lib, 0.0, 1.25)  # The wind-up, the recoil, the idle sway
 	return _lib
 
 
-## v0.10.5 O3 (owner L6; O3_PRISM.md): her last phase's clips.
+## Her last phase's clips.
 ## - lances: the Facet Lances: she gathers (the windup: she rises, "charge" glowing, the shards racing out, "spin"),
 ##   holds aloft and flicks at each lance ("flare" pulses) while they strike, and sinks back to the float;
 ## - kneel: the Shattered Kneel: she falls (the windup: a drop and a lurch), lies low and tilted, "open" 1 and the

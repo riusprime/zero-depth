@@ -7,16 +7,16 @@ extends Resource
 @export var combo: Array[SwingStepDefinition] = []
 ## After a swing ends, a press within this starts the next step; otherwise the combo starts over.
 @export var combo_window_seconds := 0.2
-## v0.8.0 GF1 (owner O18): the Gun's shot 25 % bigger, x0.75 the fire rate (0.12 s -> 0.15 s: 7 -> 9 ticks), x4/3
+## The Gun's shot 25 % bigger, x0.75 the fire rate (0.12 s -> 0.15 s: 7 -> 9 ticks), x4/3
 ## the damage rounded to a whole point (4 -> 5; the DPS 34.3 -> 33.3 a second: what whole ticks and points allow),
 ## x0.9 the flight speed (18 -> 16.2 m/s) and its life 0.6 -> 0.667 s so the range stays 10.8 m.
 @export var shot_period_seconds := 0.15
 @export var bolt_damage := 5
 @export var bolt_speed_mps := 16.2
-## The bolt's hit radius, which is also the blue pulse's drawn radius (v0.8.0 GF1: what you see is what hits).
+## The bolt's hit radius, which is also the blue pulse's drawn radius (what you see is what hits).
 @export var bolt_radius_m := 0.2
 @export var bolt_life_seconds := 0.6666667
-## v0.10.5 O11 (F1): a direct hit pushes a normal enemy back this many metres (an elite half, a boss none), over the
+## A direct hit pushes a normal enemy back this many metres (an elite half, a boss none), over the
 ## Heavy card's knock ticks. A Blade hit, the Blade finisher, a Gun bolt and a Gun crit.
 @export var hit_push_m := 0.15  # starting value (O11, overnight pick)
 @export var finisher_push_m := 0.45  # starting value (O11, overnight pick)

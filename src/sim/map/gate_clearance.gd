@@ -1,6 +1,6 @@
 class_name GateClearance
 extends RefCounted
-## v0.9.0 PT (owner: "there should be an space between the wall and the portals"): where a gate stands from the wall
+## Where a gate stands from the wall
 ## it backs onto and the zone kept clear round it, for FloorGenerator, BossRoomBuilder and Routes. A floor built
 ## under floor rules 1-9 (FloorLayout.legacy_gate) keeps the placement it was saved with.
 

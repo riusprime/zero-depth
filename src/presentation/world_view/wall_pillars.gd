@@ -1,6 +1,6 @@
 class_name WallPillars
 extends RefCounted
-## v0.8.0 N13 (owner O71, "Walls should be 100% new with the textures"): ProceduralWall's pillars (its rule 3b), where
+## ProceduralWall's pillars (its rule 3b), where
 ## N10's decimated kit pillar accents stood. On a wall at least MIN_WALL long and at most MAX_DEPTH thick, one every
 ## STEP (from FIRST in, never within END of the wall's ends), kept CLEAR from a light's niche, and only where a face
 ## is open ground OTHER along either side (no join): a pier through the wall's whole depth, flush with its faces
@@ -23,7 +23,7 @@ const LIP := 0.06
 const STEP_IN := 0.07
 
 
-## v0.8.0 N13 (rule 3b): where the pillars stand: [{"rect": Rect2 (sim plane, the wall's whole depth), "owner":
+## Rule 3b: where the pillars stand: [{"rect": Rect2 (sim plane, the wall's whole depth), "owner":
 ## int, "axis": 0 (the wall runs along x) | 1}], on long thin walls, clear of lights' niches and other walls.
 static func spots(ctx: Dictionary, rects: Array, owners: PackedInt32Array, cuts: Array) -> Array:
 	var rng := RandomNumberGenerator.new()
@@ -108,7 +108,7 @@ static func build_one(ctx: Dictionary, p: Dictionary) -> void:
 	lines.append(top - 0.12)
 	lines.append(top)
 	var c := r.get_center()
-	var noise := float(ctx.get("calm", WallCalm.BUILDER)["tint"])  # v0.8.0 N15: its tint noise
+	var noise := float(ctx.get("calm", WallCalm.BUILDER)["tint"])  # Its tint noise
 	var tint := (
 		lerpf(1.0, rng.randf_range(0.86, 1.0), noise) * ProceduralWall._variation(ctx, c.x, c.y)
 	)
@@ -150,7 +150,7 @@ static func _box(
 		ProceduralWall._quad(b, lo[0], lo[1], lo[2], lo[3], Vector3.DOWN, col)
 
 
-## v0.8.0 N13: the pillars standing on a run's face, as spans along it (their lips and a joint included).
+## The pillars standing on a run's face, as spans along it (their lips and a joint included).
 static func spans(ctx: Dictionary, run: Dictionary, a: float, b: float) -> Array:
 	var out: Array = []
 	var axis: int = run["axis"]

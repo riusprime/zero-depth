@@ -1,6 +1,6 @@
 class_name NemesisClips
 extends RefCounted
-## v0.8.0 FB3 (owner Q4: code clips first, the owner's animated model replaces them by name; FINAL_BOSS.md F6): the
+## The
 ## Nemesis's placeholder clips, in the hero's motion vocabulary (run, dash, slash, shoot, hit, death), on its whole body
 ## (the owner's model is one mesh, BossClip.BODY) plus named parameters NemesisAvatar reads for its weapon (a dark copy
 ## of the run's Blade or Gun in its hand) and its cast:
@@ -63,7 +63,7 @@ static func library() -> Dictionary:
 		_lib[&"dash"] = _dash()
 		for c: BossClip in [idle, walk] + _reactions():
 			_lib[c.name] = c
-		BossClip.loosen(_lib, 0.0, 1.25)  # v0.11.0 O16: the wind-up, the recoil, the idle sway
+		BossClip.loosen(_lib, 0.0, 1.25)  # The wind-up, the recoil, the idle sway
 	return _lib
 
 

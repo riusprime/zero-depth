@@ -3,10 +3,10 @@ extends PanelContainer
 ## A compact item card (PLAN v0.2.0 L13, owner: "more concise, appear in a smaller card and one small sentence … add to
 ## the card a symbol"): the item's icon, its name in its colour and one short sentence. It fades and slides in when
 ## shown and fades out when hidden. It shows text it is given (already translated); it decides nothing about the game.
-## v0.6.1 R1: the card is a wide plaque (Plaques, PlaqueBox; v0.8.0 MU: a carved Ember stone slab with a glowing
+## The card is a wide plaque (Plaques, PlaqueBox; a carved Ember stone slab with a glowing
 ## groove in the card's family colour, CardFrames.family); the name and the sentence step down in size until they
 ## fit the plaque's margins (en and es).
-## v0.10.5 W3-O20 (UI style Astral): the name is letter-spaced Cinzel in Astral's silver-white, the
+## UI style Astral: the name is letter-spaced Cinzel in Astral's silver-white, the
 ## sentence silver-white, the caption dim; the icon keeps its colour toned toward Astral's silver (HudStyle.tone).
 
 const WIDTH := 600.0
@@ -21,7 +21,7 @@ const GROW := [
 const ICON := 44.0
 const GAP := 12
 const PAD := 4.0
-## v0.10.5 W3-O20: nothing under HudStyle.MIN_LABEL (17; 12 to 15 read 8 to 10 px at 720p); a longer line grows the
+## Nothing under HudStyle.MIN_LABEL (17; 12 to 15 read 8 to 10 px at 720p); a longer line grows the
 ## plaque (GROW) instead.
 const NAME_SIZES := [21, 20, 19, 18, 17]
 const DESC_SIZES := [18, 17]
@@ -112,7 +112,7 @@ func show_item(
 		_apply()
 
 
-## v0.10.5 W3-O20: the name's face (Cinzel); the fit measures with it.
+## The name's face (Cinzel); the fit measures with it.
 static func name_font() -> Font:
 	return HudStyle.serif(650, 2)
 

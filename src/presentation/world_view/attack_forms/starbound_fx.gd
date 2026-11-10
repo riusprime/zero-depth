@@ -1,6 +1,6 @@
 class_name StarboundFx
 extends Node3D
-## v0.10.5 W3-P10j (owner W7: "don't get crazy with visuals for explosions"): the Starbound Detonation burst and Arc
+## The Starbound Detonation burst and Arc
 ## Jump line, drawn plainly so they read. A burst is one moon-blue ground ring that grows from about 0.3 m to the burst
 ## radius over BURST_TICKS (the Chain Blast's ring shader, BombView.RING_SHADER) with its soft disc; a jump is a
 ## moon-blue line, thick and unshaded with a bright core, for JUMP_TICKS between the two enemies' chests. No shake, no

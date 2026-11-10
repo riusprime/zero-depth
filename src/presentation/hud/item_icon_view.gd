@@ -23,8 +23,8 @@ func set_item(id: StringName, c: Color) -> void:
 
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
-	var col := HudStyle.tone(color)  # v0.10.5 W3-O20: toward Astral's silver
-	if tile:  # v0.10.5 W3-O20: Astral's tile
+	var col := HudStyle.tone(color)  # Toward Astral's silver
+	if tile:  # Astral's tile
 		HudStyle.draw_astral_tile(self, r, color)
 		r = r.grow(-size.x * 0.16)
 	drawn = ItemIcons.draw(self, item_id, r, col)

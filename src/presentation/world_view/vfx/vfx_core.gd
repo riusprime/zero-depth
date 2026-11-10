@@ -21,12 +21,12 @@ const POOLS := {
 	&"bubble": ["fx_bubbles", Vector2(2, 2), false, 0.0, 192, "fx_fire_noise"],
 	&"tendril": ["fx_void_tendrils", Vector2(2, 2), false, 0.08, 160, "fx_void_noise"],
 	&"rift": ["fx_void_rift", Vector2(2, 2), true, 0.03, 48, "fx_void_noise"],
-	# v0.8.0 TX2: the owner's rock bursts (slams, eruptions), steam puffs (the Foundry's vent) and crystal shatter
+	# The owner's rock bursts (slams, eruptions), steam puffs (the Foundry's vent) and crystal shatter
 	# bursts (the final boss between bodies).
 	&"rockburst": ["fx_rock_burst", Vector2(2, 2), false, 0.0, 48, "fx_fire_noise"],
 	&"steam": ["fx_steam_puffs", Vector2(2, 2), false, 0.04, 96, "fx_fire_noise"],
 	&"shatter": ["fx_crystal_shatter", Vector2(2, 2), true, 0.0, 32, "fx_fire_noise"],
-	# v0.9.0 VX (VFX_AUDIT.md; owner: "every VFX has a high quality layered effect"): the layers the hero's element
+	# VFX_AUDIT.md; owner: "every VFX has a high quality layered effect": the layers the hero's element
 	# effects add. A soft glow halo and an energy ring (made in code, CODE_TEX, until the owner's PNG of that id is
 	# installed), the owner's ember sparks and frost burst drawn as additive light, and the VX texture requests
 	# (docs/art/requests/v0.9.0_ART_LIST.md §7c), whose pools exist only once their PNG is installed (VfxLayer falls back
@@ -41,9 +41,9 @@ const POOLS := {
 	&"fork": ["fx_lightning_fork", Vector2(2, 2), true, 0.0, 96, "fx_fire_noise"],
 	&"muzzle": ["fx_muzzle_flash", Vector2(2, 2), true, 0.0, 48, "fx_fire_noise"],
 }
-## v0.9.0 VX: the sheets made in code when the owner's PNG isn't installed (V45's manifest: "fallback": "code").
+## The sheets made in code when the owner's PNG isn't installed (V45's manifest: "fallback": "code").
 const CODE_TEX: Array[String] = ["fx_soft_glow", "fx_energy_ring"]
-## v0.9.0 VX: the pools whose sheet is a texture request: they are made only once it is installed.
+## The pools whose sheet is a texture request: they are made only once it is installed.
 const OPTIONAL_POOLS: Array[StringName] = [&"shard", &"drop", &"fork", &"muzzle"]
 ## Floor-mark textures: the texture and its atlas cell (-1: the whole texture; the splatter sheet is 2 x 2).
 const MARK_TEX := {
@@ -54,7 +54,7 @@ const MARK_TEX := {
 	&"splat1": ["fx_splatter_mark", 1],
 	&"splat2": ["fx_splatter_mark", 2],
 	&"splat3": ["fx_splatter_mark", 3],
-	# v0.8.0 TX2: the cracks a slam, a spike row or a crater leaves (one cell: one kind, so overlapping ones merge).
+	# The cracks a slam, a spike row or a crater leaves (one cell: one kind, so overlapping ones merge).
 	&"cracks": ["fx_ground_cracks", 0],
 	# v0.9.0 VX V43: Fire's burning ground under its flames, once the owner's fire_patch is installed (else none).
 	&"fire_patch": ["fire_patch", -1],
@@ -69,7 +69,7 @@ const MAX_SPRITES := 2000
 ## How long a floor mark stays (ticks) and how long it fades at the end.
 const MARK_TICKS := 420.0
 const MARK_FADE := 90.0
-## v0.8.0 FV (owner O86, feedback 2026-10-19 Part 3: "every other effect requests unmerged lights"): every effect's
+## Every effect's
 ## light joins a light of its own colour within LIGHT_MERGE_M (the fire patches' 2.5 m since the lighting pass), so
 ## near-simultaneous effects (Twin pairs, chains, overlapping blasts) share one light instead of each taking a slot.
 ## A lone effect's light is unchanged. Each merge brightens the shared light by LIGHT_MERGE_BOOST, at most
@@ -77,16 +77,16 @@ const MARK_FADE := 90.0
 const LIGHT_MERGE_M := 2.5
 const LIGHT_MERGE_BOOST := 1.08
 const LIGHT_MERGE_BOOST_MAX := 1.3
-## v0.8.0 FV: the enemy statuses' lights (burning enemies: the term that grows with the horde) are gathered over the
+## The enemy statuses' lights (burning enemies: the term that grows with the horde) are gathered over the
 ## frame, the brightest first, merged within LIGHT_MERGE_M; at most STATUS_LIGHTS_MAX new lights come from them, the
 ## rest only join a light already there or are dropped. Starting value (the pool holds LIGHTS).
 const STATUS_LIGHTS_MAX := 4
-## v0.8.0 FV: pressure thinning. While a pool is past PRESSURE of its cap (or the frame's pieces past PRESSURE of
+## Pressure thinning. While a pool is past PRESSURE of its cap (or the frame's pieces past PRESSURE of
 ## MAX_SPRITES), an effect's debris, smoke, sparks and ice crystals are halved (rounded up); its blast and flash stay.
 ## The cap then thins the effects gradually instead of cutting the frame's last ones off. Deterministic: it reads only
 ## this frame's counts, in the callers' fixed draw order. Starting value.
 const PRESSURE := 0.7
-## v0.9.0 VX: what a missing pool reads as (_put, _pressed).
+## What a missing pool reads as (_put, _pressed).
 const NO_POOL := {}
 
 const SHADER := """
@@ -122,7 +122,7 @@ void fragment() {
 """
 
 static var _has_tex := {}
-## v0.8.0 N12 (owner O70): the floor marks' cut textures and the two sprite shaders, made once per run of the game
+## The floor marks' cut textures and the two sprite shaders, made once per run of the game
 ## and shared by every floor's layer (each floor made them again: ~30 ms of a load's frame).
 static var _mark_cache := {}
 static var _shader_cache := {}
@@ -134,10 +134,10 @@ var decals: Array[Decal] = []
 var density := 1.0
 ## Drawn into each frame before it ends (StatusVisuals' enemy statuses): func(layer: VfxCore).
 var drawers: Array[Callable] = []
-## v0.10.5 O12 (owner P9): the hero's own drawers (the forms' accents, the hits' impacts), drawn before `drawers`
+## The hero's own drawers (the forms' accents, the hits' impacts), drawn before `drawers`
 ## under the hero's budget (`hero_budget`); `drawers` (the enemies' and bosses' attacks, statuses, props) never are.
 var hero_drawers: Array[Callable] = []
-## v0.10.5 O12: the hero effects' budget (AttackFormCanvas hands its own in); null: no hero budget (the tests' layers).
+## The hero effects' budget (AttackFormCanvas hands its own in); null: no hero budget (the tests' layers).
 ## Between hero_begin() and hero_end() every sprite asks it: skipped past the cap, dimmed past its soft limit, and
 ## always at its opacity.
 var hero_budget: HeroFxBudget = null
@@ -148,13 +148,13 @@ var bursts_asked := 0
 var bursts_drawn := 0
 var bursts_merged := 0
 var bursts_skipped := 0
-## v0.8.0 FV: this frame's light requests folded into a light already asked for (_light_merged); the status lights
+## This frame's light requests folded into a light already asked for (_light_merged); the status lights
 ## asked for and those dropped past STATUS_LIGHTS_MAX; the pieces left out by pressure thinning (_thin).
 var lights_merged := 0
 var status_lights_asked := 0
 var status_lights_dropped := 0
 var pieces_thinned := 0
-## v0.8.0 N1: with `record` on (the light-walk probe, tests), the places of this frame's flame sprites (their
+## With `record` on (the light-walk probe, tests), the places of this frame's flame sprites (their
 ## centres), since a headless renderer keeps no instance transforms to read back.
 var record := false
 var placed_flames := PackedVector3Array()
@@ -163,7 +163,7 @@ var _pool_list: Array[Dictionary] = []
 var _cam_basis := Basis()
 ## Light requests: [position, colour, energy, range, brightest member's energy].
 var _light_wants: Array = []
-## v0.8.0 FV: this frame's status light requests, laid in at finish (_flush_status_lights): [p, colour, energy, range].
+## This frame's status light requests, laid in at finish (_flush_status_lights): [p, colour, energy, range].
 var _status_wants: Array = []
 ## Floor marks: [key, texture id, position, radius, start tick, turn, colour].
 var _marks: Array = []
@@ -177,13 +177,12 @@ var _spots := {}
 var _sprite_left := MAX_SPRITES
 ## While true, light requests are dropped (a thinned burst asks for none: VfxLayer.burst).
 var _lights_off := false
-## v0.10.5 O12: true while the hero's effects draw (hero_begin / hero_end).
+## True while the hero's effects draw (hero_begin / hero_end).
 var _hero_on := false
 
 
 func _init() -> void:
 	name = "Vfx"
-	# v0.8.0 N1 (owner O46/O55: "fire drawings popping randomly in position and timing through the whole screen"):
 	# every piece here (the pools' instances, the pooled lights, the floor marks) is laid out again each frame, and a
 	# pool slot holds a different effect from one frame to the next (a fire light hid, another effect's flames came
 	# first). Under the project's physics interpolation the renderer drew each slot between its last two physics
@@ -194,7 +193,7 @@ func _init() -> void:
 	for id: StringName in POOLS:
 		var spec: Array = POOLS[id]
 		if id in OPTIONAL_POOLS and not has_tex(spec[0]):
-			continue  # v0.9.0 VX: a texture request not delivered yet (VfxLayer uses its fallback)
+			continue  # A texture request not delivered yet (VfxLayer uses its fallback)
 		var mat := ShaderMaterial.new()
 		mat.shader = _shader(bool(spec[2]))
 		mat.set_shader_parameter("atlas", _tex(spec[0]))
@@ -252,7 +251,7 @@ func _shader(additive: bool) -> Shader:
 	return _shaders[key]
 
 
-## v0.8.0 N12 (O70): reads the sprite sheets and cuts the floor marks once, ahead of a floor's first layer
+## Reads the sprite sheets and cuts the floor marks once, ahead of a floor's first layer
 ## (ViewWarmup, on a worker while the loading cover shows).
 static func warm() -> void:
 	if not available():
@@ -271,7 +270,7 @@ static func _tex(id: String) -> Texture2D:
 	return _code_tex(id) if id in CODE_TEX else null
 
 
-## v0.9.0 VX: the code-made sheet of `id` (CODE_TEX), made once per run: white, the shape in its alpha.
+## The code-made sheet of `id` (CODE_TEX), made once per run: white, the shape in its alpha.
 ## - fx_soft_glow: a soft round halo falling off smoothly to nothing at its edge;
 ## - fx_energy_ring: a bright thin ring with a softer glow either side and faint wisps breaking it up.
 static func _code_tex(id: String) -> Texture2D:
@@ -360,7 +359,7 @@ static func _ice_material() -> StandardMaterial3D:
 	return m
 
 
-## v0.8.0 TX2: true when texture `id` of DIR is installed (cached; a drawer keeps its code look without it).
+## True when texture `id` of DIR is installed (cached; a drawer keeps its code look without it).
 static func has_tex(id: String) -> bool:
 	if not _has_tex.has(id):
 		_has_tex[id] = ResourceLoader.exists(DIR + id + ".png")
@@ -407,7 +406,7 @@ func finish() -> void:
 		if d.is_valid():
 			var t_d := PerfMarks.start()
 			d.call(self)
-			if PerfMarks.on:  # v0.10.5 W3-Q6: each drawer's share, in the frame probe's --breakdown
+			if PerfMarks.on:  # Each drawer's share, in the frame probe's --breakdown
 				PerfMarks.add(_drawer_key("vfx.hero.", d), t_d)
 	hero_end()
 	for d in drawers:
@@ -418,7 +417,7 @@ func finish() -> void:
 				PerfMarks.add(_drawer_key("vfx.", d), t_d)
 	var t_end := PerfMarks.start()
 	_flush_status_lights()
-	# v0.10.5 W3-Q6: a pool's count and a light's settings are written only when they change (each write is a
+	# A pool's count and a light's settings are written only when they change (each write is a
 	# RenderingServer call, and a moved light a transform update)
 	for p: Dictionary in _pool_list:
 		var mm := p["mm"] as MultiMesh
@@ -444,7 +443,7 @@ func finish() -> void:
 	PerfMarks.add(&"vfx.finish_rest", t_end)
 
 
-## v0.10.5 W3-Q6: a drawer's bucket in the frame probe's --breakdown (its script's file and method).
+## A drawer's bucket in the frame probe's --breakdown (its script's file and method).
 static func _drawer_key(prefix: String, d: Callable) -> StringName:
 	var o := d.get_object()
 	var sc: Script = o.get_script() if o != null else null
@@ -461,7 +460,7 @@ func now() -> float:
 	return _now
 
 
-## v0.10.5 O12: the sprites from here to hero_end() are the hero's (they ask hero_budget, when there is one; `b`
+## The sprites from here to hero_end() are the hero's (they ask hero_budget, when there is one; `b`
 ## replaces it).
 func hero_begin(b: HeroFxBudget = null) -> void:
 	if b != null:
@@ -481,13 +480,13 @@ func _put(
 	pool: StringName, xf: Transform3D, c: Color, cell: int, dissolve: float, sd: float
 ) -> bool:
 	sprites_asked += 1
-	var p: Dictionary = pools.get(pool, NO_POOL)  # v0.9.0 VX: a texture request's pool may not exist
+	var p: Dictionary = pools.get(pool, NO_POOL)  # A texture request's pool may not exist
 	if p.is_empty():
 		return false
 	var i: int = p["used"]
 	if i >= int(p["cap"]) or _sprite_left <= 0:
 		return false
-	if _hero_on:  # v0.10.5 O12: the hero's budget (the newest draw first, so the oldest dim, then go)
+	if _hero_on:  # The hero's budget (the newest draw first, so the oldest dim, then go)
 		var k := hero_budget.admit()
 		if k <= 0.0:
 			return false
@@ -529,14 +528,14 @@ func _facing(base: Vector3, w: float, h: float, centred: bool, roll: float = 0.0
 	return Transform3D(b, o)
 
 
-## v0.9.0 VX: a sprite lying flat on the floor at `p`, `w` across, turned `roll` radians about the vertical.
+## A sprite lying flat on the floor at `p`, `w` across, turned `roll` radians about the vertical.
 static func _flat(p: Vector3, w: float, roll: float = 0.0) -> Transform3D:
 	var x := Vector3(cos(roll), 0.0, -sin(roll)) * w
 	var y := Vector3(sin(roll), 0.0, cos(roll)) * -w
 	return Transform3D(Basis(x, y, Vector3.UP), p)
 
 
-## v0.9.0 VX: whether pool `id` exists (a texture request's pool only once its PNG is installed).
+## Whether pool `id` exists (a texture request's pool only once its PNG is installed).
 func has_pool(id: StringName) -> bool:
 	return pools.has(id)
 
@@ -586,7 +585,7 @@ func _merge_into(p: Vector3, c: Color, energy: float, rng: float, merge: float) 
 	return false
 
 
-## v0.8.0 FV: an enemy status's light, gathered for _flush_status_lights (the brightest few get slots).
+## An enemy status's light, gathered for _flush_status_lights (the brightest few get slots).
 func _light_status(p: Vector3, c: Color, energy: float, rng: float) -> void:
 	if energy > 0.02 and not _lights_off:
 		status_lights_asked += 1
@@ -622,7 +621,7 @@ static func _status_first(a: Array, b: Array) -> bool:
 	return pa.z < pb.z
 
 
-## v0.8.0 FV: `n` pieces of pool `pool` for one effect, halved (rounded up) under pressure (PRESSURE).
+## `n` pieces of pool `pool` for one effect, halved (rounded up) under pressure (PRESSURE).
 func _thin(pool: StringName, n: int) -> int:
 	if n <= 1 or not _pressed(pool):
 		return n
@@ -765,7 +764,7 @@ func marks_of(tex: StringName) -> int:
 
 
 # --- v0.8.0 AV: helpers for the attack views' drawers (FireballViews, StoneSpikeViews) -----------------------------
-## v0.9.0 VX: one sprite of pool `pool` lying flat on the floor at `p`, `s` across (a ground ring); false when full.
+## One sprite of pool `pool` lying flat on the floor at `p`, `s` across (a ground ring); false when full.
 func flat_sprite(pool: StringName, p: Vector3, s: float, c: Color, cell: int, roll: float) -> bool:
 	return _put(pool, _flat(p, s, roll), c, cell, 0.0, 0.0)
 
@@ -781,7 +780,7 @@ func sprite(pool: StringName, p: Vector3, s: float, c: Color, cell: int, roll: f
 	return _put(pool, _facing(p, s, s, true, roll), c, cell, 0.0, 0.0)
 
 
-## v0.8.0 GF2: a camera-facing streak of pool `pool` from `a` to `b`, `w` wide (a spark drawn along its path), atlas
+## A camera-facing streak of pool `pool` from `a` to `b`, `w` wide (a spark drawn along its path), atlas
 ## cell `cell`. False when the pool or the frame's sprite budget is full.
 func streak(pool: StringName, a: Vector3, b: Vector3, w: float, c: Color, cell: int) -> bool:
 	if a.distance_squared_to(b) < 1e-6:

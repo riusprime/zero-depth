@@ -1,6 +1,6 @@
 class_name CritterAi
 extends RefCounted
-## v0.11.0 O9c (owner Q16-c: "Batch now"): the horde critters' fast path. A surge brings up to its alive_cap of them,
+## The horde critters' fast path. A surge brings up to its alive_cap of them,
 ## and each ran the general enemy code three times a tick (EnemyAi.think, move, resolve: a kind check chain, a table
 ## lookup, a store property read per field, per critter). World now hands its critter rows (actor indices, ascending)
 ## to these tight loops instead, once per phase:

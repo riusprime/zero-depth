@@ -7,27 +7,27 @@ extends RefCounted
 ##   and the boss room's interior becomes the arena its closing band creeps in from.
 ## FIGHT: when World.boss_alive() turns false, the portal opens (PORTAL_OPENED) and the door reopens (v0.5.0 PB,
 ##   owner D10: its collider leaves the walls; PORTAL_OPENED marks both).
-## OPEN: the floor goes on (D10): the boss's drops stay, the gate(s) stay open until walked into, and the player may
+## OPEN: the floor goes on: the boss's drops stay, the gate(s) stay open until walked into, and the player may
 ##   leave the boss room to explore and fight. Normal spawns resume while the player is outside the boss room, at
 ##   the curve's level for the floor time (the clock never stopped); none arrive inside it (a safe spot by the
 ##   portal; SpawnDirector never anchors there). Re-entering never seals the door again, so the D9 heal is once.
 ##   Walking into the gate's opening takes the portal (FLOOR_EXIT): ENTERING holds the world still and ignores
-##   input for enter_ticks while the hero is drawn in (v0.3.5 PT, F19), then the floor ends (EXITED, still).
-## Arrival (v0.3.5 PT, F20): a floor after the first opens with arrive_ticks of the same hold while the hero
+##   input for enter_ticks while the hero is drawn in, then the floor ends (EXITED, still).
+## Arrival: a floor after the first opens with arrive_ticks of the same hold while the hero
 ##   materialises; the run flow sets both lengths (set_transit), shorter with reduced motion. One clock (EI-03).
-##   v0.8.0 N11 (owner O69: "the spawning enemies would be paused … there would be no main character yet"): every
+##   Every
 ##   run floor opens with it, floor 1 of a run the longest (the hero lands on the floor's receiver): the lengths are
 ##   data (SimTuning's arrival_*; arrival_length). While it holds nothing runs: no input acts, nothing spawns, the
 ##   hero can't be hit or targeted, the enemies already placed don't act, and the run's clock waits.
-## Routes (v0.5.0 RT): on a run's floor before the last the room has two gates (`routes`): the gate and the Deep gate
+## Routes: on a run's floor before the last the room has two gates (`routes`): the gate and the Deep gate
 ##   (FloorLayout.deep_portal_pos). Both open together; walking into one sets route_taken once (Routes.Route) and
 ##   the other closes. `deep` marks a Deep floor (RunState.prepare), and epic_altar_id its epic altar.
 ## Ascension (v0.7.5 AP, Ascension): on a run's last floor of a loop (`ascension`) the gate is the Ascension portal.
-##   v0.8.0 P2 (owner O28): no choice panel; two devices open with the boss's death: walking into the Ascension
+##   No choice panel; two devices open with the boss's death: walking into the Ascension
 ##   portal's opening sends the hero in toward the final boss, stepping onto the Loop device (FloorLayout.loop_pos)
 ##   sends the hero into the next loop (enter_ascension: ENTERING, ascend_choice).
 ## Blink (blink_may_land): the boss room is entered only through its door, and never left or entered while sealed
-## (the fight); once the boss is dead the door is open both ways (v0.5.0 PB).
+## (the fight); once the boss is dead the door is open both ways.
 ## Run time keeps counting while spawns are stopped (count_time), so the floor's clock covers the boss fight.
 ## The door's press (v0.8.0 BD, owner O83: "opening the door now is a press button … and when opened the sound
 ## play"): on today's floors (`door` starts at Door.SET, RunState.prepare) the door is shut and solid from the floor's
@@ -38,7 +38,7 @@ extends RefCounted
 
 ## Appended, never inserted: the state is hashed.
 enum State { WAITING, FIGHT, OPEN, EXITED, ENTERING }
-## v0.8.0 BD (O83): the boss door before the fight (appended, never inserted: hashed). PASSAGE: the doorway is open
+## The boss door before the fight (appended, never inserted: hashed). PASSAGE: the doorway is open
 ## (a floor before BD). SET: shut, its collider joins the walls on the floor's first tick. SHUT: shut and solid.
 ## OPENING: pressed, the slab going down (still solid). OPEN: the passage is open (and stays so once sealed).
 enum Door { PASSAGE, SET, SHUT, OPENING, OPEN }
@@ -53,14 +53,14 @@ const ENTER_TICKS := 60
 const ARRIVE_TICKS := 48
 const ENTER_TICKS_CALM := 24
 const ARRIVE_TICKS_CALM := 18
-## v0.8.0 N11 (O69; starting value): floor 1 of a run's arrival, the big landing; v0.9.0 SA (owner Q16): 4.0 s on the
+## O69; starting value: floor 1 of a run's arrival, the big landing; 4.0 s on the
 ## arrival altar.
 const ARRIVE_FIRST_TICKS := 240
-## v0.8.0 BD (O83; starting values): the door's opening, press to open (~2.7 s, the owner's opening sound's
+## O83; starting values: the door's opening, press to open (~2.7 s, the owner's opening sound's
 ## length), and how near its outer face (m, in front of it and along it past its sides) the press reaches.
 const DOOR_OPEN_TICKS := 162
 const DOOR_REACH_M := 2.2
-## v0.9.0 PT (owner C4, Q15: "it should appear from a point and grow out of it"; starting value): the gates take
+## The gates take
 ## this long (~1.5 s) to form after the boss dies (PORTAL_OPENED); walking in is refused until then. The view draws the
 ## growth from portal_form_progress, so the view and the sim agree (EI-03). Not the Ascension floor's devices.
 const PORTAL_FORM_TICKS := 90
@@ -72,29 +72,29 @@ var boss_index := 0
 var sealed_tick := -1
 var opened_tick := -1
 var exit_tick := -1
-## Portal transit (v0.3.5 PT): the tick the portal was entered (-1 = not yet) and the way in's length; the arrival's
+## Portal transit: the tick the portal was entered (-1 = not yet) and the way in's length; the arrival's
 ## length (0 = none) and the ticks of it left.
 var enter_tick := -1
 var enter_ticks := ENTER_TICKS
 var arrive_ticks := 0
 var arrive_left := 0
-## v0.5.0 RT: two gates on this floor, the route taken (-1 = none yet), this floor is Deep, its epic altar's id.
+## Two gates on this floor, the route taken (-1 = none yet), this floor is Deep, its epic altar's id.
 var routes := false
 var route_taken := -1
 var deep := false
 var epic_altar_id := -1
-## v0.7.5 AP: the gate is the Ascension portal, and the device taken (Ascension.Choice). v0.8.0 P2: ascend_open and
+## The gate is the Ascension portal, and the device taken (Ascension.Choice). ascend_open and
 ## ascend_declined belonged to the retired choice panel; they stay false (kept: saved and hashed on these floors, so
 ## older saves load and the digests keep their shape).
 var ascension := false
 var ascend_open := false
 var ascend_declined := false
 var ascend_choice := 0
-## v0.8.0 FB1 (owner O16; FINAL_BOSS.md F1): the Ascension portal (v0.8.0 P2; End the run before it) leads to the final
+## The Ascension portal (v0.8.0 P2; End the run before it) leads to the final
 ## boss (RunState.prepare, from the run's content: setup, not hashed): WorldReader.outcome is then 3 (the app builds the
 ## final arena), not 1.
 var final_next := false
-## v0.8.0 BD (O83): the door (Door) and the tick it was pressed (-1 = not yet).
+## The door (Door) and the tick it was pressed (-1 = not yet).
 var door := Door.PASSAGE
 var door_press_tick := -1
 
@@ -106,7 +106,7 @@ static func create(p_boss_index: int) -> BossFlow:
 
 
 ## Normal spawning runs: before the boss room is entered, and after the boss died while the player is outside the
-## boss room (v0.5.0 PB, D10). During the fight, and inside the boss room after it, the clock runs (count_time).
+## boss room. During the fight, and inside the boss room after it, the clock runs (count_time).
 func spawns_open(w: World) -> bool:
 	if state == State.WAITING:
 		return true
@@ -116,12 +116,12 @@ func spawns_open(w: World) -> bool:
 	return f == null or f.room_of(w.player_pos()) != f.boss_room
 
 
-## The door is shut: only during the fight (v0.5.0 PB: the boss's death reopens it).
+## The door is shut: only during the fight (the boss's death reopens it).
 func door_sealed() -> bool:
 	return state == State.FIGHT
 
 
-## v0.8.0 BD (O83): the door's slide before the fight, 0 (shut) .. 1 (open), from the press; -1 on a floor without
+## The door's slide before the fight, 0 (shut).. 1 (open), from the press; -1 on a floor without
 ## the press (Door.PASSAGE) or once the fight began (the door is then sealed or open: door_sealed()).
 func door_progress(tick: int) -> float:
 	if door == Door.PASSAGE or state != State.WAITING:
@@ -133,7 +133,7 @@ func door_progress(tick: int) -> float:
 	return clampf(float(tick - door_press_tick) / float(DOOR_OPEN_TICKS), 0.0, 1.0)
 
 
-## v0.8.0 BD (O83): the interact press would open the door now: it is shut, and `p` stands in front of its outer face
+## The interact press would open the door now: it is shut, and `p` stands in front of its outer face
 ## (on the host room's side, within DOOR_REACH_M of it and of its sides).
 func door_in_reach(f: FloorLayout, p: Vector2) -> bool:
 	if door != Door.SHUT or state != State.WAITING or f == null or f.boss_door_index < 0:
@@ -149,7 +149,7 @@ func door_in_reach(f: FloorLayout, p: Vector2) -> bool:
 	)
 
 
-## v0.8.0 BD (O83), tick phase 2b after the shrine: a buffered interact press in reach of the shut door starts its
+## v0.8.0 BD, tick phase 2b after the shrine: a buffered interact press in reach of the shut door starts its
 ## opening (BOSS_DOOR_OPENING at the door). The world goes on (nothing waits for a panel).
 func interact(w: World) -> void:
 	var f := w.floor_layout
@@ -162,16 +162,16 @@ func interact(w: World) -> void:
 	w.consume_buffered(InputFrame.INTERACT)
 	door = Door.OPENING
 	door_press_tick = w.tick
-	CatchUp.read_boss(w)  # v0.9.5 BH1 (H2, Q2): the boss's HP is read as the door starts to open
+	CatchUp.read_boss(w)  # The boss's HP is read as the door starts to open
 	w.emit_event(SimEvent.Kind.BOSS_DOOR_OPENING, 0, 0, 0, f.boss_door_center)
 
 
-## v0.8.0 BD: the door's collider stands (SHUT or OPENING).
+## The door's collider stands (SHUT or OPENING).
 func _door_solid() -> bool:
 	return door == Door.SHUT or door == Door.OPENING
 
 
-## v0.8.0 BD (O83), phase 9 before the fight: the door's collider goes up on the floor's first tick, and comes down
+## v0.8.0 BD, phase 9 before the fight: the door's collider goes up on the floor's first tick, and comes down
 ## DOOR_OPEN_TICKS after the press (BOSS_DOOR_OPENED: the slab is down). Its flow field is kept for the sealing.
 func _advance_door(w: World, f: FloorLayout) -> void:
 	if door == Door.SET:
@@ -196,7 +196,7 @@ func exited() -> bool:
 	return state == State.EXITED
 
 
-## v0.9.0 PT: 0..1 through the gates' forming (0 before the boss died, 1 once formed, PORTAL_FORM_TICKS after they
+## 0..1 through the gates' forming (0 before the boss died, 1 once formed, PORTAL_FORM_TICKS after they
 ## opened: walking in works from then).
 func portal_form_progress(tick: int) -> float:
 	if not portal_active() or opened_tick < 0:
@@ -204,7 +204,7 @@ func portal_form_progress(tick: int) -> float:
 	return clampf(float(tick - opened_tick) / float(PORTAL_FORM_TICKS), 0.0, 1.0)
 
 
-## v0.5.0 RT: gate `route` (Routes.Route) is open: the portal is active and no route was taken, or this one was.
+## Gate `route` (Routes.Route) is open: the portal is active and no route was taken, or this one was.
 func gate_open(route: int) -> bool:
 	if not portal_active() or (route == Routes.Route.DEEP and not routes):
 		return false
@@ -212,7 +212,7 @@ func gate_open(route: int) -> bool:
 
 
 ## Setup (the run flow, before the first tick): the transit lengths, short with reduced motion (`calm`), and whether
-## this floor opens with the arrival. v0.8.0 N11: `ticks` >= 0 is the arrival's length (arrival_length; the run flow's
+## this floor opens with the arrival. `ticks` >= 0 is the arrival's length (arrival_length; the run flow's
 ## data), else the shipped one.
 func set_transit(calm: bool, arrive: bool, ticks: int = -1) -> void:
 	enter_ticks = ENTER_TICKS_CALM if calm else ENTER_TICKS
@@ -221,7 +221,7 @@ func set_transit(calm: bool, arrive: bool, ticks: int = -1) -> void:
 	arrive_left = arrive_ticks
 
 
-## v0.8.0 N11 (O69): the arrival's length in ticks from the tuning: floor 1 of a run (`first`), a later floor, or
+## The arrival's length in ticks from the tuning: floor 1 of a run (`first`), a later floor, or
 ## either with reduced motion (`calm`: a quick fade-in).
 static func arrival_length(t: SimTuning, calm: bool, first: bool) -> int:
 	if calm:
@@ -251,7 +251,7 @@ func enter_progress(tick: int) -> float:
 	return clampf(float(tick - enter_tick) / float(maxi(1, enter_ticks)), 0.0, 1.0)
 
 
-## v0.4.0 TU (D9): the sealing heals World.boss_room_heal_permille of max HP (never past it), with a HEAL event.
+## The sealing heals World.boss_room_heal_permille of max HP (never past it), with a HEAL event.
 static func _entry_heal(w: World) -> void:
 	var a := w.actors
 	if w.boss_room_heal_permille <= 0 or w.player_dead():
@@ -285,39 +285,39 @@ func advance(w: World) -> void:
 	var p := w.player_pos()
 	match state:
 		State.WAITING:
-			_advance_door(w, f)  # v0.8.0 BD (O83)
+			_advance_door(w, f)  # v0.8.0 BD
 			var inner := f.door_depths[f.boss_door_index] * 0.5 + ENTRY_DEPTH_M
 			if f.room_of(p) == f.boss_room and f.boss_door_depth(p) >= inner:
 				state = State.FIGHT
 				sealed_tick = w.tick
-				if not _door_solid():  # v0.8.0 BD: a hero put inside past the shut door (tests, the dev panel)
+				if not _door_solid():  # A hero put inside past the shut door (tests, the dev panel)
 					w.add_wall_now(f.boss_door_wall)
 				if door != Door.PASSAGE:
 					door = Door.OPEN
 				w.emit_event(SimEvent.Kind.BOSS_ROOM_SEALED, 0, 0, 0, f.boss_door_center)
-				_entry_heal(w)  # v0.4.0 TU (owner D9): floor 1's boss room restores your HP
-				BossChallenge.dissolve_floor(w)  # BX (L20): the floor's enemies dissolve.
-				w.bosses.arena = f.rooms[f.boss_room]  # BX (L17): the band closes in from these walls.
+				_entry_heal(w)  # Floor 1's boss room restores your HP
+				BossChallenge.dissolve_floor(w)  # BX: the floor's enemies dissolve.
+				w.bosses.arena = f.rooms[f.boss_room]  # BX: the band closes in from these walls.
 				w.spawn_boss(boss_index, f.boss_spawn)
 		State.FIGHT:
 			if not w.boss_alive():
 				state = State.OPEN
 				opened_tick = w.tick
 				var e := w.emit_event(SimEvent.Kind.PORTAL_OPENED, 0, 0, 0, f.portal_pos)
-				e.amount = 1 if routes else 0  # v0.5.0 RT: 1 when the Deep gate opened too
-				w.remove_wall_now(f.boss_door_wall)  # v0.5.0 PB (D10): the door opens both ways
+				e.amount = 1 if routes else 0  # 1 when the Deep gate opened too
+				w.remove_wall_now(f.boss_door_wall)  # The door opens both ways
 		State.OPEN:
-			if ascension:  # v0.8.0 P2 (O28): the Ascension portal or the Loop device, no menu
+			if ascension:  # The Ascension portal or the Loop device, no menu
 				if in_portal(f, p):
 					enter_ascension(w, Ascension.Choice.ASCENSION)
 				elif (
-					Ascension.touching_loop_device(f, p, w.actors.radius[0])  # v0.9.5 SB: a solid device
+					Ascension.touching_loop_device(f, p, w.actors.radius[0])  # A solid device
 					if w.solids.on
 					else Ascension.on_loop_device(f, p)
 				):
 					enter_ascension(w, Ascension.Choice.LOOP)
 				return
-			if portal_form_progress(w.tick) < 1.0:  # v0.9.0 PT (C4): the gates are still forming
+			if portal_form_progress(w.tick) < 1.0:  # The gates are still forming
 				return
 			var route := -1
 			if in_portal(f, p):
@@ -331,7 +331,7 @@ func advance(w: World) -> void:
 				w.emit_event(SimEvent.Kind.FLOOR_EXIT, 0, 0, 0, p).amount = route
 
 
-## v0.7.5 AP: a device of the Ascension floor was taken (Ascension.Choice.ASCENSION or LOOP; v0.8.0 P2): the hero goes
+## A device of the Ascension floor was taken (Ascension.Choice.ASCENSION or LOOP; v0.8.0 P2): the hero goes
 ## in, as through the gate (FLOOR_EXIT, amount Routes.Route.NORMAL; the next floor's route is normal).
 func enter_ascension(w: World, choice: int) -> void:
 	ascend_open = false
@@ -381,9 +381,9 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(v)
 	for v in [1 if routes else 0, route_taken, 1 if deep else 0, epic_altar_id]:  # v0.5.0 RT
 		h.add_int(v)
-	if ascension:  # v0.7.5 AP: only the Ascension portal's floors, so every other floor hashes as before
+	if ascension:  # Only the Ascension portal's floors, so every other floor hashes as before
 		for v in [1, 1 if ascend_open else 0, 1 if ascend_declined else 0, ascend_choice]:
 			h.add_int(v)
-	if door != Door.PASSAGE:  # v0.8.0 BD: only the press's floors, so a floor before BD hashes as before
+	if door != Door.PASSAGE:  # Only the press's floors, so a floor before BD hashes as before
 		for v in [2, door, door_press_tick]:
 			h.add_int(v)

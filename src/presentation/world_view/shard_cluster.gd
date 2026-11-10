@@ -17,11 +17,11 @@ const TINTS := {
 	&"ruins": [Color("#B8F4EC"), Color("#5CD6C4")],
 	&"night_rocks": [Color("#C8DAFF"), Color("#7C9EFF")],
 	&"red_canyon": [Color("#FFE6C8"), Color("#EDB46A")],
-	## v0.7.5 NB1: Frozen Shore's ice, whiter and colder than the default (still off the player-core cyan).
+	## Frozen Shore's ice, whiter and colder than the default (still off the player-core cyan).
 	&"frozen_shore": [Color("#EAF6FF"), Color("#8CC8F0")],
-	## v0.7.5 NB2: Starfall's nebula crystals, magenta-pink (off the player-core cyan and the Deep's violet).
+	## Starfall's nebula crystals, magenta-pink (off the player-core cyan and the Deep's violet).
 	&"starfall": [Color("#FFD8F6"), Color("#E26AD0")],
-	## Deep floors (v0.5.5 DS): the Deep haze's violet.
+	## Deep floors: the Deep haze's violet.
 	&"deep": [Color("#D6C2FF"), Color("#8A5CFF")],
 }
 ## The unit crystal's shape: sides per variant, the shoulder (where the point starts) and the base's taper.
@@ -131,7 +131,7 @@ func build(placed: Array, tint_key: StringName, shadows := true) -> void:
 		build_room(r)
 
 
-## v0.8.0 N12 (O70): build() in parts (a load bakes one room a frame): takes `placed` and returns the rooms to build,
+## build() in parts (a load bakes one room a frame): takes `placed` and returns the rooms to build,
 ## in build()'s order; build_room(r) then bakes and adds each.
 func begin(placed: Array, tint_key: StringName, shadows := true) -> Array:
 	clusters = placed

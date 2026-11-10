@@ -1,6 +1,6 @@
 class_name EliteCompiler
 extends RefCounted
-## v0.9.0 EL (ELITES.md): the elites' content into sim tables, beside ContentCompiler (its file-length limit). An
+## ELITES.md: the elites' content into sim tables, beside ContentCompiler (its file-length limit). An
 ## archetype (EliteDefinition) becomes an EnemyTable of its kind (HP, body, walk, shards: every enemy's numbers, so
 ## spawning, scaling, rewards and the flow field treat it as an enemy) carrying an EliteTable (its ability and plain
 ## attack). The rules (EliteRulesDefinition) become EliteRules.
@@ -25,7 +25,7 @@ static func compile_elite(def: EliteDefinition, repo: ContentRepository = null) 
 	t.kind = KINDS[def.archetype]
 	t.name_key = def.name_key
 	t.hp = def.hp
-	t.base_hp = def.hp  # v0.11.0 F3: never scaled (HealOrbs)
+	t.base_hp = def.hp  # Never scaled (HealOrbs)
 	t.radius_m = def.radius_m
 	t.speed = def.move_speed_mps / SimTick.TICKS_PER_SECOND
 	t.shards = def.shards

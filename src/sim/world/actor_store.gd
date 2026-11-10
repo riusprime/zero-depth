@@ -3,11 +3,11 @@ extends RefCounted
 ## Actors as parallel arrays in ascending id order (SIM_CONTRACTS §4). Index 0 is always the player.
 ## Kinds are appended, never renumbered, because they are hashed.
 
-## HATCHLING and the bosses (v0.3.0 C): the Brood Mother's small Charger, then one kind per boss (BossAi). The
-## Arc Caster and the Bomb Drone (v0.3.5 AI) come after them, then the horde kinds (v0.4.0 EN; SPLITLING is what a
+## HATCHLING and the bosses: the Brood Mother's small Charger, then one kind per boss (BossAi). The
+## Arc Caster and the Bomb Drone come after them, then the horde kinds (v0.4.0 EN; SPLITLING is what a
 ## Splitter splits into).
-## Arc Caster and the Bomb Drone (v0.3.5 AI) come after them; then the second boss of each pool and the Hive Lens's
-## drones (v0.4.0 BO); then the final boss's bodies, the Colossus, the Prism and the Nemesis (v0.8.0 FB1).
+## Arc Caster and the Bomb Drone come after them; then the second boss of each pool and the Hive Lens's
+## drones; then the final boss's bodies, the Colossus, the Prism and the Nemesis.
 enum Kind {
 	PLAYER,
 	DUMMY,
@@ -31,44 +31,44 @@ enum Kind {
 	HIVE_LENS,
 	FOUNDRY,
 	LENS_DRONE,
-	COLOSSUS,  # v0.8.0 FB1: the final boss's three bodies (FinalBoss), one kind each
+	COLOSSUS,  # The final boss's three bodies (FinalBoss), one kind each
 	PRISM,
 	NEMESIS,
-	TIDECALLER,  # v0.9.0 NB1: floor 4's first new boss (BOSSES_4_5.md N1)
-	BREAKER,  # v0.9.0 EL: the three elite archetypes (EliteAi; ELITES.md E1-E3)
+	TIDECALLER,  # Floor 4's first new boss (BOSSES_4_5.md N1)
+	BREAKER,  # The three elite archetypes (EliteAi; ELITES.md E1-E3)
 	RIFT_HUNTER,
 	CONDUIT,
-	TWIN_WARDEN,  # v0.9.0 NB2 (BOSSES_4_5.md N2): the Twin Wardens' amber body, the boss (its bar, its defeat)
-	TWIN_WARDEN_VIOLET,  # v0.9.0 NB2: the violet body, its twin (BossTwin: one shared HP, linked by the chain)
-	CLOCKWORK_JUDGE,  # v0.9.0 NB3 (BOSSES_4_5.md N3): floor 5's first new boss (BossJudge: your echo)
-	LANTERN_SHADE,  # v0.9.0 NB4 (BOSSES_4_5.md N4): floor 5's second new boss (BossShade: lights out)
-	# v0.11.0 O9 (PLAN H1, M4; owner Q14: "one horde critter per biome, same rules, its own body"): one kind per body,
+	TWIN_WARDEN,  # BOSSES_4_5.md N2: the Twin Wardens' amber body, the boss (its bar, its defeat)
+	TWIN_WARDEN_VIOLET,  # The violet body, its twin (BossTwin: one shared HP, linked by the chain)
+	CLOCKWORK_JUDGE,  # BOSSES_4_5.md N3: floor 5's first new boss (BossJudge: your echo)
+	LANTERN_SHADE,  # BOSSES_4_5.md N4: floor 5's second new boss (BossShade: lights out)
+	# PLAN H1, M4; owner Q14: "one horde critter per biome, same rules, its own body": one kind per body,
 	# one rule set (EnemyAi.is_critter: contact damage, chase); the Cave Bat flies (EnemyTable.flies).
 	DUST_MITE,
 	CAVE_BAT,
 	EMBER_FLEA,
 	ICE_CRAB,
 	STAR_MOTE,
-	# v0.11.0 O13a (ENEMIES.md V1-V5; owner Q23): the biome variants, each running its base's behaviour
+	# ENEMIES.md V1-V5; owner Q23: the biome variants, each running its base's behaviour
 	# (EnemyAi.behaviour_of) with its own twist (Variants); each spawns only on its own biome's floors.
 	RUBBLE_WARDEN,
 	DIM_NEEDLE,
 	EMBER_CHARGER,
 	FROST_CHARGER,
 	SPLIT_SNIPER,
-	# v0.11.0 O13b (ENEMIES.md R1-R4; owner Q22): the Ruins' and the Night Rocks' signature enemies (RuinsRocks). The
+	# ENEMIES.md R1-R4; owner Q22: the Ruins' and the Night Rocks' signature enemies (RuinsRocks). The
 	# Wire Weaver's posts are actors of their own (10 HP, its cable strung between two of them).
 	WIRE_WEAVER,
 	WIRE_POST,
 	SCRAP_HOUND,
 	ROCK_LURKER,
 	STONE_THROWER,
-	# v0.11.0 O13c (ENEMIES.md R5-R8): the Red Canyon's and the Frozen Shore's signature enemies (CanyonShore).
+	# ENEMIES.md R5-R8: the Red Canyon's and the Frozen Shore's signature enemies (CanyonShore).
 	KILN_BEETLE,
 	CINDER_PRIEST,
 	FROST_SPITTER,
 	GLACIER_TURTLE,
-	# v0.11.0 O13d (ENEMIES.md R9, R10): the Starfall signatures (StarfallKinds): the Star Warper marks a star beside
+	# ENEMIES.md R9, R10: the Starfall signatures (StarfallKinds): the Star Warper marks a star beside
 	# the hero and blinks onto it; the Gravity Node, stationary and floating, bends every projectile near it.
 	STAR_WARPER,
 	GRAVITY_NODE,
@@ -96,7 +96,7 @@ const INT_FIELDS: Array[StringName] = [
 	&"burn_root",
 	&"slow_t",
 ]
-## Engine statuses (v0.3.0 G), kept apart from INT_FIELDS so worlds without items hash as before: World hashes
+## Engine statuses, kept apart from INT_FIELDS so worlds without items hash as before: World hashes
 ## them (hash_statuses) only when its loadout has items.
 const STATUS_FIELDS: Array[StringName] = [
 	&"shock_stacks",
@@ -112,10 +112,10 @@ const STATUS_FIELDS: Array[StringName] = [
 ## Enemy AI (v0.3.5 AI; EnemyAi), kept apart from INT_FIELDS so worlds without enemy tables (the kernel golden)
 ## hash as before: World hashes them (hash_ai) only when its loadout has enemies.
 const AI_FIELDS: Array[StringName] = [&"windup", &"pick", &"plan_block", &"power"]
-## v0.6.0 MX4: Venom Core's poison (Venom), kept apart so worlds without it hash as before (hash_venom, only while
+## Venom Core's poison (Venom), kept apart so worlds without it hash as before (hash_venom, only while
 ## the poison engine runs).
 const VENOM_FIELDS: Array[StringName] = [&"poison_stacks", &"poison_t", &"poison_cd"]
-## v0.9.5 EE1 (ElementLevels): the next Contagion jump, and the place of the last bleed tick (millimetres), hashed only
+## ElementLevels: the next Contagion jump, and the place of the last bleed tick (millimetres), hashed only
 ## while an element card runs at Lv 2 or more (hash_element).
 const ELEMENT_FIELDS: Array[StringName] = [&"poison_jump_cd", &"bleed_x", &"bleed_y"]
 ## The staggered plan (v0.4.0 SC; EnemyAi.plan): the walk, refreshed every EnemyAi.PLAN_PERIOD ticks.
@@ -124,9 +124,9 @@ const FLOAT_FIELDS: Array[StringName] = [
 	&"pos_x", &"pos_y", &"radius", &"lock_x", &"lock_y", &"lock_len", &"jitter_x", &"jitter_y"
 ]
 ## Every int and every float column, in that order: add and remove_sorted walk them (concatenated once, not per call).
-## v0.9.5 EE3 (ElementPairs): ticks until a Toxic Fumes cloud can poison this enemy again; hashed while a pair is on.
+## ElementPairs: ticks until a Toxic Fumes cloud can poison this enemy again; hashed while a pair is on.
 const PAIR_FIELDS: Array[StringName] = [&"gas_cd"]
-## v0.10.5 W3-P1b (ElementStack): ticks this enemy stays charged by a hero Lightning hit (counts as carrying Lightning);
+## ElementStack: ticks this enemy stays charged by a hero Lightning hit (counts as carrying Lightning);
 ## hashed only while an enemy is charged (hash_stack).
 const STACK_FIELDS: Array[StringName] = [&"charged_t"]
 const ALL_INT_FIELDS := (
@@ -172,7 +172,7 @@ var burn_stacks := PackedInt32Array()
 var burn_t := PackedInt32Array()
 var burn_cd := PackedInt32Array()
 var burn_root := PackedInt32Array()
-## Frost Core slow (v0.2.0 J): ticks left (0 = not slowed). EnemyAi.move scales its speed while it runs.
+## Frost Core slow: ticks left (0 = not slowed). EnemyAi.move scales its speed while it runs.
 var slow_t := PackedInt32Array()
 ## Engines (v0.3.0 G; Engines): shock stacks and ticks until they fade; bleed stacks, ticks until they fade and to
 ## the next DoT tick; frost stacks and ticks until they fade, ticks left frozen; 1 = never frozen (bosses: frost
@@ -186,23 +186,23 @@ var frost_stacks := PackedInt32Array()
 var frost_t := PackedInt32Array()
 var frozen_t := PackedInt32Array()
 var freeze_immune := PackedInt32Array()
-## Enemy AI (v0.3.5 AI): the current attack's windup in ticks (drawn per attack), and which attack an enemy with
-## several (the Arc Caster) is winding up. v0.4.0 EN: a Mender's pick is the id it heals (0 = none), a Sniper's 1
+## Enemy AI: the current attack's windup in ticks (drawn per attack), and which attack an enemy with
+## several (the Arc Caster) is winding up. a Mender's pick is the id it heals (0 = none), a Sniper's 1
 ## while it relocates.
 var windup := PackedInt32Array()
 var pick := PackedInt32Array()
-## The staggered plan (v0.4.0 SC): 1 while the straight walk toward the player was blocked by a wall at the last
+## The staggered plan: 1 while the straight walk toward the player was blocked by a wall at the last
 ## check (follow the flow field), and the walk itself (direction × the share of full speed), per tick.
 var plan_block := PackedInt32Array()
 var plan_x := PackedFloat32Array()
 var plan_y := PackedFloat32Array()
-## v0.4.0 SC: an enemy's damage factor in per mille (World.add_enemy sets 1000; the spawn director the danger tier's).
+## An enemy's damage factor in per mille (World.add_enemy sets 1000; the spawn director the danger tier's).
 var power := PackedInt32Array()
-## v0.6.0 MX4 (Venom): poison stacks, ticks until they run out, ticks to the next DoT tick.
+## Venom: poison stacks, ticks until they run out, ticks to the next DoT tick.
 var poison_stacks := PackedInt32Array()
 var poison_t := PackedInt32Array()
 var poison_cd := PackedInt32Array()
-## v0.9.5 EE1: Contagion's ticks to the next jump, and the place of the last bleed tick (Open wounds), in millimetres.
+## Contagion's ticks to the next jump, and the place of the last bleed tick (Open wounds), in millimetres.
 var poison_jump_cd := PackedInt32Array()
 var bleed_x := PackedInt32Array()
 var bleed_y := PackedInt32Array()
@@ -256,7 +256,7 @@ func index_of(id: int) -> int:
 func remove_sorted(indices: PackedInt32Array) -> void:
 	if indices.is_empty():
 		return
-	# v0.4.0 SC: in place, last first, with the arrays' own remove_at (a native move, not a rebuild).
+	# In place, last first, with the arrays' own remove_at (a native move, not a rebuild).
 	for f in ALL_INT_FIELDS:
 		var ai: PackedInt32Array = get(f)
 		for k in range(indices.size() - 1, -1, -1):
@@ -276,13 +276,13 @@ func hash_into(h: StateHasher) -> void:
 		h.add_f32s(get(f))
 
 
-## The engine statuses (v0.3.0 G), in STATUS_FIELDS order.
+## The engine statuses, in STATUS_FIELDS order.
 func hash_statuses(h: StateHasher) -> void:
 	for f in STATUS_FIELDS:
 		h.add_ints(get(f))
 
 
-## The enemy AI fields (v0.3.5 AI), in AI_FIELDS order.
+## The enemy AI fields, in AI_FIELDS order.
 func hash_ai(h: StateHasher) -> void:
 	for f in AI_FIELDS:
 		h.add_ints(get(f))
@@ -290,25 +290,25 @@ func hash_ai(h: StateHasher) -> void:
 		h.add_f32s(get(f))
 
 
-## v0.6.0 MX4: the poison columns (Venom), in VENOM_FIELDS order.
+## The poison columns (Venom), in VENOM_FIELDS order.
 func hash_venom(h: StateHasher) -> void:
 	for f in VENOM_FIELDS:
 		h.add_ints(get(f))
 
 
-## v0.9.5 EE3: the pair columns (ElementPairs), in PAIR_FIELDS order.
+## The pair columns (ElementPairs), in PAIR_FIELDS order.
 func hash_pair(h: StateHasher) -> void:
 	for f in PAIR_FIELDS:
 		h.add_ints(get(f))
 
 
-## v0.10.5 W3-P1b: the stacking columns (ElementStack), in STACK_FIELDS order.
+## The stacking columns (ElementStack), in STACK_FIELDS order.
 func hash_stack(h: StateHasher) -> void:
 	for f in STACK_FIELDS:
 		h.add_ints(get(f))
 
 
-## v0.9.5 EE1: the element columns (ElementLevels), in ELEMENT_FIELDS order.
+## The element columns (ElementLevels), in ELEMENT_FIELDS order.
 func hash_element(h: StateHasher) -> void:
 	for f in ELEMENT_FIELDS:
 		h.add_ints(get(f))

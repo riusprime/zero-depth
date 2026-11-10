@@ -1,6 +1,6 @@
 class_name FinalBossDefinition
 extends BossDefinition
-## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F3-F8): one body of the final boss (the Colossus, the Prism, the Nemesis):
+## One body of the final boss (the Colossus, the Prism, the Nemesis):
 ## a boss in every field (BossDefinition, CONTENT_SCHEMA §4), kept in its own category so the floors' boss indices
 ## (ContentCompiler.compile_bosses, saved in every run save) stay what they were. The run names its bodies in order
 ## (RunDefinition.final_bosses); data/final_boss/.
@@ -13,7 +13,7 @@ extends BossDefinition
 ## dps_min_measured_seconds were measured (a fight jumped straight to it). Its `hp` and the loop's scaling don't apply
 ## otherwise. Its shards (shard_count, shard_orbit_m from its centre, turning shard_turn_dps) orbit it and fire.
 
-## v0.9.5 BH6: the interphase dictionary's keys and bounds.
+## The interphase dictionary's keys and bounds.
 ## key: [default, min, max]
 const INTERPHASE_SPEC := {
 	"first_permille": [660, 100, 900],
@@ -62,7 +62,7 @@ const INTERPHASE_SPEC := {
 @export var shard_count := 0
 @export var shard_orbit_m := 0.0
 @export var shard_turn_dps := 0.0
-## v0.8.0 PR (owner O84): the body casts its phase's attacks in their listed order, one at a time (a fixed rotation;
+## The body casts its phase's attacks in their listed order, one at a time (a fixed rotation;
 ## no weighted pick), and each waits until every shot it fired is gone (BossTable.rotation). Its phases list each
 ## attack once (the rotation finds its place by the last attack).
 @export var spell_rotation := false
@@ -117,13 +117,13 @@ const INTERPHASE_SPEC := {
 ## mimic_window_seconds, one every mimic_every_seconds, the first mimic_first_seconds after its rise, each shown
 ## mimic_warn_seconds ahead; in a window the player's damage on it is pulled to pace_ref_dps (at least
 ## mimic_nerf_min_permille of it) and their move speed to the base. Outside, it fights with its own kit.
-## 0 mimic_window_seconds: it copies the whole fight (FB3).
+## 0 mimic_window_seconds: it copies the whole fight.
 @export var mimic_window_seconds := 0.0
 @export var mimic_every_seconds := 20.0
 @export var mimic_first_seconds := 12.0
 @export var mimic_warn_seconds := 1.5
 @export var mimic_nerf_min_permille := 100
-## v0.9.5 BH6 (owner, 2026-10-25; BOSSES_HARD.md HC4-HC6): The Fallen's two interphases and its dashes between moves.
+## The Fallen's two interphases and its dashes between moves.
 ## An empty dictionary: none. Otherwise the keys of INTERPHASE_SPEC (a key left out takes its default); times in
 ## seconds, lengths in metres, speeds in m/s, turns in degrees a second, *_permille in per mille of max HP. See
 ## BossInterphase and InterphaseTable. The hits and telegraphs are the damage and telegraph of the five `interphase`
@@ -177,7 +177,7 @@ func validate() -> Array[ValidationIssue]:
 	_check_crosses(issues)
 	_check_mimic(issues)
 	_check_interphase(issues)
-	if spell_rotation:  # v0.8.0 PR (O84)
+	if spell_rotation:  # v0.8.0 PR
 		for ph in phases:
 			if ph == null:
 				continue
@@ -191,7 +191,7 @@ func validate() -> Array[ValidationIssue]:
 	return issues
 
 
-## v0.9.5 BH6: the interphase's keys are known and within their bounds, its two thresholds fall in order, the dash's
+## The interphase's keys are known and within their bounds, its two thresholds fall in order, the dash's
 ## range holds (min <= max) and the rain's two gaps leave balls in its ring.
 func _check_interphase(issues: Array[ValidationIssue]) -> void:
 	if interphase.is_empty():
@@ -221,7 +221,7 @@ func _check_interphase(issues: Array[ValidationIssue]) -> void:
 		issues.append(ValidationIssue.new(&"range", p, "interphase: the rain's gaps leave balls"))
 
 
-## v0.8.0 FB3: a mimic body's numbers: an echo the fight's ring holds (2 s), a dash answered after a reaction (at least
+## A mimic body's numbers: an echo the fight's ring holds (2 s), a dash answered after a reaction (at least
 ## 0.1 s), four stance weights (one at least > 0), up to MAX_CARD_CASTS cards, an HP rule with its meter, a hit that
 ## can never take the player's whole HP (cap under 1000 per mille), and ranges with min <= max.
 func _check_mimic(issues: Array[ValidationIssue]) -> void:
@@ -277,7 +277,7 @@ func _check_mimic(issues: Array[ValidationIssue]) -> void:
 		)
 
 
-## v0.8.0 N2: a paced body's numbers (its meter, its times in order, a reference DPS) and a window that fits its cycle.
+## A paced body's numbers (its meter, its times in order, a reference DPS) and a window that fits its cycle.
 func _check_pace(issues: Array[ValidationIssue]) -> void:
 	var p := resource_path
 	if pace:

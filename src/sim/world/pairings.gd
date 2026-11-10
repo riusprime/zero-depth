@@ -1,6 +1,6 @@
 class_name Pairings
 extends RefCounted
-## v0.10.5 O15 (docs/roadmap/v0.10.5/O15_PAIRINGS.md): authored enemy duos in the spawner. After a lead-kind pack's
+## Authored enemy duos in the spawner. After a lead-kind pack's
 ## spots are chosen, each row of the lead kind whose floor has come and whose partner kind is unlocked rolls its
 ## chance (ai stream, one draw per eligible row); a hit adds `count` partners on valid walkable spots by placement,
 ## relative to the pack's anchor and the hero. Partners are limited to the room left under the alive cap (they are the

@@ -1,23 +1,23 @@
 class_name VatLooks
 extends RefCounted
-## v0.10.5 W3-V1 (the enemy VAT pilot): the material a VatCrowd draws a kind with. Its vertex stage poses each vertex
+## The enemy VAT pilot: the material a VatCrowd draws a kind with. Its vertex stage poses each vertex
 ## from the baked joint transforms (VatBake: each joint on its grid, multilinear over the instance's drives, a loop
 ## wrapped; a joint after its parent, up its chain, as the scene tree composed the nodes); its fragment stage is
 ## EnemyLooks' body and accent shading, unchanged (the same render modes, ALBEDO / METALLIC / SPECULAR / ROUGHNESS, a
 ## plate's emission mix(rest, hit, shown), an accent's colour x its glow), with the per-piece colours from the mesh's
 ## CUSTOM0 / CUSTOM1 instead of one material per piece.
 ## Per instance (VatCrowd): INSTANCE_CUSTOM = the drives 0..3 (the Swarmer's: windup raise, strike, crouch, gait phase);
-## v0.10.5 W3-V4a: a rig with more drives reads the rest from zd_drives, the instance's row (INSTANCE_ID), four a
+## A rig with more drives reads the rest from zd_drives, the instance's row (INSTANCE_ID), four a
 ## texel. COLOR = the hit value's rgb (EnemyLooks.hit_value) and in alpha the accent glow g, as g when the hit is off
 ## and -(1 + g) when it shows. The mesh has no vertex colours, so COLOR in the vertex stage is the instance's alone.
-## v0.10.5 W3-V4a: a plain plate (mode 2: the Charger's face) takes neither the flash nor a glow; a rig whose joints
+## A plain plate (mode 2: the Charger's face) takes neither the flash nor a glow; a rig whose joints
 ## scale (the Charger's lunge stretch) turns its normals by the inverse transpose, as the scene does; a mesh with
 ## two-sided pieces (the Charger's cull_disabled shell) draws with cull_disabled and drops the back faces of its
 ## one-sided ones (CUSTOM2.y).
-## v0.10.5 W3-V4b: mode 3 is an accent glowing at the instance's drive 3 (INSTANCE_CUSTOM.w) instead of COLOR's (the
+## Mode 3 is an accent glowing at the instance's drive 3 (INSTANCE_CUSTOM.w) instead of COLOR's (the
 ## Sniper's muzzle: its own glow; that rig has no gait); a pose with an `albedo_tex` (the owner's models) draws the
 ## textured variant: each plate's (mode 0) albedo times that map at the mesh's UV, as EnemyLooks.body's textured plates.
-## v0.10.5 W3-V4c: up to 32 drives (the drive texture's first three texels fill d, the next four e); CUSTOM2.z > 0
+## Up to 32 drives (the drive texture's first three texels fill d, the next four e); CUSTOM2.z > 0
 ## makes an accent glow at drive CUSTOM2.z - 1 instead of the instance's glow (the Needle's muzzle: a second glow), and
 ## CUSTOM2.w = 1 draws a piece unshaded, as an unshaded StandardMaterial3D shows it: its albedo as is, no light, no
 ## flash (the Warden's cracks, the Arc Caster's crystal, the Bomb Drone's fuse). Flags, not new mode numbers.
@@ -156,7 +156,7 @@ const _BODY_VERTEX := """
 }
 
 void fragment() {"""
-## v0.10.5 W3-V4a: in the two-sided variant, a one-sided piece's back faces are not drawn.
+## In the two-sided variant, a one-sided piece's back faces are not drawn.
 const _ONE_SIDED := """
 	if (!FRONT_FACING && zd_one_sided > 0.5) {
 		discard;
@@ -175,7 +175,7 @@ const _BODY_FRAGMENT := """
 	}
 }
 """
-## v0.10.5 W3-V4b: the textured variant (the owner's models: their plates are textured, their accents are not), the
+## The textured variant (the owner's models: their plates are textured, their accents are not), the
 ## map sampled for every fragment, outside the branch, so its mip level is never read from a neighbour that skipped it.
 const _TEX := "uniform sampler2D zd_tex : source_color, filter_linear_mipmap, repeat_enable;\n"
 const _TEX_ALBEDO := (
@@ -232,7 +232,7 @@ static func _set_pose(m: ShaderMaterial, pose: Dictionary) -> void:
 	m.set_shader_parameter("zd_scaled", bool(pose.get("scaled", false)))
 
 
-## v0.10.5 W3-V4a: the drive texture (one row per instance) `m` reads the drives past the fourth from.
+## The drive texture (one row per instance) `m` reads the drives past the fourth from.
 static func set_drives(m: ShaderMaterial, tex: Texture2D) -> void:
 	m.set_shader_parameter("zd_drives", tex)
 

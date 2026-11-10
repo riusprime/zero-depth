@@ -1,6 +1,6 @@
 class_name PerfBreakdown
 extends RefCounted
-## v0.10.5 (owner: "play a normal game, log it and then you can measure what takes the most frames"): the main-thread
+## The main-thread
 ## breakdown shared by the frame probe (scripts/checks/frame_probe.gd --breakdown) and the play recorder (PerfRecorder,
 ## --perf-log). Probe-only: nothing here runs unless one of them switches it on. The sim never reads the clock; the
 ## phase timer it reports to (World.phase_probe) lives here, on the app side.
@@ -35,7 +35,7 @@ class TimedListener:
 
 
 ## Every SimDriver.ticked listener (view sync, audio, codex, HUD, ...) called through a timer, in the order it was
-## connected; v0.10.5 Q5: and every SimDriver.frame_ticked listener (the views' once-a-frame sync), as
+## connected; and every SimDriver.frame_ticked listener (the views' once-a-frame sync), as
 ## "frame.<script>.<method>". The timers are appended to `keep` (the caller holds them).
 static func time_listeners(drv: SimDriver, keep: Array) -> void:
 	time_signal(drv.ticked, "tick", keep)

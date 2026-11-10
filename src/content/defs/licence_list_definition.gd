@@ -1,6 +1,6 @@
 class_name LicenceListDefinition
 extends ContentDef
-## v0.7.5 SM (owner N8; ROADMAP v0.9.x "Final credits and licenses"): the credits' generated part, one entry per
+## The credits' generated part, one entry per
 ## source the repo holds: each asset manifest's licence line (the owner's art, models and textures, the generated
 ## audio), each font's licence and each addon's licence (marked when the export leaves it out). Written by
 ## scripts/content/build_credits.gd from the repo (never by hand); tests/content/test_credits_licences.gd checks the

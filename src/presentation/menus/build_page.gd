@@ -1,7 +1,7 @@
 class_name BuildPage
 extends Control
 ## The pause menu's Build page (v0.6.5 WN2; docs/design/WAND.md rule 4: "Moving cards between slots is free and
-## immediate"). Ember stone (v0.8.0 MU) over the blurred game: the title, the wand as a row of slots
+## immediate"). Ember stone over the blurred game: the title, the wand as a row of slots
 ## (WandRow: each card's frame colour, icon, name and level, the trigger cards cutting the row with "cast on hit →"),
 ## and under it the forecast, the cards' icons in firing order. Moving a card:
 ## - keyboard: ←/→ (↑/↓) or 1–8 choose a card, Enter picks it up, ←/→ carry it, Enter puts it down (Esc puts it back);
@@ -12,11 +12,11 @@ extends Control
 ## (WorldReader.wand_moved → Wand.moved_read, EI-07) and the forecast follows live. On Back, Main turns the change
 ## into the fewest wand moves (planned_moves → Wand.plan_moves) and queues them as input (InputLatch); they reach the
 ## sim one per tick once the game runs again (EI-03, EI-04; WAND_2.md "How a move reaches the sim").
-## v0.10.5 O13 (owner P10): the wand forecast (WandForecastView) under the row, following every move live.
-## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): the page in the Astral style (AstralUi): the
+## The wand forecast (WandForecastView) under the row, following every move live.
+## The page in the Astral style (AstralUi): the
 ## game blurred under Astral's cool ink, a sigil and the title in Cinzel over a rule, the wand row, its pips and its
 ## forecast in Astral (their default now), Back an Astral plate.
-## v0.11.0 F11 (owner, G2 F10 "option A but simpler"): no instructions and no read-back on the page; the forecast is
+## No instructions and no read-back on the page; the forecast is
 ## the cards' icons. While a card is carried the row holds the wand as it was picked up and shows where the card will
 ## land (WandRow.carry_from); the order and the forecast are the preview, as before.
 
@@ -28,20 +28,20 @@ const ECHO := PanelInput.Echo.CONFIRM_ONCE
 const FORECAST_W := 620.0
 
 var row := WandRow.new()
-## v0.10.5 O13: the forecast of the order on the page.
+## The forecast of the order on the page.
 var forecast := WandForecastView.new()
-## v0.9.0 AS2 (G2 AS = B): the slot categories' pips over the wand.
+## G2 AS = B: the slot categories' pips over the wand.
 var pips := SlotPips.new()
 var _title := Label.new()
 var _note := Label.new()
-## v0.10.5 W3-P10c: the held Constellations ("Constellation: Prism ×2 · Glass Sky"; hidden while none).
+## The held Constellations ("Constellation: Prism ×2 · Glass Sky"; hidden while none).
 var _stars := Label.new()
 var _back := Button.new()
 var _read := {}
 var _start := PackedInt32Array()
 var _slots := 0
 var _held_from := -1
-## v0.11.0 F11: the wand as it was when the card in the air was picked up (what the row shows meanwhile).
+## The wand as it was when the card in the air was picked up (what the row shows meanwhile).
 var _carried := {}
 
 
@@ -50,7 +50,7 @@ func _init() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	AstralUi.apply(self)
 	var backdrop := MenuBackdrop.new()
-	backdrop.astral = true  # v0.10.5 W3-O19: the game blurred under Astral's cool ink
+	backdrop.astral = true  # The game blurred under Astral's cool ink
 	add_child(backdrop)
 	var outer := VBoxContainer.new()  # the column sits on the left like the menus' list, centred top to bottom
 	outer.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -66,7 +66,7 @@ func _init() -> void:
 	_title.text = "UI_BUILD_TITLE"
 	_title.name = "Title"
 	AstralUi.title(_title)
-	var head := HBoxContainer.new()  # v0.10.5 W3-O19: a sigil, the title, the slots note beside it
+	var head := HBoxContainer.new()  # A sigil, the title, the slots note beside it
 	head.name = "Head"
 	head.add_theme_constant_override("separation", 16)
 	head.add_child(AstralUi.Sigil.new(13.0))
@@ -90,7 +90,7 @@ func _init() -> void:
 	_back.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_back.focus_mode = Control.FOCUS_NONE  # the page owns the keys and the pad; Back is the mouse's way out
 	_back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	AstralUi.plate_button(_back)  # v0.10.5 W3-O19: an Astral plate
+	AstralUi.plate_button(_back)  # An Astral plate
 	_back.pressed.connect(func() -> void: back_pressed.emit())
 	col.add_child(_back)
 	row.tile_clicked.connect(_on_click)
@@ -115,7 +115,7 @@ func open(wand: Dictionary, slots: int, reader: WorldReader = null) -> void:
 	row.settle()
 
 
-## v0.10.5 W3-P10c: the held Constellations line (`held`: ids in pick order; Prism held twice reads "Prism ×2").
+## The held Constellations line (`held`: ids in pick order; Prism held twice reads "Prism ×2").
 func _show_constellations(held: PackedInt32Array) -> void:
 	var names := PackedStringArray()
 	var seen := PackedInt32Array()
@@ -151,7 +151,7 @@ func planned_moves() -> PackedInt32Array:
 	return WorldReader.wand_plan_moves(_start, order())
 
 
-## v0.11.0 F11: the card ids the forecast shows, in firing order.
+## The card ids the forecast shows, in firing order.
 func forecast_ids() -> Array[StringName]:
 	return forecast.icon_ids()
 

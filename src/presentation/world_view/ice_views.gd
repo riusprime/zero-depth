@@ -1,6 +1,6 @@
 class_name IceViews
 extends Node3D
-## v0.7.5 NB1: the floor's ice patches (Frozen Shore), drawn exactly where the sim has them (WorldReader.ice_patch:
+## The floor's ice patches (Frozen Shore), drawn exactly where the sim has them (WorldReader.ice_patch:
 ## looks slippery = is slippery). Each patch is one flat faceted sheet: 1 m facets in slightly different pale-blue
 ## shades, glossy so the moon glints on it, a bright frosted rim on its exact edge so its boundary reads at a
 ## glance, and a few dark hairline cracks. Lit by the scene (it is ground, not a warning: ice never hurts), never

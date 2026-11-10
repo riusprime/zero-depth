@@ -10,17 +10,17 @@ extends RefCounted
 ## - v0.11.0 O4 (owner Q10 a, PLAN L6: "40 % damage in the dark, 150 % inside a lit pool; a lantern stays lit 6 s;
 ##   dark 9 s / light 4 s"): from that first dark the dark and the light alternate on their own clock (the table's
 ##   dark_hold_ticks, then light_hold_ticks, repeating); a Lights Out starting while that cycle runs only plays its
-##   wisps. A table with no light_hold_ticks keeps the light until its next Lights Out's dark (NB4b); one with no
+##   wisps. A table with no light_hold_ticks keeps the light until its next Lights Out's dark; one with no
 ##   dark_hold_ticks keeps the dark until the Shade dies.
 ## - The lanterns are the player's lever: passing within relight_m (plus their radius) lights one for lamp_ticks, dark
 ##   or light, and it burns down after; a Snuff puts lit ones out.
 ## - v0.11.0 O4: never immune. A hit on the Shade is scaled by light_permille: lit_mult_permille (150 %) while its body
 ##   touches a lit lantern's pool (dark or light), dark_mult_permille (40 %) while it stands in the dark, else 1000
 ##   (in the full light, or touched by the player's own light_m circle). Tagged TAG_SHADE_LIT / TAG_SHADE_DARK.
-## - v0.11.0 O4 (L4, Q12): while dark the hint marker (ObjectiveMarkers.SHADE_LANTERN) points at every unlit lantern;
+## - v0.11.0 O4: while dark the hint marker (ObjectiveMarkers.SHADE_LANTERN) points at every unlit lantern;
 ##   cleared in the light and when the Shade is gone.
-## - v0.10.5 O2a (owner L3): Lights Out is shielded only through its telegraph (shield_seconds 0); the wisps fly open.
-##   v0.11.0 O4b (owner: "Bring it back"): kept; every other moment the Shade is never immune.
+## - v0.10.5 O2a: Lights Out is shielded only through its telegraph (shield_seconds 0); the wisps fly open.
+##   Kept; every other moment the Shade is never immune.
 ## - The Snuff (a `marks` attack with snuff): each struck circle puts out the lit lantern nearest its centre.
 ## - The dark is sim state (BossStore.shade_* and lamp_*, snapshotted and hashed while a Shade lives); the darkness
 ##   drawn is the view reading it (WorldReader.boss_light). The Shade gone, the room relights.
@@ -48,13 +48,13 @@ static func on_start(w: World, i: int, atk: BossAttackTable) -> void:
 	_own(w, i)
 	var bs := w.bosses
 	if bs.shade_dark == 1 or bs.shade_until >= 0:
-		return  # O4: the cycle runs; this Lights Out only plays its wisps
+		return  # The cycle runs; this Lights Out only plays its wisps
 	bs.shade_at = w.tick + atk.dark_ticks
 	bs.shade_from = w.tick
 
 
 ## Tick phase 6 (BossSignatures.advance): finds the Shade (its lanterns placed), lets the dark fall when due and lift
-## when its stretch is over (NB4b), then (O4) fall again when the light's stretch is over; burns the lanterns down
+## when its stretch is over, then fall again when the light's stretch is over; burns the lanterns down
 ## and lights the ones the player passes; points the hint at the unlit ones in the dark.
 static func advance(w: World) -> void:
 	var bs := w.bosses
@@ -80,10 +80,10 @@ static func advance(w: World) -> void:
 		_fall(w, t)
 	elif bs.shade_until >= 0 and w.tick >= bs.shade_until:
 		if bs.shade_dark == 1:
-			bs.shade_dark = 0  # NB4b: the dark's stretch is over
+			bs.shade_dark = 0  # The dark's stretch is over
 			bs.shade_until = w.tick + t.light_hold_ticks if t.light_hold_ticks > 0 else -1
 		else:
-			_fall(w, t)  # O4: the light's stretch is over
+			_fall(w, t)  # The light's stretch is over
 	_burn(w, t)
 	_hint(w)
 
@@ -96,7 +96,7 @@ static func _fall(w: World, t: BossTable) -> void:
 	bs.shade_until = w.tick + t.dark_hold_ticks if t.dark_hold_ticks > 0 else -1
 
 
-## O4: every lantern burns a tick down; one the player stands within reach of is lit to lamp_ticks.
+## Every lantern burns a tick down; one the player stands within reach of is lit to lamp_ticks.
 static func _burn(w: World, t: BossTable) -> void:
 	var bs := w.bosses
 	var p := w.player_pos()
@@ -110,7 +110,7 @@ static func _burn(w: World, t: BossTable) -> void:
 	bs.lamp_t = lt
 
 
-## O4 (L4, Q12): in the dark the hint points at every unlit lantern; in the light, none.
+## In the dark the hint points at every unlit lantern; in the light, none.
 static func _hint(w: World) -> void:
 	var bs := w.bosses
 	w.objectives.clear(ObjectiveMarkers.SHADE_LANTERN)
@@ -121,7 +121,7 @@ static func _hint(w: World) -> void:
 			w.objectives.point(ObjectiveMarkers.SHADE_LANTERN, Vector2(bs.lamp_x[k], bs.lamp_y[k]))
 
 
-## The Shade boss i takes the room's light (the first one; one Shade at a time): its lanterns placed, out (O4).
+## The Shade boss i takes the room's light (the first one; one Shade at a time): its lanterns placed, out.
 static func _own(w: World, i: int) -> void:
 	var bs := w.bosses
 	var id := w.actors.ids[i]
@@ -177,7 +177,7 @@ static func lit(w: World, p: Vector2, r: float = 0.0) -> bool:
 	return in_pool(w, p, r)
 
 
-## O4: True when a disc of radius r at p touches a lit lantern's pool (lamp_m round it), dark or light.
+## True when a disc of radius r at p touches a lit lantern's pool (lamp_m round it), dark or light.
 static func in_pool(w: World, p: Vector2, r: float = 0.0) -> bool:
 	var bs := w.bosses
 	var i := w.actors.index_of(bs.shade_boss)
@@ -207,7 +207,7 @@ static func light_permille(w: World, i: int) -> int:
 	return maxi(1, t.dark_mult_permille)
 
 
-## O4: [per-mille, tag] for a player's hit on actor i (Damage.hit): the light's multiplier and TAG_SHADE_LIT or
+## [per-mille, tag] for a player's hit on actor i (Damage.hit): the light's multiplier and TAG_SHADE_LIT or
 ## TAG_SHADE_DARK (0 at 1000).
 static func hit_mult(w: World, i: int) -> Array[int]:
 	var pm := light_permille(w, i)
@@ -257,7 +257,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 static func state(w: World) -> Dictionary:
 	var bs := w.bosses
 	if bs.shade_boss < 0:
-		return BossInterphase.light(w)  # v0.9.5 BH6: the Fallen's Lights Out interphase shows the same dark
+		return BossInterphase.light(w)  # The Fallen's Lights Out interphase shows the same dark
 	var i := w.actors.index_of(bs.shade_boss)
 	if i < 0:
 		return {}

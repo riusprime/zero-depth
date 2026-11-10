@@ -23,7 +23,7 @@ var blood_altars := 1
 var chaos_sizes := PackedInt32Array([5, 6, 6, 7, 7])
 var chaos_elite_permille := 250
 var chaos_altars := 1
-## v0.9.0 CF: the least grid cells of a Chaos shrine's room (Shrines.setup; 0: any room, a floor saved before CF), and
+## The least grid cells of a Chaos shrine's room (Shrines.setup; 0: any room, a floor saved before CF), and
 ## the room's floor area (m2) an enemy of the challenge needs at once (ClosedFights.cap; 0: no cap).
 var chaos_min_cells := 2
 var chaos_area_per_enemy_m2 := 30.0

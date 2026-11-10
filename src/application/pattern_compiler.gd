@@ -1,22 +1,22 @@
 class_name PatternCompiler
 extends RefCounted
-## v0.7.5 BF1 (owner N15; CONTENT_SCHEMA §4b): the dodge-first boss content in sim units, beside ContentCompiler
+## The dodge-first boss content in sim units, beside ContentCompiler
 ## (which calls it for every boss attack): a bullet pattern (BulletPatternDefinition -> BulletPatternTable), and a
-## boss attack's lock, shield, marker spacing and pattern. Enemies (v0.7.5 EF) compile their patterns here too.
+## boss attack's lock, shield, marker spacing and pattern. Enemies compile their patterns here too.
 
-## v0.9.0 NB2: a twin boss's second body, by BossDefinition.twin_kind_id (BossSchemas.TWIN_KINDS).
+## A twin boss's second body, by BossDefinition.twin_kind_id (BossSchemas.TWIN_KINDS).
 const TWIN_KINDS := {&"twin_warden_violet": ActorStore.Kind.TWIN_WARDEN_VIOLET}
 
 
-## v0.7.5 BF1: the tracked lock, the shield, the markers' spacing and the bullet pattern. A `marks` or `row_lanes`
+## The tracked lock, the shield, the markers' spacing and the bullet pattern. A `marks` or `row_lanes`
 ## attack is active until its last marker strikes; a `pattern` attack for its pattern's whole duration (the data's
-## active_seconds is a floor under both). v0.7.5 BF2: a `marks` attack with a pattern (eggs) until its last marker's
+## active_seconds is a floor under both). a `marks` attack with a pattern (eggs) until its last marker's
 ## burst has fired; a `burrow` may name one too (its eruption's ring; BossAi times that from the eruption).
 static func compile_boss_attack(
 	def: BossAttackDefinition, repo: ContentRepository, t: BossAttackTable
 ) -> void:
 	var sp := def.shape_params
-	t.steps = int(sp.get("steps", 1))  # v0.8.0 FB1: the Colossus's spikes (moved here in v0.9.0 NB1)
+	t.steps = int(sp.get("steps", 1))  # The Colossus's spikes (moved here in v0.9.0 NB1)
 	t.step_m = float(sp.get("step_m", 0.0))
 	t.weapon = ContentCompiler.ATTACK_WEAPONS.get(
 		String(sp.get("weapon", "any")), BossAttackTable.WEAPON_ANY
@@ -24,26 +24,26 @@ static func compile_boss_attack(
 	t.card = int(sp.get("card", -1))
 	t.lock_ticks = SimTick.seconds_to_ticks(def.lock_seconds)
 	t.shielded = def.shielded
-	if def.shield_seconds >= 0.0:  # v0.10.5 O2a: the shield drops this far into the active time
+	if def.shield_seconds >= 0.0:  # The shield drops this far into the active time
 		t.shield_active_ticks = SimTick.seconds_to_ticks(def.shield_seconds)
-	if sp.has("aim_degrees"):  # v0.8.0 PR (O84): a fixed aim, 1/4096 turns
+	if sp.has("aim_degrees"):  # A fixed aim, 1/4096 turns
 		t.fixed_aim = int(round(float(sp["aim_degrees"]) * 4096.0 / 360.0)) & 4095
 	t.mark_gap_ticks = SimTick.seconds_to_ticks(float(sp.get("stagger_seconds", 0.0)))
 	if t.move == BossAttackTable.Move.MARKS or t.move == BossAttackTable.Move.ROW_LANES:
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 1)
-	if t.move == BossAttackTable.Move.GRID:  # v0.7.5 BF3: until its last volley strikes
+	if t.move == BossAttackTable.Move.GRID:  # Until its last volley strikes
 		t.active_ticks = maxi(t.active_ticks, (t.volleys - 1) * t.mark_gap_ticks + 1)
-	if t.move == BossAttackTable.Move.COMBO:  # v0.8.0 FB1: until the slam after its last swing
+	if t.move == BossAttackTable.Move.COMBO:  # Until the slam after its last swing
 		t.active_ticks = maxi(t.active_ticks, t.count * t.mark_gap_ticks + 1)
-	if t.move == BossAttackTable.Move.MIMIC_COMBO:  # v0.8.0 FB3: until its last swing
+	if t.move == BossAttackTable.Move.MIMIC_COMBO:  # Until its last swing
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 1)
-	if t.move == BossAttackTable.Move.MIMIC_SHOTS:  # v0.8.0 FB3: until its last volley
+	if t.move == BossAttackTable.Move.MIMIC_SHOTS:  # Until its last volley
 		t.active_ticks = maxi(t.active_ticks, (t.volleys - 1) * t.gap_ticks + 1)
-	if t.move == BossAttackTable.Move.CARD_CAST:  # v0.8.0 FB3: until a card's last arc repeat
+	if t.move == BossAttackTable.Move.CARD_CAST:  # Until a card's last arc repeat
 		t.active_ticks = maxi(t.active_ticks, NemesisBuild.ARC_REPEATS_MAX * t.mark_gap_ticks + 1)
 	if t.move == BossAttackTable.Move.SPIKE_CHASE or t.move == BossAttackTable.Move.SPIKE_BURST:
 		t.active_ticks = maxi(t.active_ticks, (t.steps - 1) * t.mark_gap_ticks + 1)
-	if t.move == BossAttackTable.Move.CROSS:  # v0.8.0 FB2: the spin, then its window
+	if t.move == BossAttackTable.Move.CROSS:  # The spin, then its window
 		t.spin_ticks = SimTick.seconds_to_ticks(float(sp.get("spin_seconds", 0.0)))
 		t.window_ticks = SimTick.seconds_to_ticks(float(sp.get("window_seconds", 0.0)))
 		t.active_ticks = maxi(t.active_ticks, t.spin_ticks + t.window_ticks)
@@ -52,10 +52,10 @@ static func compile_boss_attack(
 	_compile_signature(def, t)
 	_compile_tide(def, t)
 	_compile_judge(def, t)
-	ShadeCompiler.compile_attack(def, t)  # v0.9.0 NB4: Lights Out's dark, the Snuff
-	if t.pillar_ticks > 0:  # v0.8.0 BS1 (S1): the last cross's pillars rise the tick after it strikes
+	ShadeCompiler.compile_attack(def, t)  # Lights Out's dark, the Snuff
+	if t.pillar_ticks > 0:  # The last cross's pillars rise the tick after it strikes
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 2)
-	HardCompiler.compile_attack(def, t)  # v0.9.5 BH2: the five harder spells (a second cross lengthens the active time)
+	HardCompiler.compile_attack(def, t)  # The five harder spells (a second cross lengthens the active time)
 	if sp.has("pattern_id"):
 		var pd: BulletPatternDefinition = repo.get_def(
 			&"bullet_patterns", StringName(sp["pattern_id"])
@@ -66,15 +66,15 @@ static func compile_boss_attack(
 				t.move == BossAttackTable.Move.GAZE
 				or t.move == BossAttackTable.Move.LEAP
 				or t.move == BossAttackTable.Move.CROSS
-			)  # v0.8.0 FB1: a leap's ring fires on its landing, inside its flight; FB2: a Cross's orbs repeat
+			)  # A leap's ring fires on its landing, inside its flight; FB2: a Cross's orbs repeat
 			if t.egg_ticks <= 0 and not own_clock:
-				# v0.8.0 BS1 (S3): an egg bursts on its own clock, after the attack; v0.8.0 BS2 (S4): a gaze's orbs
+				# An egg bursts on its own clock, after the attack; a gaze's orbs
 				# fire again and again over its own active time.
 				t.active_ticks = maxi(t.active_ticks, t.pattern.duration_ticks())
-			if t.recall_ticks > 0:  # v0.8.0 BS1 (S2): out, stuck, then back along the same lines
+			if t.recall_ticks > 0:  # Out, stuck, then back along the same lines
 				t.recall_at = t.pattern.duration_ticks() + t.pattern.life_ticks + t.recall_ticks
 				t.active_ticks = maxi(t.active_ticks, t.recall_at + t.pattern.life_ticks + 1)
-			if t.move == BossAttackTable.Move.MARKS and t.egg_ticks <= 0:  # v0.7.5 BF2: the last egg's burst
+			if t.move == BossAttackTable.Move.MARKS and t.egg_ticks <= 0:  # The last egg's burst
 				t.active_ticks = maxi(
 					t.active_ticks,
 					(
@@ -85,7 +85,7 @@ static func compile_boss_attack(
 				)
 
 
-## v0.8.0 BS1 (owner O5; BOSS_SIGNATURES.md S1-S3): the signature numbers: the Gatekeeper's pillars, the Warlord's
+## The signature numbers: the Gatekeeper's pillars, the Warlord's
 ## recall, the Brood Mother's eggs (their enemy kind and cap come from enemy_id and max_alive, as a brood's), and the
 ## late part's death line. burst_phase is 1-based in data, a phase index here (99 = never).
 static func _compile_signature(def: BossAttackDefinition, t: BossAttackTable) -> void:
@@ -98,7 +98,7 @@ static func _compile_signature(def: BossAttackDefinition, t: BossAttackTable) ->
 	t.egg_ticks = SimTick.seconds_to_ticks(float(sp.get("egg_seconds", 0.0)))
 	t.egg_hp = int(sp.get("egg_hp", 0))
 	t.burst_phase = int(sp["burst_phase"]) - 1 if sp.has("burst_phase") else 99
-	# v0.8.0 BS2 (S4-S6): the Hive Lens's gaze, the Siege Engine's ricochets, the Foundry's lava and melt.
+	# S4-S6: the Hive Lens's gaze, the Siege Engine's ricochets, the Foundry's lava and melt.
 	t.quarter_ticks = SimTick.seconds_to_ticks(float(sp.get("quarter_seconds", 0.0)))
 	t.reverse_ticks = SimTick.seconds_to_ticks(float(sp.get("reverse_seconds", 0.0)))
 	t.orb_every_ticks = SimTick.seconds_to_ticks(float(sp.get("orb_every_seconds", 0.0)))
@@ -116,7 +116,7 @@ static func _compile_signature(def: BossAttackDefinition, t: BossAttackTable) ->
 	_compile_great_javelin(sp, t)
 
 
-## v0.11.0 F9 (BossGreatJavelin): the great javelin's embedded time, quake ring and recall, in sim units.
+## BossGreatJavelin: the great javelin's embedded time, quake ring and recall, in sim units.
 static func _compile_great_javelin(sp: Dictionary, t: BossAttackTable) -> void:
 	if t.move != BossAttackTable.Move.GREAT_JAVELIN:
 		return
@@ -129,14 +129,14 @@ static func _compile_great_javelin(sp: Dictionary, t: BossAttackTable) -> void:
 	t.great_recall_speed = float(sp.get("recall_speed_mps", 0.0)) / SimTick.TICKS_PER_SECOND
 
 
-## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): a `tide` attack's pull and push (speeds in metres per tick, times in
+## BOSSES_4_5.md N1; BossTide: a `tide` attack's pull and push (speeds in metres per tick, times in
 ## ticks; its active time is the two) and the rings' bend (1/4096 turns a tick, at least 1 when it bends at all); a
 ## `marks` attack's Undertow drag.
 static func _compile_tide(def: BossAttackDefinition, t: BossAttackTable) -> void:
 	var sp := def.shape_params
 	t.drag_m = float(sp.get("drag_m", 0.0))
 	t.drag_reach_m = float(sp.get("drag_reach_m", 0.0))
-	t.twin_look = StringName(sp.get("twin_look", ""))  # v0.9.0 NB2: the twin's Crossfire embers
+	t.twin_look = StringName(sp.get("twin_look", ""))  # The twin's Crossfire embers
 	if t.move != BossAttackTable.Move.TIDE:
 		return
 	t.tide_pull = float(sp.get("pull_mps", 0.0)) / SimTick.TICKS_PER_SECOND
@@ -150,22 +150,22 @@ static func _compile_tide(def: BossAttackDefinition, t: BossAttackTable) -> void
 	t.active_ticks = maxi(t.active_ticks, t.tide_pull_ticks + t.tide_push_ticks)
 
 
-## v0.9.0 NB1: a boss's signature cadence (BossTable.sig_every_ticks; 0 = none).
+## A boss's signature cadence (BossTable.sig_every_ticks; 0 = none).
 static func compile_cadence(def: BossDefinition, t: BossTable) -> void:
 	t.sig_every_ticks = SimTick.seconds_to_ticks(def.signature_every_seconds)
 	t.sig_first_ticks = SimTick.seconds_to_ticks(def.signature_first_seconds)
 	_compile_twin(def, t)
-	ShadeCompiler.compile_boss(def, t)  # v0.9.0 NB4: the Lantern Shade's room light
-	QuakeCompiler.compile_boss(def, t)  # v0.11.0 O3: the Gatekeeper's quake pillars
-	HazardCompiler.compile_boss(def, t)  # v0.11.0 F8: the arena hazards
-	for a in def.attacks:  # v0.9.0 NB3: the Clockwork Judge records for its echo (its first echo's numbers)
+	ShadeCompiler.compile_boss(def, t)  # The Lantern Shade's room light
+	QuakeCompiler.compile_boss(def, t)  # The Gatekeeper's quake pillars
+	HazardCompiler.compile_boss(def, t)  # The arena hazards
+	for a in def.attacks:  # The Clockwork Judge records for its echo (its first echo's numbers)
 		if a != null and a.move == &"echo":
 			t.echo_gap_ticks = echo_gap(a)
 			t.echo_points = echo_points(a)
 			break
 
 
-## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): an echo's step (ticks) and its points (record over step).
+## BOSSES_4_5.md N3; BossJudge: an echo's step (ticks) and its points (record over step).
 static func echo_gap(a: BossAttackDefinition) -> int:
 	return maxi(1, SimTick.seconds_to_ticks(float(a.shape_params.get("step_seconds", 0.0))))
 
@@ -175,7 +175,7 @@ static func echo_points(a: BossAttackDefinition) -> int:
 	return clampi(ticks / echo_gap(a), 1, BossSchemas.ECHO_MAX_POINTS)
 
 
-## v0.9.0 NB3: an echo's points and spacing (its active time: until its last point strikes) and its safe margin; a
+## An echo's points and spacing (its active time: until its last point strikes) and its safe margin; a
 ## Verdict's square.
 static func _compile_judge(def: BossAttackDefinition, t: BossAttackTable) -> void:
 	var sp := def.shape_params
@@ -188,7 +188,7 @@ static func _compile_judge(def: BossAttackDefinition, t: BossAttackTable) -> voi
 	t.active_ticks = maxi(t.active_ticks, (t.echo_points - 1) * t.echo_gap_ticks + 1)
 
 
-## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): a twin boss's second body (its kind), its chain and its anger.
+## BOSSES_4_5.md N2; BossTwin: a twin boss's second body (its kind), its chain and its anger.
 static func _compile_twin(def: BossDefinition, t: BossTable) -> void:
 	t.twin_kind = TWIN_KINDS.get(def.twin_kind_id, -1)
 	if t.twin_kind < 0:
@@ -202,7 +202,7 @@ static func _compile_twin(def: BossDefinition, t: BossTable) -> void:
 	t.flank_m = def.flank_m
 	t.anger_permille = def.anger_speed_permille
 	t.anger_ticks = SimTick.seconds_to_ticks(def.anger_seconds)
-	# v0.11.0 O5 (owner L7, Q11, Q29): the two movesets, the standing-back bolt, the last phase's swap
+	# The two movesets, the standing-back bolt, the last phase's swap
 	for a in t.attacks:
 		a.twin_body = def.twin_attack_ids.has(String(a.id))
 	t.twin_bolt = t.attack_index(def.twin_bolt_attack) if def.twin_bolt_attack != &"" else -1
@@ -212,7 +212,7 @@ static func _compile_twin(def: BossDefinition, t: BossTable) -> void:
 	t.twin_guard_permille = def.twin_guard_permille
 
 
-## v0.7.5 EF (owner N16): an enemy's patterns, one per attack in order (null where an attack names none): the Arc
+## An enemy's patterns, one per attack in order (null where an attack names none): the Arc
 ## Caster's bolt and spread fans, the Lens Drone's ring, the Bomb Drone's lobbed burst. A pattern attack is active
 ## until its last wave (its pattern's duration; the data's active_seconds is a floor).
 static func compile_enemy_patterns(
@@ -234,7 +234,7 @@ static func compile_enemy_patterns(
 		t.patterns.clear()
 
 
-## v0.7.5 BF1: a bullet pattern in sim units (BulletPatterns fires it).
+## A bullet pattern in sim units (BulletPatterns fires it).
 static func compile_pattern(def: BulletPatternDefinition) -> BulletPatternTable:
 	var t := BulletPatternTable.new()
 	t.id = def.id
@@ -262,8 +262,8 @@ static func compile_pattern(def: BulletPatternDefinition) -> BulletPatternTable:
 	t.gap_offset_m = def.gap_offset_m
 	t.gap_shift_m = def.gap_shift_m
 	t.crossing = def.crossing
-	t.cross_delay_ticks = SimTick.seconds_to_ticks(def.cross_delay_seconds)  # v0.9.5 BH3 (B6)
-	t.counter_arms = def.counter_arms  # v0.9.5 BH3 (B9)
+	t.cross_delay_ticks = SimTick.seconds_to_ticks(def.cross_delay_seconds)  # v0.9.5 BH3
+	t.counter_arms = def.counter_arms  # v0.9.5 BH3
 	t.counter_spin_milli = int(
 		round(def.counter_spin_dps * 4096.0 / 360.0 * 1000.0 / SimTick.TICKS_PER_SECOND)
 	)

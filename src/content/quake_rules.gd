@@ -1,6 +1,6 @@
 class_name QuakeRules
 extends RefCounted
-## v0.11.0 O3 (owner L5, Q9 a; BossQuake): the content rules of a boss's quake pillars (BossDefinition.quake, its own
+## The content rules of a boss's quake pillars (BossDefinition.quake, its own
 ## file: the boss definitions stay small). Every key is known and within its bounds; the ring's warning lasts the
 ## telegraph minimum and fits in its pulse; the pillars start in a phase the boss has; a recap line is named.
 

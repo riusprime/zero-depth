@@ -22,7 +22,7 @@ const CHUNK := Color("#FFD9B0")
 const NAME_PX := 28
 const NAME_M := 0.18
 
-## Built in setup (v0.9.0 CI: two up-front ones, replaced there, were left orphaned).
+## Built in setup (two up-front ones, replaced there, were left orphaned).
 var _fill: MeshInstance3D
 var _chunk: MeshInstance3D
 var _name := Label3D.new()
@@ -64,7 +64,7 @@ func set_fraction(frac: float) -> void:
 	else:
 		_shown = maxf(_shown, f)
 	_frac = f
-	if f != before_frac or _shown != before_shown:  # v0.9.5 PF3: the layout is a function of these two only
+	if f != before_frac or _shown != before_shown:  # The layout is a function of these two only
 		_layout()
 
 

@@ -1,6 +1,6 @@
 class_name EnemyPalettes
 extends RefCounted
-## v0.8.0 EC (owner O2, Q1 "By role"): the normal enemy kinds' colours, one table, so the owner's G2 pick is a data
+## The normal enemy kinds' colours, one table, so the owner's G2 pick is a data
 ## swap. Families by role, shades differing inside a role: melee rushers red / orange, ranged casters blue / violet,
 ## bombers and mines yellow, support green, tanks bronze. Every kind keeps its glowing eye (or visor), the outline,
 ## the team ring and the red bar, so it still reads as hostile. Bosses keep their own colours; elites keep their crown.

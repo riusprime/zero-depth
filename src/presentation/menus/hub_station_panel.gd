@@ -1,6 +1,6 @@
 class_name HubStationPanel
 extends MenuPanel
-## v0.9.0 HB: a hub station's stand-in panel (the Wardrobe until RB's robes and affinities, the Progression Station
+## A hub station's stand-in panel (the Wardrobe until RB's robes and affinities, the Progression Station
 ## until MP's Rune Fragments): its name, one line on what will be there, and Back. In Astral over the blurred hub
 ## (MenuPanel; v0.11.1 Step 13). Esc, pad B or Back closes it.
 

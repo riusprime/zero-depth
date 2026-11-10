@@ -68,6 +68,9 @@ Superseded rules are listed in ROADMAP §3.
 - **Every player-facing feature is reachable from the real game,** proved by an e2e test that drives `main.tscn`
   through `Input.parse_input_event` only.
 - **Decisions go into docs the same day** (PLAN, PROGRESS, LOCKED_DECISIONS). Never leave them only in chat.
+- **Comments say what and why, not when** (owner, 2026-11-10). No version, step id, owner-line id or date in a code
+  comment (`# v0.9.0 P3 (owner O32): …`): git and the PLAN hold the history. A decision's reason belongs in the
+  sentence itself.
 - **The 1,000-line file cap is not dodged** (owner, 2026-11-10: the lead decides the cap; it stays 1,000). Split a
   file by responsibility, never just to fit, and never into a helper that only holds the overflow. An exemption
   (`# gdlint: disable=max-file-lines`) needs a row with its reason in `tests/arch/test_line_cap.gd`.

@@ -1,6 +1,6 @@
 class_name BladeCardIcons
 extends RefCounted
-## v0.8.0 BL (docs/roadmap/v0.8.0/BLADE_AUDIT.md B4): the symbols of the two Blade multiplier cards, in the item
+## The symbols of the two Blade multiplier cards, in the item
 ## icons' style (ItemIcons: shapes in a unit box, y down, drawn with CanvasItem calls, no external art).
 ## ItemIcons.shapes falls through to these, so a card, the wand row and the Codex show them.
 ## - Blade Storm: two spinning blades flying out on a loop that comes back.

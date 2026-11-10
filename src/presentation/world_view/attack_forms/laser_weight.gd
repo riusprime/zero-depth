@@ -1,6 +1,5 @@
 class_name LaserWeight
 extends RefCounted
-## v0.10.5 W3-O8 (owner F14, 2026-11-04: the Laser "doesn't feel as powerful or impactful as other attack forms"):
 ## what gives the Laser's beam its weight, as numbers LaserView reads:
 ## - core + glow: the ribbon is GLOW_WIDTH times the look's width; the look's strip draws in its middle 1 / GLOW_WIDTH
 ##   (the core, as before) and a soft halo in the look's edge and deep colours fills the rest (glow(), by density);
@@ -30,13 +29,13 @@ static func glow(density: String) -> float:
 	return float(GLOW.get(density, GLOW["medium"]))
 
 
-## v0.11.0 O1: the share of the lance drawn `age` ticks after its shot (0 to 1 over DRAW_TICKS, eased out).
+## The share of the lance drawn `age` ticks after its shot (0 to 1 over DRAW_TICKS, eased out).
 static func lance_drawn(age: float) -> float:
 	var u := clampf(age / DRAW_TICKS, 0.0, 1.0)
 	return 1.0 - (1.0 - u) * (1.0 - u)
 
 
-## v0.11.0 O1: the lance's glow `age` ticks after its shot, of `glow_ticks` in all: 1 while it draws, then down to 0.
+## The lance's glow `age` ticks after its shot, of `glow_ticks` in all: 1 while it draws, then down to 0.
 static func lance_fade(age: float, glow_ticks: float) -> float:
 	if age <= DRAW_TICKS:
 		return 1.0

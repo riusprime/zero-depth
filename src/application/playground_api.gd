@@ -1,7 +1,7 @@
 # gdlint: disable=max-public-methods
 class_name PlaygroundApi
 extends RefCounted
-## v0.7.5 PG (owner N20, docs/tools/PLAYGROUND.md): the Playground's commands. The panel queues them and SimDriver
+## The Playground's commands. The panel queues them and SimDriver
 ## applies them between ticks (apply_pending), also while the panel holds the sim paused, so a placed dummy shows at
 ## once. They touch only the Playground's World, never a run's.
 ## - Dummies are the sim's DUMMY actor (the enemy team: hits, procs, statuses and on-kill triggers land on it), still
@@ -36,7 +36,7 @@ var world: World
 var god := false
 ## Ids of the endless dummies.
 var endless := {}
-## v0.8.0 FB1: the final boss's bodies (indices into World.boss_tables, in phase order: found by their kinds), the
+## The final boss's bodies (indices into World.boss_tables, in phase order: found by their kinds), the
 ## shatter's length and the fight's name (Main sets the last two from the run's content).
 var final_tables := PackedInt32Array()
 var final_shatter_ticks := 90
@@ -104,17 +104,17 @@ func remove_card(code: int) -> void:
 	_queue.append(func() -> void: remove_card_now(code))
 
 
-## v0.8.0 FB1: the final boss's fight from body `phase` (0 = the first), at the room's centre.
+## The final boss's fight from body `phase` (0 = the first), at the room's centre.
 func summon_final(phase: int = 0) -> void:
 	_queue.append(func() -> void: summon_final_now(phase))
 
 
-## v0.8.0 FB1: the fight goes to body `phase` now (a fight is summoned first when none runs).
+## The fight goes to body `phase` now (a fight is summoned first when none runs).
 func final_phase(phase: int) -> void:
 	_queue.append(func() -> void: final_phase_now(phase))
 
 
-## v0.10.5 O3 (owner L6): the fight goes to the Prism with her HP just under her last phase's threshold.
+## The fight goes to the Prism with her HP just under her last phase's threshold.
 func final_prism_last() -> void:
 	_queue.append(func() -> void: final_prism_last_now())
 
@@ -123,7 +123,7 @@ func heal() -> void:
 	_queue.append(func() -> void: world.actors.hp[0] = world.actors.max_hp[0])
 
 
-## v0.10.5 O17: any command run between ticks like the others (the Training Room's, which answer with a line).
+## Any command run between ticks like the others (the Training Room's, which answer with a line).
 func queue(c: Callable) -> void:
 	_queue.append(c)
 
@@ -158,7 +158,7 @@ func place_boss_now(table_index: int, at: Vector2) -> bool:
 	return true
 
 
-## v0.8.0 FB1: clears the room's enemies and bosses, then the final boss's body `phase` rises at the room's centre.
+## Clears the room's enemies and bosses, then the final boss's body `phase` rises at the room's centre.
 ## False without the final boss's tables.
 func summon_final_now(phase: int = 0) -> bool:
 	if final_tables.is_empty():
@@ -179,7 +179,7 @@ func final_phase_now(phase: int) -> bool:
 	return true
 
 
-## v0.10.5 O3: the Prism (body 1) with her HP one under her last phase's threshold (her fill is kept as she rises).
+## The Prism (body 1) with her HP one under her last phase's threshold (her fill is kept as she rises).
 func final_prism_last_now() -> bool:
 	if not final_phase_now(1):
 		return false
@@ -335,7 +335,7 @@ func catalog() -> Array[Dictionary]:
 		_add_entry(out, k, group, CardLevels.is_card(world, k))
 	for a in world.ability_tables.size():
 		var t := world.ability_tables[a]
-		if t.start_weapon == 0 and not t.retired:  # v0.10.5 O1: never a deleted ability's stub
+		if t.start_weapon == 0 and not t.retired:  # Never a deleted ability's stub
 			_add_entry(out, Offers.ability_code(a), GROUP_ABILITY, true)
 	for s in world.stat_tables.size():
 		for r in STAT_RARITIES:
@@ -418,7 +418,7 @@ func _remove(gone: PackedInt32Array) -> void:
 			if world.boss_id == id:
 				world.boss_id = -1
 		if world.final_fight != null and world.final_fight.body_id == id:
-			world.final_fight = null  # v0.8.0 FB1: the fight ends with its body
+			world.final_fight = null  # The fight ends with its body
 		endless.erase(id)
 	a.remove_sorted(gone)
 	if world.boss_id < 0 and world.bosses.size() > 0:

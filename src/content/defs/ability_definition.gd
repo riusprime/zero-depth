@@ -11,7 +11,7 @@ extends ContentDef
 ##   finisher's shockwave (radius_m, damage).
 ## - PULSE_GUN: level_damage scales the bolts and the Scatter Blast; level_extra 1 = bolts pierce one enemy;
 ##   level_count = bolts per shot (2 = twin bolts).
-## - BOMB_LOBBER (MX2): every `every_attacks`-th weapon attack, once cooldown_seconds has passed, lobs level_count
+## - BOMB_LOBBER: every `every_attacks`-th weapon attack, once cooldown_seconds has passed, lobs level_count
 ##   bombs (form LOB) at the densest cluster within range_m; each lands after duration_seconds for `damage` in
 ##   radius_m x level_radius.
 ## - DRONE_BUDDY: level_count drones trail the player; each fires a copy of the weapon's attack (MX2: a bolt that
@@ -23,16 +23,16 @@ extends ContentDef
 ##   shock of `damage` in radius_m x level_radius; level_extra = charges.
 ## - AEGIS (utility button): the guard (guard numbers from the player table); level_extra = the guard-charge cap,
 ##   `damage` = each charge's bonus to the next swing, in per mille.
-## v0.4.0 AB: three auto abilities that feed the v0.3.0 status engines (Engines). `engine_item` names the item whose
+## Three auto abilities that feed the v0.3.0 status engines (Engines). `engine_item` names the item whose
 ## engine numbers (threshold, how long stacks last, the DoT or discharge, the freeze) the ability's status uses when no
 ## owned item brings stronger ones; level_extra = the status stacks each hit adds.
-## - ARC_FIELD (MX2): a weapon attack leaves a shock field (form ZONE) where it ends, at most once every
+## - ARC_FIELD: a weapon attack leaves a shock field (form ZONE) where it ends, at most once every
 ##   level_cooldown: radius_m, lasting duration_seconds; an enemy in it takes `damage` and level_extra shock stacks
 ##   once every hit_seconds, at most level_count enemies a tick.
-## - FROST_NOVA (MX2): the frost element on the weapon (its `modifiers`), and a nova (form RING) of radius_m x
+## - FROST_NOVA: the frost element on the weapon (its `modifiers`), and a nova (form RING) of radius_m x
 ##   level_radius around the player when streak_kills kills come within streak_seconds of each other (at most once
 ##   every level_cooldown): `damage` and level_extra frost stacks to every enemy the ring passes.
-## - FLAME_TRAIL (MX2): your dash and your projectiles leave fire (form ZONE): a patch (radius_m x level_radius)
+## - FLAME_TRAIL: your dash and your projectiles leave fire (form ZONE): a patch (radius_m x level_radius)
 ##   every TRAIL_SPACING_M of a dash and where a projectile ends (at most one every period_seconds), lasting
 ##   duration_seconds x level_rate; an enemy in fire takes `damage` x level_damage and level_extra burn stacks, once
 ##   every hit_seconds.
@@ -70,7 +70,7 @@ const TAGS: Array[StringName] = [
 	&"frost",
 	&"fire"
 ]
-## v0.4.0 AB: the kinds that feed a status engine (they need engine_item).
+## The kinds that feed a status engine (they need engine_item).
 const ENGINE_KINDS: Array[int] = [Kind.ARC_FIELD, Kind.FROST_NOVA, Kind.FLAME_TRAIL]
 
 @export var kind := Kind.BOMB_LOBBER
@@ -81,7 +81,7 @@ const ENGINE_KINDS: Array[int] = [Kind.ARC_FIELD, Kind.FROST_NOVA, Kind.FLAME_TR
 @export var desc_key: StringName
 ## The build weapon whose slot 1 this ability is (&"blade", &"gun"), or empty for an ability card.
 @export var start_weapon: StringName = &""
-## v0.9.5 CLV (CARD_LEVELS.md C19): false = a starting weapon is never offered as a card (no level-ups; the Pulse Gun).
+## CARD_LEVELS.md C19: false = a starting weapon is never offered as a card (no level-ups; the Pulse Gun).
 ## Its level data stays so an old save keeps its level.
 @export var offered := true
 @export var tags: Array[StringName] = []
@@ -93,14 +93,14 @@ const ENGINE_KINDS: Array[int] = [Kind.ARC_FIELD, Kind.FROST_NOVA, Kind.FLAME_TR
 @export var period_seconds := 0.0
 @export var duration_seconds := 0.0
 @export var hit_seconds := 0.0
-## v0.4.0 AB: the item (an id under data/items) whose engine numbers this ability's status uses; empty for none.
+## The item (an id under data/items) whose engine numbers this ability's status uses; empty for none.
 @export var engine_item: StringName = &""
-## v0.6.0 MX2: the modifiers (ModifierDefinition ids) the ability adds to the build while held (Frost Nova's frost
+## The modifiers (ModifierDefinition ids) the ability adds to the build while held (Frost Nova's frost
 ## element), in this order, at the ability's place in the slot order.
 @export var modifiers: Array[StringName] = []
-## v0.6.0 MX2: Bomb Lobber lobs on every Nth weapon attack (0 = not attack-driven).
+## Bomb Lobber lobs on every Nth weapon attack (0 = not attack-driven).
 @export var every_attacks := 0
-## v0.6.0 MX2: Frost Nova's kill streak: this many kills, each within streak_seconds of the one before.
+## Frost Nova's kill streak: this many kills, each within streak_seconds of the one before.
 @export var streak_kills := 0
 @export var streak_seconds := 0.0
 @export_group("Levels (L1..L5)")
@@ -194,7 +194,7 @@ func validate() -> Array[ValidationIssue]:
 			check_positive(issues, "range_m", range_m)
 			check_positive(issues, "level_cooldown[0]", level_cooldown[0])
 		Kind.ARC_FIELD:
-			check_positive(issues, "radius_m", radius_m)  # v0.6.0 MX2: the field
+			check_positive(issues, "radius_m", radius_m)  # The field
 			check_positive(issues, "duration_seconds", duration_seconds)
 			check_positive(issues, "hit_seconds", hit_seconds)
 			check_positive(issues, "damage", damage)
@@ -220,7 +220,7 @@ func validate() -> Array[ValidationIssue]:
 	return issues
 
 
-## v0.4.0 AB (ContentValidator, over the whole set): every engine_item names an item that exists.
+## ContentValidator, over the whole set: every engine_item names an item that exists.
 static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 	var issues: Array[ValidationIssue] = []
 	var items := {}

@@ -2,7 +2,7 @@ class_name ElementPairsDefinition
 extends ContentDef
 ## v0.9.5 EE3 (ELEMENTS.md X1-X10; the owner: "maybe we could add some special combinations so something else happens
 ## when you have 2 level 3 elements they do something special"): the numbers of the ten element pairs. A pair is on
-## while the Gun holds both of its elements (Fire, Lightning, Frost, Venom, Bleed) at any level (v0.9.5 EP1); its pair
+## while the Gun holds both of its elements (Fire, Lightning, Frost, Venom, Bleed) at any level; its pair
 ## level is the lower of the two elements' levels, and level_permille scales its strength (the numbers below are Lv 3).
 ## One `.tres`
 ## (data/combos/element_pairs.tres), compiled by WandCompiler into ElementPairTable (World.pair_table). Every number
@@ -26,14 +26,14 @@ extends ContentDef
 
 ## A pair's strength at pair Lv 1/2/3, per mille of the Lv 3 bonus.
 @export var level_permille := PackedInt32Array([400, 700, 1000])
-## v0.10.5 W3-P1 (the progression audit's P1, owner 2026-11-04): elements add with diminishing returns on one target.
+## Elements add with diminishing returns on one target.
 ## An element's damage on an enemy already carrying k other elements counts at this share, per mille, for k = 0, 1, 2
 ## and 3 or more (ElementStack). 0..4 values, each 1..1000, never rising; empty = no falloff.
 @export var stack_falloff_permille := PackedInt32Array()
-## v0.10.5 W3-P10c (owner W7, C1 Prism): on a run without an Element limit (the Blade's), each Prism held makes the
+## On a run without an Element limit (the Blade's), each Prism held makes the
 ## falloff this many steps softer: an element counts as if its enemy carried that many fewer other elements. 0..3.
 @export var prism_falloff_steps := 1
-## v0.10.5 W3-P1b: a hero Lightning hit (the Storm card's chain or strike) leaves its enemy charged this long, so
+## A hero Lightning hit (the Storm card's chain or strike) leaves its enemy charged this long, so
 ## Lightning counts as carried in the others' falloff (ElementStack). 0 = no mark; 0..5 s.
 @export var storm_mark_seconds := 0.0
 @export var triggers_per_second := 4

@@ -1,6 +1,6 @@
 class_name SpellZones
 extends RefCounted
-## v0.11.0 O11 (owner Q17-Q20; docs/roadmap/v0.11.0/SPELLS.md, every row approved; SIM_CONTRACTS §8p): the spells that
+## The spells that
 ## last, one store for all of them (World.spell_zone_*, oldest first, hashed with the spells): each zone is a kind, the
 ## spell and level that made it, a root, the tick it ends, its next pulse, its damage a pulse, two counters, a centre,
 ## a velocity and a radius. Every period_ticks (the spell's) a zone pulses: it hits each living enemy whose centre is
@@ -8,24 +8,24 @@ extends RefCounted
 ## (Spells.status); each pulse is its own root. At its end some zones do one last thing (finish). The fire patches of
 ## the wand (ElementAbilities) run AttackSpecs from the wand's book; a spell has no spec there, so the spells keep
 ## this store of their own and reuse the statuses and the burn (Engines, Venom) as they are.
-## - BLIZZARD (F1): locked on the densest pack; Lv 5: what is still inside at the end freezes bonus_ticks.
+## - BLIZZARD: locked on the densest pack; Lv 5: what is still inside at the end freezes bonus_ticks.
 ## - FIRE (B2 Burning Ground; Fireball's Lv 5 ground; Meteor's Lv 5 crater): burns what stands in it; B2 Lv 5 (aux 1)
 ##   follows you at speed_m_tick (half the hero's walk).
-## - METEOR_MARK (B3): no pulse; at its end the strike hits what is inside the mark then (enemies can walk out), burns
+## - METEOR_MARK: no pulse; at its end the strike hits what is inside the mark then (enemies can walk out), burns
 ##   and knocks down for the level's ticks (a hold); Lv 5 leaves a crater (FIRE) of bonus_radius_m for bonus_ticks.
-## - ORB (L2): rolls on at its velocity, each pulse zaps the nearest `count` enemies within its radius; Lv 5: a burst
+## - ORB: rolls on at its velocity, each pulse zaps the nearest `count` enemies within its radius; Lv 5: a burst
 ##   of bonus_radius_m at its end.
-## - STATIC (L3): around you; Lv 5: your dash discharges it (a bonus_radius_m burst of bonus_damage; it ends).
+## - STATIC: around you; Lv 5: your dash discharges it (a bonus_radius_m burst of bonus_damage; it ends).
 ## - POOL (V1, landed by the orb in flight): a venom pool; Lv 5 (aux 0): an enemy that dies in it leaves a small pool
 ##   (aux 1, bonus_radius_m for bonus_ticks; at most SMALL_POOLS at once; a small one leaves none).
-## - CLOUD (V2): follows you, each pulse drops a PUFF (its radius, bonus_ticks long) where you stand; the puffs pulse on
+## - CLOUD: follows you, each pulse drops a PUFF (its radius, bonus_ticks long) where you stand; the puffs pulse on
 ##   the cloud's beat and hit an enemy once a tick however many it stands in; Lv 5: they slow (a hold).
-## - VINE (V3): stands where it grew, each pulse its `count` heads spit at the nearest enemies within reach (one each);
+## - VINE: stands where it grew, each pulse its `count` heads spit at the nearest enemies within reach (one each);
 ##   Lv 5: a spit passes through `pierce` more on its line.
 ## - RING_LATER (X1 Lv 3+): the second ring of thorns, at its end. THORN_WALL (X1 Lv 5): the ring stays, pulsing.
-## - HEMO (X2): follows its mark (aux: the actor id); at its end: the hit, then all its bleed at once (one DoT tick of
+## - HEMO: follows its mark (aux: the actor id); at its end: the hit, then all its bleed at once (one DoT tick of
 ##   what the bleed had left), and its stacks spread to the enemies within the radius.
-## - LEECH (X3): around you, drains the bleeding enemies within its radius (Lv 5: the others at half); aux counts the
+## - LEECH: around you, drains the bleeding enemies within its radius (Lv 5: the others at half); aux counts the
 ##   HP it took, aux2 the HP it healed: you heal 1 HP per heal_per_damage, at most the level's heal_cap a cast.
 ## Bounded: at most MAX zones (a new one past it is not made). No randomness.
 
@@ -224,7 +224,7 @@ static func _ids(w: World, idx: PackedInt32Array) -> PackedInt32Array:
 	return out
 
 
-## V3: each head spits at one of the nearest enemies within reach of the vine (Lv 5: through `pierce` more).
+## Each head spits at one of the nearest enemies within reach of the vine (Lv 5: through `pierce` more).
 static func _spit(w: World, k: int, t: SpellTable) -> void:
 	var at := w.spell_zone_pos[k]
 	var lv := w.spell_zone_level[k]

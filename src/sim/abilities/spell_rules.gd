@@ -1,6 +1,6 @@
 class_name SpellRules
 extends RefCounted
-## v0.11.0 O10: the spells' shared rules (ContentCompiler.compile_spell_rules from SpellRulesDefinition). Read-only in
+## The spells' shared rules (ContentCompiler.compile_spell_rules from SpellRulesDefinition). Read-only in
 ## play (loadout).
 
 var slots := 4

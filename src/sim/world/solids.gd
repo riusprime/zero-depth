@@ -31,7 +31,7 @@ const PYLON_HALF_M := 0.5
 const CLEAR_M := 0.5
 ## The free circle (m) kept at a room's doorways and their approaches (clear_of_doors).
 const DOOR_CLEAR_M := 0.6
-## v0.11.0 O9b: the broadphase margin of blocks() (m, over rounding).
+## The broadphase margin of blocks() (m, over rounding).
 const BROAD_MARGIN_M := 0.01
 
 var on := false
@@ -111,7 +111,7 @@ static func reach_bonus(w: World, p_kind: int, p_ref: int) -> float:
 	return maxf(w.solids.half[i].x, w.solids.half[i].y) if i >= 0 else 0.0
 
 
-## v0.9.5 SB (generation safety): `p`, a prop of half-side `h` placed on a spawn spot, moved just far enough that its
+## Generation safety: `p`, a prop of half-side `h` placed on a spawn spot, moved just far enough that its
 ## footprint leaves a 0.6 m circle (the hero and 0.2 m to spare) free at each of its room's doorways and their
 ## approaches. Unchanged when it already does (and when the solids are off).
 func clear_of_doors(f: FloorLayout, p: Vector2, h: float = PROP_HALF_M) -> Vector2:
@@ -177,7 +177,7 @@ func push(at: Vector2, r: float) -> Vector2:
 
 ## Whether a standing footprint may touch the box `rect`.
 func any_near(rect: Rect2) -> bool:
-	# v0.11.0 O9b: a footprint clearly outside the grown box (BROAD_MARGIN_M over rounding) skips the exact test.
+	# A footprint clearly outside the grown box (BROAD_MARGIN_M over rounding) skips the exact test.
 	var lo := rect.position
 	var hi := rect.end
 	for i in kind.size():

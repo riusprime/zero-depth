@@ -42,7 +42,7 @@ static func setup(
 	p.entry = w.interactables.add(
 		Interactables.Kind.PURPLE_DAIS, f.purple_pos, DAIS_REACH_M + w.solids.bonus(), 0
 	)
-	w.solids.add_square(Solids.Kind.DAIS, 0, f.purple_pos)  # v0.9.5 SB: the dais is solid
+	w.solids.add_square(Solids.Kind.DAIS, 0, f.purple_pos)  # The dais is solid
 	w.purple = p
 
 

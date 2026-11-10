@@ -1,6 +1,6 @@
 class_name MechanicHints
 extends RefCounted
-## v0.11.0 O2 (owner L4, Q12 a): which boss hints show. A reason's hint (ObjectiveMarkers, ObjectiveHints) shows the
+## Which boss hints show. A reason's hint (ObjectiveMarkers, ObjectiveHints) shows the
 ## first MEETINGS runs in which the player meets it, then never again, and none show with Options "Boss hints" off
 ## (the `boss_hints` setting, on by default).
 ## The count lives in the Codex's profile section (CodexStore), page PAGE (outside CodexStore.PAGES, so no Codex page
@@ -15,7 +15,7 @@ const RUNS := &"runs"
 const LAST_RUN := &"last_run"
 ## A reason's hint shows in the first this-many runs that meet it.
 const MEETINGS := 2
-## Reasons whose hint shows at every meeting (v0.11.0 F5: the Gatekeeper's pillars, an arrow and no text).
+## Reasons whose hint shows at every meeting (the Gatekeeper's pillars, an arrow and no text).
 const ALWAYS: Array[StringName] = [WorldReader.OBJECTIVE_GATEKEEPER_PILLAR]
 
 var codex: CodexStore

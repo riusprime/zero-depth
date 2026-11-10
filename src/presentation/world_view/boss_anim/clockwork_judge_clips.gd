@@ -1,6 +1,6 @@
 class_name ClockworkJudgeClips
 extends RefCounted
-## v0.9.0 NB3: the Clockwork Judge's clips (the owner's tall brass automaton, cut into parts in its file since its
+## The Clockwork Judge's clips (the owner's tall brass automaton, cut into parts in its file since its
 ## skeleton is broken: body, the two pendulum arms with their gavels hanging from the shoulders, the waist gear cage,
 ## the chest clock's hour and minute hands; BossModels rigs each as a bone). Model frame: +X the front, +Z its right,
 ## -Z its left. A turn about Z swings an arm forward (+) or back (-) like a pendulum; the gears and the hands turn
@@ -45,7 +45,7 @@ static func library() -> Dictionary:
 			_death(),
 		]:
 			_lib[c.name] = c
-		BossClip.loosen(_lib, 0.015)  # v0.11.0 O16: the wind-up, the recoil, the idle sway
+		BossClip.loosen(_lib, 0.015)  # The wind-up, the recoil, the idle sway
 	return _lib
 
 

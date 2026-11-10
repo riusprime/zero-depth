@@ -1,6 +1,6 @@
 class_name CanyonShore
 extends RefCounted
-## v0.11.0 O13c (PLAN M2; docs/roadmap/v0.11.0/ENEMIES.md R5-R8, approved 2026-11-07; owner Q22): the Red Canyon's and
+## The Red Canyon's and
 ## the Frozen Shore's signature enemies. Their numbers are their EnemyTable's (CanyonShoreCompiler, from
 ## data/enemies/<id>.tres; starting values); what they leave on the floor is World.canyon_shore (CanyonShoreState).
 ## Every hit here comes from no actor (Damage.hit owner 0, as an explosive barrel's), with its own effect id and recap

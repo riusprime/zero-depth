@@ -1,6 +1,6 @@
 class_name VfxPackViews
 extends RefCounted
-## v0.10.0 VX3 (VFX_PACK R19-R26, R28-R30, R41; the owner's purchased Binbun pack through PackFx): the pack's version of
+## VFX_PACK R19-R26, R28-R30, R41; the owner's purchased Binbun pack through PackFx: the pack's version of
 ## the VfxLayer's zones (fire, frost, venom and bleed patches), rings, element bursts (frost, shatter, venom, bleed,
 ## Wildfire), the statuses on an enemy (burn, poison, frost) and Bulwark's guard orbs. The layer asks first; every
 ## function says whether the pack drew it, and the layer draws its old sprites when it did not (no PackFx, or no room
@@ -24,7 +24,7 @@ const ZONE_PER_M := {
 	&"ring_venom": 0.5,
 	&"ring_bleed": 0.55,
 }
-## v0.10.5 W3-S21: burst_frost was 0.22, sized while the scene's billboard dust kept its own 4 m whatever the scale
+## burst_frost was 0.22, sized while the scene's billboard dust kept its own 4 m whatever the scale
 ## (W3-S20); at 0.45 the dust spans about the blast's diameter again.
 const BURST_PER_M := {
 	&"burst_frost": 0.45,
@@ -59,14 +59,14 @@ const SHATTER_S := 0.9
 const WILDFIRE_S := 1.0
 ## A poisoned enemy pops a bubble about this often (ticks, plus up to as much again).
 const BUBBLE_TICKS := 70.0
-## A body's flames per metre of its height, its mist per metre of its radius. v0.10.5 W3-S21: the mist was 0.12, sized
+## A body's flames per metre of its height, its mist per metre of its radius. the mist was 0.12, sized
 ## while the pack's billboards ignored the scale (each mist puff drew 2.5-3 m, W3-S20); at 0.7 a 0.4 m body's cloud is
 ## puffs ~0.85 m spread ~0.55 m round the feet, about twice the body across. MIST_LIFT (per unit of the mist's scale,
 ## the scene's emission half-height) sets the cloud on the floor: the small puffs no longer reach above it from below.
 const FLAME_PER_M := 0.8
 const MIST_PER_M := 0.7
 const MIST_LIFT := 1.0
-## The guard orbs: how many circle the body, and their scale. v0.10.5 W3-S21: was 0.07 (the orb's 2 m star flare drew
+## The guard orbs: how many circle the body, and their scale. was 0.07 (the orb's 2 m star flare drew
 ## at full size whatever the scale, W3-S20; at 0.07 it is 0.14 m); 0.25 draws a ~0.5 m gold orb.
 const ORBS := 3
 const ORB_SCALE := 0.25
@@ -182,7 +182,7 @@ static func tint_fire_area(node: Node3D, hostile: bool) -> void:
 	var mat := src.duplicate() as ShaderMaterial  # (the scene's own is shared by every instance)
 	mat.set_shader_parameter(&"main_color", dim_fire(cols[&"tertiary"]))
 	mat.set_shader_parameter(&"edge_color", dim_fire(cols[&"primary"]))
-	mat.set_shader_parameter(&"glow_color", dim_fire(cols[&"primary"]))  # W3-S4 (F5): no white-hot core
+	mat.set_shader_parameter(&"glow_color", dim_fire(cols[&"primary"]))  # W3-S4: no white-hot core
 	wave.material_override = mat
 	wave.transparency = 1.0 - FIRE_ALPHA
 	var sparks := node.get_node_or_null("sparks") as GPUParticles3D
@@ -190,18 +190,18 @@ static func tint_fire_area(node: Node3D, hostile: bool) -> void:
 		sparks.amount_ratio = FIRE_SPARKS
 
 
-## v0.10.5 W3-S4 (F5): a hero fire patch's colour `c` at FIRE_DIM (its alpha kept).
+## A hero fire patch's colour `c` at FIRE_DIM (its alpha kept).
 static func dim_fire(c: Color) -> Color:
 	return Color(c.r * FIRE_DIM, c.g * FIRE_DIM, c.b * FIRE_DIM, c.a)
 
 
 # --- Zones and rings ---------------------------------------------------------------------------------------------
-## The fire patch (R21): the hero's in fire_area_01/02 (ground-safe colours, I7), an enemy's or boss's in
+## The fire patch: the hero's in fire_area_01/02 (ground-safe colours, I7), an enemy's or boss's in
 ## fire_area_06/07 (warm), held while it is drawn, its light and scorch kept. False: no room, the old flames draw.
 func fire(c: Vector3, r: float, fade: float, age: float, sd: int, hostile: bool) -> bool:
 	var ids := FOE_FIRE_ZONES if hostile else FIRE_ZONES
 	var id: StringName = ids[absi(sd) % ids.size()]
-	var k := 1.0 if hostile else FIRE_DRAW_R  # W3-S4 (F5)
+	var k := 1.0 if hostile else FIRE_DRAW_R  # W3-S4
 	# Overlapping patches (a dash's Flame Trail) stay about one layer: one that another patch covers draws no flames.
 	if layer._claim(&"fire_zone", c, maxf(VfxLayer.FLAME_SPACING, r), sd):
 		var node := zone_holds.touch(
@@ -226,7 +226,7 @@ func fire(c: Vector3, r: float, fade: float, age: float, sd: int, hostile: bool)
 	return true
 
 
-## The frost patch (R22): an ice area and a low mist, held; its light and frost mark kept.
+## The frost patch: an ice area and a low mist, held; its light and frost mark kept.
 func frost_field(c: Vector3, r: float, fade: float, sd: int) -> bool:
 	var id: StringName = FROST_ZONES[absi(sd) % FROST_ZONES.size()]
 	var cols := kind_colors(&"frost", true)
@@ -239,7 +239,7 @@ func frost_field(c: Vector3, r: float, fade: float, sd: int) -> bool:
 	return true
 
 
-## The venom puddle (R23) or bleed pool (R25: the puddle in bleed's colours), held; the old floor splats stay.
+## The venom puddle or bleed pool (R25: the puddle in bleed's colours), held; the old floor splats stay.
 func liquid_field(c: Vector3, r: float, fade: float, sd: int, toxic: bool) -> bool:
 	var id: StringName = VENOM_ZONES[absi(sd) % VENOM_ZONES.size()] if toxic else &"zone_bleed"
 	var per: float = ZONE_PER_M[&"zone_venom" if toxic else &"zone_bleed"]
@@ -248,7 +248,7 @@ func liquid_field(c: Vector3, r: float, fade: float, sd: int, toxic: bool) -> bo
 	return zone_holds.touch(zkey(sd, 4 if toxic else 5, c), id, &"area", c, s, cols) != null
 
 
-## The ring of `kind` at radius `r` now (R26), held while the ring is drawn, the layer's light kept (fire and frost).
+## The ring of `kind` at radius `r` now, held while the ring is drawn, the layer's light kept (fire and frost).
 ## False: no room, the old ring draws.
 func ring(kind: StringName, c: Vector3, r: float, fade: float, sd: int) -> bool:
 	var id: StringName = RING_IDS[kind]
@@ -263,7 +263,7 @@ func ring(kind: StringName, c: Vector3, r: float, fade: float, sd: int) -> bool:
 
 
 # --- Bursts (once each) ------------------------------------------------------------------------------------------
-## The frost burst (R19) at `u` through its life: vfx_explosion_07 the first frame, and for a shatter a small ice
+## The frost burst at `u` through its life: vfx_explosion_07 the first frame, and for a shatter a small ice
 ## patch; the layer's light and frost mark stay. False: no room, the old burst draws.
 func frost_burst(c: Vector3, r: float, u: float, sd: int, shatter: bool) -> bool:
 	var mode := once(bkey(sd, 5 if shatter else 1), &"explosion")
@@ -279,8 +279,8 @@ func frost_burst(c: Vector3, r: float, u: float, sd: int, shatter: bool) -> bool
 	return true
 
 
-## The venom or bleed burst (R20): a poison bubble, bleed in its dark red; the layer's light and floor splat stay.
-## v0.10.0 FX: its short pack puddle on the splat is gone. False: no room, the old burst draws.
+## The venom or bleed burst: a poison bubble, bleed in its dark red; the layer's light and floor splat stay.
+## Its short pack puddle on the splat is gone. False: no room, the old burst draws.
 func liquid_burst(c: Vector3, r: float, u: float, sd: int, toxic: bool) -> bool:
 	var mode := once(bkey(sd, 2 if toxic else 3), &"impact")
 	if mode == ONCE_OLD:
@@ -288,7 +288,7 @@ func liquid_burst(c: Vector3, r: float, u: float, sd: int, toxic: bool) -> bool:
 	var kind := &"venom" if toxic else &"bleed"
 	if mode == ONCE_SPAWN:
 		var cols := kind_colors(kind, false)
-		shot(&"burst_venom" if toxic else &"burst_bleed", c, r, cols)  # v0.10.0 FX: no puddle (the splat decal)
+		shot(&"burst_venom" if toxic else &"burst_bleed", c, r, cols)  # No puddle (the splat decal)
 	var col := VfxLayer.VENOM if toxic else VfxLayer.BLOOD
 	layer._light(c + Vector3(0, 0.6, 0), col, 2.0 * (1.0 - u), r * 2.0 + 1.0)
 	var mark_c := VfxLayer.VENOM_MARK if toxic else VfxLayer.BLOOD_MARK
@@ -315,14 +315,14 @@ func front(p: Vector3, d: float) -> Vector3:
 	return p + Vector3(z.x, 0.0, z.z).normalized() * d
 
 
-## Burn (R28): small flames on the body, one of three scenes by enemy. `p` the feet, `top` the body's height.
+## Burn: small flames on the body, one of three scenes by enemy. `p` the feet, `top` the body's height.
 func burn(p: Vector3, r: float, stacks: int, sd: int, top: float) -> bool:
 	var id: StringName = BURNS[absi(sd) % BURNS.size()]
 	var size := clampf(top * FLAME_PER_M * (0.85 + 0.08 * stacks), 0.5, 1.8)
 	return status_holds.touch(skey(sd, 1), id, &"status", front(p, r * 0.9), size) != null
 
 
-## Poison (R29): a stink cloud at the body and now and then a bubble.
+## Poison: a stink cloud at the body and now and then a bubble.
 func poison(p: Vector3, r: float, sd: int, top: float) -> bool:
 	var key := skey(sd, 2)
 	var node := status_holds.touch(
@@ -351,7 +351,7 @@ func poison(p: Vector3, r: float, sd: int, top: float) -> bool:
 	return true
 
 
-## Frost (R30): ice mist at the feet.
+## Frost: ice mist at the feet.
 func frost(p: Vector3, r: float, sd: int) -> bool:
 	var id: StringName = FROSTS[absi(sd) % FROSTS.size()]
 	var s := maxf(r, 0.4) * MIST_PER_M
@@ -368,7 +368,7 @@ func frost(p: Vector3, r: float, sd: int) -> bool:
 	)
 
 
-## Bulwark's guard orbs (R41): `charges` orbs circling the body, held. Returns how many the pack draws.
+## Bulwark's guard orbs: `charges` orbs circling the body, held. Returns how many the pack draws.
 func guard(p: Vector3, r: float, charges: int, sd: int) -> int:
 	var gold := ItemLooks.status_color(&"guard")
 	var cols := {

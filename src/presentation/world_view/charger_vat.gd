@@ -1,6 +1,6 @@
 class_name ChargerVat
 extends RefCounted
-## v0.10.5 W3-V4a (owner, 2026-11-06: "can we apply it to the rest of the enemies and test it?"): the Charger's and the
+## The Charger's and the
 ## Hatchling's VAT rig (VatBake's rig, see its class notes): the drives a VAT ChargerAvatar is drawn from, the grids
 ## they are baked on, and the joints. Its own file only to keep ChargerAvatar under the line limit; it reads the
 ## avatar's own pose code (ChargerAvatar.leg_angles, body_x, body_basis and the leg terms), never a copy of it.

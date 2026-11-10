@@ -27,20 +27,20 @@ extends ContentDef
 @export var fire_hit_seconds := 0.5
 @export var fire_trail_spacing_m := 0.8
 @export var field_min_m := 1.5
-## v0.8.0 PF (owner O9): the player's projectiles alive at once, at most (the frame budget's sim cap).
+## The player's projectiles alive at once, at most (the frame budget's sim cap).
 @export var player_shots_max := 256
-## v0.8.0 N11 (owner O69): the hero's arrival on the floor's receiver: floor 1 of a run, a later floor, reduced motion.
-## v0.9.0 SA (owner Q16: "4.0 s"): floor 1's is the altar's six-stage sequence.
+## The hero's arrival on the floor's receiver: floor 1 of a run, a later floor, reduced motion.
+## Floor 1's is the altar's six-stage sequence.
 @export var arrival_first_seconds := 4.0
 @export var arrival_seconds := 0.8
 @export var arrival_calm_seconds := 0.3
-## v0.8.0 SG (owner O91): the attack-speed curve (AttackRate): a raw bonus counts in full up to the knee, then at
+## The attack-speed curve (AttackRate): a raw bonus counts in full up to the knee, then at
 ## slope per mille up to knee2, then at slope2 (per mille; knee2 >= knee).
 @export var attack_speed_knee_permille := 500
 @export var attack_speed_knee2_permille := 1500
 @export var attack_speed_slope_permille := 500
 @export var attack_speed_slope2_permille := 250
-## v0.9.5 BH2 (moved from FinalPace; owner Q11): the final fight's loop ease: each loop finished (at most
+## Moved from FinalPace; owner Q11: the final fight's loop ease: each loop finished (at most
 ## loop_ease_max) cuts the fight's time by loop_time_ease_permille and the bodies' damage by loop_damage_ease_permille.
 @export var loop_ease_max := 3
 @export var loop_time_ease_permille := 120
@@ -81,7 +81,7 @@ func validate() -> Array[ValidationIssue]:
 	return issues
 
 
-## v0.9.5 BH2: 0..10 loops ease the fight, each by 0..1000 per mille, all of them together by less than the whole fight.
+## 0..10 loops ease the fight, each by 0..1000 per mille, all of them together by less than the whole fight.
 func _validate_loop_ease(issues: Array[ValidationIssue]) -> void:
 	if loop_ease_max < 0 or loop_ease_max > 10:
 		issues.append(ValidationIssue.new(&"range", resource_path, "loop_ease_max in 0..10"))
@@ -97,7 +97,7 @@ func _validate_loop_ease(issues: Array[ValidationIssue]) -> void:
 			)
 
 
-## v0.8.0 SG: the knees are 0 or more and in order; the slopes between 0 and 1000 per mille.
+## The knees are 0 or more and in order; the slopes between 0 and 1000 per mille.
 func _validate_attack_speed(issues: Array[ValidationIssue]) -> void:
 	if attack_speed_knee_permille < 0 or attack_speed_knee2_permille < attack_speed_knee_permille:
 		issues.append(

@@ -1,6 +1,6 @@
 class_name LaserView
 extends Node3D
-## v0.9.0 LZ (owner C §6.2; PLAN C48, C49): the Laser's beams while it fires. Each beam (WorldReader.beams: the sim's
+## The Laser's beams while it fires. Each beam (WorldReader.beams: the sim's
 ## own trace, so the drawn beam ends where the hits are) is a camera-facing ribbon at the shot's height with the
 ## look's scrolling strip (BeamLooks: core and edge colour, the owner's beam_core_<look> PNG or the code strip), a
 ## muzzle glow at the hero, and an impact where it ends (on an enemy or a wall): a flickering star in the look's
@@ -11,15 +11,15 @@ extends Node3D
 ## no burst, no sparks and no light at the hit (draw_fx draws Ring's circle and the mines only); the pack tube's own end
 ## ball marks the hit.
 
-## v0.9.5 FC1: the Laser cards' extra paths (LaserMods.plan: a bent beam's legs, Halo's fan, Backfire, Split's forks)
+## The Laser cards' extra paths (LaserMods.plan: a bent beam's legs, Halo's fan, Backfire, Split's forks)
 ## are ribbons of the same shader, the pool grows to as many as the sim traces (thinner or wider by the beam's `wmul`);
 ## Echo's strike to come is a paler ghost ribbon, Ring's circle and the mines are flat rings at the tip and on the
 ## floor.
-## v0.11.0 O1 (owner Q7, Q8; PLAN L1, L2): the Laser is a lance, one instant shot every 3 s. WorldReader.beams gives the
+## The Laser is a lance, one instant shot every 3 s. WorldReader.beams gives the
 ## last shot's paths (as the sim hit them) for half a second: each lane's legs join into one strip (_join; with Homing
 ## the sim's one smooth curve), drawn out from the hero over LaserWeight.DRAW_TICKS (0.15 s, cut()) and its glow fading
 ## by the end (lance_fade). A minimal look: the final one waits for the owner's sketch (PLAN X2).
-## v0.11.0 VX (owner PD-13): with the pack (the game), each lance is the pack's laser of its element laid on one tube
+## With the pack (the game), each lance is the pack's laser of its element laid on one tube
 ## through the sim's points (LaserPackTube: laser_vfx_0N's BeamCore, BeamOuter and its start and end balls), drawn out
 ## and faded the same way; the outer glow's width follows Effects density. The ribbons stay for a bare view (tests).
 const PACK_TUBE := true
@@ -37,14 +37,14 @@ const IMPACT_SIZE := 0.9
 const MUZZLE_SIZE := 0.55
 ## The strip tiles this many times a metre along the beam.
 const TILES_PER_M := 0.6
-## v0.10.0 VX2 (VFX_PACK R4): each beam is the pack's laser scene (beam_vfx) laid from its start to its end every
+## VFX_PACK R4: each beam is the pack's laser scene (beam_vfx) laid from its start to its end every
 ## frame (false: the ribbons, for before/after shots). The scene's core radius per metre of the ribbon's width.
 ## v0.10.0 FX (owner, 2026-10-31: a bent beam was "7-8 overlapping straight laser segments", each pack scene with its
 ## own flare at its start): off; the ribbons are back, and a bent beam is one ribbon (_join).
 const PACK_LASER := false
 const BEAM_RADIUS_PER_W := 0.12
 const BEAM_RADIUS_MIN := 0.04
-## v0.10.0 FX: the legs of a path join into one beam when the next starts within JOIN_M. (v0.11.0 O1d: the sim's legs
+## The legs of a path join into one beam when the next starts within JOIN_M. (the sim's legs
 ## turn
 ## at most 6 degrees, so the view draws them as they are; rounding them more only made points to rebuild.)
 const JOIN_M := 0.08
@@ -111,15 +111,15 @@ static var _shaders := {}
 var shown := 0
 var look := &"default"
 var impacts := 0
-## v0.10.0 FX: the points of the drawn beams' centre lines (more than 2 a beam: a curve).
+## The points of the drawn beams' centre lines (more than 2 a beam: a curve).
 var points_shown := 0
-## v0.10.5 W3-O8 (LaserWeight): the start flash now (0..1) and the ribbons' width factor now (the tests read them).
+## LaserWeight: the start flash now (0..1) and the ribbons' width factor now (the tests read them).
 var flash_now := 0.0
 var width_now := 1.0
-## v0.11.0 O1 (Q7): the share of the lance drawn out now and its glow (LaserWeight.lance_drawn, lance_fade).
+## The share of the lance drawn out now and its glow (LaserWeight.lance_drawn, lance_fade).
 var drawn_now := 1.0
 var fade_now := 1.0
-## v0.11.0 VX: the pack tubes (one a lance path) and how many the last draw laid.
+## The pack tubes (one a lance path) and how many the last draw laid.
 var tubes: Array[LaserPackTube] = []
 var tubes_shown := 0
 ## What the last sync showed of the cards' extras (tests read them): ghost ribbons, rings, mines.
@@ -128,7 +128,7 @@ var rings_shown := 0
 var mines_shown := 0
 ## The effects layer for the element accents (WorldViewRoot hands it in; null: the ribbons and impacts alone).
 var vfx: VfxLayer = null
-## v0.10.0 VX2: the pack the beams draw with (WorldViewRoot hands it in) and the beams it holds, by beam index.
+## The pack the beams draw with (WorldViewRoot hands it in) and the beams it holds, by beam index.
 var pack_fx: PackFx = null:
 	set(v):
 		pack_fx = v
@@ -152,13 +152,13 @@ var _look_set := &""
 var _form := FormLook.new()
 var _tick := 0.0
 var _fire_start := 0.0
-## v0.11.0 O1: the lance's age at the last sync (ticks since its shot), its glow ticks, and the seconds since.
+## The lance's age at the last sync (ticks since its shot), its glow ticks, and the seconds since.
 var _age := 0.0
 var _glow_ticks := 30.0
 var _since := 0.0
-## v0.11.0 VX: the look the pack tubes were set up for.
+## The look the pack tubes were set up for.
 var _tube_key := ""
-## v0.11.0 O1d: the frame the lances were last placed in (sync and _process both land in a frame; once is enough).
+## The frame the lances were last placed in (sync and _process both land in a frame; once is enough).
 var _placed_frame := -1
 
 
@@ -175,7 +175,7 @@ func _init() -> void:
 	add_child(_muzzle)
 
 
-## v0.11.0 O1d (measured: the first shot's frame): a tube of the plain laser, made now and hidden: the build's
+## Measured: the first shot's frame: a tube of the plain laser, made now and hidden: the build's
 ## ShaderWarmup
 ## draws it once behind the loading cover, so the tube's pipelines compile there and not on the first shot. Every laser
 ## scene of the pack shares the shaders; only its colours differ.
@@ -198,7 +198,7 @@ func _grow(n: int) -> void:
 		var bm := ShaderMaterial.new()
 		bm.shader = _shader(BEAM_SHADER)
 		var r := MeshInstance3D.new()
-		r.mesh = ImmediateMesh.new()  # v0.10.0 FX: a strip along the beam's (maybe bent) centre line
+		r.mesh = ImmediateMesh.new()  # A strip along the beam's (maybe bent) centre line
 		r.material_override = bm
 		r.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		r.visible = false
@@ -289,8 +289,8 @@ func sync(reader: WorldReader) -> void:
 	flash_now = LaserWeight.flash(_tick - _fire_start) if shown > 0 else 0.0
 	width_now = LaserWeight.width_mul(_tick, flash_now)
 	if shown == 0:
-		hold.clear()  # v0.10.0 VX2: the pack's beams end with the fire
-		for t in tubes:  # v0.11.0 VX: and the pack tubes
+		hold.clear()  # The pack's beams end with the fire
+		for t in tubes:  # And the pack tubes
 			t.off()
 		tubes_shown = 0
 		return
@@ -329,7 +329,7 @@ func _place_ribbons() -> void:
 	var view := Vector3(0, 1, 1).normalized() if cam == null else cam.global_transform.basis.z
 	var w := BeamLooks.width(look)
 	var wide := w * LaserWeight.GLOW_WIDTH * width_now  # W3-O8: the core in the middle, the halo around it
-	var age := _age + _since * 60.0  # v0.11.0 O1 (Q7): drawn out fast, then the glow fades
+	var age := _age + _since * 60.0  # Drawn out fast, then the glow fades
 	drawn_now = LaserWeight.lance_drawn(age)
 	fade_now = LaserWeight.lance_fade(age, _glow_ticks)
 	hold.begin()
@@ -360,7 +360,7 @@ func _place_ribbons() -> void:
 		)
 
 
-## v0.10.0 VX2 (R4): beam `k` as the pack's laser: the scene stands at the beam's start, turned to its end
+## Beam `k` as the pack's laser: the scene stands at the beam's start, turned to its end
 ## (-z along it), its length set to the trace and its core radius to the look's width (vfx_beam_controller). False:
 ## the ribbon draws (no pack, no room, or too short to show).
 func _pack_beam(k: int, b: Dictionary, w: float) -> bool:
@@ -390,7 +390,7 @@ static func _hit(b: Dictionary) -> bool:
 	return bool(b.get("impact", hits.size() > 0 or bool(b["wall"])))
 
 
-## v0.11.0 VX (PD-13): beam `k` as the pack's laser on one tube through its (cut) centre line: the lance draws out and
+## PD-13: beam `k` as the pack's laser on one tube through its (cut) centre line: the lance draws out and
 ## its glow fades as the ribbon's did (drawn_now, fade_now), its width and the glow's by width_now and Effects density;
 ## the start ball stands in for the muzzle (beam 0), the end ball for the impact. False: the ribbon draws (no pack, or
 ## the scene's parts were not found).
@@ -436,7 +436,7 @@ func _tube_beam(k: int, b: Dictionary, w: float) -> bool:
 	return true
 
 
-## v0.10.0 FX: the beams as drawn: each lane's chain of main legs (Homing's curve, a Ricochet bounce) is one beam
+## The beams as drawn: each lane's chain of main legs (Homing's curve, a Ricochet bounce) is one beam
 ## {pts (its centre line), from, to, hits, wall, impact, wmul}; the other beams stay as they are (pts: their
 ## two ends). The hits and the impact are the chain's last leg's; every point is a point of the sim's own trace.
 static func _join(beams: Array[Dictionary]) -> Array[Dictionary]:
@@ -468,7 +468,7 @@ static func _join(beams: Array[Dictionary]) -> Array[Dictionary]:
 	return out
 
 
-## v0.11.0 O1 (Q7): the first share `f` (0..1) of the centre line `pts` by length (the lance drawing out from the hero).
+## The first share `f` (0..1) of the centre line `pts` by length (the lance drawing out from the hero).
 static func cut(pts: PackedVector2Array, f: float) -> PackedVector2Array:
 	if f >= 1.0 or pts.size() < 2:
 		return pts
@@ -488,7 +488,7 @@ static func cut(pts: PackedVector2Array, f: float) -> PackedVector2Array:
 	return out
 
 
-## v0.10.0 FX: one ribbon along the centre line `pts` (sim plane), `w` wide, facing the camera `view`: a single strip,
+## One ribbon along the centre line `pts` (sim plane), `w` wide, facing the camera `view`: a single strip,
 ## so a bent beam has no joints, overlaps or repeated ends (the shader fades its two real ends only).
 func _lay_path(
 	r: MeshInstance3D, mat: ShaderMaterial, pts: PackedVector2Array, w: float, view: Vector3
@@ -591,7 +591,7 @@ func _style_ghost(k: int) -> void:
 	bm.set_shader_parameter(&"tiles", TILES_PER_M)
 
 
-## VfxLayer's drawer (WorldViewRoot appends it): Ring's circle and the mines. v0.11.0 O1d: nothing along the lance or at
+## VfxLayer's drawer (WorldViewRoot appends it): Ring's circle and the mines. nothing along the lance or at
 ## its hit; the element is its colour.
 func draw_fx(layer: VfxCore) -> void:
 	_draw_extras(layer)

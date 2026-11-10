@@ -1,6 +1,6 @@
 class_name PackHold
 extends RefCounted
-## v0.10.0 VX3: pack effects that live as long as something else does (a ground patch, a ring, a status on an enemy,
+## Pack effects that live as long as something else does (a ground patch, a ring, a status on an enemy,
 ## a guard orb). The effects layer draws every frame from the sim's state, so a held effect is "touched" each frame it
 ## should be there: the first touch takes an effect from PackFx (held, life 0), later touches follow it, and an effect
 ## nobody touched in a frame is released when the frame ends (PackHold.end). Cosmetic only (EI-07).
@@ -8,12 +8,12 @@ extends RefCounted
 ## - Loops: the pack's effects are one-shot in PackFx (they end with their animation); a held one must keep going, so
 ##   its "main" animation loops and its particles stop being one-shot (the pack's own controller does the same).
 
-## v0.10.5 W3-Q7: the lookup's "none" (not a new empty Dictionary on every touch).
+## The lookup's "none" (not a new empty Dictionary on every touch).
 const _NONE := {}
 
 var fx: PackFx = null
 var held := 0  # held effects now (tests)
-## v0.10.5 W3-Q7: whether the last touch() spawned its effect (its first touch; the caller sets the new one up).
+## Whether the last touch() spawned its effect (its first touch; the caller sets the new one up).
 var spawned := false
 var _items := {}  # key -> {node, id, frame, data}
 var _frame := 0
@@ -104,7 +104,7 @@ func _is_live(node: Node3D) -> bool:
 
 
 func _move(node: Node3D, pos: Vector3, scale: float, it: Dictionary) -> void:
-	# v0.10.5 W3-Q6: an effect touched where it already stands (its body did not move since the last frame) is not
+	# An effect touched where it already stands (its body did not move since the last frame) is not
 	# placed again (no transform write down its particles, no jump test)
 	if it.get("pos", Vector3.INF) != pos:
 		it["pos"] = pos

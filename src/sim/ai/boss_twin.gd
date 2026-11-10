@@ -1,6 +1,6 @@
 class_name BossTwin
 extends RefCounted
-## v0.9.0 NB2 (owner Q24, "ok go for those"; docs/roadmap/v0.9.0/BOSSES_4_5.md row N2; SIM_CONTRACTS §10k): the Twin
+## The Twin
 ## Wardens, one boss in two bodies. Two linked actors, both boss kinds with their own BossStore entry (so each runs
 ## the boss framework: its windup, its markers, its stagger), but one boss:
 ## - The boss (the amber Warden, its table's kind) is what World.spawn_boss made: it is the boss bar
@@ -41,9 +41,9 @@ const M := BossAttackTable.Move
 const S := EnemyAi.State
 ## The twin counts its flank (or the line's end) reached this close.
 const ARRIVE_M := 0.25
-## v0.11.0 O5: a body standing back keeps this far behind the leader (away from the player).
+## A body standing back keeps this far behind the leader (away from the player).
 const REST_M := 4.0
-## v0.11.0 O5: the roles' phases.
+## The roles' phases.
 const P_YELLOW := 0
 const P_VIOLET := 1
 const P_BOTH := 2
@@ -51,9 +51,9 @@ const P_BOTH := 2
 const EFFECT_ANGER := &"twin_anger"
 ## The chain's burn's effect id (Damage.tick_dot).
 const EFFECT_BURN := &"twin_chain"
-## v0.11.0 O5: STATUS_APPLY's effect on the body to hit now when it changes (amount: the phase).
+## STATUS_APPLY's effect on the body to hit now when it changes (amount: the phase).
 const EFFECT_FOCUS := &"twin_focus"
-## v0.11.0 O5: STATUS_APPLY's effect when the body standing back casts its bolt.
+## STATUS_APPLY's effect when the body standing back casts its bolt.
 const EFFECT_BOLT := &"twin_bolt"
 
 
@@ -160,7 +160,7 @@ static func leaves(w: World, i: int) -> bool:
 	return true
 
 
-## BossSignatures.on_boss_gone: the pair goes with either body (v0.11.0 O5: and its hint).
+## BossSignatures.on_boss_gone: the pair goes with either body (and its hint).
 static func on_boss_gone(w: World, boss_id: int) -> void:
 	var k := w.bosses.twin_of(boss_id) if not w.bosses.twin_lead.is_empty() else -1
 	if k >= 0:
@@ -218,7 +218,7 @@ static func may_use(w: World, i: int, atk: BossAttackTable) -> bool:
 	return atk.twin_body == is_twin(w, i)
 
 
-## BossChallenge's punish and gap-closer: attack k for boss entry b, or -1 when it is the other Warden's (v0.11.0 O5).
+## BossChallenge's punish and gap-closer: attack k for boss entry b, or -1 when it is the other Warden's.
 static func own(w: World, b: int, k: int) -> int:
 	if k < 0 or w.bosses.twin_lead.is_empty():
 		return k
@@ -371,7 +371,7 @@ static func on_start(w: World, i: int, k: int) -> void:
 		track_sweep(w, i, atk)
 
 
-## v0.9.5 BH3 (B8), tick phase 3, a tracking Crossfire's windup (BossAi, the boss's turn): for lines_ticks each body's
+## v0.9.5 BH3, tick phase 3, a tracking Crossfire's windup (BossAi, the boss's turn): for lines_ticks each body's
 ## line turns toward the player by at most lines_turn_milli (1/4096 turns x 1000, the fraction carried) a tick, and
 ## the safe spot is where the two lines cross (the midpoint of their ends when they run parallel or the crossing is
 ## behind a body); after that the lines hold and the fans fire along them.
@@ -468,7 +468,7 @@ static func sweep_end(w: World, i: int) -> Vector2:
 
 
 ## BossAi.move for a Warden (true: nothing else moves it): free and leading, the boss pursues the player and the twin
-## keeps its flank; standing back, behind the leader (v0.11.0 O5); each the faster while angry; then the chain's length.
+## keeps its flank; standing back, behind the leader; each the faster while angry; then the chain's length.
 static func moves(w: World, i: int, slow: float) -> bool:
 	var k := pair_of(w, i)
 	if k < 0:
@@ -486,9 +486,9 @@ static func moves(w: World, i: int, slow: float) -> bool:
 	if a.state[i] == S.ACTIVE:
 		var atk := BossAi.attack_of(w, i)
 		if atk != null and (atk.move == M.CHARGE or atk.move == M.LEAP):
-			return false  # v0.11.0 O5: the Charge's run and the Blink's hop are BossAi's own steps
+			return false  # The Charge's run and the Blink's hop are BossAi's own steps
 	if a.state[i] == S.MOVE and not w.player_dead():
-		if resting(w, i):  # v0.11.0 O5: standing back, behind the leader
+		if resting(w, i):  # Standing back, behind the leader
 			_go_to(w, i, rest_goal(w, i), speed, t)
 		elif lead:
 			_pursue(w, i, t, speed)
@@ -499,7 +499,7 @@ static func moves(w: World, i: int, slow: float) -> bool:
 	return true
 
 
-## v0.11.0 O5: where a body standing back goes: REST_M behind the leader, on the far side from the player.
+## Where a body standing back goes: REST_M behind the leader, on the far side from the player.
 static func rest_goal(w: World, i: int) -> Vector2:
 	var j := partner_of(w, i)
 	if j < 0 or w.actors.dead[j] == 1:
@@ -750,7 +750,7 @@ static func state(w: World, i: int) -> Dictionary:
 		"hot": chain_hot(w, i),
 		"lifted": lifted(w, i),
 		"burned": t.chain_burn_ticks - bs.twin_burn_cd[k] if bs.twin_burn_cd[k] > 0 else -1,
-		"phase": bs.twin_phase[k],  # v0.11.0 O5: the roles
+		"phase": bs.twin_phase[k],  # The roles
 		"resting": resting(w, i),
 		"focus": bs.twin_focus[k] == a.ids[i],
 		"exposed": bs.twin_phase[k] >= P_BOTH and bs.twin_focus[k] == a.ids[i],
@@ -765,7 +765,7 @@ static func state(w: World, i: int) -> Dictionary:
 		out["safe"] = safe
 		var run := safe - a.pos(i)
 		out["gap"] = [a.pos(i), safe + run * (2.0 / maxf(Kin.length(run), 0.0001))]
-		if atk.lines_turn_milli > 0:  # v0.9.5 BH3 (B8): the line is the body's aim, the spot where the lines cross
+		if atk.lines_turn_milli > 0:  # The line is the body's aim, the spot where the lines cross
 			out["gap"] = [a.pos(i), a.pos(i) + Kin.dir(a.lock_a[i]) * (Kin.length(run) + 2.0)]
 		out["progress"] = progress if a.state[i] == S.WINDUP else 1000
 		out["firing"] = a.state[i] == S.ACTIVE

@@ -1,6 +1,6 @@
 class_name StarfallViews
 extends Node3D
-## v0.11.0 O13d (ENEMIES.md R9, R10): the Starfall signatures' tells, read through WorldReader (EI-07), in the premade
+## ENEMIES.md R9, R10: the Starfall signatures' tells, read through WorldReader (EI-07), in the premade
 ## pack's effects (PD-13; data/vfx/pack_fx_o13d.tres, BinbunVFX):
 ## - the Star Warper's star: while it winds up, a ring on the floor the size of its strike (o13d_star_ring:
 ##   magic_areas rim_area_vfx_02, pale gold) and the star itself at its centre (o13d_star_core: magic_orbs

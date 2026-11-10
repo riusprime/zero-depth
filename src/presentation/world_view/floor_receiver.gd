@@ -135,7 +135,7 @@ func _build() -> void:
 	var top := DISC_H + 0.03
 	if not model.is_empty():
 		uses_model = true
-		# v0.10.5 S4 (owner): the hero's feet are at y = 0 (the sim has no height), so the model sinks until its
+		# The hero's feet are at y = 0 (the sim has no height), so the model sinks until its
 		# top is just above the floor: the hero stands on it, not half inside it.
 		var sink: float = MODEL_TOP_Y - (model["aabb"] as AABB).end.y
 		var mi := _mesh("Model", model["mesh"], model["material"], Vector3(0, sink, 0), body)

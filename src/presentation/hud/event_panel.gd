@@ -7,11 +7,11 @@ extends ModalPanel
 ## dimmed with the reason and can't be sent. It shows what the sim offers and sends the player's choice as input
 ## (`picked` -> InputLatch.note_pick -> InputFrame.pick: 1..n, or PICK_CANCEL for Leave); it decides nothing.
 ## Keyboard: 1/2/3 or arrows move the focus, Enter takes it, Esc leaves. Pad: d-pad / stick, A takes, B leaves.
-## v0.6.1 R1: each choice is a wide stone plaque (PlaqueBox; crystal until v0.8.0 MU), stacked: the title and the cost
+## Each choice is a wide stone plaque (PlaqueBox; crystal until v0.8.0 MU), stacked: the title and the cost
 ## on the left, the reward and the curse on the right. Its colour is the reward's family (a card's own, the card frames'
 ## table; Plaques.USE_FAMILY for shards, a chest, overclock, a cleanse and Leave); a choice that carries a curse wears
 ## the curse colour. The text steps down in size until it fits the plaque's dark panel (en and es).
-## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): the panel in the Astral style: Astral's cool
+## The panel in the Astral style: Astral's cool
 ## ink over the game, the event's name as an Astral heading (a sigil, Cinzel capitals) over a rule, its line and the
 ## hint in Atkinson's greys, each choice an Astral plaque (PlaqueBox draws Astral now) with its heads in small caps,
 ## the cost in Astral's muted rose, the reward in its accent (no red or mint); the curse keeps the curse colour.
@@ -39,7 +39,7 @@ const SIZES := {
 }
 const BOLD := ["Title", "RewardTitle", "CursedHead"]
 const MIN_SIZE := 10
-## v0.10.5 W3-O19: Astral's muted rose and accent (were a red and a mint).
+## Astral's muted rose and accent (were a red and a mint).
 const COST := AstralCardArt.POOR
 const GAIN := AstralCardArt.ACCENT
 
@@ -63,7 +63,7 @@ func _init() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_add_dim(_dim, 0.5)
-	_dim.color = Color(AstralChrome.INK, 0.62)  # v0.10.5 W3-O19: Astral's cool ink
+	_dim.color = Color(AstralChrome.INK, 0.62)  # Astral's cool ink
 	var col := _centred_column(VBoxContainer.new(), 12)
 	style_labels([_title, _desc, _hint])
 	AstralUi.title(_title, AstralUi.PANEL_TITLE_SIZE)  # v0.10.5 W3-O19
@@ -168,7 +168,7 @@ static func choice_lines(ci: Object, reader: WorldReader, k: int, c: int) -> Dic
 				var face := PickPanel.card_face(ci, reader, code)
 				out["reward_title"] = "%s · %s" % [face["title"], face["tier_text"]]
 				out["reward"] = face["sentence"]
-				out["color"] = AstralCardArt.rarity(int(face["tier"]))  # v0.10.5 W3-O19: Astral's rarity
+				out["color"] = AstralCardArt.rarity(int(face["tier"]))  # Astral's rarity
 				out["plaque"] = Plaques.of_card(face["id"], int(face["type"]), int(face["tier"]))
 	var curse := reader.event_choice_curse(k, c)
 	if curse >= 0:
@@ -197,7 +197,7 @@ static func leave_lines(ci: Object) -> Dictionary:
 	}
 
 
-## v0.8.0 N17: the event's name at the panel's top (the one place it shows; tests read it).
+## The event's name at the panel's top (the one place it shows; tests read it).
 func title_text() -> String:
 	return _title.text
 
@@ -309,14 +309,14 @@ static func _right_w() -> float:
 
 func _text(line_name: String, text: String, c: Color) -> Label:
 	var l := HudStyle.label(SIZES[line_name], BOLD.has(line_name))
-	if line_name in ["CostHead", "RewardHead", "Title"]:  # v0.10.5 W3-O19: heads and the title in Cinzel
+	if line_name in ["CostHead", "RewardHead", "Title"]:  # Heads and the title in Cinzel
 		l.uppercase = line_name != "Title"
 		l.add_theme_font_override("font", AstralUi.serif(600, SIZES[line_name]))
 	l.add_theme_color_override("font_outline_color", Color(AstralChrome.INK, 0.6))
 	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	l.name = line_name
 	l.text = text
-	# v0.8.0 N19: the key and the "Cursed" mark sit in a row with no width of their own: they never wrap (N17's shots
+	# The key and the "Cursed" mark sit in a row with no width of their own: they never wrap (N17's shots
 	# showed "Cursed" one letter a line)
 	var one_line := line_name == "Key" or line_name == "CursedHead"
 	l.autowrap_mode = TextServer.AUTOWRAP_OFF if one_line else TextServer.AUTOWRAP_WORD_SMART

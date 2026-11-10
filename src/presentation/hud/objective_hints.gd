@@ -1,6 +1,6 @@
 class_name ObjectiveHints
 extends Control
-## v0.11.0 O2 (owner L4, Q12 a): the boss hint. For each objective marker (WorldReader.objectives, set by boss code:
+## The boss hint. For each objective marker (WorldReader.objectives, set by boss code:
 ## World.objectives) whose reason the gate lets show (Main: MechanicHints, the first 2 runs that meet it, and Options
 ## "Boss hints"), it draws, in the HUD's accent:
 ## - off screen: an arrow at the screen's edge, on the line from the screen's centre to the target, pointing at it;
@@ -24,7 +24,7 @@ const BOB_PX := 6.0
 const FONT_PX := 18
 const ARROW := &"arrow"
 const PING := &"ping"
-## v0.11.0 F5: reasons marked on screen by a small bobbing arrow above the target, pointing down (no ring, no text).
+## Reasons marked on screen by a small bobbing arrow above the target, pointing down (no ring, no text).
 const DOWN_ARROW: Array[StringName] = [WorldReader.OBJECTIVE_GATEKEEPER_PILLAR]
 const DOWN_GAP_PX := 54.0
 

@@ -1,6 +1,6 @@
 class_name MetaHooks
 extends RefCounted
-## v0.9.0 MP: where Main's run meets the profile's Rune Fragments and unlocks (MetaProgress), kept out of main.gd:
+## Where Main's run meets the profile's Rune Fragments and unlocks (MetaProgress), kept out of main.gd:
 ## - a floor's portal taken (finish_floor): when it was the Purple Portal, the profile records it once and the Void
 ##   joins the offers from the next floor on (RunState.locked_cards emptied), with a toast;
 ## - the run's end (bank): the run's fragments go into the profile, shown on the run summary;
@@ -56,12 +56,12 @@ static func bank(main: Main, recap: Dictionary) -> Dictionary:
 	return recap
 
 
-## v0.10.5 O5a: the Loop device took the run to loop `loop` (Main._record_ascension): the Ascension achievements'
+## The Loop device took the run to loop `loop` (Main._record_ascension): the Ascension achievements'
 ## counters, the weapon's deepest loop, and the loop robes it earned (a toast each). A tweaked run records nothing.
 static func record_loop(main: Main, loop: int) -> void:
-	if main.achievement_tracker != null:  # v0.7.5 AC: the Ascension achievements count each loop taken
+	if main.achievement_tracker != null:  # The Ascension achievements count each loop taken
 		main.achievement_tracker.report(&"runs:ascended")
-		main.achievement_tracker.raise(RunRecords.LOOP_STAT, loop)  # v0.10.5 O5a: loop_3, loop_5
+		main.achievement_tracker.raise(RunRecords.LOOP_STAT, loop)  # loop_3, loop_5
 	if _tweaked(main) or main.run == null or main.profile == null:
 		return
 	RunRecords.note_loop(main.profile, main.run.build_id, loop, main.run.run_seed)
@@ -85,7 +85,7 @@ static func record_loop(main: Main, loop: int) -> void:
 	main.profile.save_file()
 
 
-## v0.10.5 O5a: the recap's records (the fastest true ending noted now; the deepest loop noted when it was reached)
+## The recap's records (the fastest true ending noted now; the deepest loop noted when it was reached)
 ## and the loop's fragment multiplier.
 static func _records(main: Main, recap: Dictionary) -> void:
 	if main.run == null or main.profile == null or recap.is_empty():
@@ -108,7 +108,7 @@ static func observe(main: Main) -> void:
 	boss_hints(main)
 
 
-## v0.11.0 O2 (owner L4, Q12 a): the boss hints. Each tick counts the run for every reason the world points at
+## The boss hints. Each tick counts the run for every reason the world points at
 ## (MechanicHints, in the Codex's profile section), and the floor's HUD gets its gate once: a reason's hint shows in
 ## its first MechanicHints.MEETINGS runs, while Options "Boss hints" is on. Counted in a tweaked run too (a hint is
 ## about learning the fight, not a record).
@@ -123,7 +123,7 @@ static func boss_hints(main: Main) -> void:
 	hints.observe(main.driver.reader, run_seed)
 
 
-## v0.9.0 CL (COLLECTIBLES.md; P3 "Added to the Rune Archive" the first time): each collectible the hero took on
+## COLLECTIBLES.md; P3 "Added to the Rune Archive" the first time: each collectible the hero took on
 ## this floor that the profile hasn't found is written to the profile at once (a death never loses it), joins the
 ## run's collected ones (no later floor arms it), earns its fragment (RuneFragments.add_collectibles) and shows a toast.
 ## One the profile already holds (a Continue from before its pickup) gives nothing more. A tweaked run records none.

@@ -1,6 +1,6 @@
 class_name LensDroneAvatar
 extends AvatarBase
-## The Lens Drone (v0.4.0 BO): one of the three drones the Hive Lens splits into at half HP, a small copy of its
+## The Lens Drone: one of the three drones the Hive Lens splits into at half HP, a small copy of its
 ## rim pods in the enemy style. A red faceted pod with a grey cap and a glowing red eye slit in front, a grey ring
 ## turning round it, hovering HOVER_Y up with a bob over a soft dark ground shadow (the sim treats it as a body on
 ## the ground, so melee and shots hit it there). It flies the Needle's behaviour: its eye flares through a windup.
@@ -12,9 +12,9 @@ const BOB_M := 0.07
 const HEIGHT := HOVER_Y + 0.35
 const SHADOW_R := 0.4
 
-## v0.8.0 EC: the pod (body), the cap (trim), the ring (grey) and the eye slit (eye) come from EnemyPalettes.
+## The pod (body), the cap (trim), the ring (grey) and the eye slit (eye) come from EnemyPalettes.
 const KIND := WorldReader.KIND_LENS_DRONE
-## v0.11.0 S4 (SoloVat): the raw drives (_vd) and their specs [lo, hi, loop]: the pod's roll about X and Z, the ring's
+## SoloVat: the raw drives (_vd) and their specs [lo, hi, loop]: the pod's roll about X and Z, the ring's
 ## turn (its charge-quickened spin).
 const RX := 0
 const RZ := 1
@@ -23,10 +23,10 @@ const VAT_DRIVES := [[-0.08, 0.08, false], [-0.12, 0.07, false], [0.0, TAU, true
 
 var pod: Node3D
 var ring: Node3D
-## v0.8.0 MI: true when the pod is the owner's model.
+## True when the pod is the owner's model.
 var has_model := false
 var shadow: MeshInstance3D
-## v0.11.0 S4 (the Enemy VAT, like the Bomb Drone): true (set before setup(), ActorViews from ViewPrefs.enemy_vat): a
+## The Enemy VAT, like the Bomb Drone: true (set before setup(), ActorViews from ViewPrefs.enemy_vat): a
 ## VatCrowd draws the body from baked poses; setup() builds only the ground disc.
 var vat := false
 var kind := KIND
@@ -59,13 +59,13 @@ func setup() -> void:
 	shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	shadow.set_meta(SoloVat.LIVE, true)
 	add_child(shadow)
-	if vat:  # v0.11.0 S4: the crowd draws the body
+	if vat:  # The crowd draws the body
 		has_model = EnemyModels.has_model(&"lens_drone")  # (its ring spins as the model's does)
 		_pose()
 		return
 	pod = Node3D.new()
 	add_child(pod)
-	if _build_model():  # v0.8.0 MI: the owner's model
+	if _build_model():  # The owner's model
 		body_materials = _parts.body_materials
 		_pose()
 		return
@@ -99,7 +99,7 @@ func setup() -> void:
 	_pose()
 
 
-## v0.8.0 MI: the owner's Lens Drone (EnemyModels &"lens_drone"): its pod centred on the pod node (the hover and
+## The owner's Lens Drone (EnemyModels &"lens_drone"): its pod centred on the pod node (the hover and
 ## bob as the code-made pod's), its red plates in the palette's body colour (greyscale in the texture), its frame as
 ## delivered, its eye slit on the eye material (flaring through the windup as before) and its little ring of feet
 ## turning under it (the ring). False when the model is missing (the code-made pod is built).
@@ -180,7 +180,7 @@ func advance(delta: float) -> void:
 	_pose()
 
 
-## v0.8.0 GF2: the flinch leans the pod about itself, not about the ground under it.
+## The flinch leans the pod about itself, not about the ground under it.
 func _flinch_pivot() -> float:
 	return HOVER_Y
 
@@ -190,14 +190,14 @@ func hover_height() -> float:
 	return _lift
 
 
-## v0.11.0 S4: the pose's numbers first (the hover, the pod's roll, the ring's turn: the VAT drives), then the nodes
+## The pose's numbers first (the hover, the pod's roll, the ring's turn: the VAT drives), then the nodes
 ## from them (the old path).
 func _pose() -> void:
 	var bob := sin(_t * TAU * 0.8) * BOB_M
 	_lift = lerpf(0.4, HOVER_Y, _rise) + bob
 	_vd[RX] = sin(_t * 1.5) * 0.08
 	_vd[RZ] = sin(_t * 1.9) * 0.06 - 0.05 * _charge
-	# The code-made ring turns about its tube; the owner's ring of feet spins under the pod (v0.8.0 MI), faster as
+	# The code-made ring turns about its tube; the owner's ring of feet spins under the pod, faster as
 	# the eye charges.
 	_vd[SPIN] = fposmod(_t * (2.5 + 6.0 * _charge if has_model else 2.5), TAU)
 	_eye_mat.emission_energy_multiplier = 1.8 + 3.5 * _charge

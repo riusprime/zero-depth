@@ -1,6 +1,6 @@
 class_name WispMods
 extends RefCounted
-## v0.9.5 FC9 (docs/roadmap/v0.9.5/FORM_COMBOS.md P1-P6): what the Gun's cards do to the Wisps form.
+## What the Gun's cards do to the Wisps form.
 ## - Eight projectile cards (Pierce, Ricochet, Homing, Echo, Big Shot, Rapid Fire, Split, Spiral) are not handled here:
 ##   they compile onto the Wisps spec as on the Orbs (the wisps launch that very spec: Wisps._fire), so each wisp's shot
 ##   carries them through the same per-card code the orbs' shots use. The one generalisation: Echo's repeat is open to
@@ -112,7 +112,7 @@ static func share(w: World, spec: AttackSpec, dmg: int) -> int:
 	return maxi(1, (dmg * param(w, "halo_share") + 500) / 1000)
 
 
-## v0.9.5 FC9b: the whole damage `milli` thousandths deal now; the rest waits in ModifierState.pm_carry (the Seekers'
+## The whole damage `milli` thousandths deal now; the rest waits in ModifierState.pm_carry (the Seekers'
 ## rule, SeekerMods.take), so six wisps at 60 % of a shot keep the 0.6. A short carry deals 0 (no minimum of 1).
 static func take(w: World, milli: int) -> int:
 	var total := w.mx.pm_carry + milli
@@ -192,7 +192,7 @@ static func _expire(w: World, s: ModifierState) -> void:
 ## orbit_gap_ticks per wisp.
 static func touch(w: World, spec: AttackSpec, n: int) -> void:
 	var s := w.mx
-	var milli := Wisps.shot_milli(w, spec) * param(w, "orbit_share") / 1000  # v0.9.5 FC9b: thousandths
+	var milli := Wisps.shot_milli(w, spec) * param(w, "orbit_share") / 1000  # Thousandths
 	var dmg := 0
 	var gap := param(w, "orbit_gap_ticks")
 	var c: AttackContext = null

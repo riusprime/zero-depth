@@ -1,6 +1,6 @@
 class_name DamageNumbers
 extends Node3D
-## Damage numbers (v0.4.0 BS, owner F9): every direct hit the player lands on an enemy shows its damage from where it
+## Damage numbers: every direct hit the player lands on an enemy shows its damage from where it
 ## landed: a small white number, or for a crit (TAG_CRIT) a bigger yellow one. Read from the event log (DAMAGE events
 ## the player owns; damage over time stays quiet). Pooled Label3Ds, the oldest reused once POOL are in the air, so a
 ## crowd never allocates per hit (that is the rule for rapid hits: no merging, the oldest gives way). Nothing here
@@ -23,20 +23,20 @@ const SIZE := 37
 const CRIT_SIZE := 69
 const COLOR := Color(1, 1, 1, 0.92)
 const CRIT_COLOR := Color("#FFD23A")
-## v0.9.5 SM: a hit that struck a Stress Mark's weak side.
+## A hit that struck a Stress Mark's weak side.
 const WEAK_COLOR := Color("#FF8A2A")
-## v0.9.5 EE1: Exsanguinate's burst (a DoT, so shown on purpose).
+## Exsanguinate's burst (a DoT, so shown on purpose).
 const EXSANGUINATE_COLOR := Color("#9E0F26")
-## v0.10.5 O10 (Matchups): a hit on the enemy's weakness (TAG_WEAK_TO): a bigger red-pink number; a resisted one
+## Matchups: a hit on the enemy's weakness (TAG_WEAK_TO): a bigger red-pink number; a resisted one
 ## (TAG_RESISTED): a smaller dim grey one. Starting values.
 const WEAK_TO_COLOR := Color("#FF4F7A")
 const WEAK_TO_SIZE := 48
 const RESISTED_COLOR := Color(0.55, 0.57, 0.6)
 const RESISTED_SIZE := 29
-## v0.11.0 O4: a hit on the Lantern Shade in a lit lantern's pool (TAG_SHADE_LIT): lantern gold at WEAK_TO_SIZE; one
+## A hit on the Lantern Shade in a lit lantern's pool (TAG_SHADE_LIT): lantern gold at WEAK_TO_SIZE; one
 ## in the dark (TAG_SHADE_DARK) takes RESISTED's dim grey.
 const SHADE_LIT_COLOR := Color("#FFC15A")
-## v0.10.5 W3-P10a (owner W7, G1 A2): a double crit (TAG_DOUBLE_CRIT): the crit number 25 % bigger, ice-white,
+## A double crit (TAG_DOUBLE_CRIT): the crit number 25 % bigger, ice-white,
 ## with a thin ink edge instead of the thick dark one. Nothing else new in the world.
 const DOUBLE_CRIT_SIZE := 86
 const DOUBLE_CRIT_COLOR := Color("#CFE4FF")
@@ -64,7 +64,7 @@ var _crit: Array[bool] = []
 var _throw: Array[Vector2] = []
 var _next := 0
 var _last_seq := 0
-## v0.9.5 SM: the enemies whose weak side broke this tick (id -> tick), so their hit's number shows orange.
+## The enemies whose weak side broke this tick (id -> tick), so their hit's number shows orange.
 var _weak := {}
 var _side := 1.0
 ## The cosmetic stream (presentation only, EI-05): the throw's spread and the crit's shake.
@@ -87,14 +87,14 @@ func sync(reader: WorldReader) -> void:
 			continue
 		if e.kind != SimEvent.Kind.DAMAGE or e.owner_id != player_id or e.target_id == player_id:
 			continue
-		if e.effect_id == SimEvent.EFFECT_EXSANGUINATE and e.amount > 0:  # v0.9.5 EE1: the burst, in deep red
+		if e.effect_id == SimEvent.EFFECT_EXSANGUINATE and e.amount > 0:  # The burst, in deep red
 			show_number(e.pos, e.amount, false, EXSANGUINATE_COLOR)
 			continue
 		if e.tags & SimEvent.TAG_DOT or e.amount <= 0:
 			continue
 		var weak := int(_weak.get(e.target_id, -1)) == e.tick
 		var crit := (e.tags & SimEvent.TAG_CRIT) != 0
-		if e.tags & SimEvent.TAG_DOUBLE_CRIT:  # v0.10.5 W3-P10a: ice-white, bigger, a thin ink edge
+		if e.tags & SimEvent.TAG_DOUBLE_CRIT:  # Ice-white, bigger, a thin ink edge
 			show_number(e.pos, e.amount, true, DOUBLE_CRIT_COLOR, DOUBLE_CRIT_SIZE, true)
 			_weak.erase(e.target_id)
 			continue
@@ -103,7 +103,7 @@ func sync(reader: WorldReader) -> void:
 		_weak.erase(e.target_id)
 
 
-## v0.10.5 O10: [tint, font size] for a hit's matchup tags (WEAK_TO bigger red-pink, RESISTED smaller dim grey; a
+## [tint, font size] for a hit's matchup tags (WEAK_TO bigger red-pink, RESISTED smaller dim grey; a
 ## crit keeps its size and colour; none: no tint, the plain size). Presentation only, read from the event's flag.
 static func matchup_look(tags: int, crit: bool) -> Array:
 	if crit:
@@ -112,15 +112,15 @@ static func matchup_look(tags: int, crit: bool) -> Array:
 		return [WEAK_TO_COLOR, WEAK_TO_SIZE]
 	if tags & SimEvent.TAG_RESISTED:
 		return [RESISTED_COLOR, RESISTED_SIZE]
-	if tags & SimEvent.TAG_SHADE_LIT:  # v0.11.0 O4: the Lantern Shade struck in a lit pool (150 %)
+	if tags & SimEvent.TAG_SHADE_LIT:  # The Lantern Shade struck in a lit pool (150 %)
 		return [SHADE_LIT_COLOR, WEAK_TO_SIZE]
-	if tags & SimEvent.TAG_SHADE_DARK:  # v0.11.0 O4: struck in the dark (40 %)
+	if tags & SimEvent.TAG_SHADE_DARK:  # Struck in the dark (40 %)
 		return [RESISTED_COLOR, RESISTED_SIZE]
 	return [Color(0, 0, 0, 0), 0]
 
 
 ## Throws `amount` from `at` (crit: bigger, yellow, a shake and a vanish). `size` > 0: that font size instead.
-## v0.10.5 W3-P10a: `double`, a double crit's thin ink edge (DOUBLE_CRIT_EDGE).
+## `double`, a double crit's thin ink edge (DOUBLE_CRIT_EDGE).
 func show_number(
 	at: Vector2, amount: int, crit: bool, tint := Color(0, 0, 0, 0), size := 0, double := false
 ) -> void:
@@ -145,7 +145,7 @@ func show_number(
 	var k := _next
 	l = _labels[k]
 	l.text = str(amount)
-	l.outline_size = DOUBLE_CRIT_EDGE_SIZE if double else EDGE_SIZE  # v0.10.5 W3-P10a: per number (pooled)
+	l.outline_size = DOUBLE_CRIT_EDGE_SIZE if double else EDGE_SIZE  # Per number (pooled)
 	l.outline_modulate = DOUBLE_CRIT_EDGE if double else EDGE_COLOR
 	l.font_size = size if size > 0 else (CRIT_SIZE if crit else SIZE)
 	l.modulate = tint if tint.a > 0.0 else (CRIT_COLOR if crit else COLOR)

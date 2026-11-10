@@ -13,15 +13,15 @@ extends Node3D
 ## return to the pool when it ends. Ticks are the sim's (WorldReader.tick plus the interpolation fraction), so the
 ## spikes pause with the game. Reduced motion: no overshoot on the thrust.
 ## The mesh is code-made (spike_mesh); an owner model `stone_spike` listed in assets/models/manifest.json at
-## MODEL_PATH replaces it (one unit tall, its own proportions), as BossModels and KitModels do (L15). v0.9.0 MI2: the
+## MODEL_PATH replaces it (one unit tall, its own proportions), as BossModels and KitModels do. the
 ## owner's spike (delivered 2026-10-22, the tallest of his three clusters, scripts/assets/mi2_prep.py) is drawn in its
 ## own colour map, its red crystal veins (the map's red) the hot cracks that glow on the strike.
-## v0.8.0 FB1 (FINAL_BOSS.md F4: "the Gatekeeper's stone spikes, bigger"): the Colossus's chasing spike lines and
+## FINAL_BOSS.md F4: "the Gatekeeper's stone spikes, bigger": the Colossus's chasing spike lines and
 ## radial bursts (`spike_chase`, `spike_burst`: a marks telegraph of disc items) erupt the same way, read the same way
 ## (an item locked at progress 1000 is its strike tick): each disc throws up a cluster of DISC_SPIKES spikes, the tall
 ## one in its middle DISC_TALL times a lane spike's height, the rest leaning out round it to the disc's edge.
 
-## v0.11.0 O3 (owner L5, Q9 a): the Gatekeeper's quake pillars (WorldReader.boss_quake_pillars, BossQuake.ring_state)
+## The Gatekeeper's quake pillars (WorldReader.boss_quake_pillars, BossQuake.ring_state)
 ## stand as taller, wider clusters of the same stone spikes, their hot cracks glowing with the 3 s pulse: dim, warming
 ## as the ring grows over its warning, flaring on the pulse. The ring (_ring, flat unshaded bands rebuilt each draw)
 ## grows from the pillar out to the very radius the pulse hits, with a faint outline of that radius while it grows,
@@ -35,9 +35,9 @@ const HOLD_TICKS := 20.0
 const SPREAD_TICKS := 4.0
 const STEP_M := 0.5
 const MAX_SPIKES := 512
-## v0.8.0 FB1: 48 (was 8): a Colossus burst raises a strike per spike disc, some thirty alive at once.
+## 48 (was 8): a Colossus burst raises a strike per spike disc, some thirty alive at once.
 const MAX_STRIKES := 48
-## v0.8.0 FB1: a Colossus spike disc's cluster: how many spikes, how much taller than a lane spike its middle one.
+## A Colossus spike disc's cluster: how many spikes, how much taller than a lane spike its middle one.
 const DISC_SPIKES := 6
 const DISC_TALL := 1.9
 ## The floor marks a lane leaves: at the crossing and every MARK_STEP m out, MARKS_EACH_WAY each way.
@@ -49,13 +49,13 @@ const DUST := Color(0.6, 0.55, 0.5)
 const MODEL_ID := "stone_spike"
 const MODEL_PATH := "res://assets/models/fx/stone_spike.glb"
 const MANIFEST := "res://assets/models/manifest.json"
-## v0.8.0 BS1 (S1): a pillar's spikes: the tall one's height (m), how many shorter ones lean out of its corners, the
+## A pillar's spikes: the tall one's height (m), how many shorter ones lean out of its corners, the
 ## ticks its cracks pulse before it sinks and the ticks it takes to sink (_draw_pillars).
 const PILLAR_TALL := 1.9
 const PILLAR_SATELLITES := 3
 const PILLAR_WARN_TICKS := 60.0
 const PILLAR_SINK_TICKS := 18.0
-## v0.11.0 O3: a quake pillar's cluster: its tall spike's height (m), its width over the pillar's side, how many
+## A quake pillar's cluster: its tall spike's height (m), its width over the pillar's side, how many
 ## shorter spikes stand round it; the crack's heat at rest, the ticks it flares after a pulse; the ring's band width
 ## (m), its colour, and the rubble a shattered pillar throws up.
 const QUAKE_TALL := 2.7
@@ -66,7 +66,7 @@ const QUAKE_FLARE_TICKS := 14.0
 const RING_BAND_M := 0.14
 const RING_COLOR := Color(1.0, 0.42, 0.15)
 const RUBBLE := 6
-## v0.11.0 VX (owner PD-13): with the pack (the game) the quake ring is pack effects, in the telegraph's own orange
+## With the pack (the game) the quake ring is pack effects, in the telegraph's own orange
 ## (an enemy telegraph keeps its colour): the growing ring the fire rim (ring_fire: rim_area_vfx_04), the radius the
 ## pulse hits a darker rim (ring_bleed's rim_area_vfx_01, recoloured), the strike a shock pulse (bx_pulse_shock:
 ## pulse_area_vfx_02) out to that radius; a shattered pillar a rock impact (bx_impact_a: vfx_impact_03, hot, its Core
@@ -130,29 +130,29 @@ void fragment() {
 static var model_path := MODEL_PATH
 static var _mesh: Mesh
 static var _from_model := false
-## v0.9.0 MI2: the owner's spike's colour map (null with the code spike).
+## The owner's spike's colour map (null with the code spike).
 static var _model_tex: Texture2D
 
 ## The effects layer for the debris, dust, light and floor marks (WorldViewRoot sets it with the new look).
 var vfx: VfxCore
-## v0.11.0 VX: the quake rings' held pack rims, and whether the last effects frame drew the rings with the pack (then
+## The quake rings' held pack rims, and whether the last effects frame drew the rings with the pack (then
 ## the flat bands are not built).
 var quake_holds := PackHold.new()
 var quake_pack_on := false
 ## Live strikes: {"tick", "seed", "center" (Vector3), "spikes": [[base, basis, height, delay, seed]], "marks":
 ## [Vector3], "dust": [Vector3]}.
 var _strikes: Array[Dictionary] = []
-## v0.8.0 BS1 (owner O5, S1): the pillars standing now (WorldReader.boss_pillars: [center, half, from, until]).
+## The pillars standing now (WorldReader.boss_pillars: [center, half, from, until]).
 var _pillars: Array = []
 var _pillars_drawn := 0
-## v0.11.0 O3: the quake pillars standing now (WorldReader.boss_quake_pillars), the ones seen last sync (centre by
+## The quake pillars standing now (WorldReader.boss_quake_pillars), the ones seen last sync (centre by
 ## key, to shatter the ones gone), and the ring's flat mesh.
 var _quakes: Array = []
 var _quake_seen := {}
 var _ring := MeshInstance3D.new()
 var _ring_mesh := ImmediateMesh.new()
 var _ring_bands := 0
-var _quake_once := {}  # v0.11.0 VX: the quake one-shots started (key -> tick)
+var _quake_once := {}  # The quake one-shots started (key -> tick)
 ## Strikes already raised, by key (the boss's id and the marker's lanes), with their tick.
 var _seen := {}
 var _tick := 0
@@ -178,7 +178,7 @@ func _init() -> void:
 	_mat.shader = sh
 	_mat.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
 	_mat.set_shader_parameter("hot", HOT)
-	var stone := BossStrikeMeshes.texture("tex_stone_spike")  # v0.8.0 TX2: the owner's spike stone
+	var stone := BossStrikeMeshes.texture("tex_stone_spike")  # The owner's spike stone
 	_mat.set_shader_parameter("stone_tex", stone)
 	_mat.set_shader_parameter("stone_on", 1.0 if stone != null else 0.0)
 	_mat.set_shader_parameter("model_tex", _model_tex)
@@ -188,7 +188,7 @@ func _init() -> void:
 	_node.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_node.extra_cull_margin = 16384.0  # the instances spread over the whole room
 	add_child(_node)
-	_ring.name = "QuakeRings"  # v0.11.0 O3: the quake pillars' rings
+	_ring.name = "QuakeRings"  # The quake pillars' rings
 	_ring.mesh = _ring_mesh
 	var rm := StandardMaterial3D.new()
 	rm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -214,7 +214,7 @@ func sync(reader: WorldReader) -> void:
 			tg.get("shape", &"") == &"marks"
 			and (mv == WorldReader.MOVE_SPIKE_CHASE or mv == WorldReader.MOVE_SPIKE_BURST)
 		):
-			_detect_discs(reader.actor_id(i), tg)  # v0.8.0 FB1: the Colossus's spikes
+			_detect_discs(reader.actor_id(i), tg)  # The Colossus's spikes
 			continue
 		if tg.get("shape", &"") != &"marks" or mv != WorldReader.MOVE_ROW_LANES:
 			continue
@@ -319,7 +319,7 @@ static func _code_mesh() -> ArrayMesh:
 
 
 ## The owner's spike (stone_spike.glb), one unit tall like the code spike, its width in its own proportion (v0.9.0
-## MI2: a spike, not squashed into the code spike's unit width), or null when it isn't listed in the manifest or isn't
+## A spike, not squashed into the code spike's unit width), or null when it isn't listed in the manifest or isn't
 ## on disk. Keeps its colour map for the shader (_model_tex).
 static func _model_mesh() -> Mesh:
 	if not _listed() or not ResourceLoader.exists(model_path):
@@ -358,7 +358,7 @@ static func _listed() -> bool:
 	return false
 
 
-## v0.8.0 FB1: every spike disc striking now (locked at progress 1000) raises its cluster once.
+## Every spike disc striking now (locked at progress 1000) raises its cluster once.
 func _detect_discs(aid: int, tg: Dictionary) -> void:
 	for item: Dictionary in tg["items"]:
 		if not item.get("locked", false) or int(item.get("progress", 0)) < 1000:
@@ -371,7 +371,7 @@ func _detect_discs(aid: int, tg: Dictionary) -> void:
 		_spawn_disc(c, float(item["radius"]), _tick)
 
 
-## v0.8.0 FB1: one disc's cluster at `tick`: a tall spike in the middle, the rest leaning out to the disc's edge, the
+## One disc's cluster at `tick`: a tall spike in the middle, the rest leaning out to the disc's edge, the
 ## middle first.
 func _spawn_disc(c: Vector2, r: float, tick: int) -> void:
 	var sd := tick * 31 + int(absf(c.x) * 97.0) + int(absf(c.y) * 13.0)
@@ -541,7 +541,7 @@ func _draw(now: float) -> void:
 	_drawn = n
 
 
-## v0.8.0 BS1 (owner O5, S1, "Stone Spikes that stay"): each standing pillar is a cluster of the same stone spikes,
+## Each standing pillar is a cluster of the same stone spikes,
 ## a tall one filling its square and PILLAR_SATELLITES shorter ones leaning out of its corners. They thrust up with
 ## the strike (RISE_TICKS), stand for the pillar's whole life (the sim's wall), their cracks pulse hot over the last
 ## PILLAR_WARN_TICKS and they sink over the last PILLAR_SINK_TICKS: the wall goes on the sim's tick, read from
@@ -620,7 +620,7 @@ func pillar_count() -> int:
 func draw_fx(layer: VfxCore) -> void:
 	var now := float(_tick) + Engine.get_physics_interpolation_fraction()
 	var vl := layer as VfxLayer
-	if vl != null and vl.pack_fx != null:  # v0.11.0 VX: the quake rings and shatters from the pack
+	if vl != null and vl.pack_fx != null:  # The quake rings and shatters from the pack
 		_pack_quakes(vl.pack_fx, now)
 	else:
 		quake_pack_on = false
@@ -672,7 +672,7 @@ func draw_fx(layer: VfxCore) -> void:
 func _sync_quakes(list: Array) -> void:
 	var now := {}
 	for q: Dictionary in list:
-		if not q.has("javelin"):  # v0.11.0 F9: a great javelin's ring leaves no pillar to shatter
+		if not q.has("javelin"):  # A great javelin's ring leaves no pillar to shatter
 			now["%s:%d" % [str(q["center"]), int(q["rose"])]] = q["center"]
 	for key: String in _quake_seen.keys():
 		if not now.has(key):
@@ -712,7 +712,7 @@ static func quake_clock(q: Dictionary, now: float) -> Array:
 ## its cracks at rest heat, warming as its ring grows and flaring on the pulse. Appends to `buf` from instance n.
 func _draw_quakes(buf: PackedFloat32Array, n: int, now: float, still: bool) -> int:
 	for q: Dictionary in _quakes:
-		if q.has("javelin"):  # v0.11.0 F9: only its ring (GreatJavelinViews draws the javelin)
+		if q.has("javelin"):  # Only its ring (GreatJavelinViews draws the javelin)
 			continue
 		var c: Vector2 = q["center"]
 		var h := float(q["half"])
@@ -854,7 +854,7 @@ func _shatter(c: Vector2, tick: int) -> void:
 	)
 
 
-## v0.11.0 VX (PD-13): the quake rings and shatters as pack effects (QUAKE_RIM_PER_M's note), each effects frame. While
+## PD-13: the quake rings and shatters as pack effects (QUAKE_RIM_PER_M's note), each effects frame. While
 ## a warning runs: the fire rim at the growing radius and the dark rim at the radius the pulse hits; on the pulse: the
 ## shock pulse once (not with reduced motion: the rim at the radius flares instead); a shatter: the rock impact once.
 ## Effects density thins them through PackFx's caps.

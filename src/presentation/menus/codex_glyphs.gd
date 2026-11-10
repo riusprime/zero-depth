@@ -1,6 +1,6 @@
 class_name CodexGlyphs
 extends RefCounted
-## v0.7.5 CX: the Codex's emblems for enemies and bosses, in the item icons' style (ItemIcons: shapes in a unit box,
+## The Codex's emblems for enemies and bosses, in the item icons' style (ItemIcons: shapes in a unit box,
 ## y down, drawn with CanvasItem calls, no external art), and a biome's small landscape in its own palette. An enemy
 ## is drawn by its behaviour, a boss by its id; one this table doesn't know gets the generic emblem, so new content
 ## shows without code. Presentation only (EI-07).
@@ -11,7 +11,7 @@ const ENEMY := Color("#FF6A5A")
 const BOSS := Color("#FFB347")
 
 
-## v0.7.5 SM (accessibility pass): under a colour-blind mode an enemy's emblem wears that mode's enemy colour
+## Accessibility pass: under a colour-blind mode an enemy's emblem wears that mode's enemy colour
 ## (ThemePalette), as the enemies do in the game.
 static func color(page: StringName) -> Color:
 	if page == &"bosses":
@@ -21,7 +21,7 @@ static func color(page: StringName) -> Color:
 
 ## The shapes of an enemy (by behaviour id) or a boss (by id).
 static func shapes(page: StringName, key: StringName) -> Array:
-	# O13a: a variant: its base's; v0.11.0 O13c: a signature its own (not its base's)
+	# A variant: its base's; a signature its own (not its base's)
 	return _boss(key) if page == &"bosses" else _enemy(BehaviourSchemas.VARIANT_OF.get(key, key))
 
 
@@ -74,7 +74,7 @@ static func _enemy(behaviour: StringName) -> Array:
 			for p: Array in [[0.3, 0.3], [0.7, 0.3], [0.5, 0.5], [0.3, 0.72], [0.7, 0.72]]:
 				out.append(_circle(Vector2(p[0], p[1]), 0.13, 0.0))
 			return out
-		&"dust_mite":  # v0.11.0 O9: the horde critters
+		&"dust_mite":  # The horde critters
 			return [
 				_circle(Vector2(0.5, 0.56), 0.24, 0.0),
 				_circle(Vector2(0.5, 0.26), 0.1, 0.0),
@@ -126,7 +126,7 @@ static func _enemy(behaviour: StringName) -> Array:
 			]
 		&"splitling":
 			return [_poly([[0.2, 0.56], [0.3, 0.32], [0.5, 0.22], [0.7, 0.32], [0.8, 0.56]])]
-		&"star_warper":  # v0.11.0 O13d: a hooded body and the star it marks beside it
+		&"star_warper":  # A hooded body and the star it marks beside it
 			return [
 				_poly([[0.22, 0.86], [0.3, 0.42], [0.42, 0.14], [0.54, 0.42], [0.6, 0.86]]),
 				_poly(
@@ -144,7 +144,7 @@ static func _enemy(behaviour: StringName) -> Array:
 					]
 				),
 			]
-		&"gravity_node":  # v0.11.0 O13d: an orb in its ring of pull
+		&"gravity_node":  # An orb in its ring of pull
 			return [
 				_circle(Vector2(0.5, 0.5), 0.2, 0.0),
 				_circle(Vector2(0.5, 0.5), 0.38, 0.05),
@@ -175,7 +175,7 @@ static func _enemy(behaviour: StringName) -> Array:
 				_line([[0.06, 0.5], [0.34, 0.5]], 0.06),
 				_line([[0.66, 0.5], [0.94, 0.5]], 0.06),
 			]
-		&"wire_weaver":  # v0.11.0 O13b: two posts and the live cable between them
+		&"wire_weaver":  # Two posts and the live cable between them
 			return [
 				_line([[0.2, 0.2], [0.2, 0.86]], 0.08),
 				_line([[0.8, 0.2], [0.8, 0.86]], 0.08),
@@ -212,7 +212,7 @@ static func _enemy(behaviour: StringName) -> Array:
 				_line([[0.3, 0.54], [0.36, 0.26]], 0.08),
 				_line([[0.7, 0.54], [0.64, 0.26]], 0.08),
 			]
-		&"kiln_beetle":  # v0.11.0 O13c: a round shell over a glowing belly
+		&"kiln_beetle":  # A round shell over a glowing belly
 			return [
 				_poly([[0.14, 0.56], [0.24, 0.26], [0.5, 0.14], [0.76, 0.26], [0.86, 0.56]]),
 				_circle(Vector2(0.5, 0.66), 0.18, 0.0),
@@ -286,14 +286,14 @@ static func _boss(id: StringName) -> Array:
 				_poly([[0.5, 0.08], [0.7, 0.36], [0.62, 0.56], [0.38, 0.56], [0.3, 0.36]]),
 				_poly([[0.5, 0.3], [0.58, 0.44], [0.5, 0.54], [0.42, 0.44]], true),
 			]
-		&"tidecaller":  # v0.9.0 NB1: a bell over two waves
+		&"tidecaller":  # A bell over two waves
 			return [
 				_poly([[0.36, 0.14], [0.64, 0.14], [0.74, 0.5], [0.26, 0.5]]),
 				_circle(Vector2(0.5, 0.56), 0.06, 0.0, true),
 				_line([[0.1, 0.7], [0.3, 0.62], [0.5, 0.7], [0.7, 0.62], [0.9, 0.7]], 0.05),
 				_line([[0.1, 0.86], [0.3, 0.78], [0.5, 0.86], [0.7, 0.78], [0.9, 0.86]], 0.05),
 			]
-		&"twin_wardens":  # v0.9.0 NB2: two tower shields joined by a chain
+		&"twin_wardens":  # Two tower shields joined by a chain
 			return [
 				_poly([[0.08, 0.2], [0.34, 0.2], [0.34, 0.7], [0.21, 0.86], [0.08, 0.7]]),
 				_poly([[0.66, 0.2], [0.92, 0.2], [0.92, 0.7], [0.79, 0.86], [0.66, 0.7]]),
@@ -301,14 +301,14 @@ static func _boss(id: StringName) -> Array:
 				_circle(Vector2(0.5, 0.5), 0.05, 0.0, false),
 				_circle(Vector2(0.58, 0.5), 0.05, 0.0, false),
 			]
-		&"clockwork_judge":  # v0.9.0 NB3: a clock face, its two hands, a gear beneath
+		&"clockwork_judge":  # A clock face, its two hands, a gear beneath
 			return [
 				_circle(Vector2(0.5, 0.4), 0.3, 0.0, false),
 				_line([[0.5, 0.4], [0.5, 0.18]], 0.05),
 				_line([[0.5, 0.4], [0.66, 0.48]], 0.05),
 				_circle(Vector2(0.5, 0.84), 0.1, 0.0, false),
 			]
-		&"lantern_shade":  # v0.9.0 NB4: an empty hood over a hanging lantern
+		&"lantern_shade":  # An empty hood over a hanging lantern
 			return [
 				_poly([[0.5, 0.06], [0.78, 0.3], [0.74, 0.62], [0.26, 0.62], [0.22, 0.3]]),
 				_poly([[0.5, 0.2], [0.64, 0.34], [0.6, 0.54], [0.4, 0.54], [0.36, 0.34]], true),

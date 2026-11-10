@@ -6,7 +6,7 @@ extends RefCounted
 ## it rises (prepare, from FinalBoss._spawn; again at its first tick after an FB2 save, whose fight lacks it) and kept
 ## in the fight (FinalFight: saved and hashed), so a card taken later changes nothing mid-duel.
 ## - The weapon: the run's (PlayerBuild: a Gun without the Blade is the Gun, anything else the Blade).
-## - Its HP (BossTable.build_hp): hp_of (v0.8.0 N2: FinalPace's when paced). Its hit and cap: hit_of, cap_of; each
+## - Its HP (BossTable.build_hp): hp_of (FinalPace's when paced). Its hit and cap: hit_of, cap_of; each
 ##   attack's damage: damage_of (its class's share of your max HP; in a mimic window your build's hit when more).
 ## - Its combo: a Blade run's combo steps as the wand compiled them (each step's arc and reach, Attacks.arc_reach_m,
 ##   clamped to reach_max_m).
@@ -62,7 +62,7 @@ static func weapon_of(w: World) -> int:
 # --- F7: HP and damage from the build -----------------------------------------------------------------------------
 
 
-## Its HP (owner F7): max HP × build_hp_permille / 1000 + the measured DPS × dps_target_ticks / 60 (with at least
+## Its HP: max HP × build_hp_permille / 1000 + the measured DPS × dps_target_ticks / 60 (with at least
 ## dps_min_seconds measured of the last dps_seconds), clamped to dps_hp_min..dps_hp_max.
 static func hp_of(w: World, t: BossTable) -> int:
 	return hp_from(w.actors.max_hp[0], FinalBoss.measured(w, t), t)
@@ -81,7 +81,7 @@ static func cap_of(w: World, t: BossTable) -> int:
 	return maxi(1, w.actors.max_hp[0] * t.damage_cap_permille / 1000)
 
 
-## Its hit (owner F7): the player's weapon damage × build_damage_permille / 1000, at least damage_min, at most the cap.
+## Its hit: the player's weapon damage × build_damage_permille / 1000, at least damage_min, at most the cap.
 static func hit_of(w: World, t: BossTable) -> int:
 	return hit_from(Modifiers.weapon_damage(w), cap_of(w, t), t)
 
@@ -153,7 +153,7 @@ static func compile_card(w: World, t: BossTable, code: int, level: int) -> Nemes
 	var gun := weapon_of(w) == BossAttackTable.WEAPON_GUN
 	var base := Modifiers.base_bolt(w) if gun else Modifiers.base_step(w, 0)
 	var wc := WandCompile.for_world(w, mods)
-	wc.max_depth = WandCompile.MAX_DEPTH  # v0.10.5 W3-P10a: the loops deepen the player's hooks, not the copy's
+	wc.max_depth = WandCompile.MAX_DEPTH  # The loops deepen the player's hooks, not the copy's
 	var s := wc.spec(base)
 	if not gun:
 		BladeForms.settle(s)

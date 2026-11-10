@@ -6,7 +6,7 @@ extends Node3D
 ## vertical oval OVAL_W × OVAL_H whose edge is never flat (noise round the rim, drifting with time), with a soft glow
 ## round it, its light, its floor glow and motes in its colour drifting off the rim.
 ## The swirl, its light and its floor glow are the hero visor's light blue (v0.3.5 PT, F19: ThemePalette
-## "player_core"); set_deep() makes it the Deep gate (v0.5.0 RT): violet with a red rim on the swirl.
+## "player_core"); set_deep() makes it the Deep gate: violet with a red rim on the swirl.
 ##
 ## Growth (Q15: "it should appear from a point and grow out of it in a circle that grows into the full oval … the
 ## edges should have an effect while they grow from that point like the cards burning but reversed, same way to
@@ -21,7 +21,7 @@ extends Node3D
 ##
 ## Local frame: the oval spans local Z (across) and Y (up), the gate faces local +X; setup() turns +X to the sim facing.
 
-## v0.9.0 PT (starting values): the oval's width and height (m), its centre's height, and the quad it is drawn on
+## Starting values: the oval's width and height (m), its centre's height, and the quad it is drawn on
 ## (QUAD_MARGIN times the oval, room for the ragged edge and its glow).
 const OVAL_W := 1.6
 const OVAL_H := 3.4
@@ -169,13 +169,13 @@ var portal_material: ShaderMaterial
 var glow_material: ShaderMaterial
 var glow_disc: MeshInstance3D
 var light: OmniLight3D
-## v0.9.0 PT: the motes drifting off the rim, in the portal's colour.
+## The motes drifting off the rim, in the portal's colour.
 var motes: CPUParticles3D
-## v0.5.0 RT: the Deep gate's look is on.
+## The Deep gate's look is on.
 var deep := false
-## v0.9.0 PT: a later floor's arrival portal (PortalTransitView): no floor glow or motes, a softer light.
+## A later floor's arrival portal (PortalTransitView): no floor glow or motes, a softer light.
 var arrival := false
-## v0.9.0 PT: the growth (0..1, the sim's forming) and the collapse (0 whole .. 1 gone to a point).
+## The growth (0..1, the sim's forming) and the collapse (0 whole.. 1 gone to a point).
 var growth := 0.0
 var collapse := 0.0
 var _sealed := true
@@ -184,7 +184,7 @@ var _flare := 0.0
 var _mote_ramp := Gradient.new()
 
 
-## The visor's light blue (v0.3.5 PT), and the swirl's shades of it, dark to light.
+## The visor's light blue, and the swirl's shades of it, dark to light.
 static func visor_blue() -> Color:
 	return ThemePalette.color(&"player_core")
 
@@ -198,7 +198,7 @@ static func deep_colors() -> Array[Color]:
 	return [DEEP_VIOLET.darkened(0.75), DEEP_VIOLET, DEEP_VIOLET.lightened(0.55)]
 
 
-## v0.9.0 PT: the oval's half extents (m: across, up) at form `f` (0..1): a point, a circle the oval's width by
+## The oval's half extents (m: across, up) at form `f` (0..1): a point, a circle the oval's width by
 ## CIRCLE_AT, then stretched to the full height. Reduced motion (`calm`) keeps the full oval (it fades instead).
 static func half_extents(f: float, calm: bool = false) -> Vector2:
 	if calm:
@@ -221,7 +221,7 @@ func setup(sim_pos: Vector2, facing_angle: int) -> void:
 	rotation = Vector3(0, SimPlane.yaw_of(facing_angle), 0)
 
 
-## v0.5.0 RT: the Deep gate's colours (once, at setup).
+## The Deep gate's colours (once, at setup).
 func set_deep() -> void:
 	if deep:
 		return
@@ -237,7 +237,7 @@ func set_deep() -> void:
 	_tint_motes(DEEP_VIOLET)
 
 
-## v0.9.0 PT: a later floor's arrival portal (no floor glow, no motes, a softer light).
+## A later floor's arrival portal (no floor glow, no motes, a softer light).
 func set_arrival() -> void:
 	arrival = true
 	glow_disc.visible = false
@@ -267,19 +267,19 @@ func is_sealed() -> bool:
 	return _sealed
 
 
-## v0.9.0 PT: the growth from the sim (0..1; WorldReader.portal_form_progress).
+## The growth from the sim (0..1; WorldReader.portal_form_progress).
 func set_growth(k: float) -> void:
 	growth = clampf(k, 0.0, 1.0)
 	_apply()
 
 
-## v0.9.0 PT: the collapse (0 whole .. 1 gone to a point): the way in (PortalTransitView), the arrival's end.
+## The collapse (0 whole.. 1 gone to a point): the way in (PortalTransitView), the arrival's end.
 func set_collapse(k: float) -> void:
 	collapse = clampf(k, 0.0, 1.0)
 	_apply()
 
 
-## v0.9.0 PT: how formed the portal is now (0 nothing .. 1 the full oval).
+## How formed the portal is now (0 nothing.. 1 the full oval).
 func form() -> float:
 	return minf(growth, 1.0 - collapse)
 
@@ -366,7 +366,7 @@ func _build_glow() -> void:
 	add_child(glow_disc)
 
 
-## v0.9.0 PT (Q15: "add some particles of the color portal"): motes leave points round the oval and drift out and
+## "add some particles of the color portal": motes leave points round the oval and drift out and
 ## up, fading, in the portal's colour; local to the gate (they stand with it).
 func _build_motes() -> void:
 	motes = CPUParticles3D.new()

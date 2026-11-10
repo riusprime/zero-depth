@@ -1,6 +1,6 @@
 class_name CollectibleBook
 extends RefCounted
-## v0.9.0 CL (owner: "collectibles are fine", COLLECTIBLES.md as drafted; PLAN W38-W40, W43, W47): the Rune Archive's
+## The Rune Archive's
 ## collectibles (CollectibleDefinition, data/collectibles/) and the profile's record of them, the `collectibles`
 ## section of user://profile.json (ProfileStore version 3): one key per collectible found, its id, holding the run
 ## seed it was found in (0 for the hub's). HubFlags' `count:collectibles:N` counts the keys (the floor runes, the north

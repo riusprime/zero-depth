@@ -1,6 +1,6 @@
 class_name HeatLooks
 extends RefCounted
-## Overclock heat's colours (v0.3.0 L18), shared by the HUD meter, the hero's visor and blade, and the vent and
+## Overclock heat's colours, shared by the HUD meter, the hero's visor and blade, and the vent and
 ## steam effects: cool steel, amber when Hot, red-orange at Overclock, white-hot at the overheat point.
 ## v0.5.5 LK (owner A2: "the color of the swrod/bullets the current hit color as well, once reached the first
 ## threshold they turn orangem second one red"): the hero's attacks (the blade and its trail, the bolts, the Lunge
@@ -42,7 +42,7 @@ static func tier_of(s: Dictionary) -> int:
 	return TIER_COOL if s.is_empty() else int(s["tier"])
 
 
-## v0.5.5 LK (A2): the colour of the hero's attacks at heat tier `tier`: `base` (the attack's own colour) below
+## The colour of the hero's attacks at heat tier `tier`: `base` (the attack's own colour) below
 ## Hot, HOT (the meter's orange) at Hot, OVERCLOCK (the meter's red) at Overclock and while overheated. The meter's
 ## tick for each threshold is drawn in the same colour, so the bar and the attacks always agree.
 static func attack_color(base: Color, tier: int) -> Color:

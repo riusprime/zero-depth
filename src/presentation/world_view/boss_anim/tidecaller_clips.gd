@@ -1,6 +1,6 @@
 class_name TidecallerClips
 extends RefCounted
-## v0.9.0 NB1: the Tidecaller's clips (the owner's hunched sea priest, cut into parts in its file: body, staff with the
+## The Tidecaller's clips (the owner's hunched sea priest, cut into parts in its file: body, staff with the
 ## bell hanging from it, the reaching left arm, the back shell; BossModels rigs each as a bone). Model frame: +X the
 ## front, +Z its right (the staff), -Z its left (the reaching arm). Parameters the avatar maps: ring (the bell's swing,
 ## added to what the tide drives) and glow (the shell's and the mask's light). A heavy, slow figure: it breathes
@@ -44,7 +44,7 @@ static func library() -> Dictionary:
 			_death(),
 		]:
 			_lib[c.name] = c
-		BossClip.loosen(_lib, 0.02)  # v0.11.0 O16: the wind-up, the recoil, the idle sway
+		BossClip.loosen(_lib, 0.02)  # The wind-up, the recoil, the idle sway
 	return _lib
 
 

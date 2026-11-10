@@ -1,6 +1,6 @@
 class_name StarboundDefinition
 extends ContentDef
-## v0.10.5 W3-P10b (owner W7; docs/roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md §B; CONTENT_SCHEMA §8): a Starbound card,
+## A Starbound card,
 ## the loop-only card kind. It is offered from loop 2 in a regular altar's pick (RewardsDefinition.starbound_permille),
 ## works with both weapons, has no level cap (each pick adds a stack) and is never in the shop. The id names the card
 ## and its rule (Starbound, one per id in CARDS order); the numbers are per stack:

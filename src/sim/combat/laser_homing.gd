@@ -16,7 +16,7 @@ const PIECE_PASSES := 6
 const BOW_TRIES: Array[int] = [1000, 600, 300, 0]
 
 
-## The routes of `count` lanes at the shot (v0.11.0 O1d): [{ids, shared}, one a lane]. One lane: pick(). Several: the
+## The routes of `count` lanes at the shot: [{ids, shared}, one a lane]. One lane: pick(). Several: the
 ## targets split by side of the aim (_split(): "each ray takes its own enemies"), each lane's in its own best order; a
 ## lane left with none (fewer enemies than lanes, or its group all out of sight) shares the first target of its nearest
 ## neighbour's route. No target at all: every route empty (the lanes run straight, as without Homing).
@@ -106,7 +106,7 @@ static func _sees(w: World, sight: Dictionary, ia: int, a: Vector2, ib: int, b: 
 	return sight[key]
 
 
-## The order curve() visits `pool` in (v0.11.0 O1, L2; v0.11.0 O1d: dynamic programming over the subsets, at most
+## The order curve() visits `pool` in (v0.11.0 O1, L2; dynamic programming over the subsets, at most
 ## n x (n - 1) x 2^(n - 2) steps of plain array work and n x n sight checks, one per pair and kept in `sight`, where it
 ## tried every order: 8! = 40,320 chains of sight checks): the chain from `origin` that goes furthest before a step the
 ## curve can't take (a target out of sight of the one before, or a turn of more than home_arc_deg from the line in),
@@ -261,7 +261,7 @@ static func _clear(w: World, way: Dictionary, r: float) -> bool:
 	return true
 
 
-## Homing's one smooth path through `targets` (in order) from `from` heading `ang` (v0.11.0 O1, L2; v0.11.0 O1d: a C2
+## Homing's one smooth path through `targets` (in order) from `from` heading `ang` (v0.11.0 O1, L2; a C2
 ## curve, a chord-length cubic spline, so its bend changes smoothly along the whole chain). It leaves along `ang`, its
 ## speed there `lens` per mille of the chord's (a longer first tangent sweeps a wider bow); it ends on the natural
 ## tangent (or, `mirror`, on the start tangent mirrored across the last chord: a lens). Each piece is cut into legs at

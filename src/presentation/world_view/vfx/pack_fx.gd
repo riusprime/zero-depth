@@ -1,17 +1,17 @@
 class_name PackFx
 extends Node3D
-## v0.10.0 VX0 (docs/roadmap/v0.9.5/VFX_PACK.md I1-I9; the owner's purchased Binbun VFX pack): the one way the game
+## The one way the game
 ## spawns a pack effect. Each effect is a pooled scene (assets/BinbunVFX/...) named by a short id in
 ## data/vfx/pack_fx.tres (PackFxDefinition). Cosmetic only: it reads the sim through the caller's position and
 ## decides nothing (EI-03, EI-07).
 ## - spawn(id, pos, scale, colors): an idle instance (or a new one) is moved, recoloured, restarted and shown; it goes
-##   back to its pool when its animation ends or after its life (I5).
+##   back to its pool when its animation ends or after its life.
 ## - Caps per family (CAPS, I5), scaled by Effects density (ViewPrefs.effects_density, I9). Past a cap the family's
 ##   oldest live instance is reused.
-## - Lights are off on every instance (I3): a family that should glow asks VfxCore for its merged light.
-## - Colours (I6): the table's, or the caller's (`primary`, `secondary`, `tertiary`); an alpha of 0 keeps the scene's.
-## - Pause (I8): while the sim holds (follow() sees no tick for HOLD_S), every live instance's speed_scale is 0.
-## - warm(id) (I2): the id once, in front of the camera, for WARM_FRAMES frames, so its shaders compile before the first
+## - Lights are off on every instance: a family that should glow asks VfxCore for its merged light.
+## - Colours: the table's, or the caller's (`primary`, `secondary`, `tertiary`); an alpha of 0 keeps the scene's.
+## - Pause: while the sim holds (follow() sees no tick for HOLD_S), every live instance's speed_scale is 0.
+## - warm(id): the id once, in front of the camera, for WARM_FRAMES frames, so its shaders compile before the first
 ##   fight. v0.10.0 VX-W: once a session, at the main menu (PackFxSessionWarm), never one spawn an id on every floor
 ##   load; the effect scenes are kept for the session, so a later floor reuses the compiled pipelines.
 
@@ -25,22 +25,22 @@ const CAPS := {
 	&"cloud": 4,
 	&"projectile": 96,
 	&"status": 32,
-	&"enemy_shot": 128,  # v0.10.0: hostile shots have their own cap, so hero bolts never starve them
-	&"bolt": 48,  # v0.10.0 VX6: lightning strikes, chains and forks
-	&"trail": 8,  # v0.10.0 VX8: blade swing ribbons
-	&"mark": 48,  # v0.10.0 VX7: lasting floor marks
+	&"enemy_shot": 128,  # Hostile shots have their own cap, so hero bolts never starve them
+	&"bolt": 48,  # Lightning strikes, chains and forks
+	&"trail": 8,  # Blade swing ribbons
+	&"mark": 48,  # Lasting floor marks
 }
-## v0.10.0 FX (owner, 2026-10-31: oversized glows and flares, "lighting artifacts"): the pack's particles live in world
+## The pack's particles live in world
 ## space, and Godot does not size a world-space particle by its node's scale, so a spark scaled to 0.1 still drew its
 ## flares and glows full size (the white starbursts at every bolt's end, the hits' flashes). Every effect that stands
 ## where it was spawned now has local particles (the node's scale sizes them); only the families that fly keep world
 ## space, for their trails (FireballViews and the forms size those by hand).
 const WORLD_SPACE: Array[StringName] = [&"projectile", &"enemy_shot", &"trail"]
-## v0.10.0 FX (owner, 2026-10-31: effects "appear in unintended screen positions"): the pack's particles live in
+## The pack's particles live in
 ## world space, so a held effect moved further than JUMP_M in one frame (a key handed to another shot, a pooled
 ## instance taken over) would draw its old trail across the screen; settle() starts its particles again.
 const JUMP_M := 1.5
-## ViewPrefs.effects_density -> the factor on CAPS (I9).
+## ViewPrefs.effects_density -> the factor on CAPS.
 const DENSITY_FACTOR := {"low": 0.25, "medium": 0.55, "high": 1.0}
 const DEFS_DIR := "res://data/vfx"
 const WARM_FRAMES := 2
@@ -73,19 +73,19 @@ const SHORT := {
 	&"vx2_hit_rune": [0.2, 15.0],
 	&"vx2_hit_bounce": [0.2, 15.0],
 	&"vx2_hit_crit": [0.2, 15.0],
-	# v0.10.5 W3-P10l (owner W7: nothing lingers): the meteor's landing burst and the star's hit sparkle
+	# The meteor's landing burst and the star's hit sparkle
 	&"p10l_meteor_land": [0.4, 27.0],
 	&"p10l_star_hit": [0.2, 15.0],
 }
 
-## v0.10.5 W3-P10m (owner: "don't get crazy with visuals for explosions"): the pack scene's child nodes an id never
+## The pack scene's child nodes an id never
 ## shows (the meteor's landing drops vfx_impact_01's white-hot Core sphere, its smoke and its tall streaks; the
 ## pack's files stay as they are).
 const HIDE := {&"p10l_meteor_land": ["Core", "Smoke", "Impact_Streaks2"]}
 
-## v0.11.0 S3: the children spawn()'s `hide` may switch off (and back on for the next user of a pooled instance).
-## v0.11.0 O11: also an impact's white Core puff and its Ground_Impact disc (Blood Thorns' eruptions keep the sparks).
-const HIDE_PER_SPAWN: Array[String] = ["Smoke", "Core", "Ground_Impact"]  # v0.11.0 O11: Blood Thorns keeps the sparks
+## The children spawn()'s `hide` may switch off (and back on for the next user of a pooled instance).
+## Also an impact's white Core puff and its Ground_Impact disc (Blood Thorns' eruptions keep the sparks).
+const HIDE_PER_SPAWN: Array[String] = ["Smoke", "Core", "Ground_Impact"]  # Blood Thorns keeps the sparks
 
 static var _shared: PackFxDefinition
 ## How floor loads warm the pack (VX-W): &"menu" (PackFxSessionWarm warms at the main menu; a load warms what is
@@ -95,7 +95,7 @@ static var warm_mode := &"menu"
 static var _scenes := {}  # scene path -> PackedScene, kept for the session
 static var _requested := {}  # scene path -> true, once asked of the loader threads
 static var _warmed := {}  # id -> true, once warm() ran it this session
-## v0.10.5: id -> the most instances of it live at once this session (PackPrefill sizes a floor's pools by it).
+## Id -> the most instances of it live at once this session (PackPrefill sizes a floor's pools by it).
 static var _peak := {}
 
 ## The camera the warm-up places the effects in front of (WorldViewRoot sets it).
@@ -111,7 +111,7 @@ var _idle := {}
 var _live: Array[Dictionary] = []  # oldest first: {node, id, family, left}
 var _info := {}  # Node3D -> {anim, colors, speed, life, lights}
 var _live_n := {}  # id -> its live instances
-## v0.10.5 W3-Q6: the live instances by instance id, and how many each family has live, kept with _live, so is_live
+## The live instances by instance id, and how many each family has live, kept with _live, so is_live
 ## and has_room (every held effect asks them every frame) read one key instead of walking every live effect.
 var _live_ids := {}
 var _family_n := {}
@@ -126,7 +126,7 @@ func _init(def: PackFxDefinition = null) -> void:
 	_def = def if def != null else shared_def()
 
 
-## The table in data/vfx (discovered through ContentScanner), or null without it. v0.10.0: every PackFxDefinition
+## The table in data/vfx (discovered through ContentScanner), or null without it. every PackFxDefinition
 ## there joins one table (each VX step ships its own file, data/vfx/pack_fx_<step>.tres), in path order.
 static func shared_def() -> PackFxDefinition:
 	if _shared == null:
@@ -152,7 +152,7 @@ func has_id(effect_id: StringName) -> bool:
 	return _def != null and _def.row(effect_id) >= 0
 
 
-## The live cap of `family` at the current Effects density, at least 1 (I9).
+## The live cap of `family` at the current Effects density, at least 1.
 func cap_for(family: StringName) -> int:
 	var f: float = DENSITY_FACTOR.get(ViewPrefs.effects_density, 1.0)
 	return maxi(1, ceili(float(CAPS.get(family, 8)) * f))
@@ -174,9 +174,9 @@ func pooled(effect_id: StringName) -> int:
 
 
 ## Plays effect `effect_id` at world position `pos`, `scale` times the table's scale; `colors` may hold `primary`,
-## `secondary` and `tertiary`. Returns the instance (null for an unknown id). v0.10.0: `life` -1 is the scene's own
+## `secondary` and `tertiary`. Returns the instance (null for an unknown id). `life` -1 is the scene's own
 ## length; 0 keeps it until the caller's release() (a bolt, a zone, a status that follows something); above 0, seconds.
-## v0.10.0 FX: `speed` plays the scene that many times faster (a Blink's flash pops in a fraction of its length).
+## `speed` plays the scene that many times faster (a Blink's flash pops in a fraction of its length).
 func spawn(
 	effect_id: StringName,
 	pos: Vector3,
@@ -201,7 +201,7 @@ func spawn(
 		var child := node.get_node_or_null(hidden) as Node3D
 		if child != null:
 			child.visible = false
-	# v0.11.0 S3: a spawn's own `hide` (the Mortar Grid's shell drops the explosion's Smoke); a pooled instance shows
+	# A spawn's own `hide` (the Mortar Grid's shell drops the explosion's Smoke); a pooled instance shows
 	# the children it is not hiding again, so one strike's choice never leaks into the next.
 	for part: String in HIDE_PER_SPAWN:
 		if HIDE.get(effect_id, []).has(part):
@@ -223,7 +223,7 @@ func spawn(
 		p.local_coords = not WORLD_SPACE.has(family)
 	var left := float(info["life"]) / speed if life < 0.0 else (INF if life == 0.0 else life)
 	var entry := {"node": node, "id": effect_id, "family": family, "left": left}
-	if not short.is_empty():  # W3-S4 (F10): the whole scene within short[0] s, gone short[1] ticks on
+	if not short.is_empty():  # W3-S4: the whole scene within short[0] s, gone short[1] ticks on
 		var s: float = short[0]
 		speed = maxf(speed, float(info["life"]) / s)
 		entry["left"] = minf(left, s + LIFE_MARGIN_S)
@@ -287,7 +287,7 @@ func follow(now: float) -> void:
 	_expire(now)
 
 
-## v0.10.5 W3-S4 (F10): the draw time is `now` (sim ticks): the SHORT effects whose ticks are up go back to their pool.
+## The draw time is `now` (sim ticks): the SHORT effects whose ticks are up go back to their pool.
 func _expire(now: float) -> void:
 	_now = now
 	var done: Array[Node3D] = []
@@ -299,7 +299,7 @@ func _expire(now: float) -> void:
 		_release(n)
 
 
-## Pause (I8): live instances stop (speed_scale 0) while held and run again after.
+## Pause: live instances stop (speed_scale 0) while held and run again after.
 func set_held(on: bool) -> void:
 	if on == _held:
 		return
@@ -345,7 +345,7 @@ func _oldest(family: StringName) -> Dictionary:
 	return {}
 
 
-## v0.10.5 (PERF_PLAYLOG_1: a floor's first fireballs cost 47-53 ms of script, each new shot instancing its scene):
+## PERF_PLAYLOG_1: a floor's first fireballs cost 47-53 ms of script, each new shot instancing its scene:
 ## fills `effect_id`'s pool to `n` idle instances now (a floor's load, behind the cover), so the floor's first `n`
 ## spawns take them instead of instancing mid-fight. Returns the instances it made (hidden, idle).
 func prefill(effect_id: StringName, n: int) -> Array[Node3D]:
@@ -365,12 +365,12 @@ func prefill(effect_id: StringName, n: int) -> Array[Node3D]:
 	return made
 
 
-## v0.10.5 PC: the idle instances waiting outside the tree (tests, scripts/checks/pool_node_count.gd).
+## The idle instances waiting outside the tree (tests, scripts/checks/pool_node_count.gd).
 func idle_outside() -> int:
 	return idle_detached().size()
 
 
-## v0.10.5: those instances (WorldViewRoot.idle_pool_nodes). Not named idle_pieces: ShaderWarmup would walk them, and
+## Those instances (WorldViewRoot.idle_pool_nodes). Not named idle_pieces: ShaderWarmup would walk them, and
 ## the pack's own warm-up (WorldViewRoot._queue_pack_warmup) draws them.
 func idle_detached() -> Array[Node]:
 	var out: Array[Node] = []
@@ -381,7 +381,7 @@ func idle_detached() -> Array[Node]:
 	return out
 
 
-## v0.10.5 PC: an idle instance leaves the tree (it was made in it: its scripts are ready, its parts built).
+## An idle instance leaves the tree (it was made in it: its scripts are ready, its parts built).
 func _park(node: Node3D) -> void:
 	if node.get_parent() == self:
 		remove_child(node)
@@ -402,7 +402,7 @@ func _take(effect_id: StringName, scene_path: String) -> Node3D:
 	if not idle.is_empty():
 		var node: Node3D = idle.pop_back()
 		if node.get_parent() == null:
-			add_child(node)  # v0.10.5 PC: back in the tree
+			add_child(node)  # Back in the tree
 		return node
 	return _make(scene_path)
 
@@ -449,7 +449,7 @@ func _make(scene_path: String) -> Node3D:
 	return node
 
 
-## I3: no light of its own, whatever the scene had.
+## No light of its own, whatever the scene had.
 func _unlight(node: Node3D, info: Dictionary) -> void:
 	if "light_enable" in node:
 		node.set("light_enable", false)
@@ -493,7 +493,7 @@ func _restart(node: Node3D, info: Dictionary) -> void:
 		anim.seek(0.0)
 
 
-## The scene's own speed times the spawn's (v0.10.0 FX).
+## The scene's own speed times the spawn's.
 static func _speed_of(info: Dictionary) -> float:
 	return float(info["speed"]) * float(info.get("mul", 1.0))
 
@@ -518,7 +518,7 @@ func _on_anim_done(anim_name: StringName, node: Node3D) -> void:
 		if e["node"] == node and is_inf(float(e["left"])):  # held: play again until the caller's release()
 			(_info[node]["anim"] as AnimationPlayer).play(ANIM)
 			return
-	_release(node, true)  # (v0.10.5 PC: out of the tree after the player's signal, not inside it)
+	_release(node, true)  # (out of the tree after the player's signal, not inside it)
 
 
 ## v0.10.0 lead (VX3's finding): the instances of one scene share its ShaderMaterials, so a recolour of one would
@@ -533,7 +533,7 @@ func _own_materials(node: Node) -> void:
 		_own_materials(c)
 
 
-## v0.10.0 FX: a held effect moved further than JUMP_M in one frame starts its particles again (the holds call it
+## A held effect moved further than JUMP_M in one frame starts its particles again (the holds call it
 ## after each move).
 static func settle(node: Node3D, was: Vector3, now_at: Vector3) -> void:
 	if was.distance_to(now_at) <= JUMP_M:
@@ -548,12 +548,12 @@ func is_live(node: Node3D) -> bool:
 	return node != null and _live_ids.has(node.get_instance_id())
 
 
-## v0.10.0: the family has a free slot (a caller with a fallback look draws that instead of reusing the oldest).
+## The family has a free slot (a caller with a fallback look draws that instead of reusing the oldest).
 func has_room(family: StringName) -> bool:
 	return live_count(family) < cap_for(family)
 
 
-## v0.10.0: the caller is done with `node` (a bolt ended, a zone or a status went): back to its pool.
+## The caller is done with `node` (a bolt ended, a zone or a status went): back to its pool.
 func release(node: Node3D) -> void:
 	if node != null:
 		_release(node)
@@ -585,7 +585,7 @@ func _release(node: Node3D, later := false) -> void:
 			return
 
 
-## v0.10.5 PC: a deferred park, unless a spawn took the instance again meanwhile.
+## A deferred park, unless a spawn took the instance again meanwhile.
 func _park_if_idle(node: Variant) -> void:  # (a Variant: the instance may be freed meanwhile)
 	if is_instance_valid(node) and not is_live(node as Node3D):
 		_park(node as Node3D)
@@ -607,7 +607,7 @@ func _focus() -> Vector3:
 	return Vector3(hit.x, 0.0, hit.z) + back * WARM_AHEAD_M
 
 
-## v0.10.5: the most instances of `effect_id` that were live at once this session (0: not spawned yet).
+## The most instances of `effect_id` that were live at once this session (0: not spawned yet).
 static func peak(effect_id: StringName) -> int:
 	return int(_peak.get(effect_id, 0))
 
@@ -645,7 +645,7 @@ static func scenes_ready(effect_id: StringName) -> bool:
 	return ResourceLoader.load_threaded_get_status(path) != ResourceLoader.THREAD_LOAD_IN_PROGRESS
 
 
-## v0.11.0 VX: the scene path of `effect_id` ("" for an unknown id), for a view that lays the scene's own materials
+## The scene path of `effect_id` ("" for an unknown id), for a view that lays the scene's own materials
 ## on its own mesh (LaserPackTube).
 static func scene_path_of(effect_id: StringName) -> String:
 	var def := shared_def()
@@ -653,7 +653,7 @@ static func scene_path_of(effect_id: StringName) -> String:
 	return def.scenes[k] if k >= 0 else ""
 
 
-## v0.11.0 VX: the session's kept scene at `scene_path` (null for "").
+## The session's kept scene at `scene_path` (null for "").
 static func scene_at(scene_path: String) -> PackedScene:
 	return _scene(scene_path) if scene_path != "" else null
 

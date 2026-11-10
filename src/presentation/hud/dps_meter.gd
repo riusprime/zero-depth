@@ -1,9 +1,9 @@
 class_name DpsMeter
 extends PanelContainer
-## v0.7.5 PG (owner N20; pick "Total + per-source"): the Playground's DPS meter on the right of the screen. DPS over the
+## The Playground's DPS meter on the right of the screen. DPS over the
 ## last 5 s, the average since the first hit, the total and the time, then the sources by damage with their share.
 ## Counted by DpsTally from the event log; Reset starts again. Never takes the mouse.
-## v0.10.5 W3-O20 (UI style Astral; the training room is player-facing): HudStyle's Astral side panel (ink, a contour
+## UI style Astral; the training room is player-facing: HudStyle's Astral side panel (ink, a contour
 ## and an inner contour, the accent as a short line on top), the title in letter-spaced Cinzel, the DPS in Cinzel, the
 ## lines in Atkinson (HudStyle.MIN_LABEL and up) in Astral's silver-white and grey.
 

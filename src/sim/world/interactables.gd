@@ -19,8 +19,8 @@ extends RefCounted
 ## the healing fountain (Shrines, SH and HF: their prompts carry their cost or effect, prompt_key and prompt_args).
 ## Pure: no stream is drawn.
 
-## v0.9.5 TS: TIMED_LEVER, the lever inside the timed door's secret room (TimedDoor.pull).
-## v0.11.0 O14b: HEART_PEDESTAL and HEART_DOOR, the hidden room under the throne's pedestal and sealed door (HeartRoom).
+## TIMED_LEVER, the lever inside the timed door's secret room (TimedDoor.pull).
+## HEART_PEDESTAL and HEART_DOOR, the hidden room under the throne's pedestal and sealed door (HeartRoom).
 enum Kind {
 	PYLON,
 	TIMED_SWITCH,
@@ -33,7 +33,7 @@ enum Kind {
 	HEART_DOOR
 }
 
-## Each kind's prompt (a string key in locale/strings.csv), for the shared prompt view. v0.9.0 DP: the purple dais
+## Each kind's prompt (a string key in locale/strings.csv), for the shared prompt view. the purple dais
 ## (PurpleRunes) reads FA's pylons' "Awaken".
 const PROMPT_KEYS: Array[StringName] = [
 	&"APPROACH_PYLON_PROMPT",

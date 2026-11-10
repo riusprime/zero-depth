@@ -1,6 +1,6 @@
 class_name HitStop
 extends RefCounted
-## v0.8.0 GF3 (owner O22: "for the blade and flinch we add a 2 frame or so freeze to make the hit feel better"): on a
+## On a
 ## Blade hit the hero's swing (its model's pose, the laser blade and its trail) and each struck enemy (its model's
 ## pose, held at its flinch's peak, and its white flash) hold still for HOLD_SECONDS of frame time (2 frames at 60 fps),
 ## with a tiny camera kick along the swing (IsoRig.kick; none with shake off or reduced motion).
@@ -13,9 +13,9 @@ extends RefCounted
 ##   (Flurry) don't stutter.
 ## - Off with the Options "Hit-stop" off or reduced motion on (ViewPrefs.hit_stop_on).
 ## The sim's own hit-stop (World.freeze_ticks, from the step's hitstop_ticks) is unchanged and separate.
-## Starting values. v0.8.0 N1 (owner O48, D18: "OK but we could make it a 20% more noticeable"): the hold 2 -> 2.4
+## Starting values. the hold 2 -> 2.4
 ## frames, the kick 0.06 -> 0.072 m (finisher 0.1 -> 0.12 m), the sim's steps 3,3,4,7 -> 4,4,5,8 ticks (runner.tres).
-## v0.10.5 S1 (owner: "blade is still pause"): back to 2 frames, 0.06 / 0.1 m, steps 3,3,3,5 ticks.
+## Back to 2 frames, 0.06 / 0.1 m, steps 3,3,3,5 ticks.
 
 const HOLD_SECONDS := 2.0 / 60.0
 const MIN_GAP_TICKS := 9

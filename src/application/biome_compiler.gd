@@ -1,7 +1,7 @@
 class_name BiomeCompiler
 extends RefCounted
-## v0.7.5 NB1: a biome's gameplay data in sim units. Today only its surface (BiomeSurface -> IceField); the look and
-## mood stay in presentation. v0.7.5 NB2: any surface kind (Frozen Shore's ice, Starfall's starglow) via
+## A biome's gameplay data in sim units. Today only its surface (BiomeSurface -> IceField); the look and
+## mood stay in presentation. any surface kind (Frozen Shore's ice, Starfall's starglow) via
 ## compile_surface; compile_ice stays the ice-only question.
 
 
@@ -12,7 +12,7 @@ static func compile_ice(def: BiomeDefinition) -> IceField:
 	return compile_surface(def)
 
 
-## v0.7.5 NB2: the biome's surface of any kind (ice or starglow), ready for IcePatches.place; null when it has none.
+## The biome's surface of any kind (ice or starglow), ready for IcePatches.place; null when it has none.
 static func compile_surface(def: BiomeDefinition) -> IceField:
 	if def == null or def.surface == null:
 		return null

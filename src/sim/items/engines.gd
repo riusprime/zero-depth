@@ -32,7 +32,7 @@ const EFFECT_SHATTER_DASH := &"shatter_dash"
 const EFFECT_BLOOD_HARVEST := &"blood_harvest"
 const EFFECT_SPIKED_PHASE := &"spiked_phase"
 const EFFECT_SLIPSTREAM := &"slipstream"
-## v0.8.0 RM (owner O91: "Make Fire+Frost's Thermal Break a natural elemental reaction"): an enemy both burning and
+## An enemy both burning and
 ## chilled or frozen breaks (thermal_break): its DAMAGE event's and its shatter's (STATUS_APPLY) effect id.
 const EFFECT_THERMAL_BREAK := &"thermal_break"
 
@@ -42,9 +42,9 @@ const PAYOFFS: Array[StringName] = [
 	EFFECT_BLEED_BURST,
 	EFFECT_SHATTER_DASH,
 	EFFECT_BLOOD_HARVEST,
-	&"heat_vent",  # Heat.EFFECT_VENT (v0.3.0 L18)
+	&"heat_vent",  # Heat.EFFECT_VENT
 	&"meltdown",  # Heat.EFFECT_MELTDOWN
-	&"starbound_arc_jump",  # v0.10.5 W3-P10b: Starbound.EFFECT_ARC_JUMP (a jump feeds no status)
+	&"starbound_arc_jump",  # Starbound.EFFECT_ARC_JUMP (a jump feeds no status)
 	&"starbound_detonation",  # Starbound.EFFECT_DETONATION
 ]
 
@@ -59,7 +59,7 @@ const CODE_BURST := 35
 const CODE_WILDFIRE := 36
 const CODE_BLOOD := 39
 const CODE_SPIKED := 40
-## v0.6.0 MX4: Venom Core's poison feed (+ source; after the hook feeds' 48..53).
+## Venom Core's poison feed (+ source; after the hook feeds' 48..53).
 const CODE_FEED_POISON := 56
 
 ## What made a hit (on_hit): a swing (or its echo), a landed bolt, a Static Chain jump, a shockwave.
@@ -68,10 +68,10 @@ const SRC_MELEE := 1
 const SRC_BOLT := 2
 const SRC_CHAIN := 3
 const SRC_WAVE := 4
-## v0.5.0 CP: an Orbit Blades touch (Razor Orbit feeds bleed from it).
+## An Orbit Blades touch (Razor Orbit feeds bleed from it).
 const SRC_ORBIT := 5
 
-## v0.8.0 RM: the wand's numbers in a lab world without World.wand_table (Thermal Break's; they mirror wand.tres).
+## The wand's numbers in a lab world without World.wand_table (Thermal Break's; they mirror wand.tres).
 static var _wand_defaults := WandTable.new()
 
 
@@ -93,7 +93,7 @@ static func combo(w: World, effect: int) -> ComboTable:
 static func combos_for(tables: Array[ComboTable], owned: PackedInt32Array) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for c in tables.size():
-		if tables[c].item_a < 0:  # a retired combo stub (v0.10.5 O1)
+		if tables[c].item_a < 0:  # a retired combo stub
 			continue
 		if owned.has(tables[c].item_a) and owned.has(tables[c].item_b):
 			out.append(c)
@@ -125,15 +125,15 @@ static func end(w: World) -> void:
 
 # --- Feeding the statuses -------------------------------------------------------------------------------------
 ## A player hit landed on enemy `i` (Damage.hit, got > 0). Adds the stacks its source feeds, once per
-## (root, status, source, target). v0.6.0 MX1: a melee hit feeds the current combo step spec's statuses (shock,
+## (root, status, source, target). a melee hit feeds the current combo step spec's statuses (shock,
 ## bleed, frost; its burn is ItemEffects.on_melee_hit's), a projectile hit the bolt spec's (each every N landed
-## bolts; v0.6.0 MX2: the projectile's own spec, World.hit_spec); the other sources keep their items' numbers. An
+## bolts; the projectile's own spec, World.hit_spec); the other sources keep their items' numbers. An
 ## ability's attack that isn't a projectile feeds its own spec's statuses instead (Attacks._feed).
 static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName) -> void:
 	var a := w.actors
 	if a.dead[i] == 1 or tags & SimEvent.TAG_DOT or effect_id in PAYOFFS:
 		return
-	var hs := w.hit_spec  # v0.6.0 MX2: an ability's own attack (not a bolt) feeds in Attacks._feed
+	var hs := w.hit_spec  # An ability's own attack (not a bolt) feeds in Attacks._feed
 	if hs != null and hs.has_tag(&"ability") and hs.form != AttackSpec.Form.BOLT:
 		return
 	var m := w.item_mods
@@ -142,18 +142,18 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 	var shock := 0
 	var bleed := 0
 	var frost := 0
-	var poison := 0  # v0.6.0 MX4: Venom Core
+	var poison := 0  # Venom Core
 	match src:
 		SRC_MELEE:
 			if hs != null and hs.depth > 0 and hs.form == AttackSpec.Form.ARC:
-				return  # v0.6.5 WN5a: a trigger's child slash feeds its own statuses (Attacks._feed)
+				return  # A trigger's child slash feeds its own statuses (Attacks._feed)
 			var sp := Modifiers.step(w, w.combo_step)
 			shock = sp.stacks_of(&"shock")
 			bleed = sp.stacks_of(&"bleed")
 			frost = sp.stacks_of(&"frost")
 			poison = sp.stacks_of(&"poison")
 		SRC_BOLT:
-			var b := hs if hs != null else Modifiers.bolt(w)  # v0.6.0 MX2: the projectile's own spec
+			var b := hs if hs != null else Modifiers.bolt(w)  # The projectile's own spec
 			var b_burn := b.stacks_of(&"burn")  # each read once (audit G-16)
 			var b_shock := b.stacks_of(&"shock")
 			var b_bleed := b.stacks_of(&"bleed")
@@ -174,7 +174,7 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 		SRC_ORBIT:
 			bleed = m.bleed_orbit
 	var id := a.ids[i]
-	var pm := w.hit_proc_permille  # v0.8.0 MR (O91): a secondary attack's hit feeds at its proc (SecondaryProc)
+	var pm := w.hit_proc_permille  # A secondary attack's hit feeds at its proc (SecondaryProc)
 	if burn > 0 and w.proc_ledger.try_mark(root, CODE_FEED_BURN + src, id, w.tick):
 		add_burn(w, i, SecondaryProc.stacks(w, burn, pm), root, EFFECT_CINDER_SHOT)
 	if bleed > 0 and w.proc_ledger.try_mark(root, CODE_FEED_BLEED + src, id, w.tick):
@@ -216,11 +216,11 @@ static func add_burn(w: World, i: int, n: int, root: int, effect: StringName) ->
 	if lit:
 		a.burn_cd[i] = m.burn_period_ticks
 	a.burn_stacks[i] = mini(a.burn_stacks[i] + n, ElementLevels.burn_cap(w))
-	a.burn_t[i] = Affinities.burn_ticks(w, m.burn_duration_ticks)  # v0.9.0 RB: A1 Ember
+	a.burn_t[i] = Affinities.burn_ticks(w, m.burn_duration_ticks)  # A1 Ember
 	_status(w, i, root, a.burn_stacks[i], effect)
 	if lit and w.pair_mask != 0:
-		ElementPairs.on_burn_start(w, i)  # v0.9.5 EE3: Toxic Fumes
-	thermal_break(w, i, root)  # v0.8.0 RM: fire on a chilled enemy
+		ElementPairs.on_burn_start(w, i)  # Toxic Fumes
+	thermal_break(w, i, root)  # Fire on a chilled enemy
 
 
 ## Adds shock stacks (capped at the threshold, refreshed). Plasma Arc: shocking a burning enemy arcs. At the
@@ -273,11 +273,11 @@ static func add_bleed(w: World, i: int, n: int, root: int) -> void:
 		return
 	if a.bleed_stacks[i] == 0:
 		a.bleed_cd[i] = m.bleed_period_ticks
-		ElementLevels.on_bleed_start(w, i)  # v0.9.5 EE1: Open wounds starts from where it stands
+		ElementLevels.on_bleed_start(w, i)  # Open wounds starts from where it stands
 	a.bleed_stacks[i] = mini(a.bleed_stacks[i] + n, ElementLevels.bleed_cap(w))
 	a.bleed_t[i] = m.bleed_ticks
 	_status(w, i, root, a.bleed_stacks[i], EFFECT_BLEED)
-	ElementLevels.exsanguinate(w, i, bleed_period(w))  # v0.9.5 EE1: Bleed Lv 3 bursts at the cap
+	ElementLevels.exsanguinate(w, i, bleed_period(w))  # Bleed Lv 3 bursts at the cap
 
 
 ## Adds frost stacks (refreshed; each one also chills: the slow runs). No stacks build while frozen. At the
@@ -300,13 +300,13 @@ static func add_frost(w: World, i: int, n: int, root: int, effect: StringName) -
 			a.frost_t[i] = 0
 			a.frozen_t[i] = m.freeze_ticks
 			_status(w, i, root, m.freeze_ticks, EFFECT_FREEZE)
-			thermal_break(w, i, root)  # v0.8.0 RM: frost on a burning enemy
+			thermal_break(w, i, root)  # Frost on a burning enemy
 			return
 	_status(w, i, root, a.frost_stacks[i], effect)
-	thermal_break(w, i, root)  # v0.8.0 RM: frost on a burning enemy
+	thermal_break(w, i, root)  # Frost on a burning enemy
 
 
-## v0.8.0 RM (owner O91; WAND.md "Thermal Break"; SIM_CONTRACTS §8l): enemy `i` is both burning and chilled (frost
+## Enemy `i` is both burning and chilled (frost
 ## stacks) or frozen, whichever came second: it breaks. Its burn and its frost are consumed (a freeze ends), then it
 ## takes one hit of WandTable.thermal_base + thermal_per_burn × the burn stacks it had, as a damage-over-time hit
 ## (Damage.tick_dot: × the damage stat, never a crit, proc 0: it sets nothing off, so it can't chain itself), after a
@@ -322,7 +322,7 @@ static func thermal_break(w: World, i: int, root: int) -> void:
 		return
 	var t := w.wand_table if w.wand_table != null else _wand_defaults
 	var stacks := a.burn_stacks[i]
-	# v0.10.5 W3-P1b: the hit is Fire's (its burn turned into one hit): it falls off by the elements the enemy carries
+	# The hit is Fire's (its burn turned into one hit): it falls off by the elements the enemy carries
 	# now, before the break consumes the burn and the frost, and takes Fire's level share (ElementStack).
 	var el := ElementStack.mult(w, i, ElementStack.FIRE)
 	a.burn_stacks[i] = 0
@@ -363,8 +363,8 @@ static func _status(w: World, i: int, root: int, amount: int, effect: StringName
 static func tick_statuses(w: World) -> void:
 	var a := w.actors
 	var m := w.item_mods
-	var period := bleed_period(w)  # v0.6.5 WN5a: S5 Bleed ticks faster while you move
-	ElementStack.tick(w)  # v0.10.5 W3-P1b: the Lightning charges run down
+	var period := bleed_period(w)  # S5 Bleed ticks faster while you move
+	ElementStack.tick(w)  # The Lightning charges run down
 	for i in range(1, a.size()):
 		if a.shock_stacks[i] > 0:
 			a.shock_t[i] -= 1
@@ -383,13 +383,13 @@ static func tick_statuses(w: World) -> void:
 					ElementLevels.deep_dot(
 						w,
 						ElementPairs.bleed_tick(
-							w, i, ElementLevels.bleed_tick(w, i, m.bleed_damage * a.bleed_stacks[i])  # v0.9.5 EE3: Boiling Blood
+							w, i, ElementLevels.bleed_tick(w, i, m.bleed_damage * a.bleed_stacks[i])  # Boiling Blood
 						)
 					),
 					a.ids[0],
 					a.ids[0],
 					EFFECT_BLEED,
-					&"bleed"  # v0.10.5 O10: the matchup's element
+					&"bleed"  # The matchup's element
 				)
 			if a.bleed_t[i] <= 0:
 				a.bleed_stacks[i] = 0
@@ -403,7 +403,7 @@ static func tick_statuses(w: World) -> void:
 	w.proc_ledger.prune(w.tick)
 
 
-## v0.6.5 WN5a (WAND.md S5, "bleed stacks that tick faster when you move"): the bleed's period this tick: the moving
+## WAND.md S5, "bleed stacks that tick faster when you move": the bleed's period this tick: the moving
 ## period (ItemMods.bleed_move_period_ticks) while the player walks or dashes, else the standing one.
 static func bleed_period(w: World) -> int:
 	var m := w.item_mods
@@ -420,7 +420,7 @@ static func nearest_enemies(
 	var a := w.actors
 	var picked := PackedInt32Array()
 	var dists := PackedFloat32Array()
-	for j in w.aoe_candidates(at, reach):  # v0.8.0 HS: a superset, ascending (was every actor)
+	for j in w.aoe_candidates(at, reach):  # A superset, ascending (was every actor)
 		if j == skip or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
 			continue
 		var d := Kin.length(a.pos(j) - at)
@@ -454,7 +454,7 @@ static func attacker_mult(w: World, target: int, owner_id: int) -> int:
 static func on_guard_block(w: World, _owner_id: int, root: int) -> void:
 	if w.player_dead():
 		return
-	var cap := Abilities.charge_max(w)  # v0.4.0 BS: Aegis stores charges like Bulwark
+	var cap := Abilities.charge_max(w)  # Aegis stores charges like Bulwark
 	if cap > 0 and w.guard_charges < cap:
 		w.guard_charges += 1
 		_status(w, 0, root, w.guard_charges, EFFECT_BULWARK)
@@ -539,7 +539,7 @@ static func on_kill(w: World, kill: SimEvent, i: int, tags: int) -> void:
 			var at := a.pos(i)
 			w.wildfire_tick = w.tick
 			w.wildfire_pos = at
-			for j in w.aoe_candidates(at, m.wildfire_radius_m):  # v0.8.0 HS: a superset, ascending
+			for j in w.aoe_candidates(at, m.wildfire_radius_m):  # A superset, ascending
 				if j == i or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
 					continue
 				if AttackShapes.disc_touches(at, m.wildfire_radius_m, a.pos(j), a.radius[j]):
@@ -557,7 +557,7 @@ static func on_kill(w: World, kill: SimEvent, i: int, tags: int) -> void:
 	var pid := a.ids[0]
 	w.harvest_tick = w.tick
 	w.harvest_pos = center
-	for j in w.aoe_candidates(center, c.radius_m):  # v0.8.0 HS: a superset, ascending
+	for j in w.aoe_candidates(center, c.radius_m):  # A superset, ascending
 		if j == i or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
 			continue
 		if AttackShapes.disc_touches(center, c.radius_m, a.pos(j), a.radius[j]):

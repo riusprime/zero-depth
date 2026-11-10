@@ -1,6 +1,6 @@
 class_name RuinsRocksCompiler
 extends RefCounted
-## v0.11.0 O13b (ENEMIES.md R1-R4, approved 2026-11-07; owner Q22): the Ruins' and the Night Rocks' signature enemies in
+## The Ruins' and the Night Rocks' signature enemies in
 ## the sim's units (RuinsRocks runs them). ContentCompiler compiles each one's shared numbers (HP, speed, its one
 ## attack's windup, damage and cooldown, a keep-away band), then its own here. The Wire Weaver's post is a table of its
 ## own (extra_tables), made from the Weaver's: an actor with post_hp HP and no attack.

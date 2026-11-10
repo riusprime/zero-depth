@@ -2,7 +2,7 @@ class_name EliteRulesDefinition
 extends ContentDef
 ## v0.9.0 EL (owner Q24: "15 % / 25 %", floors 4-5 only, at most 1 alive, at least 2 rooms apart; Q25: "you have a 30%
 ## chance of dropping the core"; ELITES.md E0): where elites appear and what a kill gives (data/elites/rules.tres,
-## category `elite_rules`, id `rules`). Starting values (F10).
+## category `elite_rules`, id `rules`). Starting values.
 ## - room_permille: the share of a floor's combat rooms that hold an elite, per floor of a loop (1-based; the last
 ##   repeats; 0 = none). The elite arrives the first time the hero walks in (while fewer than max_alive are alive).
 ## - min_gap_rooms: at least this many rooms between two elite rooms (an Elite Lockdown counts as one).
@@ -10,7 +10,7 @@ extends ContentDef
 ## - kind_weights: Breaker, Rift Hunter, Conduit (EliteDefinition.ARCHETYPES order), for each elite drawn.
 ## - lockdown_escort: the normal enemies standing with an Elite Lockdown's elite (owner Q21: "an elite plus a small
 ##   escort").
-## - elite_weight (v0.9.0 CF): how many enemies an elite counts as in a closed fight's at-once cap (ClosedFights).
+## - elite_weight: how many enemies an elite counts as in a closed fight's at-once cap (ClosedFights).
 
 @export var room_permille := PackedInt32Array([0, 0, 0, 150, 250])
 @export var min_gap_rooms := 2

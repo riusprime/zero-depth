@@ -1,6 +1,6 @@
 class_name TidecallerAvatar
 extends BossAvatar
-## v0.9.0 NB1 (BOSSES_4_5.md N1; art list §2): The Tidecaller, floor 4's boss: a hunched shell-backed sea priest with a
+## BOSSES_4_5.md N1; art list §2: The Tidecaller, floor 4's boss: a hunched shell-backed sea priest with a
 ## bell-headed staff, deep teal and brass. The owner's model (assets/models/bosses/boss_tidecaller.glb) comes cut into
 ## parts (scripts/assets/nb_prep.py: Body, Staff, Bell, ArmL, Shell); BossModels rigs each part as a bone (the bell
 ## hanging from the staff) and it plays TidecallerClips, and on top of them (_pose_rig) the tide the sim reads out

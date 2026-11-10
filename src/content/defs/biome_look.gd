@@ -1,6 +1,6 @@
 class_name BiomeLook
 extends Resource
-## A biome's own look beyond its palette and mood (v0.7.5 NB1), so a new biome is data plus, at most, one new edge
+## A biome's own look beyond its palette and mood, so a new biome is data plus, at most, one new edge
 ## builder: what stands in for the kit's square cover, which code-made pieces replace the kit's floor decoration,
 ## what lies beyond the floor's edge, and the cold (or other) cast its enemies' grey parts take. Presentation only:
 ## StageView, StageDresser and ActorViews read it, the sim never does. A biome without one (Ruins, Night Rocks,
@@ -38,18 +38,18 @@ const ROLES: Array[StringName] = [
 ]
 
 ## What a square cover footprint is drawn with: kit piece id -> weight (empty: the dresser's own rule).
-## v0.8.0 MI: the cover_square pool when `pools` has none.
+## The cover_square pool when `pools` has none.
 @export var square_cover: Dictionary = {}
 ## Floor decoration swaps: kit decor piece id -> the piece drawn instead (a kit or a code-made piece, CodeProps).
-## v0.8.0 MI: used for a decoration role `pools` has no pool for.
+## Used for a decoration role `pools` has no pool for.
 @export var decor_swap: Dictionary = {}
-## v0.8.0 MI: role (ROLES) -> {piece id: int weight}. A role without a pool keeps the Ruins kit's piece (the old rule).
-## A piece whose model is missing drops out (L15); an empty pool falls back the same way.
+## Role (ROLES) -> {piece id: int weight}. A role without a pool keeps the Ruins kit's piece (the old rule).
+## A piece whose model is missing drops out; an empty pool falls back the same way.
 @export var pools: Dictionary = {}
-## v0.8.0 MI (owner O79: "cap the observatory max to 1 per floor"): piece id -> the most of it one floor draws (a
+## Piece id -> the most of it one floor draws (a
 ## unique landmark never repeats); once reached the pool's other pieces draw. Unlisted: no cap.
 @export var max_per_floor: Dictionary = {}
-## v0.8.0 MI: how many wall props (pool wall_prop) a room sets into its walls at most, and the chance of each.
+## How many wall props (pool wall_prop) a room sets into its walls at most, and the chance of each.
 @export var wall_props_per_room := 0
 @export var wall_prop_chance := 0.5
 ## What lies beyond the floor's edge: &"" the void (the mood's void colour), &"water" a frozen sea with ice floes

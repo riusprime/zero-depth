@@ -1,6 +1,6 @@
 class_name BombMods
 extends RefCounted
-## v0.9.5 FC2 (docs/roadmap/v0.9.5/FORM_COMBOS.md B1-B10): what ten cards do to the Bomb form. One handler per card.
+## What ten cards do to the Bomb form. One handler per card.
 ## A bomb ignores these cards' generic ops (WandCompile.run: it only notes the id in modifier_ids, and Split's level as
 ## "bomblets:N"), and this file reads them from there: mask(spec).
 ## - At the throw (Attacks._bolts -> on_throw): Halo's cross of four bombs and Backfire's bomb at the hero's feet

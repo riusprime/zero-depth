@@ -1,6 +1,6 @@
 class_name HeroFxBudget
 extends RefCounted
-## v0.10.5 O12 (owner P9, 2026-11-01: "yes cap it it will also help fps"; pillar 2, readable chaos): the per-frame
+## The per-frame
 ## budget of the HERO's own effects, so a stacked build's noise never drowns what the enemies are about to do.
 ## - A cap per frame on the hero's sprites in the effects layer (VfxCore), by Effects density. The callers draw the
 ##   newest effects first, so past SOFT of the cap the oldest draw dimmed (OVER_ALPHA) and smaller (OVER_SCALE), and

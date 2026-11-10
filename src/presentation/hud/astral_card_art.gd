@@ -1,6 +1,6 @@
 class_name AstralCardArt
 extends RefCounted
-## v0.10.5 W3-O15 (owner 2026-11-04: UI style Astral, W3_O13_UI_STYLE_G2.md round 2; the painted card art): the one
+## The one
 ## file that loads the card art. The card icons (assets/ui/card_icons/icon_<card id>.png, cut from his sheets by
 ## scripts/art/split_sheets.py; a card without one shows icon_unknown), his four carved slate card frames and their
 ## focused twins (assets/ui/card_frames/frame_<1..4>[_focus].png, cut by scripts/art/cut_card_frames.py: each frame's
@@ -15,10 +15,10 @@ const NOISE := "res://assets/ui/fx/dissolve_noise.png"
 const UNKNOWN := &"unknown"
 const CINZEL := "res://assets/fonts/cinzel/Cinzel-Variable.ttf"
 const FRAMES := 4
-## v0.10.5 W3-P10c: the Constellation cards' frame variant and their ids' prefix (Constellations.card_id).
+## The Constellation cards' frame variant and their ids' prefix (Constellations.card_id).
 const CONSTELLATION := 101
 const CONSTELLATION_PREFIX := "const_"
-## v0.10.5 W3-P10b (owner W7): a Starbound card (an id starting STARBOUND_PREFIX) wears the owner's gold Starbound frame
+## A Starbound card (an id starting STARBOUND_PREFIX) wears the owner's gold Starbound frame
 ## and back (frame_starbound.png, back_starbound.png, on the same canvas) as variant STARBOUND; it has no focused twin,
 ## so the game's own focus look (the lift, the glow, the light) shows the focus. Its moon-blue (V1, V3, the HUD row).
 const STARBOUND := 5
@@ -78,7 +78,7 @@ static func has_icon(id: StringName) -> bool:
 
 
 ## Which of the four frames card `id` wears (1..4): the same for an id every time (a sum of its characters).
-## v0.10.5 W3-P10c: a Constellation card (an id `const_<name>`, Constellations.card_id) wears the owner's violet
+## A Constellation card (an id `const_<name>`, Constellations.card_id) wears the owner's violet
 ## Constellation frame and back (CONSTELLATION; one drawing each: its focus is the game's own look, owner).
 static func variant_of(id: StringName) -> int:
 	var s := String(id)
@@ -94,7 +94,7 @@ static func variant_of(id: StringName) -> int:
 
 ## Frame `variant` (1..4, or CONSTELLATION), focused or not.
 static func frame(variant: int, focused: bool) -> Texture2D:
-	if variant == STARBOUND:  # v0.10.5 W3-P10b: the gold frame, no focused twin
+	if variant == STARBOUND:  # The gold frame, no focused twin
 		if not _frames.has("frame_starbound"):
 			_frames["frame_starbound"] = load(FRAME_DIR + "frame_starbound.png")
 		return _frames["frame_starbound"]
@@ -106,10 +106,10 @@ static func frame(variant: int, focused: bool) -> Texture2D:
 	return _frames[key]
 
 
-## Card back `variant` (1..4, or CONSTELLATION), focused or not (v0.10.5 W3-S13): on the frames' canvas, so a back
+## Card back `variant` (1..4, or CONSTELLATION), focused or not: on the frames' canvas, so a back
 ## and a front line up.
 static func back(variant: int, focused: bool) -> Texture2D:
-	if variant == STARBOUND:  # v0.10.5 W3-P10b: the gold back, no focused twin
+	if variant == STARBOUND:  # The gold back, no focused twin
 		if not _backs.has("back_starbound"):
 			_backs["back_starbound"] = load(BACK_DIR + "back_starbound.png")
 		return _backs["back_starbound"]

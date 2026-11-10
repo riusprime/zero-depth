@@ -1,6 +1,6 @@
 class_name RuinsRocksAvatar
 extends AvatarBase
-## v0.11.0 O13b (ENEMIES.md R1-R4; OWNER_TODO §3.2's prompts): the code-made stand-in bodies of the Ruins' and the
+## ENEMIES.md R1-R4; OWNER_TODO §3.2's prompts: the code-made stand-in bodies of the Ruins' and the
 ## Night Rocks' signature enemies, in the Charger family's style until the owner's models arrive (then VAT): a faceted
 ## ridged shell in the kind's role colour, a dark shield-shaped face with one glowing gem visor, a charcoal body, grey
 ## segmented limbs with bone tips. Drawn as nodes (they come one or two at a time, not in crowds; no VAT crowd yet).

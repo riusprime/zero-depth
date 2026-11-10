@@ -6,12 +6,12 @@ extends RefCounted
 ## doorways between rooms that touch (loops; never into the hall). Each room gets an interior template (RoomInterior)
 ## that never blocks a doorway or splits the room; item spots (1 in a 1 x 1 room, 1-2 in bigger rooms, none in the
 ## hall) and spawn points scaled with its size. The portal room is the room farthest from the hall by doorways.
-## v0.3.0 (L1-L2): the cell size is drawn per floor; every room side draws its own wall half, so walls are 0.6-3.0 m
+## L1-L2: the cell size is drawn per floor; every room side draws its own wall half, so walls are 0.6-3.0 m
 ## thick and room interiors give way to them; doorways are 2.2-3.4 m wide, anywhere along the stretch the two rooms
 ## share, and cut through the full thickness.
-## v0.7.5 MG (owner N9): 15-19 rooms (20 with the boss room), footprints up to the extra-large 4 x 4, on a span of
+## 15-19 rooms (20 with the boss room), footprints up to the extra-large 4 x 4, on a span of
 ## 11 cells (FloorParams; the run's floors read them from data/map).
-## v0.8.0 RT (owner O12): with designed layouts (FloorParams.room_layouts, data/room_layouts), a room of a size that has
+## With designed layouts (FloorParams.room_layouts, data/room_layouts), a room of a size that has
 ## them draws one (RoomLayouts: a layout, a quarter turn and a mirror, after the templates) and is furnished from it
 ## instead of its template; its groups pass the same checks as a vignette, plus a box in front of each doorway.
 ## Every draw comes from the `map` stream in a fixed order, so a seed always gives the same floor. Pure sim code:
@@ -101,7 +101,7 @@ static func generate(seed_value: int, params: FloorParams = null) -> FloorLayout
 	return f
 
 
-## v0.7.5 PG (owner N20, the Playground): one walled room of `cells` with no doorway, portal, items or spawn
+## One walled room of `cells` with no doorway, portal, items or spawn
 ## points; its interior is the start hall's open floor. The cell size and the wall halves are drawn as for a floor.
 static func one_room(seed_value: int, cells: Vector2i, params: FloorParams = null) -> FloorLayout:
 	var p := params if params != null else FloorParams.defaults()
@@ -127,7 +127,7 @@ static func one_room(seed_value: int, cells: Vector2i, params: FloorParams = nul
 	_make_walls(f, plan)
 	f.slab_first = f.walls.size()
 	f.room_template.append(RoomInterior.pick(rng, cells, true))
-	_draw_layouts(f, FloorParams.new(), rng)  # v0.8.0 RT: the Playground's room is the hall (no layout, no draw)
+	_draw_layouts(f, FloorParams.new(), rng)  # The Playground's room is the hall (no layout, no draw)
 	f.spawn_points.resize(1)
 	f.spawn_points[0] = PackedVector2Array()
 	return f
@@ -394,7 +394,7 @@ static func _place_portal(f: FloorLayout, rng: RngStream) -> void:
 	assert(false, "no wall of the portal room fits the gate")
 
 
-## The gate's stone footprint and the clear square in front of it both lie inside the portal room, and (v0.9.0 PT)
+## The gate's stone footprint and the clear square in front of it both lie inside the portal room, and
 ## so does its oval's wall clearance.
 static func _gate_fits(f: FloorLayout) -> bool:
 	var r := f.rooms[f.portal_room].grow(0.001)
@@ -572,7 +572,7 @@ static func _furnish(f: FloorLayout, p: FloorParams, rng: RngStream, room: int) 
 	var walls := f.room_walls(room)
 	var pieces: Array[Obb] = []
 	var template := f.room_template[room]
-	if f.layout_of(room) != &"":  # v0.8.0 RT: a designed room
+	if f.layout_of(room) != &"":  # A designed room
 		_furnish_layout(f, p, room, walls)
 		return
 	if RoomThemes.is_themed(template):
@@ -588,7 +588,7 @@ static func _furnish(f: FloorLayout, p: FloorParams, rng: RngStream, room: int) 
 	f.walls.append_array(pieces)
 
 
-## v0.5.9 L8: a themed room's vignettes, tried in RoomThemes' order while each anchor's quota lasts, cars capped.
+## A themed room's vignettes, tried in RoomThemes' order while each anchor's quota lasts, cars capped.
 static func _furnish_themed(
 	f: FloorLayout, p: FloorParams, rng: RngStream, room: int, walls: Array[Obb]
 ) -> void:
@@ -619,7 +619,7 @@ static func _furnish_themed(
 	f.walls.append_array(pieces)
 
 
-## v0.8.0 RT (owner O12): each room's designed layout, turn and mirror, drawn from the map stream in room order. Only
+## Each room's designed layout, turn and mirror, drawn from the map stream in room order. Only
 ## when the floor has layouts (FloorParams.room_layouts; none on a floor saved before RT, which then draws nothing
 ## here and comes out as it was), and never for the start hall or the portal room (their own rules) or a room whose
 ## size has no layout yet (its rule-built interior stays).
@@ -640,7 +640,7 @@ static func _draw_layouts(f: FloorLayout, p: FloorParams, rng: RngStream) -> voi
 		_settle_orientation(f, p, room, t, d[1], d[2])
 
 
-## v0.8.0 RT: the drawn turn and mirror, unless another way round keeps more of the layout clear of the room's
+## The drawn turn and mirror, unless another way round keeps more of the layout clear of the room's
 ## doorways: every allowed turn and mirror is scored by the blockers that would stand in a doorway's box (or leave the
 ## room), tried from the drawn one on, and the first with the fewest wins. No draw (the choice is a pure function of
 ## the floor so far), so a room keeps its drawn way round whenever that is as good as any.
@@ -681,7 +681,7 @@ static func _layout_table(f: FloorLayout, p: FloorParams, room: int) -> RoomLayo
 	return null
 
 
-## v0.8.0 RT: the boxes in front of a room's doorways that a designed room keeps free: the doorway's width plus
+## The boxes in front of a room's doorways that a designed room keeps free: the doorway's width plus
 ## layout_door_side either side, from the wall face layout_door_depth into the room.
 static func _door_boxes(f: FloorLayout, p: FloorParams, room: int) -> Array[Rect2]:
 	var r := f.rooms[room]
@@ -706,7 +706,7 @@ static func _door_boxes(f: FloorLayout, p: FloorParams, room: int) -> Array[Rect
 	return out
 
 
-## v0.8.0 RT: a designed room's groups, in the layout's order, each kept whole or dropped whole: dropped when a solid
+## A designed room's groups, in the layout's order, each kept whole or dropped whole: dropped when a solid
 ## would leave the room or stand in a doorway's box, or when the group fails a vignette's checks (doorways, the start
 ## and the gate clear, flush to a wall or the slab gap from it and from every other piece, the room one region).
 ## Drawn-only pieces go with their group; decoration in a doorway's box is left out.

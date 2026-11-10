@@ -1,7 +1,7 @@
 class_name ShardIcon
 extends Control
-## The shard symbol (v0.3.0 E): a faceted violet crystal drawn with CanvasItem calls, no external art.
-## v0.10.5 W3-O16: `astral` draws Astral's shard instead (the shop and the altar pick): a thin outlined crystal in
+## The shard symbol: a faceted violet crystal drawn with CanvasItem calls, no external art.
+## `astral` draws Astral's shard instead (the shop and the altar pick): a thin outlined crystal in
 ## `tint` (Astral's accent, or its too-poor rose) with a lit top facet, like the reference's wallet mark.
 
 const LIGHT := Color("#D9C6FF")

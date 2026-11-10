@@ -1,6 +1,6 @@
 class_name CritterCrowd
 extends Node3D
-## v0.11.0 O9c (owner Q16-c: "Batch now"): the horde critters drawn with no node each. A surge brings up to its
+## The horde critters drawn with no node each. A surge brings up to its
 ## alive_cap of one small kind at once; a node per critter (its actor root, facing, HordeAvatar with its own
 ## _process, bar and blob) cost ~40 us a frame each (O9b's breakdown), so ActorViews gives the critters to this crowd
 ## instead. Each sync (once a frame that ran a tick) it reads the WorldReader's columns straight (ids, kinds, places,

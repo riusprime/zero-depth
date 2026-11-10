@@ -1,6 +1,6 @@
 class_name ShrinesView
 extends Node3D
-## v0.9.0 SH, HF (owner Q29b, W36): the floor's Blood or Chaos shrine and its healing fountain, reading only
+## v0.9.0 SH, HF: the floor's Blood or Chaos shrine and its healing fountain, reading only
 ## (WorldReader.shrine). The Fortune shrine is GambleShrineView's.
 ## - Each body is the owner's model (`shrine_blood`, `shrine_chaos`, `healing_fountain` through ShopModels when
 ##   assets/models/manifest.json lists it), front turned to the iso camera like the gamble shrine's, else a code
@@ -11,7 +11,7 @@ extends Node3D
 ##   water light, then dry for good: its water is gone (the stand-in's water disc hidden, the model darkened) and its
 ##   light out (`dry`). A floor resumed after a use shows the spent or dry look at once.
 ## The prompt (with the cost) is the HUD's shared one; the result lines are ShrineHud's; the sounds AudioEvents'.
-## v0.9.0 BV (W71): per biome (InteractionLooks; set `biome` before setup): the owner's models tinted, the fountain's
+## Per biome (InteractionLooks; set `biome` before setup): the owner's models tinted, the fountain's
 ## water and light in the biome's water (Ruins clear blue, Night Rocks moon-teal, Red Canyon oasis teal, Frozen Shore
 ## pale ice, Starfall star-lilac), and the biome's accent round each foot. Blood keeps its red and Chaos its violet
 ## (what they cost and do) in every biome.
@@ -37,7 +37,7 @@ var fountain_light := OmniLight3D.new()
 var shrine_model := false
 var fountain_model := false
 var water: MeshInstance3D
-## v0.9.0 BV: the floor's biome (WorldViewRoot sets it), the water colour drawn, and the fountain body's lit albedo.
+## The floor's biome (WorldViewRoot sets it), the water colour drawn, and the fountain body's lit albedo.
 var biome := &""
 var water_color := WATER
 var _wet := Color.WHITE

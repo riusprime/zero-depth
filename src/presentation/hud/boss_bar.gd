@@ -1,15 +1,15 @@
 class_name BossBar
 extends Control
 ## The boss bar (PLAN v0.3.0 C) across the top of the HUD while a boss is alive: its name, its HP, and the label over
-## it ("PHASE SHIFT" through a phase change; v0.11.0 O3: "STUNNED · VULNERABLE" while a broken quake pillar stuns
-## the Gatekeeper; v0.9.5 BH1: bosses have no stagger meter). Reads the sim through
+## it ("PHASE SHIFT" through a phase change; "STUNNED · VULNERABLE" while a broken quake pillar stuns
+## the Gatekeeper; bosses have no stagger meter). Reads the sim through
 ## WorldReader only; hidden when no boss is alive.
-## v0.3.0 BX (L22): while the boss rises the bar fills from empty to full over exactly its intro ticks
+## While the boss rises the bar fills from empty to full over exactly its intro ticks
 ## (WorldReader.boss_intro_permille), then shows its real HP.
-## v0.3.5 F15: calmer; plain type, a thin bar on a faint track, a hairline stagger meter.
-## v0.8.0 N2 (owner O52): under the bar, The Fallen's mimic window line (its warning, then the window and the seconds
+## Calmer; plain type, a thin bar on a faint track, a hairline stagger meter.
+## Under the bar, The Fallen's mimic window line (its warning, then the window and the seconds
 ## left; WorldReader.final_pace), empty otherwise.
-## v0.8.0 N4 (owner O56, O57): the HP is a HudBar (HealthBarTrail: the damage chunk that holds from the burst's first
+## The HP is a HudBar (HealthBarTrail: the damage chunk that holds from the burst's first
 ## hit, then drains; heals grow). One full bar per phase (WorldReader.boss_phase_permille): full at each phase's
 ## start, refilling (animated) when the phase changes; the line under it names the phase ("Phase 2 / 3"). The final
 ## boss shows one bar per body (Colossus, Prism, The Fallen) under the fight's name, the line naming the body only
@@ -17,18 +17,18 @@ extends Control
 ## rise fills it (the sim's own rise, L22). Replaces FB1's three segments. While
 ## the sim says the boss can't be hurt (WorldReader.boss_invulnerable) the bar turns INVULNERABLE's colour and says
 ## "Invulnerable", with the shields still to pass (WorldReader.boss_shields_left) when there are any.
-## v0.10.5 W3-O17 (UI style Astral): no slab: the name in letter-spaced Cinzel between two stars
+## UI style Astral: no slab: the name in letter-spaced Cinzel between two stars
 ## and fading hairlines, a small crescent over it, and the bar as one continuous fill in a hairline frame
 ## (AstralHudParts.bar) in the colour mode's enemy colour; the lines under it in Atkinson. Same reads.
-## v0.10.5 W3-O20: the lines under the bar (the phase, Invulnerable, The Fallen's window) in Cinzel, Astral's tones.
+## The lines under the bar (the phase, Invulnerable, The Fallen's window) in Cinzel, Astral's tones.
 
 const BAR := Vector2(560, 8)
 ## The bar while the boss can't be hurt: a cold steel blue, far from the HP red (and from the stagger's gold).
 const INVULNERABLE := Color("#8FB8E8")
-## v0.11.0 O4: the Lantern Shade's bar in the dark (the HP colour darkened by DIM) and in a lit pool (lantern gold).
+## The Lantern Shade's bar in the dark (the HP colour darkened by DIM) and in a lit pool (lantern gold).
 const DIM := 0.55
 const LIT := Color("#FFC15A")
-## v0.11.0 O5: the Twin Wardens' bar owner per phase (the line under the bar).
+## The Twin Wardens' bar owner per phase (the line under the bar).
 const TWIN_LEADS: Array[String] = [
 	"HUD_TWIN_LEADS_AMBER", "HUD_TWIN_LEADS_VIOLET", "HUD_TWIN_LEADS_BOTH"
 ]
@@ -36,15 +36,15 @@ const TWIN_LEADS: Array[String] = [
 var _name := Label.new()
 var _hp := HudBar.new()
 var _stagger_label := Label.new()
-## v0.8.0 N4: the phase (or the final boss's body) line, and the invulnerable line.
+## The phase (or the final boss's body) line, and the invulnerable line.
 var _sub := Label.new()
 var _shield := Label.new()
 var _boss_id := -1
 var _phase_key := -1
 var _invulnerable := false
-## v0.11.0 O4: the light's per-mille shown (WorldReader.boss_light_permille; 1000 none).
+## The light's per-mille shown (WorldReader.boss_light_permille; 1000 none).
 var _light := 1000
-## v0.8.0 N2: The Fallen's window line.
+## The Fallen's window line.
 var _fallen := Label.new()
 
 
@@ -96,7 +96,7 @@ func _init() -> void:
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	HudStyle.serif_label(_name, 18, 5, HudStyle.A_TEXT)
 	HudStyle.serif_label(_stagger_label, 13, 3, HudStyle.A_ACCENT)
-	# v0.10.5 W3-O20: the lines under the bar in Cinzel too, in Astral's tones (no violet, no steel)
+	# The lines under the bar in Cinzel too, in Astral's tones (no violet, no steel)
 	HudStyle.serif_label(_sub, 16, 3, HudStyle.A_DIM)
 	HudStyle.serif_label(_shield, 16, 3, HudStyle.A_ACCENT)
 	HudStyle.serif_label(_fallen, 18, 4, HudStyle.A_LINE_HI)
@@ -114,13 +114,13 @@ func sync(reader: WorldReader) -> void:
 	var final := reader.final_fight()
 	_sync_hp(reader, i, final)
 	_stagger_label.text = ""
-	if reader.boss_in_gate(i):  # v0.5.5 DS (D7): the phase gate's transition
+	if reader.boss_in_gate(i):  # The phase gate's transition
 		_stagger_label.text = tr("HUD_BOSS_PHASE_SHIFT")
-	elif reader.boss_stunned(i):  # v0.11.0 O3 (Q9 a): a broken quake pillar stunned it (it takes more damage)
+	elif reader.boss_stunned(i):  # Q9 a: a broken quake pillar stunned it (it takes more damage)
 		_stagger_label.text = tr("HUD_BOSS_STUNNED")
 	if not final:
 		_fallen.text = ""
-		# every sync, so a language switch renames the boss at once (v0.6.0 UP)
+		# every sync, so a language switch renames the boss at once
 		_set_name(tr(reader.boss_name_key(i)))
 		var n := reader.boss_phase_thresholds(i).size()
 		_sub.text = tr("HUD_BOSS_PHASE") % [reader.boss_phase(i) + 1, n] if n > 1 else ""
@@ -132,7 +132,7 @@ func sync(reader: WorldReader) -> void:
 	_sub.text = tr(reader.final_segment_name_key(reader.final_phase()))
 	if reader.final_shattering():
 		_stagger_label.text = tr("HUD_FINAL_SHATTER")
-	var pace := reader.final_pace()  # v0.8.0 N2 (O52): The Fallen's window
+	var pace := reader.final_pace()  # The Fallen's window
 	match int(pace.get("window", WorldReader.FALLEN_OFF)):
 		WorldReader.FALLEN_WARN:
 			_fallen.text = tr("HUD_FALLEN_WARN")
@@ -142,7 +142,7 @@ func sync(reader: WorldReader) -> void:
 			_fallen.text = ""
 
 
-## v0.11.0 O5 (owner L7, Q29): the Twin Wardens' bar names whose bar it is (the amber Warden's, the violet's, both),
+## The Twin Wardens' bar names whose bar it is (the amber Warden's, the violet's, both),
 ## and in their last phase which one is exposed now.
 func _twin_lines(reader: WorldReader, i: int) -> void:
 	var twin := reader.boss_twin(i)
@@ -156,14 +156,14 @@ func _twin_lines(reader: WorldReader, i: int) -> void:
 		)
 
 
-## The name (v0.10.5 W3-O17: a new one redraws the name's ornaments; an unchanged one writes nothing).
+## The name (a new one redraws the name's ornaments; an unchanged one writes nothing).
 func _set_name(t: String) -> void:
 	if _name.text != t:
 		_name.text = t
 		queue_redraw()
 
 
-## v0.8.0 N4: the bar's fill (this phase's HP, or this body's), its motion and its invulnerable look.
+## The bar's fill (this phase's HP, or this body's), its motion and its invulnerable look.
 func _sync_hp(reader: WorldReader, i: int, final: bool) -> void:
 	var frac := reader.boss_phase_permille(i) / 1000.0
 	var intro := reader.boss_intro_permille(i)
@@ -183,7 +183,7 @@ func _sync_hp(reader: WorldReader, i: int, final: bool) -> void:
 	_hp.color = INVULNERABLE if _invulnerable else ThemePalette.color(&"enemy_bar")
 	_light = 1000 if _invulnerable else reader.boss_light_permille(i)
 	if not _invulnerable:
-		# v0.11.0 O4 (owner Q10 a): the Lantern Shade's light: a dim bar and "In the dark · 40 %" in the dark, a bright
+		# The Lantern Shade's light: a dim bar and "In the dark · 40 %" in the dark, a bright
 		# one and "In the light · 150 %" in a lit lantern's pool; nothing at 100 %.
 		if _light < 1000:
 			_hp.color = ThemePalette.color(&"enemy_bar").darkened(DIM)
@@ -213,37 +213,37 @@ func hp_fraction() -> float:
 	return _hp.fraction()
 
 
-## v0.8.0 N4: the fill drawn now (a refill grows it; tests).
+## The fill drawn now (a refill grows it; tests).
 func shown_fraction() -> float:
 	return _hp.shown_fraction()
 
 
-## v0.8.0 N4: the damage chunk's share of the bar drawn now (tests).
+## The damage chunk's share of the bar drawn now (tests).
 func chunk_fraction() -> float:
 	return _hp.chunk_fraction()
 
 
-## v0.8.0 N4: the bar (its trail, its colour; tests and shots).
+## The bar (its trail, its colour; tests and shots).
 func hp_bar() -> HudBar:
 	return _hp
 
 
-## v0.8.0 N4: the bar shows the invulnerable look.
+## The bar shows the invulnerable look.
 func invulnerable() -> bool:
 	return _invulnerable
 
 
-## v0.11.0 O4: the Lantern Shade's light per-mille the bar shows (1000: none; tests).
+## The Lantern Shade's light per-mille the bar shows (1000: none; tests).
 func light_permille() -> int:
 	return _light
 
 
-## v0.8.0 N4: the invulnerable line ("" when the boss can be hurt; tests).
+## The invulnerable line ("" when the boss can be hurt; tests).
 func shield_text() -> String:
 	return _shield.text
 
 
-## v0.8.0 N4: the phase or body line (tests).
+## The phase or body line (tests).
 func phase_text() -> String:
 	return _sub.text
 
@@ -253,7 +253,7 @@ func status_text() -> String:
 	return _stagger_label.text
 
 
-## v0.8.0 N2: The Fallen's window line ("" none; tests).
+## The Fallen's window line ("" none; tests).
 func fallen_text() -> String:
 	return _fallen.text
 
@@ -262,14 +262,14 @@ func boss_name() -> String:
 	return _name.text
 
 
-## v0.10.5 W3-O20: the bar's lowest line's bottom (px, in its parent; Hud stacks the phase line under it).
+## The bar's lowest line's bottom (px, in its parent; Hud stacks the phase line under it).
 func bottom() -> float:
 	var low: Label = _fallen if _fallen.text != "" else _sub
 	return position.y + low.position.y + low.get_combined_minimum_size().y
 
 
 func _draw() -> void:
-	# v0.10.5 W3-O17: the name's stars and rules, a crescent over it
+	# The name's stars and rules, a crescent over it
 	var f := _name.get_theme_font(&"font")
 	var tw := f.get_string_size(_name.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
 	var cx := roundf(BAR.x * 0.5)

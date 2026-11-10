@@ -1,6 +1,6 @@
 class_name AstralButton
 extends Button
-## v0.10.5 W3-O18: a menu button in the Astral style (AstralMenu), drawn in code; it stays a Button (focus, keys, pad,
+## A menu button in the Astral style (AstralMenu), drawn in code; it stays a Button (focus, keys, pad,
 ## mouse, the disabled state and the press work as for any button), only its look is its own:
 ## - ROW (a menu list's row): the label in letter-spaced Cinzel capitals, dim with a small diamond before it; lit
 ##   (focused, or hovered: a hover takes the focus, so the mouse, the keys and the pad move one focus) it turns bright

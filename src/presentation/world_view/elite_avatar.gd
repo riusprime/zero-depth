@@ -1,6 +1,6 @@
 class_name EliteAvatar
 extends AvatarBase
-## v0.9.0 EL (owner Q26; ELITES.md E1-E3; art list §3.1): the three elites, drawn with the owner's models
+## The three elites, drawn with the owner's models
 ## (assets/models/enemies/elite_*.glb, cut into parts by scripts/assets/mi2_prep.py: the owner, "enemies are not
 ## animated, you will have to do it manually") and posed here in frame time from the sim's state (EI-07: it reads,
 ## never writes). Each part turns about its own pivot (+X the front, Y up). The surfaces are `base` (as delivered) and
@@ -102,7 +102,7 @@ func dying() -> bool:
 	return _die_t >= 0.0
 
 
-## v0.10.5 W3-Q6: the values straight to _apply (no Dictionary per elite per sync).
+## The values straight to _apply (no Dictionary per elite per sync).
 func sync(reader: WorldReader, i: int) -> void:
 	_apply(
 		reader.actor_state(i),
@@ -262,7 +262,7 @@ func _pose_model(ability: bool, calm: bool) -> void:
 				(parts["shards"] as Node3D).rotation.y = -_t * 0.9
 
 
-## v0.9.5 PF5: the hit flash and the accent glow are each written to a list of pieces (RigMerge swaps merged
+## The hit flash and the accent glow are each written to a list of pieces (RigMerge swaps merged
 ## pieces in them).
 func rig_spec() -> Dictionary:
 	return {"keep": [], "sets": [_hit_pieces, _glow_pieces]}
@@ -307,7 +307,7 @@ func _build_model(m: Dictionary) -> void:
 		_rest[String(pname)] = pivot.position
 
 
-## L15: without the model file, a box body of the elite's height and a glowing accent band.
+## Without the model file, a box body of the elite's height and a glowing accent band.
 func _build_stand_in(accent: Color) -> void:
 	var w := height * 0.4
 	var box := BoxMesh.new()

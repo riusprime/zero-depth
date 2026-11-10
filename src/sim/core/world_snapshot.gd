@@ -1,7 +1,7 @@
 # gdlint: disable=max-file-lines
 class_name WorldSnapshot
 extends RefCounted
-## v0.4.0 SV: the canonical snapshot of a whole World as plain data (SIM_CONTRACTS §10b), and its restore. Pure: no
+## The canonical snapshot of a whole World as plain data (SIM_CONTRACTS §10b), and its restore. Pure: no
 ## file I/O (the application's RunSaveStore writes the bytes).
 ##
 ## Every script variable of World, and of every state object it holds (STATE_CLASSES), is copied field by field,
@@ -82,16 +82,16 @@ const WORLD_KEPT := {
 }
 ## Content tables: compiled from content at setup, read-only in play (the guard test checks they don't change).
 const LOADOUT_CLASSES: Array[StringName] = [
-	&"StarboundTable",  # v0.10.5 W3-P10b: the Starbound cards (content, compiled at setup)
-	&"SpellTable",  # v0.11.0 O10: the spells and their rules (content, compiled at setup)
+	&"StarboundTable",  # The Starbound cards (content, compiled at setup)
+	&"SpellTable",  # The spells and their rules (content, compiled at setup)
 	&"SpellRules",
-	&"RelicTable",  # v0.11.0 O14b: the relics (content, compiled at setup)
+	&"RelicTable",  # The relics (content, compiled at setup)
 	&"PlayerTable",
 	&"EnemyTable",
 	&"EncounterTable",
 	&"SpawnTable",
 	&"FloorLayout",
-	&"ShopRoomTable",  # v0.8.0 SR: the shop rooms (content, read when a floor is built)
+	&"ShopRoomTable",  # The shop rooms (content, read when a floor is built)
 	&"RoomLayoutTable",  # v0.8.0 RT/SR: a designed layout (content)
 	&"RoomLayoutGroupTable",
 	&"RoomLayoutPieceTable",
@@ -104,14 +104,14 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"StatTable",
 	&"HeatTable",
 	&"BossAttackTable",
-	&"QuakeTable",  # v0.11.0 O3: the Gatekeeper's quake pillars (BossTable.quake, content)
-	&"HazardTable",  # v0.11.0 F8: a boss's arena hazards (BossTable.hazard, content)
+	&"QuakeTable",  # The Gatekeeper's quake pillars (BossTable.quake, content)
+	&"HazardTable",  # A boss's arena hazards (BossTable.hazard, content)
 	&"SwingStep",
 	&"SkillTable",
 	&"OverrunTable",  # v0.4.0 AB
 	&"ShopTable",  # v0.5.0 SH
 	&"ArenaTable",  # v0.5.5 AR
-	&"LockdownTable",  # v0.9.0 LK: the Lockdowns' numbers (LockdownState.table)
+	&"LockdownTable",  # The Lockdowns' numbers (LockdownState.table)
 	&"ShrineTable",  # v0.9.0 SH, HF: the shrines' and the fountain's numbers (ShrineState.table)
 	&"CurveTable",  # v0.4.0 TU's difficulty curve (SpawnTable.curve); the save lab builds floors with it, as Main
 	&"LegendaryTable",
@@ -122,20 +122,20 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"CatchUpTable",  # v0.5.5 DS
 	&"ModifierTable",  # v0.6.0 MX1
 	&"ModifierOp",
-	&"RemnantRule",  # v0.8.0 RM: a REMNANT op's rule (content)
+	&"RemnantRule",  # A REMNANT op's rule (content)
 	&"WandTable",  # v0.6.5 WN1
 	&"BladeTable",  # v0.6.5 WN4
 	&"SimTuning",  # the dev panel's Step 6: the sim's designer numbers
-	&"IceField",  # v0.7.5 NB1: a floor's ice, laid from the floor seed at setup and never written in play
-	&"PairingTable",  # v0.10.5 O15: the enemy duos (SpawnTable.pairings)
-	&"SurgeTable",  # v0.11.0 O9: the horde surges' numbers (SpawnTable.surge)
-	&"IntensityTable",  # v0.8.0 N5: the intensity director's numbers (SpawnTable.intensity)
-	&"BulletPatternTable",  # v0.7.5 BF1: a boss attack's bullet pattern (BossAttackTable.pattern)
-	&"SlotTable",  # v0.9.0 AS: the wand's slot limits, caps and form × card table (content, read in play)
-	&"ElementPairTable",  # v0.9.5 EE3 (World.pair_table; v0.10.5 D1: SaveLab worlds hold it now, as Main)
-	&"EliteTable",  # v0.9.0 EL: an elite archetype's ability and plain attack (EnemyTable.elite)
-	&"EliteRules",  # v0.9.0 EL: where elites appear and the core drop (EliteState.rules)
-	&"AffinityTable",  # v0.9.0 RB: the run's rune affinity's numbers (AffinityState.table)
+	&"IceField",  # A floor's ice, laid from the floor seed at setup and never written in play
+	&"PairingTable",  # The enemy duos (SpawnTable.pairings)
+	&"SurgeTable",  # The horde surges' numbers (SpawnTable.surge)
+	&"IntensityTable",  # The intensity director's numbers (SpawnTable.intensity)
+	&"BulletPatternTable",  # A boss attack's bullet pattern (BossAttackTable.pattern)
+	&"SlotTable",  # The wand's slot limits, caps and form × card table (content, read in play)
+	&"ElementPairTable",  # v0.9.5 EE3 (World.pair_table; SaveLab worlds hold it now, as Main)
+	&"EliteTable",  # An elite archetype's ability and plain attack (EnemyTable.elite)
+	&"EliteRules",  # Where elites appear and the core drop (EliteState.rules)
+	&"AffinityTable",  # The run's rune affinity's numbers (AffinityState.table)
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
@@ -144,12 +144,12 @@ const STATE_CLASSES: Array[StringName] = [
 	&"ProjectileStore",
 	&"PickupStore",
 	&"MineStore",
-	&"VariantState",  # v0.11.0 O13a: the variants' trails and rubble
-	&"RuinsRocksState",  # v0.11.0 O13b: the signatures' cables, rocks and boulders
-	&"CanyonShoreState",  # v0.11.0 O13c: R5-R8's bursts, vents, blobs, chunks and shells
+	&"VariantState",  # The variants' trails and rubble
+	&"RuinsRocksState",  # The signatures' cables, rocks and boulders
+	&"CanyonShoreState",  # R5-R8's bursts, vents, blobs, chunks and shells
 	&"HealOrbStore",  # v0.4.0 TU
 	&"ShardDropStore",  # v0.10.5 O7b
-	&"ObjectiveMarkers",  # v0.11.0 O2: the hint arrow's markers
+	&"ObjectiveMarkers",  # The hint arrow's markers
 	&"BossStore",
 	&"RewardStore",
 	&"AbilityState",
@@ -164,61 +164,61 @@ const STATE_CLASSES: Array[StringName] = [
 	&"Obb",
 	&"OverrunState",  # v0.4.0 AB
 	&"ShopState",  # v0.5.0 SH
-	&"EventState",  # v0.5.0 EV: pedestals, rolls, defence, cursed offers (its tables are loadout)
-	&"CatchUpState",  # v0.5.5 DS: the floor's hidden catch-up
-	&"ArenaState",  # v0.5.5 AR: the sealed arena, its waves, streams and barriers; the arenas cleared
-	# v0.6.0 MX1: the compiled specs (World.attack_book is kept out and compiled again on restore; listed so the
+	&"EventState",  # Pedestals, rolls, defence, cursed offers (its tables are loadout)
+	&"CatchUpState",  # The floor's hidden catch-up
+	&"ArenaState",  # The sealed arena, its waves, streams and barriers; the arenas cleared
+	# The compiled specs (World.attack_book is kept out and compiled again on restore; listed so the
 	# guard knows them).
 	&"AttackBook",
 	&"AttackSpec",
 	&"AttackHook",
-	&"CurseState",  # v0.6.0 CU: the trade-off curses in play (stun, dodges, shots counted)
-	&"CoreState",  # v0.6.0 CU: core carriers, staggers, steal windows, the drops on the floor
-	&"ModifierState",  # v0.6.0 MX4: queued launches, every-N counters, the moments' and body rules' marks
-	&"FinalFight",  # v0.8.0 FB1: the final boss's fight (its bodies, the phase, the shatter)
-	&"NemesisCast",  # v0.8.0 FB3: the Nemesis's hostile copies of the player's shot and cards (FinalFight)
-	&"IntensityState",  # v0.8.0 N5: the intensity director's state
-	&"FinalApproach",  # v0.9.0 FA: the final approach (the pylons, the buildup, the walls of light)
-	&"Solids",  # v0.9.5 SB: the props' footprints (standing, or waiting for the hero to clear)
-	&"Interactables",  # v0.9.0 IX: the shared interactables and the puzzles' calm rooms
-	&"TimedDoor",  # v0.9.0 TD: the timed door (its state, timer and reward)
-	&"RuneAlignment",  # v0.9.0 RA: the rune puzzle (its pillars, solved, slab and reward)
-	&"Breakables",  # v0.9.0 DX: the cracked wall, the containers and the explosive barrels
-	&"PurpleRunes",  # v0.9.0 DP: the purple-rune dais (awakened, the Deep gate's footprint)
-	&"LockdownState",  # v0.9.0 LK: the Lockdown sealed, its formations, the safety, the strikes; those opened
+	&"CurseState",  # The trade-off curses in play (stun, dodges, shots counted)
+	&"CoreState",  # Core carriers, staggers, steal windows, the drops on the floor
+	&"ModifierState",  # Queued launches, every-N counters, the moments' and body rules' marks
+	&"FinalFight",  # The final boss's fight (its bodies, the phase, the shatter)
+	&"NemesisCast",  # The Nemesis's hostile copies of the player's shot and cards (FinalFight)
+	&"IntensityState",  # The intensity director's state
+	&"FinalApproach",  # The final approach (the pylons, the buildup, the walls of light)
+	&"Solids",  # The props' footprints (standing, or waiting for the hero to clear)
+	&"Interactables",  # The shared interactables and the puzzles' calm rooms
+	&"TimedDoor",  # The timed door (its state, timer and reward)
+	&"RuneAlignment",  # The rune puzzle (its pillars, solved, slab and reward)
+	&"Breakables",  # The cracked wall, the containers and the explosive barrels
+	&"PurpleRunes",  # The purple-rune dais (awakened, the Deep gate's footprint)
+	&"LockdownState",  # The Lockdown sealed, its formations, the safety, the strikes; those opened
 	&"ShrineState",  # v0.9.0 SH, HF: the Blood or Chaos shrine (used, the challenge, its altars) and the fountain
-	&"EliteState",  # v0.9.0 EL: the floor's elite rooms, the elites alive, their contact clocks, the escort
-	&"AffinityState",  # v0.9.0 RB: the rune affinity's ward and dash crackle on this floor
-	&"CollectState",  # v0.9.0 CL: the floor's collectibles (armed, shown, taken)
-	&"StressState",  # v0.9.5 SM: the Stress Mark's weak sides
-	&"HeartRoom",  # v0.11.0 O14b: the hidden room under the throne (its pedestal, its sealed door)
+	&"EliteState",  # The floor's elite rooms, the elites alive, their contact clocks, the escort
+	&"AffinityState",  # The rune affinity's ward and dash crackle on this floor
+	&"CollectState",  # The floor's collectibles (armed, shown, taken)
+	&"StressState",  # The Stress Mark's weak sides
+	&"HeartRoom",  # The hidden room under the throne (its pedestal, its sealed door)
 ]
 
-## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
+## Old saves: fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
 ## base world's value (its default, or what the carry gave it) instead of failing the restore; apply() then pads
 ## the per-entry arrays to their store's size and migrates the build into the slots (BuildSlots.migrate). Any other
 ## missing field still fails.
 const ADDED_SINCE_V05 := {
-	&"HealOrbStore": [&"meter", &"ready_tick"],  # v0.11.0 F3: an older save has neither (the base's: 0)
-	&"IntensityState": [&"kill_ring", &"kill_seen", &"ring_ticks", &"standing"],  # v0.10.5 O4: an older save reads afresh
+	&"HealOrbStore": [&"meter", &"ready_tick"],  # An older save has neither (the base's: 0)
+	&"IntensityState": [&"kill_ring", &"kill_seen", &"ring_ticks", &"standing"],  # An older save reads afresh
 	&"TimedDoor":
 	[
-		&"lever",  # v0.9.5 TS: a floor saved before TS has no lever and its 15 s timer (the base's, from the old rules)
+		&"lever",  # A floor saved before TS has no lever and its 15 s timer (the base's, from the old rules)
 		&"lever_ticks",
 		&"open_ticks",
 	],
 	&"World":
 	[
 		&"hook_chain",
-		&"events_seen",  # v0.9.5 AQ: a save from before AQ has seen none (the base's, from the carry)
+		&"events_seen",  # A save from before AQ has seen none (the base's, from the carry)
 		&"launch_tick",
 		&"launch_count",
-		&"shot_tick",  # v0.8.0 PF: the player-shot cap's per-tick count
+		&"shot_tick",  # The player-shot cap's per-tick count
 		&"shot_count",
-		&"blast_tick",  # v0.8.0 BL: the blast merge's per-tick marks
+		&"blast_tick",  # The blast merge's per-tick marks
 		&"blast_pos",
 		&"blast_merged",
-		&"shot_window",  # v0.9.0 AS: the last second's player launches (a save from before AS: none)
+		&"shot_window",  # The last second's player launches (a save from before AS: none)
 		&"shot_window_tick",
 		&"el_chain_hits",  # v0.9.5 EE2 (Lightning's Overcharge count, the strike and shatter budgets; padded as new)
 		&"el_strike_log",
@@ -226,18 +226,18 @@ const ADDED_SINCE_V05 := {
 		&"pair_mask",  # v0.9.5 EE3 (the element pairs on, their budget and clouds; an older save has none)
 		&"pair_levels",  # v0.9.5 EP1 (an older save has none: its pairs read as Lv 3)
 		&"pair_log",
-		&"pairs_seen",  # v0.10.5 O15: an older save starts with none seen
-		&"variants",  # v0.11.0 O13a: an older save's floor has no trails or rubble (the base's: none)
-		&"ruins_rocks",  # v0.11.0 O13b: an older save's floor has no cables, rocks or boulders (the base's: none)
-		&"canyon_shore",  # v0.11.0 O13c: an older save's floor has none of R5-R8's leavings
-		&"surge_at",  # v0.11.0 O9: an older save's floor plans its surges afresh (the base's: none planned)
+		&"pairs_seen",  # An older save starts with none seen
+		&"variants",  # An older save's floor has no trails or rubble (the base's: none)
+		&"ruins_rocks",  # An older save's floor has no cables, rocks or boulders (the base's: none)
+		&"canyon_shore",  # An older save's floor has none of R5-R8's leavings
+		&"surge_at",  # An older save's floor plans its surges afresh (the base's: none planned)
 		&"surge_sizes",
 		&"surge_next",
 		&"surge_t",
 		&"surge_spawned",
-		&"shard_drops",  # v0.10.5 O7b: an older save's floor has no shards lying on it (the base's: empty)
-		&"objectives",  # v0.11.0 O2: an older save points at nothing (the base's: empty)
-		&"player_hp_floor",  # v0.10.5 O17: an older save has no floor (0)
+		&"shard_drops",  # An older save's floor has no shards lying on it (the base's: empty)
+		&"objectives",  # An older save points at nothing (the base's: empty)
+		&"player_hp_floor",  # An older save has no floor (0)
 		&"pair_clouds",
 		&"mod_slots",
 		&"swap_code",
@@ -248,62 +248,62 @@ const ADDED_SINCE_V05 := {
 		&"card_levels",  # v0.6.5 WN3 (an older save's cards are all level 1)
 		&"blade",  # v0.6.5 WN4 (the base's fresh state)
 		&"tuning",  # the dev panel's Step 6 (loadout, SimTuning; a v0.6.1 save keeps the base's, v0.6.5 WN5b)
-		&"loop",  # v0.7.5 AP: the loop fields (an older save is loop 1: the base's, from RunState.prepare)
+		&"loop",  # The loop fields (an older save is loop 1: the base's, from RunState.prepare)
 		&"run_floor",
 		&"loop_threat",
 		&"loop_cap_permille",
-		&"loop_rules",  # v0.10.5 O5b: the loop rules (an older save has none: the base's, from RunState.prepare)
+		&"loop_rules",  # The loop rules (an older save has none: the base's, from RunState.prepare)
 		&"loop_shield_permille",
 		&"loop_shield_half_arc",
-		&"final_fight",  # v0.8.0 FB1: the final boss's fight (a save from before FB1 holds none: null, as the base's)
-		&"approach",  # v0.9.0 FA: the final approach (a save from before FA holds none: FloorPlan builds that one bare)
-		&"solids",  # v0.9.5 SB: a floor saved before SB has none (floor rules 1-17 build none in the base either)
-		&"interactables",  # v0.9.0 IX: a save from before IX keeps the base's registry (apply re-syncs the pylons)
-		&"timed",  # v0.9.0 TD: a floor saved before TD has none (built under floor rules 1-9: none in the base either)
-		&"runes",  # v0.9.0 RA: a floor saved before RA has none (built under floor rules 1-10: none in the base either)
-		&"breakables",  # v0.9.0 DX: the same (floor rules 1-10 build none)
-		&"heart",  # v0.11.0 O14b: a save from before O14b has no heart room (its base builds none either)
-		&"relics",  # v0.11.0 O14b: an older save holds no relic (the base's, from the carry)
+		&"final_fight",  # The final boss's fight (a save from before FB1 holds none: null, as the base's)
+		&"approach",  # The final approach (a save from before FA holds none: FloorPlan builds that one bare)
+		&"solids",  # A floor saved before SB has none (floor rules 1-17 build none in the base either)
+		&"interactables",  # A save from before IX keeps the base's registry (apply re-syncs the pylons)
+		&"timed",  # A floor saved before TD has none (built under floor rules 1-9: none in the base either)
+		&"runes",  # A floor saved before RA has none (built under floor rules 1-10: none in the base either)
+		&"breakables",  # The same (floor rules 1-10 build none)
+		&"heart",  # A save from before O14b has no heart room (its base builds none either)
+		&"relics",  # An older save holds no relic (the base's, from the carry)
 		&"relic_pulse_tick",
 		&"relic_pulse_pos",
-		&"purple",  # v0.9.0 DP: a floor saved before DP has none (built under floor rules 1-11: none in the base either)
-		&"lockdown",  # v0.9.0 LK: a floor saved before LK has none (built under floor rules 1-12: none in the base either)
+		&"purple",  # A floor saved before DP has none (built under floor rules 1-11: none in the base either)
+		&"lockdown",  # A floor saved before LK has none (built under floor rules 1-12: none in the base either)
 		&"shrine",  # v0.9.0 SH, HF: a floor saved before SH has none (floor rules 1-13 build none in the base either)
-		&"elites",  # v0.9.0 EL: a floor saved before EL has no elite rooms (floor rules 1-14 build none either)
-		&"affinity",  # v0.9.0 RB: a save from before RB is a run without one (None: null in the base too)
-		# v0.9.0 MP: copied, not kept: the run's locked cards come from the profile when the run began, not from the
+		&"elites",  # A floor saved before EL has no elite rooms (floor rules 1-14 build none either)
+		&"affinity",  # A save from before RB is a run without one (None: null in the base too)
+		# Copied, not kept: the run's locked cards come from the profile when the run began, not from the
 		# floor's generation inputs, so a replay onto a base built without that profile stays exact. A save from
 		# before MP keeps the base's (FloorPlan resolves RunState.locked_cards; such a run has none)
 		&"locked_items",
-		&"collect",  # v0.9.0 CL: a save from before CL keeps the base's (the collectibles armed again, none shown)
-		&"stress",  # v0.9.5 SM: a save from before SM holds none (the base's: null)
-		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
-		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
+		&"collect",  # A save from before CL keeps the base's (the collectibles armed again, none shown)
+		&"stress",  # A save from before SM holds none (the base's: null)
+		&"legendary_picks",  # A boss altar's extra picks (an older save has none: 0)
+		&"loot_guaranteed",  # An older save's floor used no guarantee (0) and holds no jackpot
 		&"loot_jackpots",
-		&"intensity",  # v0.8.0 N5: the intensity director (an older save's floor starts in BUILD_UP: the base's)
-		&"gamble_wins",  # v0.8.0 N14: an older save's shrine counts its uses as wins (apply), and never failed
+		&"intensity",  # The intensity director (an older save's floor starts in BUILD_UP: the base's)
+		&"gamble_wins",  # An older save's shrine counts its uses as wins (apply), and never failed
 		&"gamble_fail_tick",
-		&"stat_rules",  # v0.8.0 SG: an older save's stat rules are 0 (apply rebuilds them: Stats.migrate_rules)
-		&"dmg_carry",  # v0.10.5 W3-P9: the carried remainders (an older save carries none: 0)
+		&"stat_rules",  # An older save's stat rules are 0 (apply rebuilds them: Stats.migrate_rules)
+		&"dmg_carry",  # The carried remainders (an older save carries none: 0)
 		&"dot_carry",
 		&"shot_carry",
-		&"constellations",  # v0.10.5 W3-P10: the held Constellations (an older save holds none)
-		&"starfall_crits",  # v0.10.5 W3-P10e: Starfall's counters and the meteors in the air
+		&"constellations",  # The held Constellations (an older save holds none)
+		&"starfall_crits",  # Starfall's counters and the meteors in the air
 		&"meteor_attacks",
 		&"meteors",
-		&"constellation_offer",  # v0.10.5 W3-P10c: a loop's open Constellation pick (an older save has none)
-		&"starbound",  # v0.10.5 W3-P10b: the Starbound picks and counters (an older save holds none)
+		&"constellation_offer",  # A loop's open Constellation pick (an older save has none)
+		&"starbound",  # The Starbound picks and counters (an older save holds none)
 		&"starbound_crits",
 		&"starbound_kills",
 		&"starbound_burst_tick",
 		&"starbound_bursts",
-		&"starbound_jump_roots",  # v0.10.5 W3-P10k: an older save has none
+		&"starbound_jump_roots",  # An older save has none
 		&"starbound_echo_carry",
 		&"starbound_fx_kind",
 		&"starbound_fx_tick",
 		&"starbound_fx_from",
 		&"starbound_fx_to",
-		&"spell_slots",  # v0.11.0 O10: the spells (an older save holds none)
+		&"spell_slots",  # The spells (an older save holds none)
 		&"spell_levels",
 		&"spell_cd",
 		&"spell_cast_tick",
@@ -316,7 +316,7 @@ const ADDED_SINCE_V05 := {
 		&"spell_push_dir",
 		&"spell_push_step",
 		&"spell_push_left",
-		&"spell_zone_kind",  # v0.11.0 O11: the lasting spells and the holds (an older save holds none)
+		&"spell_zone_kind",  # The lasting spells and the holds (an older save holds none)
 		&"spell_zone_spell",
 		&"spell_zone_level",
 		&"spell_zone_root",
@@ -338,18 +338,18 @@ const ADDED_SINCE_V05 := {
 		&"spell_fx_size",
 		&"spell_fx_spell",
 	],
-	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
+	# The Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
 	&"BossFlow":
 	[
 		&"ascension",
 		&"ascend_open",
 		&"ascend_declined",
 		&"ascend_choice",
-		&"final_next",  # v0.8.0 FB1: an older save gets the base's (RunState.prepare: today's content)
-		&"door",  # v0.8.0 BD: an older save's floor (rules 1-7) gets the base's: Door.PASSAGE (RunState.prepare)
+		&"final_next",  # An older save gets the base's (RunState.prepare: today's content)
+		&"door",  # An older save's floor (rules 1-7) gets the base's: Door.PASSAGE (RunState.prepare)
 		&"door_press_tick",
 	],
-	# v0.8.0 BS1: the signature mechanics' pillars and javelins (lists of their own; an older save has none)
+	# The signature mechanics' pillars and javelins (lists of their own; an older save has none)
 	&"BossStore":
 	[
 		&"pillar_x",
@@ -365,7 +365,7 @@ const ADDED_SINCE_V05 := {
 		&"jav_attack",
 		&"jav_from",
 		&"jav_back",
-		# v0.11.0 F9: the Warlord's great javelin (an older save has none)
+		# The Warlord's great javelin (an older save has none)
 		&"gj_boss",
 		&"gj_attack",
 		&"gj_phase",
@@ -377,7 +377,7 @@ const ADDED_SINCE_V05 := {
 		&"gj_y",
 		&"gj_tox",
 		&"gj_toy",
-		# v0.8.0 BS2: the Foundry's lava and meltdown and their burn clock (an older save has none)
+		# The Foundry's lava and meltdown and their burn clock (an older save has none)
 		&"lava_x",
 		&"lava_y",
 		&"lava_hx",
@@ -396,32 +396,32 @@ const ADDED_SINCE_V05 := {
 		&"melt_ey",
 		&"melt_exit",
 		&"burn_cd",
-		&"sig_boss",  # v0.9.0 NB1: the Tidecaller's Pull cadence (an older save has no Tidecaller: none)
+		&"sig_boss",  # The Tidecaller's Pull cadence (an older save has no Tidecaller: none)
 		&"sig_due",
-		&"twin_lead",  # v0.9.0 NB2: the Twin Wardens' pair (an older save has no Wardens: none)
+		&"twin_lead",  # The Twin Wardens' pair (an older save has no Wardens: none)
 		&"twin_body",
 		&"twin_angry",
 		&"twin_anger_t",
 		&"twin_burn_cd",
-		&"twin_phase",  # v0.11.0 O5: the roles (a save from before O5 has none)
+		&"twin_phase",  # The roles (a save from before O5 has none)
 		&"twin_clock",
 		&"twin_turn",
 		&"twin_focus",
-		&"echo_boss",  # v0.9.0 NB3: the Clockwork Judge's echo (an older save has no Judge: none)
+		&"echo_boss",  # The Clockwork Judge's echo (an older save has no Judge: none)
 		&"echo_x",
 		&"echo_y",
 		&"path_x",
 		&"path_y",
 		&"path_k",
-		&"shade_boss",  # v0.9.0 NB4: the Lantern Shade's light (an older save has no Shade: none)
+		&"shade_boss",  # The Lantern Shade's light (an older save has no Shade: none)
 		&"shade_dark",
 		&"shade_at",
 		&"shade_from",
-		&"shade_until",  # v0.9.0 NB4b: the dark comes and goes
+		&"shade_until",  # The dark comes and goes
 		&"lamp_x",
 		&"lamp_y",
 		&"lamp_t",
-		&"str_boss",  # v0.9.5 BH4: the Tidecaller's ring stream and crossing waves (an older save has none)
+		&"str_boss",  # The Tidecaller's ring stream and crossing waves (an older save has none)
 		&"str_ring_due",
 		&"str_ring_n",
 		&"str_wave_due",
@@ -434,10 +434,10 @@ const ADDED_SINCE_V05 := {
 		&"wv_y",
 		&"wv_len",
 		&"wv_run",
-		&"quake_boss",  # v0.11.0 O3: the quake pillars' break count (an older save has none)
+		&"quake_boss",  # The quake pillars' break count (an older save has none)
 		&"quake_phase",
 		&"quake_stuns",
-		&"hz_id",  # v0.11.0 F8: the bosses' arena hazards (an older save has none)
+		&"hz_id",  # The bosses' arena hazards (an older save has none)
 		&"hz_boss",
 		&"hz_kind",
 		&"hz_x",
@@ -472,7 +472,7 @@ const ADDED_SINCE_V05 := {
 	],
 	# v0.6.0 MX4 (Venom; padded with 0); v0.9.5 EE1 (the element columns, padded with 0)
 	&"ActorStore":
-	# v0.8.0 FB2: the final fight's centre and damage meter (an FB1 save has neither: the base's, a fresh meter)
+	# The final fight's centre and damage meter (an FB1 save has neither: the base's, a fresh meter)
 	[
 		&"poison_stacks",
 		&"poison_t",
@@ -483,7 +483,7 @@ const ADDED_SINCE_V05 := {
 		&"gas_cd",  # v0.9.5 EE3
 		&"charged_t",  # v0.10.5 W3-P1b (ElementStack; an older save's enemies are not charged: 0)
 	],
-	# v0.8.0 FB3: the mimic body's state (an FB2 save has none: a fresh one, the build read at the Nemesis's next tick)
+	# The mimic body's state (an FB2 save has none: a fresh one, the build read at the Nemesis's next tick)
 	&"FinalFight":
 	[
 		&"home",
@@ -510,12 +510,12 @@ const ADDED_SINCE_V05 := {
 		&"dash_vel",
 		&"stance",
 		&"stance_t",
-		# v0.8.0 N2: the body's pace and The Fallen's window copy (an older save: unpaced, set again from the meter)
+		# The body's pace and The Fallen's window copy (an older save: unpaced, set again from the meter)
 		&"paced",
 		&"pace_dps",
 		&"pace_budget",
 		&"copying",
-		# v0.9.5 BH6: the Fallen's interphases and dash between moves (an older save: none begun, none pending)
+		# The Fallen's interphases and dash between moves (an older save: none begun, none pending)
 		&"ip_done",
 		&"ip_stage",
 		&"ip_t",
@@ -693,16 +693,16 @@ const ADDED_SINCE_V05 := {
 		&"imprint_at",
 		&"imprint_until",
 	],
-	# v0.9.0 CF: a closed fight's members waiting to come in (an older save's fight has none: the base's, empty)
+	# A closed fight's members waiting to come in (an older save's fight has none: the base's, empty)
 	&"ArenaState": [&"later_kinds", &"later_pos"],
 	&"LockdownState": [&"later_kinds", &"later_pos"],
 	&"ShrineState": [&"later_kinds", &"later_pos"],
 	&"ItemMods": [&"bleed_move_period_ticks"],  # v0.6.5 WN5a (S5 Bleed: an older save has the base's)
-	# v0.9.5 HT: the Gun's heat fill remainder and the Vent cooldown (an older save has neither: 0)
+	# The Gun's heat fill remainder and the Vent cooldown (an older save has neither: 0)
 	&"HeatState": [&"fill_rem"],
 	&"KitState": [&"vent_cd"],
-	&"CatchUpState": [&"boss_read"],  # v0.9.5 BH1: an older save has no door-read m waiting (0)
-	# v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0); v0.8.0 N17: the curse room's altar (an
+	&"CatchUpState": [&"boss_read"],  # An older save has no door-read m waiting (0)
+	# v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0); the curse room's altar (an
 	# older save's floor has none: -1, apply)
 	&"EventState": [&"cursed_rolled", &"curse_k"],
 	&"AbilityState":
@@ -746,8 +746,8 @@ static func take(w: World, errors: PackedStringArray = PackedStringArray()) -> D
 		"size": w.nav.size,
 		"dist": w.nav.dist.duplicate(),
 		"flooded": w.nav.get(&"_flooded"),
-		"work": w.nav.last_work,  # v0.8.0 NF: the next build's budget
-		"build": w.nav.build_state(),  # v0.8.0 NF: the flood being built ({} none), run again on restore
+		"work": w.nav.last_work,  # The next build's budget
+		"build": w.nav.build_state(),  # The flood being built ({} none), run again on restore
 	}
 	data[&"_wall_next"] = w.get(&"_wall_next") != null
 	data[&"_nav_next"] = w.get(&"_nav_next") != null
@@ -769,13 +769,13 @@ static func apply(base: World, snap: Dictionary) -> String:
 	var saved_c: PackedVector2Array = saved.get("center", PackedVector2Array())
 	if saved_c.size() < walls_before or saved_c.slice(0, walls_before) != built["center"]:
 		return "World.walls: the snapshot's floor differs from the one generated from its inputs"
-	# v0.8.0 BS1: the Gatekeeper's standing pillars are walls added in play too (barriers, never in the flow field).
+	# The Gatekeeper's standing pillars are walls added in play too (barriers, never in the flow field).
 	var pillars := _saved_pillars(data)
-	# v0.9.0 TD: the timed door's slab is a barrier added in play (before or after the boss door): left out here;
-	# v0.9.0 RA: the rune puzzle's slab too (Secrets.slabs); v0.9.0 DP: the Deep gate's footprint once earned.
+	# The timed door's slab is a barrier added in play (before or after the boss door): left out here;
+	# The rune puzzle's slab too (Secrets.slabs); the Deep gate's footprint once earned.
 	var plain := _without_slab(base, saved_c, walls_before)
 	# The boss door sealed in play: add it the way play did (its prepared flow field swaps in, no rebuild).
-	# v0.9.0 FV: found among every wall play added, so a sealed arena's barriers (added on the same tick, before or
+	# Found among every wall play added, so a sealed arena's barriers (added on the same tick, before or
 	# after it) don't hide it. Missed, the restored world kept no field from before the door (World._nav_open) and,
 	# once the door opened, rebuilt one where play swapped its kept field back: the two flow fields parted.
 	var door: Obb = base.get(&"_wall_next")
@@ -790,33 +790,33 @@ static func apply(base: World, snap: Dictionary) -> String:
 	var err := _apply_object(base, data, WORLD_KEPT, "World")
 	if err != "":
 		return err
-	_pad_added(base)  # v0.6.0 MX2: an older save's stores get their new per-entry arrays
-	RuneAlignment.drop_orphan(base)  # v0.10.5 S14: a saved rune room the rebuilt floor no longer has
-	if not data.has(&"gamble_wins"):  # v0.8.0 N14 (O72): every use before N14 won a stat
+	_pad_added(base)  # An older save's stores get their new per-entry arrays
+	RuneAlignment.drop_orphan(base)  # A saved rune room the rebuilt floor no longer has
+	if not data.has(&"gamble_wins"):  # Every use before N14 won a stat
 		base.gamble_wins = base.gamble_uses
 		base.gamble_fail_tick = -1
-	if not data.has(&"stat_rules"):  # v0.8.0 SG (O91): damage and attack speed compounded before SG
+	if not data.has(&"stat_rules"):  # Damage and attack speed compounded before SG
 		base.stat_rules = 0
 		Stats.migrate_rules(base)
 	var ev_data: Variant = data.get(&"ev", {})
 	if typeof(ev_data) == TYPE_DICTIONARY and not (ev_data as Dictionary).has(&"curse_k"):
-		base.ev.curse_k = -1  # v0.8.0 N17 (O75): a floor saved before the curse room has none
-	if not data.has(&"interactables") and base.approach != null:  # v0.9.0 IX: the pylons follow the saved lit ones
+		base.ev.curse_k = -1  # A floor saved before the curse room has none
+	if not data.has(&"interactables") and base.approach != null:  # The pylons follow the saved lit ones
 		base.approach.sync_registry(base)
-	if not data.has(&"mod_slots"):  # v0.6.0 MX2: a v0.5 build into the six slots
+	if not data.has(&"mod_slots"):  # A v0.5 build into the six slots
 		base.mod_slots = PackedInt32Array()
 		BuildSlots.migrate(base)
-	Modifiers.invalidate(base)  # v0.6.0 MX1: the restored build's specs compile on their next read
-	Events.drop_retired(base)  # v0.9.0 EL (Q25): an Ambush Cache pedestal closes, a held Marked curse goes
-	base.drop_retired_combos()  # v0.10.5 O1: a held combo deleted since the save (CardOrder.RETIRED_COMBOS) goes
-	CoreTheft.drop_plain(base)  # v0.9.0 EL: a pre-EL elite's core (a normal enemy's) goes; it drops nothing now
+	Modifiers.invalidate(base)  # The restored build's specs compile on their next read
+	Events.drop_retired(base)  # An Ambush Cache pedestal closes, a held Marked curse goes
+	base.drop_retired_combos()  # A held combo deleted since the save (CardOrder.RETIRED_COMBOS) goes
+	CoreTheft.drop_plain(base)  # A pre-EL elite's core (a normal enemy's) goes; it drops nothing now
 	Curses.invalidate(base)  # v0.7.0 audit C-12: the curse sums are summed again from what was restored
-	# v0.5.5 AR: a sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
+	# A sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
 	# so only the wall grid is rebuilt for them.
-	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # v0.8.0 BS1: pillars too
+	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # Pillars too
 	barriers += Secrets.slabs_up(base)  # v0.9.0 TD, RA: the secret rooms' slabs while they stand
-	barriers += base.ruins_rocks.rock_count() + base.ruins_rocks.hide_count()  # v0.11.0 O13b: rocks, boulders
-	if base.lockdown != null:  # v0.9.0 LK: a sealed Lockdown's bars, as an arena's
+	barriers += base.ruins_rocks.rock_count() + base.ruins_rocks.hide_count()  # Rocks, boulders
+	if base.lockdown != null:  # A sealed Lockdown's bars, as an arena's
 		barriers += base.lockdown.barriers.size()
 	if base.walls.size() == walls_before + barriers and barriers > 0:
 		base.rebuild_wall_grid()
@@ -831,7 +831,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 		BossSignatures.set_nav_extra(base, false)
 	base.nav.dist = (nav["dist"] as PackedInt32Array).duplicate()
 	base.nav.set(&"_flooded", nav["flooded"])
-	# v0.8.0 NF: a save from before NF has no build in progress and no work (the next build's budget starts small).
+	# A save from before NF has no build in progress and no work (the next build's budget starts small).
 	base.nav.last_work = int(nav.get("work", 0))
 	base.nav.restore_build(nav.get("build", {}))
 	for f: StringName in [&"_wall_next", &"_nav_next"]:
@@ -842,7 +842,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 	return ""
 
 
-## v0.9.0 TD: the saved walls' centres without the secret rooms' slabs (barriers past the floor's walls; v0.9.0 RA:
+## The saved walls' centres without the secret rooms' slabs (barriers past the floor's walls;
 ## every slab of Secrets.slabs), as saved.
 static func _without_slab(
 	base: World, saved_c: PackedVector2Array, walls_before: int
@@ -857,7 +857,7 @@ static func _without_slab(
 	return out
 
 
-## v0.8.0 BS1: how many of the Gatekeeper's pillars stood in the snapshot (0 for an older save).
+## How many of the Gatekeeper's pillars stood in the snapshot (0 for an older save).
 static func _saved_pillars(data: Dictionary) -> int:
 	var bosses: Variant = data.get(&"bosses", {})
 	if typeof(bosses) != TYPE_DICTIONARY:
@@ -866,13 +866,13 @@ static func _saved_pillars(data: Dictionary) -> int:
 	return (xs as PackedFloat32Array).size() if xs is PackedFloat32Array else 0
 
 
-## v0.6.0 MX2: per-entry arrays an older save didn't have, padded to their store's size with the "none" value (a
+## Per-entry arrays an older save didn't have, padded to their store's size with the "none" value (a
 ## projectile, a bomb or a patch without a spec runs as before MX2).
 static func _pad_added(w: World) -> void:
 	var p := w.projectiles
 	while p.spec_key.size() < p.ids.size():
 		p.spec_key.append("")
-	if p.speed.size() != p.ids.size():  # v0.6.0 MX4: an older save's projectiles have no behaviour
+	if p.speed.size() != p.ids.size():  # An older save's projectiles have no behaviour
 		var zeros := PackedInt32Array()
 		zeros.resize(p.ids.size())
 		zeros.fill(0)
@@ -883,29 +883,29 @@ static func _pad_added(w: World) -> void:
 		none.fill(0.0)
 		p.speed = none
 		p.moves = false
-	if p.mine_t.size() != p.ids.size():  # v0.6.5 WN3: an older save's projectiles neither spiral nor wait
+	if p.mine_t.size() != p.ids.size():  # An older save's projectiles neither spiral nor wait
 		var none_i := PackedInt32Array()
 		none_i.resize(p.ids.size())
 		none_i.fill(0)
 		p.spiral = none_i.duplicate()
 		p.mine_t = none_i.duplicate()
 	var a := w.actors
-	if a.poison_stacks.size() != a.ids.size():  # v0.6.0 MX4: an older save's actors carry no poison
+	if a.poison_stacks.size() != a.ids.size():  # An older save's actors carry no poison
 		var zero := PackedInt32Array()
 		zero.resize(a.ids.size())
 		zero.fill(0)
 		for f in ActorStore.VENOM_FIELDS:
 			a.set(f, zero.duplicate())
-	if a.poison_jump_cd.size() != a.ids.size():  # v0.9.5 EE1: an older save's actors carry no element state
+	if a.poison_jump_cd.size() != a.ids.size():  # An older save's actors carry no element state
 		var nil := PackedInt32Array()
 		nil.resize(a.ids.size())
 		nil.fill(0)
 		for f in ActorStore.ELEMENT_FIELDS:
 			a.set(f, nil.duplicate())
-	if a.gas_cd.size() != a.ids.size():  # v0.9.5 EE3: an older save's actors carry no gas clock
+	if a.gas_cd.size() != a.ids.size():  # An older save's actors carry no gas clock
 		a.gas_cd.resize(a.ids.size())
 		a.gas_cd.fill(0)
-	if a.charged_t.size() != a.ids.size():  # v0.10.5 W3-P1b: an older save's enemies carry no charge
+	if a.charged_t.size() != a.ids.size():  # An older save's enemies carry no charge
 		a.charged_t.resize(a.ids.size())
 		a.charged_t.fill(0)
 	var s := w.ab
@@ -918,7 +918,7 @@ static func _pad_added(w: World) -> void:
 		s.fire_depth.append(0)
 		s.fire_proc.append(100)
 		s.fire_cap.append(0)
-	if s.ring_pulse.size() != s.ring_pos.size():  # v0.8.0 N3: an older save's rings are plain (they don't travel)
+	if s.ring_pulse.size() != s.ring_pos.size():  # An older save's rings are plain (they don't travel)
 		for f: StringName in [&"ring_vel", &"ring_orb", &"ring_orb_a", &"ring_pulse", &"ring_k"]:
 			var arr: Variant = s.get(f)
 			arr.resize(s.ring_pos.size())
@@ -1030,15 +1030,15 @@ static func _apply_object(obj: Object, data: Dictionary, kept: Dictionary, where
 			continue
 		if not data.has(f):
 			if (ADDED_SINCE_V05.get(class_of(obj), []) as Array).has(f):
-				continue  # v0.6.0 MX2: an older save; apply() fills it in
+				continue  # An older save; apply() fills it in
 			if class_of(obj) == &"ModifierState" and RuneMods.SNAPSHOT_FIELDS.has(f):
-				continue  # v0.9.5 FC5: the Rune Explosion cards' rows (RuneMods lists them: this file is at its line cap)
+				continue  # The Rune Explosion cards' rows (RuneMods lists them: this file is at its line cap)
 			if class_of(obj) == &"ModifierState" and WaveMods.SNAPSHOT_FIELDS.has(f):
-				continue  # v0.9.5 FC8: the Wave cards' rows (WaveMods lists them)
+				continue  # The Wave cards' rows (WaveMods lists them)
 			if class_of(obj) == &"ModifierState" and WispMods.SNAPSHOT_FIELDS.has(f):
-				continue  # v0.9.5 FC9: the Wisps cards' rows (WispMods lists them)
+				continue  # The Wisps cards' rows (WispMods lists them)
 			if class_of(obj) == &"AbilityState" and RuleCards.SNAPSHOT_FIELDS.has(f):
-				continue  # v0.10.5 O9: the rule cards' state (RuleCards lists it); an older save keeps the defaults
+				continue  # The rule cards' state (RuleCards lists it); an older save keeps the defaults
 			return "%s.%s: not in the snapshot" % [where, f]
 		var cur: Variant = obj.get(f)
 		var r: Array = _decode(cur, data[f], "%s.%s" % [where, f])
@@ -1068,7 +1068,7 @@ static func _decode(cur: Variant, v: Variant, where: String) -> Array:
 		return [cur if LOADOUT_CLASSES.has(cls) else null, ""]
 	if typeof(v) == TYPE_ARRAY and typeof(cur) == TYPE_ARRAY:
 		var arr: Array = cur
-		var old := arr.duplicate()  # v0.5.0 EV: an array of content tables (World.ev.events) keeps its tables
+		var old := arr.duplicate()  # An array of content tables (World.ev.events) keeps its tables
 		arr.clear()
 		var src: Array = v
 		for i in src.size():
@@ -1111,11 +1111,11 @@ static func _make(cls: StringName) -> Object:
 			return LockdownState.new()
 		&"ShrineState":  # v0.9.0 SH, HF
 			return ShrineState.new()
-		&"EliteState":  # v0.9.0 EL: a base whose floor had no elite before play brought one
+		&"EliteState":  # A base whose floor had no elite before play brought one
 			return EliteState.new()
 		&"StressState":  # v0.9.5 SM
 			return StressState.new()
-		&"CollectState":  # v0.9.0 CL: a base built without the collectibles armed (a lab)
+		&"CollectState":  # A base built without the collectibles armed (a lab)
 			return CollectState.new()
 		&"RngStream":
 			return RngStream.new()

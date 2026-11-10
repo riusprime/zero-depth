@@ -1,6 +1,6 @@
 class_name GambleShrineView
 extends Node3D
-## The gamble shrine (v0.3.0 L19): an angular robotic obelisk on a hexagonal plinth, split by a window where a
+## The gamble shrine: an angular robotic obelisk on a hexagonal plinth, split by a window where a
 ## glowing core crystal floats and turns, with light strips up its faces and two fins. The next price floats above
 ## it (shard gem + number), red when you can't afford it. A use spins the core fast for the card's spin and lands
 ## with a flash; a refused use shakes it and dims the core. Glowing materials have emission on from creation and the
@@ -10,11 +10,11 @@ extends Node3D
 ## KitModels like the kit: scaled, bottom on the floor, LODs), its front turned to the camera and lined up with the
 ## sim's square footprint (Gamble.collider, turned 45°). The cues stay: shards orbit its crystal (spinning fast on a
 ## use), the crystal's light brightens in reach, the body flashes on the landing and shakes on a refusal, the price
-## floats above. A missing model draws the code-built obelisk (L15). Presentation only: the sim's spot and footprint
+## floats above. A missing model draws the code-built obelisk. Presentation only: the sim's spot and footprint
 ## are unchanged.
-## v0.8.0 N14 (owner O72): a failed use cracks and fizzles (the core flickers out to red, the body jolts, sparks of
+## A failed use cracks and fizzles (the core flickers out to red, the body jolts, sparks of
 ## light die off); a spent shrine (its wins given) goes dim, its shards slow, and the price above it reads "Spent".
-## v0.9.0 BV (W71): per biome (InteractionLooks; set `biome` before setup): the owner's model (Fortune, or the gamble
+## Per biome (InteractionLooks; set `biome` before setup): the owner's model (Fortune, or the gamble
 ## shrine) tinted and the biome's accent round its foot. Its golden (or magenta) glow is the same in every biome.
 
 const CORE := Color("#3FF2D0")
@@ -30,8 +30,8 @@ const CORE_ENERGY := 2.4
 const LIGHT_ENERGY := 1.1
 const SHAKE_S := 0.35
 const LAND_FLASH_S := 0.35
-## v0.8.0 N14: a failed use's crack and fizzle (s), and a spent shrine's glow (a share of its core's).
-## v0.9.5 SS (owner: "clearer and more visual when it fails"): the fizzle is a white flash, a gutter to red that dims
+## A failed use's crack and fizzle (s), and a spent shrine's glow (a share of its core's).
+## The fizzle is a white flash, a gutter to red that dims
 ## the core to 20 %, and a recovery (their sum is FIZZLE_S); five cracks fade over CRACK_S; the body drops JOLT_M and
 ## springs back; twelve dark smoke puffs rise SMOKE_RISE_M.
 const FLASH_S := 0.08
@@ -47,7 +47,7 @@ const GUTTER_GLOW := 0.2
 const PUFFS := 12
 const SMOKE_RISE_M := 0.8
 const SMOKE_S := 1.0
-## v0.9.5 SS: a gold ring pulses on the base when a spin lands.
+## A gold ring pulses on the base when a spin lands.
 const PULSE_S := 0.3
 const PULSE_GOLD := Color("#FFC94A")
 const CRACK_TINT := Color("#FF3A2A")
@@ -65,7 +65,7 @@ const MODEL_CRYSTAL := Vector3(0.07, 0.86, -0.2)
 const MODEL_GLOW := Color("#D46BFF")
 ## How far the shards orbit the model's crystal (m).
 const MODEL_ORBIT_M := 0.3
-## v0.9.0 SH (owner Q29b: "Today's gamble shrine becomes the Fortune Shrine"): the owner's Fortune Shrine model
+## The owner's Fortune Shrine model
 ## (ShopModels id, assets/models/devices/shrine_fortune.glb, 2.0 m tall as scripts/assets/mi2_prep.py prepares it), its
 ## front (+Z) turned to the camera like the gamble shrine's; the shards orbit FORTUNE_GLOW_Y of its height up, in its
 ## golden light. Without it, the v0.6.0 gamble shrine model, then the code-built obelisk.
@@ -79,7 +79,7 @@ var root: Node3D
 var price_label: Label3D
 ## Use the owner's model (set before setup; WorldViewRoot turns it on with the v0.5.9 look).
 var kit_model := false
-## v0.9.0 BV: the floor's biome (set before setup; WorldViewRoot sets it).
+## The floor's biome (set before setup; WorldViewRoot sets it).
 var biome := &""
 var _body: Node3D
 var _core: Node3D
@@ -100,7 +100,7 @@ var _hot := false
 var _glow := CORE
 var _core_y := CORE_Y
 var _model: MeshInstance3D
-## v0.9.5 SS: the effects layer's drawer feeds (smoke, gold ring) when VfxCore is on; the cracks and the prize.
+## The effects layer's drawer feeds (smoke, gold ring) when VfxCore is on; the cracks and the prize.
 var _crack: Sprite3D
 var _crack_left := 0.0
 var _puff_age := -1.0
@@ -123,7 +123,7 @@ func _init() -> void:
 ## Builds the shrine at its sim position (once; the shrine never moves).
 func setup(at: Vector2) -> void:
 	root = null
-	if kit_model:  # v0.9.0 SH: the owner's Fortune Shrine first, then his v0.6.0 gamble shrine
+	if kit_model:  # The owner's Fortune Shrine first, then his v0.6.0 gamble shrine
 		var fortune := ShopModels.get_model(FORTUNE_ID)
 		if not fortune.is_empty():
 			root = _make_fortune(fortune)
@@ -143,7 +143,7 @@ func sync(reader: WorldReader) -> void:
 		return
 	var p := reader.player_pos()
 	_hot = reader.gamble_in_reach()
-	_spent = reader.gamble_spent()  # v0.8.0 N14: dimmed, "Spent" above it
+	_spent = reader.gamble_spent()  # Dimmed, "Spent" above it
 	var gem := price_label.get_child(0) as Node3D
 	if _spent:
 		price_label.text = tr("UI_GAMBLE_SPENT_TAG")
@@ -183,22 +183,22 @@ func shaking() -> bool:
 	return _shake_left > 0.0
 
 
-## v0.8.0 N14: a failed use's crack and fizzle is playing.
+## A failed use's crack and fizzle is playing.
 func fizzling() -> bool:
 	return _fizzle_left > 0.0
 
 
-## v0.9.5 SS: the cracks are showing.
+## The cracks are showing.
 func cracked() -> bool:
 	return _crack != null and _crack.visible
 
 
-## v0.9.5 SS: the gold ring pulse is playing.
+## The gold ring pulse is playing.
 func pulsing() -> bool:
 	return _pulse_left > 0.0
 
 
-## v0.9.5 SS: how many smoke puffs the fail throws at the current Effects density.
+## How many smoke puffs the fail throws at the current Effects density.
 static func puff_count() -> int:
 	var share := 1.0
 	match ViewPrefs.effects_density:
@@ -209,7 +209,7 @@ static func puff_count() -> int:
 	return maxi(1, int(round(PUFFS * share)))
 
 
-## v0.8.0 N14: the shrine is spent and drawn dim.
+## The shrine is spent and drawn dim.
 func dimmed() -> bool:
 	return _spent
 
@@ -238,7 +238,7 @@ func _process(delta: float) -> void:
 	_core_col = _glow
 	var energy := CORE_ENERGY * (1.35 if _hot else 1.0)
 	var turn := 0.8 if not _hot else 1.4
-	if _spent:  # v0.8.0 N14: its wins given, the shrine sleeps
+	if _spent:  # Its wins given, the shrine sleeps
 		energy = CORE_ENERGY * SPENT_GLOW
 		turn = 0.15
 	if _spin_left > 0.0:
@@ -285,7 +285,7 @@ func _process(delta: float) -> void:
 	_tick_fx(delta)
 
 
-## v0.9.5 SS: the failed use's core at `e` seconds in: {"glow": share of CORE_ENERGY, "color"}. A white flash (FLASH_S),
+## The failed use's core at `e` seconds in: {"glow": share of CORE_ENERGY, "color"}. A white flash (FLASH_S),
 ## then it gutters to DENY red and dims to GUTTER_GLOW over GUTTER_S (flickering unless `flicker` is off), then recovers
 ## to its own light over RECOVER_S.
 func fizzle_look(e: float, flicker: bool, t: float) -> Dictionary:
@@ -305,14 +305,14 @@ func fizzle_look(e: float, flicker: bool, t: float) -> Dictionary:
 	return {"glow": lerpf(GUTTER_GLOW, 1.0, r), "color": DENY.lerp(_glow, r)}
 
 
-## v0.9.5 SS: the body's drop at `e` seconds into the fizzle, 0..1 of JOLT_M: down fast, then springing back.
+## The body's drop at `e` seconds into the fizzle, 0..1 of JOLT_M: down fast, then springing back.
 static func jolt_at(e: float) -> float:
 	if e < FLASH_S:
 		return e / FLASH_S
 	return maxf(0.0, 1.0 - (e - FLASH_S) / JOLT_BACK_S)
 
 
-## v0.9.5 SS: advances the cracks, smoke, ring and prize.
+## Advances the cracks, smoke, ring and prize.
 func _tick_fx(delta: float) -> void:
 	if _crack_left > 0.0:
 		_crack_left = maxf(0.0, _crack_left - delta)
@@ -329,13 +329,13 @@ func _tick_fx(delta: float) -> void:
 	_pulse_left = maxf(0.0, _pulse_left - delta)
 
 
-## v0.9.5 SS: a gold ring pulses on the base when a spin lands. (v0.11.0 F13: the won stat's symbol rolls on the HUD,
+## A gold ring pulses on the base when a spin lands. (the won stat's symbol rolls on the HUD,
 ## above the shrine, instead of a billboard here: GambleRoll.)
 func _start_prize() -> void:
 	_pulse_left = PULSE_S
 
 
-## v0.9.5 SS: five cracks across the core, a billboard drawn in code (dark red with a bright edge so it reads on any
+## Five cracks across the core, a billboard drawn in code (dark red with a bright edge so it reads on any
 ## glow); shown for CRACK_S while it fades.
 func _make_crack() -> Sprite3D:
 	if _crack_tex == null:
@@ -391,7 +391,7 @@ static func _line(img: Image, a: Vector2, b: Vector2, col: Color, r: int) -> voi
 					img.set_pixel(x, y, col)
 
 
-## v0.9.5 SS: the effects layer's drawer: the fail's dark smoke rising off the core and the win's gold ring on the foot.
+## The effects layer's drawer: the fail's dark smoke rising off the core and the win's gold ring on the foot.
 func draw_fx(layer: VfxCore) -> void:
 	if root == null or not is_inside_tree():
 		return
@@ -513,7 +513,7 @@ func _make_model(piece: Dictionary) -> Node3D:
 	return n
 
 
-## v0.9.0 SH: the owner's Fortune Shrine (ShopModels: already in metres, bottom on the floor, centred), turned to the
+## The owner's Fortune Shrine (ShopModels: already in metres, bottom on the floor, centred), turned to the
 ## camera; the same cues as _make_model, in its golden light.
 func _make_fortune(piece: Dictionary) -> Node3D:
 	_glow = FORTUNE_GLOW

@@ -1,6 +1,6 @@
 class_name SkillTable
 extends RefCounted
-## A build's second ability in sim units (v0.3.5 K, owner F18), compiled from SkillDefinition (ContentCompiler.
+## A build's second ability in sim units, compiled from SkillDefinition (ContentCompiler.
 ## compile_skill) and set on PlayerTable.skill by the run's build. Ticks, metres, 1/4096 turns; heat in milli-points.
 ## PlayerSkill runs it. Starting values (PLAN v0.3.5 "Second abilities").
 

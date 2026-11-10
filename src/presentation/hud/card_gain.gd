@@ -56,7 +56,7 @@ static func percent(ci: Object, permille: int) -> String:
 	return ci.tr("UI_GAIN_PERCENT") % GambleIcons.percent(permille)
 
 
-## v0.10.5 W3-P10n: an attack-speed card whose rate no longer rises (past the curve's top) but whose damage does.
+## An attack-speed card whose rate no longer rises (past the curve's top) but whose damage does.
 static func gives_damage(gain: Dictionary) -> bool:
 	return (
 		gain.has("dmg_new")

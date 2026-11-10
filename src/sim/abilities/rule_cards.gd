@@ -122,7 +122,7 @@ static func on_kill(w: World, target: int, tags: int, root: int) -> void:
 		var bonus := (base * _capped(w, Stats.Stat.SCAVENGER) + 500) / 1000
 		bonus = Affinities.shards(w, Stats.shards(w, bonus))
 		if bonus > 0 and Rewards.lies_on_floor(w, a.kinds[target]):
-			ShardDrops.drop(w, a.pos(target), bonus)  # v0.10.5 O7b: joins the kill's drop, paid when taken
+			ShardDrops.drop(w, a.pos(target), bonus)  # Joins the kill's drop, paid when taken
 		elif bonus > 0:
 			w.shards += bonus
 			var me := a.ids[0]

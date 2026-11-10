@@ -1,6 +1,6 @@
 class_name IcePatches
 extends RefCounted
-## v0.7.5 NB1: lays a floor's ice patches (Frozen Shore) and says when the hero stands on one. A pure function of the
+## Lays a floor's ice patches (Frozen Shore) and says when the hero stands on one. A pure function of the
 ## layout, the walls and the floor seed, drawn from the `map:ice` sub-stream (derived from World.seed_value like
 ## `map:event`), so no other draw moves and a resumed floor lays the same patches.
 ##
@@ -16,7 +16,7 @@ const ATTEMPTS := 8
 const STREAM := "map:ice"
 
 
-## v0.7.5 NB2: a surface's own sub-stream, `map:<kind>` (ice: STREAM, unchanged; Starfall's starglow:
+## A surface's own sub-stream, `map:<kind>` (ice: STREAM, unchanged; Starfall's starglow:
 ## `map:starglow`), so two surfaces never share draws and neither moves any other stream.
 static func stream_of(kind: StringName) -> String:
 	return STREAM if kind == &"ice" else "map:" + String(kind)

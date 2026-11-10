@@ -1,9 +1,9 @@
 class_name Stats
 extends RefCounted
-## Stat cards and crit (v0.4.0 BS, owner F9). World.stat_values holds one integer per Stat (empty = no card yet:
+## Stat cards and crit. World.stat_values holds one integer per Stat (empty = no card yet:
 ## every stat at its base). Cards stack multiplicatively in per mille, rounded half up at each card:
 ## - MULT stats: value x (1000 + amount) / 1000, never over the cap (max HP, area, move speed, shard gain, pickup
-##   range; base 1000 = x1); v0.8.0 SG (owner O91): an additive table (StatTable.additive: damage, attack speed, Glass
+##   range; base 1000 = x1); an additive table (StatTable.additive: damage, attack speed, Glass
 ##   Cannon) adds instead, value + amount within the cap;
 ## - CUT stats: value x (1000 - amount) / 1000, never under the cap (cooldowns, armour = damage taken);
 ## - ADD stats: value + amount (crit chance and crit damage in per mille points on top of the player's base, capped
@@ -21,17 +21,17 @@ extends RefCounted
 ## - HOARDER (ADD): + damage per full 100 shards held (at most the limit's shards count); each card also raises
 ##   the shard gain stat by its side amount, so spending at a chest trades power for a card;
 ## - FAST_HANDS (CUT): the auto abilities' cooldowns and periods only (auto_cooldown, auto_period).
-## v0.5.5 EC (owner D9): LIFESPROUT (ADD), the heal-orb card: the first card sets the kill's heal-orb drop chance to
+## LIFESPROUT (ADD), the heal-orb card: the first card sets the kill's heal-orb drop chance to
 ## its amount, each further card adds its side amount; the chance is read capped (heal_orb_chance). Without the card
-## no orb drops (HealOrbs.on_kill). v0.11.0 F3 (owner's playtest §6): disabled, weight 0: kills earn orbs for every run
+## no orb drops (HealOrbs.on_kill). disabled, weight 0: kills earn orbs for every run
 ## (HealOrbs), this stat changes nothing now; the code stays so the card can come back.
-## Damage stats fold into one multiplier (damage_permille). v0.8.0 SG (owner O91): one additive bucket, (damage +
+## Damage stats fold into one multiplier (damage_permille). one additive bucket, (damage +
 ## onrush while moving + hoarder) x glass cannon; the curses stay explicit multipliers. Attack speed reads one curve
 ## with the attack's wand bonus (AttackRate).
-## v0.10.5 O9 (theory audit P2): seven more rule cards, VENT_MEND .. SCAVENGER (RuleCards has each Trigger -> Condition
+## Theory audit P2: seven more rule cards, VENT_MEND.. SCAVENGER (RuleCards has each Trigger -> Condition
 ## -> Payoff); HEAT_SHIELD is a CUT, the rest ADD. The eight flat cards they replace keep their stats and tables at
 ## weight 0 (never offered; an old save's cards still count).
-## v0.10.5 W3-P10a (owner W7, G1 A1-A4; loop 1 unchanged): from loop 2 the caps lift (cap_of). Crit chance is capped
+## From loop 2 the caps lift (cap_of). Crit chance is capped
 ## at 200 %; past 100 % the one `crit` roll also picks a double crit (roll < chance - 1000): the crit multiplier twice,
 ## at most x10, TAG_CRIT and TAG_DOUBLE_CRIT. The crit multiplier's cap is x6 at loop 2, x8 from loop 3. Attack speed
 ## has no cap: its raw bonus past the rate curve's top (AttackRate) adds no rate but +10 per mille damage per 20 (in
@@ -56,7 +56,7 @@ enum Stat {
 	HOARDER,
 	FAST_HANDS,
 	LIFESPROUT,
-	# v0.10.5 O9 (theory audit P2): the rule cards that replace the flat stats (RuleCards has each rule)
+	# Theory audit P2: the rule cards that replace the flat stats (RuleCards has each rule)
 	VENT_MEND,
 	HEAT_SHIELD,
 	ADRENALINE,
@@ -65,10 +65,10 @@ enum Stat {
 	REFLEX,
 	SCAVENGER,
 }
-enum Rarity { COMMON, RARE, EPIC, LEGENDARY }  # v0.5.5 AR: LEGENDARY, the boss's tier (X1b)
+enum Rarity { COMMON, RARE, EPIC, LEGENDARY }  # LEGENDARY, the boss's tier
 
 const COUNT := 25
-## v0.10.5 O9: the stats before O9. A world's values grow to this many at its first card (grow), and past it only
+## The stats before O9. A world's values grow to this many at its first card (grow), and past it only
 ## for an O9 card, so a world without one keeps its value array, and its hash, as before.
 const LEGACY_COUNT := 18
 const MULT := 0
@@ -128,20 +128,20 @@ const BASE: Array[int] = [
 	0,
 	0
 ]
-## v0.8.0 SG (owner O91): the stat rules a world's values follow (World.stat_rules): 0 before SG (damage, attack
+## The stat rules a world's values follow (World.stat_rules): 0 before SG (damage, attack
 ## speed and Glass Cannon compounded), 1 since (their cards add). An older save rebuilds them (migrate_rules).
 const RULES := 1
 const ADDITIVE_STATS: Array[int] = [Stat.DAMAGE, Stat.ATTACK_SPEED, Stat.GLASS_CANNON]
 ## Hoarder counts shards in steps of this many.
 const HOARD_STEP := 100
-## v0.10.5 W3-P10a (owner W7, G1 A1/A3): the loops' caps (cap_of). From loop 2 crit chance is capped at 200 % (past
+## The loops' caps (cap_of). From loop 2 crit chance is capped at 200 % (past
 ## 100 % a double crit's chance), and the crit multiplier at x6 (loop 2) and x8 (loop 3 on); a double crit's
 ## multiplier (the crit multiplier twice) is at most x10.
 const CRIT_CHANCE_CAP_LOOPS := 2000
 const CRIT_MULT_CAP_LOOP2 := 6000
 const CRIT_MULT_CAP_LOOP3 := 8000
 const DOUBLE_CRIT_MAX := 10000
-## v0.10.5 W3-P10a (G1 A4): every HASTE_STEP per mille of raw attack speed past the curve's top adds HASTE_DAMAGE per
+## Every HASTE_STEP per mille of raw attack speed past the curve's top adds HASTE_DAMAGE per
 ## mille to the damage bucket (AttackRate.overflow_at).
 const HASTE_STEP := 20
 const HASTE_DAMAGE := 10
@@ -171,13 +171,13 @@ static func add_card(w: World, s: int, rarity: int) -> void:
 	var t := table(w, s)
 	if t != null:
 		var r := clampi(rarity, 0, t.amounts.size() - 1)
-		w.stat_cards.append(Offers.stat_code(s, r))  # v0.5.0 SH: the shop can sell it back
+		w.stat_cards.append(Offers.stat_code(s, r))  # The shop can sell it back
 		add_amount(w, s, card_amount(w, s, r))
 		if s != Stat.LIFESPROUT:
 			_side(w, t, s, t.side[r] if r < t.side.size() else 0)
 
 
-## What a card of stat `s` at `rarity` adds now: its amount, but for Lifesprout (v0.5.5 D9) only the first card
+## What a card of stat `s` at `rarity` adds now: its amount, but for Lifesprout only the first card
 ## adds the amount and every further card its side amount.
 static func card_amount(w: World, s: int, rarity: int) -> int:
 	var t := table(w, s)
@@ -189,7 +189,7 @@ static func card_amount(w: World, s: int, rarity: int) -> int:
 	return t.amounts[r]
 
 
-## v0.5.0 CP: a rule card's second number: Glass Cannon cuts the max HP stat (never under its limit), Hoarder raises
+## A rule card's second number: Glass Cannon cuts the max HP stat (never under its limit), Hoarder raises
 ## shard gain. Both move the other stat's value directly, so they work without that stat's own card table.
 static func _side(w: World, t: StatTable, s: int, a: int) -> void:
 	if a <= 0:
@@ -223,7 +223,7 @@ static func add_amount(w: World, s: int, a: int) -> void:
 		w.actors.hp[0] = mini(w.actors.max_hp[0], w.actors.hp[0] + maxi(0, gain))
 
 
-## v0.10.5 O9: makes room for stat `s` in the world's values: at least LEGACY_COUNT, more only for an O9 stat (the new
+## Makes room for stat `s` in the world's values: at least LEGACY_COUNT, more only for an O9 stat (the new
 ## ones at their BASE).
 static func grow(w: World, s: int) -> void:
 	var n := maxi(LEGACY_COUNT, s + 1)
@@ -235,8 +235,8 @@ static func grow(w: World, s: int) -> void:
 		w.stat_values[k] = old[k]
 
 
-## v0.8.0 N8: stat `s`'s raw value `v` moved by `a` per mille within table `t`'s cap (add_amount's step, and the
-## pick card's forecast: CardForecast). Pure. v0.10.5 W3-P10a: `cap` is the loop's (cap_of; -1: the table's).
+## Stat `s`'s raw value `v` moved by `a` per mille within table `t`'s cap (add_amount's step, and the
+## pick card's forecast: CardForecast). Pure. `cap` is the loop's (cap_of; -1: the table's).
 static func stepped(t: StatTable, s: int, v: int, a: int, cap := -1) -> int:
 	var c := t.cap if cap < 0 else cap
 	match MODE[s]:
@@ -249,7 +249,7 @@ static func stepped(t: StatTable, s: int, v: int, a: int, cap := -1) -> int:
 	return v + a
 
 
-## v0.10.5 W3-P10a (owner W7, G1 A1/A3/A4): stat `s`'s cap in world `w` (table `t`'s, per mille; 0 = none). Loop 1:
+## Stat `s`'s cap in world `w` (table `t`'s, per mille; 0 = none). Loop 1:
 ## the table's. From loop 2: crit chance at least CRIT_CHANCE_CAP_LOOPS, the crit multiplier at least
 ## CRIT_MULT_CAP_LOOP2 (CRIT_MULT_CAP_LOOP3 from loop 3), attack speed none. A table without a cap stays without.
 static func cap_of(w: World, s: int, t: StatTable) -> int:
@@ -271,10 +271,10 @@ static func at_cap(w: World, s: int) -> bool:
 	if t == null:
 		return true
 	if s == Stat.GLASS_CANNON and value(w, Stat.MAX_HP) <= t.limit_permille:
-		return true  # v0.5.0 CP: no more HP to trade
+		return true  # No more HP to trade
 	if (s == Stat.VENT_MEND or s == Stat.HEAT_SHIELD) and w.heat == null:
-		return true  # v0.10.5 O9: a world without heat has no Vent and is never Hot
-	var cap := cap_of(w, s, t)  # v0.10.5 W3-P10a: the loop's
+		return true  # A world without heat has no Vent and is never Hot
+	var cap := cap_of(w, s, t)  # The loop's
 	if cap <= 0:
 		return false
 	match MODE[s]:
@@ -290,7 +290,7 @@ static func total(w: World, s: int) -> int:
 	return total_at(w, s, value(w, s))
 
 
-## v0.8.0 N8: total() for a raw value `v` of stat `s` (CardForecast's after-card number).
+## total() for a raw value `v` of stat `s` (CardForecast's after-card number).
 static func total_at(w: World, s: int, v: int) -> int:
 	match s:
 		Stat.CRIT_CHANCE:
@@ -300,48 +300,48 @@ static func total_at(w: World, s: int, v: int) -> int:
 	return v
 
 
-## The player's max HP: the table's, x the max HP stat, plus the gamble shrine's old-style wins (v0.3.0 L19) when
+## The player's max HP: the table's, x the max HP stat, plus the gamble shrine's old-style wins when
 ## the shrine doesn't pay in stats.
 static func max_hp(w: World) -> int:
 	return max_hp_at(w, value(w, Stat.MAX_HP))
 
 
-## v0.8.0 N8: max_hp() with the max HP stat at `v` (CardForecast's after-card number).
+## max_hp() with the max HP stat at `v` (CardForecast's after-card number).
 static func max_hp_at(w: World, v: int) -> int:
-	var base := ((w.player.hp + w.floor_hp_bonus) * v + 500) / 1000  # v0.9.0 SV: the floors' growth
-	var cut := Curses.max_hp_permille(w)  # v0.6.0 CU: Glass Heart
+	var base := ((w.player.hp + w.floor_hp_bonus) * v + 500) / 1000  # The floors' growth
+	var cut := Curses.max_hp_permille(w)  # Glass Heart
 	if cut != 1000:
 		base = maxi(1, (base * cut + 500) / 1000)
 	var total_hp := base + Gamble.hook_bonus(w, GambleTable.Stat.MAX_HP)
-	if Constellations.has(w, Constellations.GLASS_SKY):  # v0.10.5 W3-P10c: C3 Glass Sky halves it
+	if Constellations.has(w, Constellations.GLASS_SKY):  # C3 Glass Sky halves it
 		total_hp = maxi(1, Constellations.scale(total_hp, Constellations.GLASS_SKY_HP_PERMILLE))
 	return total_hp
 
 
 # --- Damage ----------------------------------------------------------------------------------------------------
-## Crit chance now, per mille (base + cards, at most the cap; v0.10.5 W3-P10a: the loop's, cap_of).
+## Crit chance now, per mille (base + cards, at most the cap; the loop's, cap_of).
 static func crit_chance(w: World) -> int:
 	var cap := cap_of(w, Stat.CRIT_CHANCE, table(w, Stat.CRIT_CHANCE))
-	var c := total(w, Stat.CRIT_CHANCE) + Curses.crit_chance(w)  # v0.6.0 CU: Glass Heart
+	var c := total(w, Stat.CRIT_CHANCE) + Curses.crit_chance(w)  # Glass Heart
 	return mini(c, cap) if cap > 0 else c
 
 
-## A crit's multiplier now, per mille (base 1500 + cards, at most the cap; v0.10.5 W3-P10a: the loop's, cap_of).
+## A crit's multiplier now, per mille (base 1500 + cards, at most the cap; the loop's, cap_of).
 static func crit_mult(w: World) -> int:
 	var cap := cap_of(w, Stat.CRIT_DAMAGE, table(w, Stat.CRIT_DAMAGE))
 	var c := total(w, Stat.CRIT_DAMAGE)
 	var capped := mini(c, cap) if cap > 0 else c
-	return capped + Starbound.crit_bonus(w)  # v0.10.5 W3-P10b: Rising Edge, past the cap
+	return capped + Starbound.crit_bonus(w)  # Rising Edge, past the cap
 
 
-## v0.10.5 W3-P10a (owner W7, G1 A1): a double crit's multiplier now, per mille: the crit multiplier twice, at most
+## A double crit's multiplier now, per mille: the crit multiplier twice, at most
 ## DOUBLE_CRIT_MAX (x10).
 static func double_crit_mult(w: World) -> int:
 	var m := crit_mult(w)
 	return mini(m * m / 1000, DOUBLE_CRIT_MAX)
 
 
-## v0.10.5 W3-P10a: the chance now that a hit is a double crit, per mille (crit chance past 100 %; 0 in loop 1).
+## The chance now that a hit is a double crit, per mille (crit chance past 100 %; 0 in loop 1).
 static func double_crit_chance(w: World) -> int:
 	if w.loop < 2:
 		return 0
@@ -354,10 +354,10 @@ static func double_crit_chance(w: World) -> int:
 ## chance - 1000 is a double crit (double_crit_mult, TAG_CRIT | TAG_DOUBLE_CRIT).
 static func outgoing(w: World, amount: int, tags: int) -> Array[int]:
 	var m := damage_permille(w)
-	var ab := Curses.ability_damage_permille(w, tags)  # v0.6.0 CU: Blood Price
+	var ab := Curses.ability_damage_permille(w, tags)  # Blood Price
 	if ab != 1000:
 		m = (m * ab + 500) / 1000
-	var milli := amount * m  # v0.10.5 W3-P9: thousandths of a point, carried (w.dmg_carry)
+	var milli := amount * m  # Thousandths of a point, carried (w.dmg_carry)
 	if tags & SimEvent.TAG_DOT:
 		return [carry_hit(w, milli), 0]
 	var chance := crit_chance(w)
@@ -366,7 +366,7 @@ static func outgoing(w: World, amount: int, tags: int) -> Array[int]:
 	var roll := w.rng_crit.range_int(0, 999)
 	if roll >= chance:
 		return [carry_hit(w, milli), 0]
-	if w.loop >= 2 and roll < chance - 1000:  # v0.10.5 W3-P10a: a double crit, from loop 2 only
+	if w.loop >= 2 and roll < chance - 1000:  # A double crit, from loop 2 only
 		return [
 			carry_hit(w, milli * double_crit_mult(w) / 1000),
 			SimEvent.TAG_CRIT | SimEvent.TAG_DOUBLE_CRIT
@@ -374,7 +374,7 @@ static func outgoing(w: World, amount: int, tags: int) -> Array[int]:
 	return [carry_hit(w, milli * crit_mult(w) / 1000), SimEvent.TAG_CRIT]
 
 
-## v0.10.5 W3-P9 (owner: "lets do only A then"): a player hit of `milli` thousandths of a point, in whole points, the
+## A player hit of `milli` thousandths of a point, in whole points, the
 ## fraction carried to the next hit (w.dmg_carry), so a 7.3 hit lands 7, 7, 8, 7, 7, 8 … and averages 7.3 exactly.
 ## A hit at x 1.00 (a whole number of points) lands as it is and leaves the carry alone.
 static func carry_hit(w: World, milli: int) -> int:
@@ -385,7 +385,7 @@ static func carry_hit(w: World, milli: int) -> int:
 	return t / 1000
 
 
-## A DoT tick the player owns: x damage only (DoT never crits). v0.10.5 W3-P9: its fraction is carried to the next
+## A DoT tick the player owns: x damage only (DoT never crits). its fraction is carried to the next
 ## tick (w.dot_carry), as a hit's is.
 static func dot(w: World, amount: int) -> int:
 	var m := damage_permille(w)
@@ -396,19 +396,19 @@ static func dot(w: World, amount: int) -> int:
 	return t / 1000
 
 
-## The player's damage multiplier now, per mille (v0.8.0 SG, owner O91): the bucket (damage_bucket: the damage stat
+## The player's damage multiplier now, per mille: the bucket (damage_bucket: the damage stat
 ## + Onrush while moving + Hoarder per 100 shards held) x glass cannon.
 static func damage_permille(w: World) -> int:
 	return damage_at(w, damage_bucket(w, w.move_intent != Vector2i.ZERO))
 
 
-## v0.8.0 SG: the additive damage bucket, per mille: the damage stat (its cards and the gamble's wins add) + Hoarder's
+## The additive damage bucket, per mille: the damage stat (its cards and the gamble's wins add) + Hoarder's
 ## bonus now + Onrush when `moving`.
 static func damage_bucket(w: World, moving: bool) -> int:
 	return bucket_at(w, value(w, Stat.DAMAGE), moving)
 
 
-## damage_bucket() with the damage stat at raw value `v` (CardForecast's after-card number). v0.10.5 W3-P10a (G1 A4):
+## damage_bucket() with the damage stat at raw value `v` (CardForecast's after-card number).
 ## plus the haste overflow's damage with the attack-speed stat at `speed_v` (-1: its value now; haste_damage_at).
 static func bucket_at(w: World, v: int, moving: bool, speed_v := -1) -> int:
 	var sv := value(w, Stat.ATTACK_SPEED) if speed_v < 0 else speed_v
@@ -416,13 +416,13 @@ static func bucket_at(w: World, v: int, moving: bool, speed_v := -1) -> int:
 	return b + value(w, Stat.ONRUSH) if moving else b
 
 
-## v0.10.5 W3-P10a (owner W7, G1 A4): the damage the attack-speed stat at raw value `speed_v` adds past the rate
+## The damage the attack-speed stat at raw value `speed_v` adds past the rate
 ## curve's top, per mille: HASTE_DAMAGE per full HASTE_STEP of AttackRate.overflow_at (0 in loop 1).
 static func haste_damage_at(w: World, speed_v: int) -> int:
 	return AttackRate.overflow_at(w, speed_v) / HASTE_STEP * HASTE_DAMAGE
 
 
-## Bucket `b` x glass cannon, per mille. v0.10.5 W3-P10c: x C3 Glass Sky's damage when held.
+## Bucket `b` x glass cannon, per mille. x C3 Glass Sky's damage when held.
 static func damage_at(w: World, b: int) -> int:
 	var g := value(w, Stat.GLASS_CANNON)
 	var m := b if g == 1000 else (b * g + 500) / 1000
@@ -465,7 +465,7 @@ static func armour_permille(w: World) -> int:
 	return value(w, Stat.ARMOUR)
 
 
-## v0.5.5 D9: a kill's heal-orb drop chance from Lifesprout, per mille (0 without the card; at most its cap).
+## A kill's heal-orb drop chance from Lifesprout, per mille (0 without the card; at most its cap).
 static func heal_orb_chance(w: World) -> int:
 	var t := table(w, Stat.LIFESPROUT)
 	var c := value(w, Stat.LIFESPROUT)
@@ -487,12 +487,12 @@ static func _scaled_ticks(w: World, s: int, ticks: int) -> int:
 	return maxi(1, (ticks * m + 500) / 1000)
 
 
-## v0.5.0 CP: an auto ability's cooldown: the cooldowns stat, then Fast Hands (never under 1 tick).
+## An auto ability's cooldown: the cooldowns stat, then Fast Hands (never under 1 tick).
 static func auto_cooldown(w: World, ticks: int) -> int:
 	return _fast(w, cooldown(w, ticks))
 
 
-## v0.5.0 CP: an auto ability's firing period: attack speed (the curve, the stat alone), then Fast Hands (never
+## An auto ability's firing period: attack speed (the curve, the stat alone), then Fast Hands (never
 ## under 1 tick).
 static func auto_period(w: World, ticks: int) -> int:
 	return _fast(w, period(w, ticks))
@@ -503,7 +503,7 @@ static func _fast(w: World, ticks: int) -> int:
 
 
 ## A firing period of `ticks` under attack speed without a wand bonus (AttackRate: the stat through the curve, then
-## Heavy Hands; never under 1 tick). v0.8.0 SG: the Gun's period and the Blade's swing read AttackRate with their
+## Heavy Hands; never under 1 tick). the Gun's period and the Blade's swing read AttackRate with their
 ## wand bonus (ItemEffects.shot_period_ticks, BladeForms.step); the old recovery-only swing_end folded into the
 ## Blade's one rate.
 static func period(w: World, ticks: int) -> int:
@@ -523,8 +523,8 @@ static func _scaled_m(w: World, s: int, metres: float) -> float:
 	return metres if m == 1000 else metres * m / 1000.0
 
 
-## v0.8.0 N2 (owner O42): in The Fallen's mimic window the move speed is at most the base (FinalPace.move_cap).
-## v0.10.5 O9: Adrenaline's burst on top (RuleCards.rush_permille), still under the mimic cap.
+## In The Fallen's mimic window the move speed is at most the base (FinalPace.move_cap).
+## Adrenaline's burst on top (RuleCards.rush_permille), still under the mimic cap.
 static func move_permille(w: World) -> int:
 	var v := value(w, Stat.MOVE)
 	var rush := RuleCards.rush_permille(w)
@@ -535,7 +535,7 @@ static func move_permille(w: World) -> int:
 
 static func shards(w: World, amount: int) -> int:
 	var m := value(w, Stat.SHARDS)
-	var c := Curses.shard_permille(w)  # v0.6.0 CU: Tunnel Vision
+	var c := Curses.shard_permille(w)  # Tunnel Vision
 	if c != 1000:
 		m = (m * c + 500) / 1000
 	return amount if m == 1000 else (amount * m + 500) / 1000
@@ -560,7 +560,7 @@ static func advance_regen(w: World) -> void:
 		w.ab.regen_tick = w.tick
 
 
-## v0.8.0 SG: a world restored from before SG (World.stat_rules 0: WorldSnapshot.apply, or a carry through
+## A world restored from before SG (World.stat_rules 0: WorldSnapshot.apply, or a carry through
 ## Abilities.start_floor) rebuilds damage, attack speed and Glass Cannon from its stat cards and the gamble shrine's
 ## stacks under today's rules (Shop.rebuild_stats' replay, limited to those stats). The other stats keep their stored
 ## values (an event's max HP cut isn't recorded anywhere to replay). Then stat_rules = RULES.
@@ -593,7 +593,7 @@ static func migrate_rules(w: World) -> void:
 			)
 
 
-## The gamble shrine pays its overlapping stats into the same stat values (v0.4.0 BS), by its own amounts: the stat
+## The gamble shrine pays its overlapping stats into the same stat values, by its own amounts: the stat
 ## a shrine stat maps to, or -1 (heat, or a world without stat cards).
 static func from_gamble(w: World, gamble_stat: int) -> int:
 	if not enabled(w):

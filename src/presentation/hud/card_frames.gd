@@ -5,7 +5,7 @@ extends RefCounted
 ## card's title and inlay groove (StoneCard), a plaque's inlay (Plaques), a wand tile's and a pip's ring, a Codex
 ## tile's, and in the world a core's and an altar's light. **This file is the one table to remap**: FRAME says which
 ## colour a family wears, FAMILY_OF says which family each card is in. Rules on top of the table: an epic card wears
-## the epic gold, a cursed offer the curse violet; v0.5.5 AR (X1b): a legendary card (the boss's tier, PickSlot tier
+## the epic gold, a cursed offer the curse violet; a legendary card (the boss's tier, PickSlot tier
 ## LEGENDARY_TIER) wears the gold with a paler title (LEGENDARY_TINT) and a stronger glow. A card missing from
 ## FAMILY_OF falls back to its type's family (DEFAULT_BY_TYPE); tests/unit/presentation/test_card_frames.gd fails on a
 ## content card that is missing here, so a new card gets a family on purpose.
@@ -60,7 +60,7 @@ const FAMILY_OF := {
 	&"thorn_mantle": &"projectile",
 	&"vampiric_core": &"healing",
 	&"wildfire": &"fire",
-	# v0.6.0 MX4: the M-list's modifier cards (trinkets indigo) and the boss tier's legendary ones
+	# The M-list's modifier cards (trinkets indigo) and the boss tier's legendary ones
 	&"blade_orbit": &"damage",
 	&"echo_slash": &"time",
 	&"ember_core": &"fire",
@@ -71,8 +71,8 @@ const FAMILY_OF := {
 	&"storm_core": &"area",
 	&"venom_core": &"damage",
 	&"wide_arc": &"area",
-	# v0.6.5 WN1: the wand's trigger cards (placeholder frame until WN5 gives them their look)
-	# v0.6.5 WN3: the Gun pool's new cards (G5, G9, G10, G16 keep theirs above)
+	# The wand's trigger cards (placeholder frame until WN5 gives them their look)
+	# The Gun pool's new cards (G5, G9, G10, G16 keep theirs above)
 	&"gun_backfire": &"projectile",
 	&"gun_big_shot": &"damage",
 	&"gun_echo": &"time",
@@ -83,17 +83,17 @@ const FAMILY_OF := {
 	&"gun_ricochet": &"projectile",
 	&"gun_spiral": &"trinket",
 	&"gun_twin": &"time",
-	&"gun_ring": &"area",  # v0.8.0 AO (owner O37): the order rule's Ring and Swirl
-	&"gun_laser": &"projectile",  # v0.9.0 LZ: the Laser form
-	&"gun_void": &"dash",  # v0.9.0 VP: the Void form (the retired Void card's family)
-	&"gun_wave": &"area",  # v0.9.0 AF3: the Wave form
-	&"gun_wisps": &"trinket",  # v0.9.0 AF3: the Wisps form (Orbit Rounds' family)
-	&"gun_lance": &"crit",  # v0.9.0 AF1: the Lance form (the retired Charge card's family)
-	&"gun_rune_explosion": &"trinket",  # v0.9.5 FC0: the Rune Explosion form (replaces Scatter)
-	&"gun_glaive": &"trinket",  # v0.9.0 AF2: the Glaive form (the retired Boomerang card's family)
-	&"gun_seekers": &"projectile",  # v0.9.0 AF2: the Seekers form (the Homing card's family)
+	&"gun_ring": &"area",  # The order rule's Ring and Swirl
+	&"gun_laser": &"projectile",  # The Laser form
+	&"gun_void": &"dash",  # The Void form (the retired Void card's family)
+	&"gun_wave": &"area",  # The Wave form
+	&"gun_wisps": &"trinket",  # The Wisps form (Orbit Rounds' family)
+	&"gun_lance": &"crit",  # The Lance form (the retired Charge card's family)
+	&"gun_rune_explosion": &"trinket",  # The Rune Explosion form (replaces Scatter)
+	&"gun_glaive": &"trinket",  # The Glaive form (the retired Boomerang card's family)
+	&"gun_seekers": &"projectile",  # The Seekers form (the Homing card's family)
 	&"gun_swirl": &"trinket",
-	# v0.6.5 WN4: the Blade pool's new cards (B3–B16; Wide Arc, Wave, Afterimage and Orbit Blades keep theirs above)
+	# The Blade pool's new cards (B3–B16; Wide Arc, Wave, Afterimage and Orbit Blades keep theirs above)
 	&"chain_cut": &"damage",
 	&"counter": &"dash",
 	&"double_slash": &"time",
@@ -106,10 +106,10 @@ const FAMILY_OF := {
 	&"split_wave": &"projectile",
 	&"thrust": &"damage",
 	&"whirl": &"area",
-	# v0.8.0 BL (BLADE_AUDIT B4): the Blade's two multiplier cards
+	# BLADE_AUDIT B4: the Blade's two multiplier cards
 	&"blade_storm": &"trinket",
 	&"riposte_chain": &"damage",
-	# v0.8.0 RM (owner O91): the remnant cards and the two mutations (Dodge Imprint and Fracture Bank keep theirs)
+	# The remnant cards and the two mutations (Dodge Imprint and Fracture Bank keep theirs)
 	&"gun_threadline": &"projectile",
 	&"shared_faultline": &"area",
 	&"shared_stress_mark": &"damage",
@@ -124,7 +124,7 @@ const FAMILY_OF := {
 	&"fast_hands": &"time",
 	&"glass_cannon": &"damage",
 	&"hoarder": &"economy",
-	&"lifesprout": &"healing",  # v0.5.5 D9 (Step EC): heal orbs only with this card
+	&"lifesprout": &"healing",  # Step EC: heal orbs only with this card
 	&"max_hp": &"healing",
 	&"move_speed": &"dash",
 	&"onrush": &"damage",
@@ -132,7 +132,7 @@ const FAMILY_OF := {
 	&"pickup_range": &"economy",
 	&"regen": &"healing",
 	&"shard_gain": &"economy",
-	# v0.10.5 O9: the rule cards that replace the flat stats
+	# The rule cards that replace the flat stats
 	&"vent_mend": &"healing",
 	&"heat_shield": &"economy",
 	&"adrenaline": &"dash",
@@ -145,12 +145,12 @@ const FAMILY_OF := {
 	&"blink": &"dash",
 	&"combo_sword": &"damage",
 	&"pulse_gun": &"projectile",
-	# v0.6.5 WN5a: the shared pool's new cards (S1-S4 and S6 keep their v0.6 cards' frames above)
+	# The shared pool's new cards (S1-S4 and S6 keep their v0.6 cards' frames above)
 	&"shared_bleed": &"damage",
-	&"chain_blast": &"area",  # v0.8.0 RR: the Legendary pre-nerf Explosive
+	&"chain_blast": &"area",  # The Legendary pre-nerf Explosive
 }
 
-## v0.5.5 AR (X1b): the legendary tier (PickSlot.TIERS index): the gold, its title a paler gold.
+## The legendary tier (PickSlot.TIERS index): the gold, its title a paler gold.
 const LEGENDARY_TIER := 4
 const LEGENDARY_TINT := Color("#FFF0A8")
 

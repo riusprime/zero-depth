@@ -58,7 +58,7 @@ const LIFE := {
 	&"fire_lanes": 40.0,
 	&"skid": 100.0,
 }
-## v0.8.0 FB3: the Nemesis's moves that strike on the tick their telegraph says "striking".
+## The Nemesis's moves that strike on the tick their telegraph says "striking".
 const NEMESIS_MOVES: Array[int] = [WorldReader.MOVE_MIMIC_COMBO, WorldReader.MOVE_CARD_CAST]
 const SUSTAINED: Array[StringName] = [&"spears", &"beam", &"molten", &"fire_lanes", &"skid"]
 ## A marker strike already raised is not raised again for this many ticks (one strike, seen once).
@@ -99,14 +99,14 @@ func _init() -> void:
 	_pool(&"band_add", BossStrikeMeshes.band(), _glow(BossStrikeMeshes.GLOW % "blend_add"), false)
 	_pool(&"band_mix", BossStrikeMeshes.band(), _glow(BossStrikeMeshes.GLOW % "blend_mix"), false)
 	var beam := _glow(BossStrikeMeshes.GLOW % "blend_add")
-	var strip := FxTextures.get_tex("fx_beam")  # v0.8.0 TX1: the Focus Beam in the owner's beam strip
+	var strip := FxTextures.get_tex("fx_beam")  # The Focus Beam in the owner's beam strip
 	if strip != null:
 		beam.set_shader_parameter("beam_tex", strip)
 		beam.set_shader_parameter("tex_on", 1.0)
 	_pool(&"beam", BossStrikeMeshes.tube(), beam, false)
 	var ground := _glow(BossStrikeMeshes.GROUND)
 	ground.render_priority = 1  # over the telegraph's fill of the same lanes (both transparent)
-	BossStrikeMeshes.set_ground_textures(ground)  # v0.8.0 TX2: the owner's ground textures
+	BossStrikeMeshes.set_ground_textures(ground)  # The owner's ground textures
 	_pool(&"ground", BossStrikeMeshes.ground(), ground, false)
 	for pair: Array in [[_swoosh_add, "SwooshAdd", true], [_swoosh_mix, "SwooshMix", false]]:
 		var mi: MeshInstance3D = pair[0]
@@ -225,7 +225,7 @@ func _detect(
 		_detect_strikes(aid, move, tg)
 		return
 	if move == WorldReader.MOVE_SPIKE_CHASE or move == WorldReader.MOVE_SPIKE_BURST:
-		return  # v0.8.0 FB1: StoneSpikeViews raises them
+		return  # StoneSpikeViews raises them
 	if move == WorldReader.MOVE_LEAP:
 		var leap := reader.boss_leap(i)
 		if bool(leap[0]) and float(leap[1]) >= 1.0 and tg.get("shape", &"") == &"disc":
@@ -302,7 +302,7 @@ func _detect_marks(aid: int, look: StringName, tg: Dictionary) -> void:
 		_spawn(look, aid, {"discs": discs})
 
 
-## v0.8.0 FB1: the Colossus's combo strikes on the tick its telegraph says "striking": a swing throws a dust arc where
+## The Colossus's combo strikes on the tick its telegraph says "striking": a swing throws a dust arc where
 ## it locked, the closing slam blows a crater round its feet.
 func _detect_combo(aid: int, tg: Dictionary) -> void:
 	if not bool(tg.get("striking", false)):
@@ -319,7 +319,7 @@ func _detect_combo(aid: int, tg: Dictionary) -> void:
 			_spawn(&"cl_slam", aid, {"discs": [[tg["center"], float(tg["radius"])]]})
 
 
-## v0.8.0 FB1: the Colossus's combo (each swing and the slam on the tick it lands); FB3: the Nemesis's swings, a card's
+## The Colossus's combo (each swing and the slam on the tick it lands); FB3: the Nemesis's swings, a card's
 ## arc and blast.
 func _detect_strikes(aid: int, move: int, tg: Dictionary) -> void:
 	if move == WorldReader.MOVE_COMBO:
@@ -328,7 +328,7 @@ func _detect_strikes(aid: int, move: int, tg: Dictionary) -> void:
 		_detect_nemesis(aid, tg)
 
 
-## v0.8.0 FB3: the Nemesis's strikes on the tick its telegraph says "striking": a combo swing's arc, a card's arc
+## The Nemesis's strikes on the tick its telegraph says "striking": a combo swing's arc, a card's arc
 ## (each repeat) and its blast, in its own look.
 func _detect_nemesis(aid: int, tg: Dictionary) -> void:
 	if not bool(tg.get("striking", false)):
@@ -368,7 +368,7 @@ func _keep_up(reader: WorldReader) -> void:
 		if on and s.has("lane"):
 			s["to"] = reader.actor_pos(i)
 		if on and s.has("lanes") and s["kind"] == &"beam":
-			# v0.9.5 BH2 (B4): a turning beam is drawn where it is now (the telegraph's lanes while it burns)
+			# A turning beam is drawn where it is now (the telegraph's lanes while it burns)
 			var tg := reader.telegraph(i)
 			if tg.get("shape", &"") == &"lanes":
 				s["lanes"] = tg["obbs"]

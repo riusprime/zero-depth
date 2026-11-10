@@ -1,7 +1,7 @@
 class_name CurseLook
 extends RefCounted
-## How a curse reads on screen (v0.5.0 EV): one colour (a sick magenta, apart from every rarity and the shards'
-## gold) and one line, its name and its sentence with the number, translated through the caller. v0.6.0 CU: a
+## How a curse reads on screen: one colour (a sick magenta, apart from every rarity and the shards'
+## gold) and one line, its name and its sentence with the number, translated through the caller. a
 ## trade-off curse's line adds its upside after a dot ("Rooted: You can't dash · 25 % chance to dodge a hit"); the
 ## cursed chest card shows the upside on its face and the drawback (down_line) under it.
 

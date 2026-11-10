@@ -19,7 +19,7 @@ extends RefCounted
 ## FinalFight's meter) while a body that can be hurt is fought (not rising, gated or shattering, the player alive),
 ## except a body whose own HP comes from the meter (BossTable.dps_hp: the Prism). As such a body rises its HP is set
 ## from the meter (dps_hp_of; SIM_CONTRACTS "The final boss").
-## v0.8.0 FB3 (owner F6, F7 "Nemesis takes its HP and damage from your own build, an even duel"): as a mimic body
+## As a mimic body
 ## rises it reads the player's build (NemesisBuild.prepare: its weapon, hit, combo, shot and cards; its HP from the
 ## build), and while it fights the fight records the player's path and dashes (BossNemesis.record).
 ## Pure: no stream is drawn.
@@ -27,7 +27,7 @@ extends RefCounted
 ## BossAi state of a shattering body: after BossAi.GATE (6) and BossSignatures' egg states (7-9), which the views
 ## also read off the state alone.
 const SHATTER := 10
-## v0.9.5 BH6: BossAi state of the Fallen vanished in an interphase (BossInterphase.STATE).
+## BossAi state of the Fallen vanished in an interphase (BossInterphase.STATE).
 const INTERPHASE := BossInterphase.STATE
 ## STATUS_APPLY effect ids for the views and the sound: a body shatters (amount = the phase it ends), a body rises
 ## (amount = the phase it begins).
@@ -40,7 +40,7 @@ static func begin(
 	w: World, tables: PackedInt32Array, shatter_ticks: int, at: Vector2, phase: int = 0
 ) -> void:
 	w.final_fight = FinalFight.create(tables, shatter_ticks)
-	w.final_fight.home = at  # v0.8.0 FB2: the Prism floats back here
+	w.final_fight.home = at  # The Prism floats back here
 	_spawn(w, clampi(phase, 0, tables.size() - 1), at)
 
 
@@ -61,14 +61,14 @@ static func shattering(w: World) -> bool:
 	return w.final_fight != null and w.final_fight.shatter_t > 0
 
 
-## Damage._apply (through BossGates.clamp_damage): a body before the last keeps 1 HP, whoever hits it. v0.8.0 N2: a
+## Damage._apply (through BossGates.clamp_damage): a body before the last keeps 1 HP, whoever hits it. a
 ## hit not the world's own (owner_id != 0) goes through FinalPace first (The Fallen's window, the rate cap).
 static func clamp_damage(w: World, i: int, amount: int, owner_id: int = 0) -> int:
 	var f := w.final_fight
 	if f == null or w.actors.ids[i] != f.body_id:
 		return amount
 	if f.ip_stage >= BossInterphase.STAGE_VANISHED and owner_id != 0:
-		return 0  # v0.9.5 BH6: vanished, its HP is frozen (the world's own hit, the dev panel's Kill boss, still lands)
+		return 0  # Vanished, its HP is frozen (the world's own hit, the dev panel's Kill boss, still lands)
 	if not f.last_phase():
 		amount = mini(amount, maxi(0, w.actors.hp[i] - 1))
 	return FinalPace.cap_hit(w, amount, owner_id)
@@ -84,16 +84,16 @@ static func advance(w: World) -> void:
 	var i := body_index(w)
 	if i < 0:
 		return
-	if measuring(w, i):  # v0.8.0 FB2: a measured tick of the fight (the meter's second runs on)
+	if measuring(w, i):  # A measured tick of the fight (the meter's second runs on)
 		f.dps_t += 1
 		if f.dps_t >= SimTick.TICKS_PER_SECOND:
 			f.close_second()
 	var a := w.actors
 	if f.shatter_t == 0 and a.dead[i] == 0:
 		var t := w.boss_tables[f.tables[f.phase]]
-		FinalPace.advance(w, i, t)  # v0.8.0 N2: its HP from the meter, its bucket, The Fallen's window cues
+		FinalPace.advance(w, i, t)  # Its HP from the meter, its bucket, The Fallen's window cues
 		if t.mimic:
-			BossNemesis.record(w, i)  # v0.8.0 FB3: the echo of the player's path, their dashes
+			BossNemesis.record(w, i)  # The echo of the player's path, their dashes
 	if f.shatter_t > 0:
 		f.shatter_t -= 1
 		a.invuln[i] = maxi(a.invuln[i], 2)
@@ -149,18 +149,18 @@ static func _spawn(w: World, phase: int, at: Vector2) -> void:
 	f.shatter_t = 0
 	f.body_id = w.spawn_boss(f.tables[phase], at)
 	var t := w.boss_tables[f.tables[phase]]
-	if w.loop > 1:  # v0.9.5 BH1 (Q11, HC7): a looped run meets softer bodies (80 per mille per loop finished)
+	if w.loop > 1:  # A looped run meets softer bodies (80 per mille per loop finished)
 		var j := w.actors.index_of(f.body_id)
 		var pm := w.actors.power[j] if w.actors.power[j] > 0 else 1000
 		w.actors.power[j] = maxi(1, pm * FinalPace.damage_ease_permille(w) / 1000)
-	if t.dps_hp and not t.pace:  # v0.8.0 FB2 (F7): her HP from the player's measured damage per second
+	if t.dps_hp and not t.pace:  # Her HP from the player's measured damage per second
 		var i := w.actors.index_of(f.body_id)
 		var hp := dps_hp_of(w, t)
 		w.actors.max_hp[i] = hp
 		w.actors.hp[i] = hp
-	if t.mimic:  # v0.8.0 FB3 (F6, F7): the Nemesis reads the build; its HP from it
+	if t.mimic:  # The Nemesis reads the build; its HP from it
 		NemesisBuild.prepare(w, w.actors.index_of(f.body_id), t, true)
-	FinalPace.rise(w, w.actors.index_of(f.body_id), t)  # v0.8.0 N2 (O41): its HP from the meter, a fresh bucket
+	FinalPace.rise(w, w.actors.index_of(f.body_id), t)  # Its HP from the meter, a fresh bucket
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, f.body_id, f.body_id, f.body_id, at)
 	e.effect_id = EFFECT_RISE
 	e.amount = phase
@@ -231,7 +231,7 @@ static func segment_permille(w: World, k: int) -> int:
 	return fill
 
 
-# --- v0.8.0 FB2: the damage meter (owner F7) ------------------------------------------------------------------------
+# --- v0.8.0 FB2: the damage meter ------------------------------------------------------------------------
 
 
 ## True while tick-phase-9's tick counts in the meter: the fight runs, the player lives, and body i can be hurt (not
@@ -241,7 +241,7 @@ static func measuring(w: World, i: int) -> bool:
 	if f == null or f.won or w.player_dead() or i < 0 or f.shatter_t > 0:
 		return false
 	if f.ip_stage >= BossInterphase.STAGE_VANISHED:
-		return false  # v0.9.5 BH6: the interphase's seconds are not fought: the meter holds
+		return false  # The interphase's seconds are not fought: the meter holds
 	var s := w.actors.state[i]
 	if s == EnemyAi.State.SPAWN or s == BossAi.GATE or s == SHATTER or w.actors.dead[i] == 1:
 		return false
@@ -261,10 +261,10 @@ static func measured(w: World, t: BossTable) -> Array[int]:
 	return w.final_fight.measured(t.dps_seconds)
 
 
-## A dps_hp body's HP (owner F7): with at least dps_min_seconds measured, dps × dps_target_ticks / 60 ×
+## A dps_hp body's HP: with at least dps_min_seconds measured, dps × dps_target_ticks / 60 ×
 ## window_permille / 1000 (dps = the damage over the seconds measured), else its table's hp; clamped to
 ## dps_hp_min..dps_hp_max. Integer maths (64-bit), so the same meter always gives the same HP.
-## v0.8.0 N2 (owner O41): a paced body's is FinalPace's (its time at the measured rate from a square root).
+## A paced body's is FinalPace's (its time at the measured rate from a square root).
 static func dps_hp_of(w: World, t: BossTable) -> int:
 	if t.pace:
 		return FinalPace.hp_for(FinalPace.measured_milli(w, t), t, FinalPace.ease_permille(w))

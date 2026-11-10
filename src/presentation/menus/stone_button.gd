@@ -1,6 +1,5 @@
 class_name StoneButton
 extends Button
-## v0.9.5 MM (owner, 2026-10-26: "make the main menu look closer to this", docs/art/reference/v0.9.5_main_menu.webp):
 ## the main menu's button, drawn in code: a dark cracked-stone plate with angled (hexagonal) ends, a thin bevelled
 ## light rim, a few hairline cracks and small crystal shards jutting from its right end. The focused or hovered one is
 ## rimmed and lit in electric blue (a soft glow round the plate, bigger shards at both ends); a press flashes it

@@ -3,7 +3,7 @@ extends Node
 ## Samples the player's devices once per tick for SimDriver (ARCHITECTURE §7):
 ## - move: the move actions as a screen vector (y up);
 ## - aim: with a gamepad, the right stick (screen-relative), and where the hero faces (the last move direction)
-##   until the stick has aimed since the pad took over (v0.8.0 N9, owner O65); otherwise, the mouse ray on the
+##   until the stick has aimed since the pad took over; otherwise, the mouse ray on the
 ##   ground plane.
 ## The device tracker switches between them on the last device used.
 
@@ -18,7 +18,7 @@ var _reader: WorldReader
 var _mouse := Vector2.ZERO
 var _last_aim := Vector2.RIGHT
 var _last_dist := 4.0
-## v0.8.0 N9: the right stick has aimed since the pad took over; until then a pad aim follows the move direction.
+## The right stick has aimed since the pad took over; until then a pad aim follows the move direction.
 var _stick_aimed := false
 
 
@@ -52,7 +52,7 @@ func sample() -> Array:
 			_last_dist = STICK_AIM_DIST_M * minf(stick.length(), 1.0)
 			_stick_aimed = true
 		elif not _stick_aimed and move.length() > 0.01:
-			# O65: no stick aim yet, so the shot goes where the hero faces (PlayerBuild.note_facing: the last move
+			# No stick aim yet, so the shot goes where the hero faces (PlayerBuild.note_facing: the last move
 			# direction, kept when the hero stops). The stick at rest after aiming keeps its last aim.
 			_last_aim = InputLatch.screen_to_sim(move).normalized()
 			_last_dist = STICK_AIM_DIST_M

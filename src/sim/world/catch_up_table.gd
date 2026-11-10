@@ -9,14 +9,14 @@ var cap_permille := PackedInt32Array([1500])
 var boss_expected_permille := PackedInt32Array([2000])
 var boss_cap_permille := PackedInt32Array([2000])
 var threat_cap_permille := 250
-## v0.9.5 BH1 (Q2): each boss's HP spread, +- this per mille, drawn once per fight (CatchUp.read_boss).
+## Each boss's HP spread, +- this per mille, drawn once per fight (CatchUp.read_boss).
 var boss_spread_permille := 80
 ## v0.10.5 O2b (owner D38 (a)): a floor boss's HP multiplier at the expected power, per floor (entry f − 1, the last
 ## repeats); empty = off (the boss's HP takes the catch-up m, as before). CatchUp.pace_multiplier.
 var boss_pace_permille := PackedInt32Array()
-## v0.10.5 O2b: the power, per mille of the boss's expected power, past which its HP stops growing (the one-shot cap).
+## The power, per mille of the boss's expected power, past which its HP stops growing (the one-shot cap).
 var boss_pace_cap_permille := 3000
-## v0.10.5 O2b: the paced HP multiplier never goes under this, per mille.
+## The paced HP multiplier never goes under this, per mille.
 var boss_pace_min_permille := 1000
 var ability_level_permille := 120
 var item_permille := 80

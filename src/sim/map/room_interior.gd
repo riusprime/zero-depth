@@ -14,7 +14,7 @@ const EDGE := 2.6
 const T := FloorLayout.Template
 
 ## Template weights, in Template order: OPEN, SCATTER, PILLARS, CENTRE, CROSS, LINES, BUNKERS, COLONNADE,
-## DIAGONALS, then the themed rooms SCRAPYARD, RUINED_HALL, CAMP, OVERGROWN (v0.5.9 L8). Ordinary rooms draw only
+## DIAGONALS, then the themed rooms SCRAPYARD, RUINED_HALL, CAMP, OVERGROWN. Ordinary rooms draw only
 ## themes (and now and then an open room); the geometric templates stay for boss arenas (BossArenaSpec).
 const _W_HALL := [0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 2, 2]
 const _W_SMALL := [1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 2, 3]

@@ -1,6 +1,6 @@
 class_name Mines
 extends RefCounted
-## The Mine Layer's mines (v0.4.0 EN). A mine lies idle, its circle drawn, for its life. When the player's body
+## The Mine Layer's mines. A mine lies idle, its circle drawn, for its life. When the player's body
 ## touches the circle it arms: its fuse runs for fuse_total ticks (the attack's telegraph, at least
 ## MIN_TELEGRAPH_TICKS) with the circle filling, then it blows and hits the player if still touching it. Killing the
 ## Mine Layer clears its mines (as killing a Bomb Drone defuses its bomb). Runs in tick phase 6, after the enemies'
@@ -27,7 +27,7 @@ static func drop(w: World, i: int) -> void:
 		a.ids[i],
 		a.pos(i),
 		t.slam_radius_m,
-		EnemyAi.powered(w, i, t.damage),  # v0.4.0 SC: the layer's danger-tier damage
+		EnemyAi.powered(w, i, t.damage),  # The layer's danger-tier damage
 		t.mine_life_ticks,
 		t.fuse_ticks
 	)

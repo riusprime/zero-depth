@@ -11,11 +11,11 @@ const GROUPS := [
 	[
 		"player",
 		"UI_DEVM_G_PLAYER",
-		# v0.9.0 RB: the Wardrobe's rune affinities and robe colours
+		# The Wardrobe's rune affinities and robe colours
 		["res://data/player", "res://data/builds", "res://data/heat", "res://data/wardrobe"],
 		""
 	],
-	# v0.9.0 EL: the elite archetypes and their rules beside the enemies
+	# The elite archetypes and their rules beside the enemies
 	["enemies", "UI_DEVM_G_ENEMIES", ["res://data/enemies", "res://data/elites"], ""],
 	["sim", "UI_DEVM_G_SIM", ["res://data/tuning"], ""],
 	[
@@ -25,7 +25,7 @@ const GROUPS := [
 			"res://data/bosses",
 			"res://data/boss_pools",
 			"res://data/bullet_patterns",
-			"res://data/final_boss",  # v0.8.0 FB1: the final boss's bodies and its arena
+			"res://data/final_boss",  # The final boss's bodies and its arena
 		],
 		"",
 	],
@@ -41,7 +41,7 @@ const GROUPS := [
 			"res://data/overrun",
 			"res://data/map",
 			"res://data/secrets",  # v0.9.0 RA/DX: rune puzzles, cracked walls, containers, barrels
-			"res://data/lockdowns",  # v0.9.0 LK: Lockdown rooms
+			"res://data/lockdowns",  # Lockdown rooms
 		],
 		"",
 	],
@@ -57,8 +57,8 @@ const GROUPS := [
 			"res://data/event_rules",
 			"res://data/events",
 			"res://data/curses",
-			"res://data/meta",  # v0.9.0 MP: the Rune Fragments' sources and the locked forms
-			"res://data/collectibles",  # v0.9.0 CL: the Rune Archive's collectibles (where found, the look)
+			"res://data/meta",  # The Rune Fragments' sources and the locked forms
+			"res://data/collectibles",  # The Rune Archive's collectibles (where found, the look)
 		],
 		"",
 	],
@@ -71,11 +71,11 @@ const GROUPS := [
 			"res://data/abilities",
 			"res://data/combos",
 			"res://data/stat_cards",
-			"res://data/starbound",  # v0.10.5 W3-P10b: the Starbound cards
-			"res://data/spells",  # v0.11.0 O10: the spells and their rules
-			"res://data/relics",  # v0.11.0 O14b: the relics (the City's Heart)
+			"res://data/starbound",  # The Starbound cards
+			"res://data/spells",  # The spells and their rules
+			"res://data/relics",  # The relics (the City's Heart)
 			"res://data/wand",
-			"res://data/vfx",  # v0.10.0: the VFX pack's effect table (scales, colours)
+			"res://data/vfx",  # The VFX pack's effect table (scales, colours)
 		],
 		"",
 	],

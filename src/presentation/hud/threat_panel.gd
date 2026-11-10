@@ -3,13 +3,13 @@ extends PanelContainer
 ## Threat T and the curses held (v0.5.0 EV, PLAN R4; PD-05): "THREAT 2" over one line per curse (its mark, name and
 ## sentence). The HUD shows it at the top left while you hold a curse; the pause menu shows it too. A curse just
 ## taken or lifted flashes a caption under the title for a moment. Reads only.
-## v0.10.5 W3-O20 (UI style Astral): the HUD's Astral side panel on the HUD and in the pause screen (ink, a contour
+## UI style Astral: the HUD's Astral side panel on the HUD and in the pause screen (ink, a contour
 ## and an inner contour, the curses' colour as a short line on top); the title in letter-spaced Cinzel, the lines in
 ## Astral's silver-white (each curse keeps its mark in the curses' colour), the empty line and the caption dim.
 
 const FLASH_S := 3.0
 const MARGIN := Vector2(14, 9)
-## The widest a curse line runs before it wraps (v0.6.0 UP: a long Spanish line ran under the top plate).
+## The widest a curse line runs before it wraps (a long Spanish line ran under the top plate).
 const LINE_W := 560.0
 ## A curse line's type size (HudStyle raises it to its MIN_LABEL).
 const LINE_SIZE := 15
@@ -57,7 +57,7 @@ func _notification(what: int) -> void:
 		sync(_reader)  # the pause menu syncs it once: a language switch from its Options words it again
 
 
-## The panel's box and title (v0.10.5 W3-O20: one Astral panel on the HUD and in the pause).
+## The panel's box and title (one Astral panel on the HUD and in the pause).
 func _apply_look() -> void:
 	add_theme_stylebox_override("panel", HudStyle.side_panel_box(MARGIN + Vector2(4, 4)))
 	HudStyle.serif_label(_title, 18, 4, HudStyle.A_TEXT)
@@ -95,7 +95,7 @@ func sync(reader: WorldReader) -> void:
 				)
 			)
 	var now := reader.curses_owned()
-	if now == _shown and TranslationServer.get_locale() == _locale:  # v0.6.0 UP: worded again on a switch
+	if now == _shown and TranslationServer.get_locale() == _locale:  # Worded again on a switch
 		return
 	_shown = now.duplicate()
 	_locale = TranslationServer.get_locale()

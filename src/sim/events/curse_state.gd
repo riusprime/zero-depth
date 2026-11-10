@@ -1,6 +1,6 @@
 class_name CurseState
 extends RefCounted
-## v0.6.0 CU: what the trade-off curses keep in play (World.cs; Curses). Per floor (not carried); hashed once touched.
+## What the trade-off curses keep in play (World.cs; Curses). Per floor (not carried); hashed once touched.
 
 ## Brittle: ticks of stun left, and the tick the last stun started (-1 = none).
 var stun_t := 0

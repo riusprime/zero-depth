@@ -1,6 +1,6 @@
 class_name AstralHudParts
 extends RefCounted
-## v0.10.5 W3-O17 (owner, 2026-11-04: "and what about the rest of the UI? it should match the new style"): the in-run
+## The in-run
 ## HUD's own Astral pieces (W3_O13_UI_STYLE_G2.md round 2, Astral; the round-2 mock HUD, scripts/shots/mock_ui2/), next
 ## to the shared kit (AstralChrome: hairlines, stars, diamonds, crescents). Unboxed: no slab under any group; straight
 ## lines are 1 px rects on whole pixels, only curves and diagonals antialiased; no glow, no rounded boxes.
@@ -158,7 +158,7 @@ static func medallion(ci: CanvasItem, c: Vector2, r: float, share: float) -> voi
 	)
 
 
-## A key cap centred on `c`: the binding's short name in Atkinson bold at HudStyle.MIN_LABEL (v0.10.5 W3-O20: 13
+## A key cap centred on `c`: the binding's short name in Atkinson bold at HudStyle.MIN_LABEL (13
 ## read ~9 px at 720p) in a 1 px frame on ink.
 static func keycap(ci: CanvasItem, text: String, c: Vector2) -> void:
 	if text == "":
@@ -193,13 +193,13 @@ static func serif_text(
 	track := 2,
 	wght := 600
 ) -> void:
-	fs = maxi(fs, HudStyle.MIN_LABEL)  # v0.10.5 W3-O20: nothing under ~11 px at 720p
+	fs = maxi(fs, HudStyle.MIN_LABEL)  # Nothing under ~11 px at 720p
 	var f := HudStyle.serif(wght, track)
 	ci.draw_string_outline(f, base, text, align, w, fs, 4, Color(HudStyle.A_INK, 0.75))
 	ci.draw_string(f, base, text, align, w, fs, col)
 
 
-## v0.10.5 W3-O17: the content margins of a HudFrame (ASTRAL lays its groups out unboxed).
+## The content margins of a HudFrame (ASTRAL lays its groups out unboxed).
 static func set_margins(f: HudFrame, left: float, right: float, top: float, bottom: float) -> void:
 	var box := StyleBoxEmpty.new()
 	box.content_margin_left = left
@@ -209,7 +209,7 @@ static func set_margins(f: HudFrame, left: float, right: float, top: float, bott
 	f.add_theme_stylebox_override("panel", box)
 
 
-## v0.10.5 W3-O17: the floor line's ornaments: a four-point star each side of the text and a hairline fading outward.
+## The floor line's ornaments: a four-point star each side of the text and a hairline fading outward.
 ## It sits over the floor label and redraws only when the label's text or size changes.
 class FloorMarks:
 	extends Control

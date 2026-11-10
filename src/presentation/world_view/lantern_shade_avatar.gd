@@ -1,6 +1,6 @@
 class_name LanternShadeAvatar
 extends BossAvatar
-## v0.9.0 NB4 (BOSSES_4_5.md N4; art list §2; PLAN NB: "Keep the empty hood"): The Lantern Shade, floor 5's second
+## BOSSES_4_5.md N4; art list §2; PLAN NB: "Keep the empty hood": The Lantern Shade, floor 5's second
 ## boss: a tall gaunt wraith in a long torn violet-black cloak that frays into smoke (it floats), an empty hood, long
 ## arms of dark wood and iron, a lantern on a short chain in its right hand; violet-black and pale gold. The owner's
 ## model (assets/models/bosses/boss_lantern_shade.glb) comes cut into parts (scripts/assets/nb_prep.py: Body, ArmL,

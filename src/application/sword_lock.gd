@@ -1,6 +1,6 @@
 class_name SwordLock
 extends RefCounted
-## v0.9.5 SL (G11, owner Q15 a): the sword (Blade) is locked from the start for every profile, the owner's too (like the
+## G11, owner Q15 a: the sword (Blade) is locked from the start for every profile, the owner's too (like the
 ## Void was before a Purple Portal). Beating the Hollow Crown with the Gun earns the "Sword Unbound" achievement
 ## (AchievementTracker: the stat `final:won_gun`), and that achievement IS the unlock: the profile's `achievements`
 ## section holds it, so it survives save and load with nothing else stored. A profile that earned it before this step

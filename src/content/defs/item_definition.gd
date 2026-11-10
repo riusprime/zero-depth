@@ -37,18 +37,18 @@ enum Kind {
 	RAZOR_ORBIT,
 	AFTERIMAGE,
 	MODIFIER,
-	TRIGGER,  # v0.6.5 WN1: a wand trigger card (its modifier is a TRIGGER op; not offered until WN5)
-	WAND,  # v0.6.5 WN3: a wand card of a weapon's pool (tag wand: levels 1–5; requires_weapon: its pool)
+	TRIGGER,  # A wand trigger card (its modifier is a TRIGGER op; not offered until WN5)
+	WAND,  # A wand card of a weapon's pool (tag wand: levels 1–5; requires_weapon: its pool)
 }
 
-## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered. v0.6.0 MX4:
-## LEGENDARY, the boss's tier. v0.8.0 RR (owner O33; docs/roadmap/v0.8.0/evidence/RARITY.md): EPIC appended, so the
+## How rare an item is: chests weight rare items higher. Appended, never renumbered.
+## LEGENDARY, the boss's tier. EPIC appended, so the
 ## four tiers read Common < Rare < Epic < Legendary (ItemTable.tier maps this enum onto that order). Every tier's
 ## weight in an altar's, a chest's and the shop's draw is RewardsDefinition's; a Legendary card is mostly the boss's
 ## (LegendaryDefinition.card_permille), rarely an altar's or a chest's.
 enum Rarity { COMMON, RARE, LEGENDARY, EPIC }
 
-## v0.6.0 MX1: the kinds whose attack effects live in their modifiers (each must name at least one).
+## The kinds whose attack effects live in their modifiers (each must name at least one).
 const MODIFIER_KINDS: Array[Kind] = [
 	Kind.LONG_EDGE,
 	Kind.TWIN_ARC,
@@ -64,7 +64,7 @@ const MODIFIER_KINDS: Array[Kind] = [
 	Kind.SERRATED_EDGE,
 	Kind.BARBED_BOLTS,
 	Kind.GLACIAL_EDGE,
-	# v0.6.0 MX4: the ability mods' effects are modifiers now, and the M-list's cards are all modifier cards.
+	# The ability mods' effects are modifiers now, and the M-list's cards are all modifier cards.
 	Kind.CLUSTER_PAYLOAD,
 	Kind.OVERCLOCKED_DRONE,
 	Kind.AFTERIMAGE,
@@ -73,10 +73,10 @@ const MODIFIER_KINDS: Array[Kind] = [
 	Kind.WAND,  # v0.6.5 WN3
 ]
 
-## The closed set of item tags (v0.3.0 G): engines (fire, shock, frost, bleed, guard) and attack families.
-## v0.3.0 L18: &"heat" marks the Overclock heat items (offered only when the run has heat).
-## v0.5.0 CP: &"ability" marks the ability mods (each needs its ability: requires_ability).
-## v0.6.0 MX4: &"venom" (Venom Core's poison engine).
+## The closed set of item tags: engines (fire, shock, frost, bleed, guard) and attack families.
+## &"heat" marks the Overclock heat items (offered only when the run has heat).
+## &"ability" marks the ability mods (each needs its ability: requires_ability).
+## &"venom" (Venom Core's poison engine).
 const TAGS: Array[StringName] = [
 	&"fire",
 	&"shock",
@@ -89,33 +89,33 @@ const TAGS: Array[StringName] = [
 	&"heat",
 	&"ability",
 	&"venom",
-	&"trigger",  # v0.6.5 WN1: a wand trigger card (Kind.TRIGGER)
-	&"wand",  # v0.6.5 WN3: a wand card that levels up 1–5 (CardLevels)
-	&"mutation",  # v0.8.0 RM (owner O91): a rare mutation card (its own category; offer_weight_permille keeps it rare)
+	&"trigger",  # A wand trigger card (Kind.TRIGGER)
+	&"wand",  # A wand card that levels up 1–5 (CardLevels)
+	&"mutation",  # A rare mutation card (its own category; offer_weight_permille keeps it rare)
 ]
 
-## v0.8.0 FL: the pacing categories, in LootPacing.Category's order (ItemTable.loot_category is the index).
+## The pacing categories, in LootPacing.Category's order (ItemTable.loot_category is the index).
 const LOOT_CATEGORIES: Array[StringName] = [
 	&"other", &"form", &"element", &"advanced", &"trigger", &"mutation"
 ]
-## v0.9.0 AS (owner Q2–Q4, PLAN C37–C45): the wand's slot categories, in AttackSlots' order (ItemTable.slot_category is
+## The wand's slot categories, in AttackSlots' order (ItemTable.slot_category is
 ## the index; empty = free). Not loot_category (that only paces loot, and its "form" means something else).
 const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"secondary", &"element"]
 
 @export var kind := Kind.LONG_EDGE
 @export var rarity := Rarity.COMMON
-## The utility the item needs to do anything (v0.3.0 E): a UtilityDefinition id (&"guard", &"blink"), or empty for
+## The utility the item needs to do anything: a UtilityDefinition id (&"guard", &"blink"), or empty for
 ## any. Altars and chests never offer an item whose utility you didn't choose.
 @export var requires_utility: StringName = &""
-## The weapon the item feeds (v0.3.0 L15): a BuildDefinition weapon id (&"blade", &"gun"), or empty for any. A run
+## The weapon the item feeds: a BuildDefinition weapon id (&"blade", &"gun"), or empty for any. A run
 ## whose build lacks that weapon is never offered it.
 @export var requires_weapon: StringName = &""
-## v0.5.0 CP: the ability the mod changes (an AbilityDefinition.Kind in lower case, e.g. &"bomb_lobber"), or
+## The ability the mod changes (an AbilityDefinition.Kind in lower case, e.g. &"bomb_lobber"), or
 ## empty. Altars and chests offer it only while you own that ability; an ability mod (tag &"ability") names one.
 @export var requires_ability: StringName = &""
 @export var name_key: StringName
 @export var desc_key: StringName
-## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md): the modifiers (ModifierDefinition ids, data/modifiers/) this item
+## docs/design/MODIFIER_ENGINE.md: the modifiers (ModifierDefinition ids, data/modifiers/) this item
 ## brings into the build, in order. What an item does to the Blade's steps, the Gun's bolt and the Skills lives
 ## there; the item keeps its card fields and its engine numbers (burn, shock, bleed, frost, slow, guard, heat).
 @export var modifiers: Array[StringName] = []
@@ -149,11 +149,11 @@ const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"seco
 @export var phase_damage := 0
 @export var phase_radius_m := 0.0
 @export var phase_guard_window_seconds := 0.0
-# --- Engines (v0.3.0 G). An engine's numbers live in each item that feeds it; owning several takes the strongest.
-## v0.9.5 CLV (CARD_LEVELS.md): how many levels this wand card has (1..5); 0 = the default, CardLevels.MAX_LEVEL. A
+# --- Engines. An engine's numbers live in each item that feeds it; owning several takes the strongest.
+## CARD_LEVELS.md: how many levels this wand card has (1..5); 0 = the default, CardLevels.MAX_LEVEL. A
 ## card with 1 is offered once and never again while held.
 @export var level_max := 0
-## v0.9.5 SM (Stress Mark): a nonzero radius makes this the Stress Mark card: enemies within it show a weak side
+## Stress Mark: a nonzero radius makes this the Stress Mark card: enemies within it show a weak side
 ## (half_angle_deg wide), a hit from it multiplies by mult_permille, then waits cooldown_seconds; a boss carries
 ## boss_marks sides.
 @export var mark_radius_m := 0.0
@@ -164,7 +164,7 @@ const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"seco
 ## Tags from TAGS: at least one, no repeats.
 @export var tags: PackedStringArray = PackedStringArray()
 ## Stacks one qualifying hit of a source that is not a weapon attack adds (Static Chain's jumps, Overcharge's
-## shockwave, Cold Snap's dash, Razor Orbit's blades), or the stacks Wildfire spreads. v0.6.0 MX1: the stacks a
+## shockwave, Cold Snap's dash, Razor Orbit's blades), or the stacks Wildfire spreads. the stacks a
 ## Blade or Gun hit feeds (Conductor, Serrated Edge, Glacial Edge, Cinder Shot, Barbed Bolts, Frost Core, Static
 ## Chain's bolts) moved into each item's modifier (a STATUS op with its stacks and every).
 @export var stacks_per_hit := 0
@@ -203,7 +203,7 @@ const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"seco
 ## Meltdown: reaching the overheat point blows up as a full-heat vent blast at this share (per mille), no stall.
 @export var meltdown_damage_permille := 0
 # --- Ability mods (v0.5.0 CP; AbilityMods). Razor Orbit: a blade's touch adds bleed (its modifier's STATUS op; the
-## bleed fields here, like Serrated Edge). v0.6.0 MX4: Cluster Payload's bomblets, Overclocked Drone's heat rate and
+## bleed fields here, like Serrated Edge). Cluster Payload's bomblets, Overclocked Drone's heat rate and
 ## Afterimage's echo are their modifiers' ops (data/modifiers/), no longer fields here.
 # --- v0.6.0 MX4: Venom Core's poison engine (Venom): damage per stack per period, how long stacks last (refreshed by
 # each new one), the stack cap, and the radius a poisoned enemy's death spreads its stacks over.
@@ -248,7 +248,7 @@ const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"seco
 @export var el_shard_permille := 0
 @export var el_shard_slow_seconds := 0.0
 @export var el_shatters_per_second := 0
-## v0.10.5 W3-P2 (the progression audit's P2, owner 2026-11-04): an element card's own damage at Lv 1, 2, 3, per mille
+## An element card's own damage at Lv 1, 2, 3, per mille
 ## of its numbers (ElementStack.level_permille: its ticks, hook hits, strikes and shards), so part of Lv 1's power
 ## moves to Lv 2-3. Empty = 1000 at every level; else one value per level (level_max), each 100..3000.
 @export var el_level_permille := PackedInt32Array()
@@ -260,15 +260,15 @@ const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"seco
 ## same face on both weapons. Both or neither.
 @export var name_key_gun: StringName = &""
 @export var desc_key_gun: StringName = &""
-## v0.8.0 BL (saves name items by index): 0 for every card that shipped before v0.8.0. A card added later takes the
+## Saves name items by index: 0 for every card that shipped before v0.8.0. A card added later takes the
 ## next wave (v0.8.0 BL's Blade Storm and Riposte Chain: 1); its index comes after every earlier wave's
 ## (ModifierCompiler.item_defs), so no index an older save holds moves.
 @export var index_wave := 0
-## v0.8.0 RM (owner O91: mutations "exceptionally rare"): the card's draw weight × this per mille in an altar's, a
+## The card's draw weight × this per mille in an altar's, a
 ## chest's and the shop's draw (ItemPool.card_weight); a card under 1000 never fills the boss's legendary chance slot
 ## (Offers.legendary_cards). The floor pacing step (FL) tunes when such a card is eligible. 1000 = as its tier.
 @export var offer_weight_permille := 1000
-## v0.8.0 FL (owner O91; docs/roadmap/v0.8.0/BALANCE_PASS.md "FL"): the card's pacing category, one of
+## The card's pacing category, one of
 ## LOOT_CATEGORIES (empty = other): `form` changes the attack's shape or path on its own, `element` is a shared status
 ## card (S1–S7), `advanced` multiplies, repeats or builds on other cards (and the legendary ×2 triggers), `trigger` is
 ## T1–T4, `mutation` a mutation. Every wand card and trigger card names one; LootPacing weighs its draws by the floor.
@@ -325,7 +325,7 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "requires_weapon is empty, blade or gun")
 		)
-	# v0.6.5 WN4: a Blade pool card is offered only in Blade runs
+	# A Blade pool card is offered only in Blade runs
 	if kind == Kind.WAND and tags.has("blade") != (requires_weapon == &"blade"):
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "a blade pool card requires the blade")
@@ -400,7 +400,7 @@ func validate() -> Array[ValidationIssue]:
 	return issues
 
 
-## The eight engine items (v0.3.0 G).
+## The eight engine items.
 func _validate_engines(issues: Array[ValidationIssue]) -> void:
 	match kind:
 		Kind.CINDER_SHOT:
@@ -423,7 +423,7 @@ func _validate_engines(issues: Array[ValidationIssue]) -> void:
 			_check_frost(issues)
 			check_positive(issues, "chill_bonus_permille", chill_bonus_permille)
 			check_positive(issues, "frozen_bonus_permille", frozen_bonus_permille)
-			_check_element_levels(issues)  # v0.9.5 EE2: Frost's Lv 2 and 3
+			_check_element_levels(issues)  # Frost's Lv 2 and 3
 		Kind.BULWARK:
 			check_positive(issues, "charge_max", charge_max)
 			check_positive(issues, "charge_bonus_permille", charge_bonus_permille)
@@ -438,18 +438,18 @@ func _validate_engines(issues: Array[ValidationIssue]) -> void:
 			_validate_ability_mods(issues)
 
 
-## v0.5.0 CP: the AbilityDefinition.Kind named `id` in lower case (&"bomb_lobber"), or -1.
+## The AbilityDefinition.Kind named `id` in lower case (&"bomb_lobber"), or -1.
 static func ability_kind(id: StringName) -> int:
 	return -1 if id == &"" else AbilityDefinition.Kind.keys().find(String(id).to_upper())
 
 
-## The ability mods (v0.5.0 CP; v0.6.0 MX4: Cluster Payload, Overclocked Drone and Afterimage are their modifiers),
-## and the M-list's modifier cards (v0.6.0 MX4): the engine numbers a card's modifier feeds are checked when present.
+## The ability mods (Cluster Payload, Overclocked Drone and Afterimage are their modifiers),
+## and the M-list's modifier cards: the engine numbers a card's modifier feeds are checked when present.
 func _validate_ability_mods(issues: Array[ValidationIssue]) -> void:
 	match kind:
 		Kind.RAZOR_ORBIT:
 			_check_bleed(issues)
-		Kind.MODIFIER, Kind.WAND:  # v0.6.5 WN5a: a shared wand card brings its engine's numbers too
+		Kind.MODIFIER, Kind.WAND:  # A shared wand card brings its engine's numbers too
 			if burn_max_stacks > 0:
 				_check_burn(issues)
 			if poison_max_stacks > 0 or poison_damage > 0:
@@ -459,7 +459,7 @@ func _validate_ability_mods(issues: Array[ValidationIssue]) -> void:
 			_check_element_levels(issues)
 
 
-## v0.9.5 EE1: the element levels' numbers are in range, and each element's set comes whole.
+## The element levels' numbers are in range, and each element's set comes whole.
 func _check_element_levels(issues: Array[ValidationIssue]) -> void:
 	var venom := el_jump_seconds > 0.0 or el_jump_range_m > 0.0 or el_jumps_per_second > 0
 	var bleed := el_wound_move_mm > 0 or el_wound_bonus_permille > 0 or el_burst_stacks > 0
@@ -496,7 +496,7 @@ func _check_element_levels(issues: Array[ValidationIssue]) -> void:
 	_check_element_levels_fsf(issues)
 
 
-## v0.9.5 EE2: Fire's, Lightning's and Frost's level numbers are in range, and each set comes whole.
+## Fire's, Lightning's and Frost's level numbers are in range, and each set comes whole.
 func _check_element_levels_fsf(issues: Array[ValidationIssue]) -> void:
 	var ints := [
 		el_patch_wide_permille,
@@ -555,7 +555,7 @@ func _check_element_levels_fsf(issues: Array[ValidationIssue]) -> void:
 			)
 
 
-## v0.6.0 MX4: Venom Core's poison engine.
+## Venom Core's poison engine.
 func _check_poison(issues: Array[ValidationIssue]) -> void:
 	check_positive(issues, "poison_damage", poison_damage)
 	check_positive(issues, "poison_period_seconds", poison_period_seconds)
@@ -589,7 +589,7 @@ func _check_burn(issues: Array[ValidationIssue]) -> void:
 
 
 ## `feeds`: the item feeds the status from a source of its own (stacks_per_hit); false when its modifier's STATUS
-## op carries the stacks (v0.6.0 MX1).
+## op carries the stacks.
 func _check_shock(issues: Array[ValidationIssue], feeds: bool = true) -> void:
 	if feeds:
 		check_positive(issues, "stacks_per_hit", stacks_per_hit)
@@ -637,7 +637,7 @@ func _check_permille_below_1000(issues: Array[ValidationIssue], field: String, v
 		issues.append(ValidationIssue.new(&"range", resource_path, "%s is in 1..999" % field))
 
 
-## v0.6.5 WN5a: a shared card's bleed (S5): the engine's numbers (no dash burst needed).
+## A shared card's bleed: the engine's numbers (no dash burst needed).
 func _check_bleed_engine(issues: Array[ValidationIssue]) -> void:
 	check_positive(issues, "bleed_damage", bleed_damage)
 	check_positive(issues, "bleed_period_seconds", bleed_period_seconds)
@@ -647,7 +647,7 @@ func _check_bleed_engine(issues: Array[ValidationIssue]) -> void:
 	check_positive(issues, "bleed_max_stacks", bleed_max_stacks)
 
 
-## v0.8.0 FL: a known category; every wand card and trigger card names one (not other); a mutation is tagged so and
+## A known category; every wand card and trigger card names one (not other); a mutation is tagged so and
 ## only it; a trigger card is a trigger (T1–T4) or, legendary (the ×2 triggers), advanced, and only a trigger card is.
 func _check_loot_category(issues: Array[ValidationIssue]) -> void:
 	if loot_category != &"" and not loot_category in LOOT_CATEGORIES:
@@ -678,7 +678,7 @@ func _check_loot_category(issues: Array[ValidationIssue]) -> void:
 		)
 
 
-## v0.6.5 WN5a: the moving bleed is shorter than the standing one; a Gun face has both keys.
+## The moving bleed is shorter than the standing one; a Gun face has both keys.
 func _check_wand_extras(issues: Array[ValidationIssue]) -> void:
 	if (
 		bleed_move_period_seconds < 0.0

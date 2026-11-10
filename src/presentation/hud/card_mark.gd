@@ -1,6 +1,6 @@
 class_name CardMark
 extends Control
-## A card's small faceted mark (v0.3.5 F16): a little diamond, split into a lit and a shaded facet like the game's
+## A card's small faceted mark: a little diamond, split into a lit and a shaded facet like the game's
 ## low-poly gems, in a colour that means something (the rarity on a pick card, a curse's mark). v0.8.0 MU (Ember
 ## stone): carved into the stone, a dark setting round it and a soft glow of its colour. It draws the colour it is
 ## given.

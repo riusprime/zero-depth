@@ -7,7 +7,7 @@ extends Control
 ## seconds left; a ready square has a lit border and flashes white for 0.15 s the tick it becomes ready. The binding
 ## glyph (the live binding of the last device used) sits in a pill at the bottom-left corner; Blink's charges at the
 ## top right. Reads WorldReader only (EI-07).
-## v0.10.5 W3-O17 (UI style Astral): each square holds a round medallion instead of a box (the
+## UI style Astral: each square holds a round medallion instead of a box (the
 ## round-2 mock's): an ink disc in a silver ring with a dotted inner ring, four small stars round it while ready;
 ## cooling, a dark wedge over the part still cooling, a moon-blue arc outside with a diamond at its head, the seconds
 ## in Cinzel; the binding in a 1 px key cap under it. Same squares, same places, same reads.
@@ -23,7 +23,7 @@ const FLASH_ALPHA := 0.45
 const DECIMAL_BELOW := 10.0
 ## The PlayStation names of the pad glyphs.
 const PS_NAMES := {"RT": "R2", "LT": "L2", "RB": "R1", "LB": "L1"}
-## v0.10.5 W3-O17: the medallion's radius inside a square (its cooldown arc runs 6 px outside it).
+## The medallion's radius inside a square (its cooldown arc runs 6 px outside it).
 const A_RADIUS := 29.0
 
 ## True while the last device used was a gamepad (tests set it).
@@ -169,7 +169,7 @@ func _draw() -> void:
 		_medallion(_rect_of(k), _slots[k])
 
 
-## v0.10.5 W3-O17: the square `r` as an Astral medallion (AstralHudParts.medallion), its icon, seconds, flash, charges
+## The square `r` as an Astral medallion (AstralHudParts.medallion), its icon, seconds, flash, charges
 ## and key cap.
 func _medallion(r: Rect2, s: Dictionary) -> void:
 	var cooling: bool = s["cooling"]

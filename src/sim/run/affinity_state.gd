@@ -1,6 +1,6 @@
 class_name AffinityState
 extends RefCounted
-## v0.9.0 RB (AFFINITIES.md): the run's rune affinity on this floor (World.affinity; null for None, so a run without
+## AFFINITIES.md: the run's rune affinity on this floor (World.affinity; null for None, so a run without
 ## one hashes and snapshots as before RB). Hashed whenever it exists.
 
 ## The numbers (content, kept by the snapshot as loadout).

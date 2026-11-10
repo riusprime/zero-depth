@@ -1,6 +1,6 @@
 class_name RunicLinesDefinition
 extends ContentDef
-## v0.9.5 RS1 (RUNIC_STONE.md): the Runic Stone's lines, in the order the easter eggs were written (r1, r2, ...). A
+## RUNIC_STONE.md: the Runic Stone's lines, in the order the easter eggs were written (r1, r2,...). A
 ## line is learned in the profile's `runes` section by its id; what triggers each one is the application's
 ## (RunicStone). The English is the cipher's plain text and is never shown (no translation, by design).
 
@@ -8,8 +8,8 @@ static var _line_id_re := RegEx.create_from_string("^r[0-9]+$")
 static var _text_re := RegEx.create_from_string("^[A-Z]+( [A-Z]+)*$")
 
 @export var lines: Array[RunicLineEntry] = []
-## v0.11.0 O14b (owner Q-O14b "Both"): the hidden room under the Hollow Crown's throne speaks in the same cipher: the
-## lines carved on its rune slab, and the line its sealed door speaks when the hero comes near (N2). A-Z and spaces.
+## The hidden room under the Hollow Crown's throne speaks in the same cipher: the
+## lines carved on its rune slab, and the line its sealed door speaks when the hero comes near. A-Z and spaces.
 ## The lead's wording, until the owner changes it.
 @export var heart_lines: PackedStringArray = PackedStringArray()
 @export var sealed_line := ""

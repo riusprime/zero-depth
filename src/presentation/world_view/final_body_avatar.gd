@@ -1,6 +1,6 @@
 class_name FinalBodyAvatar
 extends BossAvatar
-## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F3): the base of the final boss's three bodies (the Colossus, the Prism,
+## The base of the final boss's three bodies (the Colossus, the Prism,
 ## the Nemesis). What they share is the shatter: while the sim holds a body in WorldReader.STATE_SHATTER (1.5 s,
 ## invulnerable) it cracks: it trembles harder and harder and glows from inside (the glow overlay), sinking a little;
 ## then the sim removes it and it leaves at once (no fall: die() refuses), where FinalBossViews bursts it into shards.

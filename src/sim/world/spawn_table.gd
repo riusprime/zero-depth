@@ -21,7 +21,7 @@ var pack_min_by_floor := PackedInt32Array([1])
 var pack_max_by_floor := PackedInt32Array([1])
 var min_distance_m := 8.0
 var edge_band_m := 3.0
-## v0.10.5 O14: the floor (1-based; 0: off) on which no pack spawns while the hero is in the boss room's host room.
+## The floor (1-based; 0: off) on which no pack spawns while the hero is in the boss room's host room.
 var calm_antechamber_floor := 0
 ## The mix, parallel arrays: actor kind (ActorStore.Kind), weight, the tier it unlocks at, and its pack size
 ## (SpawnMixEntry.pack: 0 = the per-floor draw, > 0 = always that many, e.g. a Swarmer pack).
@@ -29,17 +29,17 @@ var kinds := PackedInt32Array()
 var weights := PackedInt32Array()
 var unlock_tiers := PackedInt32Array()
 var packs := PackedInt32Array()
-## v0.11.0 O13a (owner Q23): per mix row, 1 when its kind is a biome's own (a signature or a variant: it opens only on a
+## Per mix row, 1 when its kind is a biome's own (a signature or a variant: it opens only on a
 ## floor whose World.roster_kinds holds it, SpawnDirector.unlocked), 0 for the shared core and the floor-unlocked kinds.
 var biome_only := PackedByteArray()
-## v0.4.0 TU (owner D1–D3): the floor's difficulty curve (null = SC's plain 30 s tiers, as before). With a curve,
+## The floor's difficulty curve (null = SC's plain 30 s tiers, as before). With a curve,
 ## floor time picks a phase: the danger tier, the cap and the interval follow it, and the mix opens by phase.
 var curve: CurveTable
-## v0.8.0 N5 (owner O58): the intensity director's numbers (null = off: packs come as before; Intensity).
+## The intensity director's numbers (null = off: packs come as before; Intensity).
 var intensity: IntensityTable
-## v0.10.5 O15: the authored enemy duos (null = off: packs come as before; Pairings).
+## The authored enemy duos (null = off: packs come as before; Pairings).
 var pairings: PairingTable
-## v0.11.0 O9 (owner Q15): the horde surges' numbers (null = off: no surges; Surges).
+## The horde surges' numbers (null = off: no surges; Surges).
 var surge: SurgeTable
 
 
@@ -47,7 +47,7 @@ func tier_at(run_ticks: int) -> int:
 	return run_ticks / maxi(1, tier_ticks)
 
 
-## v0.4.0 TU: the danger tier at `run_ticks` of floor time: the curve's (its tier × 1000, rounded down), or the
+## The danger tier at `run_ticks` of floor time: the curve's (its tier × 1000, rounded down), or the
 ## plain tier. HP, damage and shards scale by it.
 func danger_tier(run_ticks: int) -> int:
 	return curve.tier_permille_at(run_ticks) / 1000 if curve != null else tier_at(run_ticks)
@@ -60,17 +60,17 @@ func danger_permille(run_ticks: int) -> int:
 	return tier_at(run_ticks) * 1000 + run_ticks % maxi(1, tier_ticks) * 1000 / maxi(1, tier_ticks)
 
 
-## v0.4.0 TU: the alive cap at `run_ticks` of floor time on floor `floor_index`: the curve's share of the tier's cap
+## The alive cap at `run_ticks` of floor time on floor `floor_index`: the curve's share of the tier's cap
 ## (at least 1), or the tier's cap.
 func cap_now(floor_index: int, run_ticks: int) -> int:
 	var tier := danger_tier(run_ticks)
 	if curve == null:
 		return cap(floor_index, tier)
 	var c := scale(cap(floor_index, tier), curve.cap_permille_at(run_ticks))
-	return maxi(1, scale(c, curve.cap_bonus_permille(tier)))  # v0.9.5 DC: the overtime's growth
+	return maxi(1, scale(c, curve.cap_bonus_permille(tier)))  # The overtime's growth
 
 
-## v0.4.0 TU: ticks between packs at `run_ticks` (the curve stretches or keeps the tier's interval).
+## Ticks between packs at `run_ticks` (the curve stretches or keeps the tier's interval).
 func interval_now(run_ticks: int) -> int:
 	var tier := danger_tier(run_ticks)
 	if curve == null:
@@ -79,7 +79,7 @@ func interval_now(run_ticks: int) -> int:
 	return curve.overtime_interval(v, tier)  # v0.9.5 DC
 
 
-## v0.4.0 TU: mix row k may spawn at `run_ticks` (its curve phase has begun; without a curve, its unlock tier).
+## Mix row k may spawn at `run_ticks` (its curve phase has begun; without a curve, its unlock tier).
 func row_open(k: int, run_ticks: int) -> bool:
 	if curve == null:
 		return unlock_tiers[k] <= tier_at(run_ticks)
@@ -87,19 +87,19 @@ func row_open(k: int, run_ticks: int) -> bool:
 	return p >= 0 and p <= curve.phase_at(run_ticks)
 
 
-## v0.4.0 TU: a kind's max HP arriving at `run_ticks` (its floor-scaled `base_hp`): the tier's, eased by the curve.
+## A kind's max HP arriving at `run_ticks` (its floor-scaled `base_hp`): the tier's, eased by the curve.
 func hp_now(base_hp: int, run_ticks: int) -> int:
 	var hp := scaled_hp(base_hp, danger_tier(run_ticks))
 	return maxi(1, scale(hp, curve.hp_permille_at(run_ticks))) if curve != null else hp
 
 
-## v0.4.0 TU: the damage factor (per mille) of an enemy arriving at `run_ticks`: the tier's, eased by the curve.
+## The damage factor (per mille) of an enemy arriving at `run_ticks`: the tier's, eased by the curve.
 func power_now(run_ticks: int) -> int:
 	var p := damage_permille(danger_tier(run_ticks))
 	return maxi(1, scale(p, curve.damage_permille_at(run_ticks))) if curve != null else p
 
 
-## v0.4.0 TU: the largest pack at `run_ticks` (0 = no limit).
+## The largest pack at `run_ticks` (0 = no limit).
 func pack_cap_now(run_ticks: int) -> int:
 	return curve.pack_cap_at(run_ticks) if curve != null else 0
 

@@ -7,7 +7,7 @@ extends RefCounted
 ## Per-mille multiplier for a hit arriving from `from` (the player's guard, the Warden's armour). Returns
 ## [mult, tags]. The Warden never blocks (owner, 2026-10-07): a hit from its front arc is ARMOURED (front mult), one
 ## from its rear arc lands on its WEAK_SPOT (rear mult), and the sides (or a hit from its own position) take 1000.
-## The Shield Bearer (v0.4.0 EN) BLOCKS everything from its front arc (multiplier 0); sides and back take 1000.
+## The Shield Bearer BLOCKS everything from its front arc (multiplier 0); sides and back take 1000.
 static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 	var a := w.actors
 	var to_attacker := Kin.angle_of(from - a.pos(target))
@@ -15,12 +15,12 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 		if Kin.angle_diff(to_attacker, a.facing[0]) <= w.player.guard_half_arc:
 			return [w.player.guard_mult_permille, SimEvent.TAG_GUARDED]
 	elif BossAi.is_boss_kind(a.kinds[target]) and from != a.pos(target):
-		# Bosses (v0.3.0 C): armour by direction, as the Warden's.
+		# Bosses: armour by direction, as the Warden's.
 		var bt := BossAi.table_of(w, target)
 		var off := Kin.angle_diff(to_attacker, a.facing[target])
 		var lifted := bt.weak_drops_armour and w.bosses.exposed_t[BossAi.entry_of(w, target)] > 0
-		if bt.front_half_arc > 0 and off <= bt.front_half_arc and not lifted:  # v0.4.0 BO: shield up
-			# v0.8.0 BS1 (owner O5, S2): a 0 multiplier is a shield that blocks the hit outright (the Warlord's).
+		if bt.front_half_arc > 0 and off <= bt.front_half_arc and not lifted:  # Shield up
+			# A 0 multiplier is a shield that blocks the hit outright (the Warlord's).
 			var tag := (
 				SimEvent.TAG_BLOCKED if bt.front_mult_permille == 0 else SimEvent.TAG_ARMOURED
 			)
@@ -28,7 +28,7 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 		if bt.rear_half_arc > 0 and off >= 2048 - bt.rear_half_arc:
 			return [bt.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
 	elif EliteAi.is_elite_kind(a.kinds[target]):
-		# v0.9.0 EL (ELITES.md E1, E3): the Breaker stuck and the Conduit overloaded take +50 % (the punish window).
+		# ELITES.md E1, E3: the Breaker stuck and the Conduit overloaded take +50 % (the punish window).
 		if EliteAi.vulnerable(w, target):
 			return [EliteAi.vulnerable_permille(w, target), SimEvent.TAG_WEAK_SPOT]
 	elif EnemyAi.armoured(a.kinds[target]) and from != a.pos(target):
@@ -36,7 +36,7 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 		if def != null:
 			var off := Kin.angle_diff(to_attacker, a.facing[target])
 			if def.front_half_arc > 0 and off <= def.front_half_arc:
-				# v0.4.0 EN: the Shield Bearer's shield (a 0 multiplier) blocks the hit outright.
+				# The Shield Bearer's shield (a 0 multiplier) blocks the hit outright.
 				var tag := (
 					SimEvent.TAG_BLOCKED if def.front_mult_permille == 0 else SimEvent.TAG_ARMOURED
 				)
@@ -49,13 +49,13 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 		and from != a.pos(target)
 		and Kin.angle_diff(to_attacker, a.facing[target]) <= w.loop_shield_half_arc
 	):
-		return [w.loop_shield_permille, SimEvent.TAG_ARMOURED]  # v0.10.5 O5b: SHIELDED's guarded front
+		return [w.loop_shield_permille, SimEvent.TAG_ARMOURED]  # SHIELDED's guarded front
 	return [1000, 0]
 
 
 ## Applies one hit to the actor at index `target`. `from` is where the attack came from (the attacker, or the
 ## projectile's previous position), `at` where it landed. `effect_id` names the item effect that made the hit
-## (v0.2.0), or &"". `proc_pct` (v0.6.0 MX1): the proc coefficient the HIT carries (a hook's attack: 50, then 25;
+## or &"". `proc_pct`: the proc coefficient the HIT carries (a hook's attack: 50, then 25;
 ## Attacks). Returns the HP removed.
 static func hit(
 	w: World,
@@ -71,11 +71,11 @@ static func hit(
 	proc_pct: int = 100
 ) -> int:
 	var a := w.actors
-	var mu := Matchups.take(w)  # v0.10.5 O10: this hit's matchup (armed by its caller), never a nested one's
+	var mu := Matchups.take(w)  # This hit's matchup (armed by its caller), never a nested one's
 	if a.dead[target] == 1:
 		return 0
 	var target_id := a.ids[target]
-	# v0.5.0 CP: an Overkill splash is already scaled; v0.9.5 EE2: so is a Shatter shard (half of a scaled hit)
+	# An Overkill splash is already scaled; so is a Shatter shard (half of a scaled hit)
 	var splash := (
 		effect_id == Stats.EFFECT_OVERKILL
 		or effect_id == SimEvent.EFFECT_FROST_SHARD
@@ -84,17 +84,17 @@ static func hit(
 		or effect_id == Starbound.EFFECT_ARC_JUMP
 		or effect_id == Starbound.EFFECT_DETONATION
 		or effect_id == Relics.EFFECT_RING
-	)  # v0.9.5 EE3: a pair burst is already scaled; v0.10.5 W3-P10b/e: so are a Starbound jump and burst, a star
-	# (v0.11.0 O14b: so is the City's Heart's shock ring: it deals its own number)
-	var was_frozen := a.frozen_t[target] > 0 and owner_id == a.ids[0]  # v0.9.5 EE2: Shatter breaks what was frozen
-	var was_hot := a.burn_stacks[target] > 0  # v0.9.5 EE3: Thermal Shock reads it before this hit's own statuses
+	)  # A pair burst is already scaled; v0.10.5 W3-P10b/e: so are a Starbound jump and burst, a star
+	# (so is the City's Heart's shock ring: it deals its own number)
+	var was_frozen := a.frozen_t[target] > 0 and owner_id == a.ids[0]  # Shatter breaks what was frozen
+	var was_hot := a.burn_stacks[target] > 0  # Thermal Shock reads it before this hit's own statuses
 	var raw := amount
-	if w.stress != null and owner_id == a.ids[0] and target != 0:  # v0.9.5 SM: a struck weak side, before crit
+	if w.stress != null and owner_id == a.ids[0] and target != 0:  # A struck weak side, before crit
 		amount = StressMarks.on_hit(w, target, amount, tags, from, at, effect_id)
-	# v0.10.5 W3-P10k: the hit before any of this target's multipliers (after the damage stat and the crit, without its
+	# The hit before any of this target's multipliers (after the damage stat and the crit, without its
 	# weak side): an Arc Jump and a Starfall star are sized from it, so the next target applies only its own.
 	var carried := amount
-	if owner_id == a.ids[0] and target != 0 and not splash:  # v0.4.0 BS: damage stats, crit (Stats)
+	if owner_id == a.ids[0] and target != 0 and not splash:  # Damage stats, crit (Stats)
 		var stressed := amount
 		var out := Stats.outgoing(w, amount, tags)
 		amount = out[0]
@@ -107,17 +107,17 @@ static func hit(
 		amount = amount * exec / 1000
 		tags |= SimEvent.TAG_EXECUTE
 	amount = amount * Engines.attacker_mult(w, target, owner_id) / 1000  # Engines: Cold Snap.
-	if target != 0 and owner_id == a.ids[0]:  # v0.6.0 MX4: Resonance
+	if target != 0 and owner_id == a.ids[0]:  # Resonance
 		amount = amount * ModifierRuntime.resonance_mult(w, target, owner_id) / 1000
 	var heat := Heat.attacker_mult(w, target, owner_id, tags, effect_id)  # Heat: Overclock.
 	if heat != 1000:
 		amount = amount * heat / 1000
 		tags |= SimEvent.TAG_OVERCLOCK
-	if not splash:  # v0.9.5 EE2: Heat sync, Frostbite
+	if not splash:  # Heat sync, Frostbite
 		var el := ElementLevelsFsf.attacker_mult(w, target, owner_id)
 		if el != 1000:
 			amount = amount * el / 1000
-	if w.pair_mask != 0:  # v0.9.5 EE3: Sepsis, +20 % on an enemy deep in poison and bleed
+	if w.pair_mask != 0:  # Sepsis, +20 % on an enemy deep in poison and bleed
 		amount = amount * ElementPairs.attacker_mult(w, target, owner_id) / 1000
 	if w.pair_table != null and target != 0 and owner_id == a.ids[0]:  # v0.10.5 W3-P1, P2
 		var el := ElementStack.of_id(effect_id)  # an element's own hit: its hook, strike or shard
@@ -133,25 +133,25 @@ static func hit(
 	h.ancestry = w.engine_chain.duplicate()
 	if amount <= 0 or a.invuln[target] > 0 or (target == 0 and w.dash_iframes_active()):
 		return 0
-	if owner_id != 0 and target != 0 and _blocked(w, target):  # v0.7.5 BF1: it sparks off the shield
+	if owner_id != 0 and target != 0 and _blocked(w, target):  # It sparks off the shield
 		h.tags |= SimEvent.TAG_BLOCKED
 		return 0
-	if target != 0 and CanyonShore.shell_takes(w, target, from, amount):  # v0.11.0 O13c: the turtle's shell
+	if target != 0 and CanyonShore.shell_takes(w, target, from, amount):  # The turtle's shell
 		h.tags |= SimEvent.TAG_BLOCKED
 		return 0
-	if target == 0 and owner_id != a.ids[0] and Curses.dodges(w, owner_id, at):  # v0.6.0 CU: Rooted
+	if target == 0 and owner_id != a.ids[0] and Curses.dodges(w, owner_id, at):  # Rooted
 		return 0
-	if target == 0 and owner_id != a.ids[0] and ModifierRuntime.absorb(w):  # v0.6.0 MX4: Aether Shell
+	if target == 0 and owner_id != a.ids[0] and ModifierRuntime.absorb(w):  # Aether Shell
 		return 0
-	if w.pair_table != null and owner_id == a.ids[0]:  # v0.10.5 W3-P1b: a landed Lightning hit charges
+	if w.pair_table != null and owner_id == a.ids[0]:  # A landed Lightning hit charges
 		ElementStack.on_hit(w, target, ElementStack.of_id(effect_id))
 	var m := target_mult(w, target, from)
 	if owner_id == a.ids[0] and BossAi.is_boss_kind(a.kinds[target]):
-		var c := BossChallenge.hit_mult(w, target)  # BX (L17): ranged armour, the weak point.
+		var c := BossChallenge.hit_mult(w, target)  # BX: ranged armour, the weak point.
 		m = [m[0] * c[0] / 1000, m[1] | c[1]]
-		c = BossShade.hit_mult(w, target)  # v0.11.0 O4: the Lantern Shade's 40 % in the dark, 150 % in a lit pool
+		c = BossShade.hit_mult(w, target)  # The Lantern Shade's 40 % in the dark, 150 % in a lit pool
 		m = [m[0] * c[0] / 1000, m[1] | c[1]]
-		var tw := BossTwin.taken_permille(w, target)  # v0.11.0 O5: phase 3's exposed Warden, its guarded twin
+		var tw := BossTwin.taken_permille(w, target)  # Phase 3's exposed Warden, its guarded twin
 		if tw != 1000:
 			m = [
 				m[0] * tw / 1000,
@@ -160,20 +160,20 @@ static func hit(
 	h.tags |= m[1]
 	var scaled := amount * m[0] / 1000
 	if mu[1] != 0 and owner_id == a.ids[0] and target != 0:
-		h.tags |= mu[1]  # v0.10.5 O10: weak to its form or element, or resists it (Matchups)
+		h.tags |= mu[1]  # Weak to its form or element, or resists it (Matchups)
 		scaled = Matchups.scale(scaled, mu[0])
-	if owner_id == a.ids[0] and target != 0:  # v0.10.5 W3-P10c: C8 Hunter's Sky on elites and bosses
+	if owner_id == a.ids[0] and target != 0:  # C8 Hunter's Sky on elites and bosses
 		scaled = Constellations.scale(scaled, Constellations.hunt_permille(w, target))
 	if target == 0 and scaled > 0:
-		# v0.4.0 BS: armour; v0.8.0 N1 (D39): times the held weapon's damage taken (the Blade's -25 %), one rounding.
+		# Armour; times the held weapon's damage taken (the Blade's -25 %), one rounding.
 		var taken := Stats.armour_permille(w) * PlayerBuild.taken_permille(w) / 1000
-		var shield := RuleCards.taken_permille(w)  # v0.10.5 O9: Heat Shield, while Hot
+		var shield := RuleCards.taken_permille(w)  # Heat Shield, while Hot
 		if shield != 1000:
 			taken = taken * shield / 1000
 		if taken != 1000:
 			scaled = maxi(1, (scaled * taken + 500) / 1000)
 		if w.affinity != null and owner_id != a.ids[0] and Affinities.ward_blocks(w):
-			h.tags |= SimEvent.TAG_BLOCKED  # v0.9.0 RB: A5 Guardian's ward takes the hit
+			h.tags |= SimEvent.TAG_BLOCKED  # A5 Guardian's ward takes the hit
 			return 0
 	var got := 0
 	if scaled > 0:
@@ -181,30 +181,30 @@ static func hit(
 			w, target, scaled, source_id, owner_id, root_id, h.tags, at, h.seq, 1, effect_id
 		)
 		if h.tags & SimEvent.TAG_CRIT and owner_id == a.ids[0] and target != 0 and not splash:
-			Starfall.on_crit(w, target, carried, root_id)  # v0.10.5 W3-P10e: every 5th crit calls a star
+			Starfall.on_crit(w, target, carried, root_id)  # Every 5th crit calls a star
 	if target == 0 and m[1] & SimEvent.TAG_GUARDED:
 		ItemProcs.on_guard_block(w)  # Items: Phase Strike.
 		Engines.on_guard_block(w, owner_id, root_id)  # Engines: Bulwark, Frozen Bastion.
 	elif got > 0 and target != 0 and owner_id == a.ids[0]:
 		if w.pair_mask != 0 and was_hot and was_frozen and a.dead[target] == 0:
-			ElementPairs.thermal_shock(w, target, scaled, h.tags, effect_id)  # v0.9.5 EE3: X1
+			ElementPairs.thermal_shock(w, target, scaled, h.tags, effect_id)  # X1
 		Engines.on_hit(w, target, root_id, h.tags, effect_id)  # Engines: stacks.
 		Heat.on_hit(w, target, root_id, h.tags, effect_id)  # Heat: gain, Overclock embers.
 		if was_frozen:
-			ElementLevelsFsf.shatter(w, target, scaled, h.tags, effect_id)  # v0.9.5 EE2: Frost Lv 3
+			ElementLevelsFsf.shatter(w, target, scaled, h.tags, effect_id)  # Frost Lv 3
 			if not w.spell_slots.is_empty():
-				Spells.on_frozen_hit(w, target, root_id, effect_id)  # v0.11.0 O11: Frost Nova Lv 5 shatters it
+				Spells.on_frozen_hit(w, target, root_id, effect_id)  # Frost Nova Lv 5 shatters it
 		if a.dead[target] == 1 and not splash:
-			Stats.overkill(w, target, scaled - got, root_id)  # v0.5.0 CP: the Overkill card
-		if not w.starbound.is_empty():  # v0.10.5 W3-P10b: Rising Edge counts a crit, Arc Jump jumps
+			Stats.overkill(w, target, scaled - got, root_id)  # The Overkill card
+		if not w.starbound.is_empty():  # Rising Edge counts a crit, Arc Jump jumps
 			Starbound.on_player_hit(w, target, carried, h.tags, effect_id, proc_pct, root_id)
-	w.last_hit_crit = (h.tags & SimEvent.TAG_CRIT) != 0  # v0.6.5 WN1: ON_CRIT reads it (after any nested hit)
+	w.last_hit_crit = (h.tags & SimEvent.TAG_CRIT) != 0  # ON_CRIT reads it (after any nested hit)
 	return got
 
 
 ## A damage-over-time tick (SIM_CONTRACTS §8): DAMAGE with TAG_DOT and proc_pct 0, never a HIT, so it can't
 ## trigger on-hit effects. A status tick opens its own root. Ignores guard and armour; skips invulnerable or dead
-## targets. Returns the HP removed. v0.10.5 O10: `element` names the status's element (burn: ember, poison: venom,
+## targets. Returns the HP removed. `element` names the status's element (burn: ember, poison: venom,
 ## bleed: bleed; &"" none), which the target may be weak to or resist (Matchups).
 static func tick_dot(
 	w: World,
@@ -218,12 +218,12 @@ static func tick_dot(
 	var a := w.actors
 	if a.dead[target] == 1 or a.invuln[target] > 0 or amount <= 0:
 		return 0
-	if owner_id != 0 and target != 0 and _blocked(w, target):  # v0.7.5 BF1: the shield holds
+	if owner_id != 0 and target != 0 and _blocked(w, target):  # The shield holds
 		return 0
 	var tags := SimEvent.TAG_DOT
 	if owner_id == a.ids[0] and target != 0:
-		amount = Stats.dot(w, amount)  # v0.4.0 BS: the damage stat (a DoT tick never crits)
-		if w.pair_mask != 0:  # v0.9.5 EE3: Sepsis takes the ticks too
+		amount = Stats.dot(w, amount)  # The damage stat (a DoT tick never crits)
+		if w.pair_mask != 0:  # Sepsis takes the ticks too
 			amount = amount * ElementPairs.attacker_mult(w, target, owner_id) / 1000
 		if w.pair_table != null:  # v0.10.5 W3-P1, P2: an element's tick (or Exsanguinate's burst)
 			var el := ElementStack.of_id(element if element != &"" else effect_id)
@@ -233,14 +233,14 @@ static func tick_dot(
 		if mu[1] != 0:
 			amount = Matchups.scale(amount, mu[0])
 			tags |= mu[1]
-		amount = Constellations.scale(amount, Constellations.hunt_permille(w, target))  # v0.10.5 W3-P10c: C8
-		if BossQuake.stunned(w, target):  # v0.11.0 O3 (Q9 a): the stunned Gatekeeper takes +50 % ticks too
+		amount = Constellations.scale(amount, Constellations.hunt_permille(w, target))  # C8
+		if BossQuake.stunned(w, target):  # Q9 a: the stunned Gatekeeper takes +50 % ticks too
 			amount = amount * BossQuake.taken_permille(w, target) / 1000
-		var sh := BossShade.hit_mult(w, target)  # v0.11.0 O4: the Lantern Shade's light scales its ticks too
+		var sh := BossShade.hit_mult(w, target)  # The Lantern Shade's light scales its ticks too
 		if sh[1] != 0:
 			amount = maxi(1, amount * sh[0] / 1000)
 			tags |= sh[1]
-		amount = amount * BossTwin.taken_permille(w, target) / 1000  # v0.11.0 O5: the Wardens' swap
+		amount = amount * BossTwin.taken_permille(w, target) / 1000  # The Wardens' swap
 	var root := w.take_root()
 	return _apply(
 		w, target, amount, source_id, owner_id, root, tags, a.pos(target), -1, 0, effect_id
@@ -263,11 +263,11 @@ static func _apply(
 ) -> int:
 	var a := w.actors
 	var target_id := a.ids[target]
-	# v0.5.5 DS (D7): a boss's HP stops at its next phase gate (BossGates).
+	# A boss's HP stops at its next phase gate (BossGates).
 	var applied := mini(BossGates.clamp_damage(w, target, scaled, owner_id), a.hp[target])
-	if target == 0 and w.player_hp_floor > 0:  # v0.10.5 O17: the Training Room's hero can't die
+	if target == 0 and w.player_hp_floor > 0:  # The Training Room's hero can't die
 		applied = mini(applied, maxi(0, a.hp[0] - w.player_hp_floor))
-	var saved := false  # v0.11.0 O14b (N1): the City's Heart catches the first killing blow of the run
+	var saved := false  # The City's Heart catches the first killing blow of the run
 	if target == 0 and applied >= a.hp[0] and not w.relics.is_empty():
 		var left := Relics.save(w)
 		if left >= 0:
@@ -275,10 +275,10 @@ static func _apply(
 			saved = true
 
 	a.hp[target] -= applied
-	BossTwin.share_hp(w, target)  # v0.9.0 NB2: the Twin Wardens' one HP: the twin holds what this body holds
-	PlayerRegen.note_combat(w, target, owner_id)  # Builds: combat stops the out-of-combat regen (L25).
+	BossTwin.share_hp(w, target)  # The Twin Wardens' one HP: the twin holds what this body holds
+	PlayerRegen.note_combat(w, target, owner_id)  # Builds: combat stops the out-of-combat regen.
 	if w.final_fight != null and target != 0 and owner_id == a.ids[0]:
-		FinalBoss.note_damage(w, scaled)  # v0.8.0 FB2 (F7): the final fight's damage meter
+		FinalBoss.note_damage(w, scaled)  # The final fight's damage meter
 	var d := w.emit_event(SimEvent.Kind.DAMAGE, source_id, owner_id, target_id, at)
 	d.root_id = root_id
 	d.parent_seq = parent_seq
@@ -305,27 +305,27 @@ static func _apply(
 		if target != 0 and owner_id == a.ids[0]:
 			ItemProcs.on_kill(w, k)  # Items: Vampiric Core.
 			Engines.on_kill(w, k, target, tags)  # Engines: Wildfire, Blood Harvest.
-			Venom.on_kill(w, target, root_id)  # v0.6.0 MX4: Venom Core's spread
+			Venom.on_kill(w, target, root_id)  # Venom Core's spread
 			if not w.spell_zone_kind.is_empty():
-				SpellZones.on_kill(w, target)  # v0.11.0 O11: a Lv 5 Venom Orb pool leaves a small one
-			RuleCards.on_kill(w, target, tags, root_id)  # v0.10.5 O9: Adrenaline, Reflex, Scavenger
+				SpellZones.on_kill(w, target)  # A Lv 5 Venom Orb pool leaves a small one
+			RuleCards.on_kill(w, target, tags, root_id)  # Adrenaline, Reflex, Scavenger
 			if w.pair_mask != 0 and a.frozen_t[target] > 0:
-				ElementPairs.on_frozen_end(w, target)  # v0.9.5 EE3: Brittle
+				ElementPairs.on_frozen_end(w, target)  # Brittle
 			if not w.starbound.is_empty():
-				Starbound.on_kill(w, target, root_id)  # v0.10.5 W3-P10b: Fervour, Detonation
-		BossTwin.fall_together(w, target, k)  # v0.9.0 NB2: its twin falls with it (its own KILL)
+				Starbound.on_kill(w, target, root_id)  # Fervour, Detonation
+		BossTwin.fall_together(w, target, k)  # Its twin falls with it (its own KILL)
 	if target != 0 and not (tags & SimEvent.TAG_DOT):
-		BossTwin.on_hit(w, target, applied, owner_id)  # v0.9.0 NB2: a hit on one Warden angers the other
+		BossTwin.on_hit(w, target, applied, owner_id)  # A hit on one Warden angers the other
 	if target == 0:
 		ItemProcs.on_player_hurt(w)  # Items: Thorn Mantle.
 		if applied > 0 and not (tags & SimEvent.TAG_DOT) and owner_id != a.ids[0]:
-			Curses.on_player_hit(w)  # v0.6.0 CU: Brittle
+			Curses.on_player_hit(w)  # Brittle
 		if saved:
-			Relics.pulse(w)  # v0.11.0 O14b: its shock ring, once the saved blow has landed
+			Relics.pulse(w)  # Its shock ring, once the saved blow has landed
 	return applied
 
 
-## v0.7.5 BF1: a boss's signature shield holds. (v0.11.0 O4: the dark round a Lantern Shade no longer blocks; it
+## A boss's signature shield holds. (the dark round a Lantern Shade no longer blocks; it
 ## scales the hit instead, BossShade.hit_mult.) v0.11.0 O5: a Twin Warden standing back blocks (BossTwin.resting:
 ## "not now", the other leads).
 static func _blocked(w: World, target: int) -> bool:

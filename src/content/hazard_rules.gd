@@ -1,6 +1,6 @@
 class_name HazardRules
 extends RefCounted
-## v0.11.0 F8 (owner 4.2; BossHazard): the content rules of a boss's arena hazards (BossDefinition.hazard, its own file:
+## The content rules of a boss's arena hazards (BossDefinition.hazard, its own file:
 ## the boss definitions stay small). Every key is known and within its bounds; the warning lasts the telegraph minimum;
 ## the kind's numbers agree; the attacks that leave one exist; a hazard that hurts names a recap line. The cover bound
 ## (at most 30 % of the arena) is the strict cap's own: it leaves most of the floor safe.

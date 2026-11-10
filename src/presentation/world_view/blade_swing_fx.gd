@@ -1,6 +1,6 @@
 class_name BladeSwingFx
 extends Node3D
-## v0.8.0 GF3 (owner O22: "the exact same exercise to the blade … what we did to the gun"): the Blade's edge spark,
+## The Blade's edge spark,
 ## the slash's counterpart of the Gun's cast spark (HeroCastFx): a light spark rides the laser blade's tip while it
 ## sweeps its arc (KitView.blade_tip_point, the blade as drawn this frame), flares bigger on the swing's hit tick (the
 ## cut; the finisher's bigger still) and fades as the blade settles. KitView draws the bright slash edge, PlayerAvatar
@@ -10,7 +10,7 @@ extends Node3D
 ## - Timing from the sim's swing ticks (WorldReader.swing_tick / swing_active_tick / swing_sweep_ticks), drawn in frame
 ##   time; it decides nothing (EI-07). Reduced motion keeps it (a light, no movement of its own).
 
-## v0.10.0 VX8 (VFX_PACK N3): the cut also strikes a pack spark (vfx_hit_04) on the tip, gold or the
+## VFX_PACK N3: the cut also strikes a pack spark (vfx_hit_04) on the tip, gold or the
 ## step's element; false: the old flare alone.
 const PACK_BLADE := true
 const POOL := 3
@@ -167,7 +167,7 @@ func spark_size() -> float:
 	return (_slots[_live]["node"] as Node3D).scale.x if _live >= 0 else 0.0
 
 
-## v0.10.0 VX8: the cut's pack spark (vx8_cut) on the blade's tip; false when the pack is off or its `hit`
+## The cut's pack spark (vx8_cut) on the blade's tip; false when the pack is off or its `hit`
 ## family is full (the old flare then draws alone).
 func _pack_cut(finisher: bool) -> bool:
 	var pack := BladePack.pack_of(self) if PACK_BLADE and kit != null else null

@@ -1,6 +1,6 @@
 class_name TrainingProps
 extends Node3D
-## v0.10.5 O17 (owner P17): the Training Room's own pieces, in the hub's look (HubProps: its stone and its blue glow):
+## The Training Room's own pieces, in the hub's look (HubProps: its stone and its blue glow):
 ## the terminal (a stone lectern with a lit blue screen) and the way back to the hub (a blue pool on the floor between
 ## two low stone posts, at the room's top corner). Drawn at sim points the app hands over (TrainingRoom); the terminal
 ## brightens while the hero stands at it (focus). Presentation only (EI-07): it reads nothing and decides nothing.

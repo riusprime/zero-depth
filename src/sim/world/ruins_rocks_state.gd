@@ -1,6 +1,6 @@
 class_name RuinsRocksState
 extends RefCounted
-## v0.11.0 O13b (ENEMIES.md R1-R4; RuinsRocks): what the Ruins' and the Night Rocks' signature enemies leave on a floor,
+## ENEMIES.md R1-R4; RuinsRocks: what the Ruins' and the Night Rocks' signature enemies leave on a floor,
 ## as parallel arrays.
 ## - Cables (the Wire Weavers'), in planting order: the ids of its two posts (the cable runs between them where they
 ##   stand), the Weaver's id, the tick it went live, its touch's damage (already powered by its Weaver's tier), its

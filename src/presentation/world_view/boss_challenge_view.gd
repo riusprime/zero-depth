@@ -7,7 +7,7 @@ extends Node3D
 ## - the vortex of a pull (a telegraph whose move is MOVE_PULL): spiral arms turning inward out to its reach;
 ## - enemies dissolving as the boss is summoned (ENEMY_DISSOLVED): a column of motes rising from where each stood and
 ##   a ring that fades;
-## - v0.5.5 DS (D7) a phase gate (WorldReader.boss_gate_permille): a violet shell around the boss that swells as the
+## - v0.5.5 DS a phase gate (WorldReader.boss_gate_permille): a violet shell around the boss that swells as the
 ##   transition runs (it can't be hurt meanwhile), and a ground ring as wide as the adds' ring.
 ## Meshes are rebuilt each tick (ImmediateMesh) with kept materials; only colours change. Nothing here feeds back.
 
@@ -25,7 +25,7 @@ const GATE_COLOR := Color("#B48CFF")
 var band_mesh := MeshInstance3D.new()
 var warn_mesh := MeshInstance3D.new()
 var vortex_mesh := MeshInstance3D.new()
-## v0.5.5 DS: the phase gate's shell and ground ring (hidden outside a gate).
+## The phase gate's shell and ground ring (hidden outside a gate).
 var gate_shell := MeshInstance3D.new()
 var gate_ring := MeshInstance3D.new()
 var _gate_mat := StandardMaterial3D.new()

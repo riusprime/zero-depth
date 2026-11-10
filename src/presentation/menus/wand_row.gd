@@ -4,13 +4,13 @@ extends Control
 ## The wand as a row of slots (v0.6.5 WN2; docs/design/WAND.md rule 4), shared by the pause menu's Build page and the
 ## Swap panel. Each held card is a tile with its icon, its name and its level; an empty slot is a dim tile. A trigger
 ## card cuts the row: a line stands after it, and under the row a bracket per part of the wand says what it is
-## ("the shot you fire", then "cast on hit →" under the cards the trigger casts). v0.9.0 AS (owner Q14): a Form,
+## ("the shot you fire", then "cast on hit →" under the cards the trigger casts). a Form,
 ## Pattern, Secondary or Element card's tile adds its slot tag to its level line ("Lv 2 · Pattern"). It draws a wand
 ## read (WorldReader.wand(), or a preview from WorldReader.wand_moved) and the page's marks (focus, the card held, a
 ## card leaving, a new card); it decides nothing (EI-07). Mouse: a press on a tile and a release on another is a drag
 ## (`tile_dropped`); a press and release on the same tile is a click (`tile_clicked`); hovering a tile reports it
 ## (`tile_hovered`). The pages turn those into moves.
-## v0.11.0 F11 (owner, G2 F10 "option A but simpler"): a card being carried (`carry_from`, on the Build page) is shown
+## A card being carried (`carry_from`, on the Build page) is shown
 ## lifted and tilted over the slot it would land in, a dashed ghost stays where it came from, and a bar and an arrow
 ## show exactly where it lands; the cards beside the bar slide apart. Tiles glide to where they belong (ANIM_S, instant
 ## under reduced motion). Nothing here decides anything: the moves are the page's. The mouse is read by one layer over
@@ -19,7 +19,7 @@ extends Control
 signal tile_clicked(k: int)
 signal tile_dropped(from: int, to: int)
 signal tile_hovered(k: int)
-## v0.11.0 F11: a press on a tile became a drag; the drag was released away from every slot.
+## A press on a tile became a drag; the drag was released away from every slot.
 signal tile_drag_started(k: int)
 signal tile_drag_cancelled
 
@@ -37,7 +37,7 @@ const SMALL_SIZE := 13
 const BRACKET_SIZE := 14
 ## A press that moves this far (px) before its release is a drag.
 const DRAG_PX := 8.0
-## v0.11.0 F11: how long a tile takes to reach its place (s), how far a carried card rises and tilts and grows, and how
+## How long a tile takes to reach its place (s), how far a carried card rises and tilts and grows, and how
 ## far the cards beside the landing bar move apart (px at the 1920 x 1080 base).
 const ANIM_S := 0.15
 const CARRY_RISE := 44.0
@@ -54,7 +54,7 @@ const CUT_KEYS := {
 	WorldReader.WAND_ON_FINISHER: "UI_WAND_CUT_ON_FINISHER",
 	WorldReader.WAND_ON_CRIT: "UI_WAND_CUT_ON_CRIT",
 }
-## v0.8.0 AO: the order mark of each order kind (WorldReader.WAND_ORDER_*; a plain card has none).
+## The order mark of each order kind (WorldReader.WAND_ORDER_*; a plain card has none).
 const ORDER_KEYS := {
 	WorldReader.WAND_ORDER_SHAPE: "UI_WAND_ORDER_SHAPE",
 	WorldReader.WAND_ORDER_COUNT: "UI_WAND_ORDER_COUNT",
@@ -69,27 +69,27 @@ var focus := -1
 var held := -1
 var leaving := -1
 var fresh := -1
-## v0.11.0 F11: the slot a carried card came from (-1: none). The row then shows the wand as it was picked up (the
+## The slot a carried card came from (-1: none). The row then shows the wand as it was picked up (the
 ## page's preview is the forecast), `held` is the slot the card would land in, and that is where it is drawn.
 var carry_from := -1
-## v0.9.0 AS2 (owner "Let me choose"): the slot category a limited Swap chooses in (WorldReader.SLOT_*; 0: any): the
+## The slot category a limited Swap chooses in (WorldReader.SLOT_*; 0: any): the
 ## other cards' tiles are dimmed and can't be chosen (selectable).
 var only_slot := 0
-## v0.10.5 W3-O16 (owner 2026-11-04: the Swap in the Astral style): Astral tiles (AstralChrome.FrameBox: a 1 px frame,
+## Astral tiles (AstralChrome.FrameBox: a 1 px frame,
 ## an inner frame, Astral's focus) and type, the cuts and brackets as thin accent lines.
-## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): Astral is the default (the Build page's too).
+## Astral is the default (the Build page's too).
 ## v0.11.1 Step 13 (owner: Astral the only style): the Ember stone tiles are gone; every row is Astral.
 
 var _wand := {}
 var _slots := 0
 var _tiles: Array[PanelContainer] = []
-## v0.10.5 W3-O19: the tiles' icons: the card's painted icon in an Astral medallion.
+## The tiles' icons: the card's painted icon in an Astral medallion.
 var _medals: Array[AstralMedallion] = []
 var _keys: Array[Label] = []
 var _names: Array[Label] = []
 var _levels: Array[Label] = []
 var _brackets: Array[Label] = []
-## v0.8.0 MR (owner O91): why each card can't act where it sits (Wand.flags: a translation key, or &"").
+## Why each card can't act where it sits (Wand.flags: a translation key, or &"").
 var _dead: Array[StringName] = []
 ## Each tile's x (left edge) and the dividers' x, from the last layout.
 var _xs: Array[float] = []
@@ -99,7 +99,7 @@ var _spans: Array = []
 var _press := -1
 var _press_at := Vector2.ZERO
 var _dragging := false
-## v0.11.0 F11: each tile's pose (position, tilt, size) and where it is heading.
+## Each tile's pose (position, tilt, size) and where it is heading.
 var _poses: Array[Pose] = []
 var _hover := -1
 ## The layer that reads the mouse, the marks over the tiles (ghost frame, bar, arrow), and the ghost's icon.
@@ -108,7 +108,7 @@ var _marks := Control.new()
 var _ghost := AstralMedallion.new()
 
 
-## v0.11.0 F11: a tile's place on screen, and the glide to its goal (the view's own clock; it decides nothing).
+## A tile's place on screen, and the glide to its goal (the view's own clock; it decides nothing).
 class Pose:
 	extends RefCounted
 	var at := Vector2.ZERO
@@ -185,7 +185,7 @@ func _make_tile(k: int) -> void:
 	t.name = "WandSlot%d" % (k + 1)
 	t.custom_minimum_size = TILE
 	t.size = TILE
-	t.mouse_filter = Control.MOUSE_FILTER_IGNORE  # v0.11.0 F11: the mouse layer reads the slots
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE  # The mouse layer reads the slots
 	t.pivot_offset = TILE * 0.5
 	t.clip_contents = true
 	var box := VBoxContainer.new()
@@ -209,7 +209,7 @@ func _make_tile(k: int) -> void:
 	nm.custom_minimum_size = Vector2(TILE.x - 16, 0)
 	box.add_child(nm)
 	var lv := make_label(SMALL_SIZE, false, AstralCardArt.DIM)
-	lv.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # v0.8.0 MR: a flagged card's reason takes two lines
+	lv.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # A flagged card's reason takes two lines
 	lv.max_lines_visible = 2
 	lv.custom_minimum_size = Vector2(TILE.x - 16, 0)
 	box.add_child(lv)
@@ -242,7 +242,7 @@ func show_wand(wand: Dictionary, slots: int) -> void:
 	_refresh(before)
 
 
-## v0.11.0 F11: every tile on its place now, no glide (a page opening).
+## Every tile on its place now, no glide (a page opening).
 func settle() -> void:
 	for k in _slots:
 		_aim(k, true)
@@ -253,7 +253,7 @@ func card_count() -> int:
 	return (_wand.get("cards", []) as Array).size()
 
 
-## v0.9.0 AS2: card k may be chosen (a held card, of only_slot's category when it is set).
+## Card k may be chosen (a held card, of only_slot's category when it is set).
 func selectable(k: int) -> bool:
 	if k < 0 or k >= card_count():
 		return false
@@ -277,7 +277,7 @@ func card_name(k: int) -> String:
 	return _names[k].text
 
 
-## v0.8.0 N18: the font size tile `k`'s name is drawn at (NAME_SIZE, or smaller for a word too long for the tile).
+## The font size tile `k`'s name is drawn at (NAME_SIZE, or smaller for a word too long for the tile).
 func name_size(k: int) -> int:
 	return _names[k].get_theme_font_size("font_size")
 
@@ -286,9 +286,9 @@ func level_text(k: int) -> String:
 	return _levels[k].text
 
 
-## v0.8.0 MR (owner O91): why the card in slot `k` can't act where it sits (a translation key; &"": it acts). Its tile
+## Why the card in slot `k` can't act where it sits (a translation key; &"": it acts). Its tile
 ## is dimmed and shows the reason in place of its level.
-## v0.9.0 AS: tile `k`'s slot tag (WorldReader.SLOT_*; NONE for a card without one, or an empty slot).
+## Tile `k`'s slot tag (WorldReader.SLOT_*; NONE for a card without one, or an empty slot).
 func slot_of(k: int) -> int:
 	var cards: Array = _wand.get("cards", [])
 	return (
@@ -320,7 +320,7 @@ func row_width() -> float:
 
 
 ## Restyles the marks only (focus, held, leaving, new) after the page changes them.
-## v0.8.0 AO (owner O37: "make the order of the attacks be more important"): a tile's top line, its slot number and,
+## A tile's top line, its slot number and,
 ## on a card that changes what is left of it (Wand.order_of: a shape, a count or a motion), that mark.
 func key_text(k: int, order: int) -> String:
 	var key: String = ORDER_KEYS.get(order, "")
@@ -340,15 +340,15 @@ func refresh_marks() -> void:
 		_ghost.position = _rest(carry_from) + Vector2((TILE.x - SOCKET) * 0.5, 30.0)
 	_fit_mouse_layer()
 	_marks.queue_redraw()
-	queue_redraw()  # v0.10.5 W3-O16: an Astral row draws the focus contour itself
+	queue_redraw()  # An Astral row draws the focus contour itself
 
 
-## v0.11.0 F11: the tile drawn lifted (the carried card's tile; on the Swap, the held card's).
+## The tile drawn lifted (the carried card's tile; on the Swap, the held card's).
 func lifted_tile() -> int:
 	return carry_from if carry_from >= 0 else held
 
 
-## v0.11.0 F11: the slot the ghost marks and the slot the carried card lands in (-1: nothing is carried).
+## The slot the ghost marks and the slot the carried card lands in (-1: nothing is carried).
 func ghost_slot() -> int:
 	return carry_from
 
@@ -357,19 +357,19 @@ func marker_slot() -> int:
 	return held if carry_from >= 0 else -1
 
 
-## v0.11.0 F11: the landing bar on screen (empty when nothing moves: not carrying, or over its own place).
+## The landing bar on screen (empty when nothing moves: not carrying, or over its own place).
 func marker_rect() -> Rect2:
 	if carry_from < 0 or held == carry_from:
 		return Rect2()
 	return Rect2(global_position + Vector2(_bar_x() - 2.0, LIFT - 8.0), Vector2(4.0, TILE.y + 16.0))
 
 
-## v0.11.0 F11: the id of the card the ghost shows (&"": no ghost; tests).
+## The id of the card the ghost shows (&"": no ghost; tests).
 func ghost_card() -> StringName:
 	return _card_id(carry_from) if _ghost.visible else &""
 
 
-## v0.11.0 F11: whether any tile is still gliding (tests).
+## Whether any tile is still gliding (tests).
 func animating() -> bool:
 	for p in _poses:
 		if p.left > 0.0:
@@ -377,7 +377,7 @@ func animating() -> bool:
 	return false
 
 
-## v0.11.0 F11: where slot `k` rests on screen, whatever its tile is doing (the mouse's slot; tests click its centre).
+## Where slot `k` rests on screen, whatever its tile is doing (the mouse's slot; tests click its centre).
 func slot_rect(k: int) -> Rect2:
 	return Rect2(global_position + Vector2(_xs[k], LIFT), TILE)
 
@@ -492,7 +492,7 @@ func _bar_x() -> float:
 	return right_end + 10.0 if t == _slots - 1 else (right_end + _rest(t + 1).x) * 0.5
 
 
-## v0.11.0 F11: the carry's marks, over the tiles: the ghost's dashed frame, then the landing bar and the arrow to it.
+## The carry's marks, over the tiles: the ghost's dashed frame, then the landing bar and the arrow to it.
 func _draw_carry() -> void:
 	if carry_from < 0 or carry_from >= _slots:
 		return
@@ -559,15 +559,15 @@ func _refresh(before: Array = []) -> void:
 			_names[k].text = tr(c["name_key"])
 			_keys[k].text = key_text(k, int(c.get("order", 0)))
 			var ability := int(c["type"]) == WorldReader.CARD_ABILITY
-			var levels := ability or bool(c.get("wand", false))  # v0.7.5 SM: a wand card shows its level too
+			var levels := ability or bool(c.get("wand", false))  # A wand card shows its level too
 			var cap := int(c.get("max_level", 5))
-			if levels and cap <= 1 and not ability:  # v0.9.5 CLV: a card that doesn't level shows none
+			if levels and cap <= 1 and not ability:  # A card that doesn't level shows none
 				_levels[k].text = ""
-			elif levels and cap < 5 and not ability:  # v0.9.5 CLV: "Lv 2/3"
+			elif levels and cap < 5 and not ability:  # "Lv 2/3"
 				_levels[k].text = tr("UI_WAND_LEVEL_OF") % [int(c["level"]), cap]
 			else:
 				_levels[k].text = tr("UI_WAND_LEVEL") % int(c["level"]) if levels else ""
-			var slot := int(c.get("slot", WorldReader.SLOT_NONE))  # v0.9.0 AS (Q14): the slot tag
+			var slot := int(c.get("slot", WorldReader.SLOT_NONE))  # The slot tag
 			if slot != WorldReader.SLOT_NONE:
 				var tag := tr(WorldReader.SLOT_TAG_KEYS[slot])
 				_levels[k].text = (
@@ -575,9 +575,9 @@ func _refresh(before: Array = []) -> void:
 				)
 			if k == fresh:
 				_levels[k].text = tr("UI_WAND_NEW")
-			elif dead_reason(k) != &"":  # v0.8.0 MR: it does nothing here; the tile says why
+			elif dead_reason(k) != &"":  # It does nothing here; the tile says why
 				_levels[k].text = tr(dead_reason(k))
-			_medals[k].show_card(id)  # v0.10.5 W3-O19: the painted icon on an Astral row
+			_medals[k].show_card(id)  # The painted icon on an Astral row
 			_medals[k].visible = true
 			t.set_meta(&"empty", false)
 		else:
@@ -586,7 +586,7 @@ func _refresh(before: Array = []) -> void:
 			_levels[k].text = ""
 			_medals[k].visible = false
 			t.set_meta(&"empty", true)
-		TextFit.fit_label_words(_names[k], TILE.x - 16.0, NAME_SIZE)  # v0.8.0 N18: a long word shrinks
+		TextFit.fit_label_words(_names[k], TILE.x - 16.0, NAME_SIZE)  # A long word shrinks
 		x += TILE.x
 		var trig := int(cards[k]["trigger"]) if k < cards.size() else -1
 		if trig >= 0 and k < _slots - 1:
@@ -628,7 +628,7 @@ func _style(k: int) -> void:
 	var empty: bool = t.get_meta(&"empty", false)
 	var lifted := k == lifted_tile()
 	var lit := lifted or (k == focus and carry_from < 0)
-	# v0.10.5 W3-O16: an Astral tile; a held card's frame in the accent, the new card's in moonlight
+	# An Astral tile; a held card's frame in the accent, the new card's in moonlight
 	var fb := AstralChrome.FrameBox.new(1.0 if lit else 0.0, 0.55 if empty else 1.0)
 	if lifted:
 		fb.rim = AstralCardArt.ACCENT
@@ -638,13 +638,13 @@ func _style(k: int) -> void:
 	t.add_theme_stylebox_override("panel", fb)
 	_medals[k].focused = lit
 	t.modulate = Color(1, 1, 1, 0.42) if k == leaving else Color.WHITE
-	if k != leaving and dead_reason(k) != &"":  # v0.8.0 MR (O91): a card that can't act here is dimmed
+	if k != leaving and dead_reason(k) != &"":  # A card that can't act here is dimmed
 		t.modulate = Color(0.62, 0.6, 0.58, 0.78)
-	if only_slot != 0 and k < card_count() and k != fresh and not selectable(k):  # v0.9.0 AS2: not a choice
+	if only_slot != 0 and k < card_count() and k != fresh and not selectable(k):  # Not a choice
 		t.modulate = Color(0.5, 0.47, 0.45, 0.5)
 
 
-## v0.10.5 W3-O16: a tile's box (tests: the look, the focus).
+## A tile's box (tests: the look, the focus).
 func astral_box(k: int) -> AstralChrome.FrameBox:
 	return _tiles[k].get_theme_stylebox("panel") as AstralChrome.FrameBox
 
@@ -653,7 +653,7 @@ func _draw() -> void:
 	_draw_astral()
 
 
-## The slot under `global` (a point on screen), or -1. v0.11.0 F11: by where each slot rests (a tile on its way
+## The slot under `global` (a point on screen), or -1. by where each slot rests (a tile on its way
 ## somewhere does not move its slot), up to the middle of the gaps, and through the air over the row while carrying.
 func slot_at(global: Vector2) -> int:
 	var p := global - global_position
@@ -670,7 +670,7 @@ func slot_at(global: Vector2) -> int:
 	return -1
 
 
-## v0.11.0 F11: the mouse, against the slots' resting places: a press and release is a click, a press that travels is
+## The mouse, against the slots' resting places: a press and release is a click, a press that travels is
 ## a drag (`tile_drag_started` once, `tile_dropped` on a slot, `tile_drag_cancelled` away from them).
 func _on_mouse(event: InputEvent) -> void:
 	if not (event is InputEventMouse):
@@ -703,7 +703,7 @@ func _on_mouse(event: InputEvent) -> void:
 			tile_hovered.emit(over)
 
 
-## v0.11.0 F11: forgets a press under way (the page put the card back while the button was down).
+## Forgets a press under way (the page put the card back while the button was down).
 func end_press() -> void:
 	_press = -1
 	_dragging = false
@@ -714,7 +714,7 @@ func _notification(what: int) -> void:
 		_refresh()
 
 
-## v0.10.5 W3-O16: the Astral row's marks: the focused tile's outer contour (6 px outside, 25 %), each cut a 1 px
+## The Astral row's marks: the focused tile's outer contour (6 px outside, 25 %), each cut a 1 px
 ## accent line with an open chevron, the brackets as 1 px lines (dim under the shot you fire, accent under a cast).
 func _draw_astral() -> void:
 	var top := LIFT

@@ -1,6 +1,6 @@
 class_name FormParticles
 extends RefCounted
-## v0.6.0 MX3: where an element particle of the canvas's flat look sits and its colour, `u` (0..1) through its cycle
+## Where an element particle of the canvas's flat look sits and its colour, `u` (0..1) through its cycle
 ## (AttackFormCanvas._emit_parts). Moved out of AttackFormCanvas unchanged in v0.9.0 VX (its file length).
 ## Presentation only (EI-07): pure functions.
 

@@ -3,7 +3,7 @@ extends ContentDef
 ## v0.6.5 WN5b (docs/design/WAND.md "What happens to the v0.6 cards", owner G1 "Approve all"; CONTENT_SCHEMA "The
 ## wand"): the one table that retires the v0.6 cards and says what each becomes. One `.tres` in data/wand/.
 ## - Row k: the old card `old_ids[k]` (an item id or an ability id) is retired: no altar, chest, shop, event, core or
-##   legendary tier offers it again. v0.10.5 O1 (owner L23): the retired cards' files are deleted; a stub table keeps
+##   legendary tier offers it again. the retired cards' files are deleted; a stub table keeps
 ##   each one's saved index (CardOrder, application layer), so old saves still resolve and map through this table.
 ## - What it becomes in a held build (an old save's wand, a carry): `blade_into[k]` on a Blade run, `gun_into[k]` on a
 ##   Gun run; an empty id means no match: the card is refunded as shards (the shop's salvage price, WandMigration).
@@ -45,7 +45,7 @@ func validate() -> Array[ValidationIssue]:
 	return issues
 
 
-## Every target is an item of the data, or a pending one. v0.10.5 O1: an old id needs no file (its card was deleted;
+## Every target is an item of the data, or a pending one. an old id needs no file (its card was deleted;
 ## CardOrder's stub keeps its index, and tests/unit/application/test_card_order.gd checks every old id has one).
 static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 	var issues: Array[ValidationIssue] = []

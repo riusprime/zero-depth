@@ -71,7 +71,7 @@ static func edge(look: StringName) -> Color:
 	return ElementLooks.core(ELEMENT.get(look, &""))
 
 
-## V2: the [centre, edge] colours of a form carrying `elements` (the first's centre, the second's edge).
+## The [centre, edge] colours of a form carrying `elements` (the first's centre, the second's edge).
 static func colors(elements: PackedStringArray) -> Array[Color]:
 	return ElementLooks.pair(elements)
 

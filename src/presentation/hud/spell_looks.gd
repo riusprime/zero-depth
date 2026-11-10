@@ -1,6 +1,6 @@
 class_name SpellLooks
 extends RefCounted
-## v0.11.0 O10 (SPELLS.md "Readability": every spell its element's colour and a shape no enemy attack uses): the spells'
+## SPELLS.md "Readability": every spell its element's colour and a shape no enemy attack uses: the spells'
 ## colours (their element's, from the status colours: never the bosses' red or purple) and their placeholder icons,
 ## drawn with lines on any CanvasItem (the HUD squares, the pick card's icon). Presentation only.
 
@@ -69,7 +69,7 @@ static func draw_icon(ci: CanvasItem, id: StringName, r: Rect2, c: Color) -> voi
 				_diamond(ci, o, h, c)
 
 
-## v0.11.0 O11: the twelve spells O11 added have an icon (placeholders, each its own shape).
+## The twelve spells O11 added have an icon (placeholders, each its own shape).
 static func has_icon(id: StringName) -> bool:
 	return (
 		[&"spell_frost_nova", &"spell_fireball", &"spell_sky_strike"].has(id)

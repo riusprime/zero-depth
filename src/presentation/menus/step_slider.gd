@@ -1,8 +1,8 @@
 class_name StepSlider
 extends HSlider
-## A volume slider that left / right (arrows, d-pad, stick) always step, instead of moving focus away (v0.3.0 O):
+## A volume slider that left / right (arrows, d-pad, stick) always step, instead of moving focus away:
 ## Godot 4.7's slider let the d-pad's ui_left leave it, so a pad couldn't change a volume.
-## v0.10.5 W3-O18: `astral` draws it in Astral (AstralMenu's theme leaves the built-in track and grabber empty): a
+## `astral` draws it in Astral (AstralMenu's theme leaves the built-in track and grabber empty): a
 ## 1 px hairline track, the filled part a 3 px accent line, a diamond knob with a lit core. Focused or hovered (one
 ## rule): the knob turns moonlight with a second contour round it at 25 %, and the track brightens a little.
 

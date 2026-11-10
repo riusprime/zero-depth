@@ -1,6 +1,6 @@
 class_name CanyonShoreCompiler
 extends RefCounted
-## v0.11.0 O13c (PLAN M2; ENEMIES.md R5-R8, approved 2026-11-07): the Red Canyon's and the Frozen Shore's signature
+## The Red Canyon's and the Frozen Shore's signature
 ## enemies' own numbers in the sim's units (CanyonShore reads them). The Kiln Beetle and the Glacier Turtle compile as a
 ## Warden first (BehaviourSchemas.CANYON_SHORE_BASE); the Cinder Priest and the Frost Spitter keep a distance band
 ## (ContentCompiler._compile_horde: keep_min_m, keep_max_m). Signatures open on a floor's curve with the Warden

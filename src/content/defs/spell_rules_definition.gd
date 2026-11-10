@@ -1,13 +1,13 @@
 class_name SpellRulesDefinition
 extends ContentDef
-## v0.11.0 O10 (owner Q17-Q19; docs/roadmap/v0.11.0/SPELLS.md "The rules every spell follows"; CONTENT_SCHEMA §8): the
+## The
 ## rules every spell follows (one definition, id spell_rules). Starting values; O12 measures them.
 
-## The spell slots, separate from the wand (E2).
+## The spell slots, separate from the wand.
 @export var slots := 4
 ## The chance per mille that a regular altar's offer holds a spell card while the run's pool has one.
 @export var offer_permille := 350
-## A spell whose `affinity` is the run's rune affinity weighs this much per mille (Q17).
+## A spell whose `affinity` is the run's rune affinity weighs this much per mille.
 @export var affinity_permille := 2000
 ## The highest spell level in loop 1 (Lv 4-5 from loop 2, Q18).
 @export var loop1_max_level := 3

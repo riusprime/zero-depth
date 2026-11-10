@@ -1,6 +1,6 @@
 class_name EliteTable
 extends RefCounted
-## v0.9.0 EL (ELITES.md E1-E3): one elite archetype's ability and plain attack in sim units (ContentCompiler.
+## ELITES.md E1-E3: one elite archetype's ability and plain attack in sim units (ContentCompiler.
 ## compile_elite from EliteDefinition; EnemyTable.elite holds it, the rest of an elite's numbers are its EnemyTable's).
 ## Content: read in play, never written (WorldSnapshot keeps it as loadout). RunState.scale_enemies scales its damages
 ## with the floor (scale_damage), as an enemy table's.

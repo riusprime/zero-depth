@@ -1,6 +1,6 @@
 class_name HubFlags
 extends RefCounted
-## v0.9.0 HB (PLAN W45): reads the hub's evolving states from the profile (HubStateDefinition's flag grammar). It only
+## PLAN W45: reads the hub's evolving states from the profile (HubStateDefinition's flag grammar). It only
 ## reads: a section the profile doesn't hold yet (CL's `collectibles` before profile v2) reads as empty and is never
 ## created, so an old profile loads and saves as it was. Never part of a run or any sim hash.
 

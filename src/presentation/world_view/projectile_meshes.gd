@@ -1,6 +1,6 @@
 class_name ProjectileMeshes
 extends RefCounted
-## v0.8.0 AV (owner O8: "actual 3D objects in the game that look and feel like the game's art"): the code-made
+## The code-made
 ## meshes of the hostile fireballs (FireballViews) and their noise. One unit across, the flight along +x; built once
 ## and shared. Faceted where the look is stone or crystal (flat normals, the kit's low-poly style), smooth where it is
 ## liquid or plasma. Textures are procedural (owner Q5 allows CC0 downloads; the session's network blocked the CC0
@@ -11,7 +11,7 @@ static var _cache := {}
 static var _noise: NoiseTexture2D
 
 
-## The mesh of shape `id`: &"rock", &"gem", &"spear", &"orb", &"glob", &"drop", &"crescent" (v0.8.0 FB3: a flying
+## The mesh of shape `id`: &"rock", &"gem", &"spear", &"orb", &"glob", &"drop", &"crescent" (a flying
 ## slash, bowed forward across its flight), or &"ribbon" (the trail strip).
 static func get_mesh(id: StringName) -> Mesh:
 	if not _cache.has(id):
@@ -56,7 +56,7 @@ static func _build(id: StringName) -> Mesh:
 	return _sphere(16, 8)
 
 
-## v0.8.0 FB3: a flying slash: a thin curved blade bowed forward (+x) across its flight, its horns trailing back.
+## A flying slash: a thin curved blade bowed forward (+x) across its flight, its horns trailing back.
 static func _crescent() -> ArrayMesh:
 	var n := 10
 	var top := []

@@ -1,6 +1,6 @@
 class_name AchievementRow
 extends Button
-## v0.7.5 AC: one achievement on the Codex's Achievements page; v0.8.0 MU: a carved stone row (Ember stone),
+## One achievement on the Codex's Achievements page; a carved stone row (Ember stone),
 ## ember-lit when focused, an unlocked one with a gold rim inlay and groove: its glyph, its name and
 ## sentence, and on the right "Unlocked" or how far along it is ("37 / 100"). A locked one is dimmed with its
 ## sentence; a hidden locked one is "???" with the hidden line. A Button, so keys, the pad and the mouse reach it
@@ -11,7 +11,7 @@ const ICON := 56.0
 const NAME_SIZE := 21
 const DESC_SIZE := 17
 const STATE_W := 150.0
-## v0.10.5 W3-O19: Astral's legendary pale gold (was a warm gold).
+## Astral's legendary pale gold (was a warm gold).
 const UNLOCKED := Color("#E2CB8E")
 
 var entry := {}
@@ -46,7 +46,7 @@ func _init() -> void:
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(text)
 	name_label.name = "Name"
-	AstralUi.caps(name_label, NAME_SIZE - 2, AstralCardArt.TEXT)  # v0.10.5 W3-O19: Cinzel
+	AstralUi.caps(name_label, NAME_SIZE - 2, AstralCardArt.TEXT)  # Cinzel
 	desc_label.name = "Desc"
 	AstralUi.body(desc_label, DESC_SIZE)
 	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -99,7 +99,7 @@ func show_entry(a: Dictionary, book: AchievementBook) -> void:
 	_style()
 
 
-## v0.10.5 W3-O19: an Astral frame (AstralChrome.FrameBox), an unlocked one's in the pale gold, a locked one fainter.
+## An Astral frame (AstralChrome.FrameBox), an unlocked one's in the pale gold, a locked one fainter.
 func _style() -> void:
 	var quiet := 1.0 if unlocked else 0.6
 	var normal := AstralChrome.FrameBox.new(0.0, quiet)

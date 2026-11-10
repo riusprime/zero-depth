@@ -8,8 +8,8 @@ extends RefCounted
 ## Presentation only: a look changes nothing the sim decides.
 
 ## Marker patterns (the MARK_SHADER's `pattern`).
-## v0.8.0 FB3: VOID, the Nemesis's (dark rifts, a violet-red glow).
-## v0.9.0 NB1: WATER, the Tidecaller's (swirling caustics and foam, sea green).
+## VOID, the Nemesis's (dark rifts, a violet-red glow).
+## WATER, the Tidecaller's (swirling caustics and foam, sea green).
 enum Pattern { STONE, BLADE, ACID, LIGHT, HAZARD, MOLTEN, VOID, WATER }
 
 ## Strike kinds BossStrikeViews draws, by the geometry they take: discs (a marker's circles, a leap's landing, a
@@ -34,7 +34,7 @@ const PATTERN_COLORS := {
 	Pattern.WATER: [Color(0.02, 0.07, 0.05), Color(0.52, 1.0, 0.42)],  # sea-green, 80° from the hero's cyan
 }
 
-## v0.8.0 TX2: per pattern, the owner's texture that replaces the code pattern: [texture id, world scale (repeats a
+## Per pattern, the owner's texture that replaces the code pattern: [texture id, world scale (repeats a
 ## metre), how much of its own colour shows as the ground under the hot part (0: the look's dark tint), flow]. The
 ## void (the Nemesis) keeps its code rifts: no texture was asked for it.
 const PATTERN_TEX := {
@@ -71,34 +71,34 @@ const LOOKS := {
 	&"fd_vent": {"pattern": Pattern.MOLTEN, "strike": &"steam_ring"},
 	&"fd_firestorm": {"pattern": Pattern.MOLTEN, "strike": &"fire_lanes"},
 	&"fd_bombs": {"pattern": Pattern.MOLTEN, "strike": &"shell"},
-	# v0.8.0 FB1 (FINAL_BOSS.md F4): the Colossus. Its fists' swings throw a dust arc, the slam and the leap blow a
+	# FINAL_BOSS.md F4: the Colossus. Its fists' swings throw a dust arc, the slam and the leap blow a
 	# crater, its boulders land as craters too (their shards are fireballs). Its spikes are StoneSpikeViews'.
 	&"cl_fists": {"pattern": Pattern.STONE, "strike": &"dust_arc"},
 	&"cl_slam": {"pattern": Pattern.STONE, "strike": &"crater"},
 	&"cl_leap": {"pattern": Pattern.STONE, "strike": &"crater"},
 	&"cl_boulder": {"pattern": Pattern.STONE, "strike": &"crater"},
 	&"cl_spikes": {"pattern": Pattern.STONE, "strike": &"crack_impact"},
-	# v0.8.0 FB3 (FINAL_BOSS.md F6): the Nemesis. Its swings (its combo's and a card's arc) cut a steel arc in its own
+	# FINAL_BOSS.md F6: the Nemesis. Its swings (its combo's and a card's arc) cut a steel arc in its own
 	# colours, a card's blast flashes as a burst; its volleys are fireballs (FireballViews' nemesis looks).
 	&"nm_slash": {"pattern": Pattern.VOID, "strike": &"steel_arc"},
 	&"nm_cast": {"pattern": Pattern.VOID, "strike": &"light_burst"},
-	# v0.9.0 NB1: the Tidecaller. The Undertow's circle erupts as a burst of spray, the Shell Slam blows a ring of steam
+	# The Tidecaller. The Undertow's circle erupts as a burst of spray, the Shell Slam blows a ring of steam
 	# off the water, both over swirling water.
 	&"tc_undertow": {"pattern": Pattern.WATER, "strike": &"eruption"},
 	&"tc_slam": {"pattern": Pattern.WATER, "strike": &"steam_ring"},
-	# v0.9.0 NB2: the Twin Wardens. The Chain Sweep's lane scorches where the burning chain lashed (the chain itself is
+	# The Twin Wardens. The Chain Sweep's lane scorches where the burning chain lashed (the chain itself is
 	# TwinViews'), the Shield Bash cracks a shock ring out of the stone.
 	&"tw_sweep": {"pattern": Pattern.MOLTEN, "strike": &"skid"},
 	&"tw_bash": {"pattern": Pattern.STONE, "strike": &"shock_ring"},
-	&"tw_charge": {"pattern": Pattern.STONE, "strike": &"skid"},  # v0.11.0 O5: the amber's Charge, Ground Slam
+	&"tw_charge": {"pattern": Pattern.STONE, "strike": &"skid"},  # The amber's Charge, Ground Slam
 	&"tw_slam": {"pattern": Pattern.STONE, "strike": &"crater"},
-	&"tw_runes": {"pattern": Pattern.VOID, "strike": &"light_ring"},  # v0.11.0 O5: the violet's Rune Ring, Blink
+	&"tw_runes": {"pattern": Pattern.VOID, "strike": &"light_ring"},  # The violet's Rune Ring, Blink
 	&"tw_blink": {"pattern": Pattern.VOID, "strike": &"light_burst"},
-	# v0.9.0 NB3: the Clockwork Judge. The Verdict's square takes a column of gold light where the pendulum drops (the
+	# The Clockwork Judge. The Verdict's square takes a column of gold light where the pendulum drops (the
 	# pendulum itself is JudgeViews'); the Gavel Slam rings a light shockwave out over the floor.
 	&"cj_verdict": {"pattern": Pattern.LIGHT, "strike": &"beam"},
 	&"cj_gavel": {"pattern": Pattern.LIGHT, "strike": &"light_ring"},
-	# v0.9.0 NB4: the Lantern Shade. The Snuff's circle closes like a hand of shadow (a void burst over the swirling
+	# The Lantern Shade. The Snuff's circle closes like a hand of shadow (a void burst over the swirling
 	# dark); the Lantern Sweep rings a light shockwave out where the lantern swung.
 	&"ls_snuff": {"pattern": Pattern.VOID, "strike": &"light_burst"},
 	&"ls_sweep": {"pattern": Pattern.VOID, "strike": &"light_ring"},
@@ -166,18 +166,18 @@ const BY_KIND := {
 		WorldReader.MOVE_MARKS: &"tc_undertow",
 		WorldReader.MOVE_SLAM_RING: &"tc_slam",
 	},
-	WorldReader.KIND_TWIN_WARDEN:  # v0.9.0 NB2: the amber Warden (the boss) and its violet twin alike
+	WorldReader.KIND_TWIN_WARDEN:  # The amber Warden (the boss) and its violet twin alike
 	{
 		WorldReader.MOVE_CHAIN_SWEEP: &"tw_sweep",
 		WorldReader.MOVE_SLAM_RING: &"tw_bash",
-		WorldReader.MOVE_CHARGE: &"tw_charge",  # v0.11.0 O5: each Warden's own moveset
+		WorldReader.MOVE_CHARGE: &"tw_charge",  # Each Warden's own moveset
 		WorldReader.MOVE_MARKS: &"tw_slam",
 		WorldReader.MOVE_LEAP: &"tw_blink",
 	},
 	WorldReader.KIND_TWIN_WARDEN_VIOLET:
 	{
 		WorldReader.MOVE_CHAIN_SWEEP: &"tw_sweep",
-		WorldReader.MOVE_SLAM_RING: &"tw_runes",  # v0.11.0 O5: the violet's ring is its Rune Ring
+		WorldReader.MOVE_SLAM_RING: &"tw_runes",  # The violet's ring is its Rune Ring
 		WorldReader.MOVE_CHARGE: &"tw_charge",
 		WorldReader.MOVE_MARKS: &"tw_slam",
 		WorldReader.MOVE_LEAP: &"tw_blink",

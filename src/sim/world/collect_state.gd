@@ -1,6 +1,6 @@
 class_name CollectState
 extends RefCounted
-## v0.9.0 CL (COLLECTIBLES.md; Collectibles): the collectibles this floor can hold (World.collect; null on a floor
+## COLLECTIBLES.md; Collectibles: the collectibles this floor can hold (World.collect; null on a floor
 ## that holds none: every world before CL, goldens, sims, the Playground). One entry per collectible armed at setup
 ## (CollectibleBook.arm, app side: the ones the profile hasn't found whose source this floor has): its id (a
 ## CollectibleDefinition id), its source (Collectibles.Source) and the source's number (`param`: a final body's index,

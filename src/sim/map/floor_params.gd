@@ -33,19 +33,19 @@ var footprints: Array[Vector2i] = [
 	Vector2i(4, 4),
 ]
 var footprint_weights := PackedInt32Array([22, 14, 14, 8, 8, 12, 7, 7, 5, 2, 2, 2])
-## The whole floor fits in this many cells either way (keeps the floor compact and the nav grid bounded). v0.7.5 MG:
+## The whole floor fits in this many cells either way (keeps the floor compact and the nav grid bounded).
 ## 11 (was 8), for the extra rooms.
 var max_span := 11
-## Random placements tried for each room after the hall before giving up on the floor's room count (v0.7.5 MG: 600,
+## Random placements tried for each room after the hall before giving up on the floor's room count (600,
 ## was 400).
 var place_attempts := 600
-## Wall thickness (v0.3.0 L1). Each room side draws a half from this range: the wall material from its face out to
+## Wall thickness. Each room side draws a half from this range: the wall material from its face out to
 ## its grid line. A partition is the two rooms' halves (0.6-5.0 m thick); an outer wall is twice its room's half
 ## (0.6-5.0 m), half inside the grid line and half outside. Owner, 2026-10-07, "Thicker room walls": the blink stays
 ## 5 m and the thickest walls can't be crossed even from point-blank (starting value; was 1.5).
 var wall_half_min := 0.3
 var wall_half_max := 2.5
-## Doorway width, drawn per doorway (v0.3.0 L2).
+## Doorway width, drawn per doorway.
 var door_width_min := 2.2
 var door_width_max := 3.4
 ## A doorway keeps this far from the corners of both rooms it joins; within that it lies anywhere along the
@@ -89,28 +89,28 @@ var nav_clearance := 0.6
 var start_clear_radius := 3.5
 ## No interior piece within this radius of a doorway centre (on the wall line).
 var door_clear_radius := 3.0
-## v0.8.0 RT (owner O12): the designed room layouts, RoomLayouts.key(cells) -> Array of RoomLayoutTable
+## The designed room layouts, RoomLayouts.key(cells) -> Array of RoomLayoutTable
 ## (RunContentCompiler.compile_room_layouts, data/room_layouts). Empty (the default, and a floor saved before RT:
 ## RunSaver.floor_tables): every room keeps its rule-built interior (RoomInterior + RoomThemes) and the generator makes
 ## no layout draw, so that floor comes out as it was. A room whose size has no layout keeps it too, as do the start
 ## hall and the portal room.
 var room_layouts := {}
-## v0.8.0 RT: a designed room keeps its pieces out of a box in front of each doorway: the doorway's width plus this
+## A designed room keeps its pieces out of a box in front of each doorway: the doorway's width plus this
 ## either side, this deep into the room from the wall face.
 var layout_door_side := 1.0
-## v0.9.0 PT: build the gates as before PT, against the wall (a floor saved under floor rules 1-9; RunSaver).
+## Build the gates as before PT, against the wall (a floor saved under floor rules 1-9; RunSaver).
 var legacy_gate := false
 var layout_door_depth := 3.0
 
-## v0.9.0 TD (owner W §2, Q20): the share of floors with a timed door and its secret room (per mille; starting value
+## The share of floors with a timed door and its secret room (per mille; starting value
 ## 35 %), and the door's timer in ticks (15 s at 60 Hz). MapDefinition's numbers.
 var timed_door_permille := 350
 var timed_door_ticks := 900
-## v0.9.5 TS: the switches' rooms are 1..timed_switch_steps_max steps from the host (0: both in the host, before TS)
+## The switches' rooms are 1..timed_switch_steps_max steps from the host (0: both in the host, before TS)
 ## and the lever's open time in ticks (0: no lever).
 var timed_switch_steps_max := 0
 var timed_lever_ticks := 0
-## v0.11.0 O15 (PLAN P1): the share of large combat rooms that take a purpose (per mille; RoomPurposes.lay). 0 on a
+## PLAN P1: the share of large combat rooms that take a purpose (per mille; RoomPurposes.lay). 0 on a
 ## floor without the data. MapDefinition's number.
 var purpose_permille := 0
 
@@ -119,7 +119,7 @@ static func defaults() -> FloorParams:
 	return FloorParams.new()
 
 
-## v0.7.5 MG: v0.7.0's room numbers (10-12 rooms, footprints up to 3 x 3, span 8, 400 attempts), for a v0.7.0 floor
+## v0.7.0's room numbers (10-12 rooms, footprints up to 3 x 3, span 8, 400 attempts), for a v0.7.0 floor
 ## resumed from a save made before v0.7.5 (RunState.v070_floor): its walls must come out as they were saved.
 static func v070() -> FloorParams:
 	var p := FloorParams.new()

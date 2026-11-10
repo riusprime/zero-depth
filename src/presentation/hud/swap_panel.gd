@@ -14,16 +14,16 @@ extends ModalPanel
 ## - Reorder: R (pad Y) picks up the chosen card, ←/→ carry it, R / Enter put it down (mouse: drag a card onto a
 ##   slot). The moves reach the sim while the panel is open (the sim ticks while it waits).
 ## It sits over the pick panel and the shop (their input waits while it is open).
-## v0.6.0 UP: a modal choice, so it wears the menus' look (v0.8.0 MU: Ember stone, now gone): the game blurred and
+## A modal choice, so it wears the menus' look (Ember stone, now gone): the game blurred and
 ## sunk into the warm dark behind (MenuBackdrop), warm type, stone tablets with their family's colour as the glowing
 ## groove at the foot, the focused tile ember-lit. The incoming card keeps the pick cards' look (StoneCard).
-## v0.9.0 AS2 (owner "Let me choose"; G2 AS = B): the slot pips over the wand (SlotPips), and a Swap for a full
+## The slot pips over the wand (SlotPips), and a Swap for a full
 ## Secondary or Element slot (the wand read's "swap_slot") is limited to that slot's cards: the others are dimmed and
 ## can't be chosen, Insert is off, the title says which slot; the sim takes only those answers (BuildSlots.swap_answer).
-## v0.10.5 W3-O16 (owner 2026-11-04: the shop and the pick in Astral; the Swap's chrome with them): the game blurred
+## The game blurred
 ## under Astral's cool ink (MenuBackdrop.astral), the title as an Astral heading over a rule, the wand row's tiles,
 ## pips and forecast in Astral (WandRow, SlotPips), Skip an Astral plate.
-## v0.11.0 F11: the forecast is the cards' icons in firing order (WandForecastView); the row's cards glide when they
+## The forecast is the cards' icons in firing order (WandForecastView); the row's cards glide when they
 ## trade places.
 
 signal moved(value: int)
@@ -40,9 +40,9 @@ const SKIP_TILE := Vector2(224, 56)
 const SKIP := WorldReader.MOD_SLOTS
 
 var row := WandRow.new()
-## v0.9.0 AS2: the slot pips over the wand, and the category a limited Swap chooses in (0: any card).
+## The slot pips over the wand, and the category a limited Swap chooses in (0: any card).
 var pips := SlotPips.new()
-## v0.10.5 O13 (owner P10): the forecast of the wand the focused answer leaves (WandForecastView).
+## The forecast of the wand the focused answer leaves (WandForecastView).
 var forecast := WandForecastView.new()
 var _only := 0
 var _dim := MenuBackdrop.new()
@@ -56,7 +56,7 @@ var _skip := PanelContainer.new()
 var _skip_key: Label
 var _skip_name: Label
 var _skip_lit := false
-## The reader last shown (read only), so a language switch words the open panel again (v0.6.0 UP).
+## The reader last shown (read only), so a language switch words the open panel again.
 var _reader: WorldReader
 ## The wand as the panel shows it: the sim's read with this panel's reorders applied (they reach the sim a tick later).
 var _wand := {}
@@ -74,7 +74,7 @@ func _init() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dim.mouse_filter = Control.MOUSE_FILTER_STOP  # the game under it takes no clicks
-	_dim.astral = true  # v0.10.5 W3-O16: the game blurred under Astral's cool ink
+	_dim.astral = true  # The game blurred under Astral's cool ink
 	add_child(_dim)
 	_col.name = "Column"
 	_col.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -98,8 +98,8 @@ func _init() -> void:
 	card_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_card = PickSlot.new(0, 0.8)
 	_card.name = "SwapCard"
-	_card.mouse_filter = Control.MOUSE_FILTER_STOP  # v0.6.5 WN2: drag it onto a slot to insert it there
-	_card.set_key_visible(false)  # v0.6.0 UP: the incoming card has no number key here
+	_card.mouse_filter = Control.MOUSE_FILTER_STOP  # Drag it onto a slot to insert it there
+	_card.set_key_visible(false)  # The incoming card has no number key here
 	_card.gui_input.connect(_on_card_input)
 	card_box.add_child(_card)
 	col.add_child(card_box)
@@ -137,7 +137,7 @@ func _make_skip() -> void:
 	_skip.name = "SwapSkip"
 	_skip.custom_minimum_size = SKIP_TILE
 	_skip.mouse_filter = Control.MOUSE_FILTER_STOP
-	# v0.10.5 W3-O16: Skip is an Astral plate (AstralChrome.plate), its key and its name inside the tips.
+	# Skip is an Astral plate (AstralChrome.plate), its key and its name inside the tips.
 	var pad := StyleBoxEmpty.new()
 	pad.content_margin_left = roundf(SKIP_TILE.y * AstralChrome.TIP)
 	pad.content_margin_right = roundf(SKIP_TILE.y * AstralChrome.TIP)
@@ -217,7 +217,7 @@ func title_text() -> String:
 	return _title.full_text()
 
 
-## v0.9.0 AS2: the held slots this Swap may replace (all of them, or a full Secondary or Element slot's cards).
+## The held slots this Swap may replace (all of them, or a full Secondary or Element slot's cards).
 func choices() -> Array[int]:
 	var out: Array[int] = []
 	for k in _count:
@@ -241,7 +241,7 @@ func read_back_text() -> String:
 	return _read_back.text
 
 
-## v0.11.0 F11: the card ids the forecast shows, in firing order.
+## The card ids the forecast shows, in firing order.
 func forecast_ids() -> Array[StringName]:
 	return forecast.icon_ids()
 
@@ -300,7 +300,7 @@ func _refresh() -> void:
 				outcome = WorldReader.wand_swapped(_wand, a.x, a.y)
 	var lines := WorldReader.wand_describe(outcome)
 	_read_back.text = WorldReader.wand_render(lines, func(k: StringName) -> String: return tr(k))
-	forecast.show_forecast(outcome)  # v0.10.5 O13: the same outcome's forecast (F11: its cards' icons)
+	forecast.show_forecast(outcome)  # The same outcome's forecast (F11: its cards' icons)
 	var title_key := "UI_SWAP_TITLE"
 	match _mode:
 		Mode.PLACE:
@@ -382,7 +382,7 @@ func _step(step: int) -> void:
 func _step_from(k: int, step: int) -> int:
 	var order: Array[int] = []
 	for n in _count:
-		if _allowed(n):  # v0.9.0 AS2: a limited Swap steps over the other slots' cards
+		if _allowed(n):  # A limited Swap steps over the other slots' cards
 			order.append(n)
 	order.append(SKIP)
 	var at := order.find(k)
@@ -406,7 +406,7 @@ func _style_skip(on: bool) -> void:
 	_skip.queue_redraw()
 
 
-## v0.10.5 W3-O16: whether the Skip plate is lit (tests).
+## Whether the Skip plate is lit (tests).
 func skip_lit() -> bool:
 	return _skip_lit
 
@@ -460,7 +460,7 @@ func _carry_toggle() -> void:
 
 
 func _start_place(at: int = -1) -> void:
-	if (_mode != Mode.CHOOSE and _mode != Mode.PLACE) or _only != 0:  # v0.9.0 AS2: a limited Swap only replaces
+	if (_mode != Mode.CHOOSE and _mode != Mode.PLACE) or _only != 0:  # A limited Swap only replaces
 		return
 	_mode = Mode.PLACE
 	_place = clampi(at if at >= 0 else (_focus if _focus != SKIP else _count), 0, _count)

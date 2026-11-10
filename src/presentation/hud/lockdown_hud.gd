@@ -1,11 +1,11 @@
 class_name LockdownHud
 extends VBoxContainer
-## v0.9.0 LK (owner Q21): the Lockdown banner, beside the arena's (OverrunHud, the same place: they never show
+## The Lockdown banner, beside the arena's (OverrunHud, the same place: they never show
 ## together). While you're sealed in, a title near the top of the screen ("LOCKDOWN", or "HAZARD LOCKDOWN" in a
 ## Hazard one) with the formation you're on and how many enemies are left; when it opens, a line saying the exits are
 ## open (or that the bars gave way, when the 90 s cap opened them), for a few seconds. Reads WorldReader.lockdown()
 ## only; it decides nothing.
-## v0.10.5 W3-O20 (UI style Astral): the title is letter-spaced Cinzel over a fading hairline
+## UI style Astral: the title is letter-spaced Cinzel over a fading hairline
 ## (HudStyle.astral_banner), silver-white, a Hazard one in the rose warning.
 
 const CLEARED_SECONDS := 4.0

@@ -1,6 +1,6 @@
 class_name AchievementGlyphs
 extends RefCounted
-## v0.7.5 AC: the achievements' pictures, drawn in code (AchievementDefinition.GLYPHS): a few strokes and flat shapes
+## The achievements' pictures, drawn in code (AchievementDefinition.GLYPHS): a few strokes and flat shapes
 ## on a unit square, scaled into the rect given, in one colour. Draws only.
 
 const STROKE := 0.075

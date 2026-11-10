@@ -41,7 +41,7 @@ const ID_COLORS := {
 	&"meltdown": Color("#FF3D1F"),
 }
 
-## Engine status colours (v0.3.0 G): the enemy effects, pips and the combo frame use them.
+## Engine status colours: the enemy effects, pips and the combo frame use them.
 const STATUS_COLORS := {
 	&"burn": Color("#FF7A3D"),
 	&"shock": Color("#9FC8FF"),
@@ -51,13 +51,13 @@ const STATUS_COLORS := {
 	&"guard": Color("#F2C14E"),
 }
 
-## One colour per named combo (v0.3.0 G): its card frame, badge and payoff effect.
+## One colour per named combo: its card frame, badge and payoff effect.
 const COMBO_COLORS := {
 	&"shatter_dash": Color("#A8EEFF"),
 	&"blood_harvest": Color("#FF3B5C"),
 	&"spiked_phase": Color("#9BE070"),
 	&"slipstream": Color("#7CFFE0"),
-	# v0.4.0 AB: the ability combos.
+	# The ability combos.
 }
 
 ## The colour of an item this table doesn't know.

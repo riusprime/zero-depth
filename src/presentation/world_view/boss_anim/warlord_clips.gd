@@ -1,6 +1,6 @@
 class_name WarlordClips
 extends RefCounted
-## v0.8.0 BA: the Warlord's clips (the owner's rigged knight, 41 Tripo joints posed through BonePoser in the model
+## The Warlord's clips (the owner's rigged knight, 41 Tripo joints posed through BonePoser in the model
 ## frame). A drilled soldier, so its moves are sharp and committed: a guarded breath with the tower shield carried
 ## across its front, a marching walk, the spear raised and thrust forward to loose each wave of the Javelin Fan (and
 ## for the Shield Wall, braced behind its shield on bent knees: the shielded hold), the shield drawn back and rammed
@@ -38,8 +38,8 @@ static func library() -> Dictionary:
 			_flood(),
 			_charge(),
 			_barrage(),
-			_hurl(&"great_javelin"),  # v0.11.0 F9: the Great Javelin's throw (the Rain's whip)
-			_recall(),  # v0.8.0 BS1 (S2)
+			_hurl(&"great_javelin"),  # The Great Javelin's throw (the Rain's whip)
+			_recall(),  # v0.8.0 BS1
 			_shielded(),
 			_flinch(),
 			_stagger(),
@@ -48,7 +48,7 @@ static func library() -> Dictionary:
 			_death(),
 		]:
 			_lib[c.name] = c
-		BossClip.loosen(_lib, 0.02)  # v0.11.0 O16: the wind-up, the recoil, the idle sway
+		BossClip.loosen(_lib, 0.02)  # The wind-up, the recoil, the idle sway
 	return _lib
 
 
@@ -294,7 +294,7 @@ static func _hurl(clip_name: StringName) -> BossClip:
 	return c
 
 
-## v0.8.0 BS1 (owner O5, S2): the recall, timed 0..1 from its first javelin sticking to their flight back
+## The recall, timed 0..1 from its first javelin sticking to their flight back
 ## (BossAvatar._recall): planted on braced legs behind its shield, it reaches its empty spear hand out toward the
 ## javelins in the floor, straining harder (the tremble) as the recall nears, then yanks the arm back to its chest
 ## with a twist of the whole body on the tick they fly (1.0), and holds the pull while they come home.

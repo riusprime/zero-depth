@@ -28,7 +28,7 @@ const KIT: Array[StringName] = [
 	&"rubble_small",
 	&"grass_tuft",
 	&"debris_low",
-	# v0.8.0 MI (owner O79): the piece roles (BiomeLook.ROLES) the layouts name; each biome draws them from its pools.
+	# The piece roles (BiomeLook.ROLES) the layouts name; each biome draws them from its pools.
 	&"cover_square",
 	&"cover_block",
 	&"cover_long",
@@ -68,7 +68,7 @@ func category() -> StringName:
 	return &"room_layout"
 
 
-## The pieces this layout may name (v0.8.0 SR: a shop room adds its stall's pieces, ShopRoomDefinition).
+## The pieces this layout may name (a shop room adds its stall's pieces, ShopRoomDefinition).
 func kit() -> Array[StringName]:
 	return KIT
 

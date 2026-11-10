@@ -1,7 +1,7 @@
 # gdlint: disable=max-public-methods, max-file-lines
 class_name HordeAvatar
 extends AvatarBase
-## The six horde kinds (v0.4.0 EN), code-built low-poly in the enemy sheet's red and grey (no concept sheet yet; the
+## The six horde kinds, code-built low-poly in the enemy sheet's red and grey (no concept sheet yet; the
 ## agent's reading of the enemy style, ART_DIRECTION "Horde enemies"). One class builds each kind:
 ## - Swarmer: a tiny red beetle on six grey legs with bone mandibles that open through its windup.
 ## - Splitter: two red half-bodies pressed together over a glowing seam that gapes as it winds up; grey claws.
@@ -13,22 +13,22 @@ extends AvatarBase
 ## - Mine Layer: a low red crawler with a grey dome and a mine sitting in its rear hopper, lowered to drop it.
 ## - Sniper: a red box body on a grey tripod with a long grey barrel; its scope glows hotter through the windup.
 ## Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame time.
-## +X is the front. v0.8.0 HR (owner O89, the horde lag): every material is EnemyLooks' (shared by every enemy of the
+## +X is the front. every material is EnemyLooks' (shared by every enemy of the
 ## same look, so a crowd's identical pieces draw instanced) and the meshes are shared too (_shared_mesh); the hit
 ## flash and the status tints (show_hit, from ActorViews) and the accent's glow (GLOW) are instance uniforms on this
 ## enemy's own pieces, set only when they change.
-## v0.8.0 TG (owner O4, Q3): the Swarmer's lane, the Splitter's and Splitling's disc, the Shield Bearer's bash lane and
+## The Swarmer's lane, the Splitter's and Splitling's disc, the Shield Bearer's bash lane and
 ## the Sniper's line are no longer drawn on the ground; these kinds (TELL_KINDS) read their windup from the body
 ## (AvatarBase "tell"): a crouch and draw-back that deepens with the windup's progress, the accent (eye, seam, visor,
 ## scope) brightening and flashing just before the strike, and the Sniper's muzzle charging up at its barrel's tip (in
 ## the air, never a line on the ground). The facing is the sim's, held through the windup.
-## v0.8.0 P1 (owner O26: "Their arm movements don't communicate attacks properly"): the melee kinds (STRIKE_KINDS)
+## The melee kinds (STRIKE_KINDS)
 ## raise their strike pose by STRIKE_RAISE_BY of the windup's progress and hold it (AvatarBase.strike_raise): the
 ## Swarmer's mandibles gape and its body rears, the Splitter's claws lift high and back, the Shield Bearer draws its
 ## shield back and leans in behind it. At the hit tick (the sim's ACTIVE) the strike snaps out (strike_swing): the
 ## mandibles bite shut as the body lunges, the claws chop down through the front, the shield slams forward.
 
-## v0.8.0 EC: each kind's main plate (body), its second plate or trim (trim), its limbs and frame (grey) and its eye
+## Each kind's main plate (body), its second plate or trim (trim), its limbs and frame (grey) and its eye
 ## (eye) come from EnemyPalettes; the light grey, dark and bone parts stay neutral.
 const GREY_LIGHT := Color("#8A817C")
 const DARK := Color("#24272D")
@@ -44,7 +44,7 @@ const HEIGHTS := {
 	WorldReader.KIND_MINE_LAYER: 0.7,
 	WorldReader.KIND_SNIPER: 1.3,
 }
-## v0.8.0 TG: the kinds whose windup the body tells (no ground mark); the Mender has no attack and the Mine Layer's
+## The kinds whose windup the body tells (no ground mark); the Mender has no attack and the Mine Layer's
 ## mines keep theirs.
 const TELL_KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
@@ -53,16 +53,16 @@ const TELL_KINDS: Array[int] = [
 	WorldReader.KIND_SHIELD_BEARER,
 	WorldReader.KIND_SNIPER,
 ]
-## v0.8.0 P1: the melee kinds whose strike is a raise-and-hold then a snap.
+## The melee kinds whose strike is a raise-and-hold then a snap.
 const STRIKE_KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_SPLITTER,
 	WorldReader.KIND_SPLITLING,
 	WorldReader.KIND_SHIELD_BEARER,
 ]
-## v0.8.0 P1: the Splitter's claw pivot (x, height) and how far out to each side the claws hang (z).
+## The Splitter's claw pivot (x, height) and how far out to each side the claws hang (z).
 const CLAW_PIVOT := Vector3(0.1, 0.6, 0.36)
-## v0.8.0 MI (the owner's models, posed in code): the walk is full at WALK_FULL_MPS (m/s on the ground), a stride
+## The owner's models, posed in code: the walk is full at WALK_FULL_MPS (m/s on the ground), a stride
 ## WALK_HZ a second, the legs swing WALK_SWING (radians); a death lasts DEATH_SECONDS.
 ## Starting values.
 const WALK_FULL_MPS := 2.0
@@ -72,7 +72,7 @@ const DEATH_SECONDS := 0.4
 ## The Sniper's muzzle glow at full charge (emission energy; 0 when cold), and where it sits on the barrel.
 const MUZZLE_ENERGY := 4.0
 const MUZZLE_AT := Vector3(0.92, 0, 0)
-## v0.10.5 W3-V1: the idle bob (radians a second of frame time, metres) and the Swarmer's legs' scuttle (radians a
+## The idle bob (radians a second of frame time, metres) and the Swarmer's legs' scuttle (radians a
 ## second, each leg SWARMER_LEG_PHASE further on, swinging SWARMER_LEG_SWING): named so the VAT bake (VatBake) reads the
 ## same numbers the pose uses. Unchanged values.
 const BOB_RATE := 7.0
@@ -80,16 +80,16 @@ const BOB_M := 0.015
 const SWARMER_LEG_RATE := 22.0
 const SWARMER_LEG_PHASE := 1.7
 const SWARMER_LEG_SWING := 0.25
-## v0.10.5 W3-V4b: the Sniper's barrel angle spans [SNIPER_AIM_MIN, SNIPER_AIM_MIN + SNIPER_AIM_SPAN] (radians: the
+## The Sniper's barrel angle spans [SNIPER_AIM_MIN, SNIPER_AIM_MIN + SNIPER_AIM_SPAN] (radians: the
 ## windup's -0.04 and the crouch's -0.12 down, the strike's +0.12 up); its VAT grid runs over that span.
 const SNIPER_AIM_MIN := -0.16
 const SNIPER_AIM_SPAN := 0.28
-## v0.10.5 W3-V4b: the owner's models whose legs walk (the Mender floats).
+## The owner's models whose legs walk (the Mender floats).
 const MODEL_LEG_KINDS: Array[int] = [
 	WorldReader.KIND_SPLITTER, WorldReader.KIND_SPLITLING, WorldReader.KIND_SHIELD_BEARER
 ]
 
-## v0.8.0 HR: the code bodies' meshes, one per shape for every enemy (keyed by their vertices), and the boxes by size.
+## The code bodies' meshes, one per shape for every enemy (keyed by their vertices), and the boxes by size.
 static var _meshes := {}
 static var _boxes := {}
 
@@ -99,13 +99,13 @@ var height := 1.0
 ## The pivot every part hangs from (the rise-in and the lean), and the kind's moving parts, by name.
 var body: Node3D
 var parts := {}
-## v0.11.0 O13c: a signature's tell drive (CanyonShoreBodies.read: the beetle's heat, the priest's pulse, 0..1) and
+## A signature's tell drive (CanyonShoreBodies.read: the beetle's heat, the priest's pulse, 0..1) and
 ## whether the turtle's shell stands.
 var sig_drive := 0.0
 var sig_on := true
-## v0.8.0 MI: the owner's model (null: the code-made body), scaled to the kind's height.
+## The owner's model (null: the code-made body), scaled to the kind's height.
 var model: Node3D
-## v0.10.5 W3-V1 (owner, 2026-11-06, the enemy VAT pilot): true (set before setup(), ActorViews from
+## True (set before setup(), ActorViews from
 ## ViewPrefs.enemy_vat): the body is drawn by a VatCrowd from baked poses, not by nodes. setup() builds no piece and
 ## _pose() writes no node; the drives the crowd reads (windup_pose, strike_pose, crouch_amount, anim_time, vat_lift,
 ## glow_energy) are the very numbers the nodes' pose is made of. Only VatCrowd.supports() kinds.
@@ -113,12 +113,12 @@ var vat := false
 
 ## The glowing accent (eye, seam, crystal, scope): shared (EnemyLooks.accent), its energy this enemy's GLOW.
 var _glow_mat: ShaderMaterial
-## v0.8.0 TG: the Sniper's muzzle (its GLOW from 0).
+## The Sniper's muzzle (its GLOW from 0).
 var _muzzle_mat: ShaderMaterial
-## v0.8.0 EC: the eye slit the Splitter / Splitling and the Mender get when the palette asks for one on every kind
+## The eye slit the Splitter / Splitling and the Mender get when the palette asks for one on every kind
 ## (their glow is the seam and the heal crystal), steady.
 var _eye_mat: ShaderMaterial
-## v0.8.0 HR: this enemy's accent pieces (the glow) and muzzle, and the energies last set on them (the body plates
+## This enemy's accent pieces (the glow) and muzzle, and the energies last set on them (the body plates
 ## and their flash: AvatarBase's _hit_pieces).
 var _glow_pieces: Array[GeometryInstance3D] = []
 var _muzzle_piece: GeometryInstance3D
@@ -132,7 +132,7 @@ var _healing := false
 var _rise := 0.0
 var _wind := 0.0
 var _strike := 0.0
-## v0.8.0 MI: each part's rest pivot, the walk's phase and pace (0..1, from how fast the node moves on screen), and
+## Each part's rest pivot, the walk's phase and pace (0..1, from how fast the node moves on screen), and
 ## the death (seconds in; -1: alive).
 var _rest := {}
 var _walk := 0.0
@@ -141,16 +141,16 @@ var _last_at := Vector3.INF
 var _die_t := -1.0
 var _model_scale := 1.0
 var _vat_lift := 0.0
-## v0.10.5 W3-V1: the crouch pose_at() poses at (< 0: none, the windup's own).
+## The crouch pose_at() poses at (< 0: none, the windup's own).
 var _bake_crouch := -1.0
-## v0.10.5 W3-V4b: the body is the owner's model (set by setup() even when `vat` builds no node).
+## The body is the owner's model (set by setup() even when `vat` builds no node).
 var _is_model := false
-## v0.10.5 W3-V4b (the VAT kinds past the Swarmer): the body's whole transform in the avatar's space (its pivot's
+## The VAT kinds past the Swarmer: the body's whole transform in the avatar's space (its pivot's
 ## place, lean and scale and, on a model, the model's sway and death shrink past its rest scale) and the drives the
 ## crowd's shader poses the parts at (vat_drives), both from the last _pose().
 var _vat_body := Transform3D.IDENTITY
 var _vat_d := Vector4.ZERO
-## v0.11.0 O9: the Ice Crab's slide (0..1 through it; -1: none) and whether it was walking (a stop starts one).
+## The Ice Crab's slide (0..1 through it; -1: none) and whether it was walking (a stop starts one).
 var _slide := -1.0
 var _slide_armed := false
 
@@ -171,10 +171,10 @@ static func is_horde_kind(p_kind: int) -> bool:
 		or HEIGHTS.has(p_kind)
 		or CritterBodies.is_critter(p_kind)
 		or CanyonShoreBodies.is_kind(p_kind)
-	)  # v0.11.0 O13c: R5-R8  # v0.11.0 O9: the horde critters (CritterBodies)
+	)  # R5-R8 # v0.11.0 O9: the horde critters (CritterBodies)
 
 
-## v0.8.0 MI: the owner's model a kind draws with (EnemyModels; the Splitling the Splitter's, smaller), or &"".
+## The owner's model a kind draws with (EnemyModels; the Splitling the Splitter's, smaller), or &"".
 static func model_id(p_kind: int) -> StringName:
 	match p_kind:
 		WorldReader.KIND_SPLITTER, WorldReader.KIND_SPLITLING:
@@ -188,12 +188,12 @@ static func model_id(p_kind: int) -> StringName:
 	return &""
 
 
-## v0.8.0 MI: true when the body is the owner's model.
+## True when the body is the owner's model.
 func has_model() -> bool:
 	return _is_model
 
 
-## v0.8.0 MI: starts the death (the owner's model only): the body sinks and tips over DEATH_SECONDS, the Splitter's
+## Starts the death (the owner's model only): the body sinks and tips over DEATH_SECONDS, the Splitter's
 ## halves fly apart (its two Splitlings are already in the sim). False for the code-made body (it goes at once).
 func die() -> bool:
 	if not _is_model:
@@ -210,9 +210,9 @@ func setup(p_kind: int) -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	kind = p_kind
 	height = height_of(kind)
-	if vat:  # v0.10.5 W3-V1: no nodes; the crowd draws the body
+	if vat:  # No nodes; the crowd draws the body
 		var m := EnemyModels.get_model(model_id(kind))
-		_is_model = not m.is_empty()  # v0.10.5 W3-V4b: the owner's model's numbers, no node
+		_is_model = not m.is_empty()  # The owner's model's numbers, no node
 		if _is_model:
 			_model_scale = float(m["scale"])
 		_pose()
@@ -225,7 +225,7 @@ func setup(p_kind: int) -> void:
 		glow = ThemePalette.color(&"telegraph_hostile")
 	elif kind == WorldReader.KIND_MENDER:
 		glow = MEND
-	var owner_model := EnemyModels.get_model(model_id(kind))  # v0.8.0 MI: the owner's model first
+	var owner_model := EnemyModels.get_model(model_id(kind))  # The owner's model first
 	_glow_mat = EnemyLooks.accent(glow, glow, 1.5)
 	if not owner_model.is_empty():
 		_build_model(owner_model)
@@ -255,9 +255,9 @@ func setup(p_kind: int) -> void:
 	_pose()
 
 
-## v0.10.5 W3-Q6: the values straight to _apply (no Dictionary per enemy per sync).
+## The values straight to _apply (no Dictionary per enemy per sync).
 func sync(reader: WorldReader, i: int) -> void:
-	if CanyonShoreBodies.is_kind(kind):  # v0.11.0 O13c: its tell's drive (heat, pulse, shell)
+	if CanyonShoreBodies.is_kind(kind):  # Its tell's drive (heat, pulse, shell)
 		CanyonShoreBodies.read(self, reader, i)
 	_apply(
 		reader.tick(),
@@ -282,7 +282,7 @@ func _apply(tick: int, state: int, healing: bool, windup: float) -> void:
 		_state = state
 		_state_tick = tick
 	_ticks_in = tick - _state_tick
-	strike_note(state)  # v0.8.0 P1: the hit tick starts the strike
+	strike_note(state)  # The hit tick starts the strike
 	if _fresh:
 		_fresh = false
 		_rise = 0.0 if state == WorldReader.STATE_SPAWN else 1.0
@@ -296,7 +296,7 @@ func advance(delta: float) -> void:
 	_t += dt
 	if _die_t >= 0.0:
 		_die_t += dt
-	# v0.8.0 MI: the walk's pace from how fast the body moves (v0.11.0 O9: the critters' too: the crab's slide)
+	# The walk's pace from how fast the body moves (the critters' too: the crab's slide)
 	if (_is_model or CritterBodies.is_critter(kind)) and is_inside_tree():
 		var at := global_position
 		var speed := (
@@ -313,7 +313,7 @@ func advance(delta: float) -> void:
 	var winding := _state == WorldReader.STATE_WINDUP
 	strike_advance(dt)
 	if STRIKE_KINDS.has(kind):
-		# v0.8.0 P1: raised from the windup's progress and held; the strike snaps out at the hit tick.
+		# Raised from the windup's progress and held; the strike snaps out at the hit tick.
 		_wind = strike_raised(winding, _tell_p, move_toward(_wind, 0.0, dt * 5.0))
 		_strike = strike_swing()
 	else:
@@ -330,7 +330,7 @@ func windup_pose() -> float:
 	return _wind
 
 
-## v0.8.0 P1: 0..1 how far its strike is out (tests).
+## 0..1 how far its strike is out (tests).
 func strike_pose() -> float:
 	return _strike
 
@@ -340,7 +340,7 @@ func glow_energy() -> float:
 	return _glow_e
 
 
-## v0.8.0 TG: 0..1 how deep the windup crouch is (0 for a kind without a tell or outside the windup).
+## 0..1 how deep the windup crouch is (0 for a kind without a tell or outside the windup).
 func crouch_amount() -> float:
 	if _bake_crouch >= 0.0:
 		return _bake_crouch
@@ -349,23 +349,23 @@ func crouch_amount() -> float:
 	return tell_crouch(_tell_p)
 
 
-## v0.8.0 TG: the Sniper's muzzle glow (0 when cold; always 0 for the other kinds).
+## The Sniper's muzzle glow (0 when cold; always 0 for the other kinds).
 func muzzle_energy() -> float:
 	return _muzzle_e if kind == WorldReader.KIND_SNIPER else 0.0
 
 
-## v0.10.5 W3-V1: the frame-time clock the pose runs on (seconds; the VAT crowd reads the legs' phase from it).
+## The frame-time clock the pose runs on (seconds; the VAT crowd reads the legs' phase from it).
 func anim_time() -> float:
 	return _t
 
 
-## v0.10.5 W3-V1: how far the whole body is lifted now (m, the idle bob and the rise-in's sink): the part of the
+## How far the whole body is lifted now (m, the idle bob and the rise-in's sink): the part of the
 ## body's pose the VAT crowd moves the instance by (VatBake bakes the rest at no bob, fully risen).
 func vat_lift() -> float:
 	return _vat_lift
 
 
-## v0.10.5 W3-V1 (VatBake): poses the body straight from its drives (the windup raise `wind`, the strike `strike`,
+## VatBake: poses the body straight from its drives (the windup raise `wind`, the strike `strike`,
 ## the crouch, the clock `t`, the rise-in `rise`), as advance() would have left them, so the bake runs this very pose
 ## code over a grid of them. Tools and tests only; the game never calls it.
 func pose_at(wind: float, strike: float, crouch: float, t: float, rise: float) -> void:
@@ -385,12 +385,12 @@ func _pose() -> void:
 	var telling := TELL_KINDS.has(kind) and _state == WorldReader.STATE_WINDUP
 	var tell := tell_glow(_tell_p, _t, calm) if telling else 1.0
 	var energy := (1.5 + _wind * 3.0) * tell + _strike * 2.0
-	if vat and kind == WorldReader.KIND_SWARMER:  # v0.10.5 W3-V1: the crowd draws the body; its numbers only
+	if vat and kind == WorldReader.KIND_SWARMER:  # The crowd draws the body; its numbers only
 		_vat_lift = bob - (1.0 - _rise) * height
 		_set_glow(energy * lerpf(0.2, 1.0, _rise))
 		return
 	# The crouch sinks the body by a share of its height and draws it back from the way it will strike.
-	# (v0.10.5 W3-V4b: the body's place `bp` and lean `brz` are reckoned first and set once, _place_body: on its
+	# (the body's place `bp` and lean `brz` are reckoned first and set once, _place_body: on its
 	# node, or as the VAT crowd's instance transform.)
 	var bp := Vector3(
 		-_wind * 0.06 - crouch * 0.08 * height + _strike * 0.12,
@@ -398,18 +398,18 @@ func _pose() -> void:
 		0
 	)
 	var brz := crouch * 0.12
-	if CritterBodies.is_critter(kind):  # v0.11.0 O9: the body's own move, then the gait's parts
+	if CritterBodies.is_critter(kind):  # The body's own move, then the gait's parts
 		var mv := CritterBodies.body_move(kind, _t, _slide, calm)
 		_place_body(bp + (mv[0] as Vector3), brz + float(mv[1]))
 		_pose_parts(Vector4(0, 0, 0, CritterBodies.phase_at(kind, _t)))
 		_set_glow(energy * lerpf(0.2, 1.0, _rise))
 		return
-	if _is_model:  # v0.8.0 MI: the owner's model's parts
+	if _is_model:  # The owner's model's parts
 		_pose_model(energy, calm, bp, brz)
 		return
 	match kind:
 		WorldReader.KIND_SWARMER:
-			# v0.8.0 P1: rears up with the mandibles gaping, then lunges and bites them shut.
+			# Rears up with the mandibles gaping, then lunges and bites them shut.
 			brz += _wind * 0.25 - _strike * 0.2
 			bp.x += _strike * 0.08
 			for k in 2:
@@ -424,13 +424,13 @@ func _pose() -> void:
 			var gap := 0.03 + _wind * 0.08 + sin(_t * 3.0) * 0.01
 			(parts["left"] as Node3D).position.z = -gap
 			(parts["right"] as Node3D).position.z = gap
-			# v0.8.0 P1: the claws lift high and back over the body, then chop down through the front.
+			# The claws lift high and back over the body, then chop down through the front.
 			var claws := parts["claws"] as Node3D
 			claws.rotation.z = _wind * 1.1 - _strike * 0.85
 			claws.position.x = CLAW_PIVOT.x - _wind * 0.06 + _strike * 0.14
 			brz += _wind * 0.1 - _strike * 0.16
 		WorldReader.KIND_SHIELD_BEARER:
-			# v0.8.0 P1: the shield draws back and tips up, the body leans in behind it; then the shield slams out.
+			# The shield draws back and tips up, the body leans in behind it; then the shield slams out.
 			var shield := parts["shield"] as Node3D
 			shield.position.x = 0.5 - _wind * 0.24 + _strike * 0.38
 			shield.rotation.z = _wind * 0.22 - _strike * 0.12
@@ -440,13 +440,13 @@ func _pose() -> void:
 			(parts["cross"] as Node3D).rotation.y = _t * 2.0
 			energy = 1.5 + (2.5 + sin(_t * 9.0) if _healing else 0.0)
 		WorldReader.KIND_MINE_LAYER:
-			# v0.10.5 W3-V4b: the drives (the windup, the mine shown) through _pose_parts, as the VAT bake poses it.
+			# The drives (the windup, the mine shown) through _pose_parts, as the VAT bake poses it.
 			_pose_parts(Vector4(_wind, 1.0 if _strike < 0.5 else 0.0, 0.0, 0.0))
 		WorldReader.KIND_SNIPER:
 			var charge := smoothstep(0.0, 1.0, _tell_p) if telling else 0.0
 			var muzzle := MUZZLE_ENERGY * charge * tell / (1.0 + TELL_GLOW_CLIMB + TELL_GLOW_FLASH)
 			_set_muzzle(maxf(muzzle, _strike * MUZZLE_ENERGY))
-			# v0.10.5 W3-V4b: the drives (the barrel's angle, the muzzle's size) through _pose_parts.
+			# The drives (the barrel's angle, the muzzle's size) through _pose_parts.
 			_pose_parts(
 				Vector4(
 					-_wind * 0.04 + _strike * 0.12 - crouch * 0.12,
@@ -461,7 +461,7 @@ func _pose() -> void:
 	_set_glow(energy * lerpf(0.2, 1.0, _rise))
 
 
-## v0.10.5 W3-V4b: sets the body's place `bp` and lean `brz` and, on the owner's model, its sway `mrx` and death
+## Sets the body's place `bp` and lean `brz` and, on the owner's model, its sway `mrx` and death
 ## shrink `ms` (x its rest scale) on the nodes; a VAT avatar keeps them as one transform for its crowd (vat_offset).
 func _place_body(bp: Vector3, brz: float, mrx := 0.0, ms := 1.0) -> void:
 	if not vat:
@@ -486,7 +486,7 @@ func _place_body(bp: Vector3, brz: float, mrx := 0.0, ms := 1.0) -> void:
 	_vat_body = xf
 
 
-## v0.10.5 W3-V4b: the moving parts of the kinds past the Swarmer, posed from their drives `d` (natural units):
+## The moving parts of the kinds past the Swarmer, posed from their drives `d` (natural units):
 ## - the owner's models: the windup raise x, the strike y, the death z (the Splitter's), the legs' swing w (-1..1, x
 ##   WALK_SWING); the Mender's: the crystal raised x (0 / 1) and the cross's turn w (radians);
 ## - the Mine Layer: the windup x (the hopper lowers), the mine shown y (0 / 1);
@@ -539,7 +539,7 @@ func _pose_parts(d: Vector4) -> void:
 			(parts["muzzle"] as Node3D).scale = Vector3.ONE * d.y
 
 
-## v0.9.5 PF5: the hit flash and the accent glow are each written to a list of pieces (RigMerge swaps merged
+## The hit flash and the accent glow are each written to a list of pieces (RigMerge swaps merged
 ## pieces in them).
 ## The Sniper's muzzle has a glow value of its own (_set_muzzle), so it stays a node of its own.
 func rig_spec() -> Dictionary:
@@ -549,7 +549,7 @@ func rig_spec() -> Dictionary:
 	return {"keep": keep, "sets": [_hit_pieces, _glow_pieces]}
 
 
-## v0.8.0 HR: the accent's energy on this enemy's accent pieces, set only when it changes.
+## The accent's energy on this enemy's accent pieces, set only when it changes.
 func _set_glow(e: float) -> void:
 	if e == _glow_e:
 		return
@@ -562,7 +562,7 @@ func _set_muzzle(e: float) -> void:
 	if e == _muzzle_e:
 		return
 	_muzzle_e = e
-	if _muzzle_piece != null:  # (v0.10.5 W3-V4b: a VAT Sniper has none; the crowd reads muzzle_energy)
+	if _muzzle_piece != null:  # (a VAT Sniper has none; the crowd reads muzzle_energy)
 		_muzzle_piece.set_instance_shader_parameter(EnemyLooks.GLOW, e)
 
 
@@ -613,16 +613,16 @@ func _build_model(m: Dictionary) -> void:
 		_rest[String(pname)] = pivot.position
 
 
-## v0.8.0 HR: the shared body material for a plate of colour `c` (times `tex`, the owner's colour map, when given),
+## The shared body material for a plate of colour `c` (times `tex`, the owner's colour map, when given),
 ## AvatarBase.shared_body: the biome's cast and the role glow picked in.
 func _body_material(c: Color, tex: Texture2D) -> ShaderMaterial:
 	return shared_body(kind, c, tex)
 
 
-## v0.8.0 MI: the model's parts in this frame's pose (model units, about a metre each; +X the front, each part turning
+## The model's parts in this frame's pose (model units, about a metre each; +X the front, each part turning
 ## about its own pivot). What drives each move is the same as the code body's: the windup's raise-and-hold (_wind),
 ## the strike's snap (_strike), the Mender's heal, the walk's pace (_walk) and the death (_die_t).
-## (v0.10.5 W3-V4b: the body's moves are reckoned into `bp` / `brz` and the model's sway and shrink, set by
+## (the body's moves are reckoned into `bp` / `brz` and the model's sway and shrink, set by
 ## _place_body; the parts' through _pose_parts: the same arithmetic as before, split so the VAT bake poses the parts.)
 func _pose_model(energy: float, calm: bool, bp: Vector3, brz: float) -> void:
 	var d := clampf(_die_t / DEATH_SECONDS, 0.0, 1.0) if _die_t >= 0.0 else 0.0
@@ -748,7 +748,7 @@ func _build_splitter() -> void:
 			_eye(h, Vector3(0.012, 0.035, 0.1), Vector3(0.105, 0.82, 0))
 		parts[name] = h
 	_glow(body, Vector3(0.5, 0.62, 0.02), Vector3(0.02, 0.44, 0))
-	# v0.8.0 P1 (O26): the claws hang from the shoulders, out to the sides past the body, so a raised claw and its
+	# The claws hang from the shoulders, out to the sides past the body, so a raised claw and its
 	# chop read from the iso camera (they were tucked into the body's front).
 	var claws := Node3D.new()
 	claws.position = Vector3(CLAW_PIVOT.x, CLAW_PIVOT.y, 0)
@@ -914,7 +914,7 @@ func _build_sniper() -> void:
 	)
 	_glow(barrel, Vector3(0.012, 0.05, 0.05), Vector3(0.115, 0.1, 0))
 	parts["barrel"] = barrel
-	# v0.8.0 TG: the muzzle that charges up through the windup (a small hot gem at the barrel's tip, in the air).
+	# The muzzle that charges up through the windup (a small hot gem at the barrel's tip, in the air).
 	_muzzle_mat = EnemyLooks.accent(_col(&"eye"), _col(&"eye").lightened(0.3), 0.0)
 	var muzzle := MeshInstance3D.new()
 	muzzle.name = "Muzzle"
@@ -941,7 +941,7 @@ func _glow(parent: Node3D, size: Vector3, at: Vector3) -> void:
 	_glow_pieces.append(mi)
 
 
-## v0.8.0 EC: a steady eye slit on the eye material (see _eye_mat).
+## A steady eye slit on the eye material (see _eye_mat).
 func _eye(parent: Node3D, size: Vector3, at: Vector3) -> void:
 	var mi := MeshInstance3D.new()
 	mi.name = "Eye"
@@ -952,16 +952,16 @@ func _eye(parent: Node3D, size: Vector3, at: Vector3) -> void:
 	parent.add_child(mi)
 
 
-## v0.8.0 EC: this kind's colour in `slot` under the active palette.
+## This kind's colour in `slot` under the active palette.
 func _col(slot: StringName) -> Color:
-	if CritterBodies.is_critter(kind):  # v0.11.0 O9: a critter wears its biome's colours, not a role's
+	if CritterBodies.is_critter(kind):  # A critter wears its biome's colours, not a role's
 		return CritterBodies.color(kind, slot)
-	if CanyonShoreBodies.is_kind(kind):  # v0.11.0 O13c: the prompts' role colours
+	if CanyonShoreBodies.is_kind(kind):  # The prompts' role colours
 		return CanyonShoreBodies.color(kind, slot)
 	return EnemyPalettes.color(kind, slot)
 
 
-## A flashable body piece. v0.8.0 HR: the shared mesh and material (it was its own material per piece).
+## A flashable body piece. the shared mesh and material (it was its own material per piece).
 func _piece(parent: Node3D, mesh: Mesh, at: Vector3, c: Color) -> void:
 	var piece := MeshInstance3D.new()
 	piece.mesh = _shared_mesh(mesh)
@@ -971,7 +971,7 @@ func _piece(parent: Node3D, mesh: Mesh, at: Vector3, c: Color) -> void:
 	_hit_pieces.append(piece)
 
 
-## v0.8.0 HR: the one mesh every enemy draws for `mesh`'s shape (the builders make a new one per call).
+## The one mesh every enemy draws for `mesh`'s shape (the builders make a new one per call).
 static func _shared_mesh(mesh: Mesh) -> Mesh:
 	var verts: PackedVector3Array = mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
 	var key := (
@@ -982,7 +982,7 @@ static func _shared_mesh(mesh: Mesh) -> Mesh:
 	return _meshes[key]
 
 
-## v0.8.0 HR: the one box of `size` every enemy draws (the accents and the Mender's cross).
+## The one box of `size` every enemy draws (the accents and the Mender's cross).
 static func _box(size: Vector3) -> BoxMesh:
 	var key := "%.4f/%.4f/%.4f" % [size.x, size.y, size.z]
 	if not _boxes.has(key):
@@ -992,7 +992,7 @@ static func _box(size: Vector3) -> BoxMesh:
 	return _boxes[key]
 
 
-## v0.11.0 O9 (ENEMIES.md H4): the Ice Crab slides a little when it stops (a full walk, then nearly none, starts the
+## ENEMIES.md H4: the Ice Crab slides a little when it stops (a full walk, then nearly none, starts the
 ## slide; CritterBodies.body_move draws it). The other kinds never slide.
 func _slide_step(dt: float) -> void:
 	if kind != WorldReader.KIND_ICE_CRAB:

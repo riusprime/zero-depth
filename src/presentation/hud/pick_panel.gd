@@ -9,18 +9,18 @@ extends ModalPanel
 ## - Pad: d-pad or left stick moves the focus, A (Cross) takes it, B (Circle) leaves.
 ## Space (dash) never confirms: the panel doesn't use ui_accept.
 ## Layouts (G2 mockups for the owner): ROW_CENTRE ships as the default.
-## v0.8.0 N8 (owner O62, D48): the cards are dealt (CardDeal): face down from the bottom of the screen into a fan,
+## The cards are dealt (CardDeal): face down from the bottom of the screen into a fan,
 ## flipped one by one (the width to 0, the face swapped halfway); an Epic or Legendary card waits for last with a
 ## glowing back while the background darkens, and flips with a punch, a flash and rays behind it; a Legendary card
 ## keeps a holographic shine. The hovered card tilts toward the cursor (a focused one by key or pad: a fixed tilt)
 ## and sinks a little, its numbers counting up from the old value. On a pick its icon flies to its HUD slot
-## (card_taken → Hud's CardFly) and the cards not picked burn (no discard button: D48; v0.9.0 AS: and the card a
+## (card_taken → Hud's CardFly) and the cards not picked burn (no discard button: D48; and the card a
 ## picked Form, Pattern, Secondary or Element card replaces burns on its slot line, PickSlot); a chest deals its one
-## card, already taken (N7), and any answer closes it. A press during the deal ends the deal at once and still counts
+## card, already taken, and any answer closes it. A press during the deal ends the deal at once and still counts
 ## (no input is lost or held back). Reduced motion: no deal, flip or tilt; the cards fade in face up, tier colour and
 ## words kept; on a pick the panel fades. All of it only draws: the sim decides (EI-07).
 
-## v0.8.0 N8: the picked card (its code) leaves its socket at `from` (global px): the HUD flies its icon to its slot.
+## The picked card (its code) leaves its socket at `from` (global px): the HUD flies its icon to its slot.
 signal card_taken(code: int, from: Rect2)
 
 enum Layout { ROW_CENTRE, ROW_LOW, COLUMN_RIGHT }
@@ -28,34 +28,34 @@ enum Layout { ROW_CENTRE, ROW_LOW, COLUMN_RIGHT }
 ## Key repeats (PanelInput.Echo): a held key repeats (the sent latch stops a second answer).
 const ECHO := PanelInput.Echo.ACT
 const SLOTS := 3
-## v0.8.0 N8: the background's dim at rest and how much darker the rare wait takes it; the outro (burn, fly) length.
+## The background's dim at rest and how much darker the rare wait takes it; the outro (burn, fly) length.
 const DIM := 0.45
 const DIM_WAIT := 0.32
 const OUTRO_S := 0.75
 const OUTRO_REDUCED_S := 0.15
 ## The fixed tilt of a card focused by key or pad (CardFx.set_hover).
 const FOCUS_TILT := Vector2(0.35, -0.2)
-## v0.8.0 RR (owner O33): the tier words in order (Offers.info's rarity: common, rare, epic, legendary).
+## The tier words in order (Offers.info's rarity: common, rare, epic, legendary).
 const RARITY_KEYS: Array[String] = [
 	"RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC", "RARITY_LEGENDARY"
 ]
 
 var layout := Layout.ROW_CENTRE
-## v0.8.0 N8: the deal's timeline (CardDeal).
+## The deal's timeline (CardDeal).
 var deal := CardDeal.new()
 var _dim := ColorRect.new()
-## v0.10.5 W3-O16: the Astral heading (AstralChrome.Heading), a chest price's shard and the hint line.
+## The Astral heading (AstralChrome.Heading), a chest price's shard and the hint line.
 var _title := AstralChrome.Heading.new(32)
 var _price_icon := ShardIcon.new(28.0, true)
 var _hint := AstralChrome.Hint.new(200.0, 16)
-## v0.8.0 N8: the high cards' light rays, on one layer under every card.
+## The high cards' light rays, on one layer under every card.
 var _rays := Control.new()
 var _slots: Array[PickSlot] = []
 var _count := 0
 var _reward := -1
-var _boss := false  # v0.8.0 RR: the open choice is the boss's altar
+var _boss := false  # The open choice is the boss's altar
 var _swap_seen := false
-## v0.8.0 N8: the cards' codes, the answer sent, the dealt chest, the outro's clock (< 0: none).
+## The cards' codes, the answer sent, the dealt chest, the outro's clock (< 0: none).
 var _codes := PackedInt32Array()
 var _answer := InputFrame.PICK_NONE
 var _dealt := false
@@ -73,7 +73,7 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dim_base = 0.18 if layout == Layout.ROW_LOW else DIM
 	_add_dim(_dim, _dim_base)
-	_dim.color = Color(AstralChrome.INK, _dim_base)  # v0.10.5 W3-O16: Astral's ink, not black
+	_dim.color = Color(AstralChrome.INK, _dim_base)  # Astral's ink, not black
 	_rays.name = "Rays"
 	_rays.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_rays.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -82,7 +82,7 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_theme_constant_override("separation", 16)
-	# v0.10.5 W3-O16 (Astral): the sigil and the letter-spaced title (a chest's price with Astral's shard after it),
+	# Astral: the sigil and the letter-spaced title (a chest's price with Astral's shard after it),
 	# a rule under it, the cards, and the hint between fading hairlines.
 	var head := HBoxContainer.new()
 	head.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -122,7 +122,7 @@ func sync(reader: WorldReader) -> void:
 		return
 	var r := reader.choice_reward()
 	var rid := reader.reward_id(r)
-	if reader.swapping():  # v0.6.0 MX2: the Swap choice (SwapPanel) sits over the cards
+	if reader.swapping():  # The Swap choice (SwapPanel) sits over the cards
 		_swap_seen = true
 		return
 	if _swap_seen and _open and rid == _reward:  # a skipped swap: back to the cards
@@ -139,7 +139,7 @@ func sync(reader: WorldReader) -> void:
 	_end_outro()
 	var items := reader.choice_items()
 	_codes = items
-	var legendary := reader.reward_is_legendary(r)  # v0.5.5 AR (X1b)
+	var legendary := reader.reward_is_legendary(r)  # v0.5.5 AR
 	_boss = legendary
 	_count = items.size()
 	for k in SLOTS:
@@ -147,13 +147,13 @@ func sync(reader: WorldReader) -> void:
 		s.visible = k < _count
 		if k >= _count:
 			continue
-		var face := card_face(self, reader, items[k])  # v0.4.0 BS: a mod, an ability or a stat card
+		var face := card_face(self, reader, items[k])  # A mod, an ability or a stat card
 		if legendary:
 			face = legendary_face(self, face)
-		if reader.choice_jackpot(k):  # v0.8.0 FL: a jackpot card says so
+		if reader.choice_jackpot(k):  # A jackpot card says so
 			face = jackpot_face(self, face)
 		s.show_card(face)
-		var curse := reader.choice_curse(k)  # v0.5.0 EV: a cursed chest card says so
+		var curse := reader.choice_curse(k)  # A cursed chest card says so
 		s.show_curse(CurseLook.down_line(self, reader, curse) if curse >= 0 else "")  # v0.6.0 CU
 	var chest := reader.reward_kind(r) == WorldReader.REWARD_CHEST
 	var title := (
@@ -161,14 +161,14 @@ func sync(reader: WorldReader) -> void:
 	)
 	if reader.reward_is_epic(r):  # v0.5.0 RT
 		title = tr("PICK_TITLE_EPIC_ALTAR")
-	if legendary:  # v0.5.5 AR (X1b): the boss's reward; v0.8.0 RR: says when it holds a Legendary card
+	if legendary:  # The boss's reward; says when it holds a Legendary card
 		title = boss_title(self, _slots.slice(0, _count), reader.legendary_picks_left())
-	var drop := reader.reward_drop_kind(r)  # v0.6.0 CU: a stolen core, Marked's card
+	var drop := reader.reward_drop_kind(r)  # A stolen core, Marked's card
 	if drop == WorldReader.DROP_CORE or drop == WorldReader.DROP_BOSS_CORE:
 		title = tr("PICK_TITLE_CORE")
 	elif drop == WorldReader.DROP_ELITE_CARD:
 		title = tr("PICK_TITLE_ELITE_DROP")
-	var dealt := reader.choice_dealt()  # v0.8.0 N7 (owner O61): a chest deals its one card, no choice
+	var dealt := reader.choice_dealt()  # A chest deals its one card, no choice
 	if dealt:
 		title = tr("PICK_TITLE_CHEST_DEALT")
 	_price_icon.visible = chest and not dealt
@@ -193,11 +193,11 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 		"color": AbilityIcons.color(id),
 		"tier": int(info["rarity"]),
 		"tier_text": "",
-		"type": int(info["type"]),  # v0.5.5 A4: the colour's family falls back on the card's type
-		"wand": bool(info.get("wand", false)),  # v0.6.5 WN5b: a wand card (levels 1–5)
-		"level_text": "",  # v0.7.5 SM: the level badge ("Lv 1", "Lv 2 → 3"); "" for a card with no level
-		"held_level": 0,  # v0.7.5 SM: the level held now (0: not held)
-		"gain": reader.card_forecast(code),  # v0.8.0 N8 (O62): what gets better, old → new (the sim's forecast)
+		"type": int(info["type"]),  # The colour's family falls back on the card's type
+		"wand": bool(info.get("wand", false)),  # A wand card (levels 1–5)
+		"level_text": "",  # The level badge ("Lv 1", "Lv 2 → 3"); "" for a card with no level
+		"held_level": 0,  # The level held now (0: not held)
+		"gain": reader.card_forecast(code),  # What gets better, old → new (the sim's forecast)
 	}
 	match int(info["type"]):
 		WorldReader.CARD_ABILITY:
@@ -211,17 +211,17 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			face["tier_text"] = (
 				ci.tr(new_key) if lvl <= 1 else ci.tr("UI_CARD_ABILITY_LEVEL") % lvl
 			)
-			# v0.8.0 N8 (O62, "write the rarity out"): an ability card names its rarity too
+			# O62, "write the rarity out": an ability card names its rarity too
 			face["tier_text"] += " · " + ci.tr(RARITY_KEYS[clampi(int(info["rarity"]), 0, 3)])
 		WorldReader.CARD_STAT:
 			var args := [GambleIcons.percent(int(info["amount"]))]
-			if int(info.get("side", 0)) > 0:  # v0.5.0 CP: a rule card's second number
+			if int(info.get("side", 0)) > 0:  # A rule card's second number
 				args.append(GambleIcons.percent(int(info["side"])))
 			face["sentence"] = ci.tr(info["desc_key"]) % args
 			face["tier_text"] = ci.tr(RARITY_KEYS[clampi(face["tier"], 0, 3)])
-			if face["tier"] == WorldReader.RARITY_LEGENDARY:  # v0.5.5 AR: tier 3 is the ability's; legendary has its own
+			if face["tier"] == WorldReader.RARITY_LEGENDARY:  # Tier 3 is the ability's; legendary has its own
 				face["tier"] = CardFrames.LEGENDARY_TIER
-		WorldReader.CARD_STARBOUND:  # v0.10.5 W3-P10b: the gold Starbound card (AstralCardArt), its stacks as Lv
+		WorldReader.CARD_STARBOUND:  # The gold Starbound card (AstralCardArt), its stacks as Lv
 			face["tier"] = 1  # its rarity line in the moon-blue (AstralCardArt.RARITY), no high-card wait
 			face["color"] = AstralCardArt.STARBOUND_BLUE
 			face["tier_text"] = ci.tr("STARBOUND_KIND")
@@ -231,29 +231,29 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			face["level_text"] = ""
 			if face["held_level"] > 0:
 				face["tier_text"] = "%s ×%d" % [face["tier_text"], face["held_level"]]
-		WorldReader.CARD_SPELL:  # v0.11.0 O10: a spell card, its element's colour, "Spell · Lv N", the Replace line
+		WorldReader.CARD_SPELL:  # A spell card, its element's colour, "Spell · Lv N", the Replace line
 			spell_face(ci, info, face)
-		WorldReader.CARD_CURSE:  # v0.6.0 CU: a trade-off curse card: its name, its upside, rare
+		WorldReader.CARD_CURSE:  # A trade-off curse card: its name, its upside, rare
 			face["sentence"] = CurseLook.up_sentence(ci, reader, int(info["curse"]))
 			face["color"] = CurseLook.COLOR
 			face["tier_text"] = "%s · %s" % [ci.tr("UI_CARD_CURSE"), ci.tr("RARITY_RARE")]
 		_:
 			face["color"] = ItemLooks.color_of_id(id)
-			# v0.8.0 RR (owner O33): the four tiers' words; a Legendary card wears the legendary gold
+			# The four tiers' words; a Legendary card wears the legendary gold
 			var rarity: String = ci.tr(RARITY_KEYS[clampi(face["tier"], 0, 3)])
 			if face["tier"] == WorldReader.RARITY_LEGENDARY:
 				face["tier"] = CardFrames.LEGENDARY_TIER
 			var run := not reader.abilities().is_empty()  # a run with abilities: say it's a mod
 			var kind_key := "UI_CARD_MODIFIER" if info.get("modifier", false) else "UI_CARD_MOD"  # v0.6.0 MX2
 			face["tier_text"] = "%s · %s" % [ci.tr(kind_key), rarity] if run else rarity
-			if face["wand"]:  # v0.7.5 SM (N8): a wand card's level, and the level taking it gives
+			if face["wand"]:  # A wand card's level, and the level taking it gives
 				face["held_level"] = held_level(reader, code)
 				face["level_text"] = level_text(
 					ci,
 					face["held_level"],
 					face["held_level"] + 1,
 					int(info.get("max_level", 5)),
-					int(info.get("base_max", 0)),  # v0.10.5 W3-P3: an overlevel says so
+					int(info.get("base_max", 0)),  # An overlevel says so
 				)
 			slot_face(ci, reader, info, face)  # v0.9.0 AS
 			form_face(reader, info, face)  # v0.9.5 TX
@@ -261,7 +261,7 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 	return face
 
 
-## v0.11.0 O10 (owner Q18): a spell card's face: its element's colour (SpellLooks), the kind line "Spell · Lv N" (the
+## A spell card's face: its element's colour (SpellLooks), the kind line "Spell · Lv N" (the
 ## level taking it gives), the level badge (Lv N, or Lv N → M when held), the level's line under the sentence when it
 ## levels a held spell, and "Replaces <spell>" when every spell slot is full (Offers.info "replaces", Spells.replaces).
 static func spell_face(ci: Object, info: Dictionary, face: Dictionary) -> void:
@@ -281,7 +281,7 @@ static func spell_face(ci: Object, info: Dictionary, face: Dictionary) -> void:
 		face["replaces_text"] = ci.tr("UI_SLOT_REPLACES") % ci.tr(info.get("replaces_name", &""))
 
 
-## v0.9.5 TX: a Pattern or Secondary Gun card says what it does on the form held now (FormCardText): face["form_line"]
+## A Pattern or Secondary Gun card says what it does on the form held now (FormCardText): face["form_line"]
 ## under the generic sentence, in the form's colour (face["form_color"]). Orbs, the Blade and every other card: none.
 static func form_face(reader: WorldReader, info: Dictionary, face: Dictionary) -> void:
 	var slot := int(info.get("slot", WorldReader.SLOT_NONE))
@@ -295,7 +295,7 @@ static func form_face(reader: WorldReader, info: Dictionary, face: Dictionary) -
 	face["form_color"] = FormCardText.accent_for(form)
 
 
-## v0.9.5 EP4 (owner: "some kind of notification when you select it and see that you got the element combination"): an
+## An
 ## element card that would turn on or raise a pair says so under the sentence ("Pair: Thermal Shock", "Thermal Shock
 ## -> Lv 2") in the pair's colour, unless the card already has a form line. `code` is the item's index.
 static func pair_face(ci: Object, reader: WorldReader, code: int, face: Dictionary) -> void:
@@ -314,7 +314,7 @@ static func pair_face(ci: Object, reader: WorldReader, code: int, face: Dictiona
 	face["form_color"] = ItemLooks.combo_color(reader.pair_id(x))
 
 
-## v0.9.0 AS (owner Q5, Q14: "Short line + slot tag"; C67, C87): a Form, Pattern, Secondary or Element card's slot tag
+## A Form, Pattern, Secondary or Element card's slot tag
 ## ("Pattern"), and when its slot is full the card taking it replaces ("Replaces Twin", that card's id and colour).
 ## AS2 (G2 AS = B): the tag leads the rarity line ("Pattern · Modifier · Rare") and the pick card's ribbon (PickSlot)
 ## says "Replaces Twin", or "Choose one to replace" for a full Secondary or Element slot (the Swap panel asks).
@@ -336,7 +336,7 @@ static func slot_face(ci: Object, reader: WorldReader, info: Dictionary, face: D
 	face["replaces_text"] = ci.tr("UI_SLOT_REPLACES") % ci.tr(o["name_key"])
 
 
-## v0.7.5 SM (N8): the level of card `code` in the wand now (BuildSlots' slots), or 0 when it isn't held.
+## The level of card `code` in the wand now (BuildSlots' slots), or 0 when it isn't held.
 static func held_level(reader: WorldReader, code: int) -> int:
 	for s: Dictionary in reader.build()["slots"]:
 		if int(s["code"]) == code:
@@ -344,13 +344,13 @@ static func held_level(reader: WorldReader, code: int) -> int:
 	return 0
 
 
-## v0.7.5 SM (N8): the level badge: "Lv N" for a card not held (N is the level it arrives at), "Lv N → M" when
-## taking it raises a held card from N to M. v0.10.5 W3-P3: a level past the card's own max (`base`, 0: none) is an
+## The level badge: "Lv N" for a card not held (N is the level it arrives at), "Lv N → M" when
+## taking it raises a held card from N to M. a level past the card's own max (`base`, 0: none) is an
 ## overlevel: the badge adds "✦ overlevel" (UI_CARD_OVERLEVEL).
 static func level_text(ci: Object, held: int, to: int, cap: int = 5, base: int = 0) -> String:
 	var s := ""
 	if held <= 0 or held >= to:
-		if cap < 5:  # v0.9.5 CLV: a card of 3 levels reads "Lv 1/3"
+		if cap < 5:  # A card of 3 levels reads "Lv 1/3"
 			s = ci.tr("UI_WAND_LEVEL_OF") % [maxi(held, to), cap]
 		else:
 			s = ci.tr("UI_WAND_LEVEL") % maxi(held, to)
@@ -361,15 +361,15 @@ static func level_text(ci: Object, held: int, to: int, cap: int = 5, base: int =
 	return s
 
 
-## v0.5.5 AR (X1b): a card of the boss's legendary altar. v0.8.0 RR (owner O33): it keeps its own tier (a Legendary
+## A card of the boss's legendary altar. it keeps its own tier (a Legendary
 ## card the legendary gold, a legendary stat card too; any other its tier's colour and word), so a Legendary card
-## stands out. v0.8.0 FL (owner O91): no level-5 version any more: a wand card there reads as anywhere else (an
+## stands out. no level-5 version any more: a wand card there reads as anywhere else (an
 ## upgrade's badge "Lv N → N+1", card_face).
 static func legendary_face(_ci: Object, face: Dictionary) -> Dictionary:
 	return face.duplicate()
 
 
-## v0.8.0 FL (owner O91: "rare early jackpots … through explicit exceptional rewards"; LootPacing.jackpot): a jackpot
+## A jackpot
 ## card's line starts with "Jackpot", and the face says so (`jackpot`).
 static func jackpot_face(ci: Object, face: Dictionary) -> Dictionary:
 	var out := face.duplicate()
@@ -381,7 +381,7 @@ static func jackpot_face(ci: Object, face: Dictionary) -> Dictionary:
 	return out
 
 
-## v0.8.0 RR: the boss altar's title: "The boss left a Legendary card" when one of `slots` is a Legendary mod card
+## The boss altar's title: "The boss left a Legendary card" when one of `slots` is a Legendary mod card
 ## (the gold frame on a mod), else "The boss's reward"; with picks left after this one, their count after it.
 static func boss_title(ci: Object, slots: Array, picks_left: int) -> String:
 	var key := "PICK_TITLE_BOSS"
@@ -392,7 +392,7 @@ static func boss_title(ci: Object, slots: Array, picks_left: int) -> String:
 	return ci.tr("PICK_TITLE_BOSS_MORE") % [title, picks_left] if picks_left > 0 else title
 
 
-## Whether the open choice is the boss's legendary pick (v0.8.0 RR: by the reward, not the first card's tier).
+## Whether the open choice is the boss's legendary pick (by the reward, not the first card's tier).
 func is_legendary() -> bool:
 	return _open and _boss
 
@@ -425,7 +425,7 @@ func _input(event: InputEvent) -> void:
 		]
 	):
 		_mouse_tilt = false
-		skip_deal()  # v0.8.0 N8: a press during the deal ends it at once, and still counts
+		skip_deal()  # A press during the deal ends it at once, and still counts
 	match d.kind:
 		PanelInput.Kind.DIGIT:
 			_set_focus(d.digit)
@@ -456,7 +456,7 @@ func _on_clicked(k: int) -> void:
 	_send(k + 1)
 
 
-## v0.8.0 N8: ends the deal now (every card in place, face up); a pick press calls it before it counts.
+## Ends the deal now (every card in place, face up); a pick press calls it before it counts.
 func skip_deal() -> void:
 	if not deal.done():
 		deal.skip()
@@ -541,7 +541,7 @@ func _hover() -> void:
 		s.card.fx.set_hover(tilt, 1.0 if s.focused else 0.0)
 
 
-## v0.8.0 N8: the choice closed. After a pick (or a dealt chest's answer) the picked card's icon flies to the HUD and
+## The choice closed. After a pick (or a dealt chest's answer) the picked card's icon flies to the HUD and
 ## the others burn; after a cancel the panel just goes.
 func _on_closed() -> void:
 	var k := _answer - 1 if _answer > 0 else (0 if _dealt else -1)
@@ -577,7 +577,7 @@ func _advance_outro(delta: float) -> void:
 		_rays.queue_redraw()
 		if k == _picked:
 			fx.modulate.a = 1.0 - clampf(t * 3.0, 0.0, 1.0)  # its icon is flying; the card fades fast
-			_slots[k].burn_replaced(t)  # v0.9.0 AS (Q5): the card it replaces burns
+			_slots[k].burn_replaced(t)  # The card it replaces burns
 		elif reduced:
 			fx.modulate.a = 1.0 - t
 		else:
@@ -604,7 +604,7 @@ func _end_outro() -> void:
 		s.burn_replaced(0.0)
 
 
-## v0.8.0 N8: the outro is playing (the picked card's icon flying, the others burning), and which card was picked.
+## The outro is playing (the picked card's icon flying, the others burning), and which card was picked.
 func outro_playing() -> bool:
 	return _outro >= 0.0
 

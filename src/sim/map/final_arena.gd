@@ -26,7 +26,7 @@ const CAUSEWAY_M := 25.0
 const GAP_SEGMENTS := 3
 const FOOT_IN := 2.5
 const PYLON_FRACTION := 0.62
-## v0.11.0 O14b (add_heart_room): the ring segment the heart room opens off (sim +X), the room's depth and half width
+## add_heart_room: the ring segment the heart room opens off (sim +X), the room's depth and half width
 ## (m), the pedestal's half side (m), the slab's half length along the far wall and its half depth off it.
 const HEART_ANGLE := 0
 const HEART_LENGTH_M := 9.0
@@ -76,7 +76,7 @@ static func layout(seed_value: int, radius_m: float, segments: int = SEGMENTS) -
 
 
 ## v0.9.0 FA (owner C §3: "a separate, quieter environment … stairs and a clear path leading toward a large altar";
-## Q18: "the plateau is the arena: when the buildup ends, walls of light rise around it … No second load"): the final
+## "the plateau is the arena: when the buildup ends, walls of light rise around it … No second load"): the final
 ## approach's floor. The plateau is layout()'s ring with GAP_SEGMENTS segments on the hero's side (round START_ANGLE)
 ## left open: those are the light walls (FloorLayout.light_walls), which the world adds when the buildup ends
 ## (FinalApproach). From the gap a causeway CAUSEWAY_M long runs out toward START_ANGLE, as wide as the gap, walled on
@@ -144,7 +144,7 @@ static func segments_of(f: FloorLayout) -> int:
 	return f.slab_first if f != null else 0
 
 
-## v0.11.0 O14b (owner Q-O14b "Both": "the hidden room under the Hollow Crown's throne"; RUNIC_CLUES.md r10, r11): the
+## The
 ## city's heart, added to the final approach's floor (approach_layout) when the run's profile learned all ten Runic
 ## Stone lines (RunState.heart_room). The ring segment HEART_ANGLE (sim +X: 45° round from the causeway, on the iso
 ## camera's side, so the room lies below the throne on the screen) becomes a cracked wall (FloorLayout.crack_*: a

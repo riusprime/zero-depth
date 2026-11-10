@@ -1,6 +1,6 @@
 class_name ProgressionPanel
 extends MenuPanel
-## v0.9.0 MP (PLAN W44, W49-W52; LOCKED_DECISIONS PD-06: sideways only): the hub Progression Station's panel. The
+## PLAN W44, W49-W52; LOCKED_DECISIONS PD-06: sideways only: the hub Progression Station's panel. The
 ## profile's Rune Fragments, one row per robe they buy (its colour, its name, its price or "owned"), a line on the Void
 ## form's unlock (travel through a Purple Portal), a status line, and Back. Pressing a row asks to buy it
 ## (`buy_requested`); HubSession buys through MetaProgress and calls `show_state` back. Nothing here is a stat.
@@ -76,7 +76,7 @@ static func _swatch(c: Color, frame: Color = Color(0, 0, 0, 0)) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
-## MP2: the "???" robe's swatch: a hooded figure's dark silhouette with a faint violet edge, on nothing.
+## The "???" robe's swatch: a hooded figure's dark silhouette with a faint violet edge, on nothing.
 static func silhouette() -> ImageTexture:
 	var img := Image.create(SWATCH, SWATCH, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))

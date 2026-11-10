@@ -19,14 +19,14 @@ const STONE := Color(0.118, 0.104, 0.096)
 const GOLD := Color("#E8C870")
 ## The groove's dark (cracks, the socket, the outer edge).
 const GROOVE := Color(0.025, 0.018, 0.013)
-## v0.9.0 AS2 (owner, on step AS: "can you make the edges of things straight and not the zigzags it has?"): the UI's
+## The UI's
 ## slabs (StoneBox: cards, card backs, panels, plaques, tiles, menus, the HUD's pips) keep straight edges between their
 ## cut corners; the chips' zigzag is off. The fill, the grain, the cracks, the glow and the bevel stay. The 3D world's
 ## jagged things (walls, crystals, lightning) are not drawn here. False brings the chipped edges back.
 const STRAIGHT_EDGES := true
 ## The grain texture's size (px); a slab larger than this stretches it.
 const GRAIN_PX := 512
-## v0.8.0 TX3: the owner's textures (docs/art/requests/v0.8.0_textures.md; scripts/assets/tx3_prep.py): the slabs'
+## The owner's textures (docs/art/requests/v0.8.0_textures.md; scripts/assets/tx3_prep.py): the slabs'
 ## carved stone grain (`tex_menu_stone`, grey, multiplied in) and the main menu's ember-lit wall
 ## (`tex_menu_stone_wall`, MenuBackdrop). Without them the code-made looks stay (the grain from noise, the shader's
 ## stone floor).

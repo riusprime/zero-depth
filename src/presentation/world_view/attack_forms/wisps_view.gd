@@ -1,13 +1,13 @@
 class_name WispsView
 extends Node3D
-## v0.9.0 AF3 (owner Q7; ATTACK_FORMS.md F10 "Orbs circle you and fire on their own at the nearest enemy"): the Wisps'
+## The Wisps'
 ## look. Each wisp (WorldReader.wisps: where the sim has it, its wait to the next shot) is a small glowing orb at body
 ## height circling the hero, bobbing a little, in the element's colours (BeamLooks: default energy, Fire, Lightning,
 ## Frost, Venom, Bleed). It brightens and swells as its shot comes due and flares the tick it fires, so the player
 ## can read which wisp is about to shoot; its orb then flies as the Gun's (a smaller one; the pulses draw it).
-## v0.9.0 VX (VFX_AUDIT.md V31, with the element accents): the first element's centre and the second's edge (V2); each
+## VFX_AUDIT.md V31, with the element accents: the first element's centre and the second's edge; each
 ## wisp carries its element's accent (HeroFx.accent, trailing along its orbit) and flashes as it fires (a hot core, a
-## glow, a ring and sparks, FIRE_TICKS, no light), its shot then a plain Orb with its own accent (V6).
+## glow, a ring and sparks, FIRE_TICKS, no light), its shot then a plain Orb with its own accent.
 ## v0.10.5 W3-S19 (owner playtest 2026-11-05: "wisps orbiting VFX is very bad too it also leaves like a trail of
 ## replicas of the attack when you move"): each wisp is a small bright orb (ORB_M across, the element's colours, the
 ## Gun's moon blue with none) with a short soft trail along its orbit (TRAIL_N fading ghosts, TRAIL_STEP ticks of its
@@ -17,7 +17,7 @@ extends Node3D
 ## walked. The firing flash is the effects layer's again (FIRE_TICKS, on the wisp).
 ## Presentation only (EI-07): the sim decides where and when; the bob is the frame's clock.
 
-## v0.9.5 FC9: Halo with Twin draws seven; Ring's lightning rings (the Void's and the Glaive's look, the same
+## Halo with Twin draws seven; Ring's lightning rings (the Void's and the Glaive's look, the same
 ## ARC_FRONT).
 const WISPS_MAX := 8
 const ARCS_MAX := 12
@@ -78,7 +78,7 @@ var _mat: ShaderMaterial
 var _charge: Array[float] = []
 var _time := 0.0
 var _form := FormLook.new()
-## v0.9.0 VX: each wisp's last firing tick (-1: none yet), its angle round the hero, and the sim tick.
+## Each wisp's last firing tick (-1: none yet), its angle round the hero, and the sim tick.
 var _fired: PackedFloat32Array = PackedFloat32Array()
 var _angle: PackedFloat32Array = PackedFloat32Array()
 ## W3-S19: the hero's place this tick; each wisp's angle and distance round it (the sim plane), and its turn since
@@ -126,7 +126,7 @@ func _glow(quad: QuadMesh) -> MeshInstance3D:
 	return n
 
 
-## v0.9.5 FC9: the pool of lightning rings (one shared material, the Glaive's ring look).
+## The pool of lightning rings (one shared material, the Glaive's ring look).
 func _make_arcs() -> void:
 	var flat := PlaneMesh.new()
 	flat.size = Vector2(2.0, 2.0)
@@ -148,7 +148,7 @@ func _make_arcs() -> void:
 		_arcs.append(n)
 
 
-## v0.9.5 FC9: the Ring card's lightning rings where a wisp's shot struck (grown as the Void's are).
+## The Ring card's lightning rings where a wisp's shot struck (grown as the Void's are).
 func _place_arcs(reader: WorldReader) -> void:
 	arcs = 0
 	if not reader.player_dead():

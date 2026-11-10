@@ -1,6 +1,5 @@
 class_name Matchups
 extends RefCounted
-## v0.10.5 O10 (owner P3 "yes": the stress matrix as rock-paper-scissors; docs/roadmap/v0.10.5/O10_STRESS_MATRIX.md):
 ## every enemy kind (not a boss, not an elite) is weak to one form or element and resists another (EnemyTable.weak_to,
 ## resists: a form card's modifier id or an element id). A player's direct hit whose attack carries the id (the spec's
 ## modifier_ids or elements; the launch's spec or the landing one, either counts) takes weak_permille (TAG_WEAK_TO) or

@@ -37,7 +37,7 @@ var _elbows: Array[Node3D] = []
 
 
 ## The sheet's name for this boss: its imported model would be stone_sentinel.glb.
-## v0.7.5 BF1: its dodge-first moves (tracked fist slams, shock lanes, the rock rings and the cross quake) pose as
+## Its dodge-first moves (tracked fist slams, shock lanes, the rock rings and the cross quake) pose as
 ## its slam: the fists rise for the windup and come down as it strikes.
 func apply_state(s: Dictionary) -> void:
 	super(s)
@@ -299,7 +299,7 @@ func _pose(dt: float) -> void:
 		legs[k].position.y = HIP_Y + maxf(0.0, s * sgn) * 0.08 * walk + 0.02
 
 
-## v0.8.0 BA: the owner's model (rigged in code, BossRig) plays its keyframed clips (GatekeeperClips): the Fist
+## The owner's model (rigged in code, BossRig) plays its keyframed clips (GatekeeperClips): the Fist
 ## Slam, the Shock Lanes, the Cross Quake, the Rock Rings curled up behind its arms, the sweep, and its idle, walk,
 ## flinch, stagger, roar, rise and death.
 func _clip_library() -> Dictionary:

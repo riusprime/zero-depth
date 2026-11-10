@@ -1,6 +1,6 @@
 class_name VatCrowd
 extends Node3D
-## v0.10.5 W3-V1 (owner, 2026-11-06: the enemy VAT pilot, ViewPrefs.enemy_vat): draws every VAT enemy of a kind and
+## Draws every VAT enemy of a kind and
 ## look as one MultiMesh (VatBake's merged body, VatLooks' material), instead of a node per piece. Each enemy keeps its
 ## actor node, facing node and avatar (HordeAvatar with `vat` on: no pieces): ActorViews, HitFeel and HitStop drive
 ## them as before (the sync, the flinch, the hold, the hit flash and tints through show_hit, the culling's
@@ -14,17 +14,17 @@ extends Node3D
 ## A hidden actor (an egg, a vanished one) or a freed one draws nothing. Its shadow (ViewPrefs.enemy_shadows "proxy")
 ## is one more MultiMesh per kind of the same rest-pose stand-in EnemyShadows gives a node enemy (SHADOWS_ONLY), at the
 ## avatar's transform (no lift), as the stand-in followed the avatar; "blob" keeps the blob node on the actor.
-## v0.10.5 W3-V4a (owner, 2026-11-06: VAT for every regular enemy): any avatar with a VatBake rig (a HordeAvatar's, or
+## Any avatar with a VatBake rig (a HordeAvatar's, or
 ## its own vat_rig(): the Charger and the Hatchling). The drives are VatBake.drives_of (the avatar's vat_drives(), or a
 ## horde avatar's four); a rig with more than four sends the rest in a per-look drive texture, one row per instance
 ## (written with the buffer, in the same order), and its lift is the avatar's vat_lift().
 ## Presentation only (EI-07): it reads the avatars, never the sim.
 
-## The kinds a VAT crowd can draw (the pilot: the Swarmer, the most numerous horde kind: a pack of 8; v0.10.5 W3-V4a:
+## The kinds a VAT crowd can draw (the pilot: the Swarmer, the most numerous horde kind: a pack of 8;
 ## the Charger and the Brood Mother's Hatchling).
-## v0.10.5 W3-V4b: the other horde kinds (HordeVat).
-## v0.10.5 W3-V4c: the Needle, Warden, Arc Caster and Bomb Drone (SoloVat.KINDS).
-## v0.11.0 S4: the Hive Lens's Lens Drone.
+## The other horde kinds (HordeVat).
+## The Needle, Warden, Arc Caster and Bomb Drone (SoloVat.KINDS).
+## The Hive Lens's Lens Drone.
 const KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_CHARGER,
@@ -40,11 +40,11 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_ARC_CASTER,
 	WorldReader.KIND_BOMB_DRONE,
 	WorldReader.KIND_LENS_DRONE,
-	WorldReader.KIND_SCRAP_HOUND,  # v0.11.0 O17a: the owner's model (SoloVat)
-	WorldReader.KIND_ROCK_LURKER,  # v0.11.0 O17b: the owner's model (SoloVat)
-	WorldReader.KIND_STONE_THROWER,  # v0.11.0 O17c: the owner's model (SoloVat)
-	WorldReader.KIND_KILN_BEETLE,  # v0.11.0 O17e: the owner's model (SoloVat)
-	WorldReader.KIND_DUST_MITE,  # v0.11.0 O9: the horde critters (CritterBodies, on HordeVat's path)
+	WorldReader.KIND_SCRAP_HOUND,  # The owner's model (SoloVat)
+	WorldReader.KIND_ROCK_LURKER,  # The owner's model (SoloVat)
+	WorldReader.KIND_STONE_THROWER,  # The owner's model (SoloVat)
+	WorldReader.KIND_KILN_BEETLE,  # The owner's model (SoloVat)
+	WorldReader.KIND_DUST_MITE,  # The horde critters (CritterBodies, on HordeVat's path)
 	WorldReader.KIND_CAVE_BAT,
 	WorldReader.KIND_EMBER_FLEA,
 	WorldReader.KIND_ICE_CRAB,
@@ -69,7 +69,7 @@ var _looks := {}
 var _shadows := {}
 
 
-## v0.10.5 W3-V4b: a horde kind drawn by the owner's model is baked from that model; without its file (EnemyModels)
+## A horde kind drawn by the owner's model is baked from that model; without its file (EnemyModels)
 ## the code-built stand-in stays on the old path.
 static func supports(kind: int) -> bool:
 	if not KINDS.has(kind):
@@ -181,7 +181,7 @@ func _process(_delta: float) -> void:
 		shadows_drawn += _write(s, false)
 
 
-## v0.10.5 W3-V1: one instance per drawable enemy of set `s`; returns how many.
+## One instance per drawable enemy of set `s`; returns how many.
 func _write(s: Dictionary, body: bool) -> int:
 	var entries: Array = s["entries"]
 	var keep := 0
@@ -219,7 +219,7 @@ func _write(s: Dictionary, body: bool) -> int:
 			* (e[1] as Node3D).transform
 			* avatar.transform
 		)
-		if body and avatar is HordeAvatar:  # v0.10.5 W3-V4b: the body's own moves (the Swarmer's: its lift)
+		if body and avatar is HordeAvatar:  # The body's own moves (the Swarmer's: its lift)
 			xf = xf * (avatar as HordeAvatar).vat_offset()
 		elif body:
 			xf = xf.translated_local(Vector3(0, float(avatar.call(&"vat_lift")), 0))
@@ -261,7 +261,7 @@ func _write(s: Dictionary, body: bool) -> int:
 	return n
 
 
-## v0.10.5 W3-V4a: the drive texture of set `s` (`texels` wide, a row per instance of its capacity) from `dbuf`; a new
+## The drive texture of set `s` (`texels` wide, a row per instance of its capacity) from `dbuf`; a new
 ## texture (given to the material) when the capacity grew.
 func _upload_drives(s: Dictionary, dbuf: PackedFloat32Array, texels: int, rows: int) -> void:
 	var img := Image.create_from_data(
@@ -323,7 +323,7 @@ func _new_set(mesh: Mesh, mat: Material, body: bool, pose := {}) -> Dictionary:
 	return out
 
 
-## v0.10.5 W3-V4a: a drive texture of one still instance (every drive 0).
+## A drive texture of one still instance (every drive 0).
 static func _zero_drives(texels: int) -> ImageTexture:
 	var data := PackedFloat32Array()
 	data.resize(texels * 4)
@@ -332,7 +332,7 @@ static func _zero_drives(texels: int) -> ImageTexture:
 	)
 
 
-## v0.10.5 W3-V1 (ShaderWarmup): one still instance of `kind` in this look, so its shader variant compiles behind the
+## ShaderWarmup: one still instance of `kind` in this look, so its shader variant compiles behind the
 ## loading cover (and its bake is made there).
 static func warm_proxy(
 	kind: int, tint: Color, role_glow: float, outline: Color

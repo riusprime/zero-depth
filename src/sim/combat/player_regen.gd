@@ -18,7 +18,7 @@ static func note_combat(w: World, target: int, owner_id: int) -> void:
 
 
 ## The regen rate now, in per mille of max HP per second.
-## The gamble shrine's REGEN wins add to it (v0.3.0 L19).
+## The gamble shrine's REGEN wins add to it.
 static func rate_permille(w: World) -> int:
 	var gamble := Gamble.regen_bonus_permille(w) if w.gamble_table != null else 0
 	return maxi(0, w.player.regen_permille + w.regen_bonus_permille + gamble)

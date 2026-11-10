@@ -1,6 +1,6 @@
 class_name VariantState
 extends RefCounted
-## v0.11.0 O13a (ENEMIES.md V1-V5; Variants): what the biome variants leave on a floor, as parallel arrays.
+## ENEMIES.md V1-V5; Variants: what the biome variants leave on a floor, as parallel arrays.
 ## - Trails (the Ember and Frost Chargers' charges), in drop order: the kind (Variants.TRAIL_FIRE / TRAIL_SLICK), the
 ##   centre and radius, the tick it was dropped and the tick it goes, the ticks it waits before it burns (fire), its
 ##   number (fire: the burn's damage, already powered by its charger's tier; slick: the hero's easing per mille a tick),

@@ -1,6 +1,6 @@
 class_name HubLayout
 extends RefCounted
-## v0.9.0 HB: the hub's plan (HubDefinition) on the sim plane. The plan's north is the top of the screen in the iso
+## The hub's plan (HubDefinition) on the sim plane. The plan's north is the top of the screen in the iso
 ## view (IsoRig's yaw 45°: the camera looks toward sim (-1, +1)), so a plan point (x, y) lies at sim
 ## ((x - y), (x + y)) / √2 and every plan-square box is a sim box turned 45° (angle 512 of 4096). Pure geometry, read
 ## by the hub's World (HubScenario: the walls), its view (where each thing stands) and its session (which station
@@ -55,7 +55,7 @@ func walls() -> Array[Obb]:
 		if absf(c.x) < hub.gate_half_m + piece and c.y > 0.0:
 			continue  # the gate's gap in the north rim
 		if has_training_door() and absf(c.x) < hub.training_door_half_m + piece and c.y < 0.0:
-			continue  # v0.10.5 O17: the Training Room's door in the south rim
+			continue  # The Training Room's door in the south rim
 		out.append(_plan_box(c, Vector2(hub.wall_m * 0.5, piece), a))
 	# The gate's posts either side of the gap, and its slab while sealed.
 	var gy := hub.radius_m + hub.wall_m * 0.5
@@ -91,7 +91,7 @@ func walls() -> Array[Obb]:
 	out.append(_plan_box(Vector2.ZERO, Vector2.ONE * hub.machine_core_m, 0.0))
 	for s in hub.stations:
 		out.append(_plan_box(s.at, s.half, facing(s.at)))
-	# v0.9.0 HB3: the pillar braziers and the dressing props stand solid.
+	# The pillar braziers and the dressing props stand solid.
 	for p in hub.pillars:
 		out.append(_plan_box(p, Vector2.ONE * hub.pillar_half_m, facing(p)))
 	for d: Dictionary in hub.props:
@@ -99,17 +99,17 @@ func walls() -> Array[Obb]:
 	return out
 
 
-## v0.10.5 O17 (owner P17): the hub has the Training Room's south door.
+## The hub has the Training Room's south door.
 func has_training_door() -> bool:
 	return hub.training_door_half_m > 0.0
 
 
-## v0.10.5 O17: the door's middle on the rim (plan m).
+## The door's middle on the rim (plan m).
 func training_door() -> Vector2:
 	return Vector2(0.0, -(hub.radius_m + hub.wall_m * 0.5))
 
 
-## v0.10.5 O17: the hero at sim `pos` has walked down the door's lane to its end: the Training Room.
+## The hero at sim `pos` has walked down the door's lane to its end: the Training Room.
 func in_training_door(pos: Vector2) -> bool:
 	if not has_training_door():
 		return false
@@ -118,12 +118,12 @@ func in_training_door(pos: Vector2) -> bool:
 	return absf(p.x) < hub.training_door_half_m and p.y <= end_y + 1.0
 
 
-## v0.10.5 O17: the hero at sim `pos` is near the door (its name shows).
+## The hero at sim `pos` is near the door (its name shows).
 func near_training_door(pos: Vector2) -> bool:
 	return has_training_door() and to_plan(pos).distance_to(training_door()) <= 3.0
 
 
-## v0.10.5 O17: the door's posts either side of its gap, the lane's walls past it and the wall across its end.
+## The door's posts either side of its gap, the lane's walls past it and the wall across its end.
 func _training_walls() -> Array[Obb]:
 	var out: Array[Obb] = []
 	var half := hub.training_door_half_m
@@ -144,7 +144,7 @@ func _training_walls() -> Array[Obb]:
 	return out
 
 
-## v0.9.0 HB3 (owner: "looking into the middle, not all looking down"): how far a thing standing at plan point `at` is
+## How far a thing standing at plan point `at` is
 
 
 ## turned (radians, counter-clockwise on the plan) so its front, the plan's south when unturned, faces the plaza's
@@ -156,7 +156,7 @@ static func facing(at: Vector2) -> float:
 	return atan2(d.x, -d.y)
 
 
-## v0.9.0 HB3: the point before station `id`'s front, `out` m from its footprint (the plan; the machine's: due south).
+## The point before station `id`'s front, `out` m from its footprint (the plan; the machine's: due south).
 func front_of(id: StringName, out: float = 0.6) -> Vector2:
 	if id == MACHINE:
 		return Vector2(0.0, -(hub.machine_core_m + out))
@@ -202,7 +202,7 @@ func panel_of(id: StringName) -> StringName:
 
 
 ## Where the floor runes stand on the plan, in order (rune 0 due south of the machine, then clockwise from above;
-## v0.9.0 HB3: on the medallion's sockets, `rune_angles`, when the hub lists them).
+## On the medallion's sockets, `rune_angles`, when the hub lists them).
 func rune_points() -> Array[Vector2]:
 	var out: Array[Vector2] = []
 	for i in hub.rune_count:

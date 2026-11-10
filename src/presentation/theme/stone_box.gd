@@ -1,6 +1,6 @@
 class_name StoneBox
 extends StyleBox
-## v0.8.0 MU (owner O14, G2 "menu style B"): one carved slab of the Ember stone look (EmberStone) as a style box, so
+## One carved slab of the Ember stone look (EmberStone) as a style box, so
 ## any Control can wear it (a menu's panel and focused row, a card, a plaque, a tile). Drawn in code from polygons:
 ## - the shape: a box with its corners cut by `cut`; its edges straight (v0.9.0 AS2, EmberStone.STRAIGHT_EDGES; before
 ##   that chipped unevenly, a stable pattern per `pattern`, by `chip`);
@@ -78,7 +78,7 @@ var fill := EmberStone.STONE:
 	set(v):
 		fill = v
 		emit_changed()
-## v0.8.0 N8 (owner O62, "paint the whole card"): the glow's colour (alpha 0: the ember's) and a frame line round the
+## The glow's colour (alpha 0: the ember's) and a frame line round the
 ## slab in this colour (alpha 0: none), a card's rarity.
 var glow_color := Color(0, 0, 0, 0):
 	set(v):
@@ -119,7 +119,7 @@ func outline(rect: Rect2) -> Array:
 		]
 	)
 	var depth := minf(chip, minf(rect.size.x, rect.size.y) * 0.06)
-	if EmberStone.STRAIGHT_EDGES:  # v0.9.0 AS2 (owner): straight edges, no zigzag
+	if EmberStone.STRAIGHT_EDGES:  # Straight edges, no zigzag
 		depth = 0.0
 	var pts := PackedVector2Array()
 	var nrm := PackedVector2Array()
@@ -193,7 +193,7 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 			to_canvas_item, inset, PackedColorArray([Color(rim, 0.9 * rim.a)]), 1.6 * k, true
 		)
 	_bevel(to_canvas_item, pts, nrm, k)
-	if edge.a > 0.0:  # v0.8.0 N8: the rarity's frame, just inside the dark rim
+	if edge.a > 0.0:  # The rarity's frame, just inside the dark rim
 		var frame := PackedVector2Array()
 		for i in pts.size():
 			frame.append(pts[i] - nrm[i] * 3.5 * k)

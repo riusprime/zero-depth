@@ -1,6 +1,6 @@
 class_name FoundryClips
 extends RefCounted
-## v0.8.0 BA: the Foundry's clips (the owner's walking furnace, its legs cut in code by BossRig: body and four legs).
+## The Foundry's clips (the owner's walking furnace, its legs cut in code by BossRig: body and four legs).
 ## Parameters the avatar maps: gait_a_* (front left and back right) and gait_b_* (front right and back left) for its
 ## steps, splay (every foot slid out to the side), front_lift (the front legs raised), front_kneel and back_kneel (a
 ## pair folded under), heat (the grate's glow, + hotter, - dying). A squat iron furnace, so it moves like a heavy
@@ -38,7 +38,7 @@ static func library() -> Dictionary:
 			_slam_ring(),
 			_brood(),
 			_flood(),
-			_melt(),  # v0.8.0 BS2 (S6)
+			_melt(),  # v0.8.0 BS2
 			_shielded(),
 			_flinch(),
 			_stagger(),
@@ -47,7 +47,7 @@ static func library() -> Dictionary:
 			_death(),
 		]:
 			_lib[c.name] = c
-		BossClip.loosen(_lib, 0.015)  # v0.11.0 O16: the wind-up, the recoil, the idle sway
+		BossClip.loosen(_lib, 0.015)  # The wind-up, the recoil, the idle sway
 	return _lib
 
 
@@ -234,7 +234,7 @@ static func _stagger() -> BossClip:
 	return c
 
 
-## v0.8.0 BS2 (owner O5, S6): the meltdown. Through its long windup (0..0.6, the 2 s the outer ring glows) it rears
+## The meltdown. Through its long windup (0..0.6, the 2 s the outer ring glows) it rears
 ## back on its back legs, roaring, its fire roaring hotter and hotter and the body swelling, shaking; on the strike
 ## (the ring melts) it slams down onto splayed legs and pours, tipped forward with its grate blazing; then it settles.
 static func _melt() -> BossClip:

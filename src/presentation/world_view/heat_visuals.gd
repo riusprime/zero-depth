@@ -3,7 +3,7 @@ extends Node3D
 ## Overclock heat on the hero and in the world (v0.3.0 PLAN L18). Reads WorldReader.heat_state() only (EI-07):
 ## - the visor leans from its own cyan toward amber, red-orange and white-hot as heat rises (HeatLooks; kept
 ##   materials, colour and energy only, never emission_enabled); the blade, the bolts and the skills take the heat
-##   tier's colour themselves (v0.5.5 LK: KitView, ActorViews, SkillVisuals via HeatLooks.attack_color);
+##   tier's colour themselves (KitView, ActorViews, SkillVisuals via HeatLooks.attack_color);
 ## - a vent blast: a flash disc and a ring that grows out to the blast's real radius (the sim's), hotter the more
 ##   heat was vented; a Meltdown is the same blast in white-hot;
 ## - overheat: a burst of steam, then steam venting from the hero for the whole stall;
@@ -17,7 +17,7 @@ var kit: KitView
 var actors: ActorViews
 ## Kept for the view's life so the effects compile their shader once (the v0.2.0 H rule, as ItemVisuals).
 var _fx_template := _make_fx_template()
-## v0.5.5 LK (A3 VFX audit): steam is vapour, not light: shaded by the scene's light (the glowing effects stay
+## A3 VFX audit: steam is vapour, not light: shaded by the scene's light (the glowing effects stay
 ## unshaded). Unshaded, its pale puffs read as flat white stickers, brightest in the darkest scene.
 var _steam_template := _make_steam_template()
 var _glow_template := make_glow_template()
@@ -53,7 +53,7 @@ func _init(p_kit: KitView, p_actors: ActorViews) -> void:
 func sync(reader: WorldReader) -> void:
 	var s := reader.heat_state()
 	var look := HeatLooks.from_state(s)
-	# v0.5.5 LK (A2): the blade takes its heat tier's colour itself (KitView.sync, HeatLooks.attack_color).
+	# The blade takes its heat tier's colour itself (KitView.sync, HeatLooks.attack_color).
 	var avatar := _avatar(reader)
 	if avatar != null:
 		avatar.set_heat(look[0], look[1])
@@ -123,7 +123,7 @@ func _blast(s: Dictionary) -> void:
 	disc.mesh = _disc
 	disc.position = SimPlane.to_3d(at, 0.06)
 	disc.scale = Vector3(r, 1, r)
-	# v0.5.5 LK (A3 VFX audit): the flash disc is light, so it adds to the floor (a mixed, unshaded pale disc read
+	# A3 VFX audit: the flash disc is light, so it adds to the floor (a mixed, unshaded pale disc read
 	# as a flat sheet of paper over a dark lit floor); the ring keeps the blast's edge readable on pale ground.
 	_add(disc, c, 0.1 + 0.15 * share, &"blast", Vector3.ZERO, r, _glow_template)
 	var ring := MeshInstance3D.new()
@@ -216,7 +216,7 @@ static func _make_steam_template() -> StandardMaterial3D:
 	return m
 
 
-## v0.5.5 LK (A3): an additive, unshaded effect material for flashes of light (a vent's disc, a skill's flash), kept
+## An additive, unshaded effect material for flashes of light (a vent's disc, a skill's flash), kept
 ## as a template; SkillVisuals uses it too.
 static func make_glow_template() -> StandardMaterial3D:
 	var m := _make_fx_template()

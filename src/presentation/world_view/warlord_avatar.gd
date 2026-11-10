@@ -8,7 +8,7 @@ extends BossAvatar
 ## flood), couches the spear for the lunge (the charge) and draws it back to throw for the javelin rain (the
 ## barrage). While its weak point is open the shield is lifted up and aside, baring the gold core on its chest (the
 ## sim drops its front armour then); staggered, it reels with both arms low.
-## v0.7.5 BM: the owner's model (assets/models/bosses/warlord.glb, rigged by the owner: a 41-joint Tripo skeleton)
+## The owner's model (assets/models/bosses/warlord.glb, rigged by the owner: a 41-joint Tripo skeleton)
 ## replaces the code-built body, which stays as the fallback when the file is missing. It is posed from its bones,
 ## one function per layer (_pose_rig): breath and sway, a walk cycle from its speed (legs, knees, counter-swinging
 ## arms), the shield carried in front and lifted aside while the weak point is open, the spear raised and planted,
@@ -28,7 +28,7 @@ const RED := Color("#D23E35")
 const RED_DARK := Color("#A9322B")
 const VISOR := Color("#FF2A22")
 const EMBLEM := Color("#FF3A26")
-## v0.7.5 BM: points on the owner's model at rest (metres, model frame; evidence/BOSS_MODELS.md) and the bones they
+## Points on the owner's model at rest (metres, model frame; evidence/BOSS_MODELS.md) and the bones they
 ## ride on: the chest's core, the spear's tip (right hand) and the shield's face (left forearm).
 const MODEL_WEAK := Vector3(0.42, 1.35, 0)
 const MODEL_SPEAR_TIP := Vector3(0.53, 2.7, 0.81)
@@ -282,8 +282,8 @@ func _pose(dt: float) -> void:
 		legs[k].position.y = HIP_Y + maxf(0.0, s * sgn) * 0.07 * walk
 
 
-# --- The owner's model (v0.7.5 BM), posed from its bones -------------------------------------------------------
-# v0.8.0 BA: its keyframed clips (WarlordClips) do the moves; this adds the shield's lift while the weak point is
+# --- The owner's model, posed from its bones -------------------------------------------------------
+# Its keyframed clips (WarlordClips) do the moves; this adds the shield's lift while the weak point is
 # open (the sim drops its front armour then), a layer the clips don't know about. Turns are in the model frame: +Z
 # swings a hanging limb forward (and tips the torso back), +X swings it out to the left (-Z), +Y turns it to its left.
 

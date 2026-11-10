@@ -1,7 +1,7 @@
 class_name ItemTable
 extends RefCounted
 ## One item's compiled numbers in sim units (ticks, 1/4096 turns, metres, per mille). Built from ItemDefinition by
-## the content compiler (v0.2.0 E). Only the fields of its kind are used.
+## the content compiler. Only the fields of its kind are used.
 
 ## Appended, never renumbered (save files and views refer to them).
 enum Kind {
@@ -37,8 +37,8 @@ enum Kind {
 	RAZOR_ORBIT,
 	AFTERIMAGE,
 	MODIFIER,
-	TRIGGER,  # v0.6.5 WN1: a wand trigger card (Wand; ItemPool never draws one yet)
-	WAND,  # v0.6.5 WN3: a wand card of a weapon's pool (CardLevels)
+	TRIGGER,  # A wand trigger card (Wand; ItemPool never draws one yet)
+	WAND,  # A wand card of a weapon's pool (CardLevels)
 }
 
 ## ItemDefinition.Rarity (v0.3.0 E; v0.6.0 MX4 LEGENDARY: the boss's tier; v0.8.0 RR EPIC, appended).
@@ -46,7 +46,7 @@ const COMMON := 0
 const RARE := 1
 const LEGENDARY := 2
 const EPIC := 3
-## v0.8.0 RR (owner O33): the card tiers in order (Offers.info's "rarity": 0 common, 1 rare, 2 epic, 3 legendary).
+## The card tiers in order (Offers.info's "rarity": 0 common, 1 rare, 2 epic, 3 legendary).
 const TIER_COMMON := 0
 const TIER_RARE := 1
 const TIER_EPIC := 2
@@ -60,24 +60,24 @@ var desc_key := &""
 var rarity := COMMON
 ## The PlayerTable.Utility the item needs, or -1 for any (rewards never offer it otherwise).
 var requires_utility := -1
-## The PlayerTable.WEAPON_* bit the item feeds (v0.3.0 L15), or 0 for any: a build without that weapon is never
+## The PlayerTable.WEAPON_* bit the item feeds, or 0 for any: a build without that weapon is never
 ## offered it.
 var requires_weapon := 0
-## v0.5.0 CP: the AbilityTable.Kind the item modifies, or -1: rewards offer it only while you own that ability.
+## The AbilityTable.Kind the item modifies, or -1: rewards offer it only while you own that ability.
 var requires_ability := -1
-## v0.6.0 MX1: the item's modifiers (compiled ModifierDefinitions), in its order: what it does to the weapon attacks
+## The item's modifiers (compiled ModifierDefinitions), in its order: what it does to the weapon attacks
 ## and the Skills (Modifiers.compile). Empty for items whose effects are not attack rewrites yet.
 var modifiers: Array[ModifierTable] = []
-## v0.6.5 WN5b (WAND.md "What happens to the v0.6 cards"): a retired v0.6 card. Never offered (ItemPool); kept so
+## WAND.md "What happens to the v0.6 cards": a retired v0.6 card. Never offered (ItemPool); kept so
 ## old saves and item indices still resolve; a held one maps onto its new card on load (WandMigration).
 var retired := false
-## v0.8.0 RM (owner O91: mutations): the card's draw weight × this per mille (ItemPool.card_weight; under 1000 it never
+## The card's draw weight × this per mille (ItemPool.card_weight; under 1000 it never
 ## fills the boss's chance slot, Offers.legendary_cards). 1000 = as its tier.
 var offer_weight_permille := 1000
-## v0.8.0 FL (owner O91; LootPacing.Category): the card's pacing category (ItemDefinition.loot_category): OTHER 0,
+## The card's pacing category (ItemDefinition.loot_category): OTHER 0,
 ## FORM 1, ELEMENT 2, ADVANCED 3, TRIGGER 4, MUTATION 5. Its draw weight × the floor stage's multiplier for it.
 var loot_category := 0
-## v0.9.0 AS (owner Q2; AttackSlots): the card's wand slot category (ItemDefinition.slot_category's index in
+## The card's wand slot category (ItemDefinition.slot_category's index in
 ## SLOT_CATEGORIES): FREE 0, FORM 1, PATTERN 2, SECONDARY 3, ELEMENT 4 (AttackSlots' constants).
 var slot_category := 0
 ## Ember Edge (the burn engine's numbers).
@@ -112,9 +112,9 @@ var phase_radius_m := 0.0
 var phase_guard_window_ticks := 0
 ## Engines (v0.3.0 G; see ItemDefinition for each field). Tags are for views and docs, never for gameplay.
 var tags := PackedStringArray()
-## v0.9.5 CLV: the card's level cap (0: CardLevels.MAX_LEVEL; see CardLevels.max_level).
+## The card's level cap (0: CardLevels.MAX_LEVEL; see CardLevels.max_level).
 var level_max := 0
-## v0.9.5 SM: the Stress Mark card (mark_radius_m > 0; see ItemDefinition).
+## The Stress Mark card (mark_radius_m > 0; see ItemDefinition).
 var mark_radius_m := 0.0
 var mark_half_angle_deg := 45.0
 var mark_mult_permille := 1000
@@ -145,13 +145,13 @@ var vent_damage_bonus_permille := 0
 var vent_radius_bonus_permille := 0
 var heat_hot_threshold := 0
 var meltdown_damage_permille := 0
-## v0.6.0 MX4: Venom Core's poison engine (see ItemDefinition; Venom).
+## Venom Core's poison engine (see ItemDefinition; Venom).
 var poison_damage := 0
 var poison_period_ticks := 1
 var poison_ticks := 0
 var poison_max_stacks := 0
 var poison_spread_m := 0.0
-## v0.9.5 EE1: what Venom and Bleed gain at Lv 2 and 3 (see ItemDefinition; ElementLevels). Ticks, not seconds.
+## What Venom and Bleed gain at Lv 2 and 3 (see ItemDefinition; ElementLevels). Ticks, not seconds.
 var el_jump_ticks := 0
 var el_jump_range_m := 0.0
 var el_jump_gap_ticks := 0
@@ -160,7 +160,7 @@ var el_stack_bonus_permille := 0
 var el_wound_move_mm := 0
 var el_wound_bonus_permille := 0
 var el_burst_stacks := 0
-## v0.9.5 EE2: what Fire, Lightning and Frost gain at Lv 2 and 3 (see ItemDefinition; ElementLevelsFsf). Ticks.
+## What Fire, Lightning and Frost gain at Lv 2 and 3 (see ItemDefinition; ElementLevelsFsf). Ticks.
 var el_patch_wide_permille := 0
 var el_patch_extra_ticks := 0
 var el_heat_permille := 0
@@ -176,20 +176,20 @@ var el_shard_range_m := 0.0
 var el_shard_permille := 0
 var el_shard_slow_ticks := 0
 var el_shatters_per_second := 0
-var el_level_permille := PackedInt32Array()  # v0.10.5 W3-P2: an element card's damage share by level (ElementStack)
-## v0.6.5 WN5a: S5 Bleed's period while the player moves (0 = none), and T4's face on a Gun run (empty = name_key /
+var el_level_permille := PackedInt32Array()  # An element card's damage share by level (ElementStack)
+## S5 Bleed's period while the player moves (0 = none), and T4's face on a Gun run (empty = name_key /
 ## desc_key; Offers.item_keys picks the run's).
 var bleed_move_period_ticks := 0
 var name_key_gun := &""
 var desc_key_gun := &""
 
 
-## v0.8.0 RR: this card's tier, in order (TIER_*: common 0, rare 1, epic 2, legendary 3).
+## This card's tier, in order (TIER_*: common 0, rare 1, epic 2, legendary 3).
 func tier() -> int:
 	return tier_of(rarity)
 
 
-## v0.8.0 RR: ItemDefinition.Rarity `r` as a tier in order (TIER_*).
+## ItemDefinition.Rarity `r` as a tier in order (TIER_*).
 static func tier_of(r: int) -> int:
 	match r:
 		RARE:

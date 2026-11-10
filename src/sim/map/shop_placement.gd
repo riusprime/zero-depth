@@ -55,7 +55,7 @@ static func allowed(f: FloorLayout, room: int) -> bool:
 		room != f.start_room
 		and room != f.boss_room
 		and room != f.boss_host_room
-		and room != f.overrun_room  # v0.4.0 AB: never the Overrun side room
+		and room != f.overrun_room  # Never the Overrun side room
 		and room < f.hops.size()
 		and f.hops[room] > 0
 	)

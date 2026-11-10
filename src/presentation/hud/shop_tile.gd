@@ -1,9 +1,9 @@
 class_name ShopTile
 extends PanelContainer
-## One button of the shop panel (v0.5.0 SH): the heal or the reroll (a salvage row until v0.10.5 W3-O9). A title,
+## One button of the shop panel: the heal or the reroll (a salvage row until v0.10.5 W3-O9). A title,
 ## a detail line under it, and a price or refund with the shard icon. A disabled tile is dimmed and its price
 ## turns red when you can't afford it. A mouse click or hover reports itself; the panel decides.
-## v0.10.5 W3-O16 (owner 2026-11-04, the shop's layout A in the Astral style): a wide Astral plate (AstralChrome.plate:
+## A wide Astral plate (AstralChrome.plate:
 ## a slim lozenge, a star off each tip), its icon in a thin ring at the left (`icon_kind`: &"heal" or &"reroll"), the
 ## title in letter-spaced Cinzel capitals, and the price BIG at the right with Astral's shard. Focus follows Astral's
 ## rules (the contour brightens, a second contour 6 px outside, the tip stars light). The title and the detail step
@@ -185,7 +185,7 @@ func _fit() -> void:
 
 func _apply() -> void:
 	modulate = Color(1, 1, 1, 1.0 if enabled else 0.55)
-	set_meta(GameCursor.META_INVALID, not enabled)  # v0.9.5 MC2: the cursor shows INVALID over a tile you can't use
+	set_meta(GameCursor.META_INVALID, not enabled)  # The cursor shows INVALID over a tile you can't use
 	title.add_theme_color_override(
 		"font_color", AstralCardArt.TEXT if focused else Color(AstralCardArt.TEXT, 0.86)
 	)

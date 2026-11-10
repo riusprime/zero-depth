@@ -1,6 +1,6 @@
 class_name VariantCompiler
 extends RefCounted
-## v0.11.0 O13a (PLAN M3; ENEMIES.md V1-V5; owner Q23): the biome variants and rosters in the sim's units. A variant
+## PLAN M3; ENEMIES.md V1-V5; owner Q23: the biome variants and rosters in the sim's units. A variant
 ## compiles as its base (ContentCompiler matches BehaviourSchemas.base_of), then its own numbers here; it opens on a
 ## floor's curve with its base (inherit_phases), and only on its own biome's floors (biome_only_rows,
 ## FloorPlan.roster_kinds_of, SpawnDirector.unlocked).

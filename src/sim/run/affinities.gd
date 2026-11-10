@@ -1,6 +1,6 @@
 class_name Affinities
 extends RefCounted
-## v0.9.0 RB (owner, PLAN "Owner decisions" RB; docs/roadmap/v0.9.0/AFFINITIES.md A0-A5): the run's rune affinity in
+## The run's rune affinity in
 ## play. FloorPlan builds World.affinity from the run's locked choice (RunState.affinity) on every floor; None builds
 ## nothing (World.affinity stays null), so every hook here is a no-op and the world hashes as before RB.
 ## - A1 Ember: the burns the hero applies last burn_duration_permille of their duration (burn_ticks).

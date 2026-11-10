@@ -1,11 +1,11 @@
 class_name GlaiveView
 extends Node3D
-## v0.9.0 AF2 (owner Q7; ATTACK_FORMS.md F7): the Glaive's look. Each disc in flight (WorldReader.projectile_is_disc)
+## The Glaive's look. Each disc in flight (WorldReader.projectile_is_disc)
 ## is a flat spinning blade-disc lying on the core plane: a bright rim, three curved blades turning round a hot hub,
 ## in the element's colours (BeamLooks: default energy, Fire, Lightning, Frost, Venom, Bleed), with two fading
 ## afterimages where it was the last syncs (its whirl). On its way back (WorldReader.disc_coming_back) it spins the
 ## other way and burns brighter, so the return reads at a glance.
-## v0.9.0 VX (VFX_AUDIT.md): V2 the first element's centre and the second's edge; V25 the rim sheds its element's
+## VFX_AUDIT.md: V2 the first element's centre and the second's edge; V25 the rim sheds its element's
 ## accent;
 ## V26 a small catch flash at the hero's hand; V47 Effects density Low drops the afterimages; V48 fixed buffers.
 ## Presentation only (EI-07): it reads the reader, never writes; the spin is cosmetic (sim ticks, and frame time
@@ -24,14 +24,14 @@ const GHOST_FADE: Array[float] = [0.45, 0.2]
 const CATCH_M := 1.6
 const CATCH_TICKS := 4.0
 const CATCHES_MAX := 4
-## v0.9.5 FC6: Ring's lightning rings round the discs (the Bomb's ring look, as the Lance's and the Void's): drawn at
+## Ring's lightning rings round the discs (the Bomb's ring look, as the Lance's and the Void's): drawn at
 ## once, and the ring shader's phase that puts its band at ARC_FRONT of the quad's half-width (0.25 + 0.72 u), so a
 ## ring of radius r is drawn at r / ARC_FRONT.
 const ARCS_MAX := 12
 const ARC_U := 0.7
 const ARC_FRONT := 0.754
 
-## v0.10.0 VX7 (VFX_PACK N4): the pack's ring (data/vfx/pack_fx_vx7.tres, pulse_area_03 in the disc's colours), held on
+## VFX_PACK N4: the pack's ring (data/vfx/pack_fx_vx7.tres, pulse_area_03 in the disc's colours), held on
 ## each disc, turning with it, over the disc and its afterimages (they stay). false: the disc as before.
 const PACK_RING := true
 const RING_ID := &"vx7_glaive_ring"
@@ -63,18 +63,18 @@ void fragment() {
 
 static var _shader: Shader
 
-## What the last sync showed (tests read them): the discs drawn, those coming back, the look; v0.9.0 VX: the
-## afterimages drawn (none at Low, V47), the catch flashes playing and caught since the view began (V26).
+## What the last sync showed (tests read them): the discs drawn, those coming back, the look; the
+## afterimages drawn (none at Low, V47), the catch flashes playing and caught since the view began.
 var discs := 0
 var returning := 0
 var look := &"default"
 var ghosts := 0
 var catches := 0
 var caught := 0
-## v0.9.5 FC6: the lightning rings drawn now (the tests read it).
+## The lightning rings drawn now (the tests read it).
 var arcs := 0
 
-## v0.10.0 VX7: the pack effects (found through the parent, or set directly: tests, the shot tool) and the rings held
+## The pack effects (found through the parent, or set directly: tests, the shot tool) and the rings held
 ## on the discs, by projectile id.
 var pack_fx: PackFx = null:
 	set(v):
@@ -96,7 +96,7 @@ var _ids: PackedInt32Array = PackedInt32Array()
 var _trail := {}
 var _was_back := {}
 var _seen := {}
-## V26: the catches playing ([pos (Vector2), tick (float)]).
+## The catches playing ([pos (Vector2), tick (float)]).
 var _catches: Array = []
 var _spin := 0.0
 var _tick := 0.0
@@ -121,7 +121,7 @@ func _init() -> void:
 			_ghost_mats.append(h.material_override as ShaderMaterial)
 
 
-## v0.9.5 FC6: the pool of lightning rings (one shared material, the Lance's ring look).
+## The pool of lightning rings (one shared material, the Lance's ring look).
 func _make_arcs() -> void:
 	var flat := PlaneMesh.new()
 	flat.size = Vector2(2.0, 2.0)
@@ -143,7 +143,7 @@ func _make_arcs() -> void:
 		_arcs.append(n)
 
 
-## v0.9.5 FC6: the Ring card's lightning ring round each disc that carries one.
+## The Ring card's lightning ring round each disc that carries one.
 func _place_arcs(reader: WorldReader) -> void:
 	arcs = 0
 	for row in reader.glaive_rings():
@@ -175,7 +175,7 @@ func _node(mesh: Mesh) -> MeshInstance3D:
 	return n
 
 
-## Each tick: the discs in flight, their afterimages, the spin; a disc that came back to the hand flashes (V26).
+## Each tick: the discs in flight, their afterimages, the spin; a disc that came back to the hand flashes.
 func sync(reader: WorldReader) -> void:
 	_tick = float(reader.tick())
 	_spin = _tick * SPIN
@@ -184,7 +184,7 @@ func sync(reader: WorldReader) -> void:
 	look = _form.look
 	if pack_fx == null and PACK_RING:
 		pack_fx = GapPack.pack_of(self)
-	var low := ViewPrefs.effects_density == "low"  # V47: Low drops the afterimages
+	var low := ViewPrefs.effects_density == "low"  # Low drops the afterimages
 	_pos.clear()
 	_back.clear()
 	_ghost_n.clear()
@@ -243,7 +243,7 @@ func _colour(k: int) -> void:
 		m.set_shader_parameter(&"fade", GHOST_FADE[g])
 
 
-## The discs that left since the last sync: one coming back that left within CATCH_M of the hero was caught (V26).
+## The discs that left since the last sync: one coming back that left within CATCH_M of the hero was caught.
 func _drop_gone() -> void:
 	for id: int in _trail.keys():
 		if _seen.has(id):
@@ -269,7 +269,7 @@ func _process(delta: float) -> void:
 		_turn_rings()
 
 
-## v0.10.0 VX7: the pack's ring on each disc (held; its colours are the disc's, read when it spawns).
+## The pack's ring on each disc (held; its colours are the disc's, read when it spawns).
 func _pack_rings() -> void:
 	ring_hold.begin()
 	if ring_hold.active():

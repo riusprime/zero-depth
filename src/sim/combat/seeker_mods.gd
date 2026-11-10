@@ -1,6 +1,6 @@
 class_name SeekerMods
 extends RefCounted
-## v0.9.5 FC7 (docs/roadmap/v0.9.5/FORM_COMBOS.md S1-S11): what eleven cards do to the Seekers form. One handler per
+## What eleven cards do to the Seekers form. One handler per
 ## card. A dart ignores these cards' generic ops (WandCompile.run: it only notes the id in modifier_ids), and this file
 ## reads them from there: mask(spec).
 ## - At the volley (Attacks._bolts): the count of darts (count(): Twin x2, Big Shot 2, Rapid Fire 5), their angles
@@ -125,12 +125,12 @@ static func mm(v: int) -> float:
 	return v / 1000.0
 
 
-## v0.9.5 FC7b: `dmg` x `permille` in thousandths of a point (a dart's damage keeps its fractions).
+## `dmg` x `permille` in thousandths of a point (a dart's damage keeps its fractions).
 static func milli_of(dmg: int, permille: int) -> int:
 	return dmg * permille
 
 
-## v0.9.5 FC7b: the whole damage a dart of `milli` thousandths deals now; the rest waits in ModifierState.sk_carry,
+## The whole damage a dart of `milli` thousandths deals now; the rest waits in ModifierState.sk_carry,
 ## so a run of 2.25-damage darts deals 9 over four (exact on average, deterministic). A short carry deals 0.
 static func take(w: World, milli: int) -> int:
 	var total := w.mx.sk_carry + milli
@@ -315,7 +315,7 @@ static func on_spawn(w: World, pi: int, milli: int = 0) -> void:
 	var k := _add(w, K_BALL, p.ids[pi], Vector2.ZERO, w.tick, 0, ang, p.root_id[pi])
 	if k >= 0:
 		w.mx.sk_r[k] = ang  # the launch heading
-		w.mx.sk_dmg[k] = milli  # v0.9.5 FC7b: what the dart was dealt from (its Ring and Split shares)
+		w.mx.sk_dmg[k] = milli  # What the dart was dealt from (its Ring and Split shares)
 
 
 # --- Flight ---------------------------------------------------------------------------------------------------------
@@ -510,7 +510,7 @@ static func _open(w: World, spec: AttackSpec, k: int) -> void:
 	var flags: int = s.sk_kind[k]
 	var at: Vector2 = s.sk_at[k]
 	var ang: int = s.sk_ang[k]
-	var milli: int = s.sk_dmg[k]  # v0.9.5 FC7b: thousandths; the whole damage is dealt (take) as the dart opens
+	var milli: int = s.sk_dmg[k]  # Thousandths; the whole damage is dealt (take) as the dart opens
 	var r: float = s.sk_r[k] / 1000.0
 	var aux: int = s.sk_aux[k]
 	var aux2: int = s.sk_aux2[k]

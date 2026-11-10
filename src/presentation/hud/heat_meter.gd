@@ -11,7 +11,7 @@ extends Control
 ## - a small word over the bar's left end names the zone, and "VENT: DASH" shows over its middle while a dash (or
 ##   blink) would vent.
 ## Reads WorldReader.heat_state() only (EI-07); hidden when the world has no heat.
-## v0.10.5 W3-O17 (UI style Astral): no slab: a slim bar (an ink bed in a hairline frame), the fill
+## UI style Astral: no slab: a slim bar (an ink bed in a hairline frame), the fill
 ## a 3 px line in Astral's warm tones (silver cool, the muted amber Hot, amber leaning rose in Overclock, rose-red
 ## overheated), the thresholds as 1 px ticks, a small diamond at the overheat end, the zone's word in letter-spaced
 ## Cinzel over the bar's left end and "VENT READY" over its right end while venting would blast. Same marks and reads.
@@ -147,7 +147,7 @@ func _draw() -> void:
 	_draw_astral(r, mx, h, pulse)
 
 
-## v0.10.5 W3-O17: the colour the fill is drawn in now: the heat's zone in Astral's tones, the warning while overheated.
+## The colour the fill is drawn in now: the heat's zone in Astral's tones, the warning while overheated.
 func astral_color() -> Color:
 	if _s.is_empty():
 		return HudStyle.A_METAL

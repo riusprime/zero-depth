@@ -1,6 +1,6 @@
 class_name CardOrder
 extends RefCounted
-## v0.10.5 O1 (owner L23: "remove them from the game to have a cleaner code"): the frozen index orders of the item,
+## The frozen index orders of the item,
 ## ability and combo tables. Saves hold indices, not ids (RunCarry.FIELDS, World.to_snapshot), so a deleted card keeps
 ## its place, the way EventCompiler.RETIRED_CURSES keeps a deleted curse's: a stub table (its id, kind, rarity and
 ## weapon, `retired`, no modifiers) that no run offers, that WandMigration still maps by id (data/wand/migration.tres)

@@ -1,7 +1,7 @@
 class_name BonePoser
 extends RefCounted
 ## Poses a boss model's skeleton from turns given in the avatar's model frame (+X the front, Y up, +Z the right,
-## metres), whatever the skeleton's own bone axes are (v0.7.5 BM: the owner's rigged Warlord and Hive Lens come with
+## metres), whatever the skeleton's own bone axes are (the owner's rigged Warlord and Hive Lens come with
 ## Tripo bones whose rest rotations are not the identity). Each frame the avatar's pose functions add turns, shifts
 ## and scales, then commit() writes every bone once: a bone left alone this frame goes back to its rest pose.
 ## A turn is applied about the bone's own pivot, in the model frame, as if the parent were at rest; children follow.

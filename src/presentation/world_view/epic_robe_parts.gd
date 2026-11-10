@@ -1,6 +1,6 @@
 class_name EpicRobeParts
 extends RefCounted
-## v0.9.0 MP2: the epic robes' made-in-code parts for EpicRobeView: the crown, gem and halo-bead meshes (flat-shaded,
+## The epic robes' made-in-code parts for EpicRobeView: the crown, gem and halo-bead meshes (flat-shaded,
 ## the hood's frame), and the layered materials (a fresnel sheen shell, the trim's additive glow, the halo's ring glow,
 ## the trail's camera-facing sprites) with their shaders and textures, each made once. Presentation only (EI-07).
 

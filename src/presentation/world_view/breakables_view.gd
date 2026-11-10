@@ -13,14 +13,14 @@ extends Node3D
 ## - Explosive barrels (`explosive_barrel`): a battered red barrel with a fuse cap; lit, a red light on it blinks faster
 ##   and faster until it blows (the `barrel_fuse` sound is AudioEvents'); the blast is a flash and a ball of fire the
 ##   size of its reach (BLAST_S), and `blasted` asks the camera for a thud.
-## - v0.9.0 BV (W71): per biome (InteractionLooks, the stage's prop_style): the owner's wall models tinted, the room's
+## - v0.9.0 BV: per biome (InteractionLooks, the stage's prop_style): the owner's wall models tinted, the room's
 ##   light, the biome's accent at the wall's feet; the containers' wood, clay and hoops and their chips (Ruins brown
 ##   wood and clay, Night Rocks blue-grey, Red Canyon bleached wood and terracotta, Frozen Shore frosted grey under a
 ##   snow cap, Starfall violet); the explosive barrel's red body and band (dark with a yellow band on Red Canyon's red
 ##   ground, so it still reads).
 
 const STONE := Color("#5A544C")
-const CRACK := Color("#C9D3D6")  # S15b: lighter than the slab (was #2A2622)
+const CRACK := Color("#C9D3D6")  # Lighter than the slab (was #2A2622)
 const WOOD := Color("#7A5634")
 const RED := Color("#8E2B1E")
 const FIRE := Color("#FF8A2A")
@@ -57,13 +57,13 @@ var props: Array[Node3D] = []
 ## How dark the cracks are now (CRACK_BASE .. 1) and each barrel's fuse light (0 / 1; others 0); tests read them.
 var crack_shade := 0.0
 var fuse_glow := PackedFloat32Array()
-## v0.9.0 BV: the biome whose look is drawn, and its container materials (wood, clay, hoop, keg, band), made once.
+## The biome whose look is drawn, and its container materials (wood, clay, hoop, keg, band), made once.
 var biome := &""
-## S15b: the slab as a wall spec ([center, half, yaw, height]; empty with no cracked wall). WorldViewRoot puts it
+## The slab as a wall spec ([center, half, yaw, height]; empty with no cracked wall). WorldViewRoot puts it
 ## after StageView.wall_specs for the wall cutaway, and fade_slab gets the indices that picks.
 var slab_spec: Array = []
 var slab_index := -1
-## S15c: how bright the runes are now (0 .. 1; they shine when the hero is near).
+## How bright the runes are now (0.. 1; they shine when the hero is near).
 var shine := 0.0
 var _accent_biome := &""
 var _mats := {}
@@ -141,7 +141,7 @@ static func fuse_blink(reader: WorldReader, i: int) -> bool:
 	return (t % period) < period / 2 + 1
 
 
-## S15b: fades the whole slab when the cutaway picks its wall_specs entry (the indices StageView.apply_occlusion gets).
+## Fades the whole slab when the cutaway picks its wall_specs entry (the indices StageView.apply_occlusion gets).
 func fade_slab(indices: PackedInt32Array) -> void:
 	if wall == null or slab_index < 0:
 		return
@@ -155,7 +155,7 @@ func fade_slab(indices: PackedInt32Array) -> void:
 
 func _process(delta: float) -> void:
 	if wall != null and wall.visible and _reader != null:
-		# S15c: runes shine when the hero is near (reads the hero's position; presentation time, decides nothing)
+		# Runes shine when the hero is near (reads the hero's position; presentation time, decides nothing)
 		var near := _reader.player_pos().distance_to(_slab_center) <= SHINE_RADIUS_M
 		if near:
 			shine = minf(1.0, shine + delta / SHINE_IN_S)
@@ -185,7 +185,7 @@ func _build_wall(reader: WorldReader) -> void:
 	root.name = "CrackedWall"
 	root.position = SimPlane.to_3d(reader.crack_door_center())
 	root.rotation.y = SimPlane.yaw_of(reader.crack_door_angle())
-	# v0.10.5 (owner PERF_PLAYLOG_1: a 1.1 s frame as the runes first shone): every piece here, the rubble too, is drawn
+	# Every piece here, the rubble too, is drawn
 	# once behind the loading cover (ShaderWarmup), so no material of the wall compiles mid-play.
 	root.set_meta(ShaderWarmup.WARM_META, true)
 	add_child(root)
@@ -200,7 +200,7 @@ func _build_wall(reader: WorldReader) -> void:
 		_model(wall, model, Vector3(1.0, 1.0, width / 3.0))
 	else:
 		_box(wall, Vector3(depth, WALL_H, width), Vector3(0, WALL_H * 0.5, 0), _stone)
-	# S15b: a web of cracks from one point on all four vertical faces (two along the doorway, two at its ends).
+	# A web of cracks from one point on all four vertical faces (two along the doorway, two at its ends).
 	for face in [-1.0, 1.0]:
 		for axis in 2:
 			var at: Vector3
@@ -221,8 +221,8 @@ func _build_wall(reader: WorldReader) -> void:
 					bar.rotation.z = ang
 					bar.position += Vector3(cos(ang) * 0.3, sin(ang) * -0.3, 0)
 				bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# S15c: a rune on all four faces (both passage faces and both ends), invisible until the hero comes near.
-	# v0.10.5: drawn from the floor's load at alpha 0 (was hidden until then: its first draw compiled its shader).
+	# A rune on all four faces (both passage faces and both ends), invisible until the hero comes near.
+	# Drawn from the floor's load at alpha 0 (was hidden until then: its first draw compiled its shader).
 	_slab_center = reader.crack_door_center()
 	_rune_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_rune_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -256,7 +256,7 @@ func _build_wall(reader: WorldReader) -> void:
 		SimPlane.yaw_of(reader.crack_door_angle()),
 		WALL_H
 	]
-	for side in [-1.0, 1.0]:  # v0.9.0 BV: the biome's touch at the wall's feet, on both sides
+	for side in [-1.0, 1.0]:  # The biome's touch at the wall's feet, on both sides
 		var foot := Node3D.new()
 		foot.name = "Foot"
 		foot.position = Vector3(-side * (depth * 0.5 + 0.45), 0, side * width * 0.4)
@@ -326,7 +326,7 @@ func _build_prop(i: int, kind: int, at: Vector2) -> void:
 				_cyl(root, 0.33, 0.33, 0.1, Vector3(0, 0.62, 0), _look_mat("keg_band"))
 				_cyl(root, 0.06, 0.06, 0.12, Vector3(0.12, 1.06, 0), _look_mat("metal"))
 				top = 0.0  # its top stays clear: the fuse cap and the blinking light
-		if _accent_biome == &"frozen_shore" and top > 0.0:  # v0.9.0 BV: snow on the container's top
+		if _accent_biome == &"frozen_shore" and top > 0.0:  # Snow on the container's top
 			var cap := MeshInstance3D.new()
 			cap.name = "Snow"
 			var c := CylinderMesh.new()
@@ -396,7 +396,7 @@ func _mat(c: Color) -> StandardMaterial3D:
 	return m
 
 
-## v0.9.0 BV: the biome's material for one container part (shared by every prop and chip of this floor).
+## The biome's material for one container part (shared by every prop and chip of this floor).
 func _look_mat(part: String) -> StandardMaterial3D:
 	if _mats.has(part):
 		return _mats[part]

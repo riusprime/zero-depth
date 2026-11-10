@@ -1,9 +1,9 @@
 class_name BuildPicker
 extends Control
-## The start screen (v0.3.0 L15: "pick at start, have a two card screen with a cool animation of appearing that
+## The start screen ("pick at start, have a two card screen with a cool animation of appearing that
 ## shows both"): one BuildCard per BuildDefinition (Blade, then Gun), staggered in (each rises and fades in), under
 ## the title. The last pick has focus.
-## v0.8.0 MU (owner O14, Ember stone): the title sits on a carved stone plaque with a glowing groove, the cards are
+## The title sits on a carved stone plaque with a glowing groove, the cards are
 ## stone tablets (BuildCard); behind them the menus' ember backdrop (MenuBackdrop). (v0.6.1 R2b's crystal
 ## title plaque and frames are retired.)
 ## v0.10.5 W3-O20 (owner 2026-11-04 night: "remake every single UI element into this new style even the main menu";
@@ -24,7 +24,7 @@ const TITLE_S := 0.45
 ## The title's type size (px), and the room it has (W3-O20: no plaque drawn); it fits en and es (test_plaques.gd).
 const TITLE_FONT := 40
 const TITLE_PLAQUE := Vector2(760, 96)
-## v0.10.5 W3-O20: the hairline under the title (px each way from its star).
+## The hairline under the title (px each way from its star).
 const TITLE_RULE := 210.0
 
 var cards: Array[BuildCard] = []
@@ -35,10 +35,10 @@ var _plaque := PanelContainer.new()
 var _hint := Label.new()
 var _back := AstralButton.new(AstralButton.Kind.PLATE, 260.0)
 var _t := 0.0
-var _backdrop := MenuBackdrop.new()  # v0.8.0 MU: from the main menu, so its own scene (W3-O20: Astral's)
+var _backdrop := MenuBackdrop.new()  # From the main menu, so its own scene (W3-O20: Astral's)
 
 
-## `locked`: {build id: condition tr key} for the builds shown padlocked (v0.9.5 SL: the Blade); a pick of one does
+## `locked`: {build id: condition tr key} for the builds shown padlocked (the Blade); a pick of one does
 ## nothing but flash its padlock. The Playground (a dev tool) passes none.
 func _init(builds: Array, last_id: StringName, locked: Dictionary = {}) -> void:
 	name = "BuildPicker"
@@ -89,11 +89,11 @@ func _init(builds: Array, last_id: StringName, locked: Dictionary = {}) -> void:
 			FIRST_DELAY_S + STAGGER_S * k
 		)
 		c.name = String(def.id).capitalize()
-		c.taken_permille = def.damage_taken_permille  # v0.8.0 N1 (D39)
+		c.taken_permille = def.damage_taken_permille  # v0.8.0 N1
 		var id := def.id
 		c.locked_key = StringName(locked.get(id, &""))
 		if c.is_locked():
-			c.set_meta(GameCursor.META_INVALID, true)  # v0.9.5 MC2: the cursor shows INVALID over it
+			c.set_meta(GameCursor.META_INVALID, true)  # The cursor shows INVALID over it
 		c.pressed.connect(
 			func() -> void:
 				if c.is_locked():
@@ -128,7 +128,7 @@ func _ready() -> void:
 		c.focus_neighbor_bottom = c.get_path_to(_back)
 	if not cards.is_empty():
 		_back.focus_neighbor_top = _back.get_path_to(cards[_focus_index])
-	if HudStyle.reduced_motion:  # v0.7.5 SM (accessibility pass): reduced motion shows the cards in place
+	if HudStyle.reduced_motion:  # Accessibility pass: reduced motion shows the cards in place
 		settle()
 
 
@@ -178,7 +178,7 @@ func title_label() -> Label:
 	return _title
 
 
-## The title's box (tests; v0.10.5 W3-O20: it draws nothing, the title and its rule sit in it).
+## The title's box (tests; it draws nothing, the title and its rule sit in it).
 func title_plaque() -> PanelContainer:
 	return _plaque
 

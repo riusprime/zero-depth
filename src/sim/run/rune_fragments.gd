@@ -1,6 +1,6 @@
 class_name RuneFragments
 extends RefCounted
-## v0.9.0 MP (PLAN W49-W50, Q28): the Rune Fragments a floor earned, read from the floor's own state (no new state,
+## PLAN W49-W50, Q28: the Rune Fragments a floor earned, read from the floor's own state (no new state,
 ## no event: the boss's flow, the secrets' solved flags, the final fight). RunState.finish_floor adds a finished
 ## floor's to the run's tally; total() adds the current floor's so far. The profile banks the tally
 ## when the run ends (MetaProgress, app side). Pure.
@@ -42,7 +42,7 @@ static func of_floor(w: World, t: FragmentTable, cleared: bool) -> int:
 	return loop_scaled(t, _of_floor_base(w, t, cleared), w.loop)
 
 
-## v0.10.5 O5a (owner L2): `n` fragments earned on loop `loop`: × (1000 + loop_bonus_permille × (loop − 1)) / 1000,
+## `n` fragments earned on loop `loop`: × (1000 + loop_bonus_permille × (loop − 1)) / 1000,
 ## rounded down (loop 1: n).
 static func loop_scaled(t: FragmentTable, n: int, loop: int) -> int:
 	if t == null or loop <= 1:

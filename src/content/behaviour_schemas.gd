@@ -5,10 +5,10 @@ extends RefCounted
 
 ## Every enemy attack's windup is at least this many ticks (0.4 s; owner, 2026-10-06). SimTick mirrors it.
 const MIN_TELEGRAPH_TICKS := 24
-## v0.11.0 O9: the horde critters' schema (one rule set, five bodies).
+## The horde critters' schema (one rule set, five bodies).
 const CRITTER := {"params": ["contact_damage", "contact_cd_seconds", "flies"], "attacks": []}
 ## Shapes are AttackDefinition.Shape values: 0 CIRCLE, 2 LINE, 4 PROJECTILE.
-## A behaviour with one attack names its "shape" and "shape_params"; one with several (v0.3.5 AI: the Arc Caster)
+## A behaviour with one attack names its "shape" and "shape_params"; one with several (the Arc Caster)
 ## lists "attacks", each with its "id", "shape" and "shape_params", in the order the definition must give them.
 
 const SCHEMAS := {
@@ -47,16 +47,16 @@ const SCHEMAS := {
 		"shape_params":
 		["count", "gap_seconds", "speed_mps", "radius_m", "range_m", "spread_degrees"],
 	},
-	## v0.4.0 BO: the Hive Lens's drones, split off at half HP; they fly the Needle's behaviour (EnemyAi.behaviour_of).
-	## v0.7.5 EF (owner N16): they fire a slow fireball pattern (data/bullet_patterns, a ring of orbs), not a burst.
+	## The Hive Lens's drones, split off at half HP; they fly the Needle's behaviour (EnemyAi.behaviour_of).
+	## They fire a slow fireball pattern (data/bullet_patterns, a ring of orbs), not a burst.
 	&"lens_drone":
 	{
 		"params": ["attack_range_m", "cooldown_seconds", "keep_distance_m", "flee_distance_m"],
 		"shape": 4,
 		"shape_params": ["pattern_id"],
 	},
-	## v0.3.5 AI (owner F5): keeps keep_min_m..keep_max_m away and casts one of three spells, picked by weight.
-	## v0.7.5 EF (owner N16): the bolt and the spread each fire a slow fireball pattern (a fan of plasma balls).
+	## Keeps keep_min_m..keep_max_m away and casts one of three spells, picked by weight.
+	## The bolt and the spread each fire a slow fireball pattern (a fan of plasma balls).
 	&"arc_caster":
 	{
 		"params":
@@ -76,8 +76,8 @@ const SCHEMAS := {
 			{"id": &"rune", "shape": 0, "shape_params": ["radius_m"]},
 		],
 	},
-	## v0.3.5 AI (owner F6): hovers keep_min_m..keep_max_m away and lobs a bomb whose circle fills for the windup.
-	## v0.7.5 EF (owner N16): it lobs a fireball (a BURST pattern) that bursts into small ones; no ground circle.
+	## Hovers keep_min_m..keep_max_m away and lobs a bomb whose circle fills for the windup.
+	## It lobs a fireball (a BURST pattern) that bursts into small ones; no ground circle.
 	&"bomb_drone":
 	{
 		"params": ["attack_range_m", "cooldown_seconds", "keep_min_m", "keep_max_m"],
@@ -142,7 +142,7 @@ const SCHEMAS := {
 		"shape": 2,
 		"shape_params": ["range_m", "half_width_m"],
 	},
-	## v0.11.0 O9 (PLAN H1; owner Q14): the horde critters, one per biome, one rule set (EnemyAi.is_critter): no attack;
+	## PLAN H1; owner Q14: the horde critters, one per biome, one rule set (EnemyAi.is_critter): no attack;
 	## a touch hurts for contact_damage at most every contact_cd_seconds; `flies` (true or false) lets it fly over the
 	## floor's hazards (the Cave Bat).
 	&"dust_mite": CRITTER,
@@ -150,7 +150,7 @@ const SCHEMAS := {
 	&"ember_flea": CRITTER,
 	&"ice_crab": CRITTER,
 	&"star_mote": CRITTER,
-	## v0.11.0 O13a (ENEMIES.md V1-V5; owner Q23): the biome variants, each its base's params and attack (VARIANT_OF)
+	## ENEMIES.md V1-V5; owner Q23: the biome variants, each its base's params and attack (VARIANT_OF)
 	## plus its own (Variants). The Rubble Warden: a crust of crust_hp on top of its HP that falls off at half HP as
 	## a patch of patch_radius_m lasting patch_seconds that slows the hero on it to patch_slow_permille (never solid).
 	&"rubble_warden":
@@ -299,7 +299,7 @@ const SCHEMAS := {
 		"shape": 0,
 		"shape_params": ["radius_m"],
 	},
-	## v0.11.0 O13c (ENEMIES.md R5-R8, approved 2026-11-07): the Red Canyon's and the Frozen Shore's signature enemies
+	## The Red Canyon's and the Frozen Shore's signature enemies
 	## (CanyonShore). The Kiln Beetle: a slow armoured Warden whose death bursts burst_radius_m round where it fell
 	## burst_delay_seconds later (burst_damage to the hero, burst_enemy_damage to every enemy in it), erupting a lava vent
 	## under it too.
@@ -383,7 +383,7 @@ const SCHEMAS := {
 		"shape": 0,
 		"shape_params": ["radius_m"],
 	},
-	## v0.11.0 O13d (ENEMIES.md R9): the Star Warper marks a star mark_offset_m beside the hero, then after its windup
+	## ENEMIES.md R9: the Star Warper marks a star mark_offset_m beside the hero, then after its windup
 	## (1 s) blinks onto it and strikes a disc of radius_m; the hero standing within mark_radius_m of the star cancels
 	## the blink and stuns it stun_seconds.
 	&"star_warper":
@@ -393,11 +393,11 @@ const SCHEMAS := {
 		"shape": 0,
 		"shape_params": ["radius_m"],
 	},
-	## v0.11.0 O13d (ENEMIES.md R10): the Gravity Node, stationary and floating, no attack: every projectile within
+	## ENEMIES.md R10: the Gravity Node, stationary and floating, no attack: every projectile within
 	## pull_radius_m turns toward it (pull_mps2 at its centre, none at the reach), its speed kept.
 	&"gravity_node": {"params": ["pull_radius_m", "pull_mps2"], "attacks": []},
 }
-## v0.11.0 O13a: a variant's base behaviour (it walks, aims and hits as its base: EnemyAi.behaviour_of).
+## A variant's base behaviour (it walks, aims and hits as its base: EnemyAi.behaviour_of).
 const VARIANT_OF := {
 	&"rubble_warden": &"warden",
 	&"dim_needle": &"needle",
@@ -405,11 +405,11 @@ const VARIANT_OF := {
 	&"frost_charger": &"charger",
 	&"split_sniper": &"sniper",
 }
-## v0.11.0 O13c: the signature enemies that walk, turn and hit as a base (the Kiln Beetle and the Glacier Turtle a
+## The signature enemies that walk, turn and hit as a base (the Kiln Beetle and the Glacier Turtle a
 ## Warden's slam and slow turn; EnemyAi.behaviour_of: CanyonShore.BASE). They are no variants (VARIANT_OF).
 const CANYON_SHORE_BASE := {&"kiln_beetle": &"warden", &"glacier_turtle": &"warden"}
 
 
-## v0.11.0 O13a: the behaviour `behaviour` runs (its base for a variant, else itself).
+## The behaviour `behaviour` runs (its base for a variant, else itself).
 static func base_of(behaviour: StringName) -> StringName:
 	return VARIANT_OF.get(behaviour, CANYON_SHORE_BASE.get(behaviour, behaviour))

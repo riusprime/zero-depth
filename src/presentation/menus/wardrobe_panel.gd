@@ -1,7 +1,7 @@
 class_name WardrobePanel
 extends MenuPanel
-## v0.9.0 RB (owner, PLAN "Owner decisions" RB; docs/roadmap/v0.9.0/AFFINITIES.md): the hub Wardrobe's panel. Two
-## choices, picked apart (W53): the robe's colour and the rune affinity, each a cycler (left / right, or press to step;
+## The hub Wardrobe's panel. Two
+## choices, picked apart: the robe's colour and the rune affinity, each a cycler (left / right, or press to step;
 ## keyboard, mouse and pad through the focus, as every menu), a line on the affinity's gain and its trade-off, and Back.
 ## The hero in the hub wears the choice at once (HubSession). A robe not yet bought (Rune Fragments, MP) is shown with
 ## "locked" and isn't worn: the hero keeps the last robe that is. MP2: the epic robes are picked like the others once
@@ -47,7 +47,7 @@ func _init(
 		keys.append(String(Wardrobe.HIDDEN_NAME if masked else r.name_key))
 	robe_cycler = LockCycler.new(ids, keys, String(current_robe), unlocked)
 	robe_cycler.name = "Robe"
-	robe_cycler.astral = true  # v0.10.5 W3-O20: Astral's chevrons and hairline (OptionCycler)
+	robe_cycler.astral = true  # Astral's chevrons and hairline (OptionCycler)
 	robe_cycler.custom_minimum_size = Vector2(300, 40)
 	robe_cycler.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	robe_cycler.changed.connect(_on_robe)
@@ -65,7 +65,7 @@ func _init(
 		akeys.append(String(a.name_key))
 	affinity_cycler = OptionCycler.new(aids, akeys, String(current_aff))
 	affinity_cycler.name = "Affinity"
-	affinity_cycler.astral = true  # v0.10.5 W3-O20: Astral's chevrons and hairline (OptionCycler), as in Options
+	affinity_cycler.astral = true  # Astral's chevrons and hairline (OptionCycler), as in Options
 	affinity_cycler.custom_minimum_size = Vector2(300, 40)
 	affinity_cycler.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	affinity_cycler.changed.connect(_on_affinity)
@@ -101,7 +101,7 @@ func _on_robe(id: String) -> void:
 		picked.emit(worn_robe, affinity)
 
 
-## The note under a locked robe: its own hint (v0.9.5 RS2: the Runic robe is earned, not bought) or the shop's.
+## The note under a locked robe: its own hint (the Runic robe is earned, not bought) or the shop's.
 func _note_for(id: String) -> String:
 	for r: RobeDefinition in _robes:
 		if String(r.id) == id and not String(r.unlock_hint_key).is_empty():

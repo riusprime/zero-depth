@@ -1,6 +1,6 @@
 class_name CardDeal
 extends RefCounted
-## v0.8.0 N8 (owner O62, D48): the reward cards' deal as one timeline, so the pick panel only reads it each frame
+## The reward cards' deal as one timeline, so the pick panel only reads it each frame
 ## (no tween decides anything: EI-03; the sim waits on the pick as before, this only draws it).
 ## - Deal: every card arrives face down from the bottom of the screen into its place in a fan, one after another
 ##   (STAGGER_S apart, ARRIVE_S each).

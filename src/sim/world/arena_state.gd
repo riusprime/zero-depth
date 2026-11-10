@@ -12,7 +12,7 @@ var wave := 0
 var next_wave_tick := -1
 ## Enemies the waves of this sealing spawned so far.
 var spawned := 0
-## v0.9.0 CF: the wave's members still waiting to come in (the room holds only so many at once: ClosedFights), in
+## The wave's members still waiting to come in (the room holds only so many at once: ClosedFights), in
 ## order: their enemy kinds and spots.
 var later_kinds := PackedInt32Array()
 var later_pos := PackedVector2Array()
@@ -45,7 +45,7 @@ func hash_into(h: StateHasher) -> void:
 		h.add_f32(o.center.y)
 	for s in [rng_combat, rng_ai]:
 		h.add_int(s.state if s != null else 0)
-	if not later_kinds.is_empty():  # v0.9.0 CF: hashed only while members wait (a fight before CF hashes as it did)
+	if not later_kinds.is_empty():  # Hashed only while members wait (a fight before CF hashes as it did)
 		h.add_ints(later_kinds)
 		for q in later_pos:
 			h.add_f32(q.x)

@@ -34,7 +34,7 @@ extends Node3D
 ## the blade and its trail hold still for a moment of frame time; the syncs that fall inside it are caught up when it
 ## ends.
 
-## v0.10.0 VX8 (VFX_PACK N3): the swing ribbon takes the beam pack's scrolling-noise look (BladePack's ribbon material,
+## VFX_PACK N3: the swing ribbon takes the beam pack's scrolling-noise look (BladePack's ribbon material,
 ## UV.x along the ribbon) while a ribbon slot is free; false: the old plain ribbon (before/after shots).
 const PACK_BLADE := true
 ## Height of the blade above the ground (the cube's middle).
@@ -57,11 +57,11 @@ const THRUST_PULLBACK := 0.55
 ## Arc segments across a thrust's streak.
 const STREAK_SEGMENTS := 8
 const SPIN_SUBSTEPS := 8
-## v0.6.5 WN4 (the Blade pool, WorldReader.blade_swing): Heavy's blade thickens with its damage weight (up to this),
+## The Blade pool, WorldReader.blade_swing: Heavy's blade thickens with its damage weight (up to this),
 ## and a faster swing (Flurry) keeps this many more trail samples: a blur of slashes.
 const HEAVY_WIDTH_MAX := 1.8
 const FLURRY_TRAIL := 5
-## v0.8.0 GF3: the slash edge: across this share of the blade's span at the tip, its peak opacity, and the finisher's.
+## The slash edge: across this share of the blade's span at the tip, its peak opacity, and the finisher's.
 const EDGE_IN := 0.84
 const EDGE_OUT := 1.03
 const EDGE_ALPHA := 0.95
@@ -71,7 +71,7 @@ var color := ThemePalette.color(&"player_core")
 var length_scale := 1.0
 var width_scale := 1.0
 var trail_count := 6
-## Overclock heat's tier (HeatLooks.TIER_*), read from the sim each sync: v0.5.5 LK (owner A2) the blade and its
+## Overclock heat's tier (HeatLooks.TIER_*), read from the sim each sync: v0.5.5 LK the blade and its
 ## trail take the heat meter's tier colour (HeatLooks.attack_color): their own below Hot, orange at Hot, red at
 ## Overclock.
 var heat_tier := HeatLooks.TIER_COOL
@@ -95,21 +95,21 @@ var _streak: Array = [0.0, 0.0, 0.0]
 var _history: Array = []
 var _last_t := 0
 var _pivot_base := Vector3.ZERO
-## v0.6.5 WN4: the current swing's weight and speed bonus as drawn (WorldReader.blade_swing).
+## The current swing's weight and speed bonus as drawn (WorldReader.blade_swing).
 var _form_weight := 1.0
 var _form_rate := 0
-## v0.8.0 GF3: the slash edge's layer, its colour's element tint (alpha 0: none) and the cache key it was read for.
+## The slash edge's layer, its colour's element tint (alpha 0: none) and the cache key it was read for.
 var _edge := MeshInstance3D.new()
 var _edge_mesh := ImmediateMesh.new()
 var _edge_mat := StandardMaterial3D.new()
 var _edge_element := Color(0, 0, 0, 0)
 var _edge_key := ""
-## v0.8.0 GF3: the hit-stop's hold (frame seconds left), and the last sync it skipped (caught up when it ends).
+## The hit-stop's hold (frame seconds left), and the last sync it skipped (caught up when it ends).
 var _hold := 0.0
 var _held_reader: WorldReader
 var _edge_drawn := 0
 var _finisher := false
-## v0.10.0 VX8: the pack ribbon's material (the view's own), whether it draws this swing (a slot was free), the noise's
+## The pack ribbon's material (the view's own), whether it draws this swing (a slot was free), the noise's
 ## scroll and the colour it was last tinted to.
 var _ribbon_mat: ShaderMaterial
 var _ribbon_on := false
@@ -168,7 +168,7 @@ func _init() -> void:
 	_apply_look()
 
 
-## Overclock heat (v0.5.5 LK, A2): the blade and its trail take the tier's colour (HeatLooks.attack_color). Only
+## Overclock heat: the blade and its trail take the tier's colour (HeatLooks.attack_color). Only
 ## material parameters change (never the shader).
 func set_heat_tier(tier: int) -> void:
 	if tier == heat_tier:
@@ -238,7 +238,7 @@ func blade_offset() -> float:
 	return _pivot.position.distance_to(_pivot_base)
 
 
-## v0.6.5 WN4: the swing's blade thickness factor from its damage weight (Heavy), as of the last sync.
+## The swing's blade thickness factor from its damage weight (Heavy), as of the last sync.
 func form_weight() -> float:
 	return _form_weight
 
@@ -248,7 +248,7 @@ func motion() -> int:
 	return _motion
 
 
-## v0.8.0 GF3: the slash edge's colour: the step's element (lightened) if it has one, the heat tier's from Hot up,
+## The slash edge's colour: the step's element (lightened) if it has one, the heat tier's from Hot up,
 ## else the hero's blue-white.
 func edge_color() -> Color:
 	if heat_tier != HeatLooks.TIER_COOL:
@@ -258,7 +258,7 @@ func edge_color() -> Color:
 	return ImpactFx.HERO
 
 
-## v0.8.0 GF3: how many quads the slash edge drew last (tests), and whether a hit-stop holds the blade now.
+## How many quads the slash edge drew last (tests), and whether a hit-stop holds the blade now.
 func edge_segments() -> int:
 	return _edge_drawn
 
@@ -267,13 +267,13 @@ func holding() -> bool:
 	return _hold > 0.0
 
 
-## v0.8.0 GF3: the blade's tip as drawn this frame (world space; BladeSwingFx's edge spark sits on it).
+## The blade's tip as drawn this frame (world space; BladeSwingFx's edge spark sits on it).
 func blade_tip_point() -> Vector3:
 	var xf := _pivot.get_global_transform_interpolated() if is_inside_tree() else _pivot.transform
 	return xf * Vector3(_span.y, 0, 0)
 
 
-## v0.8.0 GF3 (HitStop): holds the blade and its trail still for `seconds` of frame time (the longer, never stacked).
+## HitStop: holds the blade and its trail still for `seconds` of frame time (the longer, never stacked).
 func hold(seconds: float) -> void:
 	_hold = maxf(_hold, seconds)
 
@@ -284,7 +284,7 @@ func blade_energy() -> float:
 
 
 func sync(reader: WorldReader) -> void:
-	if _hold > 0.0:  # v0.8.0 GF3: held by the hit-stop: caught up when it ends
+	if _hold > 0.0:  # Held by the hit-stop: caught up when it ends
 		_held_reader = reader
 		return
 	set_heat_tier(reader.heat_tier())
@@ -365,7 +365,7 @@ func sync(reader: WorldReader) -> void:
 ## Rebuilds the trail every drawn frame so its head sits on the blade as drawn (interpolated between ticks);
 ## built from the tick samples alone, the trail would run up to a tick ahead of the blade.
 func _process(delta: float) -> void:
-	if _hold > 0.0:  # v0.8.0 GF3: the hit-stop holds the trail where it is
+	if _hold > 0.0:  # The hit-stop holds the trail where it is
 		_hold -= delta
 		if _hold > 0.0:
 			return
@@ -392,7 +392,7 @@ func _head() -> Array:
 	return [xf.origin, yaw, newest[2]]
 
 
-## v0.10.0 VX8: a new swing asks for a ribbon slot (the pack's `trail` family cap); with none, or without the pack, the
+## A new swing asks for a ribbon slot (the pack's `trail` family cap); with none, or without the pack, the
 ## old ribbon draws this swing.
 func _claim_ribbon() -> void:
 	if _ribbon_on or not PACK_BLADE or not is_inside_tree():
@@ -496,7 +496,7 @@ func _build_trail(head: Array) -> void:
 	_build_edge(pts, sub)
 
 
-## v0.8.0 GF3: the slash edge over the same samples as the trail: a narrow bright band along the tip's path (the
+## The slash edge over the same samples as the trail: a narrow bright band along the tip's path (the
 ## trail's look stays under it), fading toward the oldest sample; the finisher's brighter.
 func _build_edge(pts: Array, sub: int) -> void:
 	var n := pts.size()
@@ -527,7 +527,7 @@ func _build_edge(pts: Array, sub: int) -> void:
 	_edge_drawn = total
 
 
-## v0.8.0 GF3: the thrust's edge: a bright narrow fan along the aim at the tip.
+## The thrust's edge: a bright narrow fan along the aim at the tip.
 func _build_edge_streak() -> void:
 	var strength: float = _streak[2]
 	if strength <= 0.01:
@@ -553,7 +553,7 @@ func _build_edge_streak() -> void:
 	_edge_drawn = STREAK_SEGMENTS
 
 
-## v0.8.0 GF3: the step's first element colour (its spec's; none: alpha 0), read once a build and step.
+## The step's first element colour (its spec's; none: alpha 0), read once a build and step.
 func _read_edge_element(reader: WorldReader) -> void:
 	var id := reader.step_attack_id()
 	var key := reader.attack_digest() + ":" + String(id)
@@ -597,7 +597,7 @@ func _build_streak() -> void:
 
 
 ## A flat fan facing +X (sim angle 0): from the cube's edge out to edge + reach, across +-half_arc. The melee no
-## longer draws it (v0.2.0 L1); UtilityView's guard arc still uses it.
+## longer draws it; UtilityView's guard arc still uses it.
 static func fan_mesh(half_arc: int, own_r: float, reach: float) -> ArrayMesh:
 	var verts := PackedVector3Array()
 	var half := TAU * half_arc / 4096.0

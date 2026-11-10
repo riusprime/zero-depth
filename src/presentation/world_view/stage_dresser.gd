@@ -43,12 +43,12 @@ const BASE_GRASS_CHANCE := 0.7
 const SCATTER_DENSITY := 0.03
 ## Height of the cover slabs the sim describes (StageView's SLAB_HEIGHT).
 const SLAB_HEIGHT := 1.8
-## v0.8.0 RT (owner O12): the square cover pieces a designed room names, restyled by the biome as the dresser's own
+## The square cover pieces a designed room names, restyled by the biome as the dresser's own
 ## square cover is (BiomeLook.square_cover; Night Rocks: rocks and dead trees); other pieces keep their name. And the
 ## decoration pieces (the biome's decor_swap, never past DECOR_MAX_HEIGHT).
 const LAYOUT_SQUARE: Array[StringName] = [&"crate_stack", &"rock_large"]
 const LAYOUT_DECOR: Array[StringName] = [&"grass_tuft", &"rubble_small", &"debris_low"]
-## v0.8.0 MI: the role a kit name stands for (the generator's vignettes, RoomThemes, still name kit pieces; the sim
+## The role a kit name stands for (the generator's vignettes, RoomThemes, still name kit pieces; the sim
 ## never reads the name). A slab_concrete is a block when both its sides are BLOCK_MIN or more, else a long slab.
 const ROLE_OF := {
 	&"crate_stack": &"cover_square",
@@ -65,7 +65,7 @@ const ROLE_OF := {
 	&"rubble_small": &"decor_rubble",
 	&"debris_low": &"decor_debris",
 }
-## v0.8.0 MI: the piece a role draws when the biome has no pool for it (the Ruins kit's, the look before MI).
+## The piece a role draws when the biome has no pool for it (the Ruins kit's, the look before MI).
 const LEGACY_PIECE := {
 	&"cover_square": &"crate_stack",
 	&"cover_block": &"slab_concrete",
@@ -79,11 +79,11 @@ const LEGACY_PIECE := {
 	&"decor_debris": &"debris_low",
 }
 const BLOCK_MIN := 1.4
-## v0.8.0 MI: a footprint this many times longer (for its depth) than the chosen piece's own footprint is tiled with
+## A footprint this many times longer (for its depth) than the chosen piece's own footprint is tiled with
 ## the piece along its length instead of one stretched copy (at most TILE_MAX copies).
 const TILE_ASPECT := 1.8
 const TILE_MAX := 8
-## v0.8.0 MI: a wall prop keeps this far from a doorway, a light prop and another wall prop (m), and needs a wall
+## A wall prop keeps this far from a doorway, a light prop and another wall prop (m), and needs a wall
 ## this much deeper than its own footprint (rule 1: it stands inside the wall).
 const WALL_PROP_DOOR := 1.6
 const WALL_PROP_SPACING := 2.5
@@ -92,7 +92,7 @@ const WALL_PROP_BACK := 0.1
 
 ## Places the kit over a floor. `f` keys:
 ## - "walls": [[center: Vector2, half: Vector2, yaw: float, kind: int, piece (optional StringName), layout height
-##   (optional float)]] (kind 0 structural, 1 cover slab; a slab that names its piece is drawn with it; v0.8.0 RT: a
+##   (optional float)]] (kind 0 structural, 1 cover slab; a slab that names its piece is drawn with it; a
 ##   layout height >= 0 marks a designed room's blocker, drawn at that height (0: the kit's own) after the biome's
 ##   swap), the same order and yaw as StageView.wall_specs;
 ## - v0.8.0 RT, "props": the designed rooms' drawn-only pieces (WorldReader.layout_prop dictionaries);
@@ -102,7 +102,7 @@ const WALL_PROP_BACK := 0.1
 ##   {piece: int weight} draws square cover footprints with those pieces, and "decor_swap" {piece: piece} draws a
 ##   decoration piece as another (a kit or a code-made piece, CodeProps).
 ## Returns [{"piece": StringName, "xform": Transform3D (scales the unit-box piece), "wall": the wall index it
-## belongs to (-1 for none), "kind": &"cover" | &"light" | &"decor"}] (v0.8.0 N10: a structural wall's light props
+## belongs to (-1 for none), "kind": &"cover" | &"light" | &"decor"}] (a structural wall's light props
 ## also carry "niche": Rect2).
 ## - v0.8.0 MI, a biome's piece pools (look_input(look)): "pools" {role: {piece: weight}}, "max_per_floor"
 ##   {piece: n}, "wall_props_per_room" and "wall_prop_chance" (BiomeLook's fields).
@@ -111,7 +111,7 @@ static func dress(f: Dictionary) -> Array:
 	rng.seed = int(f.get("seed", 0)) * 7919 + 4513  # the cosmetic stream: presentation only
 	var out: Array = []
 	var walls: Array = f.get("walls", [])
-	f["_counts"] = {}  # v0.8.0 MI: per piece, how many this floor has drawn (max_per_floor)
+	f["_counts"] = {}  # Per piece, how many this floor has drawn (max_per_floor)
 	var slots := _light_slots(f, rng)
 	var props := _wall_prop_slots(f, slots, rng)  # v0.8.0 MI
 	for i in walls.size():
@@ -119,7 +119,7 @@ static func dress(f: Dictionary) -> Array:
 		if w[3] == 0 and ProceduralWall.handles(w):
 			_dress_wall_proc(out, i, w, slots.get(i, []))
 			_dress_wall_props(out, i, w, props.get(i, []))
-		elif w.size() > 5 and float(w[5]) >= 0.0:  # v0.8.0 RT: a designed room's blocker
+		elif w.size() > 5 and float(w[5]) >= 0.0:  # A designed room's blocker
 			_layout_named(out, i, w, f, rng)
 		else:
 			_dress_slab(out, i, w, f.get("biome", &""), rng, f.get("square_cover", {}), f)
@@ -129,7 +129,7 @@ static func dress(f: Dictionary) -> Array:
 	return out
 
 
-## v0.8.0 MI: a biome's look as the dresser's input keys (main thread: it asks which pieces are installed, so a
+## A biome's look as the dresser's input keys (main thread: it asks which pieces are installed, so a
 ## missing model drops out of its pools; L15). Empty for no look.
 static func look_input(look: BiomeLook) -> Dictionary:
 	if look == null:
@@ -165,7 +165,7 @@ static func _names(d: Dictionary) -> Dictionary:
 	return out
 
 
-## v0.8.0 MI: the role a footprint named `name` takes (a role name is itself; a kit name maps by ROLE_OF; a
+## The role a footprint named `name` takes (a role name is itself; a kit name maps by ROLE_OF; a
 ## slab_concrete narrower than BLOCK_MIN is a long slab; anything else: &"" and it keeps its own name).
 static func role_of(name: StringName, fr: Dictionary = {}) -> StringName:
 	if name in BiomeLook.ROLES:
@@ -176,7 +176,7 @@ static func role_of(name: StringName, fr: Dictionary = {}) -> StringName:
 	return role
 
 
-## v0.8.0 MI: the piece the biome draws for `role` on a footprint whose shorter side is `depth` (m): a weighted pick
+## The piece the biome draws for `role` on a footprint whose shorter side is `depth` (m): a weighted pick
 ## from its pool among the pieces that fit (min_foot / max_foot) and are under their floor cap; then counted. A
 ## role without a pool (or nothing that fits): `fallback` (the kit name the footprint carried), else LEGACY_PIECE.
 static func pick_piece(
@@ -254,7 +254,7 @@ static func _jitter(rng: RandomNumberGenerator, h: float) -> float:
 
 
 ## A light prop at `along`, on the side `side` (+1 or -1 along the depth axis); the procedural wall leaves it a niche
-## (v0.8.0 N10), recorded on the placement.
+## recorded on the placement.
 static func _light(
 	out: Array, i: int, fr: Dictionary, along: float, side: float, piece: StringName
 ) -> void:
@@ -267,7 +267,7 @@ static func _light(
 	out[out.size() - 1]["niche"] = _niche(fr, along, side, foot, piece)
 
 
-## v0.8.0 N10 (option A): a structural wall the procedural wall draws: only its light props, in niches (v0.8.0 N13:
+## Option A: a structural wall the procedural wall draws: only its light props, in niches (
 ## no kit pillar accents; ProceduralWall lays its own pillars).
 static func _dress_wall_proc(out: Array, i: int, w: Array, slots: Array) -> void:
 	var fr := _frame(w)
@@ -275,7 +275,7 @@ static func _dress_wall_proc(out: Array, i: int, w: Array, slots: Array) -> void
 		_light(out, i, fr, s[0], s[1], s[2])
 
 
-## v0.8.0 N10: the sim-plane rect a light prop's niche cuts from the procedural wall: LIGHT_SLOT wide (a brazier's
+## The sim-plane rect a light prop's niche cuts from the procedural wall: LIGHT_SLOT wide (a brazier's
 ## 0.6), from the wall's face on the prop's side back over the prop's foot (leaving at least 0.12 m of wall behind).
 static func _niche(
 	fr: Dictionary, along: float, side: float, foot: float, piece: StringName
@@ -296,7 +296,7 @@ static func _niche(
 	return Rect2(c - size * 0.5, size)
 
 
-## v0.8.0 N10: every niche the placements ask for (the structural walls' light props).
+## Every niche the placements ask for (the structural walls' light props).
 static func niches(placements: Array) -> Array:
 	var out: Array = []
 	for p: Dictionary in placements:
@@ -322,7 +322,7 @@ static func _dress_slab(
 		return
 	var pools: Dictionary = f.get("pools", {})
 	if length / depth < 1.6:
-		# v0.8.0 MI: a near-square footprint: the biome's square cover (a big one, both sides BLOCK_MIN + 0.6 or
+		# A near-square footprint: the biome's square cover (a big one, both sides BLOCK_MIN + 0.6 or
 		# more, its blocks); v0.7.5 NB1 square_cover; else the old rule.
 		var role := (
 			&"cover_block"
@@ -347,7 +347,7 @@ static func _dress_slab(
 		)
 		_add(out, pick, _place(fr, 0.0, 0.0, Vector3(length, h, depth)), i, &"cover")
 		return
-	# v0.8.0 MI: a biome with long cover but no wreck of its own tiles its deep footprints instead.
+	# A biome with long cover but no wreck of its own tiles its deep footprints instead.
 	var no_wreck := pools.has(&"cover_long") and not pools.has(&"cover_deep")
 	if depth >= 1.2 and length >= 2.6 and length <= 5.0 and not no_wreck and rng.randf() < 0.5:
 		var wreck := pick_piece(f, &"cover_deep", depth, rng)
@@ -360,7 +360,7 @@ static func _dress_slab(
 		var seg := rng.randf_range(1.0, 1.6) if rest > 2.2 else rest
 		var piece: StringName
 		var h: float
-		if pools.has(&"cover_long"):  # v0.8.0 MI: the biome's own long cover, segment by segment
+		if pools.has(&"cover_long"):  # The biome's own long cover, segment by segment
 			piece = pick_piece(f, &"cover_long", depth, rng)
 			h = _jitter(rng, maxf(float(_spec_of(piece)["height"]), 0.6))
 		else:
@@ -382,7 +382,7 @@ static func _layout_swap(
 	return piece
 
 
-## v0.8.0 MI: the piece a footprint named `name` (a role or a kit name) is drawn with in this biome: its role's
+## The piece a footprint named `name` (a role or a kit name) is drawn with in this biome: its role's
 ## pool when the biome has one; else (no pool: the look before MI) the old swap and the kit name itself.
 static func _resolve(
 	name: StringName, fr: Dictionary, f: Dictionary, rng: RandomNumberGenerator
@@ -405,7 +405,7 @@ static func _spec_of(piece: StringName) -> Dictionary:
 	return {"height": float(cp.get("height", 1.2)), "role": &"cover"}
 
 
-## v0.8.0 MI: a piece's own footprint (m, long side first): its spec's "foot", or the kit's measured proportions.
+## A piece's own footprint (m, long side first): its spec's "foot", or the kit's measured proportions.
 static func _foot_of(piece: StringName) -> Vector2:
 	var spec: Dictionary = KitModels.SPECS.get(piece, {})
 	if spec.has("foot"):
@@ -418,7 +418,7 @@ static func _foot_of(piece: StringName) -> Vector2:
 	return Vector2.ZERO  # the kit's pieces fill any footprint (the old rule)
 
 
-## v0.8.0 MI: `piece` filling the frame's footprint at height h: one copy, or (a footprint more than TILE_ASPECT times
+## `piece` filling the frame's footprint at height h: one copy, or (a footprint more than TILE_ASPECT times
 ## longer than the piece's own proportions) that many copies along it, each its share of the length.
 static func _fill(
 	out: Array,
@@ -453,15 +453,15 @@ static func _fill(
 		)
 
 
-## v0.8.0 RT: a designed room's blocker, its piece swapped for the biome, filling its footprint at the layout's height
-## (or the kit's own, jittered); a light piece carries its light. v0.8.0 MI: the layout names a role (_resolve); a
+## A designed room's blocker, its piece swapped for the biome, filling its footprint at the layout's height
+## (or the kit's own, jittered); a light piece carries its light. the layout names a role (_resolve); a
 ## biome piece keeps its own height (the layout's heights were set for the Ruins kit), tiled along a long footprint.
 static func _layout_named(
 	out: Array, i: int, w: Array, f: Dictionary, rng: RandomNumberGenerator
 ) -> void:
 	var fr := _frame(w)
 	var piece := StringName(w[4])
-	if not _in_named_room(f, w[0]):  # v0.11.0 O15: a purpose room's piece is drawn as named
+	if not _in_named_room(f, w[0]):  # A purpose room's piece is drawn as named
 		piece = _resolve(piece, fr, f, rng)
 	var spec := _spec_of(piece)
 	var kind: StringName = &"light" if spec["role"] == &"light" else &"cover"
@@ -470,9 +470,9 @@ static func _layout_named(
 	_fill(out, i, fr, piece, h, kind, rng)
 
 
-## v0.8.0 RT: a designed room's drawn-only pieces: decoration (the biome's decor_swap; never past DECOR_MAX_HEIGHT,
+## A designed room's drawn-only pieces: decoration (the biome's decor_swap; never past DECOR_MAX_HEIGHT,
 ## kept KEEP_CLEAR from doorways, rewards and the portal) and the pieces standing on its blockers (fading with them).
-## v0.8.0 MI: a decoration role draws from the biome's decoration pool.
+## A decoration role draws from the biome's decoration pool.
 static func _layout_props(out: Array, f: Dictionary, rng: RandomNumberGenerator) -> void:
 	var keep: Array = f.get("keep_clear", [])
 	var doors: Array = f.get("doors", [])
@@ -486,7 +486,7 @@ static func _layout_props(out: Array, f: Dictionary, rng: RandomNumberGenerator)
 		var h := float(p["height"])
 		var kind: StringName
 		var role := role_of(piece)
-		var named := _in_named_room(f, at)  # v0.11.0 O15: a purpose room's piece is drawn as named
+		var named := _in_named_room(f, at)  # A purpose room's piece is drawn as named
 		if named and _spec_of(piece).get("role", &"") == &"decor":
 			if _near_any_point(at, keep, KEEP_CLEAR) or _near_any_rect(at, doors, KEEP_CLEAR):
 				continue
@@ -513,11 +513,11 @@ static func _layout_props(out: Array, f: Dictionary, rng: RandomNumberGenerator)
 			Basis(Vector3.UP, SimPlane.yaw_of(int(p["angle"])))
 			* Basis.from_scale(Vector3(size.x, h, size.y))
 		)
-		var lift := float(p.get("lift", 0.0))  # v0.11.0 O15: a lintel rests on its stones
+		var lift := float(p.get("lift", 0.0))  # A lintel rests on its stones
 		_add(out, piece, Transform3D(basis, SimPlane.to_3d(at, lift)), wall, kind)
 
 
-## v0.11.0 O15: whether `at` lies in a purpose room (the input's "named_rooms").
+## Whether `at` lies in a purpose room (the input's "named_rooms").
 static func _in_named_room(f: Dictionary, at: Vector2) -> bool:
 	for r: Rect2 in f.get("named_rooms", []):
 		if r.has_point(at):
@@ -526,7 +526,7 @@ static func _in_named_room(f: Dictionary, at: Vector2) -> bool:
 
 
 ## A box that names its piece (a vignette's, PLAN L8): that piece fills the footprint at its natural height; a
-## light piece (a burn barrel) also carries its light. v0.8.0 MI: a cover name is a role, drawn from the biome's pool.
+## light piece (a burn barrel) also carries its light. a cover name is a role, drawn from the biome's pool.
 static func _named(
 	out: Array,
 	i: int,
@@ -544,7 +544,7 @@ static func _named(
 	_fill(out, i, fr, drawn, h, kind, rng)
 
 
-## v0.8.0 MI: per structural wall, the wall props its rooms set into it: [[along, side, piece]] (BiomeLook
+## Per structural wall, the wall props its rooms set into it: [[along, side, piece]] (BiomeLook
 ## wall_props_per_room, wall_prop_chance, pool wall_prop). Each keeps WALL_PROP_DOOR from a doorway and
 ## WALL_PROP_SPACING from a light prop's slot and another prop, on a wall deep enough to hold it (rule 1).
 static func _wall_prop_slots(
@@ -607,7 +607,7 @@ static func _wall_prop_slots(
 	return slots
 
 
-## v0.8.0 MI: a structural wall's props, each standing in a niche the procedural wall leaves (inside the wall's
+## A structural wall's props, each standing in a niche the procedural wall leaves (inside the wall's
 ## footprint, its back WALL_PROP_BACK from the far face), its front (+Z) toward the room.
 static func _dress_wall_props(out: Array, i: int, w: Array, slots: Array) -> void:
 	if slots.is_empty():
@@ -767,8 +767,8 @@ static func _decorate(out: Array, f: Dictionary, rng: RandomNumberGenerator) -> 
 			_decor(out, piece, p, rng.randf_range(0.7, 1.2), rng, f)
 
 
-## v0.8.0 MI: the piece a decoration name (a kit decor name or a decor role) draws in this biome: its role's pool,
-## else the biome's decor_swap (v0.7.5 NB1), else the kit's own.
+## The piece a decoration name (a kit decor name or a decor role) draws in this biome: its role's pool,
+## else the biome's decor_swap, else the kit's own.
 static func _decor_piece(
 	f: Dictionary, piece: StringName, rng: RandomNumberGenerator
 ) -> StringName:
@@ -788,7 +788,7 @@ static func _decor(
 	rng: RandomNumberGenerator,
 	f: Dictionary = {}
 ) -> void:
-	piece = _decor_piece(f, piece, rng)  # v0.7.5 NB1, v0.8.0 MI: the biome's own decoration
+	piece = _decor_piece(f, piece, rng)  # The biome's own decoration
 	if KitModels.SPECS.has(piece) and (KitModels.SPECS[piece] as Dictionary).has("foot"):
 		var ft: Vector2 = KitModels.SPECS[piece]["foot"]
 		var kh := minf(float(KitModels.SPECS[piece]["height"]) * s, DECOR_MAX_HEIGHT)
@@ -846,7 +846,7 @@ static func _near_any_point(p: Vector2, points: Array, d: float) -> bool:
 	return false
 
 
-## v0.7.5 NB1: a key of {key: int weight}, in proportion to its weight (one draw; keys in sorted order so the pick
+## A key of {key: int weight}, in proportion to its weight (one draw; keys in sorted order so the pick
 ## never depends on how the dictionary was written).
 static func _pick(rng: RandomNumberGenerator, weights: Dictionary) -> StringName:
 	var keys := weights.keys()

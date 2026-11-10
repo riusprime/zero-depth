@@ -163,7 +163,7 @@ func query_rect(rect: Rect2) -> PackedInt32Array:
 	return out
 
 
-## v0.4.0 TU: whether query_rect(rect) would return anything (box mode or circle mode), without building the list.
+## Whether query_rect(rect) would return anything (box mode or circle mode), without building the list.
 func any_in_rect(rect: Rect2) -> bool:
 	if _count == 0:
 		return false

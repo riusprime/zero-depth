@@ -29,7 +29,7 @@ extends ContentDef
 @export var min_distance_m := 8.0
 ## A pack's anchor is a spawn point within this distance of its room's walls (the room's edge), when there is one.
 @export var edge_band_m := 3.0
-## v0.10.5 O14 (Schell's interest curve): on this floor (1-based; 0 = off) no new pack spawns while the hero stands in
+## Schell's interest curve: on this floor (1-based; 0 = off) no new pack spawns while the hero stands in
 ## the room before the boss door (the enemies out stay). A starting value.
 @export var calm_antechamber_floor := 3
 @export var mix: Array[SpawnMixEntry] = []

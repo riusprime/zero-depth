@@ -1,11 +1,11 @@
 class_name RelicDefinition
 extends ContentDef
-## v0.11.0 O14b (owner Q-O14b "Both"; OWNER_QUESTIONS §J N1; CONTENT_SCHEMA §8): a relic, a run-long passive that no
+## A relic, a run-long passive that no
 ## altar, chest or shop ever offers: it lies on one pedestal and is taken by hand. The id names the relic and its rule
 ## (Relics, one per id in RELICS order):
 ## - city_heart (the hidden room under the Hollow Crown's throne, HeartRoom): `uses` times a run (1), the first killing
 ##   blow on the hero instead leaves them at `saved_hp` HP (1) and pulses a shock ring of `ring_radius_m` (4 m) that
-##   deals `ring_damage` to every enemy in it. OWNER-PENDING PLACEHOLDER (N1): the lead's idea, built so the room has
+##   deals `ring_damage` to every enemy in it. OWNER-PENDING PLACEHOLDER: the lead's idea, built so the room has
 ##   its reward; the owner approves or replaces it (`placeholder` stays true until then).
 
 ## The relics in the sim's order (Relics' indices). Appended, never renumbered.
@@ -20,7 +20,7 @@ const RELICS: Array[StringName] = [&"city_heart"]
 ## The shock ring's radius (m) and damage to each enemy inside it.
 @export var ring_radius_m := 4.0
 @export var ring_damage := 60
-## True while the relic is the lead's placeholder awaiting the owner (N1).
+## True while the relic is the lead's placeholder awaiting the owner.
 @export var placeholder := false
 
 

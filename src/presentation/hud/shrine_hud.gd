@@ -1,11 +1,11 @@
 class_name ShrineHud
 extends VBoxContainer
-## v0.9.0 SH, HF (owner Q29b, W36): the Blood and Chaos shrines' and the healing fountain's result lines, near the top
+## v0.9.0 SH, HF: the Blood and Chaos shrines' and the healing fountain's result lines, near the top
 ## of the screen like the Lockdown banner (LockdownHud). The cost is shown before the press by the shared interact
 ## prompt; this shows what the press did, for a few seconds: Blood's price paid and its altar risen (or that you are
 ## too weak), the Chaos challenge's enemies left while it is fought and then its altar, the fountain's heal (or that
 ## you are at full health). Reads WorldReader.shrine() only; it decides nothing.
-## v0.10.5 W3-O20 (UI style Astral): the title is letter-spaced Cinzel over a fading hairline
+## UI style Astral: the title is letter-spaced Cinzel over a fading hairline
 ## (HudStyle.astral_banner); Blood in the rose warning, Chaos in the lilac accent, the fountain a cold moon-blue.
 
 const LINE_SECONDS := 3.5
@@ -95,7 +95,7 @@ func _process(delta: float) -> void:
 		_left -= delta  # the next sync hides the line
 
 
-## v0.10.5 W3-O20: Blood's and Chaos's title colours (the rose warning, the lilac accent).
+## Blood's and Chaos's title colours (the rose warning, the lilac accent).
 static func _blood() -> Color:
 	return HudStyle.A_WARN
 

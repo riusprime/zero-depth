@@ -1,6 +1,6 @@
 class_name SpecForms
 extends RefCounted
-## v0.6.0 MX4 (docs/design/MODIFIER_ENGINE.md §2, the M-list): what Modifiers does to a spec's sizes when its form
+## docs/design/MODIFIER_ENGINE.md §2, the M-list: what Modifiers does to a spec's sizes when its form
 ## changes, the per-form "range" a modifier scales, a hook child's starting sizes, and the ability merges (mirror).
 ## Compile-time only (the specs are rebuilt on every compile; nothing here runs in a tick). No randomness, no trig.
 ##
@@ -101,7 +101,7 @@ static func change_form(s: AttackSpec, to: int) -> void:
 
 
 ## A hook child's starting sizes for its form, from its op's radius and reach (Modifiers._hook): the lingering
-## forms' times, and (MX4) a bolt's speed and flight, an arc's width; a bolt hook of an arc is a crescent as wide as
+## forms' times, and a bolt's speed and flight, an arc's width; a bolt hook of an arc is a crescent as wide as
 ## the arc (Echo Slash: "a projectile copy of the arc").
 static func hook_base(c: AttackSpec, parent: AttackSpec) -> void:
 	match c.form:

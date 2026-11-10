@@ -19,29 +19,29 @@ const ENEMY_KINDS := {  # behaviour ids to actor kinds (a test checks the key se
 	&"mine_layer": ActorStore.Kind.MINE_LAYER,
 	&"sniper": ActorStore.Kind.SNIPER,
 	&"lens_drone": ActorStore.Kind.LENS_DRONE,
-	&"dust_mite": ActorStore.Kind.DUST_MITE,  # v0.11.0 O9: the horde critters (EnemyAi.is_critter)
+	&"dust_mite": ActorStore.Kind.DUST_MITE,  # The horde critters (EnemyAi.is_critter)
 	&"cave_bat": ActorStore.Kind.CAVE_BAT,
 	&"ember_flea": ActorStore.Kind.EMBER_FLEA,
 	&"ice_crab": ActorStore.Kind.ICE_CRAB,
 	&"star_mote": ActorStore.Kind.STAR_MOTE,
-	&"rubble_warden": ActorStore.Kind.RUBBLE_WARDEN,  # v0.11.0 O13a: the biome variants (VariantCompiler)
+	&"rubble_warden": ActorStore.Kind.RUBBLE_WARDEN,  # The biome variants (VariantCompiler)
 	&"dim_needle": ActorStore.Kind.DIM_NEEDLE,
 	&"ember_charger": ActorStore.Kind.EMBER_CHARGER,
 	&"frost_charger": ActorStore.Kind.FROST_CHARGER,
 	&"split_sniper": ActorStore.Kind.SPLIT_SNIPER,
-	&"wire_weaver": ActorStore.Kind.WIRE_WEAVER,  # v0.11.0 O13b: the Ruins and Night Rocks signatures (RuinsRocks)
+	&"wire_weaver": ActorStore.Kind.WIRE_WEAVER,  # The Ruins and Night Rocks signatures (RuinsRocks)
 	&"scrap_hound": ActorStore.Kind.SCRAP_HOUND,
 	&"rock_lurker": ActorStore.Kind.ROCK_LURKER,
 	&"stone_thrower": ActorStore.Kind.STONE_THROWER,
-	&"kiln_beetle": ActorStore.Kind.KILN_BEETLE,  # v0.11.0 O13c: R5-R8 (CanyonShoreCompiler)
+	&"kiln_beetle": ActorStore.Kind.KILN_BEETLE,  # R5-R8 (CanyonShoreCompiler)
 	&"cinder_priest": ActorStore.Kind.CINDER_PRIEST,
 	&"frost_spitter": ActorStore.Kind.FROST_SPITTER,
 	&"glacier_turtle": ActorStore.Kind.GLACIER_TURTLE,
-	&"star_warper": ActorStore.Kind.STAR_WARPER,  # v0.11.0 O13d: the Starfall signatures (StarfallKinds)
+	&"star_warper": ActorStore.Kind.STAR_WARPER,  # The Starfall signatures (StarfallKinds)
 	&"gravity_node": ActorStore.Kind.GRAVITY_NODE,
 }
-## Bosses (v0.3.0 C): ids to actor kinds, move names to BossAttackTable moves (a test matches BossSchemas' sets).
-const BOSS_KINDS := BossKinds.ALL  # v0.9.0 NB4: the table lives in BossKinds (this file's line limit)
+## Bosses: ids to actor kinds, move names to BossAttackTable moves (a test matches BossSchemas' sets).
+const BOSS_KINDS := BossKinds.ALL  # The table lives in BossKinds (this file's line limit)
 const BOSS_MOVES := {
 	&"slam_ring": BossAttackTable.Move.SLAM_RING,
 	&"lanes": BossAttackTable.Move.LANES,
@@ -62,8 +62,8 @@ const BOSS_MOVES := {
 	&"row_lanes": BossAttackTable.Move.ROW_LANES,
 	&"grid": BossAttackTable.Move.GRID,  # v0.7.5 BF3
 	&"row_flood": BossAttackTable.Move.ROW_FLOOD,
-	&"gaze": BossAttackTable.Move.GAZE,  # v0.8.0 BS2 (S4)
-	&"melt": BossAttackTable.Move.MELT,  # v0.8.0 BS2 (S6)
+	&"gaze": BossAttackTable.Move.GAZE,  # v0.8.0 BS2
+	&"melt": BossAttackTable.Move.MELT,  # v0.8.0 BS2
 	&"combo": BossAttackTable.Move.COMBO,  # v0.8.0 FB1
 	&"spike_chase": BossAttackTable.Move.SPIKE_CHASE,
 	&"spike_burst": BossAttackTable.Move.SPIKE_BURST,
@@ -81,11 +81,11 @@ const BOSS_MOVES := {
 	&"lances": BossAttackTable.Move.LANCES,  # v0.10.5 O3 (the Prism's last phase)
 	&"kneel": BossAttackTable.Move.KNEEL,
 }
-const ATTACK_WEAPONS := {  # v0.8.0 FB3: a Nemesis attack's `weapon`
+const ATTACK_WEAPONS := {  # A Nemesis attack's `weapon`
 	"any": BossAttackTable.WEAPON_ANY,
 	"blade": BossAttackTable.WEAPON_BLADE,
 	"gun": BossAttackTable.WEAPON_GUN,
-	"own": BossAttackTable.WEAPON_OWN,  # v0.8.0 N2: The Fallen's own kit (outside its windows)
+	"own": BossAttackTable.WEAPON_OWN,  # The Fallen's own kit (outside its windows)
 }
 
 
@@ -124,7 +124,7 @@ static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	return t
 
 
-## One melee combo step in sim units (v0.3.0 L11). The hit comes at least one tick after the swing starts.
+## One melee combo step in sim units. The hit comes at least one tick after the swing starts.
 static func compile_swing_step(sd: SwingStepDefinition) -> SwingStep:
 	return SwingStep.make(
 		sd.motion as SwingStep.Motion,
@@ -139,7 +139,7 @@ static func compile_swing_step(sd: SwingStepDefinition) -> SwingStep:
 	)
 
 
-## An enemy's numbers in sim units (its behaviour id picks the kind); v0.7.5 EF: with `repo`, its patterns too.
+## An enemy's numbers in sim units (its behaviour id picks the kind); with `repo`, its patterns too.
 static func compile_enemy(def: EnemyDefinition, repo: ContentRepository = null) -> EnemyTable:
 	var t := _compile_enemy_numbers(def)
 	if repo != null:
@@ -152,19 +152,19 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 	t.kind = ENEMY_KINDS[def.behaviour_id]
 	t.name_key = def.name_key
 	t.hp = def.hp
-	t.base_hp = def.hp  # v0.11.0 F3: never scaled (HealOrbs)
+	t.base_hp = def.hp  # Never scaled (HealOrbs)
 	t.radius_m = def.radius_m
 	t.speed = def.move_speed_mps / SimTick.TICKS_PER_SECOND
 	var bp := def.behaviour_params
 	t.shards = def.shards
 	t.shards_by_floor = def.shards_by_floor
-	t.weak_to = def.weak_to  # v0.10.5 O10: the matchup (Matchups)
+	t.weak_to = def.weak_to  # The matchup (Matchups)
 	t.resists = def.resists
 	t.weak_permille = def.weak_permille
 	t.resist_permille = def.resist_permille
-	if def.attacks.is_empty():  # v0.4.0 EN: the Mender has no attack.
+	if def.attacks.is_empty():  # The Mender has no attack.
 		_compile_horde(def, t, {})
-		CanyonShoreCompiler.compile(def, t)  # v0.11.0 O13c: the Cinder Priest has no attack
+		CanyonShoreCompiler.compile(def, t)  # The Cinder Priest has no attack
 		return t
 	t.attack_range_m = bp["attack_range_m"]
 	t.cooldown_ticks = SimTick.seconds_to_ticks(bp["cooldown_seconds"])
@@ -175,7 +175,7 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 	t.active_ticks = maxi(1, SimTick.seconds_to_ticks(atk.active_seconds))
 	t.recover_ticks = SimTick.seconds_to_ticks(atk.recovery_seconds)
 	t.damage = atk.damage
-	match BehaviourSchemas.base_of(def.behaviour_id):  # v0.11.0 O13a: a variant compiles as its base
+	match BehaviourSchemas.base_of(def.behaviour_id):  # A variant compiles as its base
 		&"charger", &"hatchling", &"swarmer":
 			t.charge_speed = float(sp["speed_mps"]) / SimTick.TICKS_PER_SECOND
 			t.charge_distance_m = sp["length_m"]
@@ -191,7 +191,7 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 				1, degrees_to_units(float(bp["turn_rate_dps"]) / SimTick.TICKS_PER_SECOND)
 			)
 			t.slam_radius_m = sp["radius_m"]
-		&"lens_drone":  # v0.7.5 EF: the Needle's walk; its ring is a pattern (compile_enemy_patterns)
+		&"lens_drone":  # The Needle's walk; its ring is a pattern (compile_enemy_patterns)
 			t.keep_distance_m = bp["keep_distance_m"]
 			t.flee_distance_m = bp["flee_distance_m"]
 		&"needle":
@@ -207,24 +207,24 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 			t.burst_spread = degrees_to_units(float(sp["spread_degrees"]))
 		&"arc_caster":
 			_compile_arc_caster(def, t)
-		&"bomb_drone":  # v0.7.5 EF: its lobbed fireball is a pattern (compile_enemy_patterns)
+		&"bomb_drone":  # Its lobbed fireball is a pattern (compile_enemy_patterns)
 			t.keep_min_m = bp["keep_min_m"]
 			t.keep_distance_m = bp["keep_max_m"]
 		_:
 			_compile_horde(def, t, sp)
-	VariantCompiler.compile(def, t)  # v0.11.0 O13a: a biome variant's own numbers
-	RuinsRocksCompiler.compile(def, t)  # v0.11.0 O13b: the Ruins and Night Rocks signatures' own numbers
-	CanyonShoreCompiler.compile(def, t)  # v0.11.0 O13c: R5-R8's own numbers
+	VariantCompiler.compile(def, t)  # A biome variant's own numbers
+	RuinsRocksCompiler.compile(def, t)  # The Ruins and Night Rocks signatures' own numbers
+	CanyonShoreCompiler.compile(def, t)  # R5-R8's own numbers
 	return t
 
 
-## The horde kinds (v0.4.0 EN): the numbers each one adds, from its params and its attack's shape params.
+## The horde kinds: the numbers each one adds, from its params and its attack's shape params.
 static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) -> void:
 	var bp := def.behaviour_params
 	if bp.has("keep_min_m"):
 		t.keep_min_m = bp["keep_min_m"]
 		t.keep_distance_m = bp["keep_max_m"]
-	match BehaviourSchemas.base_of(def.behaviour_id):  # v0.11.0 O13a: a variant compiles as its base
+	match BehaviourSchemas.base_of(def.behaviour_id):  # A variant compiles as its base
 		&"splitter", &"splitling":
 			t.slam_radius_m = sp["radius_m"]
 			t.reach_m = sp["reach_m"]
@@ -255,12 +255,12 @@ static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) 
 			t.damage = int(bp["contact_damage"])  # its touch (RunState.scale_enemies scales it by floor, as every hit)
 			t.contact_cd_ticks = maxi(1, SimTick.seconds_to_ticks(bp["contact_cd_seconds"]))
 			t.flies = bool(bp["flies"])
-		&"star_warper":  # v0.11.0 O13d (ENEMIES.md R9): its star, the strike round it and the stun
+		&"star_warper":  # ENEMIES.md R9: its star, the strike round it and the stun
 			t.mark_offset_m = float(bp["mark_offset_m"])
 			t.mark_radius_m = float(bp["mark_radius_m"])
 			t.stun_ticks = maxi(1, SimTick.seconds_to_ticks(float(bp["stun_seconds"])))
 			t.strike_radius_m = float(sp["radius_m"])
-		&"gravity_node":  # v0.11.0 O13d (ENEMIES.md R10): floating (no floor hazard reaches it), its pull
+		&"gravity_node":  # ENEMIES.md R10: floating (no floor hazard reaches it), its pull
 			t.flies = true
 			t.pull_radius_m = float(bp["pull_radius_m"])
 			t.pull_accel = (
@@ -268,7 +268,7 @@ static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) 
 			)
 
 
-## The Arc Caster (v0.3.5 AI): its spells in schema order (bolt, spread, rune); v0.7.5 EF: bolt and spread are fans.
+## The Arc Caster: its spells in schema order (bolt, spread, rune); bolt and spread are fans.
 static func _compile_arc_caster(def: EnemyDefinition, t: EnemyTable) -> void:
 	var bp := def.behaviour_params
 	t.keep_min_m = bp["keep_min_m"]
@@ -319,24 +319,24 @@ static func compile_spawning(def: SpawnDirectorDefinition, repo: ContentReposito
 		t.weights.append(e.weight)
 		t.unlock_tiers.append(e.unlock_tier)
 		t.packs.append(e.pack)
-	t.biome_only = VariantCompiler.biome_only_rows(def, repo)  # v0.11.0 O13a (Q23)
+	t.biome_only = VariantCompiler.biome_only_rows(def, repo)  # v0.11.0 O13a
 	return t
 
 
-## v0.4.0 TU: floor `floor_index`'s spawning as the run uses it: SC's director (`floor_1`, every floor) with the
+## Floor `floor_index`'s spawning as the run uses it: SC's director (`floor_1`, every floor) with the
 ## floor's difficulty curve on it (none when the content has no curve for that floor).
 static func compile_floor_spawning(repo: ContentRepository, floor_index: int) -> SpawnTable:
 	var t := compile_spawning(repo.get_def(&"spawning", &"floor_1"), repo)
 	var def := curve_def(repo, floor_index)
 	if def != null:
 		t.curve = compile_curve(def, t, repo)
-	t.intensity = IntensityCompiler.compile(repo.get_def(&"intensity", &"director"))  # v0.8.0 N5 (owner O58)
+	t.intensity = IntensityCompiler.compile(repo.get_def(&"intensity", &"director"))  # v0.8.0 N5
 	t.pairings = compile_pairings(repo.get_def(&"pairing", &"pairings"), repo)  # v0.10.5 O15
-	t.surge = compile_surge(repo.get_def(&"surge", &"surge"), t)  # v0.11.0 O9 (owner Q15)
+	t.surge = compile_surge(repo.get_def(&"surge", &"surge"), t)  # v0.11.0 O9
 	return t
 
 
-## v0.11.0 O9 (owner Q15, Q16): the horde surges in ticks (null without the definition); the alive cap never above the
+## The horde surges in ticks (null without the definition); the alive cap never above the
 ## spawner's hard cap (`spawning.cap_max`).
 static func compile_surge(def: SurgeDefinition, spawning: SpawnTable) -> SurgeTable:
 	if def == null:
@@ -403,8 +403,8 @@ static func compile_curve(
 	c.interval_per_tier_permille = def.interval_per_tier_permille
 	c.interval_min_ticks = SimTick.seconds_to_ticks(def.interval_min_seconds)
 	c.pack_cap_bumps = def.pack_cap_bumps.duplicate()
-	VariantCompiler.inherit_phases(repo, phase_of)  # v0.11.0 O13a: a variant opens with its base
-	CanyonShoreCompiler.inherit_phases(repo, phase_of)  # v0.11.0 O13c: a signature opens with the Warden
+	VariantCompiler.inherit_phases(repo, phase_of)  # A variant opens with its base
+	CanyonShoreCompiler.inherit_phases(repo, phase_of)  # A signature opens with the Warden
 	c.kind_phase = PackedInt32Array()
 	for kind in spawn.kinds:
 		c.kind_phase.append(phase_of.get(kind, -1))
@@ -420,13 +420,13 @@ static func compile_curve(
 	return c
 
 
-## Every enemy in a repository, compiled; v0.9.0 EL: then the elite archetypes (ELITES.md).
+## Every enemy in a repository, compiled; then the elite archetypes (ELITES.md).
 static func compile_enemies(repo: ContentRepository) -> Array[EnemyTable]:
 	var out: Array[EnemyTable] = []
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
 		out.append(compile_enemy(def, repo))
 	out.append_array(EliteCompiler.compile_elites(repo))
-	out.append_array(RuinsRocksCompiler.extra_tables(out))  # v0.11.0 O13b: the Wire Weaver's post
+	out.append_array(RuinsRocksCompiler.extra_tables(out))  # The Wire Weaver's post
 	return out
 
 
@@ -449,7 +449,7 @@ static func apply_utility(t: PlayerTable, def: UtilityDefinition) -> PlayerTable
 	return t
 
 
-## The chosen build, applied to a compiled player table (v0.3.0 L15, L16): only its weapon is enabled, and that
+## The chosen build, applied to a compiled player table: only its weapon is enabled, and that
 ## weapon's damage takes the build's per mille. null keeps both weapons at full damage (the pre-build default).
 static func apply_build(t: PlayerTable, def: BuildDefinition) -> PlayerTable:
 	if def == null:
@@ -461,12 +461,12 @@ static func apply_build(t: PlayerTable, def: BuildDefinition) -> PlayerTable:
 		BuildDefinition.Weapon.GUN:
 			t.weapons = PlayerTable.WEAPON_GUN
 			t.bolt_damage_permille = def.damage_permille
-	t.skill = compile_skill(def.skill)  # v0.3.5 K: the build's second ability.
-	t.damage_taken_permille = def.damage_taken_permille  # v0.8.0 N1 (D39): the Blade takes 25 % less
+	t.skill = compile_skill(def.skill)  # The build's second ability.
+	t.damage_taken_permille = def.damage_taken_permille  # The Blade takes 25 % less
 	return t
 
 
-## A build's skill in sim units (v0.3.5 K); null stays null (no Skill button).
+## A build's skill in sim units; null stays null (no Skill button).
 static func compile_skill(def: SkillDefinition) -> SkillTable:
 	if def == null:
 		return null
@@ -502,8 +502,8 @@ static func degrees_to_units(deg: float) -> int:
 	return int(round(deg * SimTick.ANGLE_UNITS / 360.0))
 
 
-## One item's numbers in sim units (v0.2.0 E). The definition's kind is the sim kind (same names, same numbers).
-## v0.6.0 MX1: with `repo`, the item's modifiers are compiled too (ItemTable.modifiers; an unknown id is a validation
+## One item's numbers in sim units. The definition's kind is the sim kind (same names, same numbers).
+## With `repo`, the item's modifiers are compiled too (ItemTable.modifiers; an unknown id is a validation
 ## error and is left out here); without it the item has none (offer and pool tests that never fight).
 static func compile_item(def: ItemDefinition, repo: ContentRepository = null) -> ItemTable:
 	var t := ItemTable.new()
@@ -530,7 +530,7 @@ static func compile_item(def: ItemDefinition, repo: ContentRepository = null) ->
 	return t
 
 
-## The second eight items (v0.2.0 J).
+## The second eight items.
 static func _compile_item_v2(def: ItemDefinition, t: ItemTable) -> void:
 	t.heal_per_kill = def.heal_per_kill
 	t.heal_cap = def.heal_cap
@@ -551,7 +551,7 @@ static func _compile_item_v2(def: ItemDefinition, t: ItemTable) -> void:
 	_compile_item_engines(def, t)
 
 
-## Engines (v0.3.0 G).
+## Engines.
 static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 	t.tags = def.tags.duplicate()
 	StressMarkCompiler.compile(def, t)  # v0.9.5 CLV level_max, SM the Stress Mark's numbers
@@ -574,7 +574,7 @@ static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 	t.frozen_bonus_permille = def.frozen_bonus_permille
 	t.charge_max = def.charge_max
 	t.charge_bonus_permille = def.charge_bonus_permille
-	# Overclock heat (v0.3.0 L18).
+	# Overclock heat.
 	t.requires_heat = (
 		def.kind
 		in [
@@ -588,7 +588,7 @@ static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 	t.vent_radius_bonus_permille = def.vent_radius_bonus_permille
 	t.heat_hot_threshold = def.heat_hot_threshold
 	t.meltdown_damage_permille = def.meltdown_damage_permille
-	ModifierCompiler.compile_item_extras(def, t)  # v0.6.0 MX4: Venom Core's poison, a heat card
+	ModifierCompiler.compile_item_extras(def, t)  # Venom Core's poison, a heat card
 
 
 ## Every item in a repository, compiled, in the order of item indices (ModifierCompiler.item_defs: the v0.5 items in
@@ -596,21 +596,21 @@ static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 ## Give it to the world with World.set_item_tables.
 static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
 	var out: Array[ItemTable] = []
-	for slot in CardOrder.item_slots(repo):  # v0.10.5 O1: the frozen order, a deleted card's stub in its place
+	for slot in CardOrder.item_slots(repo):  # The frozen order, a deleted card's stub in its place
 		out.append(CardOrder.item_stub(slot) if slot is StringName else compile_item(slot, repo))
-	return WandCompiler.retire_items(repo, out)  # v0.6.5 WN5b: the old cards leave the offers
+	return WandCompiler.retire_items(repo, out)  # The old cards leave the offers
 
 
-# --- Bosses (v0.3.0 C) --------------------------------------------------------------------------------------
+# --- Bosses --------------------------------------------------------------------------------------
 ## Every boss in a repository, compiled in BossOrder (boss indices: World.spawn_boss; World.set_boss_tables).
 static func compile_bosses(repo: ContentRepository) -> Array[BossTable]:
 	var out: Array[BossTable] = []
-	for def: BossDefinition in BossOrder.defs(repo):  # v0.9.0 NB1: saved indices stay
+	for def: BossDefinition in BossOrder.defs(repo):  # Saved indices stay
 		out.append(compile_boss(def, repo))
 	return out
 
 
-## v0.8.0 FB1: the final boss's bodies (FinalBossDefinition) in the run's order (RunTable.final_bosses), compiled; a
+## The final boss's bodies (FinalBossDefinition) in the run's order (RunTable.final_bosses), compiled; a
 ## missing id is left out. A world holding the fight appends them after compile_bosses, so the floors' indices stay.
 static func compile_final_bosses(repo: ContentRepository, run: RunTable) -> Array[BossTable]:
 	var out: Array[BossTable] = []
@@ -667,11 +667,11 @@ static func compile_boss(def: BossDefinition, repo: ContentRepository) -> BossTa
 		)
 		t.phase_speed_permille.append(ph.speed_permille)
 		t.phase_cd_permille.append(ph.cooldown_permille)
-		HardCompiler.compile_phase(ph, t)  # v0.9.5 BH4: the ring stream and the waves
+		HardCompiler.compile_phase(ph, t)  # The ring stream and the waves
 	t.arena_cells = def.arena_cells
 	t.legacy_arena_cells = (
 		def.legacy_arena_cells if def.legacy_arena_cells != Vector2i.ZERO else def.arena_cells
-	)  # v0.7.5 BF1 (N18)
+	)  # v0.7.5 BF1
 	t.arena_template = def.arena_template
 	_compile_boss_challenge(def, t)
 	if def is FinalBossDefinition:
@@ -679,7 +679,7 @@ static func compile_boss(def: BossDefinition, repo: ContentRepository) -> BossTa
 	return t
 
 
-## Boss challenge (v0.3.0 BX): ranged armour, punish, weak point, closing arena, harder AI.
+## Boss challenge: ranged armour, punish, weak point, closing arena, harder AI.
 static func _compile_boss_challenge(def: BossDefinition, t: BossTable) -> void:
 	t.ranged_full_m = def.ranged_full_m
 	t.ranged_far_m = def.ranged_far_m
@@ -710,8 +710,8 @@ static func _compile_boss_challenge(def: BossDefinition, t: BossTable) -> void:
 	t.gap_attack = (
 		t.attack_index(def.gap_close_attack) if not String(def.gap_close_attack).is_empty() else -1
 	)
-	t.lines_clear_shots = def.lines_clear_shots  # v0.10.5 W3-O2 (F19)
-	PatternCompiler.compile_cadence(def, t)  # v0.9.0 NB1: the Tidecaller's Pull
+	t.lines_clear_shots = def.lines_clear_shots  # v0.10.5 W3-O2
+	PatternCompiler.compile_cadence(def, t)  # The Tidecaller's Pull
 	for k in def.attacks.size():
 		var a := def.attacks[k]
 		var at := t.attacks[k]
@@ -734,7 +734,7 @@ static func compile_boss_attack(
 	t.recover_ticks = SimTick.seconds_to_ticks(def.recovery_seconds)
 	t.cooldown_ticks = SimTick.seconds_to_ticks(def.cooldown_seconds)
 	t.damage = def.damage
-	t.orb_damage = def.orb_damage  # v0.8.0 BP (owner O27)
+	t.orb_damage = def.orb_damage  # v0.8.0 BP
 	t.min_range_m = def.min_range_m
 	t.max_range_m = def.max_range_m
 	t.weight = def.weight
@@ -765,15 +765,15 @@ static func compile_boss_attack(
 	t.max_alive = int(sp.get("max_alive", 99))
 	t.pull = float(sp.get("pull_mps", 0.0)) / SimTick.TICKS_PER_SECOND
 	t.pull_range_m = float(sp.get("pull_range_m", 0.0))
-	t.gap_m = float(sp.get("gap_m", 0.0))  # v0.4.0 BO: a flood's lanes
+	t.gap_m = float(sp.get("gap_m", 0.0))  # A flood's lanes
 	t.burn_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("burn_seconds", 0.0))))
-	t.cell_m = float(sp.get("cell_m", 0.0))  # v0.7.5 BF3: a grid's cells
+	t.cell_m = float(sp.get("cell_m", 0.0))  # A grid's cells
 	PatternCompiler.compile_boss_attack(def, repo, t)  # v0.7.5 BF1
-	FinalBodyCompiler.compile_attack(sp, t)  # v0.10.5 O3: the Prism's Facet Lances and Shattered Kneel
+	FinalBodyCompiler.compile_attack(sp, t)  # The Prism's Facet Lances and Shattered Kneel
 	return t
 
 
-## The floor's reward rules (v0.3.0 E): counts, chest prices, rarity weight, the shard tier bonus, in per mille.
+## The floor's reward rules: counts, chest prices, rarity weight, the shard tier bonus, in per mille.
 static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	var t := RewardTable.new()
 	if def == null:
@@ -782,7 +782,7 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.altars_max = def.altars_max
 	t.chests_min = def.chests_min
 	t.chests_max = def.chests_max
-	t.altars_cap = def.altars_cap  # v0.5.5 EC (S1)
+	t.altars_cap = def.altars_cap  # v0.5.5 EC
 	t.chest_prices = def.chest_prices.duplicate()
 	t.floor_price_step_permille = int(round(def.floor_price_step * 1000.0))
 	t.rare_weight_chest = def.rare_weight_chest
@@ -791,30 +791,30 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.epic_permille_altar = int(round(def.epic_weight_altar * 1000.0))
 	t.legendary_permille_chest = int(round(def.legendary_weight_chest * 1000.0))
 	t.legendary_permille_altar = int(round(def.legendary_weight_altar * 1000.0))
-	t.own_weapon_card_permille = def.own_weapon_card_permille  # v0.8.0 BL (B5)
+	t.own_weapon_card_permille = def.own_weapon_card_permille  # v0.8.0 BL
 	t.offer_size = def.offer_size
 	t.starbound_permille = def.starbound_permille.duplicate()  # v0.10.5 W3-P10b
 	t.interact_radius_m = def.interact_radius_m
 	t.shard_tier_bonus_permille = int(round(def.shard_tier_bonus * 1000.0))
 	t.shard_tier_caps_at_peak = def.shard_tier_caps_at_peak  # O7a
 	t.shard_cap_min_ticks = SimTick.seconds_to_ticks(def.shard_cap_min_seconds)
-	t.shard_permille = int(round(def.shard_scale * 1000.0))  # v0.5.5 EC (S4)
+	t.shard_permille = int(round(def.shard_scale * 1000.0))  # v0.5.5 EC
 	t.boss_shards = def.boss_shards
 	t.altar_card_weights = def.altar_card_weights.duplicate()  # v0.4.0 BS
 	t.chest_card_weights = def.chest_card_weights.duplicate()
 	t.altar_rarity_weights = def.altar_rarity_weights.duplicate()
 	t.chest_rarity_weights = def.chest_rarity_weights.duplicate()
-	t.heal_orb_heal_permille = int(round(def.heal_orb_heal * 1000.0))  # v0.4.0 TU (D8)
+	t.heal_orb_heal_permille = int(round(def.heal_orb_heal * 1000.0))  # v0.4.0 TU
 	t.heal_orb_reach_m = def.heal_orb_reach_m
 	t.heal_orb_cooldown_ticks = SimTick.seconds_to_ticks(def.heal_orb_cooldown_seconds)  # v0.11.0 F3
 	t.heal_orb_meter = def.heal_orb_meter
 	t.heal_orb_points_per_hp_permille = int(round(def.heal_orb_points_per_hp * 1000.0))
 	t.heal_orb_points_min = def.heal_orb_points_min
 	t.heal_orb_points_max = def.heal_orb_points_max
-	return RunContentCompiler.add_reward_bands(t, def)  # v0.9.0 FV: counts by the floor's rooms
+	return RunContentCompiler.add_reward_bands(t, def)  # Counts by the floor's rooms
 
 
-## The gamble shrine (v0.3.0 L19): prices in per mille, each stat's amount (HP for max_hp, per mille of the data's
+## The gamble shrine: prices in per mille, each stat's amount (HP for max_hp, per mille of the data's
 ## percent otherwise), weight and cap in GambleTable.Stat order. A stat the data leaves out gets weight 0.
 static func compile_gamble(def: GambleDefinition) -> GambleTable:
 	var t := GambleTable.new()
@@ -826,7 +826,7 @@ static func compile_gamble(def: GambleDefinition) -> GambleTable:
 	t.interact_radius_m = def.interact_radius_m
 	t.spot_distance_m = def.spot_distance_m
 	t.clear_radius_m = def.clear_radius_m
-	t.floor_chance_permille = def.floor_chance_permille  # v0.8.0 N14 (O72)
+	t.floor_chance_permille = def.floor_chance_permille  # v0.8.0 N14
 	t.max_wins = def.max_wins
 	t.fail_permille = def.fail_permille
 	for f: StringName in [&"amount", &"weight", &"cap", &"requires_weapon"]:
@@ -846,7 +846,7 @@ static func compile_gamble(def: GambleDefinition) -> GambleTable:
 	return t
 
 
-## The shop (v0.5.0 SH): shares in per mille; prices as the data gives them. Null without a definition.
+## The shop: shares in per mille; prices as the data gives them. Null without a definition.
 static func compile_shop(def: ShopDefinition) -> ShopTable:
 	if def == null:
 		return null
@@ -854,28 +854,28 @@ static func compile_shop(def: ShopDefinition) -> ShopTable:
 	t.offer_size = def.offer_size
 	t.rarity_prices = def.rarity_prices.duplicate()
 	t.floor_price_step_permille = int(round(def.floor_price_step * 1000.0))
-	t.late_floor_permille = int(round(def.late_floor_price * 1000.0))  # v0.5.5 EC (S4)
-	t.max_buys = def.max_buys  # v0.5.5 EC (S3)
+	t.late_floor_permille = int(round(def.late_floor_price * 1000.0))  # v0.5.5 EC
+	t.max_buys = def.max_buys  # v0.5.5 EC
 	t.heal_permille = int(round(def.heal_share * 1000.0))
 	t.heal_price = def.heal_price
 	t.reroll_price = def.reroll_price
 	t.reroll_step_permille = int(round(def.reroll_step * 1000.0))
 	t.interact_radius_m = def.interact_radius_m
-	t.first_floor = def.first_floor  # v0.7.5 MG (N12)
+	t.first_floor = def.first_floor  # v0.7.5 MG
 	t.every_floors = def.every_floors
 	return t
 
 
-## The named combos (v0.3.0 G), their item ids resolved to item indices (the order compile_items gives), in the frozen
+## The named combos, their item ids resolved to item indices (the order compile_items gives), in the frozen
 ## combo order (CardOrder.COMBOS: a deleted combo is a retired stub). Combos naming an unknown item are left out (the
 ## validator reports them).
 static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
 	var index := {}
-	var items := CardOrder.item_ids(repo)  # v0.10.5 O1: the item index order (compile_items)
+	var items := CardOrder.item_ids(repo)  # The item index order (compile_items)
 	for k in items.size():
 		index[items[k]] = k
 	var out: Array[ComboTable] = []
-	for slot in CardOrder.combo_slots(repo):  # v0.10.5 O1: a deleted combo's stub keeps its index
+	for slot in CardOrder.combo_slots(repo):  # A deleted combo's stub keeps its index
 		if slot is StringName:
 			out.append(CardOrder.combo_stub(slot))
 			continue
@@ -901,18 +901,18 @@ static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
 	return out
 
 
-## The abilities (v0.4.0 BS) in id order (the order World.ability_owned refers to): seconds to ticks, multipliers
+## The abilities in id order (the order World.ability_owned refers to): seconds to ticks, multipliers
 ## to per mille, the start weapon to its PlayerTable.WEAPON_* bit.
 static func compile_abilities(repo: ContentRepository) -> Array[AbilityTable]:
 	var out: Array[AbilityTable] = []
-	for slot in CardOrder.ability_slots(repo):  # v0.10.5 O1: the six deleted abilities' stubs keep their indices
+	for slot in CardOrder.ability_slots(repo):  # The six deleted abilities' stubs keep their indices
 		out.append(
 			CardOrder.ability_stub(slot) if slot is StringName else compile_ability(slot, repo)
 		)
-	return WandCompiler.retire_abilities(repo, out)  # v0.6.5 WN5b: the six old abilities too
+	return WandCompiler.retire_abilities(repo, out)  # The six old abilities too
 
 
-## v0.4.0 AB: with `repo`, the ability's engine_item is compiled too (AbilityTable.engine).
+## With `repo`, the ability's engine_item is compiled too (AbilityTable.engine).
 static func compile_ability(def: AbilityDefinition, repo: ContentRepository = null) -> AbilityTable:
 	var t := AbilityTable.new()
 	t.id = def.id
@@ -954,9 +954,9 @@ static func compile_ability(def: AbilityDefinition, repo: ContentRepository = nu
 	return t
 
 
-## The stat cards (v0.4.0 BS), indexed by Stats.Stat (null for a stat without data). Amounts: percent (points for
+## The stat cards, indexed by Stats.Stat (null for a stat without data). Amounts: percent (points for
 ## crit) to per mille (x 10). Caps: the ADD stats (crit chance, crit damage, regen, onrush, overkill, hoarder) in
-## percent points (x 10), the others as a multiplier (x 1000). v0.5.0 CP: side x 10, limit x 1000.
+## percent points (x 10), the others as a multiplier (x 1000). side x 10, limit x 1000.
 static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 	var out: Array[StatTable] = []
 	out.resize(Stats.COUNT)
@@ -977,11 +977,11 @@ static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 		t.cap = int(round(def.cap * (10.0 if points else 1000.0)))
 		t.weight = def.weight
 		t.additive = def.additive  # v0.8.0 SG
-		if def.side.size() == StatCardDefinition.RARITIES:  # v0.5.0 CP: the rule cards
+		if def.side.size() == StatCardDefinition.RARITIES:  # The rule cards
 			for k in StatCardDefinition.RARITIES:
 				t.side[k] = int(round(def.side[k] * 10.0))
 		t.limit_permille = int(round(def.limit * 1000.0))
-		# v0.5.5 AR (X1b): legendary = epic x the tier's stat multiplier (v0.9.0 LG: or the card's own, Power/Haste)
+		# Legendary = epic x the tier's stat multiplier (or the card's own, Power/Haste)
 		var legend := int(round(ld.multiplier_of(def.id) * 1000.0)) if ld != null else 1600
 		t.amounts.append((t.amounts[Stats.Rarity.EPIC] * legend + 500) / 1000)
 		t.side.append((t.side[Stats.Rarity.EPIC] * legend + 500) / 1000)
@@ -989,7 +989,7 @@ static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 	return out
 
 
-## v0.11.0 O14b (OWNER_QUESTIONS N1): the relics, indexed by RelicDefinition.RELICS (Relics' order); empty when the
+## OWNER_QUESTIONS N1: the relics, indexed by RelicDefinition.RELICS (Relics' order); empty when the
 ## content misses one (a world without them has no relic to give).
 static func compile_relics(repo: ContentRepository) -> Array[RelicTable]:
 	var out: Array[RelicTable] = []
@@ -1011,7 +1011,7 @@ static func compile_relics(repo: ContentRepository) -> Array[RelicTable]:
 	return out
 
 
-## v0.10.5 W3-P10b (owner W7): the Starbound cards, indexed by StarboundDefinition.CARDS (Starbound's order); empty when
+## The Starbound cards, indexed by StarboundDefinition.CARDS (Starbound's order); empty when
 ## the content has none, or misses one (a world without them never offers one). Percent to per mille (x 10); Arc Jump's
 ## jumps and Echo Cast's most repeats as they are.
 static func compile_starbound(repo: ContentRepository) -> Array[StarboundTable]:
@@ -1036,7 +1036,7 @@ static func compile_starbound(repo: ContentRepository) -> Array[StarboundTable]:
 	return out
 
 
-## A run's floors, biome count and scaling in per mille (v0.3.0 B).
+## A run's floors, biome count and scaling in per mille.
 static func compile_run(def: RunDefinition) -> RunTable:
 	var t := RunTable.new()
 	t.floors = def.floors
@@ -1049,24 +1049,24 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.shard_carry_permille = int(round(def.shard_carry * 1000.0))  # v0.5.5 EC (Q-S4)
 	t.deep_scale_permille = int(round(def.deep_scale * 1000.0))  # v0.5.0 RT
 	t.deep_extra_chests = def.deep_extra_chests
-	t.boss_ease_floor_permille = def.boss_ease_floor_permille.duplicate()  # v0.4.0 TU (D9)
+	t.boss_ease_floor_permille = def.boss_ease_floor_permille.duplicate()  # v0.4.0 TU
 	t.boss_room_heal_floor_permille = def.boss_room_heal_floor_permille.duplicate()
-	t.loop_enemy_hp_permille = def.loop_enemy_hp_permille  # v0.7.5 AP: the Ascension loop
+	t.loop_enemy_hp_permille = def.loop_enemy_hp_permille  # The Ascension loop
 	t.loop_enemy_damage_permille = def.loop_enemy_damage_permille
 	t.loop_boss_hp_permille = def.loop_boss_hp_permille
 	t.loop_boss_damage_permille = def.loop_boss_damage_permille
 	t.loop_scale_cap_permille = def.loop_scale_cap_permille
 	t.loop_threat = def.loop_threat
 	t.loop_catch_up_cap_permille = def.loop_catch_up_cap_permille
-	t.loop_deep_ease_permille = def.loop_deep_ease_permille  # v0.8.0 P3 (owner O35)
-	t.final_bosses = def.final_bosses.duplicate()  # v0.8.0 FB1: the final boss
+	t.loop_deep_ease_permille = def.loop_deep_ease_permille  # v0.8.0 P3
+	t.final_bosses = def.final_bosses.duplicate()  # The final boss
 	t.final_name_key = def.final_name_key
 	t.final_arena = def.final_arena
 	t.final_shatter_ticks = maxi(1, SimTick.seconds_to_ticks(def.final_shatter_seconds))
-	return RunContentCompiler.add_run_shape(t, def)  # v0.9.0 FV: its id, floor sizes and wand slots
+	return RunContentCompiler.add_run_shape(t, def)  # Its id, floor sizes and wand slots
 
 
-## v0.4.0 AB: the Overrun branch's numbers (null without a definition: no Overrun).
+## The Overrun branch's numbers (null without a definition: no Overrun).
 static func compile_overrun(def: OverrunDefinition) -> OverrunTable:
 	if def == null:
 		return null
@@ -1074,7 +1074,7 @@ static func compile_overrun(def: OverrunDefinition) -> OverrunTable:
 	t.hp_permille = int(round(def.hp_multiplier * 1000.0))
 	t.damage_permille = int(round(def.damage_multiplier * 1000.0))
 	t.shard_permille = int(round(def.shard_multiplier * 1000.0))
-	t.waves_min = def.waves_min  # v0.5.5 AR (S8)
+	t.waves_min = def.waves_min  # v0.5.5 AR
 	t.waves_max = def.waves_max
 	t.wave_sizes = def.wave_sizes.duplicate()
 	t.min_cells = def.min_cells  # v0.9.0 CF
@@ -1082,7 +1082,7 @@ static func compile_overrun(def: OverrunDefinition) -> OverrunTable:
 	return t
 
 
-## v0.5.5 DS (D4, D7): the hidden catch-up's numbers (CatchUpDefinition), or null without one.
+## The hidden catch-up's numbers (CatchUpDefinition), or null without one.
 static func compile_catch_up(def: CatchUpDefinition) -> CatchUpTable:
 	if def == null:
 		return null
@@ -1128,7 +1128,7 @@ static func compile_heat(def: HeatDefinition) -> HeatTable:
 	return t
 
 
-## v0.10.5 O15: the enemy pairings with their enemy ids resolved to actor kinds (null def: none).
+## The enemy pairings with their enemy ids resolved to actor kinds (null def: none).
 static func compile_pairings(def: PairingSetDefinition, repo: ContentRepository) -> PairingTable:
 	if def == null:
 		return null

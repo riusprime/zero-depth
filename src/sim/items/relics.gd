@@ -1,6 +1,6 @@
 class_name Relics
 extends RefCounted
-## v0.11.0 O14b (owner Q-O14b "Both"; OWNER_QUESTIONS §J N1): the relics, run-long passives held outside the wand
+## The relics, run-long passives held outside the wand
 ## (RelicDefinition; World.relic_tables, compiled at setup). World.relics holds one entry per relic in RELICS order
 ## once one is taken (empty before: hashed only then): 0 not held, else 1 + the times its rule fired this run. The
 ## run's carry keeps it from floor to floor and across loops (RunCarry.FIELDS), so "once a run" holds.
@@ -8,7 +8,7 @@ extends RefCounted
 ##   has a use left, a hit that would kill the hero instead leaves them at saved_hp (Damage._apply asks save()), and a
 ##   shock ring of ring_radius_m pulses from them (pulse()): ring_damage to every living enemy it touches (EFFECT_RING,
 ##   as a splash: not scaled again by the hero's stats). The second killing blow kills. World.relic_pulse_tick and
-##   relic_pulse_pos are the last ring's (the views' heart flash and ring). OWNER-PENDING PLACEHOLDER (N1).
+##   relic_pulse_pos are the last ring's (the views' heart flash and ring). OWNER-PENDING PLACEHOLDER.
 ## Pure: no stream is drawn.
 
 const CITY_HEART := 0

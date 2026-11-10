@@ -2,12 +2,12 @@ class_name BuildSlots
 extends RefCounted
 ## The build model (v0.6.0 MX2; owner B7, B8, docs/design/MODIFIER_ENGINE.md "The build"; SIM_CONTRACTS §5c).
 ## The build is the starting weapon (with its Skill, the dash and Vent), one utility pick (Blink or Aegis, on the
-## utility button, outside the slots), the modifier slots (v0.6.5 WN1: the wand, Wand.slots of them, read left to
+## utility button, outside the slots), the modifier slots (the wand, Wand.slots of them, read left to
 ## right), and unlimited stat cards (no slot).
 ## - A modifier card takes a slot: one of the six weapon-modifier abilities (AbilityTable.is_modifier: Bomb Lobber,
 ##   Drone Buddy, Orbit Blades, Arc Field, Frost Nova, Flame Trail), or an item that changes attacks (is_slot_item:
 ##   it names modifiers, or it is an ability's mod). The other items (engines, dash, guard, heat) take no slot.
-## - World.mod_slots holds the modifier cards in slot order (Offers codes; v0.6.5 WN1: the wand order, pick order until
+## - World.mod_slots holds the modifier cards in slot order (Offers codes; the wand order, pick order until
 ##   the player moves a card, Wand.move), the order Modifiers compiles in. It
 ##   is kept by sync() after every change of what is held: the cards already listed stay in place, a newly held one
 ##   is appended, one no longer held leaves.
@@ -22,13 +22,13 @@ extends RefCounted
 ## (skip returns to the shop), or a grant with no panel (an event, a pickup: skip leaves the card).
 enum Source { NONE, REWARD, SHOP, GRANT }
 
-## v0.6.0's fixed slot count; v0.6.5 WN1: the wand's count is Wand.slots (4 → 6 → 8 by floor, WandTable), and
+## v0.6.0's fixed slot count; the wand's count is Wand.slots (4 → 6 → 8 by floor, WandTable), and
 ## this stays the count of a world without the wand's table (a lab).
 const SLOTS := 6
 
 
 # --- What a card is ------------------------------------------------------------------------------------------
-## An item that takes a modifier slot: it changes attacks (it names modifiers) or it is an ability's mod. v0.10.5 O1:
+## An item that takes a modifier slot: it changes attacks (it names modifiers) or it is an ability's mod.
 ## or a deleted card's stub (every one was a modifier card), so an old carry keeps its pick order (WandMigration).
 static func is_slot_item(t: ItemTable) -> bool:
 	return not t.modifiers.is_empty() or t.requires_ability >= 0 or t.retired
@@ -55,12 +55,12 @@ static func held(w: World, code: int) -> bool:
 	return false
 
 
-## Every slot of the wand holds a card (v0.6.5 WN1: the floor's count, Wand.slots; a migrated wand may hold more).
+## Every slot of the wand holds a card (the floor's count, Wand.slots; a migrated wand may hold more).
 static func full(w: World) -> bool:
 	return w.mod_slots.size() >= Wand.slots(w)
 
 
-## The level of slot `s`'s card: its ability's level; an item 1 (v0.6.5 WN3: a wand card its level, CardLevels).
+## The level of slot `s`'s card: its ability's level; an item 1 (a wand card its level, CardLevels).
 static func level_at(w: World, s: int) -> int:
 	var code := w.mod_slots[s]
 	if Offers.type_of(code) == Offers.ABILITY:
@@ -68,7 +68,7 @@ static func level_at(w: World, s: int) -> int:
 	return CardLevels.level(w, code)
 
 
-## Taking `code` now needs a swap: a modifier you don't hold, with every slot full. v0.9.0 AS: never when it replaces a
+## Taking `code` now needs a swap: a modifier you don't hold, with every slot full. never when it replaces a
 ## card of its own slot category (AttackSlots.replaces: that card's slot is the one it takes). v0.9.0 AS2 (owner "Let
 ## me choose"): always when its Secondary or Element category is full (AttackSlots.choices: the swap is limited to
 ## those slots), full wand or not.
@@ -80,7 +80,7 @@ static func needs_swap(w: World, code: int) -> bool:
 	return full(w) and AttackSlots.replaces(w, code) < 0
 
 
-## Slot `s` is a legal swap answer for `code`: a held slot, and (AS2) one of its category's when the choice is
+## Slot `s` is a legal swap answer for `code`: a held slot, and one of its category's when the choice is
 ## limited (AttackSlots.choices).
 static func can_replace(w: World, code: int, s: int) -> bool:
 	if s < 0 or s >= w.mod_slots.size():
@@ -122,7 +122,7 @@ static func _maybe_modifier(w: World, code: int) -> bool:
 
 
 ## A build from before MX2 (a v0.5 save's carry or snapshot, four ability slots and any number of attack items):
-## sync, then the slots past the wand's count (v0.6.5 WN1: Wand.slots, the floor reached's) leave the build, last
+## sync, then the slots past the wand's count (Wand.slots, the floor reached's) leave the build, last
 ## first (so the first ones in sync's order stay: the abilities in their slot order, then the items in pickup order).
 ## Deterministic; idempotent.
 static func migrate(w: World) -> void:
@@ -152,8 +152,8 @@ static func drop(w: World, s: int) -> void:
 ## slot full replaces slot `replace` (its card leaves; the new one takes its place in the order); without a valid
 ## `replace` nothing changes and false comes back. Everything else (a level-up, the weapon, the utility, an item
 ## without a slot, a stat card) applies as before.
-## v0.9.0 AS (owner Q5): a Form or Pattern card at its limit replaces that category's card (AttackSlots.replaces) in
-## its slot, whatever `replace` says (the pick card said so: Offers.info "replaces"). v0.9.0 AS2: a Secondary or
+## A Form or Pattern card at its limit replaces that category's card (AttackSlots.replaces) in
+## its slot, whatever `replace` says (the pick card said so: Offers.info "replaces"). a Secondary or
 ## Element card at its limit needs `replace` to be one of its category's slots (can_replace).
 static func take(w: World, code: int, replace: int = -1) -> bool:
 	var cat_slot := AttackSlots.replaces(w, code)
@@ -182,7 +182,7 @@ static func _replace(w: World, code: int, replace: int) -> bool:
 static func _apply(w: World, code: int) -> void:
 	match Offers.type_of(code):
 		Offers.MOD:
-			if not CardLevels.level_up(w, code):  # v0.6.5 WN3: a held wand card levels up
+			if not CardLevels.level_up(w, code):  # A held wand card levels up
 				if not w.items_owned.has(code):
 					CardLevels.reset(w, code)
 				w.add_item(code)
@@ -191,11 +191,11 @@ static func _apply(w: World, code: int) -> void:
 		Offers.STAT:
 			Stats.add_card(w, Offers.stat_of(code), Offers.rarity_of(code))
 		Offers.CURSE:
-			Curses.add(w, Offers.curse_of(code))  # v0.6.0 CU: the trade-off curse, drawback and upside
+			Curses.add(w, Offers.curse_of(code))  # The trade-off curse, drawback and upside
 		Offers.STARBOUND:
-			Starbound.take(w, Offers.starbound_of(code))  # v0.10.5 W3-P10b: one more stack, no slot
+			Starbound.take(w, Offers.starbound_of(code))  # One more stack, no slot
 		Offers.SPELL:
-			Spells.take(w, Offers.spell_of(code))  # v0.11.0 O10: a spell slot, not the wand
+			Spells.take(w, Offers.spell_of(code))  # A spell slot, not the wand
 	sync(w)
 
 
@@ -217,7 +217,7 @@ static func swapping(w: World) -> bool:
 	return w.swap_code >= 0
 
 
-## The swap answer in `frame`: the slot to replace (0..Wand.MAX_SLOTS-1, a held one; v0.9.0 AS2: one of the card's
+## The swap answer in `frame`: the slot to replace (0..Wand.MAX_SLOTS-1, a held one; one of the card's
 ## category's when the choice is limited, can_replace), -1 to skip (PICK_SWAP_SKIP or PICK_CANCEL), -2 for no answer
 ## yet (an illegal slot is no answer).
 static func swap_answer(w: World, frame: InputFrame) -> int:
@@ -255,7 +255,7 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	h.add_ints(w.mod_slots)
 	for v in [w.swap_code, w.swap_source, w.swap_ref]:
 		h.add_int(v)
-	CardLevels.hash_into(w, h)  # v0.6.5 WN3: once a card levelled
+	CardLevels.hash_into(w, h)  # Once a card levelled
 
 
 ## Per slot (in slot order): the card as Wand.read gives it (code, id, name key, type: Offers.MOD / ABILITY, level,
@@ -263,7 +263,7 @@ static func hash_into(w: World, h: StateHasher) -> void:
 static func read(w: World) -> Dictionary:
 	return {
 		"slots": Wand.read(w)["cards"],
-		"max": Wand.slots(w),  # v0.6.5 WN1: the wand's count now
+		"max": Wand.slots(w),  # The wand's count now
 		"swap_code": w.swap_code,
 		"swap_source": w.swap_source,
 	}

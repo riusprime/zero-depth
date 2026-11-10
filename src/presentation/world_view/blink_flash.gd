@@ -5,7 +5,7 @@ extends Node3D
 ## the ground, a burst of small blue sparks and a blue OmniLight3D, all fading over DURATION_S. Presentation only
 ## (EI-07): UtilityView starts it when the sim reports a blink; it decides nothing.
 
-## v0.10.0 FX (owner, 2026-10-31: "teleport circles linger for too long ... a quick pop"): 0.36 -> 0.22 s, and the
+## 0.36 -> 0.22 s, and the
 ## pack flash runs its whole animation in PACK_LIFE_S (it played its 1.1 s at each end).
 const DURATION_S := 0.22
 const COLUMN_H := 2.4
@@ -14,7 +14,7 @@ const SPARKS := 18
 const BLUE := Color("#2F6BFF")
 const BLUE_CORE := Color("#A8D4FF")
 const LIGHT_ENERGY := 5.0
-## v0.10.0 VX5 (R42): the flash is the pack's magic_orb_flash; false: the column, pool and sparks.
+## The flash is the pack's magic_orb_flash; false: the column, pool and sparks.
 const PACK_FLASH := true
 const PACK_SCALE := 1.0
 const PACK_LIFE_S := 0.28
@@ -129,7 +129,7 @@ func play(at: Vector3) -> void:
 	_t = 0.0
 	visible = true
 	_packed = false
-	if PACK_FLASH:  # R42: the pack's flash orb in the blue (the column, pool and sparks give way; the light stays)
+	if PACK_FLASH:  # The pack's flash orb in the blue (the column, pool and sparks give way; the light stays)
 		var pack := BossPackHold.find(self)
 		if pack != null and pack.has_room(&"impact"):
 			var where := global_position if is_inside_tree() else at

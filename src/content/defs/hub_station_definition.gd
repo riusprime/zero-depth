@@ -1,12 +1,12 @@
 class_name HubStationDefinition
 extends Resource
-## v0.9.0 HB (owner Q27, HUB_MOCKUPS option A "Rune Ring"): one station of the hub (CONTENT_SCHEMA §11). A solid
+## One station of the hub (CONTENT_SCHEMA §11). A solid
 ## footprint on the plaza, a name, the prompt shown when the hero stands at it, and the panel its interact opens.
 ## Positions are on the hub's plan: metres from the plaza's centre, +y the plan's north (the top of the screen in the
 ## iso view), +x its east (the screen's right).
 
 ## What the interact opens (Main wires each one): the run's build pick, the Codex, the Codex on its Achievements page,
-## the Runic Stone (v0.9.5 RS1: it speaks in runes; HubSession handles it), or a stand-in panel (the Wardrobe,
+## the Runic Stone (it speaks in runes; HubSession handles it), or a stand-in panel (the Wardrobe,
 ## the Progression Station).
 const PANELS: Array[StringName] = [
 	&"portal", &"codex", &"achievements", &"runic", &"wardrobe", &"progression"

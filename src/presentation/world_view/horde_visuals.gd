@@ -1,6 +1,6 @@
 class_name HordeVisuals
 extends Node3D
-## What the horde kinds (v0.4.0 EN) show besides their models and telegraphs, read through WorldReader (EI-07):
+## What the horde kinds show besides their models and telegraphs, read through WorldReader (EI-07):
 ## - each mine on the floor: a dark disc with a blinking red light inside a faint ring of the circle that arms it (an
 ##   armed mine's filling circle is its layer's telegraph, TelegraphViews);
 ## - each Mender's heal beam: a pale-green ray from its crystal to the ally it heals, pulsing;
@@ -9,7 +9,7 @@ extends Node3D
 const TRACER_S := 0.18
 const MINE_RING_ALPHA := 0.45
 const BEAM_W := 0.06
-## v0.10.0 VX5 (R27): the Mender's heal beam is the pack's (the old box where its family is full); false: the box.
+## The Mender's heal beam is the pack's (the old box where its family is full); false: the box.
 const PACK_BEAMS := true
 const PACK_BEAM_HALF_W := 0.12
 ## The mines' blinking light, bright to dim (v0.8.0 Step FS: parsed once, not every frame).
@@ -48,7 +48,7 @@ func sync(reader: WorldReader) -> void:
 	if _hold != null:
 		_hold.begin()
 	var beams := {}
-	# v0.9.5 PF3: only a Mender (its beam) or a Sniper (its tracer) is read here.
+	# Only a Mender (its beam) or a Sniper (its tracer) is read here.
 	var any := reader.any_kind(WorldReader.KIND_MENDER) or reader.any_kind(WorldReader.KIND_SNIPER)
 	any = any or reader.any_kind(WorldReader.KIND_SPLIT_SNIPER)  # v0.11.0 O13a
 	for i in range(1, reader.actor_count() if any else 1):
@@ -62,7 +62,7 @@ func sync(reader: WorldReader) -> void:
 		elif WorldReader.body_kind(kind) == WorldReader.KIND_SNIPER:
 			var st := reader.actor_state(i)
 			if st == WorldReader.STATE_ACTIVE and _states.get(id, st) != st:
-				for lane in reader.sniper_lines(i):  # v0.11.0 O13a: a Split Sniper's line and branches
+				for lane in reader.sniper_lines(i):  # A Split Sniper's line and branches
 					_tracer(lane)
 			_states[id] = st
 	for id in _beams.keys():

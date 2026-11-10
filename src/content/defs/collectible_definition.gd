@@ -1,6 +1,6 @@
 class_name CollectibleDefinition
 extends ContentDef
-## v0.9.0 CL (owner: "collectibles are fine", COLLECTIBLES.md as drafted; PLAN W38-W40, W43, W47): one of the Rune
+## One of the Rune
 ## Archive's collectibles. Category `collectible`, in data/collectibles/. Found once per profile (CollectibleBook keeps
 ## the profile's `collectibles` section); a run never depends on them. `order` is its place on the shelves (1..16,
 ## unique), `shelf` the shelf it stands on, `source` where a run (or the hub) holds it:

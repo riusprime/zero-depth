@@ -13,7 +13,7 @@ extends Node3D
 ## shader's.
 
 const VOIDS_MAX := 16
-## v0.9.5 FC3: Ring's lightning rings drawn at once, and the ring shader's phase that puts its band at ARC_FRONT of the
+## Ring's lightning rings drawn at once, and the ring shader's phase that puts its band at ARC_FRONT of the
 ## quad's half-width (0.25 + 0.72 u), so a ring of radius r is drawn at r / ARC_FRONT.
 const ARCS_MAX := 6
 const ARC_U := 0.7
@@ -26,7 +26,7 @@ const CORE_SIZE := 0.42
 const LENS_SIZE := 1.5
 const VIOLET := Color("#8B55FF")
 const RIM := Color("#D9C2FF")
-## v0.9.0 VX (VFX_AUDIT.md V12, V14, V15, V47): the lens grows from a point over GROW_TICKS; a shot that ends collapses
+## VFX_AUDIT.md V12, V14, V15, V47: the lens grows from a point over GROW_TICKS; a shot that ends collapses
 ## to a point with a violet flash over COLLAPSE_TICKS (COLLAPSE_MAX at once); the element tints the rim and the trail
 ## this much (the body stays violet) and adds its accent to the trail from ACCENT_DENSITY (Medium) up.
 const GROW_TICKS := 6.0
@@ -35,22 +35,21 @@ const COLLAPSE_MAX := 6
 const RIM_TINT := 0.6
 const TRAIL_TINT := 0.55
 const ACCENT_DENSITY := 0.5
-## v0.10.0 VX2 (VFX_PACK R7): the shot's body (the dark core, the dust disc and the trail puffs) is the pack's huge orb
+## VFX_PACK R7: the shot's body (the dark core, the dust disc and the trail puffs) is the pack's huge orb
 ## in the Void violet, and its collapse the pack's orb flash (the screen-distortion lens and the ground ring stay).
 ## False: the old body, for before/after shots. The orbs' scales per metre of the lens (LENS_SIZE).
-## v0.10.0 FX (owner, 2026-10-31: "the previous version of Void looked and felt better"): off, with PACK_SPARKS below
+## Off, with PACK_SPARKS below
 ## and GapPack.PACK_RIFT; the Void is its v0.9.5 self again (its lens, dark body, dust trail, collapse and ring).
 const PACK_VOID := false
 const BODY_PER_LENS := 0.35
 const COLLAPSE_PER_LENS := 0.5
-## v0.10.0 VX7 (VFX_PACK N5): violet sparks (the pack's orb flash, small) now and then along the dust trail, one every
+## VFX_PACK N5: violet sparks (the pack's orb flash, small) now and then along the dust trail, one every
 ## SPARK_EVERY ticks a shot (Effects density Medium and High: with the dust), SPARK_PER_LENS of the lens' size.
 const PACK_SPARKS := false
 const SPARK_ID := &"vx7_void_spark"
 const SPARK_EVERY := 9
 const SPARK_PER_LENS := 0.15
 const SPARK_SIDE_M := 0.3
-## v0.10.5 W3-O8 (owner F11, 2026-11-04: Void "has some visual bugs, with split and mine"):
 ## - the body (core, lens, dust, trail) is sized by the shot's own aura against the plain Void's BASE_AURA_M (clamped
 ##   to SIZE_MIN..SIZE_MAX), so Split's minis (0.6 m) draw smaller than the void they came from;
 ## - a void that stands still (Split's minis, a held Mine: the sim reports no flight, its way reads as +x) draws no
@@ -133,17 +132,17 @@ void fragment() {
 
 static var _shaders := {}
 
-## What the last sync drew (tests read them): the shots and the dust puffs behind them; v0.9.0 VX: the collapses
+## What the last sync drew (tests read them): the shots and the dust puffs behind them; the collapses
 ## playing, the shots' lens growth (0..1, the newest shot's) and whether the dust disc shows (Effects density Low: no).
 var voids := 0
-## v0.10.0 VX7: the pack's sparks spawned since the view began (the tests read it).
+## The pack's sparks spawned since the view began (the tests read it).
 var sparks := 0
 var arcs := 0
 var puffs := 0
 var collapses := 0
 var growth := 1.0
 var dust_on := true
-## v0.10.5 W3-O8: the body size of each shot drawn (its aura's), whether it moved (its trail shows), the trail puffs
+## The body size of each shot drawn (its aura's), whether it moved (its trail shows), the trail puffs
 ## of the still ones (always 0) and each collapse's start size, in sync order (the tests read them).
 var sizes: PackedFloat32Array = PackedFloat32Array()
 var moving: Array[bool] = []
@@ -151,7 +150,7 @@ var collapse_sizes: PackedFloat32Array = PackedFloat32Array()
 ## v0.9.0 VX V15: the element tint of the bent-light rim and the dust trail (the body stays violet).
 var rim_color := RIM
 var trail_color := VIOLET
-## v0.10.0 VX2: the pack the shots draw with (WorldViewRoot hands it in) and the orbs it holds, by shot id.
+## The pack the shots draw with (WorldViewRoot hands it in) and the orbs it holds, by shot id.
 var pack_fx: PackFx = null:
 	set(v):
 		pack_fx = v
@@ -171,8 +170,8 @@ var _ring_mat: ShaderMaterial
 ## v0.9.0 VX V14: the collapse's own small pool (a core and a lens each, shrinking to a point).
 var _gone_cores: Array[MeshInstance3D] = []
 var _gone_lenses: Array[MeshInstance3D] = []
-## v0.9.0 VX: each shot's first tick (V12's growth), the shots drawn this sync (the effects layer's accents) and the
-## collapses playing ([pos (Vector2), tick (float)]). Kept and reused, not rebuilt (V48).
+## Each shot's first tick (V12's growth), the shots drawn this sync (the effects layer's accents) and the
+## collapses playing ([pos (Vector2), tick (float)]). Kept and reused, not rebuilt.
 var _born := {}
 var _seen := {}
 var _at: Array[Vector2] = []
@@ -180,7 +179,7 @@ var _dir: Array[Vector2] = []
 var _ids: PackedInt32Array = PackedInt32Array()
 var _gone: Array = []
 var _last_at := {}
-## v0.10.5 W3-O8: each shot's place and tick at the last sync and whether it moved then; its last drawn size.
+## Each shot's place and tick at the last sync and whether it moved then; its last drawn size.
 var _prev := {}
 var _drawn := {}
 var _tick := 0.0
@@ -225,7 +224,7 @@ func _init() -> void:
 			var m := _dust_mat(1.0, true)
 			_trail.append(_node(quad, m))
 			_trail_mat.append(m)
-	var arc_mat := ShaderMaterial.new()  # v0.9.5 FC3: Ring's lightning ring (the Bomb's ring look)
+	var arc_mat := ShaderMaterial.new()  # Ring's lightning ring (the Bomb's ring look)
 	arc_mat.shader = _shader(BombView.RING_SHADER)
 	arc_mat.set_shader_parameter(&"has_tex", 0.0)
 	arc_mat.set_shader_parameter(&"u", ARC_U)
@@ -266,13 +265,13 @@ static func _shader(code: String) -> Shader:
 	return _shaders[code]
 
 
-## Each tick: every Void shot in flight, drawn where the sim has it; a shot that left collapses (V14).
+## Each tick: every Void shot in flight, drawn where the sim has it; a shot that left collapses.
 func sync(reader: WorldReader) -> void:
 	_tick = float(reader.tick())
 	if _form.refresh(reader):
 		_tint()
 	_update_motion()
-	dust_on = ViewPrefs.effects_density != "low"  # V47: Low keeps the core, lens and ring
+	dust_on = ViewPrefs.effects_density != "low"  # Low keeps the core, lens and ring
 	var shots := reader.void_shots()
 	voids = 0
 	puffs = 0
@@ -297,7 +296,7 @@ func sync(reader: WorldReader) -> void:
 		_at.append(p)
 		_dir.append(dir)
 		_ids.append(id)
-		# V12: the lens grows from a point to full size over its first GROW_TICKS.
+		# The lens grows from a point to full size over its first GROW_TICKS.
 		var g := clampf((_tick - float(_born[id]) + 1.0) / GROW_TICKS, 0.0, 1.0)
 		g = 1.0 - (1.0 - g) * (1.0 - g)
 		growth = g
@@ -313,10 +312,10 @@ func sync(reader: WorldReader) -> void:
 	hold.end()
 	_collapse_gone()
 	_place_collapses()
-	_place_arcs(reader)  # v0.9.5 FC3: Ring
+	_place_arcs(reader)  # Ring
 
 
-## v0.9.5 FC3: the Ring card's lightning rings growing from where a void ended.
+## The Ring card's lightning rings growing from where a void ended.
 func _place_arcs(reader: WorldReader) -> void:
 	arcs = 0
 	for row in reader.void_rings():
@@ -385,7 +384,7 @@ func _place_shot(
 		m.set_shader_parameter(&"strength", 0.55 / (t + 1))
 		m.set_shader_parameter(&"turn", spin + t * 1.7)
 		puffs += 1
-	if hold.active():  # v0.10.0 VX2 (R7): the pack's orb is the body; the lens and the ring stay
+	if hold.active():  # The pack's orb is the body; the lens and the ring stay
 		var xf := Transform3D(Basis.from_scale(Vector3.ONE * LENS_SIZE * BODY_PER_LENS * g), at)
 		var cols := {} if hold.has(id) else PackLooks.violet_colors()
 		if hold.put(id, &"vx2_void_body", &"projectile", xf, cols) != null:
@@ -396,7 +395,7 @@ func _place_shot(
 		_spark(id, p, dir)
 
 
-## v0.10.0 VX7: a violet spark on the dust trail of shot `id` (every SPARK_EVERY ticks, a place on the trail by turn).
+## A violet spark on the dust trail of shot `id` (every SPARK_EVERY ticks, a place on the trail by turn).
 func _spark(id: int, p: Vector2, dir: Vector2) -> void:
 	var tick := int(_tick)
 	if not PACK_SPARKS or not dust_on or not hold.active() or (tick + id) % SPARK_EVERY != 0:
@@ -420,7 +419,7 @@ func _hide_shot(k: int) -> void:
 		_trail[k * TRAIL + t].visible = false
 
 
-## V14: each shot that left since the last sync collapses where it was last seen (the oldest go past COLLAPSE_MAX).
+## Each shot that left since the last sync collapses where it was last seen (the oldest go past COLLAPSE_MAX).
 func _collapse_gone() -> void:
 	for id: int in _born.keys():
 		if _seen.has(id):
@@ -447,7 +446,7 @@ func _collapse_gone() -> void:
 		collapse_sizes.append(float(c[3]))
 
 
-## v0.10.0 VX2 (R7): a shot that left collapses in the pack's orb flash (violet); false: no pack or no room (the
+## A shot that left collapses in the pack's orb flash (violet); false: no pack or no room (the
 ## layer's flash draws).
 func _pack_collapse(pos: Vector2) -> bool:
 	if not hold.active() or not pack_fx.has_room(&"impact"):
@@ -477,7 +476,7 @@ func _place_collapses() -> void:
 		)
 
 
-## V15: the element tints the bent-light rim and the dust trail; the body, the dark core and the dust disc stay violet.
+## The element tints the bent-light rim and the dust trail; the body, the dark core and the dust disc stay violet.
 func _tint() -> void:
 	var c := _form.edge if _form.element != &"" else VIOLET
 	rim_color = RIM if _form.element == &"" else RIM.lerp(c, RIM_TINT)
@@ -487,7 +486,7 @@ func _tint() -> void:
 		m.set_shader_parameter(&"arm_color", trail_color)
 
 
-## V47: reduced motion stills the dust's swirl (the shots and their lens stay).
+## Reduced motion stills the dust's swirl (the shots and their lens stay).
 func _update_motion() -> void:
 	var m := 0.0 if ViewPrefs.reduced_motion else 1.0
 	if m == _motion:

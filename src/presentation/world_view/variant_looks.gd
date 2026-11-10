@@ -1,6 +1,6 @@
 class_name VariantLooks
 extends RefCounted
-## v0.11.0 O13a (ENEMIES.md V1-V5): how a biome variant looks. Each is its base's body (WorldReader.body_kind: the
+## ENEMIES.md V1-V5: how a biome variant looks. Each is its base's body (WorldReader.body_kind: the
 ## Rubble Warden the Warden's rock golem, the Dim Needle the Needle's turret, the Ember and Frost Chargers the Charger's
 ## crawler, the Split Sniper the Sniper's) with its biome's cast on the grey plates in place of the floor's own
 ## (ActorViews.tint_greys' rule; the shared-material avatars pick their materials by it), never drawn by the VAT crowd

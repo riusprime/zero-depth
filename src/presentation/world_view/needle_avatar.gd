@@ -8,7 +8,7 @@ extends AvatarBase
 ## back into the sim. The legs are solved by two-bone IK toward foot targets on the ground, so the feet stay planted
 ## while the body bobs, crouches or recoils. +X is the front (the cannon) and +Z the right; ActorViews parents this
 ## under the actor's facing node.
-## v0.8.0 TG (owner O4, Q3): its burst lanes are no longer drawn on the ground; the windup reads from the body
+## Its burst lanes are no longer drawn on the ground; the windup reads from the body
 ## (AvatarBase "tell"): the cube squats and tips its nose down the aim as the windup's progress climbs, the eyes and
 ## the muzzle charge up and flash just before the burst. The aim is the facing (the sim's, held through the windup).
 
@@ -45,13 +45,13 @@ const BURST_COUNT := 3
 ## Faster than this between two ticks is a teleport, not motion.
 const TELEPORT_SPEED := 20.0
 
-## Colours sampled from the reference sheet (the lit faces), as albedo under the game's light. v0.8.0 EC: the cube
+## Colours sampled from the reference sheet (the lit faces), as albedo under the game's light. the cube
 ## (body), the flank pods (trim), the barrel and legs (grey) and the eye slits (eye) come from EnemyPalettes.
 const KIND := WorldReader.KIND_NEEDLE
 const GREY_LIGHT := Color("#6D625C")
 const DARK := Color("#3A383C")
 const HOLE := Color("#141417")
-## v0.10.5 W3-V4c (SoloVat): the raw drives (_vd) and their specs [lo, hi, loop]: the body's shift and height, its
+## SoloVat: the raw drives (_vd) and their specs [lo, hi, loop]: the body's shift and height, its
 ## lean (a turn's rotation vector, x and z), its pitch, the barrel's slide, each leg's yaw and its thigh and shin
 ## angles (LEG0 + 3 k + 0 / 1 / 2: loops, the IK may turn them anywhere), and the muzzle's glow (sent as it is: the
 ## bore's accent reads it).
@@ -91,7 +91,7 @@ var body: Node3D
 var barrel: Node3D
 var legs: Array[Node3D] = []
 var feet: Array[Node3D] = []
-## v0.10.5 W3-V4c (owner, 2026-11-06: VAT for every regular enemy): true (set before setup(), ActorViews from
+## True (set before setup(), ActorViews from
 ## ViewPrefs.enemy_vat): a VatCrowd draws the body from baked poses; setup() builds no piece.
 var vat := false
 var kind := KIND
@@ -117,7 +117,7 @@ var _brace := 0.0
 var _charge := 0.0
 var _heat := 0.0
 var _kick := 0.0
-# v0.8.0 TG: the windup's progress (0..1) from the last sync; -1 when the caller gave none.
+# The windup's progress (0..1) from the last sync; -1 when the caller gave none.
 var _tell_p := -1.0
 var _vd := PackedFloat32Array()
 
@@ -126,7 +126,7 @@ var _vd := PackedFloat32Array()
 func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_vd.resize(VAT_DRIVES.size())
-	if vat:  # v0.10.5 W3-V4c: the crowd draws the body; the legs' hips and rest spots only
+	if vat:  # The crowd draws the body; the legs' hips and rest spots only
 		for k in 4:
 			_leg_spots(k)
 		_pose(0.0)
@@ -252,14 +252,14 @@ func foot_positions() -> Array[Vector3]:
 	return out
 
 
-## v0.8.0 TG: the windup's progress the tell reads (the sim's, else paced on WINDUP_TICKS); 0 outside the windup.
+## The windup's progress the tell reads (the sim's, else paced on WINDUP_TICKS); 0 outside the windup.
 func tell_progress() -> float:
 	if _state != WorldReader.STATE_WINDUP:
 		return 0.0
 	return _tell_p if _tell_p >= 0.0 else clampf(float(_ticks_in) / WINDUP_TICKS, 0.0, 1.0)
 
 
-## v0.8.0 TG: 0..1 how deep the windup crouch is.
+## 0..1 how deep the windup crouch is.
 func crouch_amount() -> float:
 	return tell_crouch(tell_progress()) if _state == WorldReader.STATE_WINDUP else 0.0
 
@@ -286,11 +286,11 @@ func _pose(dt: float) -> void:
 	# The body: an idle hum, a bob on each step, the crouch of the brace, the rise-in, the recoil.
 	var hum := sin(_t * 9.0) * 0.003 + sin(_t * 1.7) * 0.01 * (1.0 - _walk)
 	var bob := cos(_phase * TAU * 2.0) * 0.012 * _walk
-	# v0.8.0 TG: the windup squats the cube lower and tips its nose down along the aim (no ground lines any more).
+	# The windup squats the cube lower and tips its nose down along the aim (no ground lines any more).
 	var calm := ViewPrefs.reduced_motion
 	var crouch := crouch_amount()
 	var y := hum + bob - _brace * 0.06 - crouch * 0.06 - (1.0 - _rise) * 0.24 + kick * 0.01
-	# v0.10.5 W3-V4c: the pose's numbers first (the VAT drives), then the nodes from them (the old path).
+	# The pose's numbers first (the VAT drives), then the nodes from them (the old path).
 	# Lean into the walk (a turn about the axis across the walk, as its rotation vector's x and z); brace leans back a
 	# little; each shot rocks the nose up.
 	var lean := Vector3.ZERO
@@ -333,7 +333,7 @@ func _pose(dt: float) -> void:
 			_place_leg(k, hip, ik)
 
 
-## v0.10.5 W3-V4c: the body's transform from its numbers: shifted by (ax, ay), pivoting about the hips, so a pitch
+## The body's transform from its numbers: shifted by (ax, ay), pivoting about the hips, so a pitch
 ## rocks the cube instead of swinging it about the ground; its turn is the lean (rotation vector (lx, 0, lz)) after
 ## the pitch about Z.
 static func body_xf(ax: float, ay: float, lx: float, lz: float, pitch: float) -> Transform3D:
@@ -345,7 +345,7 @@ static func body_xf(ax: float, ay: float, lx: float, lz: float, pitch: float) ->
 	)
 
 
-## v0.10.5 W3-V4c: the lean's turn from its rotation vector (lx, 0, lz) (none at zero).
+## The lean's turn from its rotation vector (lx, 0, lz) (none at zero).
 static func lean_basis(lx: float, lz: float) -> Basis:
 	var r := Vector3(lx, 0, lz)
 	var a := r.length()
@@ -353,7 +353,7 @@ static func lean_basis(lx: float, lz: float) -> Basis:
 
 
 ## Two-bone IK from the hip to the foot (knee up and out like the reference's): the leg's yaw toward the foot and the
-## thigh's and shin's angles (v0.10.5 W3-V4c: the numbers only; _place_leg writes them).
+## thigh's and shin's angles (the numbers only; _place_leg writes them).
 static func leg_ik(hip: Vector3, foot: Vector3) -> Vector3:
 	var flat := Vector2(foot.x - hip.x, foot.z - hip.z)
 	var yaw := atan2(-flat.y, flat.x)
@@ -453,7 +453,7 @@ func _build_barrel() -> void:
 	_hole_mat.emission_enabled = true
 	_hole_mat.emission = shot
 	_hole_mat.emission_energy_multiplier = 0.0
-	_hole_mat.set_meta(SoloVat.GLOW, MUZZLE + 1)  # v0.10.5 W3-V4c: a VAT Needle's bore glows at its MUZZLE drive
+	_hole_mat.set_meta(SoloVat.GLOW, MUZZLE + 1)  # A VAT Needle's bore glows at its MUZZLE drive
 	var hole := MeshInstance3D.new()
 	var hb := BoxMesh.new()
 	hb.size = Vector3(0.01, BARREL_W * 0.72, BARREL_W * 0.72)

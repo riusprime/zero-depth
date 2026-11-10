@@ -1,6 +1,6 @@
 class_name MergedRig
 extends Skeleton3D
-## v0.9.5 PF5 (owner, 2026-10-26: "merge the enemy's pieces only if that does not change how animations look"): the
+## The
 ## skeleton of one enemy's merged body. Each bone mirrors one Node3D of the avatar's rig (a joint or a piece), so the
 ## avatar's animation code keeps writing the very same transforms to those nodes; the avatar copies them to the bones
 ## (update_bones, from its _process, only the ones that changed). A hidden node folds its bone to a point.

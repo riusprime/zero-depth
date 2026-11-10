@@ -1,16 +1,16 @@
 class_name SeekersView
 extends Node3D
-## v0.9.0 AF2 (owner Q7; ATTACK_FORMS.md F8): the Seekers' look. Each dart in flight (WorldReader.projectile_is_dart)
+## The Seekers' look. Each dart in flight (WorldReader.projectile_is_dart)
 ## is a thin needle of light stretched along its flight, camera-facing, in the element's colours (BeamLooks: default
 ## energy, Fire, Lightning, Frost, Venom, Bleed), trailing TRAIL fading motes where it was the last syncs, so the curve
 ## each dart draws toward its enemy reads at a glance.
-## v0.9.0 VX (VFX_AUDIT.md): V2 the first element's centre and the second's edge; V27 the volley's muzzle spark fanned
+## VFX_AUDIT.md: V2 the first element's centre and the second's edge; V27 the volley's muzzle spark fanned
 ## three ways (AttackFormView); V29 with the effects layer on the trail motes become the element's own sprites (an
 ## ember, a crackle, a shard, a drop: HeroFx.mote), same count; V47 Low keeps LOW_MOTES a dart; V48 in-place buffers.
 ## Presentation only (EI-07): it reads the reader, never writes.
 
 const DARTS_MAX := 24
-## v0.9.5 FC7: Ring's lightning rings where a dart hit (the Glaive's ring look): at most ARCS_MAX at once; the ring
+## Ring's lightning rings where a dart hit (the Glaive's ring look): at most ARCS_MAX at once; the ring
 ## shader's phase that puts its band at ARC_FRONT of the quad's half-width (0.25 + 0.72 u), so a ring of radius r is
 ## drawn at r / ARC_FRONT.
 const ARCS_MAX := 8
@@ -23,7 +23,7 @@ const NEEDLE := Vector2(0.5, 0.11)
 const MOTE := 0.16
 ## v0.9.0 VX V47: Effects density Low keeps this many trail motes a dart.
 const LOW_MOTES := 2
-## v0.10.0 VX2 (VFX_PACK R2): each dart is the pack's javelin (mprojectile_javelin, the element's scene and colours)
+## VFX_PACK R2: each dart is the pack's javelin (mprojectile_javelin, the element's scene and colours)
 ## following it, its own trail replacing the needle and the motes (false: the needles, for before/after shots).
 const PACK_DARTS := true
 ## The javelin scene drawn at this scale (its head and trail are about 2.7 m long, the needle 0.5 m).
@@ -60,12 +60,12 @@ static var _shaders := {}
 var darts := 0
 var motes := 0
 var look := &"default"
-## v0.9.5 FC7: the lightning rings drawn now.
+## The lightning rings drawn now.
 var arcs := 0
 ## v0.9.0 VX V29: the effects layer is on (WorldViewRoot sets it): an element's trail motes become its own sprites
 ## (draw_fx), the round motes hide. Same count, so the cost stays the same.
 var vfx_on := false
-## v0.10.0 VX2: the pack the darts draw with (WorldViewRoot hands it in) and the javelins it holds, by dart id.
+## The pack the darts draw with (WorldViewRoot hands it in) and the javelins it holds, by dart id.
 var pack_fx: PackFx = null:
 	set(v):
 		pack_fx = v
@@ -82,14 +82,14 @@ var _vel: Array[Vector2] = []
 var _mote_pos: Array[Vector2] = []
 var _mote_fade: PackedFloat32Array = PackedFloat32Array()
 var _mote_id: PackedInt32Array = PackedInt32Array()
-## Past positions by projectile id (the trails, nearest first), updated in place (V48).
+## Past positions by projectile id (the trails, nearest first), updated in place.
 var _trail := {}
 var _seen := {}
 var _form := FormLook.new()
 var _arcs: Array[MeshInstance3D] = []
 
 
-## v0.9.5 FC7: the pool of lightning rings (one shared material, the Glaive's ring look).
+## The pool of lightning rings (one shared material, the Glaive's ring look).
 func _make_arcs() -> void:
 	var flat := PlaneMesh.new()
 	flat.size = Vector2(2.0, 2.0)
@@ -111,7 +111,7 @@ func _make_arcs() -> void:
 		_arcs.append(n)
 
 
-## v0.9.5 FC7: Ring's lightning ring where each dart hit.
+## Ring's lightning ring where each dart hit.
 func _place_arcs(reader: WorldReader) -> void:
 	arcs = 0
 	for row in reader.seeker_rings():
@@ -227,7 +227,7 @@ func _place() -> void:
 		var dir2 := v.normalized() if v.length_squared() > 1e-8 else Vector2.RIGHT
 		var x := SimPlane.to_3d(dir2, 0.0).normalized()
 		if _pack_dart(k, x):
-			_needles[k].visible = false  # v0.10.0 VX2: the pack's javelin is the dart
+			_needles[k].visible = false  # The pack's javelin is the dart
 			continue
 		_needles[k].visible = true
 		var y := x.cross(view).normalized()
@@ -247,7 +247,7 @@ func _place() -> void:
 		_motes[k].transform = Transform3D(b, SimPlane.to_3d(_mote_pos[k], HEIGHT))
 
 
-## v0.10.0 VX2 (R2): dart `k` (flying along `x` on the ground) as the pack's javelin of its element, held on it. False:
+## Dart `k` (flying along `x` on the ground) as the pack's javelin of its element, held on it. False:
 ## the needle draws.
 func _pack_dart(k: int, x: Vector3) -> bool:
 	if not hold.active():

@@ -8,7 +8,7 @@ extends RefCounted
 ## - When the HP reaches it, the boss enters GATE for GATE_TICKS: its attack stops, it stands still, and the view
 ##   shows the transition (WorldReader.boss_gate_permille: a shell around the boss and "PHASE SHIFT" on the boss
 ##   bar). It deals no damage meanwhile (no damage without a readable cause).
-## - v0.9.5 BH1 (owner Q3, H1): the gate is the boss's kneel, the only pause left in a fight (bosses no longer
+## - v0.9.5 BH1: the gate is the boss's kneel, the only pause left in a fight (bosses no longer
 ##   stagger): 1.0 s (sim tuning gate_seconds) in which it does nothing but can be hit (the gate's HP floor still
 ##   holds), and its core's steal window opens for rules.core_window_ticks (3 s) from the gate's first tick.
 ## - The gate brings adds: clamp(floor + gate − 1, ADDS_MIN, ADDS_MAX) of the floor's enemy kinds (the spawn mix
@@ -41,12 +41,12 @@ static func floor_hp(w: World, i: int) -> int:
 
 ## Damage._apply: `amount` on actor i, cut so a boss's HP stops at its next gate. Unchanged for anything else and for
 ## the world's own hits (owner 0).
-## v0.8.0 FB1: a final boss's body before the last keeps 1 HP, whoever hits it (FinalBoss.clamp_damage).
+## A final boss's body before the last keeps 1 HP, whoever hits it (FinalBoss.clamp_damage).
 static func clamp_damage(w: World, i: int, amount: int, owner_id: int) -> int:
 	if i == 0 or not BossAi.is_boss_kind(w.actors.kinds[i]):
 		return amount
 	if w.final_fight != null:
-		amount = FinalBoss.clamp_damage(w, i, amount, owner_id)  # v0.8.0 N2: the pace's cap
+		amount = FinalBoss.clamp_damage(w, i, amount, owner_id)  # The pace's cap
 	if owner_id == 0:
 		return amount
 	var lo := floor_hp(w, i)
@@ -57,7 +57,7 @@ static func clamp_damage(w: World, i: int, amount: int, owner_id: int) -> int:
 
 ## BossAi._update_phase: boss i (entry b) reached phase `gate` (1 = the first gate): the transition starts, its
 ## attack and stagger stop, the adds are queued, and STATUS_APPLY (effect boss_phase_gate, amount = the gate) is
-## emitted for the views. v0.10.5 O3 (owner L6): a body with a spell rotation (the Prism) opens no gate: her last
+## emitted for the views. a body with a spell rotation (the Prism) opens no gate: her last
 ## phase only changes her rotation at her next spell (no pause, no adds).
 static func begin(w: World, i: int, b: int, gate: int) -> void:
 	var a := w.actors
@@ -71,13 +71,13 @@ static func begin(w: World, i: int, b: int, gate: int) -> void:
 	a.lock_len[i] = 0.0
 	a.state[i] = BossAi.GATE
 	a.state_t[i] = 0
-	CoreTheft.on_phase_change(w, i)  # v0.9.5 BH1 (H1, Q3): the core's steal window opens (3 s)
-	BossQuake.on_phase(w, i, w.boss_tables[bs.table[b]], gate)  # v0.11.0 O3 (L5): the quake pillars rise
+	CoreTheft.on_phase_change(w, i)  # The core's steal window opens (3 s)
+	BossQuake.on_phase(w, i, w.boss_tables[bs.table[b]], gate)  # The quake pillars rise
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[i], a.ids[i], a.ids[i], a.pos(i))
 	e.effect_id = EFFECT
 	e.amount = gate
 	if BossTwin.is_twin(w, i):
-		return  # v0.9.0 NB2: one boss, one set of adds (its boss's gate brings them)
+		return  # One boss, one set of adds (its boss's gate brings them)
 	var kinds := add_kinds(w)
 	if kinds.is_empty():
 		return
@@ -114,7 +114,7 @@ static func add_kinds(w: World) -> PackedInt32Array:
 		return out
 	for k in SpawnDirector.unlocked(w, w.spawner, w.run_ticks):
 		var kind := w.spawner.kinds[k]
-		# v0.11.0 O13d: no Gravity Node among a boss's adds (it spawns in regular rooms only: it would bend the patterns)
+		# No Gravity Node among a boss's adds (it spawns in regular rooms only: it would bend the patterns)
 		if (
 			not out.has(kind)
 			and not BossAi.is_boss_kind(kind)

@@ -1,6 +1,6 @@
 class_name RuinsRocks
 extends RefCounted
-## v0.11.0 O13b (PLAN M3; docs/roadmap/v0.11.0/ENEMIES.md R1-R4, approved as written 2026-11-07; owner Q22, Q23): the
+## The
 ## Ruins' and the Night Rocks' signature enemies. Each is a small state machine on EnemyAi's states (SPAWN, MOVE,
 ## WINDUP, ACTIVE, RECOVER) in ActorStore's columns; the walk between attacks is EnemyAi's plan (the Weaver and the
 ## Thrower keep a distance band: EnemyAi.KEEP_AWAY). Numbers are each one's EnemyTable (RuinsRocksCompiler, from

@@ -1,8 +1,8 @@
 class_name HiddenRoom
 extends RefCounted
-## v0.9.0 TD (owner Q23: "hidden room should not appear or be visible until you open it"): which of the floor's drawn
+## Which of the floor's drawn
 ## pieces belong only to a hidden room (WorldReader.hidden_rooms: the timed door's secret room until it first opens;
-## v0.9.0 RA: the rune puzzle's until it is solved), so StageView leaves them out of sight until it opens
+## The rune puzzle's until it is solved), so StageView leaves them out of sight until it opens
 ## (StageView.reveal_hidden). A piece is a hidden room's when it lies within its cells (grid line to grid line, grown
 ## by the thickest outer wall half) and touches no other room's interior: its own outer walls, its interior pieces and
 ## its ground; a partition it shares with a neighbour stays, as the neighbour's wall. Pure: reads only.

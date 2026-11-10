@@ -1,6 +1,6 @@
 class_name MetaProgress
 extends RefCounted
-## v0.9.0 MP (PLAN W49-W52, Q28; LOCKED_DECISIONS PD-06: sideways only): the profile's Rune Fragments and the forms
+## PLAN W49-W52, Q28; LOCKED_DECISIONS PD-06: sideways only: the profile's Rune Fragments and the forms
 ## they gate, in the profile's `progress` section (ProfileStore version 2):
 ## - `fragments`: the balance; `earned`: every fragment ever banked (a record, never spent);
 ## - `portal`: the player has travelled through a Purple Portal (owner: "void unlocked when traveling through a purple

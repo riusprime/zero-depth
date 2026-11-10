@@ -8,10 +8,10 @@ extends AvatarBase
 ## the weak spot. Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance()
 ## animates in frame time, and nothing here feeds back into the sim.
 ## +X is the front and +Z the right in every local frame; the node sits at the actor's feet under ActorViews' facing.
-## v0.8.0 TG (owner O4, Q3): its slam disc is no longer drawn on the ground; the windup reads from the body (AvatarBase
+## Its slam disc is no longer drawn on the ground; the windup reads from the body (AvatarBase
 ## "tell"): the fists climb overhead, the knees bend into a crouch that deepens with the windup's progress, and the
 ## visor brightens and flashes just before the slam.
-## v0.8.0 P1 (owner O25: "The large enemy also needs a visible ground-smash animation"; O26): a full overhead slam. The
+## A full overhead slam. The
 ## fists climb overhead and the chest heaves back by STRIKE_RAISE_BY of the windup (AvatarBase.strike_raise) and hold
 ## there, trembling, to the hit tick; then they come down hard in STRIKE_SNAP_S, the chest pitching forward and the
 ## knees dropping, the fists land at the front and stay down through the first part of the recovery, and a dust ring
@@ -32,12 +32,12 @@ const TELEPORT_SPEED := 30.0
 ## land beside the shell, not under it).
 const ARM_UP := 2.75
 const ARM_SLAM := 0.25
-## v0.8.0 P1: the chest's heave back at the top of the raise and its pitch forward in the slam (radians), and how far
+## The chest's heave back at the top of the raise and its pitch forward in the slam (radians), and how far
 ## the hips drop when the fists land (metres).
 const RAISE_LEAN := 0.24
 const SLAM_PITCH := 0.42
 const SLAM_DROP := 0.12
-## v0.8.0 P1: the dust ring: it runs from DUST_START of the slam's radius to its full radius over DUST_SECONDS from the
+## The dust ring: it runs from DUST_START of the slam's radius to its full radius over DUST_SECONDS from the
 ## impact, fading out; its band is DUST_BAND of the radius wide. Its colour is neutral dust, not a reserved role.
 const DUST_SECONDS := 0.45
 const DUST_START := 0.3
@@ -54,7 +54,7 @@ const RISE_SECONDS := 0.45
 
 ## Colours sampled from the reference sheet (lit facets read lighter in game light). Each facet of the shell and the
 ## rocks is tinted a little lighter or darker (vertex colours), so the planes stay distinct under any light.
-## v0.8.0 EC: the shell (body), the visor frame (trim), the rocks (grey) and the visor (eye) come from EnemyPalettes.
+## The shell (body), the visor frame (trim), the rocks (grey) and the visor (eye) come from EnemyPalettes.
 const FACET_TINT := 0.16
 const FIST_COLOR := Color("#68564F")
 const CHEST_COLOR := Color("#2A2D33")
@@ -92,7 +92,7 @@ const SHELL_SECTION := [
 	Vector2(-0.62, 0.84),
 ]
 
-## v0.10.5 W3-V4c (SoloVat): the raw drives (_vd) and their specs [lo, hi, loop]: the walk's swing (sin and cos of
+## SoloVat: the raw drives (_vd) and their specs [lo, hi, loop]: the walk's swing (sin and cos of
 ## the phase, times the walk), the spawn-in's sink, the chest's shift, height, lean and breath, the arms' roll (both,
 ## mirrored), each arm's swing, the elbows' bend.
 const SW := 0
@@ -130,9 +130,9 @@ var weak_spot: Node3D
 var arms: Array[Node3D] = []
 var fists: Array[Node3D] = []
 var legs: Array[Node3D] = []
-## v0.8.0 P1: the impact's dust ring (hidden between slams).
+## The impact's dust ring (hidden between slams).
 var dust: MeshInstance3D
-## v0.10.5 W3-V4c (owner, 2026-11-06: VAT for every regular enemy): true (set before setup(), ActorViews from
+## True (set before setup(), ActorViews from
 ## ViewPrefs.enemy_vat): a VatCrowd draws the body from baked poses; setup() builds only the dust ring.
 var vat := false
 var kind := WorldReader.KIND_WARDEN
@@ -154,7 +154,7 @@ var _raise := 0.0
 var _slam := 0.0
 var _rise := 1.0
 var _shake := 0.0
-# v0.8.0 P1: the slam's radius (the telegraph's, read in the windup), and seconds since the impact (-1: no dust).
+# The slam's radius (the telegraph's, read in the windup), and seconds since the impact (-1: no dust).
 var _slam_r := SLAM_RADIUS
 var _dust_t := -1.0
 var _dust_mat := StandardMaterial3D.new()
@@ -166,7 +166,7 @@ var _lift := 0.0
 func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_vd.resize(VAT_DRIVES.size())
-	if vat:  # v0.10.5 W3-V4c: the crowd draws the body; the dust ring stays a node
+	if vat:  # The crowd draws the body; the dust ring stays a node
 		_body.free()
 		_body = null
 		_chest.free()
@@ -219,7 +219,7 @@ func apply_state(s: Dictionary) -> void:
 	_windup = clampf(s.get("windup", 0.0), 0.0, 1.0)
 	if state == WorldReader.STATE_WINDUP and s.has("radius"):
 		_slam_r = maxf(float(s["radius"]), 0.5)
-	strike_note(state)  # v0.8.0 P1: the hit tick starts the slam's downswing
+	strike_note(state)  # The hit tick starts the slam's downswing
 	if _fresh:
 		_fresh = false
 		_rise = 0.0 if state == WorldReader.STATE_SPAWN else 1.0
@@ -235,7 +235,7 @@ func advance(delta: float) -> void:
 	_speed = lerpf(_speed, _vel.length(), _rate(10.0, dt))
 	var spawning := _state == WorldReader.STATE_SPAWN
 	_rise = move_toward(_rise, 0.0 if spawning else 1.0, dt / RISE_SECONDS)
-	# v0.8.0 P1: Windup: the fists climb overhead by STRIKE_RAISE_BY of its progress and hold there, trembling.
+	# Windup: the fists climb overhead by STRIKE_RAISE_BY of its progress and hold there, trembling.
 	# The hit tick: they come down hard (strike_swing's snap). Recover: they stay on the ground, then rise back.
 	var was_snapping := strike_snapping()
 	strike_advance(dt)
@@ -269,7 +269,7 @@ func slam_amount() -> float:
 	return _slam
 
 
-## v0.8.0 TG: 0..1 how deep the windup crouch is (from the windup's progress).
+## 0..1 how deep the windup crouch is (from the windup's progress).
 func crouch_amount() -> float:
 	return tell_crouch(_windup) if _state == WorldReader.STATE_WINDUP else 0.0
 
@@ -296,7 +296,7 @@ func _pose(dt: float) -> void:
 	# Heavy breathing at rest; a rolling, lumbering sway when walking.
 	var breath := sin(_t * 1.7) * (1.0 - _walk) * (1.0 - busy)
 	var bob := absf(s) * 0.03 * _walk
-	# v0.8.0 TG: the windup's knees-bent crouch (no disc on the ground any more), deepening with its progress.
+	# The windup's knees-bent crouch (no disc on the ground any more), deepening with its progress.
 	var calm := ViewPrefs.reduced_motion
 	var tell_c := crouch_amount()
 	var crouch := _raise * 0.03 + _slam * SLAM_DROP + tell_c * 0.07
@@ -304,7 +304,7 @@ func _pose(dt: float) -> void:
 	# Spawn-in: up out of the ground, leaning back as it comes.
 	var sink := 1.0 - _rise
 	sink = sink * sink * (3.0 - 2.0 * sink)
-	# v0.10.5 W3-V4c: the pose's numbers first (the VAT drives and the lift), then the nodes from them (the old path).
+	# The pose's numbers first (the VAT drives and the lift), then the nodes from them (the old path).
 	_lift = -1.35 * sink
 	_vd[SW] = s * _walk
 	_vd[CW] = cos(_phase) * _walk
@@ -345,7 +345,7 @@ func _pose(dt: float) -> void:
 		legs[k].position = Vector3(0, hip, sgn * 0.19)
 
 
-## v0.10.5 W3-V4c: the chest's breath (its scale) and a shoulder's place (`side` -1 left, 1 right), from the breath.
+## The chest's breath (its scale) and a shoulder's place (`side` -1 left, 1 right), from the breath.
 static func _chest_scale(breath: float) -> Vector3:
 	return Vector3(1.0, 1.0 + breath * 0.012, 1.0 + breath * 0.01)
 
@@ -407,12 +407,12 @@ func vat_rig() -> Dictionary:
 	return SoloVat.rig("warden", VAT_DRIVES, grids, j, true)
 
 
-## v0.8.0 P1: 0..1 how far the impact's dust ring has run (-1: none showing).
+## 0..1 how far the impact's dust ring has run (-1: none showing).
 func dust_amount() -> float:
 	return clampf(_dust_t / DUST_SECONDS, 0.0, 1.0) if _dust_t >= 0.0 else -1.0
 
 
-## v0.8.0 P1: the slam's radius the dust ring runs out to (the telegraph's).
+## The slam's radius the dust ring runs out to (the telegraph's).
 func slam_radius() -> float:
 	return _slam_r
 
@@ -436,14 +436,14 @@ func _advance_dust(dt: float) -> void:
 	_dust_mat.albedo_color = c
 
 
-## v0.8.0 P1: the dust ring: a flat band (unit outer radius) just above the floor, unshaded and see-through, laid flat
+## The dust ring: a flat band (unit outer radius) just above the floor, unshaded and see-through, laid flat
 ## on the ground under the Warden (the node's own frame: its facing doesn't matter for a ring).
 func _build_dust() -> void:
 	dust = MeshInstance3D.new()
 	dust.name = "SlamDust"
-	dust.set_meta(SoloVat.LIVE, true)  # v0.10.5 W3-V4c: a node of a VAT Warden's too, not baked
+	dust.set_meta(SoloVat.LIVE, true)  # A node of a VAT Warden's too, not baked
 	dust.mesh = _dust_mesh()
-	# v0.10.5 S2: the code-made near-white band again (the owner's beige fx_dust_ring stays for the other slams).
+	# The code-made near-white band again (the owner's beige fx_dust_ring stays for the other slams).
 	_dust_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_dust_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_dust_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -555,7 +555,7 @@ func _build_leg(side: float) -> void:
 	legs.append(pivot)
 
 
-## v0.8.0 EC: the Warden's colour in `slot` under the active palette.
+## The Warden's colour in `slot` under the active palette.
 static func _color(slot: StringName) -> Color:
 	return EnemyPalettes.color(WorldReader.KIND_WARDEN, slot)
 

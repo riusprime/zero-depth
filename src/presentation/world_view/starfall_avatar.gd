@@ -1,6 +1,6 @@
 class_name StarfallAvatar
 extends AvatarBase
-## v0.11.0 O13d (ENEMIES.md R9, R10; OWNER_TODO §3.2 holds the prompts for the owner's models): the Starfall signature
+## ENEMIES.md R9, R10; OWNER_TODO §3.2 holds the prompts for the owner's models: the Starfall signature
 ## enemies' code-made stand-in bodies, in the Charger family's style (faceted, flat-lit blocks with one
 ## glowing accent), each one shape at a glance:
 ## - Star Warper: a lean hooded crawler in violet with two blade arms and a pale-gold star on its chest; through

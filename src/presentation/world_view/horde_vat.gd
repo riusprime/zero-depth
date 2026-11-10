@@ -1,6 +1,6 @@
 class_name HordeVat
 extends RefCounted
-## v0.10.5 W3-V4b (owner, 2026-11-06: "can we apply it to the rest of the enemies and test it?"): what the VAT path
+## What the VAT path
 ## (VatBake, VatCrowd, VatLooks) needs to know about the horde kinds past the Swarmer: the Splitter and Splitling, the
 ## Shield Bearer and the Mender (the owner's models), the Mine Layer and the Sniper (code bodies). Each one's body
 ## (its pivot's place, lean and scale, the model's sway and death shrink) is the crowd's instance transform
@@ -23,7 +23,7 @@ const GRIDS := {
 	WorldReader.KIND_MENDER: [Vector3i(2, 2, 2), 48],
 	WorldReader.KIND_MINE_LAYER: [Vector3i(2, 2, 2), 0],
 	WorldReader.KIND_SNIPER: [Vector3i(17, 2, 2), 0],
-	# v0.11.0 O9: the horde critters: no stance (2 samples each way: unused), the gait loop poses their parts
+	# The horde critters: no stance (2 samples each way: unused), the gait loop poses their parts
 	WorldReader.KIND_DUST_MITE: [Vector3i(2, 2, 2), CritterBodies.GAIT_SAMPLES],
 	WorldReader.KIND_CAVE_BAT: [Vector3i(2, 2, 2), CritterBodies.GAIT_SAMPLES],
 	WorldReader.KIND_EMBER_FLEA: [Vector3i(2, 2, 2), CritterBodies.GAIT_SAMPLES],
@@ -32,7 +32,7 @@ const GRIDS := {
 }
 
 
-## v0.10.5 W3-V4b (on W3-V4a's general path): the VatBake rig of `a` (built with its pieces; see VatBake's class
+## On W3-V4a's general path: the VatBake rig of `a` (built with its pieces; see VatBake's class
 ## notes), its key "horde<kind>" as the pilot's. Four drives (vat_grid_drives): the stance grid over x, y, z, the gait
 ## loop over w (a kind without a gait has no gait grid; the Sniper's w is its muzzle's glow, read by VatLooks' mode 3).
 ## The body is the root joint, on the stance grid but always the identity (its moves are the instance's, vat_offset);
@@ -113,7 +113,7 @@ static func joint_spec(a: HordeAvatar) -> Array:
 			out.append_array([[p["hopper"], g0], [p["mine"], g0]])
 		WorldReader.KIND_SNIPER:
 			out.append_array([[p["barrel"], g0], [p["muzzle"], g0]])
-		_ when CritterBodies.is_critter(a.kind):  # v0.11.0 O9: legs, wings, claws or tail on the gait
+		_ when CritterBodies.is_critter(a.kind):  # Legs, wings, claws or tail on the gait
 			out.append_array(CritterBodies.joints(a))
 		_:
 			return []
@@ -123,7 +123,7 @@ static func joint_spec(a: HordeAvatar) -> Array:
 ## The drives `d` (HordeAvatar._pose_parts' natural units) of `a` in its grid's units: x, y, z 0..1 over the stance
 ## grid; w the gait loop's phase (any real: the shader wraps it) or, on the Sniper, the muzzle's glow.
 static func grid_of(a: HordeAvatar, d: Vector4) -> Vector4:
-	if CritterBodies.is_critter(a.kind):  # v0.11.0 O9: w is the gait's phase (0..1)
+	if CritterBodies.is_critter(a.kind):  # W is the gait's phase (0..1)
 		return Vector4(0.0, 0.0, 0.0, fposmod(d.w, 1.0))
 	match a.kind:
 		WorldReader.KIND_MENDER:
@@ -163,9 +163,9 @@ static func natural(kind: int, u: Vector3, phase: float) -> Vector4:
 
 ## The owner's model's colour map for `a` (its plates are textured; VatLooks samples it), or null.
 static func texture(avatar: Node3D) -> Texture2D:
-	if avatar.has_method(&"vat_texture"):  # v0.11.0 O17: an avatar that names its own colour map
+	if avatar.has_method(&"vat_texture"):  # An avatar that names its own colour map
 		return avatar.call(&"vat_texture")
-	var lens := avatar as LensDroneAvatar  # v0.11.0 S4: the Lens Drone's model
+	var lens := avatar as LensDroneAvatar  # The Lens Drone's model
 	if lens != null:
 		return EnemyModels.get_model(&"lens_drone").get("texture") if lens.has_model else null
 	var a := avatar as HordeAvatar

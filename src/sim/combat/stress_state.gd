@@ -1,6 +1,6 @@
 class_name StressState
 extends RefCounted
-## v0.9.5 SM (Stress Mark; StressMarks): the weak sides on enemies. One entry per enemy that was ever marked, by
+## Stress Mark; StressMarks: the weak sides on enemies. One entry per enemy that was ever marked, by
 ## actor id: `mask` (bit s set: side s is marked; sides 0 up, 1 right, 2 down, 3 left on the screen) and four cooldown
 ## ticks (`cd`, the tick a side may be marked again; a non-boss enemy uses its slot 0). `rng` is the named stream
 ## `combat:stress`. World.stress is null until a hero first holds the card. Hashed and snapshotted when it exists.

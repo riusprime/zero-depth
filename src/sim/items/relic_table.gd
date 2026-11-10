@@ -1,6 +1,6 @@
 class_name RelicTable
 extends RefCounted
-## v0.11.0 O14b (OWNER_QUESTIONS §J N1): one relic's compiled numbers (ContentCompiler.compile_relics from
+## OWNER_QUESTIONS §J N1: one relic's compiled numbers (ContentCompiler.compile_relics from
 ## RelicDefinition): how many times a run it fires, the HP a saved killing blow leaves, the shock ring's radius and
 ## damage. Read-only in play (loadout).
 

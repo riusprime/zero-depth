@@ -1,6 +1,6 @@
 class_name BulletPatterns
 extends RefCounted
-## v0.7.5 BF1 (owner N15; docs/design/BOSS_FIGHTS.md; SIM_CONTRACTS §10d): the bullet pattern engine. A pattern
+## The bullet pattern engine. A pattern
 ## (BulletPatternTable, from data/bullet_patterns) is fired over time by whoever runs it (BossAi's `pattern` move;
 ## from EF, enemies): on each of its wave ticks, wave_shots() gives the wave's spawn points and velocities, a pure
 ## function of the pattern, the wave, the origin and the aim (no stream is drawn, so a pattern never moves another
@@ -31,7 +31,7 @@ static func wave_at(p: BulletPatternTable, st: int) -> int:
 	return k if k < p.waves else -1
 
 
-## v0.9.5 BH3 (B6): the wave whose crossing wall leaves on tick st (cross_delay_ticks after its first wall), or -1.
+## The wave whose crossing wall leaves on tick st (cross_delay_ticks after its first wall), or -1.
 static func cross_wave_at(p: BulletPatternTable, st: int) -> int:
 	if p.kind != K.WALL or not p.crossing or p.cross_delay_ticks <= 0:
 		return -1
@@ -46,7 +46,7 @@ static func base_angle(p: BulletPatternTable, k: int, aim: int) -> int:
 
 ## Wave k's shots: [spawn points, velocities (metres per tick)], from `origin` (a body's centre, `origin_r` out; a
 ## burst's landing point with origin_r 0) toward `aim` (1/4096 turns). Pure: the shapes drawn and fired are these.
-## v0.9.5 BH3 (B6): `part` picks one wall of a crossing WALL (0 the first, 1 the crossing one; -1 both).
+## `part` picks one wall of a crossing WALL (0 the first, 1 the crossing one; -1 both).
 static func wave_shots(
 	p: BulletPatternTable, k: int, origin: Vector2, aim: int, origin_r: float, part := -1
 ) -> Array[PackedVector2Array]:
@@ -68,7 +68,7 @@ static func wave_shots(
 			var turn := spin_at(p, k * p.wave_gap_ticks)
 			for arm in p.arms:
 				_radial(pos, vel, origin, origin_r, base + turn + arm * 4096 / p.arms, p.speed)
-			if p.kind == K.SPIRAL and p.counter_arms > 0:  # v0.9.5 BH3 (B9): a spiral the other way
+			if p.kind == K.SPIRAL and p.counter_arms > 0:  # A spiral the other way
 				var back := p.counter_spin_milli * (k * p.wave_gap_ticks) / 1000
 				for arm in p.counter_arms:
 					var ang := base + back + arm * 4096 / p.counter_arms
@@ -85,7 +85,7 @@ static func wave_shots(
 				if int(c * 1000.0) < p.petal_cut_permille:
 					continue
 				var f := (p.petal_min_permille + (1000 - p.petal_min_permille) * c) / 1000.0
-				# v0.7.5 BF3: a raining flower's drops land rain_m × f out (0 = from the body's edge)
+				# A raining flower's drops land rain_m × f out (0 = from the body's edge)
 				_radial(pos, vel, origin, origin_r + p.rain_m * f, base + rel, p.speed * f)
 		K.BURST:
 			for j in p.count:
@@ -102,7 +102,7 @@ static func spin_at(p: BulletPatternTable, t: int) -> int:
 
 
 ## Fires wave k of pattern p for actor `owner` (its id is the shots' owner): the shots that are fair and fit under
-## the caps are queued for this tick's spawn phase. Returns how many were queued. `cause` (v0.8.0 BS1): the boss
+## the caps are queued for this tick's spawn phase. Returns how many were queued. `cause`: the boss
 ## attack the shots name (-2, the default: the owner boss's attack in progress). `gap` (v0.9.0 NB2, the Wardens'
 ## Crossfire): (heading, half), the shots heading within half of it (1/4096 turns) are left out (half 0: none).
 static func fire(
@@ -124,8 +124,8 @@ static func fire(
 	var safe := p.safe_radius_m + w.player.radius_m
 	var player := w.player_pos()
 	var n := 0
-	# v0.7.5 BF2: a boss's shots carry the attack that fired them (the death recap's cause line).
-	# v0.8.0 BS1: `cause` >= -1 names it outright (an egg's burst: its attack's late part, BossSignatures).
+	# A boss's shots carry the attack that fired them (the death recap's cause line).
+	# `cause` >= -1 names it outright (an egg's burst: its attack's late part, BossSignatures).
 	var attack := cause if cause >= -1 else -1
 	if cause < -1 and BossAi.is_boss_kind(w.actors.kinds[owner_i]):
 		var b := BossAi.entry_of(w, owner_i)
@@ -137,7 +137,7 @@ static func fire(
 		if not EnemyAi.clear_of_walls(w, pos[j], p.radius_m):
 			continue  # nor inside a wall
 		if gap.y > 0 and Kin.angle_diff(Kin.angle_of(vel[j]), gap.x) <= gap.y:
-			continue  # v0.9.0 NB2: the Crossfire's gap
+			continue  # The Crossfire's gap
 		if not room(w):
 			_limit(w, owner_i)
 			break
@@ -153,7 +153,7 @@ static func fire(
 		)
 		w.set_pending_look(p.look)
 		if attack >= 0:
-			w.set_pending_cause(attack)  # v0.7.5 BF2: the recap names the attack that fired it
+			w.set_pending_cause(attack)  # The recap names the attack that fired it
 		n += 1
 	return n
 

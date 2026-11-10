@@ -1,7 +1,7 @@
 class_name HealOrbStore
 extends RefCounted
 ## Heal orbs lying on the floor (v0.4.0 TU, owner D8; HealOrbs), as parallel arrays in drop order: id and where it
-## lies. v0.11.0 F3: and the earning state: the meter's points and the tick the pickup cooldown ends. World hashes it
+## lies. and the earning state: the meter's points and the tick the pickup cooldown ends. World hashes it
 ## only once used (touched: a kill earned points, or an orb lay), so worlds without kills hash as before.
 
 const INT_FIELDS: Array[StringName] = [&"ids"]
@@ -10,9 +10,9 @@ const FLOAT_FIELDS: Array[StringName] = [&"pos_x", &"pos_y"]
 var ids := PackedInt32Array()
 var pos_x := PackedFloat32Array()
 var pos_y := PackedFloat32Array()
-## v0.11.0 F3: the points earned toward the next orb.
+## The points earned toward the next orb.
 var meter := 0
-## v0.11.0 F3: no orb and no points before this World.tick (a pickup sets it).
+## No orb and no points before this World.tick (a pickup sets it).
 var ready_tick := 0
 var touched := false
 

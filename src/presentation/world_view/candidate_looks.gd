@@ -1,6 +1,6 @@
 class_name CandidateLooks
 extends RefCounted
-## v0.10.5 W3-O7 (owner F6, F16; G2: docs/roadmap/v0.10.5/W3_O7_VFX_G2.md): the candidate looks the owner picks from,
+## The candidate looks the owner picks from,
 ## for the purple enemy bolt and the Lance's ball, each a row of data/vfx/pack_fx_w3o7.tres (so the session warm-up
 ## compiles it before a fight). Today's looks stay the default (&""), until the owner picks: set BOLT / LANCE.
 ## FireballViews and HeroPulseViews ask here for the table id; shot tools and tests set `bolt` / `lance`.

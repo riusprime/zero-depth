@@ -19,7 +19,7 @@ var paid := 0
 ## Chaos: 0 not begun, 1 being fought, 2 cleared; its enemies (actor ids) and the tick it was cleared.
 var chaos_phase := 0
 var members := PackedInt32Array()
-## v0.9.0 CF: the members still waiting to come in (the room holds only so many at once: ClosedFights), in order:
+## The members still waiting to come in (the room holds only so many at once: ClosedFights), in order:
 ## their enemy kinds (an elite's as -1 - its kind) and spots.
 var later_kinds := PackedInt32Array()
 var later_pos := PackedVector2Array()
@@ -53,7 +53,7 @@ func hash_into(h: StateHasher) -> void:
 	for q in [pos, fountain_pos]:
 		h.add_f32(q.x)
 		h.add_f32(q.y)
-	if not later_kinds.is_empty():  # v0.9.0 CF: hashed only while members wait (a challenge before CF hashes as it did)
+	if not later_kinds.is_empty():  # Hashed only while members wait (a challenge before CF hashes as it did)
 		h.add_ints(later_kinds)
 		for q in later_pos:
 			h.add_f32(q.x)

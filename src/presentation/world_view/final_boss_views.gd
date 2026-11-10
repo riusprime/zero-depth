@@ -19,9 +19,9 @@ const HOT := Color("#FF3A5A")
 ## The gathering ring's radius over the boss's (m) and its light's range.
 const RING_M := 0.6
 const LIGHT_RANGE := 9.0
-## v0.8.0 TX2: seconds the owner's crystal shatter bursts flare (draw_fx).
+## Seconds the owner's crystal shatter bursts flare (draw_fx).
 const BURST_FX_S := 0.55
-## v0.10.0 VX5 (R19): the body's shatter is the pack's explosion_07 (the owner's crystal sprites where its family is
+## The body's shatter is the pack's explosion_07 (the owner's crystal sprites where its family is
 ## full); false: the sprites.
 const PACK_SHATTER := true
 
@@ -59,7 +59,7 @@ var _ring := MeshInstance3D.new()
 var _ring_mat := StandardMaterial3D.new()
 var _light := OmniLight3D.new()
 var _bursts := 0
-## v0.8.0 TX2: where the last burst was and the burst body's radius (draw_fx).
+## Where the last burst was and the burst body's radius (draw_fx).
 var _burst_at := Vector3.ZERO
 var _burst_r := 1.0
 var _burst_packed := false
@@ -67,7 +67,7 @@ var _burst_packed := false
 
 func _init() -> void:
 	name = "FinalBossViews"
-	# v0.8.0 N1 (O55, the lighting audit): the ring, the shards and their light are laid out in _process on frame
+	# O55, the lighting audit: the ring, the shards and their light are laid out in _process on frame
 	# time: no physics interpolation on top (the light jumped from the ring to a burst over a tick).
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var mm := MultiMesh.new()
@@ -149,7 +149,7 @@ func ring_amount() -> float:
 	return _shatter
 
 
-## v0.8.0 TX2: a VfxCore drawer (WorldViewRoot adds it with the new look): the owner's crystal shatter bursts
+## A VfxCore drawer (WorldViewRoot adds it with the new look): the owner's crystal shatter bursts
 ## (fx_crystal_shatter) flaring where the body burst over its first BURST_FX_S, a big one in the middle and three
 ## smaller round it, growing as they fade. Frame time like the shards; nothing without the texture.
 func draw_fx(layer: VfxCore) -> void:
@@ -185,7 +185,7 @@ func _burst(at: Vector3, radius: float, tick: int) -> void:
 	_burst_r = radius
 	_burst_packed = false
 	var pack := BossPackHold.find(self) if PACK_SHATTER else null
-	if pack != null and pack.has_room(&"explosion"):  # R19: the pack's burst, in the shatter's colour
+	if pack != null and pack.has_room(&"explosion"):  # The pack's burst, in the shatter's colour
 		_burst_packed = (
 			pack.spawn(
 				&"bx_shatter",

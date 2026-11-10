@@ -1,6 +1,6 @@
 class_name RockLurkerAvatar
 extends AvatarBase
-## v0.11.0 O17b (ENEMIES.md R3; owner 2026-11-08: "make sure they are animated as good as you can"): the Rock Lurker on
+## The Rock Lurker on
 ## the owner's model (EnemyModels &"rock_lurker", prepared by scripts/assets/o17_prep_rock_lurker.py): a heavy crouched
 ## creature whose back is one faceted boulder with thin red-orange cracks, a dark face plate with a red brow and one
 ## gem visor under the rock's front edge, two big gorilla arms (each an upper boulder and a clawed forearm) and two
@@ -31,7 +31,7 @@ extends AvatarBase
 ## The sim never puts it back into hiding, so there is no clip for that.
 ## VAT (SoloVat, owner 2026-11-06 "apply it to the rest of the enemies"): each pose is a set of plain numbers (_vd,
 ## VAT_DRIVES) the nodes are written from, each joint one of them, so the VatCrowd's shader poses the same body.
-## Without the model file it builds a code-made stand-in on the same joints (L15).
+## Without the model file it builds a code-made stand-in on the same joints.
 
 const KIND := WorldReader.KIND_ROCK_LURKER
 const MODEL := &"rock_lurker"

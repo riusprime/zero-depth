@@ -1,6 +1,6 @@
 class_name PlaygroundSession
 extends Node
-## v0.7.5 PG (owner N20, docs/tools/PLAYGROUND.md): the Playground while it runs. It holds the commands
+## The Playground while it runs. It holds the commands
 ## (PlaygroundApi, which SimDriver applies), the DPS meter on the UI layer, and the F1 panel: F1 opens and closes it
 ## (Esc closes it too), and while it is open the sim waits (Main.sync_pause). Main builds the room and its view and
 ## answers the panel's biome and weapon requests.

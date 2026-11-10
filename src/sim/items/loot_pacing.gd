@@ -1,6 +1,6 @@
 class_name LootPacing
 extends RefCounted
-## v0.8.0 FL (owner O91, "floor-paced loot"; docs/roadmap/v0.8.0/BALANCE_PASS.md "FL"): the one pacing rule every card
+## The one pacing rule every card
 ## source draws through (World.loot_pacing, LootPacingTable; null = no pacing, the draws as before FL).
 ## - The stage: floor 1, 2, 3 of the first loop, and DEEP for a Deep floor or any floor of a later loop.
 ## - A wand card's draw weight × its category's multiplier for the stage (ItemPool.card_weight, and the events' and
@@ -31,7 +31,7 @@ static func stage(w: World) -> int:
 	return clampi(w.floor_index - 1, Stage.FLOOR_1, Stage.FLOOR_3)
 
 
-## The card-type weights [ability, stat, mod] of a chest's (`chest`) or an altar's draw (v0.9.5 EP2): this stage's row
+## The card-type weights [ability, stat, mod] of a chest's (`chest`) or an altar's draw: this stage's row
 ## of the pacing table, or the reward table's without a table or with an empty row.
 static func card_type_weights(w: World, chest: bool) -> PackedInt32Array:
 	var t := w.loot_pacing
@@ -81,7 +81,7 @@ static func next_ceiling(w: World) -> int:
 	return _ceiling_at(w, next_stage(w))
 
 
-## v0.10.5 W3-P2 (the progression audit's P2: element levels follow the floor): an element card's own ceiling `ahead`
+## The progression audit's P2: element levels follow the floor: an element card's own ceiling `ahead`
 ## floors from this one (0: now; 1: the next floor, the boss's upgrade): the table's loop-1 row by floor (its last
 ## value past its end), element_ceiling_loops from loop 2 on; MAX_LEVEL without the table or its row.
 static func element_ceiling(w: World, ahead: int = 0) -> int:
@@ -94,7 +94,7 @@ static func element_ceiling(w: World, ahead: int = 0) -> int:
 	return clampi(t.element_ceilings[f], 1, CardLevels.MAX_LEVEL)
 
 
-## v0.10.5 W3-P2: the highest level held item `idx` is offered up to now: the stage's ceiling, and an element card's
+## The highest level held item `idx` is offered up to now: the stage's ceiling, and an element card's
 ## own (element_ceiling) under it; W3-P3: the card's own cap with this loop's overlevels (CardLevels.offer_cap).
 static func ceiling_of(w: World, idx: int) -> int:
 	return CardLevels.offer_cap(w, idx)
@@ -126,7 +126,7 @@ static func compatible(w: World, idx: int) -> bool:
 	for k in at:
 		if Wand.trigger_of(w, w.mod_slots[k]) >= 0:
 			cuts += 1
-	if cuts > Attacks.hook_depth(w):  # v0.10.5 W3-P10a: the loop's
+	if cuts > Attacks.hook_depth(w):  # The loop's
 		return false
 	return cuts == 0 or not Wand.dead_after_trigger(w, w.item_tables[idx].id)
 
@@ -180,7 +180,7 @@ static func jackpot(w: World, i: int, out: PackedInt32Array) -> PackedInt32Array
 
 ## The jackpot cards now, ascending: a held wand card exactly at the ceiling (and below CardLevels.MAX_LEVEL; taking
 ## it lifts it one past the ceiling), or a mutation still in the pool; never a card already in `out` or held in
-## another offer (ItemPool.available's rules, the ceiling one level higher). v0.10.5 W3-P2: an element card at its own
+## another offer (ItemPool.available's rules, the ceiling one level higher). an element card at its own
 ## ceiling (ceiling_of) is a jackpot card too, lifted one past it.
 static func jackpot_pool(w: World, out: PackedInt32Array) -> PackedInt32Array:
 	var cap := ceiling(w)

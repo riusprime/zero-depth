@@ -1,6 +1,6 @@
 class_name RuneRingView
 extends Node3D
-## v0.9.5 RS2 (RUNIC_STONE.md S6): the full Runic Stone's ring, the 24 Elder Futhark runes (RunicGlyphs) lying on the
+## RUNIC_STONE.md S6: the full Runic Stone's ring, the 24 Elder Futhark runes (RunicGlyphs) lying on the
 ## floor around the stone's base, glowing violet and turning slowly. Built in code from the glyph strokes as thin
 ## ribbons (one unshaded emissive mesh, no texture, no art file). Presentation only: it reads nothing, and the turn is
 ## decoration (no outcome depends on it).

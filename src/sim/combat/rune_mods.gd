@@ -1,8 +1,8 @@
 class_name RuneMods
 extends RefCounted
-## v0.9.5 FC5 (docs/roadmap/v0.9.5/FORM_COMBOS.md R1-R9): what nine cards do to the Rune Explosion form. One handler per
+## What nine cards do to the Rune Explosion form. One handler per
 ## card. A rune burst ignores these cards' generic ops (WandCompile.run only notes the id in modifier_ids); this file
-## reads them from there: mask(spec). Twin (R1) is the form's own (RuneExplosion.fire: a second shield at 70 %).
+## reads them from there: mask(spec). Twin is the form's own (RuneExplosion.fire: a second shield at 70 %).
 ## - At the cast (RuneExplosion.fire): Big Shot and Rapid Fire change the radius, the damage and (period()) the rhythm,
 ##   Homing centres the burst on the nearest enemy within 6 m (a fixed centre, a K_BURST row), Echo queues a second
 ##   at the same place 36 ticks later at 60 %, Mine leaves a trap there.

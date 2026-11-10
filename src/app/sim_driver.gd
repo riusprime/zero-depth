@@ -4,14 +4,14 @@ extends Node
 ## (max_physics_steps_per_frame = 4) slows the game on a long hitch instead of skipping time.
 
 signal ticked
-## v0.10.5 Q5 (owner: "Q5 yes fix it"): once a rendered frame that ran one tick or more, after them (from _process,
+## Once a rendered frame that ran one tick or more, after them (from _process,
 ## before the views' own _process): the world views sync here, once, on the latest state. A frame that falls behind
 ## runs several ticks, and syncing the views on each of them paid the whole sync again (PERF_Q5 §5). What happened
 ## between two frames still reaches the views: they read the event log from their own cursor (events_since), and
 ## WorldViewRoot.note_tick (on `ticked`) keeps the facts that last one tick. The gameplay listeners (the save, the
 ## Codex, the achievements, the HUD, the audio) stay on `ticked`.
 signal frame_ticked
-## v0.7.5 PG: Playground commands changed the World between ticks (also while paused): the views read it again.
+## Playground commands changed the World between ticks (also while paused): the views read it again.
 signal edited
 
 var world: World
@@ -22,17 +22,17 @@ var ticks_this_frame := 0
 var paused := false
 ## Optional dev-panel commands (debug builds); null in release play.
 var debug: DebugApi
-## v0.7.5 PG: the Playground's commands (null outside it), applied before every tick and, while paused, each frame.
+## The Playground's commands (null outside it), applied before every tick and, while paused, each frame.
 var playground: PlaygroundApi
 ## Where input comes from: a Callable returning [move_screen: Vector2, aim_world: Vector2, aim_dist_m: float].
 var input_source: Callable
-## v0.8.0 N11 (owner O69): while the world's arrival hasn't played yet and this returns true, the world waits (Main:
+## While the world's arrival hasn't played yet and this returns true, the world waits (Main:
 ## the loading cover still shows, so the arrival plays once the cover opened). Empty: never.
 var hold: Callable
-## v0.11.1 T1 (owner L7): a test-only start (Main.quick_start): the world's arrival runs in the first tick frame, every
+## A test-only start (Main.quick_start): the world's arrival runs in the first tick frame, every
 ## tick of it as in play (no hold), so the World after it is the one a normal arrival leaves. False in the game.
 var rush_arrival := false
-## v0.6.5 WN2: the frame the last tick stepped with (read only: the e2e tests record a run's frames to replay it).
+## The frame the last tick stepped with (read only: the e2e tests record a run's frames to replay it).
 var last_frame: InputFrame
 
 
@@ -96,7 +96,7 @@ func step_once() -> void:
 	if debug != null:
 		debug.apply_pending()  # dev-panel commands land between ticks
 	if playground != null:
-		playground.apply_pending()  # v0.7.5 PG: so do the Playground's (and its upkeep)
+		playground.apply_pending()  # So do the Playground's (and its upkeep)
 	last_frame = latch.close_frame(move, aim, dist)
 	var t0 := PerfMarks.start()
 	world.step(last_frame)

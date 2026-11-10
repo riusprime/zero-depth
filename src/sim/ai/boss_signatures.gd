@@ -19,7 +19,7 @@ extends RefCounted
 ##   burst_phase on it bursts into the attack's pattern (the acid star) instead and is gone, no kill. An egg whose
 ##   boss is gone crumbles.
 ## Pure: no stream is drawn here; everything follows from the locked markers, the shots' own paths and the clock.
-## v0.8.0 BS2 (rows S4-S6): the Hive Lens's Gaze (BossGaze), the Siege Engine's ricochet shells (BossRicochet), the
+## Rows S4-S6: the Hive Lens's Gaze (BossGaze), the Siege Engine's ricochet shells (BossRicochet), the
 ## Foundry's lava and meltdown (BossLava); this class ticks them and keeps the flow field round every piece.
 
 ## A pillar never rises touching a body: this much clear round every living body.
@@ -110,7 +110,7 @@ static func pillar_obbs(w: World) -> Array[Obb]:
 	return out
 
 
-## v0.11.0 O3: a pillar of boss `boss_id` at p (half side h) standing `ticks` (BossQuake's quake pillars), a wall.
+## A pillar of boss `boss_id` at p (half side h) standing `ticks` (BossQuake's quake pillars), a wall.
 ## The caller sets the flow field (set_nav_extra) once it has added its pillars.
 static func add_pillar(w: World, boss_id: int, p: Vector2, h: float, ticks: int) -> void:
 	_add_pillar(w, boss_id, p, h, ticks)
@@ -142,16 +142,16 @@ static func _drop_pillars(w: World, boss_id: int = -1) -> void:
 
 
 ## The flow field goes round the standing pillars, the molten floor and the meltdowns (NavField.set_extra) from this
-## tick (v0.8.0 BS2: the lava and melt too); `flood` false leaves the flood to the caller (a snapshot's restore).
+## tick (the lava and melt too); `flood` false leaves the flood to the caller (a snapshot's restore).
 static func set_nav_extra(w: World, flood: bool = true) -> void:
 	var boxes := pillar_obbs(w)
 	boxes.append_array(BossLava.lava_obbs(w))
 	w.nav.set_extra(boxes, BossLava.melt_shapes(w))
 	if flood and not w.enemy_tables.is_empty():
-		w.flood_nav()  # v0.8.0 P1: the world's flood (bounded, stopped past the enemies)
+		w.flood_nav()  # The world's flood (bounded, stopped past the enemies)
 
 
-## v0.8.0 BS2: true while any piece the flow field goes round is down (pillars, lava, a meltdown).
+## True while any piece the flow field goes round is down (pillars, lava, a meltdown).
 static func has_extra(w: World) -> bool:
 	var bs := w.bosses
 	return bs.pillar_x.size() + bs.lava_x.size() + bs.melt_boss.size() > 0
@@ -254,7 +254,7 @@ static func javelins_of(w: World, i: int) -> Array:
 ## in phase 9), unless the attack's kind already has max_alive alive or coming (eggs count).
 static func lay_egg(w: World, b: int, atk: BossAttackTable, c: Vector2, k: int = -1) -> void:
 	if k == 0 and atk.egg_ticks > 0:
-		BossHazard.storm_begins(w, b)  # v0.11.0 F8: this storm's first egg to land will leave a pool
+		BossHazard.storm_begins(w, b)  # This storm's first egg to land will leave a pool
 	if atk.egg_ticks <= 0 or w.enemy_table(atk.enemy_kind) == null:
 		return
 	if BossAi.alive_of(w, atk.enemy_kind) >= atk.max_alive:
@@ -278,7 +278,7 @@ static func make_egg(w: World, i: int, egg: Array) -> void:
 	a.lock_a[i] = int(egg[2])
 	a.invuln[i] = 0
 	EnemyAi.enter_state(a, i, EGG)
-	if egg.size() > 3 and egg[3]:  # v0.11.0 F8: its storm's chosen egg
+	if egg.size() > 3 and egg[3]:  # Its storm's chosen egg
 		w.bosses.hz_egg.append(a.ids[i])
 
 
@@ -303,7 +303,7 @@ static func egg_think(w: World, i: int) -> void:
 		return
 	if a.state_t[i] < a.windup[i]:
 		return
-	BossHazard.on_egg_done(w, i, boss)  # v0.11.0 F8: its storm's chosen egg leaves a venom pool
+	BossHazard.on_egg_done(w, i, boss)  # Its storm's chosen egg leaves a venom pool
 	var atk := _egg_attack(w, i, boss)
 	if (
 		atk != null
@@ -376,7 +376,7 @@ static func egg_permille(w: World, i: int) -> int:
 
 
 ## Tick phase 6 (before the projectile sweep): pillars whose time is up sink, javelins whose recall has come fly;
-## v0.8.0 BS2: molten floor cools, steps closer and burns (BossLava).
+## Molten floor cools, steps closer and burns (BossLava).
 static func advance(w: World) -> void:
 	var bs := w.bosses
 	if not bs.pillar_x.is_empty():
@@ -384,12 +384,12 @@ static func advance(w: World) -> void:
 	if not bs.jav_x.is_empty():
 		_recall(w)
 	BossLava.advance(w)
-	BossShade.advance(w)  # v0.9.0 NB4: the Lantern Shade's dark and its lanterns
-	BossStream.advance(w)  # v0.9.5 BH4: the Tidecaller's ring stream and crossing waves
-	BossInterphase.advance(w)  # v0.9.5 BH6: the Fallen's interphase hazards and its return
-	BossQuake.advance(w)  # v0.11.0 O3: the Gatekeeper's quake pillars pulse
-	BossHazard.advance(w)  # v0.11.0 F8: the arena hazards arm, burn and go
-	BossGreatJavelin.advance(w)  # v0.11.0 F9: the Warlord's great javelin flies, quakes and flies back
+	BossShade.advance(w)  # The Lantern Shade's dark and its lanterns
+	BossStream.advance(w)  # The Tidecaller's ring stream and crossing waves
+	BossInterphase.advance(w)  # The Fallen's interphase hazards and its return
+	BossQuake.advance(w)  # The Gatekeeper's quake pillars pulse
+	BossHazard.advance(w)  # The arena hazards arm, burn and go
+	BossGreatJavelin.advance(w)  # The Warlord's great javelin flies, quakes and flies back
 
 
 ## World._remove_dead: boss `boss_id` is gone: its pillars sink and its javelins go (its eggs crumble on their own).
@@ -400,16 +400,16 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	for k in range(bs.jav_x.size() - 1, -1, -1):
 		if bs.jav_boss[k] == boss_id:
 			bs.remove_javelin(k)
-	if BossLava.on_boss_gone(w, boss_id):  # v0.8.0 BS2: its lava and melt cool at once
+	if BossLava.on_boss_gone(w, boss_id):  # Its lava and melt cool at once
 		set_nav_extra(w)
-	BossTide.on_boss_gone(w, boss_id)  # v0.9.0 NB1: its Pull's cadence
-	BossTwin.on_boss_gone(w, boss_id)  # v0.9.0 NB2: the Wardens' pair
-	BossJudge.on_boss_gone(w, boss_id)  # v0.9.0 NB3: the Clockwork Judge's echo
-	BossShade.on_boss_gone(w, boss_id)  # v0.9.0 NB4: the Lantern Shade's room relights
-	BossStream.on_boss_gone(w, boss_id)  # v0.9.5 BH4: its streams and waves
-	BossQuake.on_boss_gone(w, boss_id)  # v0.11.0 O3: its break count and the hint
-	BossHazard.on_boss_gone(w, boss_id)  # v0.11.0 F8: its hazards go
-	BossGreatJavelin.on_boss_gone(w, boss_id)  # v0.11.0 F9: its great javelin goes with it
+	BossTide.on_boss_gone(w, boss_id)  # Its Pull's cadence
+	BossTwin.on_boss_gone(w, boss_id)  # The Wardens' pair
+	BossJudge.on_boss_gone(w, boss_id)  # The Clockwork Judge's echo
+	BossShade.on_boss_gone(w, boss_id)  # The Lantern Shade's room relights
+	BossStream.on_boss_gone(w, boss_id)  # Its streams and waves
+	BossQuake.on_boss_gone(w, boss_id)  # Its break count and the hint
+	BossHazard.on_boss_gone(w, boss_id)  # Its hazards go
+	BossGreatJavelin.on_boss_gone(w, boss_id)  # Its great javelin goes with it
 
 
 ## The recap's death line for a cause past LATE_CAUSE (a late part): its attack's late_cause_key (its own cause_key

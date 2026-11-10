@@ -1,6 +1,6 @@
 class_name CinderPriestAvatar
 extends AvatarBase
-## v0.11.0 O17d (ENEMIES.md R6; owner, 2026-11-08: "make sure they are animated as good as you can"): the Red Canyon's
+## The Red Canyon's
 ## Cinder Priest on the owner's model (EnemyModels &"cinder_priest", cut by scripts/assets/o17_prep_cinder_priest.py),
 ## posed in code. A tall violet-robed priest with a staff taller than itself; it stands by its lava vent and the vent
 ## erupts every 3 s, and its staff keeps time with the vent (WorldReader.priest_pulse, the vent's warning 0..1000):
@@ -19,7 +19,7 @@ extends AvatarBase
 ##   size, no flutter, tremble, flicker or overshoot; the cycle's poses stay (they are the tell).
 ## The model's parts hang in a chain of joints (Body > Waist > Hem / Torso > Hood, ArmL, ArmR > Staff); every joint's
 ## transform is made of its own drives (SoloVat's one-number joints), so the VAT crowd draws it from a bake of this very
-## pose code (vat_rig). Without the model file a code-made body of the same parts stands in (L15).
+## pose code (vat_rig). Without the model file a code-made body of the same parts stands in.
 ## Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame
 ## time; nothing here reaches the sim. ActorViews puts it under the actor's facing node: +X is the front.
 
@@ -36,7 +36,7 @@ const GREY := Color("#5A5560")
 const BONE := Color("#D9CDB8")
 const EMBER := Color("#FF7A2E")
 const GEM := Color("#C090FF")
-## v0.11.0 F6 (owner: "reuse the existing Priest model with a modified color palette"): the Arc Caster draws this very
+## The Arc Caster draws this very
 ## model (KIND_ARC_CASTER) in its own colours. One block per kind: role (the plates), base (a multiplier on the frame
 ## and bone: WHITE as delivered), gem (the visor), ember (the staff's crystal).
 const LOOKS := {
@@ -326,7 +326,7 @@ func _build_model(m: Dictionary) -> void:
 		joint.add_child(mi)
 
 
-## L15: without the model file, a code-made priest of the same parts (the O13c stand-in's shapes): a violet robe hem,
+## Without the model file, a code-made priest of the same parts (the O13c stand-in's shapes): a violet robe hem,
 ## a charcoal chest, a pointed violet hood with a dark face plate and a gem visor, grey arms, a tall grey staff with
 ## the ember crystal.
 func _build_code_body() -> void:

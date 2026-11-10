@@ -1,15 +1,15 @@
 class_name SecretsDefinition
 extends ContentDef
-## v0.9.0 RA (owner W §4 A, Q22; CONTENT_SCHEMA): the floor's secrets' numbers, read by FloorPlan when it builds a floor
+## The floor's secrets' numbers, read by FloorPlan when it builds a floor
 ## (data/secrets/secrets.tres, category `secrets`, id `secrets`). Every number is a starting value the owner tunes.
 
 ## The share of floors (per mille) with a rune puzzle: three pillars before a sealed dead end (starting value 30 %).
 @export var rune_permille := 300
-## v0.9.0 DX (owner W §4 C, §5, Q23; SecretRules has the same defaults): the share of floors with a cracked wall
+## The share of floors with a cracked wall
 ## before a dead end and the Skill hits it takes; containers a room at most, their drop chance, the heals' share of
 ## the drops and the shards' range; explosive barrels: the share of rooms with one, at most per room, the fuse (ticks),
 ## the blast's radius (m) and its damage to enemies and to the hero.
-## v0.10.5 S15d (owner: about 1 floor in 3): the cracked wall chance (per mille) by floor index, floor 1 first; a later
+## The cracked wall chance (per mille) by floor index, floor 1 first; a later
 ## floor or loop uses the last entry.
 @export var crack_floor_permille := PackedInt32Array([1000, 350, 750, 0, 0])
 @export var crack_hits := 3

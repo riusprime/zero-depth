@@ -16,15 +16,15 @@ extends RefCounted
 ##    or an obstacle) and hugs stone: its far edge within HUG of the nearest wall or stone piece (TALL_HUG for a
 ##    crystal taller than StageDresser.DECOR_MAX_HEIGHT, BIG_HUG for a crystal room's big ones). They lean away from
 ##    what they grow against and get lower the further from it they stand.
-## 2. Only stone (A3c): walls and the kit's stone pieces (STONE: wall blocks, pillars, slabs, rocks). Nothing grows
+## 2. Only stone: walls and the kit's stone pieces (STONE: wall blocks, pillars, slabs, rocks). Nothing grows
 ##    against a crate, a car wreck, a dead tree or a light prop: every crystal keeps NON_STONE_CLEAR from them.
-## 3. A share of the wall base (A3c): an ordinary room (the start room too) gets crystals on about ORDINARY_SHARE
+## 3. A share of the wall base: an ordinary room (the start room too) gets crystals on about ORDINARY_SHARE
 ##    (± ORDINARY_JITTER) of its free wall base, `coverage`; a crystal room on CRYSTAL_SHARE. The free wall base is
 ##    `wall_spots`: spots every SPOT_STEP m, SPOT_IN m in from a wall, where a crystal could stand by every rule.
 ##    Mostly corners: the room's corners in a random order first, each with short runs along its two walls, then
 ##    longer runs only if the share is still short. Every room but the boss arena gets at least one cluster. A few
 ##    stone obstacles in a room get a cluster at their foot (not counted in the share).
-## 4. Crystal rooms (A3c): 1-2 rooms per floor (`floor_crystal_rooms`; smaller rooms more likely; never the start,
+## 4. Crystal rooms: 1-2 rooms per floor (`floor_crystal_rooms`; smaller rooms more likely; never the start,
 ##    the boss arena, or a room with the shop, the shrine or an event) get the high share and big crystals, about the
 ##    size of the 1 x 1 m stone blocks, with smaller ones round them.
 ## 5. Camera-side faces stay low: a face whose floor side looks away from the iso camera (TO_CAMERA) would put its
@@ -50,7 +50,7 @@ const STONE: Array[StringName] = [
 	&"slab_concrete",
 	&"slab_wide",
 	&"rock_large",
-	# v0.8.0 MI: the owner's stone pieces of the biome pools.
+	# The owner's stone pieces of the biome pools.
 	&"column_broken",
 	&"building_corner",
 	&"rock_spire",

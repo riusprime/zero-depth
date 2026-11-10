@@ -1,6 +1,6 @@
 class_name AscensionPortal
 extends Node3D
-## v0.7.5 AP (owner N4: "a feature like the blue portal but a new one … that fits the word ascension"): the Ascension
+## The Ascension
 ## portal, on a run's last floor of a loop where the gate would stand (the sim's gate: the same footprint, the same
 ## opening; BossFlow.ascension). Its own look, in the shard style; the blue gate (PortalGate) is never restyled:
 ## - a crystal spire behind the opening (it fills the gate's solid footprint): a tall gold-white cluster flanked by
@@ -19,7 +19,7 @@ extends Node3D
 ## (BEAM_LAYERS additive shafts, each fading up its height and toward its silhouette, soft streaks scrolling up), a
 ## bright core at its foot (a glow and a glowing ring on the dais), the model's floating crystals turning and bobbing
 ## and small violet shards rising inside the beam (the motes), one soft violet light (no shadow). Reduced motion: no
-## scrolling, no bobbing, no rising shards. Without the model the v0.7.5 look stays (L15).
+## scrolling, no bobbing, no rising shards. Without the model the v0.7.5 look stays.
 ## Presentation only (EI-07): it reads nothing from the sim and decides nothing; WorldViewRoot unseals it when the
 ## portal opens, PortalTransitView flares it when the hero goes in. Its clock (rise, bands, orbit) is the
 ## presentation's (never an outcome, EI-03).
@@ -34,7 +34,7 @@ const CORE := Color("#FFF6E0")
 const LAVENDER := Color("#B79BFF")
 const DAIS := Color("#CFC6D8")
 const DAIS_TOP := Color("#E6DEEC")
-## v0.8.0 MI: the owner's beam: a pale violet-white heart and light violet edges (the reference image), its glow.
+## The owner's beam: a pale violet-white heart and light violet edges (the reference image), its glow.
 const BEAM_CORE := Color("#E2D2FF")
 const BEAM_EDGE := Color("#9F78FF")
 const BEAM_GLOW := Color("#C7A8FF")
@@ -57,7 +57,7 @@ const ORBIT_COUNT := 5
 const ORBIT_R := 1.55
 const ORBIT_Y := 3.6
 const ORBIT_SPEED := 0.12
-## v0.8.0 MI: the owner's model; where its dais's circle is in the model (metres, as prepared: the top of the dais at
+## The owner's model; where its dais's circle is in the model (metres, as prepared: the top of the dais at
 ## 0.73 m, its centre a little off the model's middle) and the circle's radius; the beam's layers [radius at the
 ## foot, at the top, strength] (outer haze, body, core); the floating crystals' bob (m) and turn (radians a second).
 const MODEL_PATH := "res://assets/models/devices/ascension_portal.glb"
@@ -89,7 +89,7 @@ void fragment() {
 }
 """
 
-## v0.8.0 MI: the owner's beam. Soft at its silhouette (the opposite of the v0.7.5 column's bright rim), fading up its
+## The owner's beam. Soft at its silhouette (the opposite of the v0.7.5 column's bright rim), fading up its
 ## height, with thin vertical streaks of light scrolling slowly up it (motion 0: still).
 const BEAM_SHADER := """
 shader_type spatial;
@@ -123,7 +123,7 @@ void fragment() {
 }
 """
 
-## v0.8.0 MI: the model's scene, read once (warm_model(), on the load's worker): a read discarded there was read again
+## The model's scene, read once (warm_model(), on the load's worker): a read discarded there was read again
 ## from the file on the main thread when the portal was built (~45 ms in one frame of the Deep floor's load).
 static var _scene: PackedScene = null
 static var _scene_read := false
@@ -142,7 +142,7 @@ var glow: MeshInstance3D
 var calm := false
 ## 0..1: how far the column has risen (tests read it).
 var rise := 0.0
-## v0.8.0 MI: the owner's model (null: the code-made dais and spire), its floating crystals (each [node, rest
+## The owner's model (null: the code-made dais and spire), its floating crystals (each [node, rest
 ## position]), the beam's extra outer layer, the dais's ring and its material, and every beam material.
 var model: Node3D
 var floaters: Array = []
@@ -220,7 +220,7 @@ func _process(delta: float) -> void:
 		f.position = Vector3(COLUMN_X + cos(a) * ORBIT_R, y * maxf(rise, 0.35), sin(a) * ORBIT_R)
 		f.rotation.y += delta * 0.8
 		f.visible = rise > 0.05
-	if not calm:  # v0.8.0 MI: the owner's floating crystals bob and turn (still with reduced motion)
+	if not calm:  # The owner's floating crystals bob and turn (still with reduced motion)
 		for k in floaters.size():
 			var n: Node3D = floaters[k][0]
 			n.position = (
@@ -258,7 +258,7 @@ func _apply() -> void:
 		ring_material.emission_energy_multiplier = (0.4 if _sealed else 2.2) + 2.0 * k * k
 
 
-## v0.8.0 MI: reads the model's scene once and keeps it (ViewWarmup calls it on the load's worker).
+## Reads the model's scene once and keeps it (ViewWarmup calls it on the load's worker).
 static func warm_model() -> void:
 	if _scene_read:
 		return
@@ -266,7 +266,7 @@ static func warm_model() -> void:
 	_scene_read = true
 
 
-## v0.8.0 MI: the owner's model (its floating crystals their own nodes), placed so its dais's circle is under the
+## The owner's model (its floating crystals their own nodes), placed so its dais's circle is under the
 ## column; false when the file is missing.
 func _build_model() -> bool:
 	warm_model()
@@ -283,7 +283,7 @@ func _build_model() -> bool:
 	return true
 
 
-## v0.8.0 MI: the reference's beam over the owner's dais: three soft additive shafts (haze, body, core), a bright glow
+## The reference's beam over the owner's dais: three soft additive shafts (haze, body, core), a bright glow
 ## and a glowing ring at the circle, the violet light.
 func _build_beam() -> void:
 	var layers: Array[MeshInstance3D] = []
@@ -441,7 +441,7 @@ func _shaft(node_name: String, r0: float, r1: float, mat: Material) -> MeshInsta
 	return n
 
 
-## Gold motes rising up the column while it is open (one small CPU emitter, presentation clock). v0.8.0 MI: with the
+## Gold motes rising up the column while it is open (one small CPU emitter, presentation clock). with the
 ## owner's model, small violet crystal shards rising and turning inside the beam (none with reduced motion).
 func _build_motes() -> void:
 	motes.name = "AscensionMotes"

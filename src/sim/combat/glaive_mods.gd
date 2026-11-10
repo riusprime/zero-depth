@@ -1,6 +1,6 @@
 class_name GlaiveMods
 extends RefCounted
-## v0.9.5 FC6 (docs/roadmap/v0.9.5/FORM_COMBOS.md G1-G11): what eleven cards do to the Glaive form. One handler per
+## What eleven cards do to the Glaive form. One handler per
 ## card. A disc ignores these cards' generic ops (WandCompile.run: it only notes the id in modifier_ids), and this file
 ## reads them from there: mask(spec).
 ## - At the throw (Attacks._bolts): Halo's four discs round the aim (halo_offsets()), Big Shot's and Rapid Fire's size,

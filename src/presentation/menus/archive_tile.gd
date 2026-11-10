@@ -1,6 +1,6 @@
 class_name ArchiveTile
 extends Button
-## v0.9.0 CL (COLLECTIBLES.md P4): one collectible's niche on the Rune Archive's shelves (ArchivePage). Found: its gem
+## COLLECTIBLES.md P4: one collectible's niche on the Rune Archive's shelves (ArchivePage). Found: its gem
 ## in its own colour, drawn in layers (a soft glow behind, the faceted stone with a lit and a shaded side, a white-hot
 ## glint, a ring of light under it); not found: a dark silhouette of the same stone with a "?". It changes nothing.
 
@@ -15,7 +15,7 @@ func _init() -> void:
 	custom_minimum_size = SIZE
 	focus_mode = Control.FOCUS_ALL
 	flat = true
-	add_theme_stylebox_override("focus", StyleBoxEmpty.new())  # v0.10.5 W3-O19: the tile draws its own focus
+	add_theme_stylebox_override("focus", StyleBoxEmpty.new())  # The tile draws its own focus
 	text = ""
 	auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	mouse_entered.connect(grab_focus)
@@ -34,7 +34,7 @@ func _draw() -> void:
 	var c := SIZE * 0.5
 	var focus := has_focus()
 	var col := def.color if def != null and found else Color(0.16, 0.17, 0.2)
-	# v0.10.5 W3-O19: an Astral frame (the focus its brighter frame and outer contour), the rune keeps its colour
+	# An Astral frame (the focus its brighter frame and outer contour), the rune keeps its colour
 	draw_style_box(
 		AstralChrome.FrameBox.new(1.0 if focus else 0.0, 1.0 if found else 0.6),
 		Rect2(Vector2.ZERO, SIZE)

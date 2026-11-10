@@ -1,13 +1,13 @@
 class_name TwinWardenClips
 extends RefCounted
-## v0.9.0 NB2: the Twin Wardens' clips, one library for both bodies so they move as a pair. Model frame: +X the front,
+## The Twin Wardens' clips, one library for both bodies so they move as a pair. Model frame: +X the front,
 ## +Z the right. The whole figure moves through BODY (the model's pivot), the same on both models: the owner's amber
 ## Warden keeps its Mixamo skeleton, but its file weights almost every vertex to the hips (evidence/BOSSES_NB.md), so
 ## only the whole figure can move; the violet one is cut into parts (Body, Helm, Shield, Sword), which add small
 ## accents on top (the helm turning, the shield set, the sword raised) that the amber's skeleton ignores (it has no
 ## such bones). Parameters the avatar maps: glow (the cracks' and visor's light) and chain (how hard the shackle hand
 ## pulls on the chain, for the chain's view).
-## v0.11.0 O16a (owner Q11, Q30: "the animation feels too stiff"): looser: an idle weight shift and sway, a rolling
+## Looser: an idle weight shift and sway, a rolling
 ## stride, a counter-move before each wind-up, a recoil after each strike, and a real hit reaction.
 ## Stone sentinels: they stand planted and breathe slowly; they march in step, heavy and stiff; for Crossfire they set
 ## their shields and lean in as the embers pour out (shielded); for the Chain Sweep they rear back on the chain and
@@ -174,7 +174,7 @@ static func _slam_ring() -> BossClip:
 	return c
 
 
-## v0.11.0 O5: the amber Warden's Charge: it sinks back on its heels behind the shield, then drives forward low.
+## The amber Warden's Charge: it sinks back on its heels behind the shield, then drives forward low.
 static func _charge() -> BossClip:
 	var c := BossClip.new(&"charge")
 	c.shift(B, FWD, [[0, 0], [0.42, -0.22, BACK], [0.5, 0.3, IN3], [0.62, 0.25], [1, 0]])
@@ -185,7 +185,7 @@ static func _charge() -> BossClip:
 	return c
 
 
-## v0.11.0 O5: the amber Warden's Ground Slam (a mark on the player): it rises tall, then drops its whole weight.
+## The amber Warden's Ground Slam (a mark on the player): it rises tall, then drops its whole weight.
 static func _marks() -> BossClip:
 	var c := BossClip.new(&"marks")
 	c.shift(
@@ -208,7 +208,7 @@ static func _marks() -> BossClip:
 	return c
 
 
-## v0.11.0 O5: the violet Warden's Orb Volley (a pattern): the sword drawn high, then thrust out as the orbs fly.
+## The violet Warden's Orb Volley (a pattern): the sword drawn high, then thrust out as the orbs fly.
 static func _pattern() -> BossClip:
 	var c := BossClip.new(&"pattern")
 	c.turn(&"sword", Z, [[0, 0], [0.42, 0.85, BACK], [0.5, -0.55, IN3], [0.62, -0.45], [1, 0]])
@@ -219,7 +219,7 @@ static func _pattern() -> BossClip:
 	return c
 
 
-## v0.11.0 O5: the violet Warden's Blink (a short leap): it crouches, springs up thin as it flickers across, and lands
+## The violet Warden's Blink (a short leap): it crouches, springs up thin as it flickers across, and lands
 ## braced.
 static func _leap() -> BossClip:
 	var c := BossClip.new(&"leap")

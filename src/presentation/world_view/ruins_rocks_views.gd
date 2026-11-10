@@ -1,6 +1,6 @@
 class_name RuinsRocksViews
 extends Node3D
-## v0.11.0 O13b (ENEMIES.md R1-R4): what the Ruins' and the Night Rocks' signature enemies put on the floor, read
+## ENEMIES.md R1-R4: what the Ruins' and the Night Rocks' signature enemies put on the floor, read
 ## through WorldReader (EI-07), in the premade packs' effects (PD-13):
 ## - a Wire Weaver's cable: a glowing yellow line between its posts' tops (code), crackling with the pack's storm hit
 ##   spark (vx1_hit_storm: BinbunVFX hit vfx_hit_01, tinted yellow) along it; while it marks a cable, the same spark
@@ -18,14 +18,14 @@ extends Node3D
 ##   second and crumbles (the debris and the dust). A rock with no room to stand (the sim skips it) bursts where it
 ##   lands;
 ## - a Rock Lurker: the pack's dust puffing at its foot while it rumbles, and the dust with the shatter
-##   (bx_shatter) as it bursts out; v0.11.0 O17b: the same dust, wide, where its claws smash down (its hit tick);
+##   (bx_shatter) as it bursts out; the same dust, wide, where its claws smash down (its hit tick);
 ## - a Scrap Hound's yelp: the pack's plain hit spark (vx1_hit_plain) at its head when a hit stops it.
 ## Nothing here decides.
 
 const ROCK_MODEL := &"boulder_small"
 const ROCK_SPREAD := 1.25
 const ROCK_HEIGHT := 0.6
-## v0.11.0 O17c: the thrown rock's tumble (turns over its flight), its landing (the squash's length in seconds, the
+## The thrown rock's tumble (turns over its flight), its landing (the squash's length in seconds, the
 ## shake, the debris's and the impact's scales, the crack mark's radius and colour) and its end (the ticks it sinks
 ## over, how deep).
 const TUMBLE_TURNS := 1.25
@@ -67,12 +67,12 @@ const DUST_SCALE := 0.45
 const SHATTER_ID := &"bx_shatter"
 const YELP_ID := &"vx1_hit_plain"
 const RUMBLE_EVERY := 30
-## The flying rock's arc: from the hands (v0.11.0 O17c: StoneThrowerAvatar.RELEASE_AT), peaking this much above
+## The flying rock's arc: from the hands (StoneThrowerAvatar.RELEASE_AT), peaking this much above
 ## the line.
 const THROW_ARC_M := 2.2
 
 var pack_fx: PackFx = null
-## v0.11.0 O17c: the floor marks' layer (the crack where a rock lands) and the camera (its small shake), or null.
+## The floor marks' layer (the crack where a rock lands) and the camera (its small shake), or null.
 var vfx: VfxCore = null
 var rig: IsoRig = null
 var _cables: Array[MeshInstance3D] = []
@@ -80,12 +80,12 @@ var _cable_ends := {}  # owner|a|b key -> [a, b] (the last ends seen: a drop bur
 var _rocks: Array[MeshInstance3D] = []
 var _rock_spots: Array = []
 var _flying := {}  # thrower id -> MeshInstance3D
-var _aim := {}  # v0.11.0 O17c: a flight's landing spot (key) -> [its rock's basis now, thrower id]
+var _aim := {}  # A flight's landing spot (key) -> [its rock's basis now, thrower id]
 var _landed := {}  # thrower id -> the landing spot of its flight already hit (its impact plays once)
 var _settle: Array[float] = []  # per standing rock: frame seconds since it landed (its squash; -1 done)
 var _rock_base: Array[Basis] = []  # per standing rock: its landed pose
 var _hidden := {}  # lurker id -> was hidden
-var _slamming := {}  # lurker id -> was in its hit tick (v0.11.0 O17b)
+var _slamming := {}  # lurker id -> was in its hit tick
 var _yelped := {}
 var _cable_mat: StandardMaterial3D
 
@@ -193,7 +193,7 @@ func _spark(at: Vector2, y: float) -> void:
 		pack_fx.spawn(SPARK_ID, SimPlane.to_3d(at, y), SPARK_SCALE, SPARK_COLORS)
 
 
-## v0.11.0 O17c: the thrown rock: the owner's (its model's `rock` part, at the size StoneThrowerAvatar holds it), else
+## The thrown rock: the owner's (its model's `rock` part, at the size StoneThrowerAvatar holds it), else
 ## the kit's boulder (sized as before).
 func _boulder() -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
@@ -278,7 +278,7 @@ func _sync_rocks(rocks: Array) -> void:
 			pack_fx.spawn(DUST_ID, at, DUST_SCALE)
 
 
-## v0.11.0 O17c: a rock coming down: the pack's rock impact (its stone-coloured sparks and ground decal), its dust,
+## A rock coming down: the pack's rock impact (its stone-coloured sparks and ground decal), its dust,
 ## the crack mark, a small shake.
 func _impact(at: Vector3) -> void:
 	if pack_fx != null:
@@ -293,7 +293,7 @@ func _impact(at: Vector3) -> void:
 		rig.shake(LAND_SHAKE)
 
 
-## v0.11.0 O17c: standing rock k with `left` ticks to go: over its last CRUMBLE_TICKS it cracks down into the floor.
+## Standing rock k with `left` ticks to go: over its last CRUMBLE_TICKS it cracks down into the floor.
 func _crumble(k: int, left: int) -> void:
 	var u := 1.0 - clampf(float(left) / CRUMBLE_TICKS, 0.0, 1.0)
 	if u <= 0.0:
@@ -308,7 +308,7 @@ func _crumble(k: int, left: int) -> void:
 		pack_fx.spawn(DUST_ID, at, DUST_SCALE * 0.4)
 
 
-## v0.11.0 O17c: the landed rocks' squash and settle (frame time: it only plays out the landing the sim made).
+## The landed rocks' squash and settle (frame time: it only plays out the landing the sim made).
 func _process(delta: float) -> void:
 	for k in _settle.size():
 		if _settle[k] < 0.0:
@@ -348,7 +348,7 @@ func _sync_flight(reader: WorldReader, i: int, id: int) -> void:
 		pack_fx != null
 		and reader.actor_state(i) == WorldReader.STATE_WINDUP
 		and reader.actor_state_ticks(i) == roundi(lift * RIP_AT)
-	):  # v0.11.0 O17c: the rock torn out of the floor in front of it
+	):  # The rock torn out of the floor in front of it
 		var ahead := SimPlane.to_3d(
 			reader.actor_pos(i) + Kin.dir(reader.actor_facing(i)) * RIP_AHEAD_M
 		)
@@ -390,7 +390,7 @@ func _sync_flight(reader: WorldReader, i: int, id: int) -> void:
 	_aim[_spot_key(to)] = [basis, id]
 
 
-## v0.11.0 O17c: a rock the sim found no room for bursts where it fell (the debris and the dust).
+## A rock the sim found no room for bursts where it fell (the debris and the dust).
 func _burst(at: Vector3) -> void:
 	_impact(at)
 	if pack_fx != null:
@@ -406,7 +406,7 @@ func _sync_lurker(reader: WorldReader, i: int, id: int, tick: int) -> void:
 		return
 	var at := SimPlane.to_3d(reader.actor_pos(i), 0.0)
 	var slam := reader.actor_state(i) == WorldReader.STATE_ACTIVE
-	if slam and not _slamming.get(id, false):  # v0.11.0 O17b: the smash lands (its disc is round where it stands)
+	if slam and not _slamming.get(id, false):  # The smash lands (its disc is round where it stands)
 		pack_fx.spawn(DUST_ID, at, DUST_SCALE * 2.2)
 	_slamming[id] = slam
 	if was and not hidden:

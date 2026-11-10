@@ -3,7 +3,7 @@ extends ContentDef
 ## v0.9.0 EL (owner Q26: "Your three (Recommended)"; G1 docs/roadmap/v0.9.0/ELITES.md rows E1-E3, "ok go for those"):
 ## an elite archetype (data/elites/<id>.tres, category `elites`): a miniboss-like enemy with its own model, one special
 ## ability (telegraph, strike, a punish window) and a plain attack between abilities. `archetype` picks the behaviour
-## the sim runs (EliteAi): breaker, rift_hunter or conduit. Every number is a starting value (F10), scaled with the
+## the sim runs (EliteAi): breaker, rift_hunter or conduit. Every number is a starting value, scaled with the
 ## floor and its danger tier like every enemy (RunState.scale_enemies, SpawnDirector.scale_arrival).
 ## - The ability: every ability_every_seconds (start to start), a windup of ability_windup_seconds (at least
 ##   MIN_ABILITY_TELEGRAPH_SECONDS: ELITES.md E0, "always shows at least 0.8 s before the hit"), of which the first

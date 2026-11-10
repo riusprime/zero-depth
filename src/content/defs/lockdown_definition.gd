@@ -1,6 +1,6 @@
 class_name LockdownDefinition
 extends ContentDef
-## v0.9.0 LK (owner Q21: "A new room type"; "1-2 a floor, short"; W20-W26; CONTENT_SCHEMA): the Lockdown rooms'
+## The Lockdown rooms'
 ## numbers (data/lockdowns/lockdown.tres, category `lockdown`, id `lockdown`), read by FloorPlan when it builds a
 ## floor (RunContentCompiler.compile_lockdown -> LockdownTable). A Lockdown seals its doorways with bars when you walk
 ## in, fights one short encounter in set formations (target 20-40 s), and opens with a free altar. Every number is a
@@ -22,14 +22,14 @@ const MIN_WARN_SECONDS := 0.4
 ## Formations per Lockdown, and each formation's size on floors 1-5 (the last repeats).
 @export var waves := 3
 @export var wave_sizes := PackedInt32Array([5, 5, 5, 6, 6])
-## v0.9.5 DR (owner Q6: "only locked rooms, where enemies spawn, no rounds"): a locked room fights one burst of
+## A locked room fights one burst of
 ## burst_waves formations (each wave_sizes[floor] enemies), the next burst_gap_seconds after the one before.
 @export var burst_waves := 2
 @export var burst_gap_seconds := 1.0
 ## Seconds from the seal (the bars dropping) to the first formation, and from a formation's last kill to the next.
 @export var first_wave_seconds := 1.0
 @export var wave_gap_seconds := 0.75
-## The stuck-enemy safety (W26): an enemy unreachable this long is pulled back into the room; the exits open this long
+## The stuck-enemy safety: an enemy unreachable this long is pulled back into the room; the exits open this long
 ## after the seal whatever is left.
 @export var stuck_seconds := 3.0
 @export var cap_seconds := 90.0
@@ -45,7 +45,7 @@ const MIN_WARN_SECONDS := 0.4
 ## rest come in as earlier ones die (ClosedFights). Starting values.
 @export var min_cells := 2
 @export var area_per_enemy_m2 := 30.0
-## v0.10.5 O14 (theory audit P12, Schell's interest curve): on this floor (1-based; 0 = off) the first Lockdown is an
+## Theory audit P12, Schell's interest curve: on this floor (1-based; 0 = off) the first Lockdown is an
 ## Elite one, in the candidate nearest the main path's middle. A starting value.
 @export var set_piece_floor := 2
 

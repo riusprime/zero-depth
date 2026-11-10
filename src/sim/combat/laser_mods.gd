@@ -4,12 +4,12 @@ extends RefCounted
 ## pierce it would make a smooth curve trying to hit the closest 5 enemies"; docs/roadmap/v0.9.5/FORM_COMBOS.md L1-L11):
 ## what the cards do to the Laser. One handler per card. A Laser ignores these cards' generic ops (WandCompile.run: it
 ## only notes the card in modifier_ids), and this file reads them from there: mask(spec).
-## v0.11.0 O1 (owner, PLAN L1, L2; Q6, Q8, Q28): the Laser is a lance, one instant shot every 3 s (Laser's class
+## The Laser is a lance, one instant shot every 3 s (Laser's class
 ## doc), so every card works on the shot:
 ## - Geometry (plan(), a pure read at the firing tick): the main path of each lane, straight, bent by Homing (one smooth
 ##   path planned for the shot, below), reflected once by Ricochet, and the extra paths (Halo's fan, Backfire, Split's
 ##   fork) and Ring's circle, each a {from, to, hits, at, wall, kind, lane, share, ...} dictionary. Every path passes
-##   every enemy on it (Q28); a wall stops it.
+##   every enemy on it; a wall stops it.
 ## - Homing (Q8: "only Homing bends it"; L2: "a single smooth, curved trajectory … not a rigid or visibly segmented
 ##   chain"; Q28; v0.11.0 O1d, owner 2026-11-08: "an even smoother curve that tracks up to maybe 8 enemies"): at the
 ##   shot the nearest enemies in front of the aim within reach (at most home_chain, 8), in sight of the one before
@@ -26,13 +26,13 @@ extends RefCounted
 ##   off the aim on its own side, the outer rays; a third ray runs down the middle) and bows into its first target
 ##   (a shared one is met from both sides, a lens: LaserHoming.bow()), and each runs on along its own arrival heading,
 ##   so tails
-##   fan apart. v0.11.0 O1f (owner, 2026-11-08: "split rays at full damage"): a ray with its own enemies deals the
+##   fan apart. a ray with its own enemies deals the
 ##   lance's full damage (its path's legs are marked "own"; Laser.fire), a ray that shares a target keeps Twin's share,
 ##   so one enemy takes what it did. A bow that would hit a wall before its target is flattened, then straightened
 ##   (LaserHoming.BOW_TRIES).
-## - Rapid Fire (Q6): the cooldown × rapid_cd per mille (700: -30 %), each shot × rapid_damage_permille (800: -20 %).
-## - Echo (Q6): the main paths strike again echo_delay_ms (0.4 s) later at echo_share (50 %).
-## - Big Shot (Q6): the lance big_width per mille wide (2x), big_damage per mille (x1.6), no aim lag.
+## - Rapid Fire: the cooldown × rapid_cd per mille (700: -30 %), each shot × rapid_damage_permille (800: -20 %).
+## - Echo: the main paths strike again echo_delay_ms (0.4 s) later at echo_share (50 %).
+## - Big Shot: the lance big_width per mille wide (2x), big_damage per mille (x1.6), no aim lag.
 ## - Spiral: the shot's heading swings side to side on the sim clock (spiral_offset).
 ## - Mine is not offered with the Laser (Q6: off its row); a held one from a lab world still drops its mines (below).
 ## - State (World.mx lz_*, advance() each tick): Echo's waiting strikes and Mine's mines; the last shot's paths for the
@@ -85,10 +85,10 @@ const F_END := 2
 const F_WALL := 4
 ## The most legs of one path (a curve of short legs through eight targets, a bounce).
 const MAX_LEGS := 256
-## v0.11.0 O1d: a path's enemies are searched this many legs at a time (_near_span(): the long curve never scans the
+## A path's enemies are searched this many legs at a time (_near_span(): the long curve never scans the
 ## room per leg).
 const SPAN_LEGS := 8
-## v0.11.0 O1c (owner): Homing's straight tail runs on to the first wall, at most this long (m) so it always ends.
+## Homing's straight tail runs on to the first wall, at most this long (m) so it always ends.
 const TAIL_MAX_M := 40.0
 const ECHO_TICKS_MAX := 8
 const HZ := 60
@@ -172,7 +172,7 @@ static func mm(v: int) -> float:
 	return v / 1000.0
 
 
-## The shot's damage factor (per mille): Big Shot's x1.6, Rapid Fire's -20 % (Q6).
+## The shot's damage factor (per mille): Big Shot's x1.6, Rapid Fire's -20 %.
 static func damage_permille(w: World, m: int) -> int:
 	var f := param(w, "big_damage") if m & BIG else 1000
 	if m & RAPID:
@@ -185,7 +185,7 @@ static func width_permille(w: World, m: int) -> int:
 	return param(w, "big_width") if m & BIG else 1000
 
 
-## Rapid Fire (Q6): the cooldown `base` × rapid_cd per mille (-30 %). `unit` is kept for the callers that read the
+## Rapid Fire: the cooldown `base` × rapid_cd per mille (-30 %). `unit` is kept for the callers that read the
 ## period in thousandths (ItemEffects); the factor is the same.
 static func rapid_period(w: World, spec: AttackSpec, base: int, _unit: int = 1) -> int:
 	if not Laser.held(spec) or mask(spec) & RAPID == 0:
@@ -202,7 +202,7 @@ static func spiral_offset(w: World) -> int:
 	return deg(param(w, "spiral_deg")) * v / 30
 
 
-## The heading the main lance has now: the player's aim, plus Spiral. v0.11.0 O1 (Q6): Big Shot no longer lags it.
+## The heading the main lance has now: the player's aim, plus Spiral. Big Shot no longer lags it.
 static func heading(w: World, m: int, angle: int) -> int:
 	var a := angle
 	if m & SPIRAL:
@@ -293,7 +293,7 @@ static func plan(w: World, spec: AttackSpec, origin: Vector2, angle: int) -> Arr
 		routes = LaserHoming.routes(w, spec, origin, base, lanes.size())
 	for li in lanes.size():
 		var way := {}
-		var own := false  # v0.11.0 O1f: this ray has enemies of its own (full damage)
+		var own := false  # This ray has enemies of its own (full damage)
 		if not routes.is_empty() and not (routes[li]["ids"] as PackedInt32Array).is_empty():
 			way = LaserHoming.bow(w, spec, origin, base, li, lanes, turns, routes[li], r)
 			own = not bool(routes[li]["shared"])
@@ -397,7 +397,7 @@ static func _path(w: World, spec: AttackSpec, m: int, way: Dictionary, r: float)
 	return out
 
 
-## v0.11.0 O1d: the actors within reach of the next SPAN_LEGS legs of the curve `pts` from `k` (a box round them; `at`
+## The actors within reach of the next SPAN_LEGS legs of the curve `pts` from `k` (a box round them; `at`
 ## is
 ## where the first starts): _path sweeps only these, not the room, along a long curve.
 static func _near_span(
@@ -439,7 +439,7 @@ static func _gone(w: World, i: int) -> bool:
 
 ## Homing's targets at the shot for one ray: the home_chain nearest enemies within the reach of `origin` (the hero), in
 ## the order the curve can take best (LaserHoming.order()).
-## v0.10.0 FX (owner: "homing must respect walls"): an enemy behind the aim `ang` (more than 90 degrees off it) is no
+## An enemy behind the aim `ang` (more than 90 degrees off it) is no
 ## target, and each target must be in sight (no wall on the line) of the one before it in the chain, the first of the
 ## hero (so the curve can reach one behind a wall round it, through one in sight).
 static func pick(w: World, spec: AttackSpec, origin: Vector2, ang: int) -> PackedInt32Array:
@@ -651,7 +651,7 @@ static func _echo_strikes(w: World, spec: AttackSpec) -> void:
 			if t < 0.0:
 				continue
 			seen[due * 100000 + i] = true
-			var at := ts.size()  # nearest first along the strike (v0.11.0 O1c: the falloff runs down it)
+			var at := ts.size()  # nearest first along the strike (the falloff runs down it)
 			while at > 0 and ts[at - 1] > t:
 				at -= 1
 			ts.insert(at, t)
@@ -677,7 +677,7 @@ static func _mine_triggers(w: World, spec: AttackSpec) -> void:
 		if w.tick - s.lz_mine_born[k] >= life:
 			_mine_remove(s, k)
 			continue
-		if not _grounded_near(w, at, trig):  # v0.11.0 O9: a flier (the Cave Bat) never sets one off
+		if not _grounded_near(w, at, trig):  # A flier (the Cave Bat) never sets one off
 			k += 1
 			continue
 		var dmg: int = s.lz_mine_dmg[k]
@@ -688,7 +688,7 @@ static func _mine_triggers(w: World, spec: AttackSpec) -> void:
 			Laser.hit(w, spec, c, i, at, w.actors.pos(i), false)
 
 
-## v0.11.0 O9 (ENEMIES.md H2): an enemy on the ground (not a flier: EnemyAi.flies) within r of `at`.
+## ENEMIES.md H2: an enemy on the ground (not a flier: EnemyAi.flies) within r of `at`.
 static func _grounded_near(w: World, at: Vector2, r: float) -> bool:
 	for i in w.enemies_near(at, r):
 		if not EnemyAi.flies(w, i):

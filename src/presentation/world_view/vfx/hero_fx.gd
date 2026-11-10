@@ -19,7 +19,7 @@ extends RefCounted
 
 ## Effects density under which the accents and impact extras are left out (Low: 0.25; the core shapes stay, V47).
 const LOW := 0.3
-## v0.10.0 VX1: the hits (R14), the volley's muzzle spark (R10) and the heavy cast flash (R11) are the pack's scenes
+## The hits, the volley's muzzle spark and the heavy cast flash are the pack's scenes
 ## (HitPack); false: the old sprites (before/after shots). A family that is full draws the old look for that one.
 const PACK_HITS := true
 const PACK_MUZZLE := true
@@ -93,7 +93,7 @@ static func accent(
 				)
 
 
-## V29: one trail mote as the element's own piece at `q`, `f` its strength (1 the newest): an ember, a crackling
+## One trail mote as the element's own piece at `q`, `f` its strength (1 the newest): an ember, a crackling
 ## spark, a frost shard with a glint, a glossy drop, a wisp of void. Drawn even at Low (it replaces a round mote).
 static func mote(
 	layer: VfxCore, kind: StringName, element: StringName, q: Vector3, f: float, sd: int

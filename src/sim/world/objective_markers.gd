@@ -1,6 +1,6 @@
 class_name ObjectiveMarkers
 extends RefCounted
-## v0.11.0 O2 (owner L4, Q12 a): the objective markers, "what matters right now" (World.objectives). Boss code points
+## The objective markers, "what matters right now" (World.objectives). Boss code points
 ## at the thing the player should use (a pillar, a lantern, the twin that can be hit); the view draws an arrow at the
 ## screen edge while it is off screen and a soft ping on it while on screen, with a short line per reason
 ## (ObjectiveHints), only the first 2 runs a player meets that reason (MechanicHints, the Codex) and only while

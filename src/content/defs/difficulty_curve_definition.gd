@@ -2,7 +2,7 @@ class_name DifficultyCurveDefinition
 extends ContentDef
 ## A floor's difficulty curve (v0.4.0 TU, owner 2026-10-08 D1–D4 and "distribute presenting them through the first
 ## 3 floors"): floor time → phase. The first phase starts at tier 0 and opens the first kinds; on floor 1 it is the
-## calm phase (it holds: no tier growth, few enemies, the basic kinds, small packs; v0.5.5 D1: 30 s), and floors 2–3
+## calm phase (it holds: no tier growth, few enemies, the basic kinds, small packs; 30 s), and floors 2–3
 ## start straight at their warm-up level (no calm phase, v0.5.5 D1); the next phases bring the floor's kinds in
 ## order and ramp the danger tier, the alive cap and the spawn rate up to the last phase, the peak (SC's tier-max
 ## level), which holds to the floor's end. SC's spawn
@@ -12,7 +12,7 @@ extends ContentDef
 ## The floor this curve runs on (1-based).
 @export var floor_index := 1
 @export var phases: Array[DifficultyPhase] = []
-## v0.9.5 DC (owner: "aim to a 10 minutes max per floor"): after the peak the danger tier keeps rising on a schedule of
+## After the peak the danger tier keeps rising on a schedule of
 ## floor time. overtime_seconds[i] is when tier 4 + i starts (ascending); past the last, +1 tier every
 ## overtime_step_seconds up to overtime_max_tier. Each tier above 3 adds cap_per_tier_permille to the peak's cap and
 ## takes interval_per_tier_permille off its interval (not below interval_min_seconds); pack_cap_bumps are the tiers
@@ -21,7 +21,7 @@ extends ContentDef
 @export var overtime_step_seconds := 30
 @export var overtime_max_tier := 20
 @export var cap_per_tier_permille := 0
-## v0.9.5 (lead, owner line 21: 10–20 enemies already lag): the cap's overtime growth stops here; past it the danger
+## Lead, owner line 21: 10–20 enemies already lag: the cap's overtime growth stops here; past it the danger
 ## comes from the tier tables (enemy HP and damage), not more enemies at once. 0 = no ceiling.
 @export var cap_bonus_max_permille := 0
 @export var interval_per_tier_permille := 0

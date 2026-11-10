@@ -1,6 +1,6 @@
 class_name AstralMedallion
 extends Control
-## v0.10.5 W3-O15: the Astral card's icon medallion (W3_O13_UI_STYLE_G2.md round 2, Astral): a 1 px contour with a
+## The Astral card's icon medallion (W3_O13_UI_STYLE_G2.md round 2, Astral): a 1 px contour with a
 ## dotted inner ring, holding the owner's painted icon (AstralCardArt.icon, icon_unknown when the card has none).
 ## Focus: the contour brightens and four small four-point stars ring it. It draws; it takes no input (EI-07).
 

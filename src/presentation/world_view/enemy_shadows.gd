@@ -58,7 +58,7 @@ static func apply(
 
 
 ## The proxy mesh of `kind` (null: no casting part): the cached one, else merged now from `host`'s casting parts
-## (v0.10.5 W3-V1: a VatCrowd gives a reference avatar, its own enemies having no parts).
+## (a VatCrowd gives a reference avatar, its own enemies having no parts).
 static func proxy_mesh(kind: int, host: Node3D) -> ArrayMesh:
 	if _cache.has(kind):
 		return _cache[kind]
@@ -72,7 +72,7 @@ static func proxy_mesh(kind: int, host: Node3D) -> ArrayMesh:
 	return mesh
 
 
-## v0.10.5 W3-V5 (owner, V3: "yes"): a fresh avatar is built posed for the rise-in, sunk under the floor; merged so,
+## A fresh avatar is built posed for the rise-in, sunk under the floor; merged so,
 ## the stand-in sat under the floor and cast nothing. It is posed standing for the merge (its first state as a
 ## standing one: every avatar rises fully then), then put back to a fresh, unsynced one (its first real sync poses it
 ## from the sim's state, as before). Presentation only. False: `host` is not a fresh avatar (left as it is).
@@ -182,7 +182,7 @@ static func _add_blob(root: Node3D, radius: float) -> MeshInstance3D:
 	return blob
 
 
-## v0.11.0 O9c: the blob's shared [mesh, material] (CritterCrowd draws the critters' blobs as one MultiMesh of it).
+## The blob's shared [mesh, material] (CritterCrowd draws the critters' blobs as one MultiMesh of it).
 static func blob_parts() -> Array:
 	if _blob_mesh == null:
 		_blob_mesh = QuadMesh.new()

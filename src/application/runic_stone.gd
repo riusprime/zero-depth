@@ -1,10 +1,10 @@
 class_name RunicStone
 extends RefCounted
-## v0.9.5 RS1 (RUNIC_STONE.md): the hub's Runic Stone, application side. The profile's `runes` section holds the ids of
+## RUNIC_STONE.md: the hub's Runic Stone, application side. The profile's `runes` section holds the ids of
 ## the lines it has learned ({"learned": ["r1", ...]}, in the order learned; created on the first write, so an old
 ## profile without it loads and saves as it was). The stone is awake once it knows r1. Never part of a run, a save or
 ## a sim hash. Adding an easter egg later is data (RunicLinesDefinition) plus one trigger here.
-## - r1 (S3): a purple-rune room was activated in a run (the achievement stat PURPLE_STAT, AchievementTracker).
+## - r1: a purple-rune room was activated in a run (the achievement stat PURPLE_STAT, AchievementTracker).
 ## - r2: the Codex counts DEATHS (times an enemy or a boss killed the hero).
 ## - r3: the woken stone pressed PRESSES times in a row, each within WINDOW_TICKS of the last, without walking away.
 ## - v0.9.5 RS2, r4-r10 (each learned once, also on load when the stored stats already meet it): r4 a floor boss beaten
@@ -18,12 +18,12 @@ extends RefCounted
 
 const SECTION := "runes"
 const PURPLE_STAT := &"runes:purple"
-## v0.9.5 RS2: the stats and counters the other lines read (see the header).
+## The stats and counters the other lines read (see the header).
 const NO_HIT_STAT := &"bosses:no_hit"
 const CRACK_STAT := &"secrets:crack_runs"
 const WON_STAT := &"final:won"
 const ROBE := &"runic"
-## v0.11.0 O14a: the last line, learned by itself once the other ten are known.
+## The last line, learned by itself once the other ten are known.
 const FINAL := &"r11"
 const COLLECTIBLES := 8
 const LOOP_BEST := 4
@@ -65,7 +65,7 @@ func knows(id: StringName) -> bool:
 	return learned().has(id)
 
 
-## v0.11.0 O14b: whether `profile` learned the last line (r11: all ten known), so a new run's final approach holds the
+## Whether `profile` learned the last line (r11: all ten known), so a new run's final approach holds the
 ## hidden room under the throne (FloorPlan.of_profile; RunState.heart_room).
 static func knows_final(profile: ProfileStore) -> bool:
 	return profile != null and RunicStone.new(profile, null).knows(FINAL)
@@ -95,7 +95,7 @@ func learn(id: StringName) -> bool:
 	return true
 
 
-## S6: the ten feat lines (every line but FINAL) are learned.
+## The ten feat lines (every line but FINAL) are learned.
 func is_full() -> bool:
 	if lines == null or lines.lines.is_empty():
 		return false
@@ -105,14 +105,14 @@ func is_full() -> bool:
 	return true
 
 
-## v0.11.0 O14a: r11 is learned once the ten are; true when it was learned now.
+## r11 is learned once the ten are; true when it was learned now.
 func ensure_final() -> bool:
 	if not is_full() or lines == null or lines.line(FINAL) == null:
 		return false
 	return learn(FINAL)
 
 
-## S6: the Runic robe is in the profile's unlocks once the stone is full; true when it unlocked now.
+## The Runic robe is in the profile's unlocks once the stone is full; true when it unlocked now.
 func ensure_robe() -> bool:
 	if not is_full():
 		return false

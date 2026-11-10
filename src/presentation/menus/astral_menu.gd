@@ -1,6 +1,6 @@
 class_name AstralMenu
 extends RefCounted
-## v0.10.5 W3-O18 (owner 2026-11-04: "and what about the rest of the UI? it should match the new style"): the menus in
+## The menus in
 ## Astral (W3_O13_UI_STYLE_G2.md round 2, the owner's pick; the round-2 mock's pause and options): the main menu, the
 ## pause menus, Options, the run recap, the credits. Nothing boxed: lists are letter-spaced Cinzel capitals, the
 ## focused row lit with a four-point star and a tapered streak under it (AstralButton), panels a light ink veil

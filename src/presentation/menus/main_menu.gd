@@ -3,12 +3,11 @@ extends MenuPanel
 ## v0.9.0 HB (owner Q27: "You will have a small menu, with options, continue and play, and the rest of the thing go
 ## into the hub"): Continue, Play, Options, Credits, Exit and the version label. Continue resumes the saved run (focused
 ## first while a run save exists; greyed out and skipped by the focus when there is none: HUB_MOCKUPS "Shared"); Play
-## goes to the hub. v0.9.5 RS1: the Credits are an item here again; the galleries moved to the master dev panel (F10).
-## v0.9.5 MM (owner, 2026-10-26: "make the main menu look closer to this", docs/art/reference/v0.9.5_main_menu.webp):
+## goes to the hub. the Credits are an item here again; the galleries moved to the master dev panel.
 ## black, the owner's logo over a column of cracked dark-stone plates on the left (StoneButton, the focused one lit
 ## blue), and on the right the owner's picture (assets/ui/menu/backdrop.png: the ruined portal, its red beam and the
 ## hero), drifting very slowly. Both pictures are cut by scripts/art/cut_menu_backdrop.py.
-## v0.10.5 W3-O18 (owner: "the rest of the UI ... should match the new style"): the list in Astral (MenuPanel):
+## The list in Astral (MenuPanel):
 ## the rows are AstralButtons (letter-spaced Cinzel capitals, the focused one lit with a star and a tapered streak; a
 ## hover takes the focus), a fading hairline under the logo, the hint and the version in Atkinson. The owner's logo
 ## and picture stay as sent.
@@ -34,7 +33,7 @@ var _rows := 0
 
 
 func _init(version: String, show_continue: bool = false) -> void:
-	super()  # v0.10.5 W3-O18: in Astral (MenuPanel)
+	super()  # In Astral (MenuPanel)
 	name = "MainMenu"
 	slab.offset_left = LEFT
 	box.custom_minimum_size = Vector2(LOGO_W, 0)

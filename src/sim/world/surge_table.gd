@@ -1,6 +1,6 @@
 class_name SurgeTable
 extends RefCounted
-## v0.11.0 O9 (PLAN H1; owner Q15): the horde surges' numbers in ticks, compiled from SurgeDefinition
+## PLAN H1; owner Q15: the horde surges' numbers in ticks, compiled from SurgeDefinition
 ## (ContentCompiler.compile_surge) onto SpawnTable.surge. Loadout: never written in play (Surges).
 
 var surges_min := 1

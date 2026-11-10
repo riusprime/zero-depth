@@ -1,6 +1,6 @@
 class_name ModifierRuntime
 extends RefCounted
-## v0.6.0 MX4 (docs/design/MODIFIER_ENGINE.md; SIM_CONTRACTS §8b): what the M-list's modifiers do in play that is
+## docs/design/MODIFIER_ENGINE.md; SIM_CONTRACTS §8b: what the M-list's modifiers do in play that is
 ## not one launch of one spec, all read from the compiled specs (Modifiers) and kept in World.mx (ModifierState):
 ## - the launch queue: Twin Cast's repeats (a root attack again repeat_delay_ticks later at repeat_damage_permille,
 ##   from where the player is then) and a delayed hook's child (Long Shadow's afterimage), fired in tick phase 6 in
@@ -17,7 +17,7 @@ extends RefCounted
 ##   C §6.4).
 ## Every function here draws no randomness (EI-05) and runs on the one clock.
 
-## v0.8.0 BL (B1): a spec with `repeats` > 1 repeats again this many ticks after each repeat (a starting value: 0.08 s,
+## A spec with `repeats` > 1 repeats again this many ticks after each repeat (a starting value: 0.08 s,
 ## so Double Slash's five repeats at level 5 come within 0.5 s of the swing).
 const REPEAT_GAP_TICKS := 5
 
@@ -48,14 +48,14 @@ static func queue_repeat(w: World, spec: AttackSpec, ctx: AttackContext) -> void
 	c.muzzle_m = ctx.muzzle_m
 	c.target = ctx.target
 	c.has_target = ctx.has_target
-	var flags := ModifierState.FLAG_REPEAT | ModifierState.FLAG_SECONDARY  # v0.8.0 MR: at the secondary proc
+	var flags := ModifierState.FLAG_REPEAT | ModifierState.FLAG_SECONDARY  # At the secondary proc
 	if ctx.origin == w.player_pos():  # the player's own attack comes again from where the player is then
 		flags |= ModifierState.FLAG_AT_PLAYER
-	for n in maxi(1, spec.repeats):  # v0.8.0 BL (B1): each further repeat REPEAT_GAP_TICKS after the one before
+	for n in maxi(1, spec.repeats):  # Each further repeat REPEAT_GAP_TICKS after the one before
 		_queue(w, spec.key, w.tick + spec.repeat_delay_ticks + n * REPEAT_GAP_TICKS, c, flags, "")
 
 
-## v0.10.5 W3-P10b (Starbound B3, Echo Cast): root attack `spec` launched with `ctx` comes again `repeats` times at its
+## Starbound B3, Echo Cast: root attack `spec` launched with `ctx` comes again `repeats` times at its
 ## whole damage, the first `delay` ticks later and each next REPEAT_GAP_TICKS after the one before, from where the
 ## player is then: a repeat (it never repeats) at the secondary proc, as Twin Cast's. W3-P10k: it keeps the launch's
 ## Lance charge (size, full) and Blade combo step (packed in its flags, ModifierState.STEP_SHIFT, SIZE_SHIFT), and is
@@ -97,7 +97,7 @@ static func unpack_echo(c: AttackContext, flags: int) -> void:
 	c.size_permille = size if size > 0 else 1000
 
 
-## v0.8.0 BL (BLADE_AUDIT B1, Double Slash +1 repeat a level): a combo step's spec repeats `spec.repeats` times.
+## BLADE_AUDIT B1, Double Slash +1 repeat a level: a combo step's spec repeats `spec.repeats` times.
 ## The first repeat stays the step's own echo (ItemEffects.after_swing, World.echo_*); the others are queued here, each
 ## REPEAT_GAP_TICKS after the one before, from where the player is then, at repeat_damage_permille of `dmg`, as the
 ## echo's slash (its effect id and mirror). A queued repeat is not cancelled by the next swing.
@@ -109,13 +109,13 @@ static func queue_echoes(w: World, spec: AttackSpec, angle: int, root: int, dmg:
 		w.player_pos(), angle, share, root, SimEvent.TAG_MELEE, ItemEffects.EFFECT_TWIN_ARC
 	)
 	var flags := ModifierState.FLAG_REPEAT | ModifierState.FLAG_AT_PLAYER
-	flags |= ModifierState.FLAG_SECONDARY  # v0.8.0 MR (O91): the echoes at the secondary proc
+	flags |= ModifierState.FLAG_SECONDARY  # The echoes at the secondary proc
 	for n in range(1, spec.repeats):
 		_queue(w, spec.key, w.tick + spec.repeat_delay_ticks + n * REPEAT_GAP_TICKS, c, flags, "")
 
 
 ## A hook's child that waits (AttackHook.delay_ticks): `c` is its launch context, built when it triggered.
-## v0.8.0 MR (O91): a repeat's child waits as a repeat's (it launches no trigger's later cast either).
+## A repeat's child waits as a repeat's (it launches no trigger's later cast either).
 static func queue_hook(w: World, k: AttackHook, c: AttackContext) -> void:
 	var flags := ModifierState.FLAG_REPEAT if c.repeat else 0
 	_queue(w, k.child.key, w.tick + k.delay_ticks, c, flags, String(k.id))
@@ -172,7 +172,7 @@ static func advance(w: World) -> void:
 			continue
 		c.repeat = (flags & ModifierState.FLAG_REPEAT) != 0
 		c.secondary = (flags & ModifierState.FLAG_SECONDARY) != 0  # v0.8.0 MR (O91; SecondaryProc)
-		if flags & ModifierState.FLAG_ECHO_CAST:  # v0.10.5 W3-P10k: Echo Cast's repeat, as its launch
+		if flags & ModifierState.FLAG_ECHO_CAST:  # Echo Cast's repeat, as its launch
 			unpack_echo(c, flags)
 		if flags & ModifierState.FLAG_AT_PLAYER:
 			c.origin = w.player_pos()
@@ -183,34 +183,34 @@ static func advance(w: World) -> void:
 		Attacks.launch(w, spec, c)
 		if hook != "":
 			w.hook_chain.remove_at(w.hook_chain.size() - 1)
-	Remnants.advance(w)  # v0.8.0 RM (O91): the remnants end, follow and activate
-	VoidShots.advance(w)  # v0.9.0 VP (Q10): the Void shots' aura and pull
-	WaveShots.advance(w)  # v0.9.0 AF3: the Wave shots' bands (after the Void clears the waits that are over)
-	Wisps.advance(w)  # v0.9.0 AF3: the wisps' own shots
-	RuneExplosion.advance(w)  # v0.9.5 FC0: the rune bursts grow, hit and shove
-	RuneMods.advance(w)  # v0.9.5 FC5: the rune cards' traps, rings, shrinking shields and shards
-	LaserMods.advance(w)  # v0.9.5 FC1: the Laser's aim, targets, ramp, Echo's strikes and mines
-	BombMods.advance(w)  # v0.9.5 FC2: the Bomb's waiting bombs, mines, echoes, bomblets and rings
-	VoidMods.advance(w)  # v0.9.5 FC3: the Void's cap, the voids to open, the rings
-	LanceMods.advance(w)  # v0.9.5 FC4: the Lance's ghosts, rings and shards
-	GlaiveMods.advance(w)  # v0.9.5 FC6: the Glaive's ghosts, small discs, rings and bound
-	WaveMods.advance(w)  # v0.9.5 FC8: the Wave cards' ghosts, children, bends, stops, sways and bound
-	SeekerMods.advance(w)  # v0.9.5 FC7: the Seekers' ghost darts, children, rings and bound
+	Remnants.advance(w)  # The remnants end, follow and activate
+	VoidShots.advance(w)  # The Void shots' aura and pull
+	WaveShots.advance(w)  # The Wave shots' bands (after the Void clears the waits that are over)
+	Wisps.advance(w)  # The wisps' own shots
+	RuneExplosion.advance(w)  # The rune bursts grow, hit and shove
+	RuneMods.advance(w)  # The rune cards' traps, rings, shrinking shields and shards
+	LaserMods.advance(w)  # The Laser's aim, targets, ramp, Echo's strikes and mines
+	BombMods.advance(w)  # The Bomb's waiting bombs, mines, echoes, bomblets and rings
+	VoidMods.advance(w)  # The Void's cap, the voids to open, the rings
+	LanceMods.advance(w)  # The Lance's ghosts, rings and shards
+	GlaiveMods.advance(w)  # The Glaive's ghosts, small discs, rings and bound
+	WaveMods.advance(w)  # The Wave cards' ghosts, children, bends, stops, sways and bound
+	SeekerMods.advance(w)  # The Seekers' ghost darts, children, rings and bound
 	_walk(w)
-	BladeForms.advance(w)  # v0.6.5 WN4: Heavy's push, Orbit Blades, Parry Edge through the swing
+	BladeForms.advance(w)  # Heavy's push, Orbit Blades, Parry Edge through the swing
 
 
 # --- The moments ----------------------------------------------------------------------------------------------------
 ## The dash just started (World phase 4): its ON_LAUNCH hooks from where it starts (Long Shadow).
 static func on_dash_start(w: World) -> void:
-	Remnants.on_dash_start(w)  # v0.8.0 RM: Dodge Imprint keeps where it began
+	Remnants.on_dash_start(w)  # Dodge Imprint keeps where it began
 	_moment(w, Modifiers.dash(w), AttackSpec.Trigger.ON_LAUNCH, w.player_pos())
 
 
 ## The dash just ended: its ON_END hooks from where it ends (Phase Dash's shard burst).
 static func on_dash_end(w: World) -> void:
 	_moment(w, Modifiers.dash(w), AttackSpec.Trigger.ON_END, w.player_pos())
-	BladeForms.on_dash_end(w)  # v0.6.5 WN4: Counter's window
+	BladeForms.on_dash_end(w)  # Counter's window
 
 
 ## A blink just left w.blink_from: the blink spec's hooks that don't wait (Afterimage's waiting echo is AbilityMods').

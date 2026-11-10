@@ -1,26 +1,26 @@
 class_name BuildHud
 extends Control
-## The build at a glance (v0.6.0 MX2; owner B7): the weapon, the utility pick and the modifier slot pips (v0.6.5 WN1:
+## The build at a glance: the weapon, the utility pick and the modifier slot pips (
 ## as many as the wand has now, 4 → 6 → 8), a
 ## small row above the ability row. A filled pip wears its card family's frame colour (CardFrames) with the card's
 ## level on it (an attack item: no number); an empty pip is a dim outline. Minimal on purpose (Step UI restyles the
 ## HUD); reads WorldReader only (EI-07).
-## v0.6.0 UP: the row sits on a small Ember stone slab (HudFrame) like the HUD's other plates; a filled pip is its
+## The row sits on a small Ember stone slab (HudFrame) like the HUD's other plates; a filled pip is its
 ## family's colour inside a dark stone rim, an empty pip a dim stone chip (as an empty ability slot).
-## v0.8.0 MU (Ember stone, owner O14): a pip is a small carved stone chip; a filled one holds a glowing inlay ring in
+## Ember stone, owner O14: a pip is a small carved stone chip; a filled one holds a glowing inlay ring in
 ## its family's colour round its level (InlaySocket's ring), an empty one is an unlit chip.
-## v0.6.5 WN2: the pips are the wand's slots in order (left to right, as the wand reads); a trigger card's pip wears a
+## The pips are the wand's slots in order (left to right, as the wand reads); a trigger card's pip wears a
 ## small "›" and a thin ember cut stands after it (the cards to its right are what it casts).
-## v0.10.5 W3-O17 (UI style Astral): a pip is a small diamond (AstralHudParts.Pip, still a StoneBox:
+## UI style Astral: a pip is a small diamond (AstralHudParts.Pip, still a StoneBox:
 ## its family's colour in `ring_color`), the plate draws nothing, and the weapon's name moves onto the HP row (Hud) so
 ## the row shows the utility and the pips.
 
-## v0.10.5 W3-O20: 24 (was 20), so the level (HudStyle.MIN_LABEL, 17) fits inside the diamond.
+## 24 (was 20), so the level (HudStyle.MIN_LABEL, 17) fits inside the diamond.
 const PIP := 24.0
 const GAP := 4.0
-## v0.6.5 WN2: a trigger's cut between pips (px wide).
+## A trigger's cut between pips (px wide).
 const CUT_W := 2.0
-## v0.6.5 WN2: the mark on a trigger card's pip.
+## The mark on a trigger card's pip.
 const TRIGGER_MARK := "›"
 ## Above the anchor's top edge (px).
 const LIFT := 12.0
@@ -35,10 +35,10 @@ var _pips: Array[Panel] = []
 ## P-3: each pip's own StoneBox, set once; sync recolours it (a bound StyleBox redraws its panel itself).
 var _boxes: Array[StoneBox] = []
 var _levels: Array[Label] = []
-## v0.6.5 WN2: the cut after each pip (shown after a trigger card's).
+## The cut after each pip (shown after a trigger card's).
 var _cuts: Array[ColorRect] = []
 var _filled := 0
-## PF2: what the pips were last written from, so a tick that changed nothing writes nothing (each write redraws a stone
+## What the pips were last written from, so a tick that changed nothing writes nothing (each write redraws a stone
 ## box and re-lays the row), and where the plate was last put.
 var _sig: Array = []
 var _placed_at := Vector2(-1.0, -1.0)
@@ -108,7 +108,7 @@ func sync(reader: WorldReader) -> void:
 	var weapon := reader.weapon_id()
 	var abilities := reader.abilities()
 	var b := reader.build()
-	var cuts: PackedInt32Array = reader.wand()["cuts"]  # v0.6.5 WN2: the trigger cards' slots
+	var cuts: PackedInt32Array = reader.wand()["cuts"]  # The trigger cards' slots
 	var names := {}
 	for a: Dictionary in abilities:
 		names[a["id"]] = a["name_key"]
@@ -119,7 +119,7 @@ func sync(reader: WorldReader) -> void:
 	_utility.visible = _utility.text != ""
 	var slots: Array = b["slots"]
 	_filled = mini(slots.size(), _pips.size())
-	var shown := maxi(int(b["max"]), slots.size())  # v0.6.5 WN1: the wand's slots now (4 → 6 → 8)
+	var shown := maxi(int(b["max"]), slots.size())  # The wand's slots now (4 → 6 → 8)
 	for k in _pips.size():
 		_pips[k].visible = k < shown
 		var box := _boxes[k]
@@ -131,7 +131,7 @@ func sync(reader: WorldReader) -> void:
 			box.ring_color = tint
 			box.dim = 1.0
 			var ability := int(s["type"]) == WorldReader.CARD_ABILITY
-			# v0.7.5 SM (N8): a wand card shows its level (1–5) on its pip too
+			# A wand card shows its level (1–5) on its pip too
 			var levels := ability or bool(reader.card_info(int(s["code"])).get("wand", false))
 			_levels[k].text = str(int(s["level"])) if levels else ""
 			if k in cuts:
@@ -161,12 +161,12 @@ func filled_pips() -> int:
 	return _filled
 
 
-## v0.8.0 MU: pip k's stone chip (its ring is its family's colour).
+## Pip k's stone chip (its ring is its family's colour).
 func pip_box(k: int) -> StoneBox:
 	return _boxes[k]
 
 
-## v0.8.0 N8: pip k's rect (global px): a picked card's icon flies to it (CardFlights).
+## Pip k's rect (global px): a picked card's icon flies to it (CardFlights).
 func pip_rect(k: int) -> Rect2:
 	return _pips[k].get_global_rect()
 
@@ -175,7 +175,7 @@ func pip_level_text(k: int) -> String:
 	return _levels[k].text
 
 
-## v0.6.5 WN2: the slots a cut stands after (a trigger card's, not the last slot).
+## The slots a cut stands after (a trigger card's, not the last slot).
 func cut_slots() -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for k in _cuts.size():

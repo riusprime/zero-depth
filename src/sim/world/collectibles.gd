@@ -1,6 +1,6 @@
 class_name Collectibles
 extends RefCounted
-## v0.9.0 CL (owner: "collectibles are fine", COLLECTIBLES.md as drafted; PLAN W38-W40, W47; CollectState): the
+## The
 ## collectibles a floor can hold. The app arms them at setup (CollectibleBook.arm: the ones the profile hasn't found
 ## whose source this floor has); each shows as a small pickup at its source the tick the source gives it, and the
 ## hero takes it by walking over it (PICK_M), a COLLECTIBLE event naming it (the app records it in the profile at

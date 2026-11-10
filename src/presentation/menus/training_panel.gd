@@ -1,6 +1,6 @@
 class_name TrainingPanel
 extends MenuPanel
-## v0.10.5 O17 (owner P17): the Training Room's terminal. One column over the room (no blur: the dummy and what was
+## The Training Room's terminal. One column over the room (no blur: the dummy and what was
 ## spawned stay in sight): pick an enemy kind the Codex has met and a count (1, 3 or 8), Spawn;
 ## Clear enemies; the weapon (Blade or Gun: the room is rebuilt with it); a wand card the Codex has seen and its level
 ## (1-5), Add card, Remove last card, and the wand's order (the Build page, as from the pause menu); Reset room; Back.
@@ -139,7 +139,7 @@ func _cycler(
 	row.custom_minimum_size = Vector2(0, ROW_H)
 	var c := OptionCycler.new(ids, keys, current)
 	c.name = n
-	c.astral = true  # v0.10.5 W3-O20: Astral's chevrons and hairline (OptionCycler), as in Options
+	c.astral = true  # Astral's chevrons and hairline (OptionCycler), as in Options
 	c.custom_minimum_size = Vector2(300, ROW_H)
 	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	c.add_theme_font_size_override("font_size", ROW_FONT)

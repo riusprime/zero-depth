@@ -12,7 +12,7 @@ extends Node3D
 ##   its 0.4 s, then gone as the bolt flies (FireballViews draws the bolt);
 ## - a shard firing (an orb volley, a bolt's aim): a flash and a small light at the sim shard.
 ## Ticks are the sim's (the views pause with it); reduced motion: no flicker or pulse.
-## v0.10.5 O3 (owner L6; O3_PRISM.md): her last phase's Facet Lances and Shattered Kneel are drawn by its child
+## Her last phase's Facet Lances and Shattered Kneel are drawn by its child
 ## PrismLastViews (`last`), in this view's frame.
 
 const BEAM := Color(1.0, 0.16, 0.3)
@@ -26,7 +26,7 @@ const SHARD_Y := 1.9
 const AIM_RADIUS := 0.06
 const BOLT_RADIUS := 0.035
 const MAX_ARMS := 8
-## v0.10.0 VX5 (R27): the beams are the pack's (beam_vfx), the old cylinders where its family is full; false: all old.
+## The beams are the pack's (beam_vfx), the old cylinders where its family is full; false: all old.
 const PACK_BEAMS := true
 
 var last := PrismLastViews.new()
@@ -61,7 +61,7 @@ func _init() -> void:
 			"impact": _flare(BEAM_CORE),
 			"light": OmniLight3D.new(),
 		}
-		# v0.8.0 TX1: the owner's beam strip, chevron aim lines (pointing out along each arm) and impact flares.
+		# The owner's beam strip, chevron aim lines (pointing out along each arm) and impact flares.
 		for key in ["core", "glow"]:
 			FxTextures.texture_beam(_mat_of(arm[key]), "fx_beam", 0, 5.0, false, 0.5)
 		FxTextures.texture_beam(
@@ -228,7 +228,7 @@ func _draw(now: float) -> void:
 		arm["packed"] = false
 	for n: Node3D in [_bolt_line, _shard_flash, _shard_light, _core_light, _ring]:
 		n.visible = false
-	last.draw(now, _hold)  # v0.10.5 O3: the lances, the kneel
+	last.draw(now, _hold)  # The lances, the kneel
 	if _cross.is_empty():
 		if _hold != null:
 			_hold.end()
@@ -277,7 +277,7 @@ func _draw_arms(c: Dictionary, p: float, now: float, still: bool, flicker: float
 		var core: MeshInstance3D = arm["core"]
 		var glow: MeshInstance3D = arm["glow"]
 		var pack_beam: Node3D = null
-		if _hold != null:  # R27: the pack's beam (the colour's nearest scene) in place of the two cylinders
+		if _hold != null:  # The pack's beam (the colour's nearest scene) in place of the two cylinders
 			pack_beam = _hold.hold(k, BossPackHold.beam_id(BEAM), a, 1.0, {}, false)
 		if pack_beam != null:
 			BossPackHold.beam_place(pack_beam, a, b, hw)

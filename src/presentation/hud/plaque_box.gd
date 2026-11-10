@@ -26,7 +26,7 @@ var plaque := &"amber"
 var height := 100.0
 var pad := 0.0
 var focused := true
-## v0.10.5 W3-O19: true once set_focused was called (a plaque you choose); only such a plaque draws the focus ring.
+## True once set_focused was called (a plaque you choose); only such a plaque draws the focus ring.
 var interactive := false
 
 
@@ -88,7 +88,7 @@ func _margins() -> void:
 	content_margin_bottom = m.w
 
 
-## v0.10.5 W3-O19: the Astral plaque (see the header); nothing is drawn past the rect but the focus ring and sparks.
+## The Astral plaque (see the header); nothing is drawn past the rect but the focus ring and sparks.
 func _draw(to: RID, rect: Rect2) -> void:
 	var o := AstralChrome.px(rect)
 	var cut := 6.0

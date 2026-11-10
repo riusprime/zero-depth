@@ -1,6 +1,6 @@
 class_name RelicPulseView
 extends Node
-## v0.11.0 O14b (OWNER_QUESTIONS §J N1): the City's Heart's saved blow, on any floor (a held relic travels with the
+## OWNER_QUESTIONS §J N1: the City's Heart's saved blow, on any floor (a held relic travels with the
 ## run): when WorldReader.relic_pulse_tick moves on, the shock ring bursts from where the hero was saved, sized to its
 ## radius, with a crimson flash at its centre (PD-13: the pack's `o14b_heart_ring`, pulse_area_vfx_02, and
 ## `o14b_heart_flash`, magic_orb_flash_vfx_01, both tinted crimson and violet). Reads only.

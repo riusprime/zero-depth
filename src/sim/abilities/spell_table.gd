@@ -1,6 +1,6 @@
 class_name SpellTable
 extends RefCounted
-## v0.11.0 O10: one spell's compiled numbers (ContentCompiler.compile_spells from SpellDefinition). Per-level lists
+## One spell's compiled numbers (ContentCompiler.compile_spells from SpellDefinition). Per-level lists
 ## hold 5 entries (Lv 1 first); seconds as ticks, speed in m a tick. Read-only in play (loadout).
 
 var id := &""
@@ -26,12 +26,12 @@ var push_m := 0.0
 var jump_m := 0.0
 var speed_m_tick := 0.0
 var stacks := 1
-## O11: a lasting spell's pulse, a delay (ticks); Blood Thorns' inner edge (m); the extra enemies passed through.
+## A lasting spell's pulse, a delay (ticks); Blood Thorns' inner edge (m); the extra enemies passed through.
 var period_ticks := 30
 var delay_ticks := 0
 var inner_m := 0.0
 var pierce := 0
-## O11: the Lv 5 extra's damage, length (ticks) and radius (m).
+## The Lv 5 extra's damage, length (ticks) and radius (m).
 var bonus_damage := 0
 var bonus_ticks := 0
 var bonus_radius_m := 0.0

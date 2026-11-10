@@ -1,6 +1,6 @@
 class_name BossAnimator
 extends RefCounted
-## v0.8.0 BA (owner O6, Q4): plays a boss model's keyframed clips (BossClip) in layers and writes the sum onto its
+## Plays a boss model's keyframed clips (BossClip) in layers and writes the sum onto its
 ## bones (through the avatar's BonePoser) and its pivot. Every layer is additive over the rest pose:
 ## - the base: idle (a loop in seconds) and walk (a loop whose time is the gait's phase, so the steps match its
 ##   speed), weighted by how fast it walks;
@@ -50,21 +50,21 @@ const MOVE_CLIPS := {
 	WorldReader.MOVE_ROW_FLOOD: &"row_flood",
 	WorldReader.MOVE_GAZE: &"gaze",  # v0.8.0 BS2
 	WorldReader.MOVE_MELT: &"melt",
-	WorldReader.MOVE_COMBO: &"combo",  # v0.8.0 FB1: the Colossus
+	WorldReader.MOVE_COMBO: &"combo",  # The Colossus
 	WorldReader.MOVE_SPIKE_CHASE: &"spike_chase",
 	WorldReader.MOVE_SPIKE_BURST: &"spike_burst",
-	WorldReader.MOVE_CROSS: &"cross",  # v0.8.0 FB2: the Prism
-	WorldReader.MOVE_MIMIC_COMBO: &"mimic_combo",  # v0.8.0 FB3: the Nemesis (a slash, a shot, a cast)
+	WorldReader.MOVE_CROSS: &"cross",  # The Prism
+	WorldReader.MOVE_MIMIC_COMBO: &"mimic_combo",  # The Nemesis (a slash, a shot, a cast)
 	WorldReader.MOVE_MIMIC_SHOTS: &"mimic_shots",
 	WorldReader.MOVE_CARD_CAST: &"card_cast",
-	WorldReader.MOVE_TIDE: &"tide",  # v0.9.0 NB1: the Tidecaller's Pull
-	WorldReader.MOVE_CROSSFIRE: &"crossfire",  # v0.9.0 NB2: the Twin Wardens
+	WorldReader.MOVE_TIDE: &"tide",  # The Tidecaller's Pull
+	WorldReader.MOVE_CROSSFIRE: &"crossfire",  # The Twin Wardens
 	WorldReader.MOVE_CHAIN_SWEEP: &"chain_sweep",
-	WorldReader.MOVE_ECHO: &"echo",  # v0.9.0 NB3: the Clockwork Judge
+	WorldReader.MOVE_ECHO: &"echo",  # The Clockwork Judge
 	WorldReader.MOVE_VERDICT: &"verdict",
-	WorldReader.MOVE_LANCES: &"lances",  # v0.10.5 O3: the Prism's last phase
+	WorldReader.MOVE_LANCES: &"lances",  # The Prism's last phase
 	WorldReader.MOVE_KNEEL: &"kneel",
-	WorldReader.MOVE_GREAT_JAVELIN: &"great_javelin",  # v0.11.0 F9: the Warlord's great throw
+	WorldReader.MOVE_GREAT_JAVELIN: &"great_javelin",  # The Warlord's great throw
 }
 ## The clips every boss has besides its moves'.
 const COMMON: Array[StringName] = [
@@ -214,7 +214,7 @@ func apply(poser: BonePoser, pivot: Node3D, reduced: bool) -> void:
 		)
 
 
-# --- The owner's clips (Q4) -------------------------------------------------------------------------------------
+# --- The owner's clips -------------------------------------------------------------------------------------
 
 
 ## Binds the owner's animations: every animation of `player` with bone tracks on `skeleton` (rotation, position,

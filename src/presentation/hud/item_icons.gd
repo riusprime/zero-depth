@@ -34,9 +34,9 @@ static func has_icon(id: StringName) -> bool:
 ## The shapes of `id`'s icon (the gem for an unknown id).
 static func shapes(id: StringName) -> Array:
 	if BladeCardIcons.has_icon(id):
-		return BladeCardIcons.shapes(id)  # v0.8.0 BL: the Blade's multiplier cards
+		return BladeCardIcons.shapes(id)  # The Blade's multiplier cards
 	if not id in IDS and AbilityIcons.has_icon(id):
-		return AbilityIcons.shapes(id)  # v0.4.0 BS: abilities and stat cards
+		return AbilityIcons.shapes(id)  # Abilities and stat cards
 	match id:
 		&"kinetic_dash":
 			return [
@@ -163,7 +163,7 @@ static func _engine_shapes(id: StringName) -> Array:
 	return gem()
 
 
-## The Overclock heat items (v0.3.0 L18): radiator fins, a thermometer, a burst.
+## The Overclock heat items: radiator fins, a thermometer, a burst.
 static func _heat_icon(id: StringName) -> Array:
 	match id:
 		&"heat_sink":

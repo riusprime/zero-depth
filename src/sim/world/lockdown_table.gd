@@ -1,10 +1,10 @@
 class_name LockdownTable
 extends RefCounted
-## v0.9.0 LK (owner Q21; W20-W26): the Lockdowns' numbers in sim units (RunContentCompiler.compile_lockdown from
+## The Lockdowns' numbers in sim units (RunContentCompiler.compile_lockdown from
 ## LockdownDefinition, data/lockdowns/lockdown.tres). The defaults equal the data's starting values. Content: read in
 ## play, never written (WorldSnapshot keeps it as loadout).
 
-## The kinds (LockdownDefinition.kind_weights is indexed by them). ELITE (v0.9.0 EL, owner Q21): an elite and its
+## The kinds (LockdownDefinition.kind_weights is indexed by them). ELITE: an elite and its
 ## escort, only from its first floor (4).
 enum Kind { NORMAL, HAZARD, ELITE }
 
@@ -17,7 +17,7 @@ var kind_floor_min := PackedInt32Array([1, 2, 4])
 ## The encounter: `waves` formations, each wave_sizes[floor] enemies (1-based; the last repeats).
 var waves := 3
 var wave_sizes := PackedInt32Array([5, 5, 5, 6, 6])
-## v0.9.5 DR (owner Q6): a locked room fights one burst: `burst_waves` formations (each wave_sizes[floor] enemies),
+## A locked room fights one burst: `burst_waves` formations (each wave_sizes[floor] enemies),
 ## the next `burst_gap_ticks` after the one before whether or not anyone is left (0: the longer fight above, a floor
 ## saved under rules 1-19), and `takes_arenas` makes the floor's arena rooms locked rooms (a floor saved under rules
 ## 1-19 keeps its arenas).
@@ -37,11 +37,11 @@ var hazard_every_ticks := 120
 var hazard_warn_ticks := 60
 var hazard_radius_m := 1.3
 var hazard_damage := 12
-## v0.9.0 CF: the least grid cells a Lockdown's room has (LockdownRooms.mark; 0: any room, a floor saved before CF),
+## The least grid cells a Lockdown's room has (LockdownRooms.mark; 0: any room, a floor saved before CF),
 ## and the room's floor area (m2) an enemy needs at once (ClosedFights.cap; 0: no cap).
 var min_cells := 2
 var area_per_enemy_m2 := 30.0
-## v0.10.5 O14: the floor (1-based) whose first Lockdown is a midpoint Elite set piece (0: off).
+## The floor (1-based) whose first Lockdown is a midpoint Elite set piece (0: off).
 var set_piece_floor := 0
 
 

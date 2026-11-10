@@ -14,7 +14,7 @@ const ACTIONS := {
 	&"aim_right": [[&"axis", JOY_AXIS_RIGHT_X, 1.0]],
 	# Owner, 2026-10-07: the triggers attack, the bumpers dash and use the utility; melee and shooting
 	# have separate buttons. The keyboard side (Shift for the utility) is the lead's pick, remappable.
-	# v0.6.0 (owner, 2026-10-09): the Blade swings on the right trigger too ("it should be right trigger by
+	# The Blade swings on the right trigger too ("it should be right trigger by
 	# default"); a Blade run never shoots and a Gun run never swings, so both share it.
 	&"primary": [[&"mouse", MOUSE_BUTTON_LEFT], [&"axis", JOY_AXIS_TRIGGER_RIGHT, 1.0]],
 	&"shoot": [[&"mouse", MOUSE_BUTTON_RIGHT], [&"axis", JOY_AXIS_TRIGGER_RIGHT, 1.0]],
@@ -22,10 +22,10 @@ const ACTIONS := {
 	&"dash": [[&"key", KEY_SPACE], [&"button", JOY_BUTTON_RIGHT_SHOULDER]],
 	&"interact": [[&"key", KEY_E], [&"button", JOY_BUTTON_X]],
 	&"pause": [[&"key", KEY_ESCAPE], [&"button", JOY_BUTTON_START]],
-	# v0.3.0 MM: hold to show the full map (owner L30).
+	# Hold to show the full map.
 	&"map": [[&"key", KEY_TAB], [&"button", JOY_BUTTON_BACK]],
-	# v0.3.5 K (owner F1, F18): Vent and the build's Skill, each on its own button.
-	# v0.9.5 HU (owner Q9): the Skill moved from pad Y to the left trigger (Y is free); a saved binding stays.
+	# Vent and the build's Skill, each on its own button.
+	# The Skill moved from pad Y to the left trigger (Y is free); a saved binding stays.
 	&"vent": [[&"key", KEY_F], [&"button", JOY_BUTTON_B]],
 	&"skill": [[&"key", KEY_Q], [&"axis", JOY_AXIS_TRIGGER_LEFT, 1.0]],
 }

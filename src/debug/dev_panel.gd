@@ -2,8 +2,8 @@ class_name DevPanel
 extends PanelContainer
 ## Developer panel stub (debug builds only), adapted from Deathventory's release gate: it opens only when
 ## unlocked() is true, toggled by backtick (physical key). Shows seed, tick, FPS and ticks per frame; buttons
-## pause, step one tick, hash now and reseed, (v0.3.0 C) spawn a chosen boss near the player and (v0.3.5 AI) a
-## chosen normal enemy, all through DebugApi. v0.5.5 DS: the hidden catch-up's readout (developers only; the player
+## pause, step one tick, hash now and reseed, spawn a chosen boss near the player and a
+## chosen normal enemy, all through DebugApi. the hidden catch-up's readout (developers only; the player
 ## never sees it: owner D4 "Yes, but hidden").
 
 var api: DebugApi
@@ -12,9 +12,9 @@ var _hash := Label.new()
 var _boss := Label.new()
 var _enemy := Label.new()
 var _ability := Label.new()
-var _mod := Label.new()  # v0.6.0 MX4: the modifier card GrantMod gives
+var _mod := Label.new()  # The modifier card GrantMod gives
 var _catch_up := Label.new()
-var _intensity := Label.new()  # v0.8.0 N5: the intensity director's readout
+var _intensity := Label.new()  # The intensity director's readout
 
 
 static func unlocked(debug_build: bool = OS.is_debug_build()) -> bool:
@@ -45,7 +45,7 @@ func _init(p_api: DebugApi) -> void:
 		["KillBoss", "UI_DEV_KILL_BOSS", api.kill_boss],
 		["NextEnemy", "UI_DEV_NEXT_ENEMY", api.next_enemy],
 		["SpawnEnemy", "UI_DEV_SPAWN_ENEMY", api.request_enemy],
-		["SpawnElite", "UI_DEV_SPAWN_ELITE", api.request_elite],  # v0.6.0 CU: TEST HELPER (core theft)
+		["SpawnElite", "UI_DEV_SPAWN_ELITE", api.request_elite],  # TEST HELPER (core theft)
 		["NextAbility", "UI_DEV_NEXT_ABILITY", api.next_ability],  # v0.4.0 BS
 		["GrantAbility", "UI_DEV_GRANT_ABILITY", api.grant_ability],
 		["NextMod", "UI_DEV_NEXT_MOD", api.next_mod],  # v0.6.0 MX4
@@ -65,7 +65,7 @@ func _init(p_api: DebugApi) -> void:
 			b.button_pressed = api.god
 		b.pressed.connect(spec[2])
 		col.add_child(b)
-	for id: StringName in DebugApi.view_switches:  # v0.10.5 W3-V1: the views' own switches
+	for id: StringName in DebugApi.view_switches:  # The views' own switches
 		var sw: Array = DebugApi.view_switches[id]
 		var b := Button.new()
 		b.name = "Switch_" + String(id)
@@ -126,7 +126,7 @@ func _process(_delta: float) -> void:
 	_intensity.text = intensity_text(WorldReader.new(w))
 
 
-## v0.10.5 W3-V1: the view switches' states ("  enemy_vat on"), developers only.
+## The view switches' states (" enemy_vat on"), developers only.
 static func switch_text() -> String:
 	var out := ""
 	for id: StringName in DebugApi.view_switches:
@@ -135,7 +135,7 @@ static func switch_text() -> String:
 	return out
 
 
-## v0.5.5 DS: "m ×1.41 (P 2000 / E 1000, cap ×1.75) · boss ×1.20 (P … / E …, cap …)", or "" without the table.
+## "m ×1.41 (P 2000 / E 1000, cap ×1.75) · boss ×1.20 (P … / E …, cap …)", or "" without the table.
 static func catch_up_text(w: World) -> String:
 	if w.catch_up_table == null:
 		return ""
@@ -148,12 +148,12 @@ static func catch_up_text(w: World) -> String:
 			"  boss x%.2f (P %d / E %d, cap x%.2f)"
 			% [s.boss / 1000.0, s.boss_power, s.boss_expected, s.boss_cap / 1000.0]
 		)
-		if not w.catch_up_table.boss_pace_permille.is_empty():  # v0.10.5 O2b: the paced boss HP
+		if not w.catch_up_table.boss_pace_permille.is_empty():  # The paced boss HP
 			out += "  boss HP x%.2f (paced)" % (CatchUp.boss_hp_permille(w) / 1000.0)
 	return out
 
 
-## v0.8.0 N5: "intensity 512 PEAK 3.2 s", or "" without the director (developers only; the player sees no cue).
+## "intensity 512 PEAK 3.2 s", or "" without the director (developers only; the player sees no cue).
 static func intensity_text(r: WorldReader) -> String:
 	if not r.has_intensity():
 		return ""
@@ -161,6 +161,6 @@ static func intensity_text(r: WorldReader) -> String:
 	var out := "intensity %d %s" % [r.intensity(), mode]
 	if r.intensity_timer() > 0:
 		out += " %.1f s" % (r.intensity_timer() / float(SimTick.TICKS_PER_SECOND))
-	if r.intensity_standing() != IntensityState.Standing.BETWEEN:  # v0.10.5 O4: "… struggling" or "… strong"
+	if r.intensity_standing() != IntensityState.Standing.BETWEEN:  # "… struggling" or "… strong"
 		out += " " + String(IntensityState.Standing.keys()[r.intensity_standing()]).to_lower()
 	return out

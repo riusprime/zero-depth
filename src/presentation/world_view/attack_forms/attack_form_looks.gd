@@ -1,6 +1,6 @@
 class_name AttackFormLooks
 extends RefCounted
-## v0.6.0 MX3 (docs/design/MODIFIER_ENGINE.md §4, owner pick "Element core, heat edge"): the look of any attack,
+## docs/design/MODIFIER_ENGINE.md §4, owner pick "Element core, heat edge": the look of any attack,
 ## composed from its final spec (WorldReader.attack_spec) by layer, never from which cards are held. Pure: a spec in,
 ## a look dictionary out (AttackFormView draws it). Presentation only (EI-07).
 ##
@@ -34,7 +34,7 @@ const FORM_NAMES: Array[StringName] = [
 	&"arc", &"bolt", &"ring", &"beam", &"zone", &"orbiter", &"lob", &"burst"
 ]
 
-## v0.6.5 WN5a: AttackSpec.Trigger.ON_END (a test pins it), and the sigil a trigger's cast flashes where it fires (a
+## AttackSpec.Trigger.ON_END (a test pins it), and the sigil a trigger's cast flashes where it fires (a
 ## pale gold, never a telegraph hue: the trigger cards' own colour, the cut on the Build page).
 const TRIGGER_ON_END := 3
 const CAST_SIGIL := Color("#FFE6A0")
@@ -109,7 +109,7 @@ static func compose(
 		"flash": CRIT_FLASH if crit else Color(0, 0, 0, 0),
 		"angles": angles_of(spec),
 		"count": maxi(1, int(spec.get("count", 1))),
-		# v0.8.0 AO: an order-rule ring (WandRings: the view joins its rings with shock arcs) and a thrown one (Swirl)
+		# An order-rule ring (WandRings: the view joins its rings with shock arcs) and a thrown one (Swirl)
 		"ring_layout": int(spec.get("ring_layout", 0)),
 		"thrown": int(spec.get("swirl", 0)) > 0 or int(spec.get("swirl_group", 0)) > 0,
 	}
@@ -120,7 +120,7 @@ static func compose(
 ## The core colour: the first element's, or the player's own (no element: the plain v0.5 cyan).
 static func core_of(elements: Array) -> Color:
 	if elements.is_empty():
-		return ElementLooks.player_energy()  # v0.9.0 MP2: violet under The Fallen's robe
+		return ElementLooks.player_energy()  # Violet under The Fallen's robe
 	return element_color(StringName(elements[0]))
 
 
@@ -155,9 +155,9 @@ static func particles_of(elements: Array) -> Array:
 
 
 ## Behaviour → motion cues: &"streak" (pierce), &"bounce_flash" (bounces), &"curve" (home), &"tether" (return).
-## v0.6.5 WN3 (the Gun pool): &"twin" (side by side), &"helix" (a corkscrew: the live trail shows the path), &"mine"
+## The Gun pool: &"twin" (side by side), &"helix" (a corkscrew: the live trail shows the path), &"mine"
 ## (a waiting mine's ground ring), &"swell" (a charging shot's orb in the barrel).
-## v0.6.5 WN4 (the Blade pool): &"crescent" (a flying slash: a bolt with an arc's width; BladeFormView bows it),
+## The Blade pool: &"crescent" (a flying slash: a bolt with an arc's width; BladeFormView bows it),
 ## &"spin" (an arc all round: Whirl), &"stab" (a thrust's motion), &"cut" (Parry Edge).
 static func cues_of(spec: Dictionary) -> Array[StringName]:
 	var out: Array[StringName] = []
@@ -187,7 +187,7 @@ static func cues_of(spec: Dictionary) -> Array[StringName]:
 	return out
 
 
-## v0.6.5 WN5a (WAND.md, the shared pool and the triggers): &"cast" (a trigger's child spell: its own small spell,
+## WAND.md, the shared pool and the triggers: &"cast" (a trigger's child spell: its own small spell,
 ## AttackFormView marks where it is cast with a sigil) and &"blast" (the spell explodes where it ends: an ON_END
 ## burst, S7 Explosive).
 static func _wand_cues(spec: Dictionary, out: Array[StringName]) -> void:

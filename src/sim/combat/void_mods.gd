@@ -1,6 +1,6 @@
 class_name VoidMods
 extends RefCounted
-## v0.9.5 FC3 (docs/roadmap/v0.9.5/FORM_COMBOS.md V1-V10): what ten cards do to the Void form. One handler per card.
+## What ten cards do to the Void form. One handler per card.
 ## A void ignores these cards' generic ops (WandCompile.run: it only notes the id in modifier_ids, and Split's level as
 ## "bomblets:N"), and this file reads them from there: mask(spec).
 ## - At the throw (Attacks._bolts): Big Shot's +20 % damage and 30 % slower flight, Rapid Fire's 0.7 damage and half
@@ -9,11 +9,11 @@ extends RefCounted
 ## - At the spawn (World._apply_spawns -> on_spawn): a void with cards gets a row (kind K_SHOT) holding its aura and
 ##   pull radius (Big Shot's, Rapid Fire's) and its steering state.
 ## - In flight (ProjectileMoves.steer -> steer()): Orbit circles the hero once, Homing turns toward the densest group,
-##   Mine stops it at the aim point for mine_hold_ms, its aura opening to mine_aura_mm there (v0.10.5 W3-P7: the one
+##   Mine stops it at the aim point for mine_hold_ms, its aura opening to mine_aura_mm there (the one
 ##   held void makes up for the stream it stops).
 ## - At its end (Attacks.on_projectile_end -> on_end): Ring queues a growing lightning ring (K_RING), Echo and Split
 ##   queue stationary voids (K_SPAWN rows, opened by advance() on the next tick). Those voids start no follow-ups.
-## - Bounded: at most live_max voids per hero (v0.11.0 S1: minis and echoes end first, quietly; a mini with no room
+## - Bounded: at most live_max voids per hero (minis and echoes end first, quietly; a mini with no room
 ##   is dropped); no void pulls a boss (VoidShots.pull_permille).
 ## - Rows (World.mx vm_*), at most ROWS_MAX; hashed only while any is set (older digests unchanged).
 ## - Numbers: data/wand/attack_slots.tres, the void row's `params` (SlotTable.params); DEFAULTS are the same values,
@@ -260,7 +260,7 @@ static func back_throw(
 	w.set_pending_second(ProjectileStore.SECONDARY)
 
 
-## FC4 (V9): with Mine, only one void at a time: the Void does not fire while one is out (flying or held).
+## With Mine, only one void at a time: the Void does not fire while one is out (flying or held).
 static func held(w: World) -> bool:
 	var s := w.mx
 	if s.vm_kind.is_empty() or mask(Modifiers.bolt(w)) & MINE == 0:
@@ -358,7 +358,7 @@ static func on_spawn(w: World, pi: int) -> void:
 			sp * float(maxi(1, p.life[pi] - (ticks(param(w, "orbit_ms")) if m & ORBIT else 0)))
 		)
 		var d := clampf(w.aim_dist_cm / 100.0, 0.5, maxf(0.5, flight - 0.5))
-		# v0.11.0 S1 (B1): each lane stops on its own line (Twin's side offset kept), not snapped to the centre one
+		# Each lane stops on its own line (Twin's side offset kept), not snapped to the centre one
 		var dir := Kin.dir(ang)
 		var across := Vector2(-dir.y, dir.x)
 		var side := (Vector2(p.pos_x[pi], p.pos_y[pi]) - w.player_pos()).dot(across)
@@ -513,7 +513,7 @@ static func advance(w: World) -> void:
 	while k < s.vm_kind.size():
 		var kind: int = s.vm_kind[k] & KIND_MASK
 		if kind == K_SPAWN and w.tick >= s.vm_due[k] and room <= 0:
-			_remove(s, k)  # v0.11.0 S1 (B1): no room under live_max: this mini is dropped, no flying void ends
+			_remove(s, k)  # No room under live_max: this mini is dropped, no flying void ends
 			continue
 		if kind == K_SHOT:
 			var at := ids.bsearch(s.vm_pid[k])
@@ -602,13 +602,13 @@ static func _live(w: World) -> PackedInt32Array:
 	return out
 
 
-## v0.11.0 S1 (B1): how many more voids may open now under live_max: the live ones and the player's queued shots
+## How many more voids may open now under live_max: the live ones and the player's queued shots
 ## (they spawn later this tick) count.
 static func _room(w: World) -> int:
 	return param(w, "live_max") - _live(w).size() - w.pending_projectiles_of(w.actors.ids[0])
 
 
-## At most live_max voids a hero. v0.11.0 S1 (B1): the minis and echoes (F_NOFOLLOW) end first, oldest first, then
+## At most live_max voids a hero. the minis and echoes (F_NOFOLLOW) end first, oldest first, then
 ## the oldest thrown voids; a cap end is quiet (its row goes first: no Ring, Echo or Split follow-ups), so a culled
 ## void no longer queues minis that push the count over again and cull the next void in flight.
 static func cull(w: World) -> void:

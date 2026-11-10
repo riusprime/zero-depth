@@ -1,6 +1,6 @@
 class_name SurgeDefinition
 extends ContentDef
-## v0.11.0 O9 (PLAN H1; owner Q15: "Surges but not during an overrun or lockdown"; CONTENT_SCHEMA §7): the horde
+## PLAN H1; owner Q15: "Surges but not during an overrun or lockdown"; CONTENT_SCHEMA §7: the horde
 ## surges. Once or twice a floor the spawner sends a burst of the floor's biome critter (BiomeDefinition.critter_id):
 ## size_min..size_max of them over duration_seconds, announced by a sound and a HUD line, never while the hero is in an
 ## Overrun room, a Lockdown, a sealed arena or the boss room (Surges). A floor has surges_min..surges_max of them; the
@@ -9,7 +9,7 @@ extends ContentDef
 ## normal cap, never above the spawner's cap_max: the hard 120). Starting values; alive_cap is the owner's Q16 gate (a
 ## 120-enemy surge measured on the owner's PC; lowered here if it drops under 144 fps). v0.11.0 O9b (Q16-b: "Optimise,
 ## then cap"): surge.tres sets 50, the most that held 144 fps with the crowd full on every idle run on the owner's PC
-## (60 held in two of four). v0.11.0 O9c (Q16-c: "Batch now"): with the critters batched, surge.tres sets 120 (idle
+## (60 held in two of four). Q16-c: "Batch now": with the critters batched, surge.tres sets 120 (idle
 ## owner's PC, crowd full: 161.1 and 161.4 fps average).
 
 ## The most enemies alive any surge may bring the floor to (the spawner's hard cap, SpawnDirectorDefinition.cap_max).

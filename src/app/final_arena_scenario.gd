@@ -1,6 +1,6 @@
 class_name FinalArenaScenario
 extends RefCounted
-## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F1-F3): the final arena's World, the run's last after the Ascension portal
+## The final arena's World, the run's last after the Ascension portal
 ## (v0.8.0 P2; End the run before). Its floor is FinalArena's round room (its radius and segments from the
 ## FinalArenaDefinition), the hero arriving on the +y side (the portal transit's arrival), the floor's tables as any
 ## floor (the run's carry, curses, heat, the hidden catch-up: Main sets them as on every floor), no spawner, rewards,
@@ -9,7 +9,7 @@ extends RefCounted
 ## boss of the loop's last floor (RunState.scale_bosses: the loop's factor too, F7 for the Colossus; the Prism's and
 ## the Nemesis's own rules are FB2's and FB3's). begin() starts the fight once Main has set the loadout (the first
 ## body's rise counts the hidden catch-up).
-## v0.9.0 FA (owner C §3: "The player should no longer teleport directly into the final boss arena"; Q18): with
+## With
 ## `approach` (the run's way in, FloorPlan) the floor is the final approach (FinalArena.approach_layout: the stair
 ## causeway up to the plateau, which is the arena) and World.approach runs the pylons and the buildup; the fight begins
 ## when the buildup ends (FinalApproach.advance), not at begin(). Without it (the tests' and tools' direct path, and a
@@ -34,7 +34,7 @@ static func build(
 		if approach
 		else FinalArena.layout(seed_value, arena.radius_m, arena.segments)
 	)
-	if approach and heart:  # v0.11.0 O14b: the hidden room under the throne (FloorPlan sets up its pieces, HeartRoom)
+	if approach and heart:  # The hidden room under the throne (FloorPlan sets up its pieces, HeartRoom)
 		FinalArena.add_heart_room(layout)
 	var w := World.new(seed_value, player, layout.start_pos)
 	w.set_walls(layout.walls)
@@ -54,12 +54,12 @@ static func build(
 	w.boss_flow.final_next = false
 	w.boss_flow.state = BossFlow.State.FIGHT  # no door to seal: the fight is the room
 	w.boss_flow.sealed_tick = 0
-	if approach:  # v0.9.0 FA: the pylons, then the buildup, then the fight
+	if approach:  # The pylons, then the buildup, then the fight
 		w.approach = FinalApproach.create(
 			body_tables(w, finals.size()), run.table.final_shatter_ticks, run.table.final_name_key
 		)
-		w.solids.on = Solids.rules_on(run)  # v0.9.5 SB: the pylons are solid
-		w.approach.register(w)  # v0.9.0 IX: the pylons are shared interactables
+		w.solids.on = Solids.rules_on(run)  # The pylons are solid
+		w.approach.register(w)  # The pylons are shared interactables
 	return w
 
 

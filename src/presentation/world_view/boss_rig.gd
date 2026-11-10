@@ -38,7 +38,7 @@ const FOUNDRY_LEG_Z := Vector2(0.28, 0.40)
 ## The Foundry's four legs, in the order of its bones: front left, front right, back left, back right.
 const FOUNDRY_LEGS: Array[StringName] = [&"leg_fl", &"leg_fr", &"leg_bl", &"leg_br"]
 
-## v0.8.0 FB1: the Colossus's pieces, as shares of its height: a fist's centre beyond FIST_Z to a side; a cuff piece
+## The Colossus's pieces, as shares of its height: a fist's centre beyond FIST_Z to a side; a cuff piece
 ## beyond CUFF_Z, in front of CUFF_X and between the CUFF_Y heights; the halo above HALO_Y; the chest blends in over
 ## CHEST_Y (± CHEST_BLEND); the shoulders (the fists' pivots) at SHOULDER_Y, SHOULDER_Z out.
 const COLOSSUS_FIST_Z := 0.3
@@ -51,7 +51,7 @@ const COLOSSUS_CHEST_BLEND := 0.08
 const COLOSSUS_SHOULDER_Y := 0.72
 const COLOSSUS_SHOULDER_Z := 0.3
 
-## v0.8.0 FB2: a Prism piece this far off her axis (a share of her height) is a shard (it orbits); closer, it stays.
+## A Prism piece this far off her axis (a share of her height) is a shard (it orbits); closer, it stays.
 const PRISM_SHARD_R := 0.2
 
 ## How many rigs were built (tests check it is once per boss type).
@@ -351,7 +351,7 @@ func _foundry(verts: PackedVector3Array) -> void:
 		_store(s)
 
 
-# --- The Colossus (v0.8.0 FB1) ------------------------------------------------------------------------------------
+# --- The Colossus ------------------------------------------------------------------------------------
 
 
 ## Each vertex's piece: the connected pieces of the mesh, vertices welded where they share a position (a mesh splits
@@ -463,7 +463,7 @@ func _colossus(verts: PackedVector3Array, indices: PackedInt32Array) -> void:
 		_store(s)
 
 
-# --- The Prism (v0.8.0 FB2) ---------------------------------------------------------------------------------------
+# --- The Prism ---------------------------------------------------------------------------------------
 
 
 ## Which part each piece is: -1 the body (the biggest piece and the crystals hugging it), else its shard's index

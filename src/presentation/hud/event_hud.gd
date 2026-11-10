@@ -1,6 +1,6 @@
 class_name EventHud
 extends Control
-## Event rooms and curses on the HUD (v0.5.0 EV): the interact prompt by a ready pedestal, the status line while an
+## Event rooms and curses on the HUD: the interact prompt by a ready pedestal, the status line while an
 ## Ambush Cache fight or a Wandering Drone defence runs, the event panel (EventPanel), and threat T with the curses
 ## held (ThreatPanel, top left, while T > 0). Reads only; only the panel's cards take the mouse.
 
@@ -36,7 +36,7 @@ func sync(reader: WorldReader) -> void:
 	var k := reader.event_in_reach() if not reader.event_open() else -1
 	if k >= 0:
 		var line := tr("UI_EVENT_OPEN") % tr(reader.event_name_key(k))
-		if k == reader.event_curse_altar():  # v0.8.0 N17 (O75): its name shows only once you open it
+		if k == reader.event_curse_altar():  # Its name shows only once you open it
 			line = tr("UI_CURSE_ALTAR_OPEN")
 		_prompt.show_prompt(reader, line, false, EventPedestalViews.GLOW.lerp(Color.WHITE, 0.6))
 	else:
@@ -57,7 +57,7 @@ func status_text() -> String:
 
 func _sync_status(reader: WorldReader) -> void:
 	_status.visible = false
-	if reader.event_defend() >= 0:  # v0.9.0 EL: the Ambush Cache's count went with it (owner Q25)
+	if reader.event_defend() >= 0:  # The Ambush Cache's count went with it
 		var k := reader.event_defend()
 		var away := (
 			reader.player_pos().distance_to(reader.event_pos(k)) > reader.event_defend_radius_m()

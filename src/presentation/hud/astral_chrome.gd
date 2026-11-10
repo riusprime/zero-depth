@@ -386,7 +386,7 @@ class FrameBox:
 	var focus := 0.0
 	var dim := 1.0
 	var rim := Color(0, 0, 0, 0)
-	## v0.11.0 F11: an opaque ink behind the fill (a lifted card reads over the cards under it).
+	## An opaque ink behind the fill (a lifted card reads over the cards under it).
 	var backing := false
 
 	func _init(p_focus: float = 0.0, p_dim: float = 1.0, margins := Vector2(8, 6)) -> void:

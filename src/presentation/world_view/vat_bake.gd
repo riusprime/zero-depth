@@ -1,12 +1,12 @@
 class_name VatBake
 extends RefCounted
-## v0.10.5 W3-V1 (owner, 2026-11-06: the enemy VAT pilot, "keeping their current animation"): bakes an enemy kind's
+## Bakes an enemy kind's
 ## pose code into a texture, so a VatCrowd can draw every enemy of that kind as one MultiMesh whose shader poses it.
 ## Nothing is recorded by hand: the bake builds the kind's real avatar (its real pieces) and runs its own pose code over
 ## a grid of the inputs the pose is made of. The bake is made once per rig and session (the first VAT enemy, or the
 ## shader warm-up behind the loading cover), so it can never go stale against the pose code.
 ##
-## v0.10.5 W3-V4a (owner: "can we apply it to the rest of the enemies"): any avatar can be baked. Its RIG says how
+## Any avatar can be baked. Its RIG says how
 ## (rig_of), a Dictionary:
 ## - "key": the bake's name (kinds that pose alike share one: the Charger and the Hatchling);
 ## - "drives": how many continuous numbers the pose is made of (each 0..1; a loop's a phase 0..1). The first four go to
@@ -31,7 +31,7 @@ extends RefCounted
 ## + mode (0 a body plate: the hit flash and rest glow; 1 an accent: the glow; 2 a plain plate: neither), CUSTOM1 =
 ## emission (linear; a plate's times its rest energy) + 0 (unused), CUSTOM2 = joint, one-sided (1: its back faces are
 ## not drawn, in a mesh that also has two-sided pieces), v0.10.5 W3-V4c: glow source (0: the instance's glow; k: drive
-## k - 1), unshaded (1: VatLooks draws its albedo as is). v0.10.5 W3-V4c: the stand-alone kinds' StandardMaterial3D
+## k - 1), unshaded (1: VatLooks draws its albedo as is). the stand-alone kinds' StandardMaterial3D
 ## pieces take their looks from SoloVat.surface_look (with vertex colours where their material takes them). VatVerify
 ## (tests/support) runs the shader's arithmetic on the CPU (the bake report's pose error, the tests). Presentation only
 ## (EI-07).
@@ -79,10 +79,10 @@ static func reference_avatar(kind: int, tint: Color, role_glow: float) -> HordeA
 	return a
 
 
-## v0.10.5 W3-V4a: a reference avatar of any VAT `kind` (reference_avatar's, or a ChargerAvatar for the Charger and
+## A reference avatar of any VAT `kind` (reference_avatar's, or a ChargerAvatar for the Charger and
 ## the Hatchling).
 static func reference_of(kind: int, tint: Color, role_glow: float) -> AvatarBase:
-	if SoloVat.is_solo(kind):  # v0.10.5 W3-V4c: the Needle, Warden, Arc Caster, Bomb Drone
+	if SoloVat.is_solo(kind):  # The Needle, Warden, Arc Caster, Bomb Drone
 		return SoloVat.reference_of(kind, tint, role_glow)
 	if is_charger(kind):
 		var c := ChargerAvatar.new()
@@ -94,7 +94,7 @@ static func reference_of(kind: int, tint: Color, role_glow: float) -> AvatarBase
 	return reference_avatar(kind, tint, role_glow)
 
 
-## v0.10.5 W3-V4a: a VAT avatar of `kind` (no pieces), as ActorViews builds one with the switch on (tools, tests; not
+## A VAT avatar of `kind` (no pieces), as ActorViews builds one with the switch on (tools, tests; not
 ## in the tree; the caller frees it).
 static func vat_avatar_of(kind: int) -> AvatarBase:
 	if SoloVat.is_solo(kind):  # v0.10.5 W3-V4c
@@ -110,7 +110,7 @@ static func vat_avatar_of(kind: int) -> AvatarBase:
 	return h
 
 
-## v0.10.5 W3-V4a: the kinds a ChargerAvatar draws.
+## The kinds a ChargerAvatar draws.
 static func is_charger(kind: int) -> bool:
 	return kind == WorldReader.KIND_CHARGER or kind == WorldReader.KIND_HATCHLING
 
@@ -129,7 +129,7 @@ static func joint_spec(avatar: HordeAvatar) -> Array:
 	return out
 
 
-## v0.10.5 W3-V4a: the rig of `avatar` (see the class notes): its own (vat_rig()), or a HordeAvatar's (horde_rig).
+## The rig of `avatar` (see the class notes): its own (vat_rig()), or a HordeAvatar's (horde_rig).
 static func rig_of(avatar: Node3D) -> Dictionary:
 	if avatar.has_method(&"vat_rig"):
 		return avatar.call(&"vat_rig")
@@ -142,7 +142,7 @@ static func rig_of(avatar: Node3D) -> Dictionary:
 ## stance grid (drives 0, 1, 2: the windup raise, the strike, the crouch; at the clock 0, fully risen) and the gait
 ## grid (drive 3: the legs' phase over gait_period), each read from its nodes after HordeAvatar.pose_at.
 static func horde_rig(avatar: HordeAvatar) -> Dictionary:
-	if avatar.kind != WorldReader.KIND_SWARMER:  # v0.10.5 W3-V4b: the other horde kinds' (HordeVat)
+	if avatar.kind != WorldReader.KIND_SWARMER:  # The other horde kinds' (HordeVat)
 		return HordeVat.rig(avatar)
 	var js: Array = []
 	var index := {}
@@ -295,7 +295,7 @@ static func bake(avatar: Node3D) -> Dictionary:
 		"scaled": bool(rig.get("scaled", false)),
 		"key": rig.get("key", ""),
 	}
-	if rig.has("albedo_tex"):  # v0.10.5 W3-V4b: the owner's model's colour map (VatLooks' textured variant)
+	if rig.has("albedo_tex"):  # The owner's model's colour map (VatLooks' textured variant)
 		out["albedo_tex"] = rig["albedo_tex"]
 	if rig.has("period"):  # the pilot's (VatCrowd's horde drives, tests)
 		var gait: Dictionary = table[GRID_GAIT]
@@ -379,7 +379,7 @@ static func pieces(avatar: Node3D, js: Array) -> Array:
 
 static func _collect(n: Node, avatar: Node, index: Dictionary, out: Array) -> void:
 	for c in n.get_children():
-		if c.has_meta(SoloVat.LIVE):  # v0.10.5 W3-V4c: a node the VAT avatar keeps (a ground disc, the dust)
+		if c.has_meta(SoloVat.LIVE):  # A node the VAT avatar keeps (a ground disc, the dust)
 			continue
 		var mi := c as MeshInstance3D
 		if mi != null and mi.mesh != null:
@@ -405,11 +405,11 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 	var ps := pieces(avatar, js)
 	var looks: Array = []
 	var any_two := false
-	var textured := HordeVat.texture(avatar) != null  # v0.10.5 W3-V4b: UVs too
+	var textured := HordeVat.texture(avatar) != null  # UVs too
 	var uvs := PackedVector2Array()
 	for p: Dictionary in ps:
 		var look := surface_look(p["node"], p["surface"])
-		if HordeVat.alt_glow(avatar, p["node"]):  # v0.10.5 W3-V4b: the Sniper's muzzle (VatLooks' mode 3)
+		if HordeVat.alt_glow(avatar, p["node"]):  # The Sniper's muzzle (VatLooks' mode 3)
 			(look[0] as Array)[3] = 3.0
 		looks.append(look)
 		any_two = any_two or bool(look[2])
@@ -434,7 +434,7 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 				uvs.append_array(zero)
 		var nr: Variant = arrays[Mesh.ARRAY_NORMAL]
 		var base := verts.size()
-		# v0.10.5 W3-V4c: an accent's glow source (0: the instance's; k: drive k - 1) and the unshaded flag
+		# An accent's glow source (0: the instance's; k: drive k - 1) and the unshaded flag
 		var jp := PackedFloat32Array(
 			[
 				float(p["joint"]),
@@ -443,7 +443,7 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 				float(look[4]) if look.size() > 4 else 0.0,
 			]
 		)
-		# v0.10.5 W3-V4c: a material taking its mesh's vertex colours as albedo (the Warden's facets): albedo x colour
+		# A material taking its mesh's vertex colours as albedo (the Warden's facets): albedo x colour
 		var vc: Variant = arrays[Mesh.ARRAY_COLOR] if look.size() > 5 and bool(look[5]) else null
 		var has_vc := vc is PackedColorArray and (vc as PackedColorArray).size() == v.size()
 		for k in v.size():
@@ -506,7 +506,7 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 
 
 ## A piece surface's look: [albedo (linear) rgb + mode, emission (linear) rgb + 0, two-sided], read from its
-## EnemyLooks material (a body plate: zd_hit; an accent: zd_glow), or (v0.10.5 W3-V4a: the Charger's face) a plain
+## EnemyLooks material (a body plate: zd_hit; an accent: zd_glow), or (the Charger's face) a plain
 ## untextured StandardMaterial3D: its albedo, no emission, no flash. A material of any other kind is drawn as a dark
 ## plate and reported (the kind is then not VAT-ready).
 static func surface_look(mi: MeshInstance3D, s: int) -> Array:
@@ -532,7 +532,7 @@ static func surface_look(mi: MeshInstance3D, s: int) -> Array:
 	if m == null or m.shader == null:
 		push_error("VatBake: %s has no EnemyLooks material" % mi.get_path())
 		return [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], false]
-	var code := m.shader.code  # (v0.10.5 W3-V4b: a textured plate's map is the pose's albedo_tex, VatLooks)
+	var code := m.shader.code  # (a textured plate's map is the pose's albedo_tex, VatLooks)
 	var albedo: Color = m.get_shader_parameter("albedo")
 	var emission: Color = m.get_shader_parameter("emission")
 	var energy := float(m.get_shader_parameter("emission_energy"))
@@ -556,13 +556,13 @@ static func gait_phase(pose: Dictionary, t: float) -> float:
 	return u - floor(u)
 
 
-## v0.10.5 W3-V4a: the drives VatCrowd sends for `avatar` now: its own (vat_drives()), or a horde avatar's four (the
+## The drives VatCrowd sends for `avatar` now: its own (vat_drives()), or a horde avatar's four (the
 ## windup raise, the strike, the crouch, the gait phase).
 static func drives_of(avatar: Node3D, pose: Dictionary) -> PackedFloat32Array:
 	if avatar.has_method(&"vat_drives"):
 		return avatar.call(&"vat_drives")
 	var h := avatar as HordeAvatar
-	if h.kind != WorldReader.KIND_SWARMER:  # v0.10.5 W3-V4b: the other horde kinds' (HordeVat)
+	if h.kind != WorldReader.KIND_SWARMER:  # The other horde kinds' (HordeVat)
 		return h.vat_grid_drives()
 	return PackedFloat32Array(
 		[

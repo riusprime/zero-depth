@@ -1,6 +1,6 @@
 class_name BossTide
 extends RefCounted
-## v0.9.0 NB1 (owner Q24, "ok go for those"; docs/roadmap/v0.9.0/BOSSES_4_5.md row N1; SIM_CONTRACTS §10j): the
+## The
 ## Tidecaller's signature, The Pull, and its Undertow.
 ## - The Pull: a `tide` attack (shielded) rings its bell through its windup; then for tide_pull_ticks the whole room
 ##   pulls the player toward the boss (the pull's speed added to the player's own step, so running away is slower and
@@ -17,7 +17,7 @@ extends RefCounted
 ##   toward its centre (never past it, by the same wall rule).
 ## Pure: no stream is drawn here; everything follows from the attack's clock and positions.
 
-## The fastest the room may ever move the player (BOSSES_4_5.md: 1.5 m/s; v0.9.5 BH4: 2.2). Each tide attack sets its
+## The fastest the room may ever move the player (BOSSES_4_5.md: 1.5 m/s; 2.2). Each tide attack sets its
 ## own cap in data (max_mps, at most this): cap_of.
 const MAX_MPS := BossSchemas.TIDE_MAX_MPS
 ## The drift never brings the player closer than this to a wall (beyond where they already are).
@@ -28,13 +28,13 @@ const BODY_GAP_M := 0.3
 const NONE := 0
 const PULL := 1
 const PUSH := 2
-## v0.9.0 NB3: due() while the signature is due but the boss's cooldown still runs.
+## due() while the signature is due but the boss's cooldown still runs.
 const HOLD := -2
 
 const M := BossAttackTable.Move
 
 
-## v0.9.5 BH4 (T1): the most tide attack `atk` moves the player a tick (its data's max_mps, else MAX_MPS).
+## The most tide attack `atk` moves the player a tick (its data's max_mps, else MAX_MPS).
 static func cap_of(atk: BossAttackTable) -> float:
 	return atk.tide_max if atk.tide_max > 0.0 else MAX_MPS / SimTick.TICKS_PER_SECOND
 
@@ -44,12 +44,12 @@ static func on_cadence(t: BossTable, atk: BossAttackTable) -> bool:
 	return t.sig_every_ticks > 0 and is_cadence(atk)
 
 
-## v0.9.0 NB3: the moves a cadence starts: the Tidecaller's Pull and the Clockwork Judge's echo (BossJudge).
+## The moves a cadence starts: the Tidecaller's Pull and the Clockwork Judge's echo (BossJudge).
 static func is_cadence_move(move: int) -> bool:
 	return move == M.TIDE or move == M.ECHO
 
 
-## v0.9.0 NB4: the attacks a cadence starts: those moves, and the Lantern Shade's Lights Out (a pattern with
+## The attacks a cadence starts: those moves, and the Lantern Shade's Lights Out (a pattern with
 ## dark_ticks: BossShade).
 static func is_cadence(atk: BossAttackTable) -> bool:
 	return atk != null and (is_cadence_move(atk.move) or atk.dark_ticks > 0)
@@ -66,7 +66,7 @@ static func signature_of(t: BossTable, phase: int) -> int:
 
 
 ## Tick phase 3, boss i pursuing: its signature's index when the cadence says it is due now and its cooldown `cd` is
-## over, else -1. The first call starts the clock (the first one sig_first_ticks on). v0.9.0 NB3: HOLD when it is
+## over, else -1. The first call starts the clock (the first one sig_first_ticks on). HOLD when it is
 ## due but the cooldown still runs: the punish and the gap-closer wait for it (a far player can't starve the cadence).
 static func due(w: World, i: int, b: int, t: BossTable, cd: int = 0) -> int:
 	if t.sig_every_ticks <= 0 or w.player_dead():
@@ -85,9 +85,9 @@ static func due(w: World, i: int, b: int, t: BossTable, cd: int = 0) -> int:
 
 
 ## BossAi.start_attack: a `tide` attack starting (by the cadence or as a phase's entry) sets the next one's due tick
-## (v0.9.0 NB3: an `echo` too).
+## (an `echo` too).
 static func on_start(w: World, i: int, atk: BossAttackTable) -> void:
-	BossShade.on_start(w, i, atk)  # v0.9.0 NB4: a Lights Out sets when the dark falls
+	BossShade.on_start(w, i, atk)  # A Lights Out sets when the dark falls
 	if not is_cadence(atk):
 		return
 	var t := BossAi.table_of(w, i)

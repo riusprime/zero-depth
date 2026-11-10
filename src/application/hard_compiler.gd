@@ -1,6 +1,6 @@
 class_name HardCompiler
 extends RefCounted
-## v0.9.5 BH2 (BOSSES_HARD.md B1-B5; BossHard): compiles the five harder spells' numbers onto their attack tables (their
+## BOSSES_HARD.md B1-B5; BossHard: compiles the five harder spells' numbers onto their attack tables (their
 ## own file: ContentCompiler is at its line limit). Validation: HardRules.
 
 
@@ -17,12 +17,12 @@ static func compile_attack(def: BossAttackDefinition, t: BossAttackTable) -> voi
 	t.beam_turn_milli = int(
 		round(float(sp.get("turn_dps", 0.0)) * 4096.0 / 360.0 * 1000.0 / SimTick.TICKS_PER_SECOND)
 	)
-	t.beam_burns = sp.has("turn_dps")  # v0.11.0 F4: turn_dps 0 = a burning beam that holds still
+	t.beam_burns = sp.has("turn_dps")  # turn_dps 0 = a burning beam that holds still
 	t.safe_cells = int(sp.get("safe_cells", 0))
 	if t.second_ticks > 0:
 		var last := (t.count - 1) * t.mark_gap_ticks + t.second_ticks
 		t.active_ticks = maxi(t.active_ticks, last + (2 if t.pillar_ticks > 0 else 1))
-	# v0.9.5 BH3 (B8): the Crossfire's tracking (degrees a second -> 1/4096 turns a tick x 1000)
+	# The Crossfire's tracking (degrees a second -> 1/4096 turns a tick x 1000)
 	t.lines_ticks = SimTick.seconds_to_ticks(float(sp.get("lines_follow_seconds", 0.0)))
 	t.lines_turn_milli = int(
 		round(
@@ -35,7 +35,7 @@ static func compile_attack(def: BossAttackDefinition, t: BossAttackTable) -> voi
 			)
 		)
 	)
-	# v0.9.5 BH4 (T1): the tide's drift cap is data; (T3) a crossing wave's numbers
+	# The tide's drift cap is data; a crossing wave's numbers
 	if sp.has("max_mps"):
 		t.tide_max = float(sp["max_mps"]) / SimTick.TICKS_PER_SECOND
 	if def.move == &"wave":

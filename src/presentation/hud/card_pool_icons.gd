@@ -1,7 +1,7 @@
 class_name CardPoolIcons
 extends RefCounted
 ## The symbols of the v0.5.0 CP cards, in the item icons' style (ItemIcons: shapes in a unit box, y down, drawn with
-## CanvasItem calls, no external art): the rule stat cards (AbilityIcons falls through to these). v0.10.5 O1: the four
+## CanvasItem calls, no external art): the rule stat cards (AbilityIcons falls through to these). the four
 ## ability mods' symbols went with their cards.
 
 ## The rule stat cards and their colours.
@@ -11,8 +11,8 @@ const STAT_COLORS := {
 	&"overkill": Color("#FF4A6A"),
 	&"hoarder": Color("#F2C14E"),
 	&"fast_hands": Color("#6AF0FF"),
-	&"lifesprout": Color("#7DF29C"),  # v0.5.5 EC (D9): green = healing (the card frame mapping)
-	# v0.10.5 O9: the rule cards that replace the flat stats
+	&"lifesprout": Color("#7DF29C"),  # Green = healing (the card frame mapping)
+	# The rule cards that replace the flat stats
 	&"vent_mend": Color("#7DF29C"),
 	&"heat_shield": Color("#FFB45A"),
 	&"adrenaline": Color("#FFE45A"),
@@ -113,7 +113,7 @@ static func shapes(id: StringName) -> Array:
 	return _rule_shapes(id)
 
 
-## v0.10.5 O9: the seven rule cards that replace the flat stats.
+## The seven rule cards that replace the flat stats.
 static func _rule_shapes(id: StringName) -> Array:
 	match id:
 		&"vent_mend":  # a blast ring round a cross

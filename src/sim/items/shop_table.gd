@@ -10,29 +10,29 @@ var offer_size := 4
 var rarity_prices := PackedInt32Array([30, 55, 90])
 ## Each floor after the first raises every price but the reroll by this share of the floor-1 price (x 1, 1.5, 2).
 var floor_price_step_permille := 500
-## v0.5.5 EC (owner S4): floors 2 and later multiply the stepped prices (cards, heal) by this too (x 1, 2.25, 3).
+## Floors 2 and later multiply the stepped prices (cards, heal) by this too (x 1, 2.25, 3).
 var late_floor_permille := 1500
-## v0.5.5 EC (owner S3): the most cards bought at one floor's shop (0 = no limit).
+## The most cards bought at one floor's shop (0 = no limit).
 var max_buys := 4
 ## The heal: this share of max HP, once per shop, for heal_price x the floor step.
 var heal_permille := 300
 var heal_price := 40
-## The reroll (v0.5.5 EC: only the unsold slots): reroll_price, then x (1 + step) per use at this shop, rounded
+## The reroll (only the unsold slots): reroll_price, then x (1 + step) per use at this shop, rounded
 ## half up (20, 30, 45, 68 ...).
 var reroll_price := 20
 var reroll_step_permille := 500
 ## The interact button opens the shop within this distance of the terminal.
 var interact_radius_m := 1.8
-## v0.7.5 MG (owner N12, "the shop is also gonna be there every two … floors"): the shop stands on floor `first_floor`
+## The shop stands on floor `first_floor`
 ## and every `every_floors` floors after it (FloorCadence: 1, 3, 5 ... as shipped; a 3-floor run has two).
 var first_floor := 1
 var every_floors := 2
-## v0.8.0 SR (owner O13): the biomes' shop rooms, biome id -> ShopRoomTable (RunContentCompiler.compile_shop_rooms).
+## The biomes' shop rooms, biome id -> ShopRoomTable (RunContentCompiler.compile_shop_rooms).
 ## Empty on a floor saved before SR (RunState.shop_rooms; RunSaver.floor_tables), whose shop is the terminal.
 var rooms := {}
 
 
-## v0.8.0 SR: the shop room of biome `biome` (null: none, so the terminal).
+## The shop room of biome `biome` (null: none, so the terminal).
 func room_for(biome: StringName) -> ShopRoomTable:
 	return rooms.get(biome, null)
 
@@ -43,7 +43,7 @@ func on_floor(floor_index: int) -> bool:
 
 
 ## The floor's price multiplier, per mille (1000 on floor 1): the floor step, and from floor 2 the late-floor
-## multiplier on top (v0.5.5 EC, S4).
+## multiplier on top.
 func floor_step_permille(floor_index: int) -> int:
 	var step := base_step_permille(floor_index)
 	return step if floor_index < 2 else scaled(step, late_floor_permille)

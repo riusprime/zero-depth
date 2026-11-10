@@ -1,6 +1,6 @@
 class_name NoticeTicker
 extends VBoxContainer
-## v0.11.0 F12 (owner, F10 option B: "do not make it permanent, it is just a notification"): a boxless stack of
+## A boxless stack of
 ## short lines under the top plate, each an icon and a name. A pickup, a combo and an element pair each add one; it
 ## holds about HOLD seconds (an element pair PAIR_HOLD), fades and is gone. At most MAX_LINES; a new one past that
 ## pushes the oldest out in PUSH_OUT seconds. Reduced motion: no slide, the line appears and fades. It shows what it

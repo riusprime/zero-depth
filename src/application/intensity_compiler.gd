@@ -1,10 +1,10 @@
 class_name IntensityCompiler
 extends RefCounted
-## v0.8.0 N5 (owner O58): IntensityDirectorDefinition into the sim's IntensityTable (CONTENT_SCHEMA §7). Its own
+## IntensityDirectorDefinition into the sim's IntensityTable (CONTENT_SCHEMA §7). Its own
 ## file: ContentCompiler is at the lint's length limit.
 
 
-## v0.8.0 N5: the intensity director in ticks and milli (intensity × 1000; per-second rates / 60, rounded); null
+## The intensity director in ticks and milli (intensity × 1000; per-second rates / 60, rounded); null
 ## without a definition (the director off).
 static func compile(def: IntensityDirectorDefinition) -> IntensityTable:
 	if def == null:
@@ -26,7 +26,7 @@ static func compile(def: IntensityDirectorDefinition) -> IntensityTable:
 	t.quiet_ticks_max = SimTick.seconds_to_ticks(def.quiet_seconds_max)
 	t.relax_level = def.relax_intensity * 1000
 	t.build_interval_permille = def.build_interval_permille
-	# v0.10.5 O4 (owner D46): the hero's live state
+	# The hero's live state
 	t.struggle_hp_permille = def.struggle_hp_permille
 	t.strong_hp_permille = def.strong_hp_permille
 	t.expected_kill_permille = def.expected_kill_permille

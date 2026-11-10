@@ -1,6 +1,6 @@
 class_name EliteState
 extends RefCounted
-## v0.9.0 EL (Elites; ELITES.md E0): the floor's elites (World.elites; null on a floor that never had one). Created by
+## Elites; ELITES.md E0: the floor's elites (World.elites; null on a floor that never had one). Created by
 ## Elites.setup when the floor has elite rooms, or by the first elite spawned (an Elite Lockdown, the Chaos shrine,
 ## the dev panel). Hashed whenever it exists. Its numbers are World.elite_rules (content).
 

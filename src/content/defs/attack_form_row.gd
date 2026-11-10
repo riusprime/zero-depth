@@ -1,12 +1,12 @@
 class_name AttackFormRow
 extends Resource
-## v0.9.0 AS (PLAN C60–C65; docs/roadmap/v0.9.0/ATTACK_FORMS.md): one Gun attack form's row of the compatibility table
+## One Gun attack form's row of the compatibility table
 ## (AttackSlotsDefinition.forms): the form, the card that sets it (empty: the default form, Orbs, the Gun's own shot),
 ## and the Pattern, Secondary and Element cards it takes. A card in `allowed` is on, in `ruled` on with a rule of the
 ## form's own (the form's step builds the rule; until then it reads as on); every other card is off (C62: "No by
 ## default"), so it is never offered, never equipped and never compiled with this form.
 
-## v0.9.5 FC9: the numbers the Wisps row carries (WispMods.DEFAULTS has the same keys; a test holds them equal).
+## The numbers the Wisps row carries (WispMods.DEFAULTS has the same keys; a test holds them equal).
 const WISP_KEYS: Array[String] = [
 	"twin_wisps",
 	"halo_wisps",
@@ -20,7 +20,7 @@ const WISP_KEYS: Array[String] = [
 	"orbit_gap_ticks",
 ]
 
-## v0.9.5 FC8: the numbers the Wave row carries (WaveMods.DEFAULTS has the same keys; a test holds them equal).
+## The numbers the Wave row carries (WaveMods.DEFAULTS has the same keys; a test holds them equal).
 const WAVE_KEYS: Array[String] = [
 	"ricochet_bounces",
 	"home_cone_deg",
@@ -45,7 +45,7 @@ const WAVE_KEYS: Array[String] = [
 	"live_max",
 ]
 
-## v0.9.5 FC6: the numbers the Glaive row carries (GlaiveMods.DEFAULTS has the same keys; a test holds them equal).
+## The numbers the Glaive row carries (GlaiveMods.DEFAULTS has the same keys; a test holds them equal).
 const GLAIVE_KEYS: Array[String] = [
 	"halo_count",
 	"halo_share",
@@ -78,7 +78,7 @@ const GLAIVE_KEYS: Array[String] = [
 	"live_max",
 ]
 
-## v0.9.5 FC7: the numbers the Seekers row carries (SeekerMods.DEFAULTS has the same keys; a test holds them equal).
+## The numbers the Seekers row carries (SeekerMods.DEFAULTS has the same keys; a test holds them equal).
 const SEEKER_KEYS: Array[String] = [
 	"twin_mult",
 	"twin_share",
@@ -104,7 +104,7 @@ const SEEKER_KEYS: Array[String] = [
 	"live_max",
 ]
 
-## v0.9.5 FC4: the numbers the Lance row carries (LanceMods.DEFAULTS has the same keys; a test holds them equal).
+## The numbers the Lance row carries (LanceMods.DEFAULTS has the same keys; a test holds them equal).
 const LANCE_KEYS: Array[String] = [
 	"halo_count",
 	"halo_share",
@@ -130,7 +130,7 @@ const LANCE_KEYS: Array[String] = [
 	"split_ticks",
 ]
 
-## v0.9.5 FC3: the numbers the Void row carries (VoidMods.DEFAULTS has the same keys; a test holds them equal).
+## The numbers the Void row carries (VoidMods.DEFAULTS has the same keys; a test holds them equal).
 const VOID_KEYS: Array[String] = [
 	"ring_mm",
 	"ring_ms",
@@ -166,7 +166,7 @@ const VOID_KEYS: Array[String] = [
 	"live_max",
 ]
 
-## v0.9.5 FC5: the numbers the Rune Explosion row carries (RuneMods.DEFAULTS has the same keys; a test holds them).
+## The numbers the Rune Explosion row carries (RuneMods.DEFAULTS has the same keys; a test holds them).
 const RUNE_KEYS: Array[String] = [
 	"ring_ticks",
 	"ring_share",
@@ -194,7 +194,7 @@ const RUNE_KEYS: Array[String] = [
 	"mine_max",
 ]
 
-## v0.9.5 FC2: the numbers the Bomb row carries (BombMods.DEFAULTS has the same keys; a test holds them equal).
+## The numbers the Bomb row carries (BombMods.DEFAULTS has the same keys; a test holds them equal).
 const BOMB_KEYS: Array[String] = [
 	"halo_dist_mm",
 	"halo_delay_ms",
@@ -223,7 +223,7 @@ const BOMB_KEYS: Array[String] = [
 	"mine_life_ms",
 ]
 
-## v0.9.5 FC1: the numbers the Laser row carries (LaserMods.DEFAULTS has the same keys; a test holds them equal).
+## The numbers the Laser row carries (LaserMods.DEFAULTS has the same keys; a test holds them equal).
 const LASER_KEYS: Array[String] = [
 	"lance_ticks",
 	"lance_feed",
@@ -267,11 +267,11 @@ const LASER_KEYS: Array[String] = [
 @export var card: StringName = &""
 @export var allowed: Array[StringName] = []
 @export var ruled: Array[StringName] = []
-## v0.10.5 W3-P7 (owner, 2026-11-04: P7 "prune"; W3_O4_PROGRESSION_G1.md section c): cards that measured no gain (or a
+## Cards that measured no gain (or a
 ## loss) with this form. They are never offered while it is the run's form, but a held one still compiles as before
 ## (an old save's wand, or a card taken under another form, keeps working). Any live Pattern, Secondary, Element or
 ## Free card; a Pattern / Secondary / Element card here is usually also in `allowed`.
 @export var pruned: Array[StringName] = []
-## v0.9.5 FC1: the form's own numbers for what its cards do (the Laser's: LaserMods.DEFAULTS names them and their units
+## The form's own numbers for what its cards do (the Laser's: LaserMods.DEFAULTS names them and their units
 ## in their keys); every value a whole number above 0. Empty for the forms without any.
 @export var params: Dictionary = {}

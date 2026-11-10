@@ -26,7 +26,7 @@ const DOOR_REACH_M := 2.5
 var relic := Relics.CITY_HEART
 var taken := 0
 var take_tick := -1
-## The sealed door (N2): its state and the tick it opened (-1 never).
+## The sealed door: its state and the tick it opened (-1 never).
 var door := Door.SEALED
 var door_tick := -1
 
@@ -84,7 +84,7 @@ static func press_pedestal(w: World) -> void:
 
 
 ## N2's hook: whether the sealed door opens to a press now. The remembered Crown's fight waits for the owner's brief
-## (Q13), so it stays sealed: always false.
+## so it stays sealed: always false.
 static func door_opens(_w: World) -> bool:
 	return false
 

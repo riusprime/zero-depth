@@ -1,14 +1,14 @@
 class_name DepthsTag
 extends HBoxContainer
-## v0.10.5 O6 (owner P4, 2026-11-01: "Danger, plus a separate tag"): the floor's catch-up, hidden at ×1.
-## v0.11.0 F12 (owner, F10 option C: "just the color skull and multiplier"): a small skull whose colour heats from
+## The floor's catch-up, hidden at ×1.
+## A small skull whose colour heats from
 ## bone to red with the level, and the multiplier beside it ("×1.41"). No sentence, no card, no pips. The level is
 ## the multiplier's step (LIMITS); the five colours step in lightness as well as hue, so they read without colour.
 ## It shows WorldReader.catch_up_permille() and decides nothing (EI-07). Also the pause menu's line.
 
 const FONT_SIZE := 16
 const SKULL := Vector2(19, 19)
-## Named data (F10): a multiplier (per mille) up to LIMITS[k] is level k + 1; above the last is the top level.
+## Named data: a multiplier (per mille) up to LIMITS[k] is level k + 1; above the last is the top level.
 const LIMITS: Array[int] = [1150, 1400, 1800, 2500]
 ## Bone, pale gold, amber, orange-red, deep red: lightness falls with every step.
 const COLORS: Array[Color] = [

@@ -1,7 +1,7 @@
 class_name SoloVat
 extends RefCounted
-## v0.10.5 W3-V4c (owner, 2026-11-06: "can we apply it to the rest of the enemies and test it?"): VAT for the
-## stand-alone enemies (the Needle, the Warden, the Arc Caster, the Bomb Drone; v0.11.0 S4: the Lens Drone): their
+## VAT for the
+## stand-alone enemies (the Needle, the Warden, the Arc Caster, the Bomb Drone; the Lens Drone): their
 ## reference and VAT avatars, the looks of their own StandardMaterial3D pieces, and the rig they declare (VatBake's,
 ## see its class notes).
 ##
@@ -31,8 +31,8 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_LENS_DRONE,
 	WorldReader.KIND_SCRAP_HOUND,  # v0.11.0 O17a
 	WorldReader.KIND_ROCK_LURKER,  # v0.11.0 O17b
-	WorldReader.KIND_STONE_THROWER,  # v0.11.0 O17c: on the owner's model
-	WorldReader.KIND_CINDER_PRIEST,  # v0.11.0 O17d: the owner's model, animated in code
+	WorldReader.KIND_STONE_THROWER,  # On the owner's model
+	WorldReader.KIND_CINDER_PRIEST,  # The owner's model, animated in code
 	WorldReader.KIND_KILN_BEETLE,  # v0.11.0 O17e
 ]
 ## Metas: a piece material's look (its role: &"plate", &"accent", &"unshaded"), an accent's glow drive (+ 1), a node
@@ -46,7 +46,7 @@ static func is_solo(kind: int) -> bool:
 	return KINDS.has(kind)
 
 
-## v0.11.0 F6: the Cinder Priest model, in the palette of `kind` (the Priest or the Arc Caster).
+## The Cinder Priest model, in the palette of `kind` (the Priest or the Arc Caster).
 static func _priest_of(kind: int) -> AvatarBase:
 	var a := CinderPriestAvatar.new()
 	a.kind = kind
@@ -100,7 +100,7 @@ static func _mark(n: Node) -> void:
 		var mi := c as MeshInstance3D
 		if mi != null:
 			var ms: Array = [mi.material_override]
-			if mi.mesh != null:  # v0.11.0 S4: the Lens Drone model's pieces carry theirs per surface
+			if mi.mesh != null:  # The Lens Drone model's pieces carry theirs per surface
 				for k in mi.mesh.get_surface_count():
 					ms.append(mi.get_surface_override_material(k))
 			for mat: Variant in ms:

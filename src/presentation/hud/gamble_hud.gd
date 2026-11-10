@@ -1,13 +1,13 @@
 class_name GambleHud
 extends Control
-## The gamble shrine on the HUD (v0.3.0 L19): the interact prompt by the shrine (its price, red when you can't
+## The gamble shrine on the HUD: the interact prompt by the shrine (its price, red when you can't
 ## afford it, or a note when every stat is capped), the reward rolled above the shrine when a use lands
 ## (GambleRoll, v0.11.0 F13: it replaced the big centre card and the "It failed" line) and the stats
 ## won this run (GambleStatsPanel) while you stand at the shrine or just after a win. Reads only; never takes the
-## mouse. v0.8.0 N14 (owner O72): a spent shrine says so; a failed use shows a short "It failed" line. v0.8.0 N18
+## mouse. a spent shrine says so; a failed use shows a short "It failed" line. v0.8.0 N18
 ## (owner O76: the game stops explaining): N14's odds line under the prompt (wins and chance to fail) is gone, and a
 ## spent shrine's prompt is the one word "Spent".
-## v0.10.5 W3-O20 (UI style Astral): the "It failed" line is letter-spaced Cinzel in Astral's rose;
+## UI style Astral: the "It failed" line is letter-spaced Cinzel in Astral's rose;
 ## the card and the stats panel draw their own Astral look.
 
 const POOR := Color("#FF5A4D")
@@ -53,14 +53,14 @@ func sync(reader: WorldReader) -> void:
 		var ok := reader.gamble_affordable() and not reader.gamble_exhausted() and not spent
 		var line := ""
 		var no_press := false
-		if spent:  # v0.8.0 N14 (O72): blocked after its wins
+		if spent:  # Blocked after its wins
 			line = tr("UI_GAMBLE_BLOCKED")
 			no_press = true
 		elif reader.gamble_exhausted():
 			line = tr("UI_GAMBLE_SPENT")
 			no_press = true
 		else:
-			line = tr("UI_GAMBLE_USE") % price  # v0.9.5 PR: short; too poor shows it red
+			line = tr("UI_GAMBLE_USE") % price  # Short; too poor shows it red
 		_prompt.show_prompt(reader, line, not ok, Color.WHITE, not no_press)
 	else:
 		_prompt.hide_prompt()

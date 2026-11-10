@@ -8,7 +8,7 @@ extends RefCounted
 ## legendary table, no altar. v0.8.0 RR (owner O33, "Infinite loops should eventually allow players to accumulate
 ## extremely powerful combinations"): on loop L the altar gives LegendaryTable.extra_picks(L) more picks: after a
 ## pick it stays, its offer cleared, and the next open rolls a fresh one (its own Legendary chance).
-## v0.8.0 FL (owner O91: "remove automatic level-5 grants"): a card taken here is taken as anywhere else (the v0.6.5
+## A card taken here is taken as anywhere else (the v0.6.5
 ## WN5b level-5 rule, on_pick and level_after, is gone); the altar's choices are an upgrade, an advanced or trigger
 ## card and a legendary stat card (Offers.roll_legendary).
 
@@ -22,7 +22,7 @@ static func advance(w: World) -> void:
 	w.legendary_picks = w.legendary_table.extra_picks(w.loop)  # v0.8.0 RR
 
 
-## v0.8.0 RR: a card was just taken from reward i. True when it is the legendary altar with picks left: one is used,
+## A card was just taken from reward i. True when it is the legendary altar with picks left: one is used,
 ## the offer is cleared (its other cards back in the pool) and the altar stays for the next open (Rewards.choose then
 ## keeps it). No draw.
 static func another_pick(w: World, i: int) -> bool:

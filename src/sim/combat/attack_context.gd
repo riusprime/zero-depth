@@ -1,6 +1,6 @@
 class_name AttackContext
 extends RefCounted
-## v0.6.0 MX1: what one launch of a spec needs that the spec doesn't hold (Attacks.launch): where and which way, the
+## What one launch of a spec needs that the spec doesn't hold (Attacks.launch): where and which way, the
 ## damage the caller computed (the build's factors, Overcharge, Momentum, the gamble shrine are runtime), the root
 ## chain, the effect id its hits carry, and the hook level (depth, proc coefficient in percent).
 
@@ -20,7 +20,7 @@ var step := -1
 var exclude := -1
 ## SimEvent tag bits its hits or bolts carry.
 var tags := 0
-## v0.6.0 MX2: where a lob lands (has_target; else reach_m along the angle), and how far past the origin a bolt
+## Where a lob lands (has_target; else reach_m along the angle), and how far past the origin a bolt
 ## leaves (-1: the player's muzzle, past the player's edge; a drone fires from its own position, 0).
 var target := Vector2.ZERO
 var has_target := false
@@ -28,32 +28,32 @@ var muzzle_m := -1.0
 ## Scatter Blast only: per landed pellet, the damage (the build's bolt factor carries a remainder, so it's taken
 ## per hit as before MX1), what follows a landed hit (the knockback), and each ray's end (the view's pellet ends).
 var damage_fn := Callable()
-## v0.6.0 MX4: a repeat (Twin Cast's again) or a back copy (Rearguard) never repeats or turns back again; a burst's
+## A repeat (Twin Cast's again) or a back copy (Rearguard) never repeats or turns back again; a burst's
 ## radius when the caller sizes it at run time (Vent's blast, an echo with the area stat; 0 = the spec's).
 var repeat := false
 var back := false
-## v0.8.0 MR (owner O91; SecondaryProc): a secondary attack (an Echo's repeat, a Double Slash echo; a secondary bolt's
+## A secondary attack (an Echo's repeat, a Double Slash echo; a secondary bolt's
 ## hit): its hits feed statuses at WandTable.secondary_proc_permille, its hooks' children launch at that share of the
 ## proc, and its trigger casts at that share of their damage (Attacks.run_hook).
 var secondary := false
 var radius_m := 0.0
-## v0.6.5 WN3: a charged shot's bolts are this much bigger (per mille of the spec's radius; G13 Charge).
+## A charged shot's bolts are this much bigger (per mille of the spec's radius; G13 Charge).
 var size_permille := 1000
-## v0.9.5 WB (owner Q13): this launch's bolts pierce this many more enemies than the spec (the Wisps' shots: 1).
+## This launch's bolts pierce this many more enemies than the spec (the Wisps' shots: 1).
 var extra_pierce := 0
-## v0.9.5 FC9: a wisp's own shot (Wisps._fire): a repeat in every other way, but Echo's repeat is open to it.
+## A wisp's own shot (Wisps._fire): a repeat in every other way, but Echo's repeat is open to it.
 var wisp := false
-## v0.9.5 FC4: a Lance release at full charge (Halo's six lances, Ricochet's bounce; PlayerKit._fire_bolt).
+## A Lance release at full charge (Halo's six lances, Ricochet's bounce; PlayerKit._fire_bolt).
 var lance_full := false
-## v0.10.5 W3-P10k: a Starbound Echo Cast repeat (ModifierRuntime.queue_again): with no ShotCap room its damage merges
+## A Starbound Echo Cast repeat (ModifierRuntime.queue_again): with no ShotCap room its damage merges
 ## into the next own shot (World.starbound_echo_carry) instead of being dropped.
 var echo_cast := false
-## v0.11.0 O1 (owner Q5): each hit of this launch feeds this many hits' worth of its statuses (the Lance-Laser's
+## Each hit of this launch feeds this many hits' worth of its statuses (the Lance-Laser's
 ## lance_feed, 3; SecondaryProc.of_ctx). Its hooks' children (child()) feed one.
 var feed_x := 1
 var on_landed := Callable()
 var on_ray := Callable()
-## v0.10.5 W3-O1: each travelling ring this launch lays (WandRings.launch): on_ring(from, to, start_r, end_r), where it
+## Each travelling ring this launch lays (WandRings.launch): on_ring(from, to, start_r, end_r), where it
 ## leaves, where its flight ends (against the first wall on its line) and its radius at both (the Skill's cracked wall).
 var on_ring := Callable()
 
@@ -78,5 +78,5 @@ func child(at: Vector2, p_damage: int, p_tags: int, p_effect: StringName) -> Att
 	var c := AttackContext.make(at, angle, p_damage, root, p_tags, p_effect)
 	c.depth = depth + 1
 	c.proc_pct = proc_pct / 2
-	c.repeat = repeat and not back  # v0.8.0 MR (O91): a repeat's child launches no later cast either
+	c.repeat = repeat and not back  # A repeat's child launches no later cast either
 	return c

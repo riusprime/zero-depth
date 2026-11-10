@@ -1,6 +1,6 @@
 class_name StarglowViews
 extends Node3D
-## v0.7.5 NB2: the floor's starglow pools (Starfall), drawn exactly where the sim has them (WorldReader.ice_patch with
+## The floor's starglow pools (Starfall), drawn exactly where the sim has them (WorldReader.ice_patch with
 ## surface_kind &"starglow": looks fast = is fast). It only helps (the hero runs faster on it), so it is ground, not a
 ## telegraph: none of the hostile hues, no pulse. Never casts a shadow. Presentation only.
 ## v0.8.0 MI (owner 2026-10-18: "ground star is currently a rectangle on the ground I created this texture but I want
@@ -11,7 +11,7 @@ extends Node3D
 ## the cosmetic stream, stretched over the sim's rect: every shape's trunks run out to all four sides, so the cracks
 ## reach the pool's edges, and a faint violet wash (AREA_ALPHA) keeps the rest of the rect readable, where the speed
 ## is. One mesh, one material for every pool on the floor (it was two: the faceted sheet and its rim). Without the
-## owner's textures the v0.7.5 faceted sheet and bright rim draw (L15).
+## owner's textures the v0.7.5 faceted sheet and bright rim draw.
 
 const DEEP := Color("#1B1046")
 const LIGHT := Color("#3F2C96")
@@ -24,7 +24,7 @@ const FACET_M := 0.75
 ## Stars per square metre cell grid (cells per metre) and the share of cells that hold a star.
 const STAR_CELLS_PER_M := 3.0
 const STAR_SHARE := 0.16
-## v0.8.0 MI: the owner's texture and the crack masks; metres one tile of the texture covers; the faint wash over the
+## The owner's texture and the crack masks; metres one tile of the texture covers; the faint wash over the
 ## rest of the pool (alpha) and the crack's glow colour.
 const STARS_TEX := "res://assets/textures/kit/ground_star.png"
 const CRACKS_TEX := "res://assets/textures/kit/ground_star_cracks.png"
@@ -68,7 +68,7 @@ void fragment() {
 }
 """
 
-## v0.8.0 MI: the crack. COLOR.rg is the pool's shape's cell in the mask (0 or 0.5 each); UV the place in it.
+## The crack. COLOR.rg is the pool's shape's cell in the mask (0 or 0.5 each); UV the place in it.
 const CRACK_SHADER := """
 shader_type spatial;
 render_mode unshaded, cull_disabled, depth_draw_never, shadows_disabled;
@@ -120,7 +120,7 @@ const TURNS := [
 var patch_count := 0
 var sheet: MeshInstance3D
 var rim: MeshInstance3D
-## v0.8.0 MI: true when the pools are cracks (the owner's textures), and each pool's crack shape (0..3).
+## True when the pools are cracks (the owner's textures), and each pool's crack shape (0..3).
 var cracked := false
 var shapes := PackedInt32Array()
 
@@ -155,7 +155,7 @@ func build(reader: WorldReader, seed_value: int) -> void:
 	rim = _add_mesh("StarglowRim", rs, rim_material())
 
 
-## v0.8.0 MI: the crack material (the owner's ground_star in the CRACKS shapes), or null without the textures.
+## The crack material (the owner's ground_star in the CRACKS shapes), or null without the textures.
 static func crack_material() -> ShaderMaterial:
 	if not (ResourceLoader.exists(STARS_TEX) and ResourceLoader.exists(CRACKS_TEX)):
 		return null
@@ -208,7 +208,7 @@ func _add_mesh(n: String, st: SurfaceTool, mat: Material) -> MeshInstance3D:
 	return mi
 
 
-## v0.8.0 MI: one pool as one quad over its exact rect, its crack shape's cell in the vertex colour and its turn in
+## One pool as one quad over its exact rect, its crack shape's cell in the vertex colour and its turn in
 ## the corners' UVs.
 func _crack(st: SurfaceTool, r: Rect2, shape: int, turn: Array) -> void:
 	var cell := Color(0.5 * (shape % 2), 0.5 * floorf(shape / 2.0), 0.0)

@@ -1,6 +1,6 @@
 class_name CritterBodies
 extends RefCounted
-## v0.11.0 O9 (PLAN H1, M4; ENEMIES.md H1-H5; owner Q14: "same rules, its own body"): the five horde critters'
+## PLAN H1, M4; ENEMIES.md H1-H5; owner Q14: "same rules, its own body": the five horde critters'
 ## code-made stand-in bodies (the owner's models come later: OWNER_TODO §3.2), built on a HordeAvatar and drawn through
 ## VAT on its general path (HordeVat: the body is the instance's transform, one gait loop poses the moving parts). Each
 ## is small, low and one shape at a glance, unlike the Swarmer's red beetle:
@@ -36,7 +36,7 @@ const COLORS := {
 	WorldReader.KIND_ICE_CRAB: ["#2C6DA6", "#123F66", "#24384A", "#FF4A5A"],
 	WorldReader.KIND_STAR_MOTE: ["#FFDD78", "#A898FF", "#5A5470", "#FFF4C8"],
 }
-## v0.11.0 F2: the plates' rest glow (emission energy of their own colour, as ActorViews.ROLE_GLOW): what a critter on a
+## The plates' rest glow (emission energy of their own colour, as ActorViews.ROLE_GLOW): what a critter on a
 ## dark floor is lit by; none where the body is darker than its bright floor.
 const GLOW := {
 	WorldReader.KIND_DUST_MITE: 0.0,
@@ -104,7 +104,7 @@ static func body_move(kind: int, t: float, slide: float, calm: bool) -> Array:
 	return [Vector3(m.x, m.y, 0.0), m.z]
 
 
-## v0.11.0 O9c: body_move without an Array (CritterCrowd poses a whole surge with it every frame): x, y the body's
+## body_move without an Array (CritterCrowd poses a whole surge with it every frame): x, y the body's
 ## place (forward, up), z its lean.
 static func body_move_v(kind: int, t: float, slide: float, calm: bool) -> Vector3:
 	match kind:

@@ -1,12 +1,12 @@
 class_name OnboardingHints
 extends Control
-## v0.7.5 SM (owner N8; ROADMAP §5 "Onboarding hints"): the first-run hints. Each shows once (HintStore, the
+## The first-run hints. Each shows once (HintStore, the
 ## profile's `hints` section), on a small Ember-stone slab with a cold top line at the top centre of the screen:
 ## - at a first run's start: move and aim, then attack, then dash (each closes when you do it);
 ## - when the heat first reads Hot: vent;
 ## - after the first card joins the wand: the Build page (pause → Build);
 ## - at the second floor's start: the Codex (pause → Codex).
-## v0.8.0 N18 (owner O74/O76: the game stops explaining): the hints that explained a thing (the first pick's "the wand
+## The hints that explained a thing (the first pick's "the wand
 ## reads left to right", the first trigger card, the first shop, the first open portal) are gone with their triggers;
 ## only the controls stay.
 ## Non-blocking: it never takes the mouse, the focus or an input (it only listens), and the game never waits for it.
@@ -14,7 +14,7 @@ extends Control
 ## "Show hints: Off" hides it at once. The keys it names are the live bindings of the device used last (keyboard
 ## and mouse, or a pad), so a remap or a device switch shows at once. Its clock is the screen's (a look, never an
 ## outcome: EI-03); it reads WorldReader only (EI-07). Main owns it on the UI layer, so it outlives a floor.
-## v0.10.5 W3-O17 (UI style Astral): the slab gives way to the store window's veil (AstralChrome:
+## UI style Astral: the slab gives way to the store window's veil (AstralChrome:
 ## ink fading at its sides between two fading hairlines, a star on the top one); "TIP" in tracked Cinzel, the accent.
 
 signal shown(id: StringName)
@@ -22,7 +22,7 @@ signal shown(id: StringName)
 const W := 720.0
 const PAD := Vector2(20, 12)
 const TOP := 150.0
-## v0.10.5 W3-O20: the gap under the phase lines when the hint stacks under them (px).
+## The gap under the phase lines when the hint stacks under them (px).
 const STACK_GAP := 10.0
 ## While a centre panel is open (a pick, the Swap, the shop, an event) the slab sits low instead, its bottom this far
 ## above the screen's bottom edge: under the panel's key line, over the heat meter, so it never covers the panel's
@@ -46,7 +46,7 @@ var header := HudStyle.label(13, true)
 var line := HudStyle.label(20, true)
 ## The device used last (InputRebind.KBM or PAD): the keys named follow it.
 var device := InputRebind.KBM
-## v0.10.5 W3-O20: the HUD's phase lines (Hud.phase_hud; Main sets it, may be null): a top hint sits under the ones
+## The HUD's phase lines (Hud.phase_hud; Main sets it, may be null): a top hint sits under the ones
 ## shown (the W3-O17 boss shot: the tip and the phase's announcement drew over each other at the same height).
 var stack_under: Control
 var _current := &""
@@ -63,7 +63,7 @@ var _was_choosing := false
 var _live := false
 ## A centre panel is open (the last observed tick): the slab sits low.
 var _panel_open := false
-## v0.8.0 N11 (owner O69): the hero is still arriving (the last observed tick): no hint shows and its clock waits.
+## The hero is still arriving (the last observed tick): no hint shows and its clock waits.
 var _landing := false
 
 
@@ -128,7 +128,7 @@ func end_floor() -> void:
 
 ## Reads one tick: queues the hints whose moment has come.
 func observe(reader: WorldReader) -> void:
-	if _landing != reader.arriving():  # v0.8.0 N11: the hints wait for the hero to land
+	if _landing != reader.arriving():  # The hints wait for the hero to land
 		_landing = reader.arriving()
 		_refresh_visible()
 	if store == null or not store.enabled():
@@ -254,7 +254,7 @@ func _place() -> void:
 	offset_bottom = y + h
 
 
-## v0.10.5 W3-O20: the top hint's top (px): TOP, or under the phase lines shown (`stack_under`'s visible children).
+## The top hint's top (px): TOP, or under the phase lines shown (`stack_under`'s visible children).
 func top_y() -> float:
 	var y := TOP
 	if (

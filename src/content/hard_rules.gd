@@ -1,6 +1,6 @@
 class_name HardRules
 extends RefCounted
-## v0.9.5 BH2 (BOSSES_HARD.md B1-B5; BossHard): the content rules of the five harder spells (their own file: the
+## BOSSES_HARD.md B1-B5; BossHard: the content rules of the five harder spells (their own file: the
 ## definitions stay small). Every telegraph of these spells is at least HARD_MIN_TELEGRAPH_TICKS (0.55 s, the owner's
 ## rule for them), a turn is a real speed, a lead is real, and a grid with safe cells leaves nowhere to hide but them.
 
@@ -19,20 +19,20 @@ const PARAMS := {
 const MAX_SAFE_GRID := 5
 ## The points a boss keeps (BossStore.MAX_PTS; a test pins the match): crosses and their seconds fit in them.
 const MAX_POINTS := 8
-## v0.9.5 BH3 (B8): the Crossfire's lines turn at most this fast (degrees a second).
+## The Crossfire's lines turn at most this fast (degrees a second).
 const MAX_TRACK_DPS := 90.0
-## v0.9.5 BH3 (B9): the narrowest path the counter-rotating spirals must leave (metres; a test measures it).
+## The narrowest path the counter-rotating spirals must leave (metres; a test measures it).
 const MIN_SPIRAL_PATH_M := 1.6
 ## The hero's radius the grid's pockets are measured against (the base hero: PlayerDefinition.radius_m).
 const HERO_RADIUS_M := 0.35
-## v0.9.5 BH4 (T2, T3): the ring stream and the waves keep to these (a ring is 1..6 s apart, a wave 2..10 s apart, one
+## The ring stream and the waves keep to these (a ring is 1..6 s apart, a wave 2..10 s apart, one
 ## or two waves at a time).
 const MIN_STREAM_SECONDS := 1.0
 const MAX_STREAM_SECONDS := 6.0
 const MIN_WAVE_SECONDS := 2.0
 const MAX_WAVE_SECONDS := 10.0
 const MAX_WAVES_AT_ONCE := 2
-## v0.9.5 BH6 (HC5): the owner's rule for The Fallen's interphase: every telegraph at least 0.8 s (48 ticks).
+## The owner's rule for The Fallen's interphase: every telegraph at least 0.8 s (48 ticks).
 const MIN_INTERPHASE_TELEGRAPH_TICKS := 48
 
 
@@ -48,7 +48,7 @@ static func validate(
 				issues.append(ValidationIssue.new(&"param_unknown", path, where + msg))
 	if a.move == &"wave":
 		validate_wave(a, issues, path, where)  # v0.9.5 BH4
-	if a.move == &"interphase":  # v0.9.5 BH6 (HC5): every interphase telegraph is at least 0.8 s
+	if a.move == &"interphase":  # Every interphase telegraph is at least 0.8 s
 		if int(round(a.telegraph_seconds * 60.0)) < MIN_INTERPHASE_TELEGRAPH_TICKS:
 			issues.append(
 				ValidationIssue.new(&"telegraph_short", path, where + "telegraph >= 0.8 s")
@@ -202,7 +202,7 @@ static func validate_spiral(d: BulletPatternDefinition, issues: Array[Validation
 		)
 
 
-## A Crossfire that tracks (B8): both params, a real turn speed, and a telegraph that shows the lines the whole time
+## A Crossfire that tracks: both params, a real turn speed, and a telegraph that shows the lines the whole time
 ## they follow the hero (at least lines_follow_seconds, and at least 0.55 s).
 static func _validate_follow(
 	a: BossAttackDefinition, issues: Array[ValidationIssue], path: String, where: String

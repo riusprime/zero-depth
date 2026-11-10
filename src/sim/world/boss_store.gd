@@ -1,13 +1,13 @@
 # gdlint: disable=max-public-methods
 class_name BossStore
 extends RefCounted
-## The live bosses' own state (v0.3.0 C), beside their actor entry (which holds the position, HP, the AI state and
+## The live bosses' own state, beside their actor entry (which holds the position, HP, the AI state and
 ## its locks). Parallel arrays in ascending actor-id order; an entry leaves when its boss dies (World._remove_dead).
 ## Hashed only in a world that has boss tables, so the kernel golden is unchanged.
 
 ## Points a move may lock per boss (lanes' lengths, egg and shell spots).
 const MAX_PTS := 8
-## v0.11.0 F8: the arena hazards' parallel arrays (BossHazard), by type.
+## The arena hazards' parallel arrays (BossHazard), by type.
 const HZ_INT_FIELDS: Array[StringName] = [
 	&"hz_id", &"hz_boss", &"hz_kind", &"hz_from", &"hz_arm", &"hz_until", &"hz_slow"
 ]
@@ -34,14 +34,14 @@ const INT_FIELDS: Array[StringName] = [
 	&"dash_t",
 	&"gate_t"
 ]
-## v0.9.0 NB2: the twin pairs' fields (BossTwin), one entry per pair.
+## The twin pairs' fields (BossTwin), one entry per pair.
 const TWIN_FIELDS: Array[StringName] = [
 	&"twin_lead",
 	&"twin_body",
 	&"twin_angry",
 	&"twin_anger_t",
 	&"twin_burn_cd",
-	&"twin_phase",  # v0.11.0 O5: the roles' phase, its clock, whose turn, the body that can be hit (the hint)
+	&"twin_phase",  # The roles' phase, its clock, whose turn, the body that can be hit (the hint)
 	&"twin_clock",
 	&"twin_turn",
 	&"twin_focus",
@@ -74,11 +74,11 @@ var chained := PackedInt32Array()
 var fight_t := PackedInt32Array()
 var close_t := PackedInt32Array()
 var hazard_cd := PackedInt32Array()
-## v0.3.5 AI (owner F3): ticks the player has stayed out of reach (the gap-closer's clock), and ticks the last dash's
+## Ticks the player has stayed out of reach (the gap-closer's clock), and ticks the last dash's
 ## landing point (dash_x, dash_y) stays the target of aimed attacks (0 = none).
 var gap_t := PackedInt32Array()
 var dash_t := PackedInt32Array()
-## v0.5.5 DS (D7): ticks left of a phase gate's transition (BossGates; 0 = none).
+## Ticks left of a phase gate's transition (BossGates; 0 = none).
 var gate_t := PackedInt32Array()
 var dash_x := PackedFloat32Array()
 var dash_y := PackedFloat32Array()
@@ -88,7 +88,7 @@ var arena := Rect2()
 ## Locked points, MAX_PTS per boss: [x, y] spots, or a lane's length in x.
 var pts_x := PackedFloat32Array()
 var pts_y := PackedFloat32Array()
-## v0.8.0 BS1 (owner O5; BossSignatures): the signature mechanics' standing pieces, lists of their own (not per
+## The signature mechanics' standing pieces, lists of their own (not per
 ## boss entry; each names its boss's actor id). Empty until a fight raises one, and hashed only then, so every
 ## fight before BS1 hashes as before (WorldSnapshot.ADDED_SINCE_V05 lists them: an older save has none).
 ## S1, the Gatekeeper's stone pillars: centre, half side (metres), the tick each rose and the tick it sinks. Each is
@@ -108,7 +108,7 @@ var jav_boss := PackedInt32Array()
 var jav_attack := PackedInt32Array()
 var jav_from := PackedInt32Array()
 var jav_back := PackedInt32Array()
-## v0.11.0 F9 (owner; BossGreatJavelin): the Warlord's great javelin, one per boss at most: its boss's actor id and
+## The Warlord's great javelin, one per boss at most: its boss's actor id and
 ## attack, its phase (THROW, EMBEDDED, RECALL_WARN, RETURN), the tick that phase began and its flight's ticks, whether
 ## this flight has hit, the angle it was thrown along, where it is or flew from, and where its flight ends.
 var gj_boss := PackedInt32Array()
@@ -122,7 +122,7 @@ var gj_x := PackedFloat32Array()
 var gj_y := PackedFloat32Array()
 var gj_tox := PackedFloat32Array()
 var gj_toy := PackedFloat32Array()
-## v0.8.0 BS2 (owner O5; S6), the Foundry's molten floor: each piece an axis-aligned box (centre, half sizes in
+## v0.8.0 BS2, the Foundry's molten floor: each piece an axis-aligned box (centre, half sizes in
 ## metres), the tick it was laid and the tick it cools, its boss's actor id and the attack that laid it.
 var lava_x := PackedFloat32Array()
 var lava_y := PackedFloat32Array()
@@ -144,14 +144,14 @@ var melt_y := PackedFloat32Array()
 var melt_ex := PackedFloat32Array()
 var melt_ey := PackedFloat32Array()
 var melt_exit := PackedInt32Array()
-## S6: ticks until molten floor (lava or the melt) may burn the player again (0 while none is down).
+## Ticks until molten floor (lava or the melt) may burn the player again (0 while none is down).
 var burn_cd := 0
-## v0.9.0 NB1 (BossTide): the signature's cadence, one entry per live boss that has one (the Tidecaller): its actor
+## BossTide: the signature's cadence, one entry per live boss that has one (the Tidecaller): its actor
 ## id and the tick its signature is next due. Empty for every other boss, and hashed only while an entry exists
 ## (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
 var sig_boss := PackedInt32Array()
 var sig_due := PackedInt32Array()
-## v0.9.0 NB2 (BossTwin): the twin bosses, one entry per pair alive (the Twin Wardens): the boss's actor id (its
+## BossTwin: the twin bosses, one entry per pair alive (the Twin Wardens): the boss's actor id (its
 ## bar, its defeat) and its twin's, the body angry now (its actor id, 0 = neither) and the ticks its anger has left,
 ## and the ticks until the chain may burn the player again. Empty for every other boss, and hashed only while a pair
 ## lives (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
@@ -160,14 +160,14 @@ var twin_body := PackedInt32Array()
 var twin_angry := PackedInt32Array()
 var twin_anger_t := PackedInt32Array()
 var twin_burn_cd := PackedInt32Array()
-## v0.11.0 O5 (owner L7, Q11, Q29; BossTwin): the phase the pair's roles are in (its boss's), the ticks since it began
+## The phase the pair's roles are in (its boss's), the ticks since it began
 ## (the standing-back bolt's and the last phase's swap clock), the body whose turn it is to attack next in the last
 ## phase (an actor id) and the body to hit now (the leader; in the last phase the exposed one; the hint follows it).
 var twin_phase := PackedInt32Array()
 var twin_clock := PackedInt32Array()
 var twin_turn := PackedInt32Array()
 var twin_focus := PackedInt32Array()
-## v0.9.0 NB3 (BossJudge): the Clockwork Judge's echo. echo_boss is the actor id of the Judge recording (-1 = none);
+## BossJudge: the Clockwork Judge's echo. echo_boss is the actor id of the Judge recording (-1 = none);
 ## echo_x/echo_y the player's last positions, oldest first (one every echo_gap_ticks, at most echo_points); path_x,
 ## path_y the echo locked as it started (the points left after the safe spot) and path_k each one's step (it strikes
 ## on active tick path_k × echo_gap_ticks). Hashed only while a Judge records (WorldSnapshot.ADDED_SINCE_V05: an
@@ -178,10 +178,10 @@ var echo_y := PackedFloat32Array()
 var path_x := PackedFloat32Array()
 var path_y := PackedFloat32Array()
 var path_k := PackedInt32Array()
-## v0.9.0 NB4 (BossShade): the Lantern Shade's light. shade_boss is the Shade's actor id (-1 = none); shade_dark 1 while
+## BossShade: the Lantern Shade's light. shade_boss is the Shade's actor id (-1 = none); shade_dark 1 while
 ## a Lights Out has the room snuffed; shade_at the tick its next Lights Out snuffs the room and relights the lanterns
 ## (-1 = none pending) and shade_from the tick that Lights Out began; NB4b: shade_until the tick the dark lifts (-1 =
-## not dark, or a table with no dark_hold_ticks: dark until the Shade dies); v0.11.0 O4: while lit after a dark,
+## not dark, or a table with no dark_hold_ticks: dark until the Shade dies); while lit after a dark,
 ## shade_until is the tick the dark falls again (the table's light_hold_ticks; -1 = lit until the next Lights Out);
 ## lamp_x/lamp_y the room's edge lanterns and lamp_t each one's lit ticks left (0 = out). Hashed only while a Shade
 ## lives (WorldSnapshot.ADDED_SINCE_V05: an
@@ -194,7 +194,7 @@ var shade_until := -1
 var lamp_x := PackedFloat32Array()
 var lamp_y := PackedFloat32Array()
 var lamp_t := PackedInt32Array()
-## v0.9.5 BH4 (BossStream): the Tidecaller's streams. One entry per live boss with them (its actor id, the tick its next
+## BossStream: the Tidecaller's streams. One entry per live boss with them (its actor id, the tick its next
 ## ring is due, the rings fired and the tick its next waves form), and one per crossing wave on the floor (its boss's
 ## actor id, its wave attack, the tick it formed, the way it travels (1/4096 turns), 1 once it has hit the player,
 ## the middle of its starting line on the wall, its length, and how far its middle travels). Hashed only while any
@@ -213,14 +213,14 @@ var wv_x := PackedFloat32Array()
 var wv_y := PackedFloat32Array()
 var wv_len := PackedFloat32Array()
 var wv_run := PackedFloat32Array()
-## v0.11.0 O3 (owner L5, Q9 a; BossQuake): one entry per live boss that has raised quake pillars (the Gatekeeper,
+## One entry per live boss that has raised quake pillars (the Gatekeeper,
 ## from its phase 2): its actor id, the phase it counts breaks in, and the stuns its broken pillars gave in that phase.
 ## The pillars themselves are S1 pillars that never sink by time (pillar_until BossQuake.UNTIL). Hashed only while an
 ## entry exists (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
 var quake_boss := PackedInt32Array()
 var quake_phase := PackedInt32Array()
 var quake_stuns := PackedInt32Array()
-## v0.11.0 F8 (owner 4.2; BossHazard): the bosses' arena hazards, oldest first: [hz_id, its boss, its kind
+## The bosses' arena hazards, oldest first: [hz_id, its boss, its kind
 ## (HazardTable.Kind), centre, radius (m), the tick it was placed, the tick it arms, the tick it ends, its slow (per
 ## mille of the hero's speed, 1000 = none)]. hz_next is the next hz_id, hz_burn_cd the clock of its damage over time,
 ## hz_storm 1 between an Egg Storm's first strike and the storm's chosen egg, hz_egg the eggs that leave a pool when
@@ -302,23 +302,23 @@ func hash_into(h: StateHasher) -> void:
 		h.add_f32(v)
 	if pillar_x.size() + jav_x.size() > 0:
 		_hash_signatures(h)
-	if lava_x.size() + melt_boss.size() > 0:  # v0.8.0 BS2: only while molten floor is down
+	if lava_x.size() + melt_boss.size() > 0:  # Only while molten floor is down
 		_hash_molten(h)
-	if not gj_boss.is_empty():  # v0.11.0 F9: only while a great javelin is out
+	if not gj_boss.is_empty():  # Only while a great javelin is out
 		h.add_int(-9)
 		for f in [gj_boss, gj_attack, gj_phase, gj_from, gj_life, gj_hit, gj_a]:
 			h.add_ints(f)
 		for f in [gj_x, gj_y, gj_tox, gj_toy]:
 			h.add_f32s(f)
-	if not sig_boss.is_empty():  # v0.9.0 NB1: only while a boss with a cadence lives
+	if not sig_boss.is_empty():  # Only while a boss with a cadence lives
 		h.add_int(-2)
 		h.add_ints(sig_boss)
 		h.add_ints(sig_due)
-	if not twin_lead.is_empty():  # v0.9.0 NB2: only while a twin pair lives
+	if not twin_lead.is_empty():  # Only while a twin pair lives
 		h.add_int(-3)
 		for f: StringName in TWIN_FIELDS:
 			h.add_ints(get(f))
-	if echo_boss >= 0:  # v0.9.0 NB3: only while a Clockwork Judge records
+	if echo_boss >= 0:  # Only while a Clockwork Judge records
 		h.add_int(-4)
 		h.add_int(echo_boss)
 		h.add_f32s(echo_x)
@@ -326,13 +326,13 @@ func hash_into(h: StateHasher) -> void:
 		h.add_f32s(path_x)
 		h.add_f32s(path_y)
 		h.add_ints(path_k)
-	if shade_boss >= 0:  # v0.9.0 NB4: only while a Lantern Shade lives
+	if shade_boss >= 0:  # Only while a Lantern Shade lives
 		h.add_int(-5)
 		h.add_ints(PackedInt32Array([shade_boss, shade_dark, shade_at, shade_from, shade_until]))
 		h.add_f32s(lamp_x)
 		h.add_f32s(lamp_y)
 		h.add_ints(lamp_t)
-	if not str_boss.is_empty() or not wv_boss.is_empty():  # v0.9.5 BH4: only while a Tidecaller's streams run
+	if not str_boss.is_empty() or not wv_boss.is_empty():  # Only while a Tidecaller's streams run
 		h.add_int(-6)
 		for f: StringName in [&"str_boss", &"str_ring_due", &"str_ring_n", &"str_wave_due"]:
 			h.add_ints(get(f))
@@ -340,12 +340,12 @@ func hash_into(h: StateHasher) -> void:
 			h.add_ints(get(f))
 		for f: StringName in [&"wv_x", &"wv_y", &"wv_len", &"wv_run"]:
 			h.add_f32s(get(f))
-	if not quake_boss.is_empty():  # v0.11.0 O3: only while a boss with quake pillars lives
+	if not quake_boss.is_empty():  # Only while a boss with quake pillars lives
 		h.add_int(-7)
 		h.add_ints(quake_boss)
 		h.add_ints(quake_phase)
 		h.add_ints(quake_stuns)
-	if hz_next > 0 or hz_storm != 0 or not hz_egg.is_empty():  # v0.11.0 F8: only once a boss has used its hazards
+	if hz_next > 0 or hz_storm != 0 or not hz_egg.is_empty():  # Only once a boss has used its hazards
 		h.add_int(-8)
 		for f: StringName in HZ_INT_FIELDS:
 			h.add_ints(get(f))
@@ -355,7 +355,7 @@ func hash_into(h: StateHasher) -> void:
 		h.add_ints(hz_egg)
 
 
-## v0.11.0 F8: removes arena hazard k (the arrays stay oldest first).
+## Removes arena hazard k (the arrays stay oldest first).
 func remove_hazard(k: int) -> void:
 	for f: StringName in HZ_INT_FIELDS:
 		var ai: PackedInt32Array = get(f)
@@ -367,12 +367,12 @@ func remove_hazard(k: int) -> void:
 		set(f, af)
 
 
-## v0.9.5 BH4: the stream entry of boss `boss_id`, or -1.
+## The stream entry of boss `boss_id`, or -1.
 func str_of(boss_id: int) -> int:
 	return str_boss.find(boss_id)
 
 
-## v0.9.5 BH4: a new stream entry for boss `boss_id` (rings and waves due at the given ticks).
+## A new stream entry for boss `boss_id` (rings and waves due at the given ticks).
 func add_stream(boss_id: int, ring_due: int, wave_due: int) -> int:
 	str_boss.append(boss_id)
 	str_ring_due.append(ring_due)
@@ -381,7 +381,7 @@ func add_stream(boss_id: int, ring_due: int, wave_due: int) -> int:
 	return str_boss.size() - 1
 
 
-## v0.9.5 BH4: removes stream entry k.
+## Removes stream entry k.
 func remove_stream(k: int) -> void:
 	for f: StringName in [&"str_boss", &"str_ring_due", &"str_ring_n", &"str_wave_due"]:
 		var ai: PackedInt32Array = get(f)
@@ -389,7 +389,7 @@ func remove_stream(k: int) -> void:
 		set(f, ai)
 
 
-## v0.9.5 BH4: removes crossing wave k.
+## Removes crossing wave k.
 func remove_wave(k: int) -> void:
 	for f: StringName in [&"wv_boss", &"wv_atk", &"wv_from", &"wv_dir", &"wv_hit"]:
 		var ai: PackedInt32Array = get(f)
@@ -401,7 +401,7 @@ func remove_wave(k: int) -> void:
 		set(f, af)
 
 
-## v0.9.0 NB4: forgets the Lantern Shade's light (its boss gone: the room relights).
+## Forgets the Lantern Shade's light (its boss gone: the room relights).
 func clear_shade() -> void:
 	shade_boss = -1
 	shade_dark = 0
@@ -413,7 +413,7 @@ func clear_shade() -> void:
 	lamp_t = PackedInt32Array()
 
 
-## v0.9.0 NB3: forgets the Clockwork Judge's echo (its boss gone).
+## Forgets the Clockwork Judge's echo (its boss gone).
 func clear_echo() -> void:
 	echo_boss = -1
 	echo_x = PackedFloat32Array()
@@ -423,7 +423,7 @@ func clear_echo() -> void:
 	path_k = PackedInt32Array()
 
 
-## v0.8.0 BS2 (S6): the lava, the meltdown and the burn clock.
+## The lava, the meltdown and the burn clock.
 func _hash_molten(h: StateHasher) -> void:
 	for f in [lava_x, lava_y, lava_hx, lava_hy, melt_r0, melt_x, melt_y, melt_ex, melt_ey]:
 		h.add_f32s(f)
@@ -434,7 +434,7 @@ func _hash_molten(h: StateHasher) -> void:
 	h.add_int(burn_cd)
 
 
-## v0.8.0 BS1: the pillars and javelins, only while any stands (and a sentinel between the two lists).
+## The pillars and javelins, only while any stands (and a sentinel between the two lists).
 func _hash_signatures(h: StateHasher) -> void:
 	h.add_f32s(pillar_x)
 	h.add_f32s(pillar_y)
@@ -449,7 +449,7 @@ func _hash_signatures(h: StateHasher) -> void:
 		h.add_ints(f)
 
 
-## v0.8.0 BS1: removes pillar k.
+## Removes pillar k.
 func remove_pillar(k: int) -> void:
 	for f: StringName in [&"pillar_x", &"pillar_y", &"pillar_h"]:
 		var af: PackedFloat32Array = get(f)
@@ -461,7 +461,7 @@ func remove_pillar(k: int) -> void:
 		set(f, ai)
 
 
-## v0.8.0 BS2: removes lava piece k.
+## Removes lava piece k.
 func remove_lava(k: int) -> void:
 	for f: StringName in [&"lava_x", &"lava_y", &"lava_hx", &"lava_hy"]:
 		var af: PackedFloat32Array = get(f)
@@ -473,7 +473,7 @@ func remove_lava(k: int) -> void:
 		set(f, ai)
 
 
-## v0.8.0 BS2: removes meltdown k.
+## Removes meltdown k.
 func remove_melt(k: int) -> void:
 	for f: StringName in [&"melt_r0", &"melt_x", &"melt_y", &"melt_ex", &"melt_ey"]:
 		var af: PackedFloat32Array = get(f)
@@ -485,24 +485,24 @@ func remove_melt(k: int) -> void:
 		set(f, ai)
 
 
-## v0.9.0 NB1: the cadence entry of boss `boss_id`, or -1.
+## The cadence entry of boss `boss_id`, or -1.
 func sig_of(boss_id: int) -> int:
 	return sig_boss.find(boss_id)
 
 
-## v0.9.0 NB1: removes cadence entry k.
+## Removes cadence entry k.
 func remove_sig(k: int) -> void:
 	sig_boss.remove_at(k)
 	sig_due.remove_at(k)
 
 
-## v0.9.0 NB2: the twin pair actor `id` is in (as the boss or its twin), or -1.
+## The twin pair actor `id` is in (as the boss or its twin), or -1.
 func twin_of(id: int) -> int:
 	var k := twin_lead.find(id)
 	return k if k >= 0 else twin_body.find(id)
 
 
-## v0.9.0 NB2: a new twin pair (boss `lead`, twin `body`), calm, its chain ready.
+## A new twin pair (boss `lead`, twin `body`), calm, its chain ready.
 func add_twin(lead: int, body: int) -> void:
 	for f: StringName in TWIN_FIELDS:
 		var ai: PackedInt32Array = get(f)
@@ -512,7 +512,7 @@ func add_twin(lead: int, body: int) -> void:
 	twin_body[twin_body.size() - 1] = body
 
 
-## v0.9.0 NB2: removes twin pair k.
+## Removes twin pair k.
 func remove_twin(k: int) -> void:
 	for f: StringName in TWIN_FIELDS:
 		var ai: PackedInt32Array = get(f)
@@ -520,7 +520,7 @@ func remove_twin(k: int) -> void:
 		set(f, ai)
 
 
-## v0.11.0 F9: removes great javelin k.
+## Removes great javelin k.
 func remove_great_javelin(k: int) -> void:
 	for f: StringName in [&"gj_x", &"gj_y", &"gj_tox", &"gj_toy"]:
 		var af: PackedFloat32Array = get(f)
@@ -534,7 +534,7 @@ func remove_great_javelin(k: int) -> void:
 		set(f, ai)
 
 
-## v0.8.0 BS1: removes javelin k.
+## Removes javelin k.
 func remove_javelin(k: int) -> void:
 	for f: StringName in [&"jav_x", &"jav_y"]:
 		var af: PackedFloat32Array = get(f)
@@ -546,12 +546,12 @@ func remove_javelin(k: int) -> void:
 		set(f, ai)
 
 
-## v0.11.0 O3: the quake entry of boss `boss_id`, or -1.
+## The quake entry of boss `boss_id`, or -1.
 func quake_of(boss_id: int) -> int:
 	return quake_boss.find(boss_id)
 
 
-## v0.11.0 O3: removes quake entry k.
+## Removes quake entry k.
 func remove_quake(k: int) -> void:
 	quake_boss.remove_at(k)
 	quake_phase.remove_at(k)

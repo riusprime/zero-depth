@@ -1,11 +1,11 @@
 class_name BossShieldView
 extends Node3D
-## v0.7.5 BF1 (owner N15, "Shielded during big patterns"; BOSS_FIGHTS.md rule 3): while a boss fires its signature
+## While a boss fires its signature
 ## pattern (WorldReader.boss_shielded) a clear crystal shell in the boss's colour stands round it: low-poly facets that
 ## turn slowly, a brighter rim, rising in over SHOW_S as the shield comes up and gone when it opens. The player's hits
 ## spark off it (HitFeel already bursts on TAG_BLOCKED). Also the shell a burst pattern lobs (its telegraph's "lob",
-## from the boss to its locked landing circle; v0.7.5 BF2: an egg onto each locked circle of a marks attack with a
-## pattern, the Brood Mother's Egg Storm). v0.8.0 FB1 (FINAL_BOSS.md F4): the Colossus's boulders, a code-made 3D
+## from the boss to its locked landing circle; an egg onto each locked circle of a marks attack with a
+## pattern, the Brood Mother's Egg Storm). FINAL_BOSS.md F4: the Colossus's boulders, a code-made 3D
 ## boulder (faceted dark violet stone with glowing red cracks, BOULDER_M across) tumbling on its arc.
 ## Looks only (EI-07).
 
@@ -17,21 +17,21 @@ const COLORS := {
 	WorldReader.KIND_HIVE_LENS: Color("#FF4AA8"),
 	WorldReader.KIND_SIEGE_ENGINE: Color("#FF9A3A"),
 	WorldReader.KIND_FOUNDRY: Color("#FFE08A"),
-	WorldReader.KIND_COLOSSUS: Color("#C060FF"),  # v0.8.0 FB1: the final boss's violet
+	WorldReader.KIND_COLOSSUS: Color("#C060FF"),  # The final boss's violet
 	WorldReader.KIND_PRISM: Color("#FF4A6A"),
 	WorldReader.KIND_NEMESIS: Color("#B070FF"),
-	WorldReader.KIND_TIDECALLER: Color("#5FE0A8"),  # v0.9.0 NB1: sea green (not the hero's cyan)
-	WorldReader.KIND_TWIN_WARDEN: Color("#FFB347"),  # v0.9.0 NB2: amber
+	WorldReader.KIND_TIDECALLER: Color("#5FE0A8"),  # Sea green (not the hero's cyan)
+	WorldReader.KIND_TWIN_WARDEN: Color("#FFB347"),  # Amber
 	WorldReader.KIND_TWIN_WARDEN_VIOLET: Color("#B98CFF"),  # and violet
-	WorldReader.KIND_CLOCKWORK_JUDGE: Color("#E8B84A"),  # v0.9.0 NB3: brass gold
-	WorldReader.KIND_LANTERN_SHADE: Color("#F3DC9A"),  # v0.9.0 NB4: pale lantern gold
+	WorldReader.KIND_CLOCKWORK_JUDGE: Color("#E8B84A"),  # Brass gold
+	WorldReader.KIND_LANTERN_SHADE: Color("#F3DC9A"),  # Pale lantern gold
 }
 const DEFAULT_COLOR := Color("#E6E0FF")
 const SHOW_S := 0.15
 const SPIN := 0.5
-## v0.7.5 BF2: lobbed shells are keyed boss id × LOB_KEYS (a burst's), + 1 + k (marker k's egg).
+## Lobbed shells are keyed boss id × LOB_KEYS (a burst's), + 1 + k (marker k's egg).
 const LOB_KEYS := 16
-## v0.8.0 FB1: the Colossus's boulder: its size (m) and its tumble (radians a second; none with reduced motion).
+## The Colossus's boulder: its size (m) and its tumble (radians a second; none with reduced motion).
 const BOULDER_M := 1.1
 const BOULDER_SPIN := 4.0
 
@@ -40,10 +40,10 @@ var _shells := {}
 ## Boss id -> the lobbed shell's node.
 var _lobs := {}
 var _lob_mat := StandardMaterial3D.new()
-## v0.7.5 BF2: the Brood Mother's eggs: a pale shell glowing acid green.
+## The Brood Mother's eggs: a pale shell glowing acid green.
 var _egg_mat := StandardMaterial3D.new()
 var _boulder_mat := StandardMaterial3D.new()
-## v0.8.0 FB1: the lobs that are boulders (their keys).
+## The lobs that are boulders (their keys).
 var _boulders := {}
 var _t := 0.0
 
@@ -83,12 +83,12 @@ func sync(reader: WorldReader) -> void:
 		var tg := reader.telegraph(i)
 		if not tg.is_empty() and tg.has("lob"):
 			lobs[id * LOB_KEYS] = tg["lob"]
-		if not tg.is_empty() and tg.has("items"):  # v0.7.5 BF2: an egg per locked circle
+		if not tg.is_empty() and tg.has("items"):  # An egg per locked circle
 			var items: Array = tg["items"]
 			for k in items.size():
 				if (items[k] as Dictionary).has("lob"):
 					lobs[id * LOB_KEYS + 1 + k] = items[k]["lob"]
-					if reader.actor_kind(i) == WorldReader.KIND_COLOSSUS:  # v0.8.0 FB1: a boulder
+					if reader.actor_kind(i) == WorldReader.KIND_COLOSSUS:  # A boulder
 						boulders[id * LOB_KEYS + 1 + k] = true
 	for id in _shells.keys():
 		if not seen.has(id):
@@ -137,14 +137,14 @@ func lob_count() -> int:
 	return _lobs.size()
 
 
-## v0.8.0 FB1: the boulders in the air now (tests and the tour).
+## The boulders in the air now (tests and the tour).
 func boulder_count() -> int:
 	return _boulders.size()
 
 
 func _process(delta: float) -> void:
 	_t += delta
-	if not ViewPrefs.reduced_motion:  # v0.8.0 FB1: the boulders tumble
+	if not ViewPrefs.reduced_motion:  # The boulders tumble
 		for id in _boulders:
 			(_lobs[id] as Node3D).rotation = Vector3(_t * BOULDER_SPIN, _t * 0.7, id * 0.9)
 	for id in _shells:

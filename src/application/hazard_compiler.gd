@@ -1,6 +1,6 @@
 class_name HazardCompiler
 extends RefCounted
-## v0.11.0 F8 (owner 4.2; BossHazard): compiles a boss's arena hazards (BossDefinition.hazard, HazardRules.SPEC) into
+## Compiles a boss's arena hazards (BossDefinition.hazard, HazardRules.SPEC) into
 ## its table's HazardTable, in sim units (its own file: ContentCompiler is at its line limit).
 
 

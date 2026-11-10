@@ -7,7 +7,7 @@ extends Node3D
 
 ## Faster than this many ticks between two syncs is a gap, not motion (the velocity is dropped).
 const MOTION_GAP_TICKS := 30
-## v0.8.0 TG: the windup tell (tell_crouch / tell_glow): the crouch is full by this share of the windup, the flash
+## The windup tell (tell_crouch / tell_glow): the crouch is full by this share of the windup, the flash
 ## runs from TELL_FLASH_FROM to the strike, the extra glow (a multiple of the accent's rest energy) at the end of
 ## the climb and at the flash, and the flash's flicker rate (none with reduced motion). Starting values.
 const TELL_CROUCH_BY := 0.6
@@ -15,7 +15,7 @@ const TELL_FLASH_FROM := 0.8
 const TELL_GLOW_CLIMB := 1.5
 const TELL_GLOW_FLASH := 2.5
 const TELL_FLICKER_HZ := 9.0
-## v0.8.0 GF2 (owner O20: "the enemy should flinch. That doesn't mean to move"): a hit's flinch, a pose recoil away
+## A hit's flinch, a pose recoil away
 ## from the hit drawn on this node only (the sim body never moves): FLINCH_SECONDS long, the lean back (radians) and
 ## the squash (the share the body shortens; it widens by half that) at full strength, peaking at FLINCH_PEAK of the
 ## way and snapping back with a small overshoot (FLINCH_SNAP). A new hit restarts it only once the last one has run
@@ -28,10 +28,10 @@ const FLINCH_PEAK := 0.25
 const FLINCH_SNAP := 0.18
 const FLINCH_RETRIGGER_S := 0.12
 const FLINCH_CALM := 0.4
-## v0.8.0 GF3 (owner O22): a Blade hit also knocks the pose away from the swing by up to FLINCH_KNOCK_M (metres, at
+## A Blade hit also knocks the pose away from the swing by up to FLINCH_KNOCK_M (metres, at
 ## the flinch's peak and strength 1; the node only, back to rest exactly). Starting value.
 const FLINCH_KNOCK_M := 0.09
-## v0.8.0 P1 (owner O26: "Their arm movements don't communicate attacks properly"): every melee enemy's strike reads
+## Every melee enemy's strike reads
 ## in two beats. The strike pose (claws, fists, shield, mandibles drawn back or up) is fully raised by STRIKE_RAISE_BY
 ## of the windup's progress (the sim's telegraph progress, not a timer) and held there to the hit; at the hit tick (the
 ## sim's ACTIVE state, first seen by a sync) the strike snaps out over STRIKE_SNAP_S, accelerating, stays out while the
@@ -42,11 +42,11 @@ const STRIKE_SNAP_S := 0.07
 const STRIKE_HOLD_S := 0.12
 const STRIKE_BACK_S := 0.35
 
-## v0.9.5 PF5: the skeleton of this avatar's merged body (RigMerge), or null while its pieces draw as they were built.
+## The skeleton of this avatar's merged body (RigMerge), or null while its pieces draw as they were built.
 var merged_rig: MergedRig
 ## The body materials (ActorViews flashes them on a hit).
 var body_materials: Array[StandardMaterial3D] = []
-## v0.8.0 HR (O89): for an avatar on EnemyLooks' shared materials (the horde kinds, the Charger and Hatchling): the
+## For an avatar on EnemyLooks' shared materials (the horde kinds, the Charger and Hatchling): the
 ## biome's cast on the grey parts (ActorViews.enemy_tint) and the role glow's energy (ActorViews.role_glow_energy;
 ## 0: none), set by ActorViews before setup(): they pick the shared body materials (they were applied to the avatar's
 ## own materials after it was built: ActorViews.tint_greys / role_glow). Its pieces carrying a body plate (the hit
@@ -62,18 +62,18 @@ var _last_pos := Vector2.ZERO
 var _vel := Vector2.ZERO
 # Frame time since the model was built (seconds).
 var _t := 0.0
-# v0.8.0 GF2: the flinch running (seconds into it; FLINCH_SECONDS or more: none), its strength, the push's direction
+# The flinch running (seconds into it; FLINCH_SECONDS or more: none), its strength, the push's direction
 # on the sim plane (away from the hit), and this node's own transform at rest (a Hatchling is built at two thirds).
 var _flinch_t := FLINCH_SECONDS
 var _flinch_s := 0.0
 var _flinch_dir := Vector2.RIGHT
 var _rest_xf := Transform3D.IDENTITY
-## v0.8.0 GF3: the knock of the flinch running (metres at its peak; 0: none, a bolt's).
+## The knock of the flinch running (metres at its peak; 0: none, a bolt's).
 var _flinch_knock := 0.0
-## v0.8.0 GF3 (owner O22, the Blade's hit-stop): frame seconds the pose is held still for (HitStop): the frame time
+## Frame seconds the pose is held still for (HitStop): the frame time
 ## that falls inside it is dropped, the rest of that frame runs on, so the pose resumes where it stopped (no pop).
 var _hold := 0.0
-## v0.8.0 P1: the strike running: frame seconds since the hit tick was seen (-1: none), and how many of them it had
+## The strike running: frame seconds since the hit tick was seen (-1: none), and how many of them it had
 ## run when the attack left ACTIVE (-1 while still active).
 var _strike_s := -1.0
 var _strike_end_s := -1.0
@@ -84,11 +84,11 @@ func _process(delta: float) -> void:
 	if dt > 0.0:
 		advance(dt)
 		advance_flinch(dt)
-	if merged_rig != null:  # v0.9.5 PF5: the merged mesh follows the nodes just posed (sync may have moved them too)
+	if merged_rig != null:  # The merged mesh follows the nodes just posed (sync may have moved them too)
 		merged_rig.update_bones()
 
 
-## v0.8.0 GF3: holds the pose still for `seconds` of frame time (the longer of this and a hold already running; never
+## Holds the pose still for `seconds` of frame time (the longer of this and a hold already running; never
 ## stacked). A flinch running jumps to its peak first, so the hold shows the impact pose. Presentation only.
 func hold(seconds: float) -> void:
 	_hold = maxf(_hold, seconds)
@@ -101,7 +101,7 @@ func holding() -> bool:
 	return _hold > 0.0
 
 
-## v0.8.0 GF3: the share of `delta` left once a hold has taken its part (the hold counts down by what it took).
+## The share of `delta` left once a hold has taken its part (the hold counts down by what it took).
 func consume_hold(delta: float) -> float:
 	if _hold <= 0.0:
 		return delta
@@ -110,9 +110,9 @@ func consume_hold(delta: float) -> float:
 	return delta - used
 
 
-## v0.8.0 GF2: a hit pushes the body's pose away along `away` (sim plane, the hit's direction) at `strength` (1: a
+## A hit pushes the body's pose away along `away` (sim plane, the hit's direction) at `strength` (1: a
 ## bolt). False when the last flinch is too young to restart (FLINCH_RETRIGGER_S).
-## v0.8.0 GF3: `knock` (0..1, a Blade hit's) also shifts the pose away by up to FLINCH_KNOCK_M.
+## `knock` (0..1, a Blade hit's) also shifts the pose away by up to FLINCH_KNOCK_M.
 func flinch(away: Vector2, strength: float = 1.0, knock: float = 0.0) -> bool:
 	if flinching() and _flinch_t < FLINCH_RETRIGGER_S:
 		return false
@@ -126,7 +126,7 @@ func flinch(away: Vector2, strength: float = 1.0, knock: float = 0.0) -> bool:
 	return true
 
 
-## v0.8.0 GF3: how far the pose is knocked away now (metres).
+## How far the pose is knocked away now (metres).
 func knock_amount() -> float:
 	return maxf(flinch_envelope(_flinch_t / FLINCH_SECONDS), 0.0) * _flinch_knock
 
@@ -185,12 +185,12 @@ func advance(_delta: float) -> void:
 	pass
 
 
-## v0.8.0 P1: 0..1 how far the strike pose is raised at windup progress p: full by STRIKE_RAISE_BY, then held.
+## 0..1 how far the strike pose is raised at windup progress p: full by STRIKE_RAISE_BY, then held.
 static func strike_raise(p: float) -> float:
 	return smoothstep(0.0, STRIKE_RAISE_BY, clampf(p, 0.0, 1.0))
 
 
-## v0.8.0 P1: notes the sim state each sync: the first sync in ACTIVE starts the strike, leaving ACTIVE ends its
+## Notes the sim state each sync: the first sync in ACTIVE starts the strike, leaving ACTIVE ends its
 ## active part (the hold and the ease back follow).
 func strike_note(state: int) -> void:
 	if state == WorldReader.STATE_ACTIVE:
@@ -201,7 +201,7 @@ func strike_note(state: int) -> void:
 		_strike_end_s = _strike_s
 
 
-## v0.8.0 P1: runs the strike's motion by `dt` seconds of frame time.
+## Runs the strike's motion by `dt` seconds of frame time.
 func strike_advance(dt: float) -> void:
 	if _strike_s < 0.0:
 		return
@@ -212,7 +212,7 @@ func strike_advance(dt: float) -> void:
 		_strike_end_s = -1.0
 
 
-## v0.8.0 P1: 0..1 how far the strike is out now: accelerating out over STRIKE_SNAP_S from the hit tick, out while
+## 0..1 how far the strike is out now: accelerating out over STRIKE_SNAP_S from the hit tick, out while
 ## the attack is active and STRIKE_HOLD_S after, then back over STRIKE_BACK_S.
 func strike_swing() -> float:
 	if _strike_s < 0.0:
@@ -228,12 +228,12 @@ func strike_swing() -> float:
 	return 1.0 - smoothstep(0.0, 1.0, (after - STRIKE_HOLD_S) / STRIKE_BACK_S)
 
 
-## v0.8.0 P1: whether the strike is still snapping out (its first STRIKE_SNAP_S).
+## Whether the strike is still snapping out (its first STRIKE_SNAP_S).
 func strike_snapping() -> bool:
 	return _strike_s >= 0.0 and _strike_s < STRIKE_SNAP_S
 
 
-## v0.8.0 P1: the raised pose's share now: from the windup's progress while it winds up (`winding`), falling to 0 as
+## The raised pose's share now: from the windup's progress while it winds up (`winding`), falling to 0 as
 ## the strike snaps out, 0 while it is out, and `rest` (the avatar's own eased value) otherwise.
 func strike_raised(winding: bool, p: float, rest: float) -> float:
 	if winding:
@@ -243,7 +243,7 @@ func strike_raised(winding: bool, p: float, rest: float) -> float:
 	return rest if _strike_s < 0.0 else 0.0
 
 
-## v0.8.0 TG (owner O4, Q3): the melee kinds, the Sniper and the Needle draw no ground mark while they wind up, so
+## The melee kinds, the Sniper and the Needle draw no ground mark while they wind up, so
 ## their bodies carry the read. From the windup's progress p (0..1, WorldReader.telegraph()["progress"] / 1000, the
 ## same number the old ground fill grew with): a crouch / draw-back that deepens over the first TELL_CROUCH_BY of the
 ## windup, and an eye / visor / muzzle glow that climbs with p and flashes from TELL_FLASH_FROM until the strike. The
@@ -319,7 +319,7 @@ func _body_piece(
 	return piece
 
 
-## v0.8.0 HR: the hit flash or a status tint (`on`: `c` at `energy` instead of the rest glow; off: the rest glow), on
+## The hit flash or a status tint (`on`: `c` at `energy` instead of the rest glow; off: the rest glow), on
 ## every body piece of this avatar (its shared materials' HIT); nothing is set when it is already showing
 ## (ActorViews._set_flash calls it).
 func show_hit(on: bool, c: Color = Color.WHITE, energy: float = 0.0) -> void:
@@ -331,7 +331,7 @@ func show_hit(on: bool, c: Color = Color.WHITE, energy: float = 0.0) -> void:
 		piece.set_instance_shader_parameter(EnemyLooks.HIT, v)
 
 
-## v0.9.5 PF5 (RigMerge): how this avatar's rig may be merged into one skinned mesh. "keep": the pieces that must stay
+## RigMerge: how this avatar's rig may be merged into one skinned mesh. "keep": the pieces that must stay
 ## nodes of their own (a per-instance shader value of their own, a mesh swapped at runtime, a node added or freed at
 ## runtime); "sets": the live lists of pieces that get a per-instance shader value written together (the hit flash on
 ## the body plates, an accent glow on the glowing ones): RigMerge swaps a merged piece for the merged mesh in each list
@@ -340,17 +340,17 @@ func rig_spec() -> Dictionary:
 	return {"keep": [], "sets": [_hit_pieces]}
 
 
-## v0.8.0 HR: the HIT now on the body pieces (tests: Vector4 rgb the linear emission x energy, w 1 = shown).
+## The HIT now on the body pieces (tests: Vector4 rgb the linear emission x energy, w 1 = shown).
 func hit_look() -> Vector4:
 	return _hit
 
 
-## v0.8.0 HR: this avatar's body pieces on shared materials (tests).
+## This avatar's body pieces on shared materials (tests).
 func hit_pieces() -> Array[GeometryInstance3D]:
 	return _hit_pieces
 
 
-## v0.8.0 HR: the shared body materials this avatar draws with, each once, in build order (tests, tools).
+## The shared body materials this avatar draws with, each once, in build order (tests, tools).
 func body_looks() -> Array[ShaderMaterial]:
 	var out: Array[ShaderMaterial] = []
 	for piece in _hit_pieces:
@@ -364,7 +364,7 @@ func body_looks() -> Array[ShaderMaterial]:
 	return out
 
 
-## v0.8.0 HR: the shared body material (EnemyLooks.body) for a plate of `p_kind` in colour `c` (times `tex` when
+## The shared body material (EnemyLooks.body) for a plate of `p_kind` in colour `c` (times `tex` when
 ## given); `two_sided`: drawn from both sides. The biome's
 ## cast pulls a grey plate toward enemy_tint and a role-coloured one rests at role_glow of its own colour, as
 ## ActorViews.tint_greys and role_glow did to the avatar's own materials.
@@ -435,7 +435,7 @@ static func flat_mesh(tris: Array, centre: Vector3) -> ArrayMesh:
 	return m
 
 
-## v0.9.5 (seams): frees a node built in a member initializer and never parented (its owner freed before setup), so
+## Seams: frees a node built in a member initializer and never parented (its owner freed before setup), so
 ## it is not left an orphan; anything already in the tree is left to its parent.
 static func free_if_loose(n: Variant) -> void:
 	if is_instance_valid(n) and (n as Node).get_parent() == null:

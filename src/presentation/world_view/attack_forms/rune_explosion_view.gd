@@ -15,7 +15,7 @@ extends Node3D
 ## radius and the hits; this reads them.
 
 const BURSTS_MAX := 6
-## v0.9.5 FC5: the cards' floor rings (a held Ring, a shrinking shield, a trap, an Echo glyph) and Split's shards.
+## The cards' floor rings (a held Ring, a shrinking shield, a trap, an Echo glyph) and Split's shards.
 const EXTRAS_MAX := 12
 const SHARDS_MAX := 24
 const SHARD_SIZE := 0.14
@@ -31,7 +31,7 @@ const GLYPH_PX := 64
 const GLYPH_REPEAT := 3.0
 const CORE := Color("9B5CFF")
 const RIM := Color("D9C2FF")
-## v0.10.0 VX2 (VFX_PACK R8): the dome is the pack's fire_forcefield_02 recoloured violet, the floor ring a MagicArea
+## VFX_PACK R8: the dome is the pack's fire_forcefield_02 recoloured violet, the floor ring a MagicArea
 ## arcane circle of the burst's radius, the hit flash the pack's vfx_hit_02 (false: the old dome, ring and flash, for
 ## before/after shots). The forcefield's sphere is squashed to the old dome's height (DOME_H, times this).
 const PACK_RUNES := true
@@ -108,10 +108,10 @@ var bursts := 0
 var edges: Array[float] = []
 var fades: Array[float] = []
 var domes_shown := false
-## v0.9.5 FC5: the card rings and shards drawn now (the sim's RuneMods.read).
+## The card rings and shards drawn now (the sim's RuneMods.read).
 var extras := 0
 var shards := 0
-## v0.10.0 VX2: the pack the dome and flashes draw with (WorldViewRoot hands it in), the domes it holds by burst uid,
+## The pack the dome and flashes draw with (WorldViewRoot hands it in), the domes it holds by burst uid,
 ## and each burst's floor-ring MagicArea.
 var pack_fx: PackFx = null:
 	set(v):
@@ -174,7 +174,7 @@ func _init() -> void:
 		add_child(g)
 		_rings.append(g)
 		_ring_mat.append(rm)
-	for k in EXTRAS_MAX:  # v0.9.5 FC5: the cards' floor rings, the same rune ring
+	for k in EXTRAS_MAX:  # The cards' floor rings, the same rune ring
 		var xm := ShaderMaterial.new()
 		xm.shader = _ring_shader
 		xm.set_shader_parameter(&"runes", tex)
@@ -319,7 +319,7 @@ func sync(reader: WorldReader) -> void:
 	_sync_cards(reader)
 
 
-## v0.10.0 VX2 (R8): burst `uid`'s dome as the pack's forcefield (violet), scaled to the edge and squashed to the old
+## Burst `uid`'s dome as the pack's forcefield (violet), scaled to the edge and squashed to the old
 ## dome's height, held while the burst lives. False: no pack or no room (the old dome draws).
 func _pack_dome(uid: int, at: Vector3, edge: float) -> bool:
 	if not hold.active():
@@ -383,7 +383,7 @@ func _pack_flash(at: Vector3) -> bool:
 	return pack_fx.spawn(&"vx2_hit_rune", at, HIT_SCALE, PackLooks.violet_colors()) != null
 
 
-## v0.9.5 FC5: what the cards leave on the floor (WorldReader.rune_effects): a held Ring and a shrinking shield (the
+## What the cards leave on the floor (WorldReader.rune_effects): a held Ring and a shrinking shield (the
 ## rune ring at the sim's radius), a trap (a small ring), an Echo glyph waiting (a dim ring at the burst point), and
 ## Split's shards (small violet beads).
 func _sync_cards(reader: WorldReader) -> void:

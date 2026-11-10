@@ -1,10 +1,10 @@
 class_name BossJudge
 extends RefCounted
-## v0.9.0 NB3 (owner Q24, "ok go for those"; docs/roadmap/v0.9.0/BOSSES_4_5.md row N3; SIM_CONTRACTS §10l): the
+## The
 ## Clockwork Judge's signature, your echo, and its Verdict.
 ## - The recording: while a Judge lives it keeps where the player stood, one point every echo_gap_ticks (on ticks that
 ##   are a multiple of it), the last echo_points of them (BossStore.echo_*): the last 3 s, a point per 0.25 s.
-## - v0.10.5 O2a (owner L3): the echo is shielded only while its path shows (shield_seconds 0); the ghosts strike open.
+## - v0.10.5 O2a: the echo is shielded only while its path shows (shield_seconds 0); the ghosts strike open.
 ## - The echo (move `echo`, shielded, on the boss's cadence: BossTide.due, every sig_every_ticks start to start): as it
 ##   starts the recording locks into the path (BossStore.path_*), the points within radius_m + the player's radius +
 ##   echo_safe_m of where the player stands then left out (it never strikes where you stand at its start); the whole

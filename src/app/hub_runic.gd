@@ -1,6 +1,6 @@
 class_name HubRunic
 extends Node
-## v0.9.5 RS1 (RUNIC_STONE.md): the Runic Stone while the hub runs. HubSession hands it the tick (where the hero
+## RUNIC_STONE.md: the Runic Stone while the hub runs. HubSession hands it the tick (where the hero
 ## stands) and the interact press at the stone; it asks RunicStone (the profile's learned lines, the 7-press rule),
 ## draws through HubView (the veins, the pulse) and RuneBubble (the speech), and asks for the hum through
 ## `cue_requested` (Main plays it). Locked: no prompt, a faint "..." bubble, the press only hums. Awake: the prompt
@@ -18,7 +18,7 @@ const READ_KEY := &"HUB_PROMPT_RUNIC_READ"
 var stone: RunicStone
 var bubble := RuneBubble.new()
 var session: HubSession
-## v0.9.5 RS2: hub ticks since the last input, and the language the stone last saw.
+## Hub ticks since the last input, and the language the stone last saw.
 var idle_ticks := 0
 var _locale := ""
 
@@ -33,9 +33,9 @@ func setup(p_session: HubSession, stores: Array) -> void:
 		session.profile.save_file()
 	session.ui.add_child(bubble)
 	session.view.set_runic(stone.is_awake())
-	session.view.set_runic_full(stone.is_full())  # v0.9.5 RS2 (S6)
+	session.view.set_runic_full(stone.is_full())  # v0.9.5 RS2
 	_locale = TranslationServer.get_locale()
-	if stone.pending_pulse:  # S5: a line learned since the last visit: the stone pulses once on entry
+	if stone.pending_pulse:  # A line learned since the last visit: the stone pulses once on entry
 		stone.pending_pulse = false
 		session.view.pulse_runic()
 
@@ -92,7 +92,7 @@ func _input(_event: InputEvent) -> void:
 	idle_ticks = 0
 
 
-## R10: the language changed while the hub runs with the stone awake.
+## The language changed while the hub runs with the stone awake.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE and is_instance_valid(bubble) and bubble.get_parent() == null:
 		bubble.free()  # never parented (no setup: a test): not left an orphan
@@ -107,7 +107,7 @@ func _notification(what: int) -> void:
 		announce()
 
 
-## A line learned in the hub (R5, R10): saved, the stone pulses at once, the full stone shows its ring, and an open
+## A line learned in the hub: saved, the stone pulses at once, the full stone shows its ring, and an open
 ## bubble speaks the new line.
 func announce() -> void:
 	session.profile.save_file()

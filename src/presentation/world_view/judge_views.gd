@@ -1,6 +1,6 @@
 class_name JudgeViews
 extends Node3D
-## v0.9.0 NB3 (BOSSES_4_5.md N3; the VX quality bar: layered, never a flat single-colour shape): the Clockwork Judge's
+## BOSSES_4_5.md N3; the VX quality bar: layered, never a flat single-colour shape: the Clockwork Judge's
 ## echo and its Verdict's pendulum, drawn from WorldReader.boss_echo (EI-07: it reads; every strike is the sim's,
 ## BossJudge).
 ## - The recording: while the Judge records the last 3 s before its echo, gold glints hang over the points it keeps,

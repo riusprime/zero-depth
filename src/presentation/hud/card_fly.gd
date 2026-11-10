@@ -1,6 +1,6 @@
 class_name CardFly
 extends Control
-## v0.8.0 N8 (owner O62, "show where it went. When it's picked, its icon flies to its slot on the HUD"): the picked
+## The picked
 ## card's icon, flown from the card's socket to the HUD slot the card landed in (Hud.slot_rect_for: an ability's slot,
 ## a wand card's pip, a passive mod's icon in the carried row, a stat or a curse to the HP plate) on an arc, shrinking,
 ## with a short trail; at the end the slot flashes once. Drawn over the HUD, it takes no input and decides nothing

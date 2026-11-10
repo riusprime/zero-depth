@@ -1,6 +1,6 @@
 class_name TwinWardenAvatar
 extends BossAvatar
-## v0.9.0 NB2 (BOSSES_4_5.md N2; art list §2): the Twin Wardens, floor 4's two stone knights joined by a burning chain.
+## BOSSES_4_5.md N2; art list §2: the Twin Wardens, floor 4's two stone knights joined by a burning chain.
 ## This is the amber one (the boss); TwinWardenVioletAvatar its violet twin. Both play TwinWardenClips, so they move
 ## as a pair: the whole figure moves through the clips' BODY channel on both models (the owner's amber file keeps
 ## its Mixamo skeleton but weights nearly every vertex to the hips, so only the whole figure can move); the violet
@@ -8,7 +8,7 @@ extends BossAvatar
 ## (_pose_rig) the anger the sim reads out (WorldReader.boss_twin) drives it: an angry Warden leans forward, its cracks
 ## and visor blaze and its light flares, so the player sees which one is fast. With the file missing it is a code
 ## stand-in of the same parts (a faceted body and cape, a slit helm with stone fins, a tower shield with its shackle,
-## a short sword) posed from the same inputs. v0.11.0 O5 (owner L7, Q11 a): the roles read out too: the Warden to hit
+## a short sword) posed from the same inputs. the roles read out too: the Warden to hit
 ## now glows brighter (phase 3's exposed one pulses), the one standing back dims and leans back behind its shield.
 ## a short sword) posed from the same inputs. Presentation only (EI-07): it reads the sim and moves its own children.
 
@@ -35,7 +35,7 @@ var _cracks: Array[MeshInstance3D] = []
 ## The anger read each tick (WorldReader.boss_twin), smoothed in frame time (0..1).
 var _angry := false
 var _anger := 0.0
-## v0.11.0 O5: standing back, the one to hit, phase 3's exposed one (read each tick), and the role's smoothed glow.
+## Standing back, the one to hit, phase 3's exposed one (read each tick), and the role's smoothed glow.
 var _resting := false
 var _focus := false
 var _exposed := false
@@ -61,7 +61,7 @@ func sync(reader: WorldReader, i: int) -> void:
 	super(reader, i)
 
 
-## Render scripts and tests set the anger directly: "angry" (bool); v0.11.0 O5: "resting", "focus", "exposed".
+## Render scripts and tests set the anger directly: "angry" (bool); "resting", "focus", "exposed".
 func apply_state(s: Dictionary) -> void:
 	if s.has("angry"):
 		_angry = bool(s["angry"])
@@ -243,7 +243,7 @@ func _idle_seconds() -> float:
 	return 3.6
 
 
-## After the clips: an angry Warden leans in and its light flares with the clips' glow; v0.11.0 O5: the role's glow
+## After the clips: an angry Warden leans in and its light flares with the clips' glow; the role's glow
 ## (the one to hit brighter, phase 3's exposed one pulsing, the one standing back dim and leaning back).
 func _pose_rig(dt: float) -> void:
 	_advance_anger(dt)
@@ -257,7 +257,7 @@ func _pose_rig(dt: float) -> void:
 		crack_light.light_energy = LIGHT_ENERGY * glow * (_role + pulse) * (1.0 - 0.6 * _stagger)
 
 
-## v0.11.0 O5: the role's light (1 = as before): the one to hit 1.6 (exposed 2.0), the one standing back 0.35.
+## The role's light (1 = as before): the one to hit 1.6 (exposed 2.0), the one standing back 0.35.
 func role_glow() -> float:
 	if _resting:
 		return 0.35

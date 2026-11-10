@@ -31,12 +31,12 @@ extends Resource
 ## Haze over the scene (exponential fog); 0 turns it off.
 @export var fog_density := 0.004
 @export var fog_color := Color(0.2, 0.16, 0.13)
-## v0.8.0 GX (owner O86, graphics feedback §4): the haze's height falloff, "high" lighting only. Below `fog_height`
+## The haze's height falloff, "high" lighting only. Below `fog_height`
 ## (m) the haze thickens by `fog_height_density` per metre (0: off), so whatever lies under the floor's level sinks
 ## into it; Godot has one fog colour, so it hazes toward `fog_color`.
 @export var fog_height := 0.0
 @export var fog_height_density := 0.0
-## v0.8.0 GX (O86, feedback §1): volumetric fog on the "high" tier, so the fire props' light hangs in the air. A low
+## O86, feedback §1: volumetric fog on the "high" tier, so the fire props' light hangs in the air. A low
 ## layer (from just under the floor up to `volumetric_height` m) that follows the view, `volumetric_density` thick,
 ## tinted `volumetric_albedo`; the fire props light it at `volumetric_light_energy`, the sun or moon at
 ## `volumetric_sun_energy` (low: torches, not the sun, carry it, and the void stays dark). Starting values.
@@ -71,12 +71,11 @@ extends Resource
 @export var grade_strength := 0.0
 @export var contrast := 1.0
 @export var saturation := 1.0
-## v0.8.0 N10 (owner O68, "the texture seems a bit too grained … make it bigger"): how much wall one tile of the
+## How much wall one tile of the
 ## procedural walls' textures covers (m): the face texture (3:2) this long along the wall (its height follows the
 ## aspect), the top texture this wide. Read when a floor is built (the dev panel's Restart floor shows an edit).
 @export var wall_texture_m := 4.0
 @export var wall_top_texture_m := 4.5
-## v0.8.0 N15 (owner O73, "Night biome textures look busy … how could we make it less busy keeping this model?"):
 ## calmer walls, the same model (ProceduralWall rule 6; the defaults are N13's look). In the walls' shader: how much
 ## of the textures' finest detail stays (1: all; toward 0 it blends into a sample 2.5 mips coarser), and each
 ## texture's contrast round its own mean colour (1: as installed; the face's lower where the modelled blocks already

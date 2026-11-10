@@ -154,7 +154,7 @@ static func leap_wave(w: World, i: int, atk: BossAttackTable, at: Vector2) -> vo
 	)
 
 
-## v0.8.0 N2 (owner O41 "really hard to dodge spells"): a leap's pattern with more than one wave fires wave k
+## A leap's pattern with more than one wave fires wave k
 ## (k >= 1) k × wave_gap_ticks into its recovery, from where it landed (the double quake ring of leap_slam_3: the
 ## second ring turned so its gaps stand where the first one's stones flew). Its stones keep the pattern's fair rules
 ## (none within its safe radius of the player: a hero punishing in melee is never hit by it).

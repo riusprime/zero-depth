@@ -16,7 +16,7 @@ const VOID_GLOW := Color(0.62, 0.32, 1.0)
 const VOID_TENDRIL := Color(0.5, 0.26, 0.9)
 const BLOOD := Color(0.58, 0.05, 0.09)
 const SCORCH := Color(0.05, 0.04, 0.035, 0.85)
-## v0.8.0 P3 (owner O31, less glow on barrels and torches): the fire props' flame sprites (were 2.2, 1.8, 1.4): the
+## The fire props' flame sprites (were 2.2, 1.8, 1.4): the
 ## same warm hue, bright enough to read as fire, no longer blooming over the room.
 const PROP_FIRE_COLOR := Color(1.6, 1.32, 1.04, 1.0)
 const FROST_MARK := Color(0.78, 0.93, 1.0, 0.8)
@@ -28,11 +28,11 @@ const FIRE_PATCH_TINT := Color(1.0, 0.667, 0.2, 0.9)
 ## The closest two flames of different patches stand in one frame (m): overlapping patches (a dash's Flame Trail)
 ## thin out to about one layer of flames (owner, 2026-10-12: "that's too much fire").
 const FLAME_SPACING := 0.8
-## v0.10.5 W3-S4 (F5): the hero's fire-patch flames at this much of their height and brightness.
+## The hero's fire-patch flames at this much of their height and brightness.
 const FIRE_LOW := 0.6
 ## Mark keys: an effect's seed times MARK_KINDS plus its kind, so two marks of one effect never collide.
 const MARK_KINDS := 8
-## v0.8.0 PF (owner O9: Spread + Split + Explosive "goes two FPS … maybe we can stop applying some effects"): the
+## The
 ## bursts' frame budget. The first BURST_FULL bursts of a frame draw as before (each with its light); past them a
 ## burst within BURST_MERGE_M of one already drawn this frame is merged into it (not drawn), the rest draw thinned
 ## (BURST_THIN of the density, no light of their own), and past BURST_MAX none is drawn. The canvas draws the newest
@@ -42,13 +42,13 @@ const BURST_FULL := 12
 const BURST_MAX := 32
 const BURST_MERGE_M := 1.2
 const BURST_THIN := 0.3
-## v0.10.5 W3-S4 (F8): a burst lighter than this (a small pop) has no light.
+## A burst lighter than this (a small pop) has no light.
 const POP_LIGHT_W := 0.5
-## v0.10.0 VX0 (VFX_PACK R18): the fire explosion's fireball, debris and smoke are the pack's effects (PackFx);
+## VFX_PACK R18: the fire explosion's fireball, debris and smoke are the pack's effects (PackFx);
 ## false keeps the sprite explosion (the before shots).
 const PACK_EXPLOSION := true
 ## Pack explosion ids (picked by seed), the factor on the burst radius that makes the pack's ~3 m fireball fill
-## it and the thinned burst's scale. v0.10.0 FX (owner, 2026-10-31: "lingering smoke"): no smoke cloud after it (the
+## it and the thinned burst's scale. no smoke cloud after it (the
 ## pack's smoke_vfx_02 hung 4 s over every blast).
 const PACK_EXPLOSIONS: Array[StringName] = [
 	&"explosion_fire_a", &"explosion_fire_b", &"explosion_fire_c"
@@ -58,7 +58,7 @@ const PACK_THIN_SCALE := 0.6
 ## A burst's seed is forgotten this long (ticks) after it was last drawn.
 const PACK_SEEN_TICKS := 180.0
 
-## v0.10.0 VX3 (VFX_PACK R19-R26, R28-R30, R41): the zones, rings, element bursts and the statuses on enemies are the
+## VFX_PACK R19-R26, R28-R30, R41: the zones, rings, element bursts and the statuses on enemies are the
 ## pack's effects (PackFx); false keeps the old sprites for that area (the before shots). Each also falls back, one
 ## instance at a time, when PackFx has no room in the effect's family.
 const PACK_ZONES := true  # fire, frost, venom and bleed patches; the element rings
@@ -66,17 +66,17 @@ const PACK_BURSTS := true  # frost, shatter, venom, bleed and Wildfire bursts
 const PACK_STATUS := true  # burn, poison and frost on an enemy; Bulwark's guard orbs
 ## The pack effects (WorldViewRoot sets it); none: the sprite explosion draws.
 var pack_fx: PackFx = null
-## VX3: how many of the guard orbs the pack draws this frame (StatusVisuals hides that many of its own).
+## How many of the guard orbs the pack draws this frame (StatusVisuals hides that many of its own).
 var guard_orbs_packed := 0
-## v0.11.0 S3: the pack explosion's child nodes the next burst() leaves out (the Mortar Grid's strikes: no Smoke).
+## The pack explosion's child nodes the next burst() leaves out (the Mortar Grid's strikes: no Smoke).
 var burst_hide: Array = []
 var _pack_seen := {}  # seed -> the tick the burst was last drawn
 var _burst_weight := 1.0  # W3-S4: the burst being drawn's weight (burst())
-## VX3: the pack's zones, bursts and statuses (VfxPackViews).
+## The pack's zones, bursts and statuses (VfxPackViews).
 var _views := VfxPackViews.new(self)
-## v0.10.0 VX6: the storm looks, the pack's lightning (StormPack).
+## The storm looks, the pack's lightning (StormPack).
 var _storm := StormPack.new(self)
-## VX7: the bleed status and the void rifts in the pack's style (GapPack).
+## The bleed status and the void rifts in the pack's style (GapPack).
 var _gap := GapPack.new(self)
 
 
@@ -141,7 +141,7 @@ func line(kind: StringName, a: Vector3, b: Vector3, fade: float, age: float, sd:
 
 
 ## A burst of radius `r` at `c` (ground), `u` (0..1) through its life: a bomb landing or a blast.
-## v0.10.5 W3-S4 (owner F8): `weight` (0..1, BlastLook: a hook blast's damage) dims it: its pieces at BURST_THIN..1 of
+## `weight` (0..1, BlastLook: a hook blast's damage) dims it: its pieces at BURST_THIN..1 of
 ## the density, its light at `weight` (none below POP_LIGHT_W: a small pop). The caller sizes `r`.
 func burst(kind: StringName, c: Vector3, r: float, u: float, sd: int, weight := 1.0) -> void:
 	bursts_asked += 1
@@ -166,7 +166,7 @@ func burst(kind: StringName, c: Vector3, r: float, u: float, sd: int, weight := 
 	_burst_weight = 1.0
 
 
-## v0.10.5 W3-Q7: only the floor mark burst(kind, c, r, ...) leaves (the same key, texture, size and colour), for a
+## Only the floor mark burst(kind, c, r,...) leaves (the same key, texture, size and colour), for a
 ## burst wholly off screen whose pieces are not drawn (StatusVisuals' payoffs): the mark is there when the camera
 ## arrives. A kind that leaves none does nothing.
 func burst_mark(kind: StringName, c: Vector3, r: float, sd: int) -> void:
@@ -183,7 +183,7 @@ func burst_mark(kind: StringName, c: Vector3, r: float, sd: int) -> void:
 			mark(sd * MARK_KINDS, &"scorch", c, r * 1.25, SCORCH)
 
 
-## v0.10.5 W3-Q7: only the floor mark line(kind, a, b, ...) leaves at `b`, for a line wholly off screen.
+## Only the floor mark line(kind, a, b,...) leaves at `b`, for a line wholly off screen.
 func line_mark(kind: StringName, b: Vector3, sd: int) -> void:
 	match kind:
 		&"venom":
@@ -198,9 +198,9 @@ func _burst_kind(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> v
 			_storm.burst(c, r, u, sd)
 		&"frost":
 			_frost_burst(c, r, u, sd)
-		&"shatter":  # v0.10.0 VX3: a frozen enemy's shatter: the frost burst and a small ice patch
+		&"shatter":  # A frozen enemy's shatter: the frost burst and a small ice patch
 			_frost_burst(c, r, u, sd, true)
-		&"wildfire":  # v0.10.0 VX3: Wildfire from a burning kill: fire_area_03, or the fire sprites' explosion
+		&"wildfire":  # Wildfire from a burning kill: fire_area_03, or the fire sprites' explosion
 			if not (PACK_BURSTS and pack_fx != null and _views.wildfire(c, r, u, sd)):
 				_explosion(c, r, u, sd)
 		&"venom":
@@ -240,7 +240,7 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int, top: float = 0.9) -> 
 			)
 		if not packed:
 			_embers(p + Vector3(0, top, 0), age, sd, 2, 1.0)
-		# v0.8.0 FV: a status light (merged, the brightest few: VfxCore.STATUS_LIGHTS_MAX).
+		# A status light (merged, the brightest few: VfxCore.STATUS_LIGHTS_MAX).
 		_light_status(p + Vector3(0, top + 0.4, 0), WARM, 0.7 + 0.1 * burn, 3.0)
 	var shock: int = on.get(&"shock", 0)
 	if shock > 0 and not _storm.shock(p, r, sd, age, top) and (int(age / 3.0) + sd) % 3 != 0:
@@ -258,7 +258,7 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int, top: float = 0.9) -> 
 			false
 		)
 	var bleed: int = on.get(&"bleed", 0)
-	if bleed > 0:  # v0.10.0 VX7: the pack's drips and splatter (GapPack), or the old drips
+	if bleed > 0:  # The pack's drips and splatter (GapPack), or the old drips
 		_gap.bleed_status(p, r, top, age, sd, bleed)
 	var poison: int = on.get(&"poison", 0)
 	if poison > 0 and not (PACK_STATUS and pack_fx != null and _views.poison(p, r, sd, top)):
@@ -319,7 +319,7 @@ static func _splat(k: int) -> StringName:
 func _fire(c: Vector3, r: float, fade: float, age: float, sd: int, hostile := false) -> void:
 	if PACK_ZONES and pack_fx != null and _views.fire(c, r, fade, age, sd, hostile):
 		return
-	# v0.10.5 W3-S4 (owner F5): the hero's flames inside FIRE_DRAW_R of the patch, lower and dimmer (VfxPackViews).
+	# The hero's flames inside FIRE_DRAW_R of the patch, lower and dimmer (VfxPackViews).
 	var dr := r * (1.0 if hostile else VfxPackViews.FIRE_DRAW_R)
 	var low := 1.0 if hostile else FIRE_LOW
 	var n := clampi(int(round((3.0 + r * r * 2.0) * density)), 3, 16)
@@ -446,7 +446,7 @@ func _explosion(c: Vector3, r: float, u: float, sd: int) -> void:
 	_explosion_rest(c, r, u, sd)
 
 
-## v0.10.0 VX0 (R18): the pack's fire explosion, once per burst (the first frame its seed is drawn). A thinned burst
+## The pack's fire explosion, once per burst (the first frame its seed is drawn). A thinned burst
 ## (past BURST_FULL) is a smaller one.
 func _pack_explosion(c: Vector3, r: float, sd: int) -> void:
 	var seen := _pack_seen.has(sd)
@@ -540,7 +540,7 @@ func _explosion_sprites(c: Vector3, r: float, u: float, sd: int) -> void:
 ## The explosion's sparks, light flash and scorch mark (the same with the sprite or the pack fireball).
 func _explosion_rest(c: Vector3, r: float, u: float, sd: int) -> void:
 	var t := clampf(u * 2.2, 0.0, 1.0)
-	# v0.10.5 W3-Q7: past t = 1 (the last 55 % of a burst) every spark is wholly clear (alpha 1 - t): none is laid out
+	# Past t = 1 (the last 55 % of a burst) every spark is wholly clear (alpha 1 - t): none is laid out
 	for k in _thin(&"spark", int(round(10 * density))) if t < 1.0 else 0:
 		var a := TAU * h(sd + 10, k)
 		var q := (

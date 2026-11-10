@@ -1,8 +1,8 @@
 class_name LaserPackTube
 extends Node3D
-## v0.11.0 VX (owner PD-13, 2026-11-07: "VFX have to match the style of the premade assets"): the Laser lance drawn with
+## The Laser lance drawn with
 ## the pack's laser (beam_vfx: laser_vfx_01..06, beam_vfx_07 for venom; PackLooks.laser_id). The pack scene is one
-## straight cylinder, so a bent or Homing lance was "7-8 overlapping straight laser segments" (v0.10.0 FX); here the
+## straight cylinder, so a bent or Homing lance was "7-8 overlapping straight laser segments"; here the
 ## scene's own materials (BeamCore's beam_core shader, BeamOuter's scrolling beam_outer shader, the BeamStart and
 ## BeamEnd balls' beam_ball shader), recoloured to the element, are laid on one tube through the sim's points (one
 ## strip, so a curve has no joints). LaserView draws it out over the lance's 0.15 s and fades it by 0.5 s (its emission
@@ -10,7 +10,7 @@ extends Node3D
 
 ## Sides round the tube.
 const SIDES := 10
-## v0.11.0 O1d: a lance that has stopped changing but for its radius rebuilds its mesh when the radius has moved this
+## A lance that has stopped changing but for its radius rebuilds its mesh when the radius has moved this
 ## much
 ## (per mille of the radius it was built at): the glow's thinning is many small steps, the steps don't show.
 const REBUILD_PERMILLE := 60
@@ -31,7 +31,7 @@ var _outer := MeshInstance3D.new()
 var _start := MeshInstance3D.new()
 var _end := MeshInstance3D.new()
 var _emission := {}  # material -> its scene emission
-## v0.11.0 O1d: what the meshes were last built from (lay()): their points' count and ends, and the radii.
+## What the meshes were last built from (lay()): their points' count and ends, and the radii.
 var _built_n := 0
 var _built_ends := [Vector3.ZERO, Vector3.ZERO]
 var _built_core := 0.0
@@ -132,7 +132,7 @@ func off() -> void:
 	visible = false
 
 
-## v0.11.0 O1d: the meshes no longer match: other points (while the lance draws out, or a new shot) or a radius that has
+## The meshes no longer match: other points (while the lance draws out, or a new shot) or a radius that has
 ## moved REBUILD_PERMILLE (the lance only thins after it is drawn).
 func _stale(pts: Array[Vector3], core_r: float, outer_r: float) -> bool:
 	if pts.size() != _built_n or pts[0] != _built_ends[0] or pts[pts.size() - 1] != _built_ends[1]:
@@ -145,7 +145,7 @@ func _stale(pts: Array[Vector3], core_r: float, outer_r: float) -> bool:
 
 
 ## A closed tube of radius `r` through `pts` (outward faces, clockwise seen from outside: Godot's front), as one indexed
-## surface. v0.11.0 O1d (the owner's "every time it shoots the game lags a bit"): it was an ImmediateMesh of three
+## surface. the owner's "every time it shoots the game lags a bit": it was an ImmediateMesh of three
 ## calls a
 ## vertex and six vertices a quad; the rings now share their vertices, and the arrays are filled in one pass.
 static func _tube(mesh: ArrayMesh, pts: Array[Vector3], total: float, r: float) -> void:

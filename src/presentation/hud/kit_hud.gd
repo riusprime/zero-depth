@@ -2,11 +2,11 @@ class_name KitHud
 extends Control
 ## The Vent hint on the HUD (v0.3.5 K, owner F1 and F18), kept apart from the HP plate and the heat meter so either
 ## can change look without touching this: "[F] VENT" beside the heat meter, bright while venting would blast (Hot),
-## dim otherwise, with the 6 s cooldown as a wedge and the seconds left. v0.9.5 HU: the Skill's pip is gone; the Skill
+## dim otherwise, with the 6 s cooldown as a wedge and the seconds left. the Skill's pip is gone; the Skill
 ## is one of the ability squares now (AbilitySquares).
 ## Reads WorldReader only (EI-07); the keys come from the live bindings (InputRebind), so a remap shows at once.
-## v0.5.5 A5: it sits on a small HudFrame slab of its own (the HUD's Ember stone look), beside its anchor.
-## v0.10.5 W3-O20 (UI style Astral): the hint is letter-spaced Cinzel (HudStyle.MIN_LABEL), no slab.
+## It sits on a small HudFrame slab of its own (the HUD's Ember stone look), beside its anchor.
+## UI style Astral: the hint is letter-spaced Cinzel (HudStyle.MIN_LABEL), no slab.
 
 const GAP := 16.0
 const FONT_SIZE := 14
@@ -19,7 +19,7 @@ var _vent := Label.new()
 var _vent_sweep := VentSweep.new()
 
 
-## The Vent plate's cooldown wedge (v0.9.5 HT): the share still cooling, drawn clockwise from twelve o'clock.
+## The Vent plate's cooldown wedge: the share still cooling, drawn clockwise from twelve o'clock.
 class VentSweep:
 	extends Control
 	var share := 0.0
@@ -39,7 +39,7 @@ func _init() -> void:
 	_vent.name = "VentHint"
 	_vent.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	HudStyle.style_label(_vent, FONT_SIZE, true)
-	# v0.10.5 W3-O20: letter-spaced Cinzel, as the heat word
+	# Letter-spaced Cinzel, as the heat word
 	HudStyle.serif_label(_vent, FONT_SIZE, 3, HudStyle.A_TEXT)
 	_vent_plate.name = "VentPlate"
 	_vent_plate.add_child(_vent)
@@ -60,7 +60,7 @@ func sync(reader: WorldReader) -> void:
 	if _vent.visible:
 		_vent.text = tr("HUD_KEY_HINT") % [key_text(&"vent"), tr("HUD_VENT")]
 		var hot: bool = h["vent_ready"]
-		# v0.9.5 HT: the 6 s cooldown, as the ability squares show theirs: a sweep and the seconds left.
+		# The 6 s cooldown, as the ability squares show theirs: a sweep and the seconds left.
 		var left := int(h["vent_cd"])
 		_vent_sweep.share = float(left) / maxf(1.0, float(h["vent_cd_total"]))
 		_vent_sweep.queue_redraw()
@@ -115,6 +115,6 @@ func vent_lit() -> bool:
 	return _vent.visible and _vent.modulate.a > DIM_ALPHA + 0.01
 
 
-## The Vent hint's colour while venting would blast: v0.10.5 W3-O17: Astral's muted amber.
+## The Vent hint's colour while venting would blast: Astral's muted amber.
 static func _hot_color() -> Color:
 	return HudStyle.A_HEAT

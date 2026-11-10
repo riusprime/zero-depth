@@ -10,12 +10,12 @@ extends Node3D
 ##   asks the camera for the door's thud (the impact sound is AudioEvents').
 ## - The switches: short octagonal stone columns with a rune disc on a slanted top (`rune_switch`, the same way). A
 ##   switch that is on glows amber; off, its rune is dark.
-## - v0.9.5 TS (owner Q7): the lever inside the secret room, a short stone post with a handle (code stand-in), on the
+## - v0.9.5 TS: the lever inside the secret room, a short stone post with a handle (code stand-in), on the
 ##   wall beside the doorway. Door shut, the handle stands up and its tip glows; pulled (the door open) it swings down.
 ## - While the timer runs, every beep (beep_ticks: slow at first, faster and faster, very fast at the end; the same
 ##   schedule AudioEvents plays) flashes the seal, the frame's notches and the switches' runes: the beep seen.
 ## - The secret room (StageView.reveal_hidden) comes into sight when the door first opens, with a warm light inside.
-## - v0.9.0 BV (W71): per biome (InteractionLooks, the stage's prop_style): the seal's, notches' and switches' rune
+## - v0.9.0 BV: per biome (InteractionLooks, the stage's prop_style): the seal's, notches' and switches' rune
 ##   colour (Ruins amber, Night Rocks mint, Red Canyon copper, Frozen Shore ice, Starfall magenta), the bolts' metal,
 ##   the room's light, the owner's switch model tinted, and the biome's accent at the jambs' and switches' feet.
 
@@ -29,7 +29,7 @@ const SWITCH_H := 1.0
 ## The slab's sink when the door opens and its slam when it shuts (s).
 const SINK_S := 1.1
 const SLAM_S := 0.14
-## v0.9.5 TS: the lever handle's swing time (s) and its up and down tilt (rad).
+## The lever handle's swing time (s) and its up and down tilt (rad).
 const PULL_S := 0.25
 const LEVER_UP := 0.7
 const LEVER_DOWN := -0.7
@@ -40,7 +40,7 @@ const BEEP_FAST := 6
 const FLASH_TICKS := 8
 const MODEL_DOOR := &"timed_door"
 const MODEL_SWITCH := &"rune_switch"
-## v0.9.0 MI2: on the owner's switch (1.3 m, its slanted top falling toward the door) the lit rune disc lies on the
+## On the owner's switch (1.3 m, its slanted top falling toward the door) the lit rune disc lies on the
 ## middle of the slant: its centre (m, the switch's frame) and its tilt (rad), measured from the prepared model.
 const MODEL_RUNE_AT := Vector3(0.0, 1.2, 0.0)
 const MODEL_RUNE_TILT := 0.58
@@ -54,13 +54,13 @@ var switch_glow := PackedFloat32Array()
 var flash := 0.0
 var slab: Node3D
 var uses_model := false
-## v0.9.0 MI2: the switches are the owner's model (tests read it).
+## The switches are the owner's model (tests read it).
 var switch_uses_model := false
 var revealed := false
-## v0.9.0 BV: the biome whose look is drawn (InteractionLooks.resolve) and its rune colour.
+## The biome whose look is drawn (InteractionLooks.resolve) and its rune colour.
 var biome := &""
 var rune_color := AMBER
-## v0.9.5 TS: the handle's pull (0 up .. 1 down) and whether a lever stands here (tests read them).
+## The handle's pull (0 up.. 1 down) and whether a lever stands here (tests read them).
 var lever_pull := 0.0
 var has_lever := false
 var _reader: WorldReader
@@ -97,7 +97,7 @@ func setup(reader: WorldReader, stage: StageView, cover: Color) -> void:
 	door.rotation.y = SimPlane.yaw_of(reader.timed_door_angle())
 	add_child(door)
 	_build_door(door, reader.timed_door_width(), reader.timed_door_depth())
-	for side in [-1.0, 1.0]:  # v0.9.0 BV: the biome's touch at each jamb's foot, on the side you come from
+	for side in [-1.0, 1.0]:  # The biome's touch at each jamb's foot, on the side you come from
 		var foot := Node3D.new()
 		foot.name = "Foot"
 		foot.position = Vector3(
@@ -156,14 +156,14 @@ func sync(reader: WorldReader) -> void:
 	_seal_mat.emission_energy_multiplier = (
 		(0.25 if st == WorldReader.TIMED_SHUT else 0.8) + 4.0 * flash
 	)
-	if has_lever:  # v0.9.5 TS: ready (bright tip) while the door is shut
+	if has_lever:  # Ready (bright tip) while the door is shut
 		_lever_mat.emission_energy_multiplier = (
 			(2.0 if st == WorldReader.TIMED_SHUT else 0.1) + 3.0 * flash
 		)
 
 
 func _process(delta: float) -> void:
-	if has_lever:  # v0.9.5 TS: the handle swings (PULL_S), down while the door stands open
+	if has_lever:  # The handle swings (PULL_S), down while the door stands open
 		var goal := 0.0 if _state == WorldReader.TIMED_SHUT else 1.0
 		lever_pull = move_toward(lever_pull, goal, delta / PULL_S)
 		_lever_arm.rotation.z = LEVER_UP - (LEVER_UP - LEVER_DOWN) * lever_pull
@@ -190,7 +190,7 @@ func _reveal_if_open() -> void:
 	revealed = true
 	_room_light.visible = true
 	if _stage != null:
-		_stage.reveal_hidden(_reader.timed_room())  # v0.9.0 RA: only its own room
+		_stage.reveal_hidden(_reader.timed_room())  # Only its own room
 
 
 ## The ticks (from the door opening) each beep falls on, for a timer of `timer` ticks: the gap is BEEP_SLOW at the start
@@ -349,7 +349,7 @@ func _build_switch(k: int, at: Vector2, toward: Vector2) -> void:
 	root.add_child(disc)
 
 
-## v0.9.5 TS: the lever (owner Q7) inside the secret room: a squat stone post with a pivoting handle, turned to face the
+## The lever inside the secret room: a squat stone post with a pivoting handle, turned to face the
 ## doorway.
 func _build_lever(at: Vector2, toward: Vector2) -> void:
 	var root := Node3D.new()

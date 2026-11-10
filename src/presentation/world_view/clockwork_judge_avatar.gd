@@ -1,6 +1,6 @@
 class_name ClockworkJudgeAvatar
 extends BossAvatar
-## v0.9.0 NB3 (BOSSES_4_5.md N3; art list §2; PLAN NB: "can you ignore the skeleton?"): The Clockwork Judge, floor
+## BOSSES_4_5.md N3; art list §2; PLAN NB: "can you ignore the skeleton?": The Clockwork Judge, floor
 ## 5's boss: a tall brass automaton with a clock-face chest and two pendulum arms ending in gavels, gold and black. The
 ## owner's model (assets/models/bosses/boss_clockwork_judge.glb) comes cut into parts (scripts/assets/nb_prep.py:
 ## Body, ArmL, ArmR, Gears, HandHour, HandMinute; its broken skeleton dropped); BossModels rigs each part as a bone and

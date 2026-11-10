@@ -14,13 +14,13 @@ extends ContentDef
 @export var offer_size := 3
 ## A legendary stat card's amount: its epic amount x this.
 @export var stat_multiplier := 1.6
-## v0.9.0 LG (owner Q12: "Power/Haste ×1.3"): a stat card's own multiplier in place of stat_multiplier (its id: one of
+## A stat card's own multiplier in place of stat_multiplier (its id: one of
 ## stat_cards; at least 1). Cards not named keep stat_multiplier.
 @export var stat_multiplier_by_card: Dictionary[StringName, float] = {}
 ## Retired by v0.8.0 FL (owner O91: "remove automatic level-5 grants"): it was v0.6.5 WN5b's level every wand card
 ## was taken at from this altar. Kept so an older file still loads; it must be 0 (the upgrade choice below replaced it).
 @export var wand_level := 0
-## v0.8.0 FL (owner O91: "boss offers an upgrade or advanced choice"; BALANCE_PASS.md "FL"): the altar's choices, in
+## The altar's choices, in
 ## card order. With `upgrade_choice`, one held wand card one level up, up to the next floor's level ceiling
 ## (LootPacing.next_ceiling). With `card_categories` (ItemDefinition.LOOT_CATEGORIES), one card of those categories
 ## from the item pool (never a Legendary card: those come only by the Legendary chance below, which takes this choice's
@@ -70,7 +70,7 @@ func validate() -> Array[ValidationIssue]:
 					&"range", resource_path, "%s: its multiplier is at least 1" % id
 				)
 			)
-	if wand_level != 0:  # v0.8.0 FL: the level-5 grant is gone (upgrade_choice)
+	if wand_level != 0:  # The level-5 grant is gone (upgrade_choice)
 		issues.append(ValidationIssue.new(&"range", resource_path, "wand_level is retired: 0"))
 	if offer_size < 1 or offer_size > 3:
 		issues.append(ValidationIssue.new(&"range", resource_path, "offer_size is 1..3"))
@@ -87,6 +87,6 @@ func validate() -> Array[ValidationIssue]:
 	return issues
 
 
-## v0.9.0 LG: the legendary multiplier of stat card `id` (its own, or stat_multiplier).
+## The legendary multiplier of stat card `id` (its own, or stat_multiplier).
 func multiplier_of(id: StringName) -> float:
 	return float(stat_multiplier_by_card.get(id, stat_multiplier))

@@ -1,6 +1,6 @@
 class_name CanyonShoreState
 extends RefCounted
-## v0.11.0 O13c (ENEMIES.md R5-R8; CanyonShore): what the Red Canyon's and the Frozen Shore's signature enemies leave on
+## ENEMIES.md R5-R8; CanyonShore: what the Red Canyon's and the Frozen Shore's signature enemies leave on
 ## a floor, as parallel arrays (each group in the order it was added).
 ## - Bursts (a dead Kiln Beetle's): the centre and radius, the tick it fell and the tick it blows, its damage to the
 ##   hero and to each enemy (already powered by the beetle's tier).

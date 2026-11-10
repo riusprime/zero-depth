@@ -1,6 +1,6 @@
 class_name QuakeCompiler
 extends RefCounted
-## v0.11.0 O3 (owner L5, Q9 a; BossQuake): compiles a boss's quake pillars (BossDefinition.quake, QuakeRules.SPEC)
+## Compiles a boss's quake pillars (BossDefinition.quake, QuakeRules.SPEC)
 ## into its table's QuakeTable, in sim units (its own file: ContentCompiler is at its line limit).
 
 

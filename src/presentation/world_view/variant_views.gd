@@ -1,6 +1,6 @@
 class_name VariantViews
 extends Node3D
-## v0.11.0 O13a (ENEMIES.md V1-V5): what the biome variants leave on the floor, read through WorldReader (EI-07), in the
+## ENEMIES.md V1-V5: what the biome variants leave on the floor, read through WorldReader (EI-07), in the
 ## premade packs' effects (PD-13):
 ## - an Ember Charger's fire trail: the pack's enemy fire patch (VfxLayer.field &"fire", hostile: zone_fire_foe_a/b,
 ##   fire_area_06/07), dimmer until it burns (its arm time) and fading out over its last half second;

@@ -18,7 +18,7 @@ const METAL_COLOR := Color("#6A6462")
 const METAL_DARK := Color("#4C4847")
 const EYE_COLOR := Color("#FF2A22")
 const GLOW_COLOR := Color("#FF3A26")
-## v0.8.0 BA: the model's legs (BossRig), front left, front right, back left, back right.
+## The model's legs (BossRig), front left, front right, back left, back right.
 const LEG_TAGS: Array[StringName] = [&"fl", &"fr", &"bl", &"br"]
 const LEG_THIGHS: Array[StringName] = [&"thigh_fl", &"thigh_fr", &"thigh_bl", &"thigh_br"]
 const LEG_SHINS: Array[StringName] = [&"shin_fl", &"shin_fr", &"shin_bl", &"shin_br"]
@@ -32,7 +32,7 @@ var legs: Array[Node3D] = []
 var _mortar_glow: Array[MeshInstance3D] = []
 
 
-## v0.7.5 BF3: its dodge-first moves pose as the old ones: the Turret Cross as its cannon's volleys (it recoils), the
+## Its dodge-first moves pose as the old ones: the Turret Cross as its cannon's volleys (it recoils), the
 ## Mortar Grid and the Barrage's tracked circles as its mortar tubes, the Rail lane as its rail's charge.
 func apply_state(s: Dictionary) -> void:
 	super(s)
@@ -230,7 +230,7 @@ func _pose(dt: float) -> void:
 		(leg.get_meta(&"knee") as Node3D).rotation = Vector3(0, 0, cos(_phase) * diag * 0.15 * walk)
 
 
-## v0.8.0 BA: the owner's model (rigged in code, BossRig) plays its keyframed clips (SiegeEngineClips); the legs
+## The owner's model (rigged in code, BossRig) plays its keyframed clips (SiegeEngineClips); the legs
 ## follow the clips' leg parameters, and in its last phase it stays a little lower, planted.
 func _clip_library() -> Dictionary:
 	return SiegeEngineClips.library()

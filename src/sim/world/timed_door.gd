@@ -17,7 +17,7 @@ extends RefCounted
 ## - The secret room's reward: an epic altar (Offers.roll_epic) or a chest (priced as the floor's next chest), drawn
 ##   from the `loot:timed_door` sub-stream, placed at setup on the room's first item spot (else its spawn spot nearest
 ##   its centre, else its centre). The room holds no enemy spawn spot.
-## - Puzzle calm (Q22): the host room (the switches' room) is a calm room of the registry until the door first opens.
+## - Puzzle calm: the host room (the switches' room) is a calm room of the registry until the door first opens.
 ## - v0.9.5 TS (owner Q7: "the buttons always by the door really close so it does not become a challenge"; "if the
 ##   door closes when you are inside you should be able to open it from the inside"): the switches sit in two other
 ##   rooms 1..2 steps from the host (TimedDoorRooms.spread_spots), the timer is 20 s (1200 ticks), and a lever just
@@ -31,7 +31,7 @@ enum State { SHUT, OPEN, HELD }
 
 ## How near a switch (m) the press reaches.
 const SWITCH_REACH_M := 1.8
-## v0.9.5 TS: the timer of a floor saved before TS (15 s at 60 Hz).
+## The timer of a floor saved before TS (15 s at 60 Hz).
 const LEGACY_TICKS := 900
 const REWARD_STREAM := "loot:timed_door"
 
@@ -46,7 +46,7 @@ var wall_up := 0
 ## The switches' entries in World.interactables, and the host room's calm entry.
 var switches := PackedInt32Array()
 var calm_k := -1
-## v0.9.5 TS: the lever's entry in World.interactables (-1 none), its open time (ticks; 0 none), and how long the door
+## The lever's entry in World.interactables (-1 none), its open time (ticks; 0 none), and how long the door
 ## stays open now (timer_ticks after the switches, lever_ticks after the lever).
 var lever := -1
 var lever_ticks := 0
@@ -76,7 +76,7 @@ static func setup(
 	if w.gamble_id >= 0:
 		avoid.append(w.gamble_pos)
 		taken.append(f.room_of(w.gamble_pos))
-	avoid.append_array(Shrines.avoid_spots(w))  # v0.9.0 HF: the fountain and its room
+	avoid.append_array(Shrines.avoid_spots(w))  # The fountain and its room
 	taken.append_array(Shrines.taken_rooms(w))
 	if TimedDoorRooms.mark(f, chance_permille, ticks, speed, taken, avoid, steps_max) < 0:
 		return
@@ -105,7 +105,7 @@ static func setup(
 
 
 static func _place_reward(w: World, t: TimedDoor) -> void:
-	var got := Secrets.place_reward(w, w.floor_layout.timed_room, REWARD_STREAM)  # v0.9.0 RA: shared
+	var got := Secrets.place_reward(w, w.floor_layout.timed_room, REWARD_STREAM)  # Shared
 	t.reward_id = got.x
 	t.reward_epic = got.y
 
@@ -125,7 +125,7 @@ static func press(w: World, i: int) -> void:
 	t.open_tick = w.tick
 	t.opened += 1
 	t.open_ticks = t.timer_ticks
-	r.solve_calm(t.calm_k)  # Q22: solved, normal spawning there from now on
+	r.solve_calm(t.calm_k)  # Solved, normal spawning there from now on
 	if t.lever >= 0:
 		r.enabled[t.lever] = 0
 	if t.wall_up == 1:
@@ -134,7 +134,7 @@ static func press(w: World, i: int) -> void:
 		t.wall_up = 0
 
 
-## v0.9.5 TS: the lever pulled (Interactables.handle): the shut door opens for lever_ticks; the switches wait.
+## The lever pulled (Interactables.handle): the shut door opens for lever_ticks; the switches wait.
 static func pull(w: World, i: int) -> void:
 	var t := w.timed
 	var r := w.interactables
@@ -196,7 +196,7 @@ static func hero_inside(w: World) -> bool:
 	return Collide.circle_vs_obb(p, w.player.radius_m + 0.05, f.timed_door_wall) != Vector2.ZERO
 
 
-## Whether reward i is a secret room's epic altar (Offers.roll: epic stat cards, as a Deep floor's). v0.9.0 RA: any
+## Whether reward i is a secret room's epic altar (Offers.roll: epic stat cards, as a Deep floor's). any
 ## secret room's (Secrets.is_epic: the timed door's, the rune puzzle's).
 static func is_epic(w: World, i: int) -> bool:
 	return Secrets.is_epic(w, i)

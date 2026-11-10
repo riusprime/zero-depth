@@ -1,6 +1,6 @@
 class_name StageAtmosphere
 extends Node3D
-## v0.8.0 GX (owner O86, feedback/2026-10-19_graphics_upgrade.md §1, §3): the air of a floor on the "high" lighting
+## The air of a floor on the "high" lighting
 ## tier. A low layer of volumetric fog that follows the view (the fire props' lights hang in it), warm embers drifting
 ## round each light prop, and a sparse cool dust over the view. Presentation only: frame time, nothing decides an
 ## outcome; the sim never reads it.

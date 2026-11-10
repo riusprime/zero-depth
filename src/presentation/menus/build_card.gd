@@ -43,16 +43,16 @@ var weapon := 0
 var title_key := &""
 var desc_key := &""
 var damage_permille := 1000
-## v0.8.0 N1 (D39): the build's damage taken, per mille (1000 draws no line; the Blade's 750 reads "-25 %").
+## The build's damage taken, per mille (1000 draws no line; the Blade's 750 reads "-25 %").
 var taken_permille := 1000
-## v0.9.5 SL: a padlocked build (the Blade until Sword Unbound) shows this condition line (a tr key) instead of its
+## A padlocked build (the Blade until Sword Unbound) shows this condition line (a tr key) instead of its
 ## damage lines, a padlock over its symbol, and can't be picked (BuildPicker). &"" is a build that can be picked.
 var locked_key := &""
 var delay := 0.0
 ## Sizes picked by the last draw (tests check the text fits).
 var name_size := 0
 var desc_size := 0
-## v0.10.5 W3-O20: how lit the card is now (0 idle .. 1 focused), as drawn.
+## How lit the card is now (0 idle.. 1 focused), as drawn.
 var lit := 0.0
 var _t := 0.0
 var _deny := 0.0
@@ -153,12 +153,12 @@ static func accent(p_weapon: int) -> Color:
 	return WEAPON.get(p_weapon, WEAPON[0])["accent"]
 
 
-## v0.10.5 W3-O20: the card's frame as drawn now (the focused twin while lit; tests).
+## The card's frame as drawn now (the focused twin while lit; tests).
 func panel_box() -> StyleBoxTexture:
 	return _frames[1] if lit >= 0.5 else _frames[0]
 
 
-## v0.10.5 W3-O20: the name's face, letter-spaced Cinzel (the fit measures with it).
+## The name's face, letter-spaced Cinzel (the fit measures with it).
 static func name_font() -> Font:
 	return AstralCardArt.serif(650, 3)
 
@@ -259,7 +259,7 @@ func _draw() -> void:
 		DESC_LINES,
 		TEXT_DIM
 	)
-	if is_locked():  # v0.9.5 SL: the condition in place of the damage lines
+	if is_locked():  # The condition in place of the damage lines
 		var cond := tr(locked_key)
 		var cs := 17
 		var top := r.end.y - 3.0 * bold.get_height(cs) - 4.0
@@ -283,7 +283,7 @@ func _draw() -> void:
 		DAMAGE_SIZE,
 		Color(acc, 0.95)
 	)
-	if taken_permille != 1000:  # v0.8.0 N1 (D39): the line above the damage factor
+	if taken_permille != 1000:  # The line above the damage factor
 		draw_string(
 			bold,
 			Vector2(r.position.x, r.end.y - regular.get_descent(DAMAGE_SIZE) - DAMAGE_SIZE - 8.0),
@@ -320,7 +320,7 @@ func _draw_medallion(c: Vector2, acc: Color) -> void:
 	)
 
 
-## v0.8.0 N1: "-25 %" from the build's damage taken per mille.
+## "-25 %" from the build's damage taken per mille.
 func taken_text() -> String:
 	var pct := int(round((taken_permille - 1000) / 10.0))
 	return ("+%d %%" % pct) if pct >= 0 else ("-%d %%" % -pct)

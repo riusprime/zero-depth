@@ -1,6 +1,6 @@
 class_name GreatJavelinViews
 extends Node3D
-## v0.11.0 F9 (owner): the Warlord's great javelin, read from the sim (WorldReader.boss_great_javelin; EI-07), never
+## The Warlord's great javelin, read from the sim (WorldReader.boss_great_javelin; EI-07), never
 ## decided here: the fan's javelin at GREAT_SCALE (BossSignatureViews.javelin_mesh and its hot shader), flying level
 ## along its line (out, and back the way it came), or planted leaning as the small ones do. Embedded, it vibrates with
 ## an

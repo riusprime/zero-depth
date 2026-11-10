@@ -2,7 +2,7 @@ class_name PlayerDefinition
 extends ContentDef
 ## The player character (CONTENT_SCHEMA §8). Values: starting values listed in GAME_BLUEPRINT §C.
 
-## Limits on the melee combo (v0.3.0 L11): steps, and how far one step may lunge.
+## Limits on the melee combo: steps, and how far one step may lunge.
 const MAX_COMBO_STEPS := 8
 const MAX_LUNGE_M := 2.0
 
@@ -21,7 +21,7 @@ const MAX_LUNGE_M := 2.0
 ## per mille of max HP each second.
 @export var regen_delay_seconds := 10.0
 @export var regen_permille_per_second := 10
-## Crit (v0.4.0 BS, owner F9): every direct hit the player lands rolls this chance on the `crit` stream; a crit
+## Crit: every direct hit the player lands rolls this chance on the `crit` stream; a crit
 ## deals crit_damage x the damage. Stat cards raise both.
 @export var crit_chance := 0.05
 @export var crit_damage := 1.5

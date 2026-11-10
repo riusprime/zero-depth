@@ -1,6 +1,6 @@
 class_name SpellRoster
 extends RefCounted
-## v0.11.0 O11 (owner Q17-Q20; docs/roadmap/v0.11.0/SPELLS.md, every row approved; SIM_CONTRACTS §8p): the casts of
+## The casts of
 ## the twelve spells O10 left for O11 (Spells.cast hands them here). Each returns true when it cast (it had its target),
 ## else the slot waits ready. The lasting parts run in SpellZones; the instant ones hit here (Spells.hit, status).
 ## - F1 Blizzard: a storm (SpellZones.BLIZZARD) on the densest pack, pulsing from now.
@@ -119,7 +119,7 @@ static func _ball_lightning(w: World, t: SpellTable, lv: int) -> bool:
 	return k >= 0
 
 
-## V1: the orb flies like a Fireball (World.spell_ball_*); Spells.land makes the pool.
+## The orb flies like a Fireball (World.spell_ball_*); Spells.land makes the pool.
 static func _venom_orb(w: World, t: SpellTable, lv: int) -> bool:
 	var from := w.player_pos()
 	var c := Spells.densest_pack(w, from, t.reach_m)

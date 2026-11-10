@@ -1,6 +1,6 @@
 class_name AchievementStore
 extends RefCounted
-## v0.7.5 AC (owner N7): the profile's `achievements` section (ProfileStore): what unlocked, in which order, and the
+## The profile's `achievements` section (ProfileStore): what unlocked, in which order, and the
 ## run counters the achievements read (AchievementDefinition.STATS). Outside the run and the sim: never part of
 ## RunState, a save or a hash. No platform API: the list lives in `user://profile.json` only.
 ##

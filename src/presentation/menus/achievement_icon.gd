@@ -1,8 +1,8 @@
 class_name AchievementIcon
 extends Control
-## v0.7.5 AC: an achievement's glyph (AchievementGlyphs) in a small diamond-cut badge: warm gold when unlocked, a dark
+## An achievement's glyph (AchievementGlyphs) in a small diamond-cut badge: warm gold when unlocked, a dark
 ## silhouette when locked, a "?" badge when hidden and locked. Draws only.
-## v0.10.5 W3-O20 (UI style Astral; the toast's gold badge was the last warm thing on the HUD): an unlocked badge is
+## UI style Astral; the toast's gold badge was the last warm thing on the HUD: an unlocked badge is
 ## Astral's silver-lilac (HudStyle.A_ACCENT) instead of the gold.
 
 const LOCKED := Color(0.36, 0.4, 0.46)

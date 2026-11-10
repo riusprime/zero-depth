@@ -38,7 +38,7 @@ func _init(p_defs: Array[CollectibleDefinition], p_found: Array[bool]) -> void:
 	info.add_theme_constant_override("separation", 10)
 	panel.add_child(info)
 	name_label.name = "EntryName"
-	AstralUi.title(name_label, 26)  # v0.10.5 W3-O19: Cinzel, small caps under it, Atkinson body
+	AstralUi.title(name_label, 26)  # Cinzel, small caps under it, Atkinson body
 	shelf_label.name = "Shelf"
 	AstralUi.caps(shelf_label, AstralUi.LABEL_SIZE)
 	lore_label.name = "Lore"
@@ -79,7 +79,7 @@ func refresh(p_found: Array[bool] = found) -> void:
 		head.name = "Head_%s" % shelf
 		head.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		head.text = "%s   %d / %d" % [tr(CollectibleBook.SHELF_KEYS[shelf]), have, here.size()]
-		AstralUi.caps(head, 15, AstralCardArt.METAL)  # v0.10.5 W3-O19: Cinzel small caps
+		AstralUi.caps(head, 15, AstralCardArt.METAL)  # Cinzel small caps
 		_list.add_child(head)
 		var row := HBoxContainer.new()
 		row.name = "Row_%s" % shelf

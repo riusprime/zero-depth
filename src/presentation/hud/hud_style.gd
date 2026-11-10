@@ -20,7 +20,7 @@ extends RefCounted
 ##   HudFrame.new()                            - a PanelContainer that pads a group (it draws nothing);
 ##   HudBar.new()                              - a thin fill bar with a damage echo and a warn pulse.
 
-## Low-HP warning (L24): below this share of max HP the HP bar pulses red (starting value).
+## Low-HP warning: below this share of max HP the HP bar pulses red (starting value).
 const LOW_HP_PERCENT := 30
 ## Warning pulses per second (starting value).
 const PULSE_HZ := 2.0
@@ -45,9 +45,9 @@ const A_INK := Color("#070913")
 const A_WARN := Color("#E0566C")
 ## ASTRAL's heal: a pale moon-green (the gain line's family, no mint), for the regen pulse and the max-HP line.
 const A_HEAL := Color("#A8DCC4")
-## v0.10.5 W3-O20: ASTRAL's water (a shrine's cleanse): a cold moon-blue, apart from the lilac accent.
+## ASTRAL's water (a shrine's cleanse): a cold moon-blue, apart from the lilac accent.
 const A_WATER := Color("#9CC8E8")
-## v0.10.5 W3-O20 (owner 2026-11-04 night: every UI element Astral; the 720p shots read 13 px labels as ~9 px): the
+## The
 ## smallest HUD type (px at the 1920 x 1080 base). The HUD's label helpers raise a smaller size to it, so no HUD text
 ## draws under 11 px at 1280 x 720 (17 x 2/3 = 11.3).
 const MIN_LABEL := 17
@@ -164,13 +164,13 @@ static func label(size: int, bold: bool = false) -> Label:
 	return l
 
 
-## v0.10.5 W3-O20: an icon's or a name's own colour `c` (an item's family, a stat) toned toward Astral's silver, so it
+## An icon's or a name's own colour `c` (an item's family, a stat) toned toward Astral's silver, so it
 ## keeps its hue but sits in the palette.
 static func tone(c: Color) -> Color:
 	return Color(c.lerp(A_METAL, 0.45), c.a)
 
 
-## v0.10.5 W3-O20: a small icon tile (GambleIconView, ItemIconView, ComboIconView): AstralChrome.FrameBox
+## A small icon tile (GambleIconView, ItemIconView, ComboIconView): AstralChrome.FrameBox
 ## (ink, a 1 px frame, an inner frame, a small diamond on top), its frame tinted by the icon's `c`.
 static func draw_astral_tile(ci: CanvasItem, r: Rect2, c: Color) -> void:
 	var box := AstralChrome.FrameBox.new()
@@ -178,7 +178,7 @@ static func draw_astral_tile(ci: CanvasItem, r: Rect2, c: Color) -> void:
 	ci.draw_style_box(box, r)
 
 
-## v0.10.5 W3-O20: a top banner (Lockdown, the arena, a shrine): its `title` in letter-spaced Cinzel, its `line` in
+## A top banner (Lockdown, the arena, a shrine): its `title` in letter-spaced Cinzel, its `line` in
 ## Atkinson, and a fading hairline with a small star between them (AstralChrome.Rule) in `box`.
 static func astral_banner(box: BoxContainer, title: Label, line: Label) -> void:
 	serif_label(title, 28, 6, A_TEXT)
@@ -210,8 +210,8 @@ static func plate_points(r: Rect2, cut: float = CHAMFER) -> PackedVector2Array:
 	)
 
 
-## A HUD side panel's box (v0.6.0 UP: the shrine stats, the threat panel, the DPS meter): an empty box padded by
-## `margin` (v0.10.5 W3-O17: the panel draws itself, draw_side_panel).
+## A HUD side panel's box (the shrine stats, the threat panel, the DPS meter): an empty box padded by
+## `margin` (the panel draws itself, draw_side_panel).
 static func side_panel_box(margin: Vector2) -> StyleBox:
 	var box := StyleBoxEmpty.new()
 	box.content_margin_left = margin.x
@@ -221,7 +221,7 @@ static func side_panel_box(margin: Vector2) -> StyleBox:
 	return box
 
 
-## v0.10.5 W3-O17: a side panel over `c`'s whole rect: Astral's ink panel, a contour, an inner contour, and its `accent`
+## A side panel over `c`'s whole rect: Astral's ink panel, a contour, an inner contour, and its `accent`
 ## (the shrine's or the curses' colour) as a short line on its top.
 static func draw_side_panel(c: Control, accent: Color) -> void:
 	var r := Rect2(Vector2.ZERO, c.size.round())

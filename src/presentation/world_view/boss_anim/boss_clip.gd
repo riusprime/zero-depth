@@ -40,7 +40,7 @@ const SETTLE := 1
 ## The default attack timing: the windup fills 0..STRIKE, the active ticks STRIKE..HOLD_END.
 const STRIKE := 0.5
 const HOLD_END := 0.62
-## v0.11.0 O16 (owner Q11: "right now the animation feels too stiff"; Q30: "all bosses, the Twins first"): the same
+## The same
 ## loosening O16a gave the Twin Wardens by hand, applied to a whole library once it is built:
 ## - the idle: every bone's and the body's sway swings `gain` (IDLE_GAIN by default) times as wide about its middle
 ##   (a held pose, such as a carried weapon, stays where it is), plus, when `sway` > 0, a slow weight shift of the
@@ -207,7 +207,7 @@ func _track(target: StringName, channel: int, axis: Vector3, keys: Array) -> Bos
 	return self
 
 
-## v0.11.0 O16: loosens a built library in place, once (the wind-up, the recoil, the idle sway: see IDLE_GAIN).
+## Loosens a built library in place, once (the wind-up, the recoil, the idle sway: see IDLE_GAIN).
 static func loosen(library: Dictionary, sway: float = 0.0, gain: float = IDLE_GAIN) -> void:
 	var moves := {}
 	for n: StringName in BossAnimator.MOVE_CLIPS.values():

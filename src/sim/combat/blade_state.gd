@@ -1,6 +1,6 @@
 class_name BladeState
 extends RefCounted
-## v0.6.5 WN4: the Blade pool's state in play (World.blade; BladeForms), per floor. Copied by WorldSnapshot like every
+## The Blade pool's state in play (World.blade; BladeForms), per floor. Copied by WorldSnapshot like every
 ## state class; hashed by BladeForms.hash_into once touched (worlds that never use a Blade card hash as before).
 
 ## The tick the last dash ended (-1 = none: Counter's window opens there), and the tick of the last slash that

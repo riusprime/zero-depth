@@ -1,13 +1,13 @@
 class_name BladeFormsDefinition
 extends ContentDef
-## v0.6.5 WN4 (docs/design/WAND.md, the Blade pool; CONTENT_SCHEMA "The wand"): the runner numbers the Blade's cards
+## docs/design/WAND.md, the Blade pool; CONTENT_SCHEMA "The wand": the runner numbers the Blade's cards
 ## share that no card's ops name, one `.tres` in data/wand/ (its own file, so the dev panel's tuning data merges
 ## beside it; id blade_forms). Compiled by BladeCompiler into BladeTable (World.blade_table). Every number is a
 ## starting value the owner tunes by play (never a measurement: no bot sims, P1).
-## - Orbit Blades (B15): at most orbit_max blades at once (the oldest leaves), each turning orbit_turns_per_second
+## - Orbit Blades: at most orbit_max blades at once (the oldest leaves), each turning orbit_turns_per_second
 ##   round the hero and resting orbit_gap_seconds after a hit.
-## - Heavy (B7): its knockback slides the enemy over knock_seconds.
-## - Lunge Step (B13): the step is spread over at least lunge_seconds (not one tick: it reads as a drive, and it never
+## - Heavy: its knockback slides the enemy over knock_seconds.
+## - Lunge Step: the step is spread over at least lunge_seconds (not one tick: it reads as a drive, and it never
 ##   jumps through thin cover).
 ## - The fastest a swing may get: min_rate_permille of its own speed's divisor floor for stacked slow cards (Heavy
 ##   twice and more), so a swing never takes forever.

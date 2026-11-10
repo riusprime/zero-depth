@@ -1,11 +1,11 @@
 class_name CanyonShoreBodies
 extends RefCounted
-## v0.11.0 O13c (ENEMIES.md R5-R8; OWNER_TODO §3.2's prompts for these ids): the code-made stand-in bodies of the Red
+## ENEMIES.md R5-R8; OWNER_TODO §3.2's prompts for these ids: the code-made stand-in bodies of the Red
 ## Canyon's and the Frozen Shore's signature enemies until the owner's models come, built on a HordeAvatar (the horde
 ## kinds' way: its pieces, outline, flash, flinch, eye and glow) in the Charger family's style: a faceted shell in the
 ## role colour, a dark shield-shaped face with one glowing gem visor, a charcoal body, grey segmented limbs with bone
 ## tips. Each one shape at a glance, and its tell drawn on the body:
-## (v0.11.0 O17d: the Cinder Priest is the owner's model now, CinderPriestAvatar; O17e: the Kiln Beetle,
+## (the Cinder Priest is the owner's model now, CinderPriestAvatar; O17e: the Kiln Beetle,
 ## KilnBeetleAvatar.)
 ## - Frost Spitter (ranged blue): a lean four-legged body with a pale ice sac on its throat that swells through the
 ##   windup.

@@ -1,6 +1,6 @@
 class_name SpellSquares
 extends Control
-## v0.11.0 O10 (owner Q19: "4 new HUD squares above the ability bar, cooldown sweep, flash on cast"): the spell slots,
+## The spell slots,
 ## four small squares right-aligned just above the ability squares (AbilitySquares). Each held slot shows its
 ## spell's placeholder icon (SpellLooks) in its element's colour; while it cools, a dark wedge sweeps round clockwise
 ## over the part still cooling, and the tick it casts the square flashes white for FLASH_SECONDS. An empty slot is a dim

@@ -5,15 +5,15 @@ extends Control
 ## red blinking when full"; G2 overnight pick, docs/roadmap/v0.10.5/evidence/O6_DANGER_BAR.md): the ember teeth are
 ## gone. A thin bar fills along the floor's danger curve, full at FULL_TIER (the overtime reaches it at the 10-minute
 ## mark), in green → yellow → red as it fills. Full, it blinks slowly (reduced motion: steady red). A tier rise still
-## brightens it for a moment, and from NUMBER_TIER the tier number stays beside it (v0.9.5 DC). It shows what
+## brightens it for a moment, and from NUMBER_TIER the tier number stays beside it. It shows what
 ## WorldReader says (tier, tier_progress) and decides nothing.
-## v0.10.5 W3-O17 (UI style Astral; owner: "and what about the rest of the UI? it should match the new style"): the
+## UI style Astral; owner: "and what about the rest of the UI? it should match the new style": the
 ## round-2 mock's danger line: a slim ink bed in a hairline frame, a fill 3 px line in the ramp (Astral's muted tones:
 ## sage, pale gold, rose-red), a tick under the bed for each tier, a diamond marker at the fill's end (filled and
 ## blinking once full) and the tier number in Cinzel.
 
-## v0.9.5 DC (owner: "aim to a 10 minutes max per floor"): from this tier on the meter also shows the tier number
-## ("×7"). v0.10.5 O6: the bar is full at FULL_TIER (data/curves/floor_N.tres: the overtime's last start, 600 s).
+## From this tier on the meter also shows the tier number
+## ("×7"). the bar is full at FULL_TIER (data/curves/floor_N.tres: the overtime's last start, 600 s).
 const NUMBER_TIER := 4
 const FULL_TIER := 10
 const NUMBER_W := 34.0
@@ -23,7 +23,7 @@ const PULSE_S := 0.8
 const SIZE := Vector2(190, 9)
 const BLINK_HZ := 0.7
 const BLINK_LOW := 0.3
-## v0.10.5 W3-O17: the ramp in Astral's muted tones (no saturated green, no orange): sage, pale gold, rose-red.
+## The ramp in Astral's muted tones (no saturated green, no orange): sage, pale gold, rose-red.
 const GREEN := Color("#8CC9A6")
 const YELLOW := Color("#E2CB8E")
 const RED := HudStyle.A_WARN
@@ -70,7 +70,7 @@ static func color_at(f: float) -> Color:
 	return YELLOW.lerp(RED, (x - 0.5) * 2.0)
 
 
-## v0.9.5 DC: whether the tier number is drawn.
+## Whether the tier number is drawn.
 static func shows_number(tier: int) -> bool:
 	return tier >= NUMBER_TIER
 
@@ -148,7 +148,7 @@ func _draw() -> void:
 		)
 
 
-## v0.10.5 W3-O17: the danger line on `c` in `r` (14 px tall): the slim bed in its hairline frame with end ticks,
+## The danger line on `c` in `r` (14 px tall): the slim bed in its hairline frame with end ticks,
 ## a tick under it per tier (`tiers`; the passed ones lit), the fill a 3 px line in the ramp's colour at brightness
 ## `lit` to `f`, and the diamond marker at its end, filled once full (it blinks with `lit`). `p` is the rise pulse.
 static func draw_astral(

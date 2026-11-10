@@ -3,7 +3,7 @@ extends RefCounted
 ## The boss room (v0.3.0 PLAN L4, "Boss room and portal"): after FloorGenerator.generate, a room of the boss's size
 ## (BossArenaSpec.cells, in grid cells) is attached to the farthest room through one doorway, the boss door, and the
 ## stone gate moves into it, against the wall opposite the door. The room sits on free grid cells (it never overlaps
-## another room) and follows the generator's wall-thickness model (v0.3.0 L1): each side's half is drawn from
+## another room) and follows the generator's wall-thickness model: each side's half is drawn from
 ## wall_half_min..wall_half_max, except the side shared with the host, which keeps the host's half (the host's outer
 ## skin there becomes the boss room's frame, so the shared wall is twice the host side's half); a side is thickened
 ## where a neighbour's skin reaches further into its cells. Its frame strips (interior out to the grid lines) and its
@@ -442,7 +442,7 @@ static func _room_at(f: FloorLayout, cell: Vector2i) -> int:
 	return _NONE
 
 
-## The gate in front of the middle of the wall opposite the door (v0.9.0 PT: GATE_WALL_CLEAR out from it), facing into
+## The gate in front of the middle of the wall opposite the door (GATE_WALL_CLEAR out from it), facing into
 ## the room.
 static func _place_gate(f: FloorLayout, r: Rect2, side: int) -> void:
 	var c := r.get_center()
@@ -458,7 +458,7 @@ static func _place_gate(f: FloorLayout, r: Rect2, side: int) -> void:
 			face = Vector2(c.x, r.position.y)
 	f.portal_room = f.boss_room
 	f.portal_angle = _SIDE_ANGLES[side]
-	f.portal_pos = face + f.portal_facing() * GateClearance.wall_offset(f)  # v0.9.0 PT: clear of the wall
+	f.portal_pos = face + f.portal_facing() * GateClearance.wall_offset(f)  # Clear of the wall
 
 
 ## The door's approach point just inside the boss room.

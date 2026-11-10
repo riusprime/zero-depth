@@ -1,6 +1,6 @@
 class_name GreatJavelinRules
 extends RefCounted
-## v0.11.0 F9 (owner; BossGreatJavelin): the content rules of a `great_javelin` attack (its own file:
+## The content rules of a `great_javelin` attack (its own file:
 ## BossAttackDefinition stays small). Its numbers sit inside the quake pillars' own bounds (QuakeRules.SPEC: a pulse
 ## is at most 100 per mille of the hero's max HP, its ring at most 5 m), every warning lasts at least the telegraph
 ## minimum and the ring's fits in its pulse; a thrown one embeds at least one pulse long; its way back names a recap

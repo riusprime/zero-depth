@@ -15,7 +15,7 @@ extends RefCounted
 ## through you about LEAD / speed after it
 ## opens (53 ticks, 0.89 s, at a quarter every 2 s): dash through it or run ahead of it. Damage and speed unchanged.
 ## Before W3-O2 it started straight away from the player (a half turn), so its first pass came only after ~4 s.
-## v0.10.5 W3-O2 (F20), v0.11.0 F4 (owner: the beams should be dodgeable): the beam starts this far round from
+## v0.10.5 W3-O2, v0.11.0 F4 (owner: the beams should be dodgeable): the beam starts this far round from
 ## the player (1/4096 turns: 90 degrees), behind them in the way it turns.
 const LEAD := 1024
 ## Returning orbs carry this cause (BossSignatures.LATE_CAUSE + the attack): the recap names the orbs, not the beam.

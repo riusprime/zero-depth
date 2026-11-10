@@ -4,7 +4,7 @@ extends VBoxContainer
 ## near the top of the screen (red "OVERRUN" in the Overrun, amber "ARENA" elsewhere) with the wave you're on and how
 ## many enemies are left; when it clears, a line saying the doors and the reward are open (the Overrun: what it paid),
 ## for a few seconds. Reads WorldReader.arenas() and overrun() only; it decides nothing.
-## v0.10.5 W3-O20 (UI style Astral): the title is letter-spaced Cinzel over a fading hairline
+## UI style Astral: the title is letter-spaced Cinzel over a fading hairline
 ## (HudStyle.astral_banner), the Overrun in the rose warning, an arena in the muted amber.
 
 const CLEARED_SECONDS := 4.0

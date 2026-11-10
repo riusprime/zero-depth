@@ -9,7 +9,7 @@ extends RefCounted
 ## opening's middle). SPECS holds what the prep printed: the opening's width as prepared, the slab's faces (X) and the
 ## round socket on each face where the game's red seal goes. Read once per biome and cached (ViewWarmup reads the
 ## floor's on the load's worker, so no frame reads the file); a missing file gives {} and the code-made door stands
-## (L15).
+## .
 
 const DIR := "res://assets/models/doors/"
 ## Per biome (scripts/assets/bd_prep.py's output, 2026-10-18): "width" (the opening, m), "slab_h" (m), "faces" (the

@@ -1,6 +1,6 @@
 class_name StoneThrowerPoses
 extends RefCounted
-## v0.11.0 O17c: the Stone Thrower's clips as poses (StoneThrowerAvatar's raw drives: {drive: value}), from the clocks
+## The Stone Thrower's clips as poses (StoneThrowerAvatar's raw drives: {drive: value}), from the clocks
 ## the avatar keeps; pure functions of their inputs, so the code avatar and its VAT twin pose alike. Each clip is a few
 ## key poses eased into each other (anticipation before the big moves, an overshoot and a settle after them) with a
 ## little secondary motion on top (the breath, the sway, the trailing hands, the strain's shudder). Presentation only.

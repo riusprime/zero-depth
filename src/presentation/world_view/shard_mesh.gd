@@ -29,7 +29,7 @@ const SIDE_TONES := [1.0, 0.66, 0.86, 0.58, 0.94, 0.7, 0.8]
 const TIP_TONES := [1.0, 0.84]
 const STONE := Color("#5B5550")
 const STONE_TOP := Color("#736C66")
-## v0.8.0 GX (owner O86, graphics feedback §5): crystals glint under the fire props (a little metallic, a low
+## Crystals glint under the fire props (a little metallic, a low
 ## roughness) against the matte stone; every crystal material takes this metallic.
 const CRYSTAL_METALLIC := 0.2
 

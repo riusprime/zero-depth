@@ -12,7 +12,7 @@ extends Node3D
 ## - Reduced motion keeps only the spark (no swirl; PlayerAvatar drops the accent).
 ## Presentation only (EI-07): it reads WorldReader; its timing is frame time and decides nothing.
 
-## v0.10.0 VX1 (R10): the spark at the hand is the pack's short flash on every shot (HitPack.muzzle_at: the swirl and
+## The spark at the hand is the pack's short flash on every shot (HitPack.muzzle_at: the swirl and
 ## the old spark stay for a full family, no pack or false here).
 const PACK_CAST := true
 const POOL := 4
@@ -101,7 +101,7 @@ func _build() -> void:
 		_swirl_shader = Shader.new()
 		_swirl_shader.code = SWIRL
 		_swirl_mesh = swirl_mesh()
-	var cols := HeroPulseViews.colors(ElementLooks.player_energy())  # MP2: violet under The Fallen
+	var cols := HeroPulseViews.colors(ElementLooks.player_energy())  # Violet under The Fallen
 	var quad := QuadMesh.new()
 	quad.size = Vector2.ONE
 	for k in POOL:
@@ -184,7 +184,7 @@ func sync(reader: WorldReader) -> void:
 	_apply(slot)
 
 
-## v0.10.0 VX1 (R10): the pack's flash at the hand for this shot; false: the old spark draws.
+## The pack's flash at the hand for this shot; false: the old spark draws.
 func _pack_spark(at: Vector3, dir: Vector2) -> bool:
 	if not PACK_CAST or pack_fx == null:
 		return false

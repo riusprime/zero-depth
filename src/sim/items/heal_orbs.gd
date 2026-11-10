@@ -1,6 +1,6 @@
 class_name HealOrbs
 extends RefCounted
-## Heal orbs (v0.4.0 TU, owner D8). v0.11.0 F3 (owner's playtest §6, "controlled, consistent healing"): every run earns
+## Heal orbs. every run earns
 ## them through kills, with no card (Lifesprout is disabled). Starting values in RewardTable (data/rewards/floor.tres):
 ## - At most heal_orbs_max (1) lie on the floor. A new orb never pushes out the old one: none appears while one lies.
 ## - A pickup starts heal_orb_cooldown_ticks (30 s, on World.tick). During it no orb may appear and kills earn nothing.

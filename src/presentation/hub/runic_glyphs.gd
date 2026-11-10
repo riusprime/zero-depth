@@ -1,6 +1,6 @@
 class_name RunicGlyphs
 extends RefCounted
-## v0.9.5 RS1 (RUNIC_STONE.md S4): the 24 Elder Futhark runes as line strokes (no font), in the Futhark's order (glyph
+## RUNIC_STONE.md S4: the 24 Elder Futhark runes as line strokes (no font), in the Futhark's order (glyph
 ## id 0 = fehu ... 23 = othala; RuneCipher maps letters onto them). Each glyph is a list of polylines on a box 2 wide
 ## and 4 tall (x right, y down); the stem of a rune is x = 1 (or the box's sides). Reads nothing, draws nothing.
 

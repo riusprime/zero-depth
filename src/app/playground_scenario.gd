@@ -1,6 +1,6 @@
 class_name PlaygroundScenario
 extends RefCounted
-## v0.7.5 PG (owner N20, docs/tools/PLAYGROUND.md): the Playground's World. One walled 4 x 4-cell room
+## The Playground's World. One walled 4 x 4-cell room
 ## (FloorGenerator.one_room: the extra-large footprint, the start hall's open floor), the chosen build's player and
 ## weapon, every table a run's floor has (enemies and bosses at floor 1's numbers, every card, the heat), and nothing
 ## that runs a floor: no spawning, gate, portal, rewards, shop, events or catch-up. The wand has its most slots.
@@ -13,7 +13,7 @@ const WAND_FLOOR := 99
 const SURFACE_PATCHES := Vector2i(5, 7)
 
 
-## v0.10.5 O17: `cells` the room's size and `surface` whether its biome's ice or starglow is laid (the Training Room's
+## `cells` the room's size and `surface` whether its biome's ice or starglow is laid (the Training Room's
 ## smaller room has none).
 static func build(
 	repo: ContentRepository,
@@ -32,7 +32,7 @@ static func build(
 	w.set_enemy_tables(ContentCompiler.compile_enemies(repo))
 	w.set_item_tables(ContentCompiler.compile_items(repo))
 	w.set_combo_tables(ContentCompiler.compile_combos(repo))
-	# v0.8.0 FB1: and the final boss's bodies after them (PlaygroundApi.summon_final).
+	# And the final boss's bodies after them (PlaygroundApi.summon_final).
 	var bosses := ContentCompiler.compile_bosses(repo)
 	bosses.append_array(ContentCompiler.compile_final_bosses(repo, final_run(repo)))
 	w.set_boss_tables(bosses)
@@ -56,7 +56,7 @@ static func build(
 	return w
 
 
-## v0.8.0 FB1: the run's table (its final boss: the bodies, the shatter, the name).
+## The run's table (its final boss: the bodies, the shatter, the name).
 static func final_run(repo: ContentRepository) -> RunTable:
 	return ContentCompiler.compile_run(repo.get_def(&"run", Main.RUN_ID))
 
@@ -80,7 +80,7 @@ static func lay_surface(w: World, biome: BiomeDefinition) -> void:
 	layout.portal_room = 0
 
 
-## The biomes the Playground offers: the run's, in its order, with their names. (v0.9.0 HB: moved here from Main.)
+## The biomes the Playground offers: the run's, in its order, with their names. (moved here from Main.)
 static func biomes(repo: ContentRepository) -> Array:
 	var out := []
 	var run_def: RunDefinition = repo.get_def(&"run", Main.RUN_ID)
@@ -92,7 +92,7 @@ static func biomes(repo: ContentRepository) -> Array:
 
 
 ## The DPS meter's source names: an effect id -> the name key of the card, ability, combo or curse with that id, and
-## the statuses' own names. (v0.9.0 HB: moved here from Main.)
+## the statuses' own names. (moved here from Main.)
 static func source_names(repo: ContentRepository) -> Dictionary:
 	var out := {
 		&"bleed": &"UI_PG_SRC_BLEED",

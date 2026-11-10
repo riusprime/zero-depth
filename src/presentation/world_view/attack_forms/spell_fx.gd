@@ -8,7 +8,7 @@ extends Node3D
 ##   flame spikes out to the burst radius;
 ## - Sky Strike: a pale-blue bolt drops from the sky onto each struck enemy, and a thin pale line marks its jump.
 ## The casts come from WorldReader.spell_fx() (each new entry once); lives are sim ticks. Presentation only (EI-07).
-## v0.11.0 VX (owner PD-13): with the effects layer these are pack effects too (_pack_o10), the strips hidden:
+## With the effects layer these are pack effects too (_pack_o10), the strips hidden:
 ## - Frost Nova: the frost ring (ring_frost: pulse_area_vfx_02 in frost) grows out to the radius over the frost burst
 ##   (burst_frost: vfx_explosion_07 in frost, its white Core hidden) at the hero;
 ## - Fireball: the fire orb (vx2_bolt_ember: fire_ball_01) in flight, the fire explosion (explosion_fire_a/b/c:
@@ -45,9 +45,9 @@ const SKY_M := 9.0
 const CHEST_M := 0.9
 const BALL_M := 1.2
 const STAR := 8
-## v0.11.0 O11: Blood Thorns' eruptions (vfx_impact_02) without the white puff and the floor disc.
+## Blood Thorns' eruptions (vfx_impact_02) without the white puff and the floor disc.
 const THORN_HIDE := ["Core", "Ground_Impact"]
-## v0.11.0 VX: the O10 casts' pack seeds start here; the Fireball's orb scale, the Frost Nova's burst radius (of the
+## The O10 casts' pack seeds start here; the Fireball's orb scale, the Frost Nova's burst radius (of the
 ## nova's).
 const O10_SEED := 700000
 const FIREBALL_SCALE := 0.6
@@ -55,10 +55,10 @@ const NOVA_BURST_R := 0.3
 ## The pack bursts' white-hot Core sphere, hidden for the Frost Nova and the Fireball (PackFx.HIDE_PER_SPAWN).
 const CORE_HIDE := ["Core"]
 
-## Counted for tests: casts drawn by kind; v0.11.0 O11: the spells seen drawn (a cast or a lasting look).
+## Counted for tests: casts drawn by kind; the spells seen drawn (a cast or a lasting look).
 var seen := {}
 var drawn := {}
-## v0.11.0 O11 (owner PD-13, 2026-11-07: every new effect from the premade packs): with the effects layer (the game),
+## With the effects layer (the game),
 ## the twelve spells and the new Lv 5 extras draw as pack effects in draw_fx (a hero drawer), and the strips below are
 ## not drawn; without it (a bare view in tests) the strips stand in.
 var vfx_on := false
@@ -494,7 +494,7 @@ func draw_fx(layer: VfxLayer) -> void:
 		_once.clear()
 
 
-## v0.11.0 VX (PD-13): O10's Frost Nova, Fireball burst, Sky Strike bolt and jump as pack effects (the header). Each
+## PD-13: O10's Frost Nova, Fireball burst, Sky Strike bolt and jump as pack effects (the header). Each
 ## cast's seed is its serial past O10_SEED, so its pack effects never share a key with another drawer's.
 func _pack_o10(layer: VfxLayer) -> void:
 	var fx := layer.pack_fx

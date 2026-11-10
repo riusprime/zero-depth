@@ -1,8 +1,8 @@
 class_name GambleStatsPanel
 extends PanelContainer
-## The stats won at the gamble shrine this run (v0.3.0 L19): one row per stat with its icon, the total it adds and
+## The stats won at the gamble shrine this run: one row per stat with its icon, the total it adds and
 ## its wins / cap. On the HUD it shows while you stand at the shrine; the pause menu shows it too.
-## v0.10.5 W3-O20 (UI style Astral): the HUD's Astral side panel on the HUD and in the pause screen, the title in
+## UI style Astral: the HUD's Astral side panel on the HUD and in the pause screen, the title in
 ## letter-spaced Cinzel, the lines in Astral's silver-white, the counts and the empty line dim; each stat keeps its
 ## icon's colour (GambleIconView draws its Astral tile).
 
@@ -21,7 +21,7 @@ var _none := Label.new()
 var _shown := PackedInt32Array()
 ## The language the rows were worded in.
 var _locale := ""
-## v0.11.0 F13: wins the view has not shown yet, per stat (the sim applied them at once; their symbol is still on its
+## Wins the view has not shown yet, per stat (the sim applied them at once; their symbol is still on its
 ## way to the panel), so the rows say the value before them until release().
 var _held := {}
 ## The row last lit and how long it still glows (s).
@@ -56,7 +56,7 @@ func _notification(what: int) -> void:
 		sync(_reader)  # the pause menu syncs it once: a language switch from its Options words it again
 
 
-## The panel's box and type (v0.10.5 W3-O20: one Astral panel on the HUD and in the pause).
+## The panel's box and type (one Astral panel on the HUD and in the pause).
 func _apply_look() -> void:
 	add_theme_stylebox_override("panel", HudStyle.side_panel_box(MARGIN + Vector2(4, 4)))
 	HudStyle.serif_label(_title, 18, 4, HudStyle.A_TEXT)
@@ -83,7 +83,7 @@ func sync(reader: WorldReader) -> void:
 	var now := PackedInt32Array()
 	for s in reader.gamble_stat_count():
 		now.append(_shown_stacks(s))
-	if now == _shown and TranslationServer.get_locale() == _locale:  # v0.6.0 UP: worded again on a switch
+	if now == _shown and TranslationServer.get_locale() == _locale:  # Worded again on a switch
 		return
 	_title.text = tr("UI_GAMBLE_STATS")  # P-7: after the early return (unchanged words then)
 	_none.text = tr("UI_GAMBLE_STATS_NONE")
@@ -108,7 +108,7 @@ func sync(reader: WorldReader) -> void:
 		var count := Label.new()
 		count.text = "%d / %d" % [_shown_stacks(s), reader.gamble_cap(s)]
 		count.add_theme_font_size_override("font_size", 14)
-		# v0.10.5 W3-O20: the HUD's type in the pause too
+		# The HUD's type in the pause too
 		HudStyle.style_label(text, 17)
 		HudStyle.style_label(count, 16)
 		text.add_theme_color_override("font_color", HudStyle.A_TEXT)
@@ -132,7 +132,7 @@ func _shown_bonus(stat: int) -> int:
 	)
 
 
-## v0.11.0 F13: a win of `stat` is on its way here; its row keeps the value before it until release(stat).
+## A win of `stat` is on its way here; its row keeps the value before it until release(stat).
 func hold(stat: int) -> void:
 	_held[stat] = int(_held.get(stat, 0)) + 1
 	_shown = PackedInt32Array()  # reworded on the next sync

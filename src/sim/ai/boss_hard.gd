@@ -13,7 +13,7 @@ extends RefCounted
 ## - B3, the Brood Mother's Leap Chain: the last leap of the chain aims last_lead_ticks ahead of the player's movement
 ##   and lands on a disc last_radius_bonus_permille per mille wider.
 ## - B4, the Hive Lens's Focus Beam: with beam_burns (turn_dps given) the beam burns the whole active time and, with
-##   beam_turn_milli > 0 (1/4096 turns a tick x 1000), turns toward the player while it does (v0.11.0 F4: 0 = never).
+##   beam_turn_milli > 0 (1/4096 turns a tick x 1000), turns toward the player while it does (0 = never).
 ## - B5, the Siege Engine's Mortar Grid: with safe_cells every volley strikes the whole board but that many cells,
 ##   inside its outer ring; the cells come from one draw of the ai stream at the attack's start (a permutation of the
 ##   inner cells), and from the second half of the volleys on they are other cells (the later volley shows for

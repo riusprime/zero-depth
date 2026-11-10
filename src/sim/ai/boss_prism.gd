@@ -31,7 +31,7 @@ extends RefCounted
 
 ## A body's shards' fast bolts look like this (FireballViews; the orbs' look is their pattern's).
 const BOLT_LOOK := &"crown_bolt"
-## v0.8.0 PR (O84): the window's first bolt starts aiming this long after the beams go out (ticks: 0.3 s).
+## The window's first bolt starts aiming this long after the beams go out (ticks: 0.3 s).
 const BOLT_LEAD_TICKS := 18
 ## No bolt fires while the player's edge is this close to its shard (m).
 const BOLT_SAFE_M := 1.0
@@ -82,7 +82,7 @@ static func shards(w: World, i: int) -> PackedVector2Array:
 	return out
 
 
-# --- the rotation (v0.8.0 PR, owner O84) -------------------------------------------------------------------------
+# --- the rotation -------------------------------------------------------------------------
 
 
 ## BossAi.think in MOVE, for a body with a rotation: the attack after her last one in the phase's list (the first when
@@ -212,7 +212,7 @@ static func resolve(w: World, i: int, b: int, atk: BossAttackTable, st: int) -> 
 	_bolts(w, i, b, atk, st)
 
 
-## v0.8.0 PR (O84): the bolt that starts aiming on active tick st (0, 1, …: its order in the window), or -1. Bolts
+## The bolt that starts aiming on active tick st (0, 1, …: its order in the window), or -1. Bolts
 ## start BOLT_LEAD_TICKS into the window, every bolt_every_ticks, while one can still fire before the window ends.
 static func bolt_starting(atk: BossAttackTable, lock: int, st: int) -> int:
 	var rel := st - atk.spin_ticks - BOLT_LEAD_TICKS
@@ -305,7 +305,7 @@ static func bolt_state(w: World, i: int) -> Dictionary:
 ## "progress" (0..1000 of the windup, the spin, or the window), "arms" ([from, to, hit] per beam: where it runs now,
 ## the aim line's in the windup; empty in the window), "angle" (arm 0's, 1/4096 turns), "half_width", "way" (+1 or
 ## -1), "quarter" (ticks a quarter turn), "speed" (0..1000: how much faster than at full HP), "bolt" (bolt_state).
-## v0.8.0 PR (O84): a Cross fires no orbs, so no "orb_shard".
+## A Cross fires no orbs, so no "orb_shard".
 static func state(w: World, i: int) -> Dictionary:
 	var atk := BossAi.attack_of(w, i)
 	var s := w.actors.state[i]

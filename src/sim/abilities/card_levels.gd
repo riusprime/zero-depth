@@ -2,8 +2,8 @@ class_name CardLevels
 extends RefCounted
 ## v0.6.5 WN3 (docs/design/WAND.md rule 6: "A duplicate levels up. Taking a card you already hold makes it stronger
 ## (levels 1–5) and uses no new slot"): the levels of the wand's cards (World.card_levels, by item index). A wand card
-## is an item tagged `wand` (ItemTable.tags): the Gun pool G1–G16 (WN3), and the other pools as they ship. While you
-## hold one below MAX_LEVEL it stays in the offers (altars, chests, the shop, events, cores; v0.8.0 FL: below the
+## is an item tagged `wand` (ItemTable.tags): the Gun pool G1–G16, and the other pools as they ship. While you
+## hold one below MAX_LEVEL it stays in the offers (altars, chests, the shop, events, cores; below the
 ## floor's level ceiling, LootPacing), and taking it again raises its level instead of taking a slot. Its modifiers
 ## compile at that level (ModifierTable.at: each op's per_level, Modifiers.build_modifiers). Deterministic; no
 ## randomness.
@@ -17,7 +17,7 @@ static func is_card(w: World, idx: int) -> bool:
 	return idx >= 0 and idx < w.item_tables.size() and w.item_tables[idx].tags.has(TAG)
 
 
-## v0.9.5 CLV (CARD_LEVELS.md): the most levels item `idx` has: its `level_max` (ItemTable; 0 = MAX_LEVEL). A card of 1
+## CARD_LEVELS.md: the most levels item `idx` has: its `level_max` (ItemTable; 0 = MAX_LEVEL). A card of 1
 ## is offered once and never again while held. 1 for an index that is no item.
 static func max_level(w: World, idx: int) -> int:
 	if idx < 0 or idx >= w.item_tables.size():
@@ -50,7 +50,7 @@ static func cap(w: World, idx: int) -> int:
 static func level(w: World, idx: int) -> int:
 	if idx < 0 or idx >= w.card_levels.size() or not w.items_owned.has(idx):
 		return 1
-	return clampi(w.card_levels[idx], 1, cap(w, idx))  # v0.9.5 CLV: an old save above the cap reads capped
+	return clampi(w.card_levels[idx], 1, cap(w, idx))  # An old save above the cap reads capped
 
 
 ## W3-P3: the level item `idx`'s ops compile at (at most its max_level: Modifiers, the element rows, the catch-up's P).
@@ -65,7 +65,7 @@ static func overlevels(w: World, idx: int) -> int:
 
 ## W3-P3: what `n` overlevels make item `idx`'s main number, per mille: 1000 + its category's overlevel_permille × n
 ## (linear, not compounding); 1000 for n <= 0, without a pacing table, or for a category without an entry.
-## v0.10.5 W3-P10c: C2 Twin Star makes each step Constellations.TWIN_STAR_OVERLEVEL_MULT times as big.
+## C2 Twin Star makes each step Constellations.TWIN_STAR_OVERLEVEL_MULT times as big.
 static func overlevel_permille(w: World, idx: int, n: int) -> int:
 	var t := w.loot_pacing
 	if n <= 0 or t == null:
@@ -109,11 +109,11 @@ static func weapon_overlevel_permille(w: World) -> int:
 	return pm
 
 
-## Item `idx` may be offered now: it isn't held, or it is a wand card below the floor's level ceiling (v0.8.0 FL:
+## Item `idx` may be offered now: it isn't held, or it is a wand card below the floor's level ceiling (
 ## LootPacing.ceiling, MAX_LEVEL without a pacing table), or below `ceiling` when given (at most MAX_LEVEL; the
 ## boss's upgrade and a jackpot pass a higher one, the dev panel's grants MAX_LEVEL). Every card source's check:
 ## ItemPool.available, Shop.can_apply (the shop, an event's cards, a core's drop).
-## v0.10.5 W3-P2: an element card also stays below its own ceiling (LootPacing.element_ceiling: this floor's, or
+## An element card also stays below its own ceiling (LootPacing.element_ceiling: this floor's, or
 ## `element_ceiling` when given: the next floor's for the boss's upgrade, one past for a jackpot; a `ceiling` given
 ## alone holds for elements too: the dev panel's MAX_LEVEL grant).
 static func can_take(w: World, idx: int, ceiling: int = -1, element_ceiling: int = -1) -> bool:
@@ -144,7 +144,7 @@ static func level_up(w: World, idx: int) -> bool:
 	return true
 
 
-## v0.8.0 N8: the level item `idx` has after it is taken once more: 1 when not held, one up for a held wand card
+## The level item `idx` has after it is taken once more: 1 when not held, one up for a held wand card
 ## below MAX_LEVEL, else its level (level_up's step, and the pick card's forecast: CardForecast). Pure.
 static func level_after(w: World, idx: int) -> int:
 	if not w.items_owned.has(idx):

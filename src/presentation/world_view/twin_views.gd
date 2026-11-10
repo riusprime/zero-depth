@@ -1,6 +1,6 @@
 class_name TwinViews
 extends Node3D
-## v0.9.0 NB2 (BOSSES_4_5.md N2; the VX quality bar: layered, never a flat single-colour shape): the Twin Wardens'
+## BOSSES_4_5.md N2; the VX quality bar: layered, never a flat single-colour shape: the Twin Wardens'
 ## chain and their two signature reads, drawn from WorldReader.boss_twin (EI-07: it reads; the burn, the length rule
 ## and the strikes are the sim's, BossTwin).
 ## - The chain: heavy iron links (lit, metallic, each turned a quarter from the last) hung between the two shackles

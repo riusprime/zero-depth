@@ -1,11 +1,11 @@
 class_name AchievementToast
 extends Control
-## v0.7.5 AC (owner N7: "a toast when one unlocks"): a small panel under the corner minimap: "Achievement unlocked",
+## A small panel under the corner minimap: "Achievement unlocked",
 ## the glyph, the achievement's name and sentence. It slides in, stays SHOW_S and fades; more unlocks wait their turn.
 ## It never takes the mouse, the focus or input (non-blocking), and it lives on the UI layer outside the HUD, so a
 ## toast for a floor's last moment carries over into the next floor. Its clock is the screen's (a look, never an
 ## outcome: EI-03).
-## v0.10.5 W3-O17 (UI style Astral): an Astral panel: Astral's ink fill in a 1 px contour with an inner contour 6 px in,
+## UI style Astral: an Astral panel: Astral's ink fill in a 1 px contour with an inner contour 6 px in,
 ## a four-point star on its top edge, a crescent over the glyph; the header in letter-spaced Cinzel small caps in the
 ## accent, the name in Cinzel, the sentence in Atkinson.
 
@@ -24,7 +24,7 @@ var icon := AchievementIcon.new()
 var header := HudStyle.label(14, true)
 var name_label := HudStyle.label(21, true)
 var desc_label := HudStyle.label(17)
-## v0.8.0 N18: true while the screen is shut behind a loading cover (Main: LoadingCover.shut). The toast waits then,
+## True while the screen is shut behind a loading cover (Main: LoadingCover.shut). The toast waits then,
 ## hidden and its clock stopped, so an unlock made while a floor loads (the biome's, on arrival) is seen when the cover
 ## opens, over the fade-in, instead of running out unseen behind it.
 var hold := Callable()
@@ -95,7 +95,7 @@ func _next() -> void:
 func _word() -> void:
 	if _current.is_empty():
 		return
-	header.text = tr(_current.get("header_key", &"UI_ACH_TOAST"))  # v0.9.0 MP: an unlock names itself
+	header.text = tr(_current.get("header_key", &"UI_ACH_TOAST"))  # An unlock names itself
 	name_label.text = AchievementsPage.title_of(self, _current)
 	desc_label.text = AchievementsPage.desc_of(self, _current)
 	_fit.call_deferred()
@@ -122,13 +122,13 @@ func _process(delta: float) -> void:
 	var a := minf(1.0, _t / FADE_IN_S) if _t < FADE_IN_S else minf(1.0, left / FADE_OUT_S)
 	modulate.a = a
 	var slide := (1.0 - minf(1.0, _t / FADE_IN_S)) * SLIDE_PX
-	if HudStyle.reduced_motion:  # v0.7.5 SM (accessibility pass): a fade, no slide
+	if HudStyle.reduced_motion:  # Accessibility pass: a fade, no slide
 		slide = 0.0
 	offset_left = -RIGHT - W + slide
 	offset_right = -RIGHT + slide
 
 
-## v0.10.5 W3-O17: the Astral panel: ink, a contour, an inner contour, a star on its top edge, a crescent by the glyph
+## The Astral panel: ink, a contour, an inner contour, a star on its top edge, a crescent by the glyph
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size.round())
 	draw_rect(r, AstralChrome.FILL)

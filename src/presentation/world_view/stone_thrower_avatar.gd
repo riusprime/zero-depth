@@ -1,6 +1,6 @@
 class_name StoneThrowerAvatar
 extends AvatarBase
-## v0.11.0 O17c (ENEMIES.md R4; owner 2026-11-08: "make sure they are animated as good as you can"): the Stone
+## The Stone
 ## Thrower on the owner's model (EnemyModels &"stone_thrower", prepared by scripts/assets/o17_prep_stone_thrower.py):
 ## a hunched brute with a bronze carapace (tank bronze, the role plates), a small head with one gem visor, two huge
 ## arms and short legs, and the rock it rips out of the floor (the model's own rock, its own part). Its parts hang in a

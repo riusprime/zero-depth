@@ -8,7 +8,7 @@ extends RefCounted
 ##   puzzle's own loot sub-stream, on the room's first item spot (else its spawn spot nearest its centre, else its
 ##   centre), as TD's; is_epic says which rewards are the secrets' epic altars (Offers.roll: epic stat cards);
 ## - the slabs (barriers added in play) that seal a secret room while it is shut, for the save's wall check (slabs,
-##   slabs_up); v0.9.0 DP: with them, the Deep gate's footprint the purple runes add (PurpleRunes.earn).
+##   slabs_up); with them, the Deep gate's footprint the purple runes add (PurpleRunes.earn).
 ## Pure.
 
 ## The share of the secret rooms' rewards that are epic altars (per mille; the rest chests), as TD's.
@@ -25,7 +25,7 @@ static func taken_rooms(w: World) -> PackedInt32Array:
 		out.append(w.ev.room[k])
 	if w.gamble_id >= 0:
 		out.append(f.room_of(w.gamble_pos))
-	out.append_array(Shrines.taken_rooms(w))  # v0.9.0 HF: the fountain's room
+	out.append_array(Shrines.taken_rooms(w))  # The fountain's room
 	return out
 
 
@@ -37,7 +37,7 @@ static func avoid_spots(w: World) -> PackedVector2Array:
 		out.append(Vector2(w.ev.pos_x[k], w.ev.pos_y[k]))
 	if w.gamble_id >= 0:
 		out.append(w.gamble_pos)
-	out.append_array(Shrines.avoid_spots(w))  # v0.9.0 HF: the fountain
+	out.append_array(Shrines.avoid_spots(w))  # The fountain
 	return out
 
 
@@ -85,7 +85,7 @@ static func is_epic(w: World, i: int) -> bool:
 		return true
 	if w.runes != null and w.runes.reward_epic == 1 and w.runes.reward_id == id:
 		return true
-	var b := w.breakables  # v0.9.0 DX: the cracked wall's room
+	var b := w.breakables  # The cracked wall's room
 	return b != null and b.has_crack() and b.crack_reward_epic == 1 and b.crack_reward_id == id
 
 
@@ -113,7 +113,7 @@ static func slabs(w: World) -> Array[Obb]:
 		out.append(f.rune_door_wall)
 	if f.crack_wall != null:  # v0.9.0 DX
 		out.append(f.crack_wall)
-	if w.purple != null:  # v0.9.0 DP: the Deep gate's footprint, a barrier once the runes are awakened
+	if w.purple != null:  # The Deep gate's footprint, a barrier once the runes are awakened
 		out.append(Routes.deep_gate_collider(f))
 	return out
 

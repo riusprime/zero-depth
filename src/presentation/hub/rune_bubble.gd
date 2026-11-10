@@ -1,6 +1,6 @@
 class_name RuneBubble
 extends Control
-## v0.9.5 RS1 (RUNIC_STONE.md S2, S4): the speech bubble over the Runic Stone, a Control drawn in code. Locked, it is a
+## RUNIC_STONE.md S2, S4: the speech bubble over the Runic Stone, a Control drawn in code. Locked, it is a
 ## faint "..." (three dots); awake, it shows one line in Elder Futhark glyphs (RunicGlyphs, line strokes, no font) in a
 ## violet glow, each glyph fading in FADE_GAP_S after the one before it. It never shows the English. `anchor_px` is
 ## the bubble's tail, where the stone's top is on the screen (HubRunic moves it every frame). Reads and draws only.
@@ -87,7 +87,7 @@ func _draw() -> void:
 			_draw_line()
 
 
-## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): an Astral panel: an ink fill, a 1 px frame in
+## An Astral panel: an ink fill, a 1 px frame in
 ## Astral's line with an inner frame 4 px in, a small diamond on its top edge, the tail outlined in the same line.
 func _panel(box: Rect2) -> void:
 	var o := Rect2(box.position.round(), box.size.round())
@@ -117,7 +117,7 @@ func _panel(box: Rect2) -> void:
 
 func _draw_dots() -> void:
 	var box := Rect2(anchor_px + Vector2(-34, -62), Vector2(68, 30))
-	draw_rect(box, Color(AstralChrome.INK, 0.6))  # v0.10.5 W3-O19: Astral's ink, three faint diamonds
+	draw_rect(box, Color(AstralChrome.INK, 0.6))  # Astral's ink, three faint diamonds
 	draw_rect(box.grow(-0.5), Color(AstralCardArt.LINE, 0.5), false, 1.0)
 	for i in 3:
 		AstralChrome.dia(
@@ -162,4 +162,4 @@ func _glyph(g: int, at: Vector2, a: float) -> void:
 		var pts := PackedVector2Array()
 		for p in s:
 			pts.append(at + Vector2(p.x * sx, p.y * sy))
-		draw_polyline(pts, Color(VIOLET.lerp(AstralCardArt.ACCENT, 0.55), a), 1.6, true)  # v0.10.5 W3-O19: no glow
+		draw_polyline(pts, Color(VIOLET.lerp(AstralCardArt.ACCENT, 0.55), a), 1.6, true)  # No glow

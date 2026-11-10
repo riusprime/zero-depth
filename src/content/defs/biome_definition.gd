@@ -6,15 +6,15 @@ const PALETTE_KEYS: Array[String] = [
 	"ground", "ground_alt", "cover", "accent", "edge", "ambient", "outline"
 ]
 const MIN_OUTLINE_CONTRAST := 3.0
-## v0.11.0 O13a (Q23): every biome's shared core of four.
+## Every biome's shared core of four.
 const SHARED_CORE: Array[StringName] = [&"charger", &"needle", &"swarmer", &"warden"]
-## v0.11.0 O13a: the ten signature enemies of ENEMIES.md R1-R10 that O13b-d build; a signature id may name one before
+## The ten signature enemies of ENEMIES.md R1-R10 that O13b-d build; a signature id may name one before
 ## its definition exists (any other unknown id fails, so a typo can't hide). Empty now: O13b-d built all ten.
 const PENDING_SIGNATURES: Array[StringName] = []
 const SIGNATURES_PER_BIOME := 2
 
 @export var name_key: StringName
-## v0.7.5 CX: the Codex's line about this biome (a locale key; empty shows no line).
+## The Codex's line about this biome (a locale key; empty shows no line).
 @export var desc_key: StringName
 ## Exactly PALETTE_KEYS (docs/art/ART_DIRECTION.md §2): token -> Color.
 @export var palette: Dictionary = {}
@@ -22,14 +22,14 @@ const SIGNATURES_PER_BIOME := 2
 @export var template_tags: PackedStringArray
 ## Its lighting mood (v0.5.9 Step 1): what StageView lights the floor with.
 @export var mood: BiomeMood
-## v0.7.5 NB1: ground that plays differently (Frozen Shore's ice); null for none. Mild flavour (PD-04).
+## Ground that plays differently (Frozen Shore's ice); null for none. Mild flavour (PD-04).
 @export var surface: BiomeSurface
-## v0.7.5 NB1: the biome's own dressing, edge and enemy cast; null keeps the hand-written look (the first three).
+## The biome's own dressing, edge and enemy cast; null keeps the hand-written look (the first three).
 @export var look: BiomeLook
-## v0.11.0 O9 (PLAN H1; owner Q14: "one horde critter per biome, same rules, its own body"): the enemy id of the
+## PLAN H1; owner Q14: "one horde critter per biome, same rules, its own body": the enemy id of the
 ## biome's horde critter (a BehaviourSchemas.CRITTER behaviour), the one its floors' surges send (Surges); &"": none.
 @export var critter_id: StringName
-## v0.11.0 O13a (PLAN M3; owner Q23): the biome's roster. `core_ids`: the shared core, exactly SHARED_CORE on every
+## PLAN M3; owner Q23: the biome's roster. `core_ids`: the shared core, exactly SHARED_CORE on every
 ## biome. `signature_ids`: its two signature enemies (ENEMIES.md R1-R10); an id whose kind is not shipped yet is
 ## listed now (PENDING_SIGNATURES only) and skipped until its definition exists (VariantCompiler.roster_kinds), so
 ## O13b-d add a kind by adding its file. `variant_id`: its variant of an existing enemy (V1-V5, a
@@ -107,7 +107,7 @@ static func _lin(v: float) -> float:
 	return v / 12.92 if v <= 0.03928 else pow((v + 0.055) / 1.055, 2.4)
 
 
-## v0.11.0 O9: every biome's critter_id names a shipped enemy whose behaviour is a horde critter's.
+## Every biome's critter_id names a shipped enemy whose behaviour is a horde critter's.
 static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 	var issues: Array[ValidationIssue] = []
 	var critters := {}
@@ -130,7 +130,7 @@ static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 	return issues
 
 
-## v0.11.0 O13a (Q23): the roster's own shape: the shared core, two distinct signatures, a variant named.
+## The roster's own shape: the shared core, two distinct signatures, a variant named.
 func _check_roster(issues: Array[ValidationIssue]) -> void:
 	var core_ok := core_ids.size() == SHARED_CORE.size()
 	for id in SHARED_CORE:
@@ -147,7 +147,7 @@ func _check_roster(issues: Array[ValidationIssue]) -> void:
 		issues.append(ValidationIssue.new(&"roster", resource_path, "variant_id is empty"))
 
 
-## v0.11.0 O13a: every roster id names a shipped enemy (a signature may be a PENDING_SIGNATURES id not built yet), the
+## Every roster id names a shipped enemy (a signature may be a PENDING_SIGNATURES id not built yet), the
 ## variant is a variant behaviour's, and no signature or variant belongs to two biomes.
 static func _cross_check_rosters(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 	var issues: Array[ValidationIssue] = []

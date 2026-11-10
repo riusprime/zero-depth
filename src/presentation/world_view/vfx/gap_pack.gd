@@ -1,18 +1,18 @@
 class_name GapPack
 extends RefCounted
-## v0.10.0 VX7 (docs/roadmap/v0.9.5/VFX_PACK.md "Gaps built in the pack's style", N2 and N5): the VfxLayer's bleed
+## The VfxLayer's bleed
 ## status and void patches in the VFX pack's style (PackFx, data/vfx/pack_fx_vx7.tres). The layer asks first; the old
 ## sprites draw when there is no PackFx, no room in the effect's family, or the const for the area is false.
-## - Bleed (N2): drips held on a bleeding enemy (assets/vfx_zd/bleed/drips.tscn: the poison bubble's splat particles,
-##   dark red, falling); the old floor decal under it. v0.10.0 FX (owner: "remove residual ground effects"): the pack's
+## - Bleed: drips held on a bleeding enemy (assets/vfx_zd/bleed/drips.tscn: the poison bubble's splat particles,
+##   dark red, falling); the old floor decal under it. the pack's
 ##   splatter laid on the decal every 2 s is gone (two ground looks for one splat).
-## - Void (N5): the rift (a flickering sprite in a patch, tearing open in a blast) is the pack's pulse ring in the void
+## - Void: the rift (a flickering sprite in a patch, tearing open in a blast) is the pack's pulse ring in the void
 ##   violet. The tendrils keep their sprites; the rift torn along a beam keeps its ribbon.
 ## Also here: the helpers the views use to find the pack and to draw a pack material on our own meshes. Cosmetic only.
 
 ## false: the old look (bleed drips and splash; void rifts).
 const PACK_BLEED := true
-const PACK_RIFT := false  # v0.10.0 FX: the Void as before VX7 (VoidView.PACK_VOID)
+const PACK_RIFT := false  # The Void as before VX7 (VoidView.PACK_VOID)
 const DRIPS_ID := &"vx7_bleed_drips"
 const RIFT_ID := &"vx7_void_rift"
 ## How often the old floor splat is laid (ticks).
@@ -100,7 +100,7 @@ static func bleed_colors() -> Dictionary:
 	return {&"primary": c, &"secondary": c, &"tertiary": ElementLooks.deep(&"bleed")}
 
 
-# --- Bleed (N2) --------------------------------------------------------------------------------------------------
+# --- Bleed --------------------------------------------------------------------------------------------------
 ## A bleeding enemy at `p` (its feet), radius `r`, body height `top`: drips running off it (held), the floor splat and
 ## (each cycle).
 func bleed_status(p: Vector3, r: float, top: float, age: float, sd: int, bleed: int) -> void:
@@ -123,7 +123,7 @@ func bleed_status(p: Vector3, r: float, top: float, age: float, sd: int, bleed: 
 	)
 
 
-# --- Void (N5) ---------------------------------------------------------------------------------------------------
+# --- Void ---------------------------------------------------------------------------------------------------
 ## A void patch: dark tendrils curling up out of it, a rift flickering open in its middle, a violet glow.
 func void_field(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
 	var n := clampi(int(round((2.0 + r * r * 1.5) * layer.density)), 2, 12)

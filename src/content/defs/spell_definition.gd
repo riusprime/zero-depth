@@ -1,11 +1,11 @@
 class_name SpellDefinition
 extends ContentDef
-## v0.11.0 O10 (owner Q17-Q20; docs/roadmap/v0.11.0/SPELLS.md, approved row by row; PLAN E1-E5; CONTENT_SCHEMA §8): an
+## An
 ## elemental spell, the card family that sits in the 4 spell slots beside the wand and casts by itself on its own
 ## cooldown (Spells). Holding its element's card (`element_card`, an item id) puts it in the run's offers; the run's
 ## rune affinity `affinity` (a wardrobe affinity id, or empty) raises its offer weight (SpellRulesDefinition). Taking it
 ## again levels it (Lv 1-3, Lv 4-5 from loop 2). The id names the spell and its rule (Spells, one per id in SPELLS
-## order). Per-level lists hold 5 entries, Lv 1 first. v0.11.0 O11: all fifteen rows; what each field means for each
+## order). Per-level lists hold 5 entries, Lv 1 first. all fifteen rows; what each field means for each
 ## spell is SIM_CONTRACTS §8p's (`seconds` is how long it lasts, Frost Nova's freeze; `count` its balls, bolts,
 ## shards, zap targets, heads or marks; `period_s` its pulse; the `bonus_*` fields its Lv 5 extra).
 
@@ -83,19 +83,19 @@ const NEEDS := {
 @export var speed_mps := 0.0
 ## The element's status stacks each hit applies (the element card's own per hit: 1).
 @export var stacks := 1
-## O11: a lasting spell's pulse (s): it hits what stands in it this often.
+## A lasting spell's pulse (s): it hits what stands in it this often.
 @export var period_s := 0.0
-## O11: Meteor's mark, Hemorrhage's wait, Blood Thorns' second ring's beat (s).
+## Meteor's mark, Hemorrhage's wait, Blood Thorns' second ring's beat (s).
 @export var delay_s := 0.0
-## O11: Blood Thorns' ring starts this far from you (m).
+## Blood Thorns' ring starts this far from you (m).
 @export var inner_m := 0.0
-## O11: the extra enemies a shard (Ice Lances) or a Lv 5 spit (Spitter Vine) passes through.
+## The extra enemies a shard (Ice Lances) or a Lv 5 spit (Spitter Vine) passes through.
 @export var pierce := 0
-## O11: the Lv 5 extra's damage a hit or a pulse (shatter, burning ground, burst, discharge, wall).
+## The Lv 5 extra's damage a hit or a pulse (shatter, burning ground, burst, discharge, wall).
 @export var bonus_damage := 0
-## O11: the Lv 5 extra's length (s): a freeze, a stun, a burning ground, a small pool, a wall.
+## The Lv 5 extra's length (s): a freeze, a stun, a burning ground, a small pool, a wall.
 @export var bonus_seconds := 0.0
-## O11: the Lv 5 extra's radius (m).
+## The Lv 5 extra's radius (m).
 @export var bonus_radius_m := 0.0
 ## O11 Leech: per level, the most HP one cast heals.
 @export var heal_cap := PackedInt32Array()

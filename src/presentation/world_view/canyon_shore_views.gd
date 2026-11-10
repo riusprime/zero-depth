@@ -1,6 +1,6 @@
 class_name CanyonShoreViews
 extends Node3D
-## v0.11.0 O13c (ENEMIES.md R5-R8): what the Red Canyon's and the Frozen Shore's signature enemies leave on the floor,
+## ENEMIES.md R5-R8: what the Red Canyon's and the Frozen Shore's signature enemies leave on the floor,
 ## read through WorldReader (EI-07), in the premade packs' effects (PD-13):
 ## - a Kiln Beetle's burst waiting: the pack's enemy fire patch growing over its fuse (VfxLayer.field &"fire", hostile:
 ##   zone_fire_foe_a/b) inside the pack's fire ring at its full radius (VfxLayer.ring &"fire": ring_fire); its blow is
@@ -20,7 +20,7 @@ extends Node3D
 const VENT_MAT := Color("#3A2420")
 const ICE_MAT := Color("#7FB8E0")
 const BLAST_ID := &"explosion_fire_a"
-## v0.11.0 F1 (owner: the small beetle's explosion was far too big): the pack blast's spawn scale (it was radius * 0.6,
+## The pack blast's spawn scale (it was radius * 0.6,
 ## 1.5 for the 2.5 m burst). The true danger area is still the ground ring across the fuse, not this visual.
 const BLAST_SCALE := 0.6
 const ERUPT_FOOT_ID := &"explosion_fire_b"

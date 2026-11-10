@@ -6,15 +6,15 @@ extends Node3D
 ## model poses itself from them in _pose(). Presentation only (EI-07): sync() reads once per tick, advance() animates
 ## in frame time, and nothing here feeds back into the sim. +X is the front and +Z the right; the node sits at the
 ## actor's feet under ActorViews' facing node.
-## The owner's models (v0.3.0 L13): when assets/models/bosses/<model_id()>.glb exists (BossModels), it replaces the
+## The owner's models: when assets/models/bosses/<model_id()>.glb exists (BossModels), it replaces the
 ## code-built body. It is one mesh, so it moves as a whole: breathing, a walk bob and sway, a lean and crouch with a
 ## red glow for the windup, a lunge and squash (a recoil for a turret) for the attack, a sag in recovery, a wobble
 ## when staggered, and a steady glow in the last phase. The glow is a material_overlay whose alpha changes, and the
 ## body's material is flashable (emission on at energy 0), so no shader ever changes at run time.
-## The weak point (v0.3.0 BX, L17): a glowing core on the boss's chest while it is open (WorldReader
+## The weak point: a glowing core on the boss's chest while it is open (WorldReader
 ## .boss_weak_point_permille), a kept material with emission on from the start, so only its energy changes, and a
 ## small light; hidden while shut.
-## v0.7.5 BM: the owner's rigged models (the Warlord, the Hive Lens; BossModels "skinned") keep their own skeleton
+## The owner's rigged models (the Warlord, the Hive Lens; BossModels "skinned") keep their own skeleton
 ## and skin, and the Foundry is cut in code (BossRig). Their bodies pose bone by bone through a BonePoser in the
 ## model frame, one function per pose layer (idle, walk, attack, guard, flinch, stagger, death, and a "shielded"
 ## hook a later step drives). More read state: the HP (a drop flinches), the player's bearing from the facing (the
@@ -32,30 +32,30 @@ extends Node3D
 
 ## Faster than this between two ticks is a teleport, not motion.
 const TELEPORT_SPEED := 40.0
-## v0.7.5 BM: seconds a boss that falls when it dies (has_death_pose) keeps drawing after the sim removed it.
+## Seconds a boss that falls when it dies (has_death_pose) keeps drawing after the sim removed it.
 const DEATH_SECONDS := 1.6
 ## Seconds to rise out of the ground once the intro ends; seconds to sink when burrowing.
 const RISE_SECONDS := 0.8
 const SINK_SECONDS := 0.3
 ## A leap's peak height (metres).
 const LEAP_HEIGHT := 2.6
-## v0.8.0 BA: seconds of the rise clip's flourish after the intro ends; the defaults of an attack's active and
+## Seconds of the rise clip's flourish after the intro ends; the defaults of an attack's active and
 ## recover ticks when apply_state isn't told them (tests, shots); seconds the stagger clip's reel takes; the
 ## shielded hold's brace.
 const RISE_FLOURISH_SECONDS := 1.0
 const DEFAULT_ACTIVE_TICKS := 6
 const DEFAULT_RECOVER_TICKS := 60
 const STAGGER_CLIP_SECONDS := 1.2
-## v0.9.5 BH1 (Q3): the kneel at a phase change (the 1 s gate) dips the model by this much.
+## The kneel at a phase change (the 1 s gate) dips the model by this much.
 const KNEEL_DIP := 0.15
 const SHIELD_CLIP_SECONDS := 0.4
-## v0.8.0 GF2 (owner O20: "the enemy should flinch"): the player's hits play the flinch clip, a light additive layer;
+## The player's hits play the flinch clip, a light additive layer;
 ## a hit restarts it only once the last one has faded to FLINCH_RETRIGGER (so steady fire keeps it twitching instead
 ## of holding it at the clip's start), and over an attack's clip it plays at FLINCH_ATTACK_WEIGHT so it never fights
 ## the strike. Starting values.
 const FLINCH_RETRIGGER := 0.4
 const FLINCH_ATTACK_WEIGHT := 0.5
-## v0.8.0 BS1 (S2): the clip a boss plays while its javelins stand in the floor (WarlordClips), timed 0..1 by the
+## The clip a boss plays while its javelins stand in the floor (WarlordClips), timed 0..1 by the
 ## recall (WorldReader.boss_recall_permille).
 const RECALL_CLIP := &"recall"
 ## Where the owner's boss models go (PLAN v0.3.0 L10): assets/models/bosses/<model_id()>.glb.
@@ -74,12 +74,12 @@ var model := Node3D.new()
 var imported: MeshInstance3D
 var pivot: Node3D
 var glow_overlay: StandardMaterial3D
-## The owner's model's skeleton (v0.3.0 L13: rigged in code, BossRig) and its rig.
+## The owner's model's skeleton (rigged in code, BossRig) and its rig.
 var skeleton: Skeleton3D
 var rig: BossRig
-## v0.7.5 BM: poses the model's bones in the model frame (the skinned models and the Foundry).
+## Poses the model's bones in the model frame (the skinned models and the Foundry).
 var poser: BonePoser
-## v0.8.0 BA: plays the model's clips (null with the code-built body).
+## Plays the model's clips (null with the code-built body).
 var animator: BossAnimator
 ## The weak point (BX): its core, its halo, their kept material and the light.
 var weak_core := MeshInstance3D.new()
@@ -112,13 +112,13 @@ var _rise := 1.0
 var _stagger := 0.0
 var _sink := 0.0
 var _late := 0.0
-# v0.7.5 BM: more read state and its smoothed animation inputs.
+# More read state and its smoothed animation inputs.
 var _last_hp := -1
 var _aim := 0.0
 var _facing_yaw := 0.0
 var _shielded := false
 var _flinch := 0.0
-## v0.8.0 GF3 (owner O22): frame seconds the pose is held still (HitStop on a Blade hit); see AvatarBase.hold.
+## Frame seconds the pose is held still (HitStop on a Blade hit); see AvatarBase.hold.
 var _hold := 0.0
 var _aim_shown := 0.0
 var _shield_hold := 0.0
@@ -146,7 +146,7 @@ var _unhide_tick := -1
 var _was_hidden := false
 var _stagger_secs := 0.0
 var _shield_t := 0.0
-## v0.8.0 BS1 (S2): the recall's progress 0..1 while the boss's javelins stand in the floor (held at 1 while they fly
+## The recall's progress 0..1 while the boss's javelins stand in the floor (held at 1 while they fly
 ## back, through the rest of the attack), -1 with none; its "recall" clip then plays instead of the attack's.
 var _recall := -1.0
 
@@ -156,7 +156,7 @@ func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	parts = BossParts.new()
 	model.name = "Model"
-	model.scale = Vector3.ONE * BossModels.SIZE_SCALE  # v0.7.5 BM (owner N18): every boss 1.3x
+	model.scale = Vector3.ONE * BossModels.SIZE_SCALE  # Every boss 1.3x
 	add_child(model)
 	_build_body()
 	body_materials = parts.body_materials
@@ -227,9 +227,9 @@ func sync(reader: WorldReader, i: int) -> void:
 			"hp": reader.actor_hp(i),
 			"facing": SimPlane.yaw_of(reader.actor_facing(i)),
 			"aim": bearing(reader.actor_pos(i), reader.actor_facing(i), reader.player_pos()),
-			"shielded": reader.boss_shielded(i),  # v0.7.5 BF1: its signature pattern (the shell and the pose)
-			"attack_ticks": reader.boss_attack_ticks(i),  # v0.8.0 BA: the clip's timing
-			"recall": reader.boss_recall_permille(i) / 1000.0,  # v0.8.0 BS1: the javelins' pull
+			"shielded": reader.boss_shielded(i),  # Its signature pattern (the shell and the pose)
+			"attack_ticks": reader.boss_attack_ticks(i),  # The clip's timing
+			"recall": reader.boss_recall_permille(i) / 1000.0,  # The javelins' pull
 			"gate": reader.boss_gate_permille(i) / 1000.0,
 			"intro": reader.boss_intro_permille(i) / 1000.0,
 		}
@@ -262,7 +262,7 @@ func apply_state(s: Dictionary) -> void:
 	_last_pos = pos
 	if state == WorldReader.STATE_ACTIVE and _state != WorldReader.STATE_ACTIVE:
 		_hit = 1.0
-	# v0.8.0 BA: a windup entered (or a new move winding up) is a new attack for the clips.
+	# A windup entered (or a new move winding up) is a new attack for the clips.
 	var raw_move: int = s.get("move", -1)
 	var shielded: bool = s.get("shielded", false)
 	if (
@@ -276,7 +276,7 @@ func apply_state(s: Dictionary) -> void:
 		_attack_shielded = true
 	_clip_move = raw_move
 	_attack_ticks = s.get("attack_ticks", Vector4i.ZERO)
-	# v0.8.0 BS1 (S2): the recall starts a new clip (crossfaded); it holds its pull while the javelins fly back.
+	# The recall starts a new clip (crossfaded); it holds its pull while the javelins fly back.
 	var recall: float = s.get("recall", -1.0)
 	if recall >= 0.0:
 		if _recall < 0.0:
@@ -303,7 +303,7 @@ func apply_state(s: Dictionary) -> void:
 	_hidden = s.get("hidden", false)
 	_boss_phase = s.get("phase", 0)
 	_weak = s.get("weak", 0.0)
-	# v0.7.5 BM: a drop in HP flinches; the bearing to the player, the facing, and "shielded" (BF1's
+	# A drop in HP flinches; the bearing to the player, the facing, and "shielded" (BF1's
 	# WorldReader.boss_shielded: the boss is firing its shielded signature).
 	var hp: int = s.get("hp", -1)
 	if hp >= 0 and _last_hp >= 0 and hp < _last_hp:
@@ -322,7 +322,7 @@ func apply_state(s: Dictionary) -> void:
 
 func _process(delta: float) -> void:
 	var dt := delta
-	if _hold > 0.0:  # v0.8.0 GF3: the hit-stop's share of this frame is dropped; the rest runs on
+	if _hold > 0.0:  # The hit-stop's share of this frame is dropped; the rest runs on
 		var used := minf(_hold, maxf(delta, 0.0))
 		_hold -= used
 		dt = delta - used
@@ -330,7 +330,7 @@ func _process(delta: float) -> void:
 		advance(dt)
 
 
-## v0.8.0 GF3: holds the pose (and its flinch clip) still for `seconds` of frame time, never stacked.
+## Holds the pose (and its flinch clip) still for `seconds` of frame time, never stacked.
 func hold(seconds: float) -> void:
 	_hold = maxf(_hold, seconds)
 
@@ -350,7 +350,7 @@ func advance(delta: float) -> void:
 	_speed = lerpf(_speed, _vel.length() if moving or _airborne else 0.0, _rate(8.0, dt))
 	var spawning := _state == WorldReader.STATE_SPAWN
 	if spawning and _intro >= 0.0:
-		# v0.8.0 BA: it rises with the boss bar (the sim's intro, L22), not after it.
+		# It rises with the boss bar (the sim's intro, L22), not after it.
 		_rise = move_toward(_rise, _intro, dt * 4.0)
 	else:
 		_rise = move_toward(_rise, 0.0 if spawning else 1.0, dt / RISE_SECONDS)
@@ -360,7 +360,7 @@ func advance(delta: float) -> void:
 		wind_target = smoothstep(0.0, 0.8, _windup)
 	_wind = lerpf(_wind, wind_target, _rate(10.0 if wind_target > _wind else 6.0, dt))
 	_hit = move_toward(_hit, 0.0, dt * 2.2)
-	var stag := 1.0 if _kneeling() else 0.0  # v0.9.5 BH1: the kneel (the phase gate's 1 s) is the old stagger's slump
+	var stag := 1.0 if _kneeling() else 0.0  # The kneel (the phase gate's 1 s) is the old stagger's slump
 	_stagger = lerpf(_stagger, stag, _rate(7.0, dt))
 	_late = move_toward(_late, 1.0 if _boss_phase > 0 else 0.0, dt)
 	_flinch = move_toward(_flinch, 0.0, dt * 3.5)
@@ -379,7 +379,7 @@ func advance(delta: float) -> void:
 	if _airborne:
 		lift = 4.0 * _leap * (1.0 - _leap) * LEAP_HEIGHT
 	model.position = Vector3(0, -3.2 * rise - 3.0 * _sink * _sink + lift - 0.12 * _stagger, 0)
-	model.scale.y = BossModels.SIZE_SCALE * (1.0 - KNEEL_DIP * _stagger)  # v0.9.5 BH1: the kneel dips the boss
+	model.scale.y = BossModels.SIZE_SCALE * (1.0 - KNEEL_DIP * _stagger)  # The kneel dips the boss
 	model.visible = _sink < 0.98
 
 
@@ -406,14 +406,14 @@ func stagger_amount() -> float:
 	return _stagger
 
 
-## 0..1: the flinch of the last hit taken (v0.7.5 BM).
+## 0..1: the flinch of the last hit taken.
 func flinch_amount() -> float:
 	return _flinch
 
 
-## v0.8.0 GF2: a hit (HitFeel, on each of the player's hits; and a drop in HP read by apply_state) starts the flinch
+## A hit (HitFeel, on each of the player's hits; and a drop in HP read by apply_state) starts the flinch
 ## clip, rate-limited (FLINCH_RETRIGGER). The clip leans the body back along its own front, so `_away` and `_strength`
-## are taken for the shared avatar call and not used (v0.8.0 GF3: so is a Blade hit's `_knock`). False when the last
+## are taken for the shared avatar call and not used (so is a Blade hit's `_knock`). False when the last
 ## flinch is still too fresh.
 func flinch(_away: Vector2 = Vector2.ZERO, _strength: float = 1.0, _knock: float = 0.0) -> bool:
 	if _flinch > FLINCH_RETRIGGER:
@@ -432,7 +432,7 @@ func death_amount() -> float:
 	return _death
 
 
-## True when this boss's body plays a fall after the sim removes it (v0.8.0 BA: every owner's model collapses).
+## True when this boss's body plays a fall after the sim removes it (every owner's model collapses).
 func has_death_pose() -> bool:
 	return imported != null
 
@@ -445,7 +445,7 @@ func die() -> bool:
 	return true
 
 
-## Where a named point on the body is now (v0.7.5 BM: for telegraphs and fireballs to start from), in this node's
+## Where a named point on the body is now (for telegraphs and fireballs to start from), in this node's
 ## space: &"weak" is the weak point's core; bodies add their own (anchor_names()). Unknown names give the core.
 func anchor(point: StringName) -> Vector3:
 	return model.transform * _anchor(point)
@@ -531,13 +531,13 @@ func _build_body() -> void:
 	animator = BossAnimator.new(_clip_library())
 	var players := pivot.find_children("*", "AnimationPlayer", true, false)
 	if not players.is_empty():
-		animator.bind_owner(players[0] as AnimationPlayer, skeleton)  # Q4: the owner's clips replace ours
+		animator.bind_owner(players[0] as AnimationPlayer, skeleton)  # The owner's clips replace ours
 	for n in _code_nodes():
 		if n.get_parent() == null:
 			n.free()
 
 
-## v0.7.5 BM: the owner's rigged model as delivered, its own skeleton and skin, under a node that turns, scales and
+## The owner's rigged model as delivered, its own skeleton and skin, under a node that turns, scales and
 ## lifts it into our frame; dressed like the others (flashable, the glow overlay).
 func _build_skinned(m: Dictionary) -> void:
 	pivot = Node3D.new()
@@ -618,7 +618,7 @@ func _pose_any(dt: float) -> void:
 		_pose(dt)
 
 
-## The owner's model (v0.8.0 BA): its clips in layers (BossAnimator), then what each body adds after them
+## The owner's model: its clips in layers (BossAnimator), then what each body adds after them
 ## (_pose_rig), the bones written once (BonePoser.commit), the owner's own clips over them, and the windup glow.
 func _pose_imported(dt: float) -> void:
 	_gait(dt, _walk_speed(), _stride())
@@ -635,19 +635,19 @@ func _pose_imported(dt: float) -> void:
 	poser.commit()
 	animator.apply_owner(skeleton)
 	var pulse := 0.5 + 0.5 * sin(_t * 6.0)
-	var extra := _extra_glow()  # v0.8.0 FB1: a final boss's body cracking as it shatters
+	var extra := _extra_glow()  # A final boss's body cracking as it shatters
 	glow_overlay.albedo_color.a = clampf(
 		0.045 * _wind + 0.04 * _hit + _late * (0.02 + 0.01 * pulse) + extra, 0.0, 0.06 + extra
 	)
 
 
-## v0.9.5 BH1: the boss kneels at a phase change (the sim's 1 s gate). A save made before BH1 may still hold a
+## The boss kneels at a phase change (the sim's 1 s gate). A save made before BH1 may still hold a
 ## STAGGERED boss: it slumps the same way.
 func _kneeling() -> bool:
 	return _state == WorldReader.STATE_GATE or _state == WorldReader.STATE_STAGGERED
 
 
-## v0.8.0 FB1: extra glow over the windup's (0 for most bodies; FinalBodyAvatar's shatter).
+## Extra glow over the windup's (0 for most bodies; FinalBodyAvatar's shatter).
 func _extra_glow() -> float:
 	return 0.0
 
@@ -688,7 +688,7 @@ func _animate(dt: float) -> void:
 	var clip_name := BossAnimator.clip_name_for(_clip_move, _attack_shielded, an.clips)
 	var c := an.clips.get(clip_name) as BossClip
 	var t := clip_time(c) if c != null else 0.0
-	if _recall >= 0.0 and an.has_clip(RECALL_CLIP):  # v0.8.0 BS1 (S2): the pull, timed by the recall
+	if _recall >= 0.0 and an.has_clip(RECALL_CLIP):  # The pull, timed by the recall
 		clip_name = RECALL_CLIP
 		t = _recall
 	an.drive_action(clip_name, _attack_serial, t, attacking, dt)

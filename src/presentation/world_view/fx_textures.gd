@@ -74,7 +74,7 @@ static var _soft_dot: GradientTexture2D
 
 
 ## The texture `id` (assets/textures/vfx/<id>.png), or null when it isn't installed (the code look stays).
-## v0.9.5 SQ: a round soft dot (white centre, transparent edge), shared by the untextured particle quads so their
+## A round soft dot (white centre, transparent edge), shared by the untextured particle quads so their
 ## corners stay clear and no lit square shows round them.
 static func soft_dot() -> GradientTexture2D:
 	if _soft_dot == null:

@@ -11,17 +11,17 @@ const METAL := Color(0.26, 0.26, 0.28)
 const SHELL := Color(0.86, 0.83, 0.72)
 const DUST := Color(0.64, 0.58, 0.52)
 const STEAM := Color(0.86, 0.87, 0.9)
-## v0.8.0 TX2: where the owner's rings sit in their quads (the ring's radius over the quad's side).
+## Where the owner's rings sit in their quads (the ring's radius over the quad's side).
 const DUST_RING_R := 0.4
 const LIGHT_RING_R := 0.42
-## v0.8.0 TX2: the widest dust front (m) drawn with the owner's ring (_dust_front); wider ones keep the code band.
+## The widest dust front (m) drawn with the owner's ring (_dust_front); wider ones keep the code band.
 const DUST_RING_MAX_M := 6.0
 
 ## The views' pools (id -> {mm, used, cap, drawn}) and the swooshes' triangles ([position, colour]) this draw.
 var pools := {}
 var arc_add := []
 var arc_mix := []
-## v0.8.0 TX2: which owner textures are installed (the rings and steam draw their code bands without them).
+## Which owner textures are installed (the rings and steam draw their code bands without them).
 var _dust_tex := BossStrikeMeshes.textured("fx_dust_ring")
 var _light_tex := BossStrikeMeshes.textured("fx_light_ring")
 var _steam_tex := VfxCore.has_tex("fx_steam_puffs")
@@ -101,7 +101,7 @@ func _rock(
 
 
 ## A ground quad at `c` (3D), `along` its long axis (length `l`) and `w` across, pattern `pat` (BossStrikeMeshes.G_*).
-## v0.8.0 TX2: `sd` picks the owner texture's atlas cell (crater cracks, acid splat, dust ring); `sub` >= 0 is sent
+## `sd` picks the owner texture's atlas cell (crater cracks, acid splat, dust ring); `sub` >= 0 is sent
 ## instead (a skid's repeats down its length). The noise offset comes from the glow.
 func _ground(
 	c: Vector3,
@@ -142,7 +142,7 @@ func _band(
 	put(pool, Transform3D(b, c), col, cd)
 
 
-## A beam from `a` to `b`, `rad` thick; `owner_art` (v0.8.0 TX1): drawn with the owner's beam strip when it is
+## A beam from `a` to `b`, `rad` thick; `owner_art`: drawn with the owner's beam strip when it is
 ## installed (the Focus Beam; the rail keeps its code look, its texture not delivered).
 func _tube(
 	a: Vector3, b: Vector3, rad: float, col: Color, bright: float, sd: int, owner_art := false
@@ -207,7 +207,7 @@ func _crater(
 	_dust_front(c, front, 0.4 * (1.0 - 0.5 * u), (0.5 if _dust_tex else 0.7) * (1.0 - u), sd)
 
 
-## v0.8.0 TX2: a shockwave's dust front `r` round at `c`: the owner's dust ring flat on the floor (its ragged ring
+## A shockwave's dust front `r` round at `c`: the owner's dust ring flat on the floor (its ragged ring
 ## sits at about DUST_RING_R of the quad), or the code's band of dust `hgt` tall while the texture is missing.
 func _dust_front(c: Vector3, r: float, hgt: float, alpha: float, sd: int) -> void:
 	# A room-wide shockwave keeps the code's rolling band: the ring texture blown up to the room covers it (the shots).
@@ -263,7 +263,7 @@ func _eruption(
 			gi
 		)
 	var u := clampf(age / 20.0, 0.0, 1.0)
-	if _dust_tex:  # v0.8.0 TX2: the dirt wall is the owner's rock burst (BossStrikeFx) over a dust ring
+	if _dust_tex:  # The dirt wall is the owner's rock burst (BossStrikeFx) over a dust ring
 		_dust_front(c, r * (0.5 + 0.8 * u), 1.3 * (1.0 - 0.6 * u), 0.9 * (1.0 - u), sd + 1)
 		return
 	_band(
@@ -400,7 +400,7 @@ func _ring(s: Dictionary, age: float, life: float) -> void:
 		&"light_ring":
 			var u := clampf(age / 8.0, 0.0, 1.0)
 			var r := lerpf(r0, r1, 1.0 - (1.0 - u) * (1.0 - u))
-			if _light_tex:  # v0.8.0 TX2: the owner's light ring flat on the floor, a low glow standing on it
+			if _light_tex:  # The owner's light ring flat on the floor, a low glow standing on it
 				var side := r / LIGHT_RING_R
 				_ground(
 					c, Vector3.RIGHT, side, side, BossStrikeMeshes.G_LIGHT_RING, 1.0, fade, glow, sd
@@ -418,7 +418,7 @@ func _ring(s: Dictionary, age: float, life: float) -> void:
 			var u := clampf(age / 10.0, 0.0, 1.0)
 			var r := lerpf(maxf(r0, 0.6), r1, 1.0 - (1.0 - u) * (1.0 - u))
 			var rise := clampf(age / life, 0.0, 1.0)
-			if not _steam_tex:  # v0.8.0 TX2: with the owner's steam puffs the steam is BossStrikeFx's sprites
+			if not _steam_tex:  # With the owner's steam puffs the steam is BossStrikeFx's sprites
 				_band(&"band_mix", c, r, 1.6 + 1.2 * rise, Color(STEAM, 0.8 * fade), 1.0, sd)
 			_band(&"band_add", c, r * 0.9, 0.4, Color(glow, 0.9 * (1.0 - u)), 2.0, sd + 1)
 			_ground(
@@ -608,7 +608,7 @@ func _skid(s: Dictionary, after: float, life: float, sd: int) -> void:
 	var alpha := 1.0 if after < 0.0 else clampf((life - after) / 30.0, 0.0, 1.0)
 	var o: Obb = s["lane"]
 	var w := o.half.y * 1.5
-	if _skid_tex:  # v0.8.0 TX2: the owner's skid grooves, repeated down the lunge's length
+	if _skid_tex:  # The owner's skid grooves, repeated down the lunge's length
 		_ground(
 			SimPlane.to_3d((from + to) * 0.5),
 			_dir3(d),

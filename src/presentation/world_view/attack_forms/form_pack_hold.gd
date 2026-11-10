@@ -1,6 +1,6 @@
 class_name FormPackHold
 extends RefCounted
-## v0.10.0 VX2: a view's pack effects that follow something each frame (a bolt, a needle, a wisp, a zone) and end with
+## A view's pack effects that follow something each frame (a bolt, a needle, a wisp, a zone) and end with
 ## it. The caller names each thing by a key; every frame it calls begin(), then put() for the things that exist, then
 ## end(): what was not put is released back to PackFx's pool. Cosmetic only (EI-07).
 ## - put() spawns the effect held (life 0) the first time a key is seen, and moves it every frame after. When PackFx's

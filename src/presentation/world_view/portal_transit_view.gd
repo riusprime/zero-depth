@@ -1,6 +1,6 @@
 class_name PortalTransitView
 extends Node3D
-## The portal's way in and the arrival on a new floor (v0.3.5 PT; owner F19, F20), in the visor's light blue.
+## The portal's way in and the arrival on a new floor, in the visor's light blue.
 ## Way in (~1.0 s): the hero is drawn to the portal's centre, spins, and shrinks into light-blue motes with a flash.
 ## Arrival (~0.8 s): a light-blue column stands on the hero's spot and the hero materialises from the same motes.
 ## Reduced motion (ViewPrefs): no pull, spin or motes; the screen fades out on the way in and in on the arrival.
@@ -46,17 +46,17 @@ const SPINS_OUT := 1.5
 ## How far in front of the gate's centre line (m) the hero is drawn to, and how high it rises.
 const PULL_DEPTH := 0.3
 const LIFT := 0.45
-## v0.9.0 SA: floor 1's timeline is the altar's (AltarStage.Look: the pop at pop_at); the zoom climbs ZOOM_IN through
+## Floor 1's timeline is the altar's (AltarStage.Look: the pop at pop_at); the zoom climbs ZOOM_IN through
 ## its buildup and eases out over the release.
 const ZOOM_IN := 0.14
 const POP_OVERSHOOT := 3.0
 const TREMBLE := 0.08
 const TREMBLE_PEAK := 0.32
-## v0.9.0 CV (owner Q17): the arrival vibrates instead of shaking and kicking: the build-up's level climbs from
+## The arrival vibrates instead of shaking and kicking: the build-up's level climbs from
 ## TREMBLE to TREMBLE_PEAK, the pop and a later floor's step-out each land a thud.
 const POP_THUD := 0.9
 const STEP_THUD := 0.4
-## v0.9.0 PT (fractions of a later floor's arrival; starting values): the portal grows until STEP_GROW_TO, the hero
+## Fractions of a later floor's arrival; starting values: the portal grows until STEP_GROW_TO, the hero
 ## steps out over STEP_FROM..STEP_TO from STEP_BACK m behind its spot (the portal's plane), the portal collapses from
 ## STEP_COLLAPSE_FROM; the way in collapses the portal taken over COLLAPSE_FROM..COLLAPSE_TO of its progress.
 const STEP_GROW_TO := 0.3
@@ -66,7 +66,7 @@ const STEP_BACK := 0.9
 const STEP_COLLAPSE_FROM := 0.66
 const COLLAPSE_FROM := 0.62
 const COLLAPSE_TO := 0.95
-## v0.9.0 CV: the Ascension portal's pull vibrates up to this level (the final-boss travel).
+## The Ascension portal's pull vibrates up to this level (the final-boss travel).
 const ASCENSION_VIBRATE := 0.5
 ## Arrival: the hero grows over this part of the progress; the column fades out after COLUMN_FADE.
 const GROW_FROM := 0.2
@@ -106,29 +106,29 @@ var column := MeshInstance3D.new()
 var flash_ball := MeshInstance3D.new()
 var light := OmniLight3D.new()
 var overlay := ColorRect.new()
-## v0.5.0 RT: the Deep gate (null without one); the way in flares and draws the hero to the gate taken.
+## The Deep gate (null without one); the way in flares and draws the hero to the gate taken.
 var deep_gate: PortalGate
-## v0.7.5 AP: the Ascension portal (null on other floors); the way in flares it and flashes in its gold.
+## The Ascension portal (null on other floors); the way in flares it and flashes in its gold.
 var ascension: AscensionPortal
-## v0.8.0 P2 (owner O28): the Loop device (null on other floors); stepping onto it flares it and flashes in its green.
+## The Loop device (null on other floors); stepping onto it flares it and flashes in its green.
 var loop_device: LoopDevice
-## v0.8.0 N11 (O69): the floor's receiver (null without one: the final arena, the Playground) and the view's rig.
+## The floor's receiver (null without one: the final arena, the Playground) and the view's rig.
 var receiver: FloorReceiver
-## v0.9.0 SA: floor 1's arrival altar (null on other floors).
+## Floor 1's arrival altar (null on other floors).
 var altar: AltarStage
 var rig: IsoRig
-## v0.9.0 PT (Q16): a later floor's arrival portal (null on floor 1 of a run and where there is no arrival).
+## A later floor's arrival portal (null on floor 1 of a run and where there is no arrival).
 var arrival_gate: PortalGate
-## v0.8.0 N11: this arrival is floor 1's (the big landing), and whether the hero has popped in (tests read both).
+## This arrival is floor 1's (the big landing), and whether the hero has popped in (tests read both).
 var first := false
 var landed := false
 
 var _actors: ActorViews
 var _gate: PortalGate
-## v0.9.0 PT: the gate the way in collapses (the gate or the Deep gate; null for the Ascension floor's devices).
+## The gate the way in collapses (the gate or the Deep gate; null for the Ascension floor's devices).
 var _taken: PortalGate
 var _blue := PortalGate.visor_blue()
-## v0.7.5 AP: the way in's flash colour (the visor blue; the Ascension portal's gold through it).
+## The way in's flash colour (the visor blue; the Ascension portal's gold through it).
 var _flash := PortalGate.visor_blue()
 var _column_mat := ShaderMaterial.new()
 var _flash_mat := StandardMaterial3D.new()
@@ -190,7 +190,7 @@ func sync(reader: WorldReader) -> void:
 			_enter(reader, node, avatar)
 		Phase.ARRIVE:
 			_hide_extras(node, avatar)
-			if arrival_gate != null and not first:  # v0.9.0 PT (Q16): a later floor's portal
+			if arrival_gate != null and not first:  # A later floor's portal
 				_step_out(avatar, progress, node.position if node != null else Vector3.ZERO)
 			elif receiver != null or altar != null:
 				_land(avatar)
@@ -211,7 +211,7 @@ func _player_node(reader: WorldReader) -> Node3D:
 func _enter(reader: WorldReader, node: Node3D, avatar: Node3D) -> void:
 	var p := progress
 	column.visible = false
-	if _taken != null:  # v0.9.0 PT (Q15): the portal collapses into a point at the end of the way in
+	if _taken != null:  # The portal collapses into a point at the end of the way in
 		_taken.set_collapse(smoothstep(COLLAPSE_FROM, COLLAPSE_TO, p))
 	if calm:
 		_set_overlay(FADE_COLOR, smoothstep(0.0, 1.0, p))
@@ -221,7 +221,7 @@ func _enter(reader: WorldReader, node: Node3D, avatar: Node3D) -> void:
 			avatar.visible = p < 1.0
 		return
 	if rig != null and ascension != null and reader.ascension_choice() != WorldReader.ASCEND_LOOP:
-		rig.vibrate_to(ASCENSION_VIBRATE * smoothstep(0.0, FLASH_AT, p))  # v0.9.0 CV: the final-boss travel
+		rig.vibrate_to(ASCENSION_VIBRATE * smoothstep(0.0, FLASH_AT, p))  # The final-boss travel
 	var centre := SimPlane.to_3d(
 		reader.entered_portal_pos() + Kin.dir(reader.entered_portal_angle()) * PULL_DEPTH
 	)
@@ -280,12 +280,12 @@ func _arrive(node: Node3D, avatar: Node3D) -> void:
 		avatar.visible = grow > 0.01
 
 
-## v0.8.0 N11: the arrival on the floor's receiver (see the header): floor 1's landing, a later floor's step-out, or
+## The arrival on the floor's receiver (see the header): floor 1's landing, a later floor's step-out, or
 ## reduced motion's flare.
 func _land(avatar: Node3D) -> void:
 	var q := progress
 	column.visible = false
-	if altar != null:  # v0.9.0 SA: floor 1
+	if altar != null:  # Floor 1
 		_land_first(avatar, q)
 		return
 	var foot := receiver.position
@@ -302,7 +302,7 @@ func _land(avatar: Node3D) -> void:
 	_step_out(avatar, q, foot)
 
 
-## v0.9.0 SA: floor 1 on the altar (see the header): the altar's own timeline, the vibration climbing through its
+## Floor 1 on the altar (see the header): the altar's own timeline, the vibration climbing through its
 ## buildup, the zoom, the pop with its thud, the release. Reduced motion: the runes light (AltarStage.calm) and the
 ## hero appears.
 func _land_first(avatar: Node3D, q: float) -> void:
@@ -354,7 +354,7 @@ func _land_first(avatar: Node3D, q: float) -> void:
 		_pose(avatar, Vector3.ZERO, _overshoot(u, POP_OVERSHOOT), true)
 
 
-## v0.9.0 PT (Q16): a later floor: the portal taken grows from a point behind the hero's spot `foot`, the hero steps
+## A later floor: the portal taken grows from a point behind the hero's spot `foot`, the hero steps
 ## out of it toward the view (a thud as it comes through), and it collapses into a point. Reduced motion: it fades in
 ## and out and the hero appears at its spot.
 func _step_out(avatar: Node3D, q: float, foot: Vector3) -> void:
@@ -384,7 +384,7 @@ func _step_out(avatar: Node3D, q: float, foot: Vector3) -> void:
 	if q >= STEP_FROM and not landed:
 		landed = true
 		if rig != null:
-			rig.thud(STEP_THUD)  # v0.9.0 CV: the vibration as the hero comes through
+			rig.thud(STEP_THUD)  # The vibration as the hero comes through
 	var f := 1.0 - smoothstep(STEP_FROM, STEP_FROM + 0.2, q) if landed else 0.0
 	_flash_at(arrival_gate.position + Vector3(0, PortalGate.OVAL_Y * 0.6, 0), f, c, 0.15)
 	if avatar != null:
@@ -432,12 +432,12 @@ func _rest(avatar: Node3D) -> void:
 	flash_ball.visible = false
 	_set_light(0.0)
 	_set_overlay(FADE_COLOR, 0.0)
-	if receiver != null:  # v0.8.0 N11: the receiver back at rest, the view settled
+	if receiver != null:  # The receiver back at rest, the view settled
 		receiver.set_charge(0.0)
 		receiver.set_burst(-1.0)
-	if arrival_gate != null:  # v0.9.0 PT: the arrival portal gone
+	if arrival_gate != null:  # The arrival portal gone
 		arrival_gate.set_collapse(1.0)
-	if altar != null:  # v0.9.0 SA: the altar at rest, its runes dimly lit
+	if altar != null:  # The altar at rest, its runes dimly lit
 		altar.pose(-1.0)
 		altar.set_burst(-1.0)
 	if rig != null:

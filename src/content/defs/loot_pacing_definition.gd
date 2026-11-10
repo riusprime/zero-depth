@@ -1,6 +1,6 @@
 class_name LootPacingDefinition
 extends ContentDef
-## v0.8.0 FL (owner O91, "floor-paced loot"; docs/roadmap/v0.8.0/BALANCE_PASS.md "FL"): one pacing table for every
+## One pacing table for every
 ## card source (altars, chests, the shop and its rerolls, events, stolen cores, the boss's altar). Per stage (floor 1,
 ## floor 2, floor 3, and the Deep floors and later loops) it holds a draw-weight multiplier per card category
 ## (ItemDefinition.loot_category), the level ceiling a held wand card can be offered up to, and how many of the floor's
@@ -26,19 +26,18 @@ const WEIGHTED := 5
 ## The chance, per mille, that a regular offer (an altar's or a chest's) holds a jackpot card: a held wand card one
 ## level past the ceiling, or a mutation.
 @export var jackpot_permille := 15
-## v0.9.5 EP2 (owner 2026-10-31: wand cards early so a build forms, then stats matched with them): each stage's
+## Each stage's
 ## card-type weights [ability, stat, mod] for altars / chests, 4 stages in order (floor 1, 2, 3, deep); empty = the
 ## reward table's.
 @export var altar_type_weights := PackedInt32Array([10, 30, 60, 10, 40, 50, 14, 43, 43, 14, 43, 43])
 @export var chest_type_weights := PackedInt32Array([10, 25, 65, 10, 30, 60, 14, 43, 43, 14, 43, 43])
-## v0.10.5 W3-P2 (the progression audit's P2, owner 2026-11-04: element levels follow the floor): an element card's
+## An element card's
 ## (loot_category element) own level ceiling in the first loop, by floor (index 0 = floor 1; floors past the end use
 ## the last), on top of the stage's ceiling; empty = none. Data 1 / 2 / 2 / 3: Lv 1 on floor 1, Lv 2 on floors 2-3,
 ## Lv 3 from floor 4.
 @export var element_ceilings := PackedInt32Array()
-## v0.10.5 W3-P2: the element ceiling on every floor of loop 2 and later (W3-P3: overlevels lift past it from loop 2).
+## The element ceiling on every floor of loop 2 and later (W3-P3: overlevels lift past it from loop 2).
 @export var element_ceiling_loops := 5
-## v0.10.5 W3-P3 (the progression audit's P3, owner 2026-11-04: loops stay "a wall", the build grows to meet them):
 ## overlevels. From loop 2 every wand card's level cap rises this many levels a loop past its own level_max (0: none),
 ## and each overlevel adds its category's per mille below to the card's main number [form, element, advanced,
 ## trigger, mutation] (CardLevels.overlevel_permille): an element its damage, any other card its damage or share ops

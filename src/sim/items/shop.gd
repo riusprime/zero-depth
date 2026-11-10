@@ -12,9 +12,9 @@ extends RefCounted
 ## - Heal: heal_permille of max HP, once per shop, for heal_price x the floor step; refused at full HP.
 ## - Reroll: a new card in every unsold slot for reroll_price, x (1 + step) per use at this shop. v0.5.5 EC (owner
 ##   S2): a bought slot stays SOLD for the floor; a reroll with no unsold slot, or with no buys left, is refused.
-## - Buy limit (v0.5.5 EC, owner S3): at most ShopTable.max_buys cards bought at the floor's shop (the heal and
+## - Buy limit: at most ShopTable.max_buys cards bought at the floor's shop (the heal and
 ##   rerolls don't count); a buy past it is refused with ShopState.Deny.LIMIT for the view's message.
-## - Prices (v0.5.5 EC, owner S4): floors 2-3 multiply the floor step by late_floor_permille (ShopTable).
+## - Prices: floors 2-3 multiply the floor step by late_floor_permille (ShopTable).
 ## - Refusals (unaffordable, nothing to do) change nothing but ShopState.denied_tick, for the view.
 ## - v0.10.5 W3-O9 (owner, 2026-11-04: "it should only show the heal, reroll and the 4 cards, lifting the curse and
 ##   selling is too broken"): the shop sells only those. Salvage (selling a card back) and the paid curse lift are
@@ -75,7 +75,7 @@ static func restock(w: World) -> void:
 	w.shop.rolled = true
 
 
-## v0.5.5 EC (owner S2): a new card in every unsold slot; the sold slots stay SOLD. The unsold cards go back to the
+## A new card in every unsold slot; the sold slots stay SOLD. The unsold cards go back to the
 ## pool while drawing (as a full restock does); a slot the draw can't fill reads SOLD.
 static func restock_unsold(w: World) -> void:
 	var open_slots := PackedInt32Array()
@@ -101,7 +101,7 @@ static func unsold(w: World) -> int:
 	return n
 
 
-## v0.5.5 EC (owner S3): cards still buyable at this floor's shop (-1 = no limit).
+## Cards still buyable at this floor's shop (-1 = no limit).
 static func buys_left(w: World) -> int:
 	var cap := w.shop_table.max_buys
 	return -1 if cap <= 0 else maxi(0, cap - w.shop.bought)
@@ -112,7 +112,7 @@ static func choose(w: World, frame: InputFrame) -> void:
 	var v := frame.pick
 	if v == InputFrame.PICK_NONE:
 		return
-	if BuildSlots.swapping(w) and w.swap_source == BuildSlots.Source.SHOP:  # v0.6.0 MX2: the swap's answer
+	if BuildSlots.swapping(w) and w.swap_source == BuildSlots.Source.SHOP:  # The swap's answer
 		var s := BuildSlots.swap_answer(w, frame)
 		if s == -2:
 			return
@@ -147,7 +147,7 @@ static func rarity(w: World, code: int) -> int:
 	return int(Offers.info(w, code)["rarity"])
 
 
-## v0.5.0 EV: every shop price goes through the prices curse (Curses.price).
+## Every shop price goes through the prices curse (Curses.price).
 static func price(w: World, code: int) -> int:
 	return w.shop_table.card_price(rarity(w, code), w.floor_index)
 
@@ -177,11 +177,11 @@ static func can_apply(w: World, code: int) -> bool:
 			return Abilities.can_take(w, Offers.ability_of(code))
 		Offers.STAT:
 			return not Stats.at_cap(w, Offers.stat_of(code))
-	return CardLevels.can_take(w, code) and ItemPool.usable(w, code)  # v0.6.5 WN3: a level-up
+	return CardLevels.can_take(w, code) and ItemPool.usable(w, code)  # A level-up
 
 
 # --- Actions -----------------------------------------------------------------------------------------------------
-## Buys stock slot k. True if bought. v0.6.0 MX2: a new modifier with the six slots full opens the swap first
+## Buys stock slot k. True if bought. a new modifier with the six slots full opens the swap first
 ## (BuildSlots; the answer comes back here with the slot it replaces, `replace`), and nothing is paid until then.
 static func buy(w: World, k: int, replace: int = -1) -> bool:
 	if k < 0 or k >= w.shop.offer.size():
@@ -190,7 +190,7 @@ static func buy(w: World, k: int, replace: int = -1) -> bool:
 	if code == ShopState.SOLD:
 		return _deny(w)
 	if buys_left(w) == 0:
-		return _deny(w, ShopState.Deny.LIMIT)  # v0.5.5 EC (S3)
+		return _deny(w, ShopState.Deny.LIMIT)  # v0.5.5 EC
 	if not can_apply(w, code):
 		return _deny(w)
 	var cost := price(w, code)  # once (audit G-16)
@@ -232,9 +232,9 @@ static func heal(w: World) -> bool:
 static func reroll(w: World) -> bool:
 	var cost := reroll_price(w)
 	if buys_left(w) == 0:
-		return _deny(w, ShopState.Deny.LIMIT)  # v0.5.5 EC (S3): nothing more to buy here
+		return _deny(w, ShopState.Deny.LIMIT)  # Nothing more to buy here
 	if unsold(w) == 0 or w.shards < cost:
-		return _deny(w)  # v0.5.5 EC (S2): every slot sold, nothing to reroll
+		return _deny(w)  # Every slot sold, nothing to reroll
 	w.shards -= cost
 	w.shop.rerolls += 1
 	_spend(w, cost, EFFECT_REROLL)
@@ -304,8 +304,8 @@ static func read(w: World) -> Dictionary:
 		"heal_used": w.shop.heal_used,
 		"reroll_price": reroll_price(w),
 		"rerolls": w.shop.rerolls,
-		"unsold": unsold(w),  # v0.5.5 EC (S2)
-		"bought": w.shop.bought,  # v0.5.5 EC (S3)
+		"unsold": unsold(w),  # v0.5.5 EC
+		"bought": w.shop.bought,  # v0.5.5 EC
 		"max_buys": w.shop_table.max_buys,
 		"buys_left": buys_left(w),
 		"denied_reason": w.shop.denied_reason,

@@ -55,7 +55,7 @@ static func on_kill(w: World, i: int, shards: int) -> void:
 	s.boosted.remove_at(k)
 	if not s.cleared():
 		s.kills += 1
-		s.shards_in += maxi(0, shards)  # v0.5.5 AR: every Overrun kill, whatever wave it came in
+		s.shards_in += maxi(0, shards)  # Every Overrun kill, whatever wave it came in
 
 
 static func _clear(w: World) -> void:
@@ -126,7 +126,7 @@ static func read(w: World) -> Dictionary:
 		"inside": s.inside,
 		"entered": s.enter_tick >= 0,
 		"kills": s.kills,
-		"wave": w.arenas.wave if s.inside else 0,  # v0.5.5 AR: the waves (Arenas)
+		"wave": w.arenas.wave if s.inside else 0,  # The waves (Arenas)
 		"waves": w.arenas.waves if s.inside else 0,
 		"cleared": s.cleared(),
 		"clear_tick": s.clear_tick,

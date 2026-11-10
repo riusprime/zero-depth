@@ -1,6 +1,6 @@
 class_name BombDroneAvatar
 extends AvatarBase
-## The Bomb Drone (v0.3.5 AI, owner F6): a low-poly quad-rotor in the enemy sheet's red and grey, hovering
+## The Bomb Drone: a low-poly quad-rotor in the enemy sheet's red and grey, hovering
 ## HOVER_Y up with a soft bob. A faceted red hull with a red slit eye in front, four grey arms with spinning rotor
 ## blades, and a dark bomb slung under its belly whose fuse glows. The bomb drops away as the drone lobs it (the
 ## telegraph view draws it flying to its circle) and a fresh one rises into the bay as the drone recovers. A soft
@@ -19,14 +19,14 @@ const ARM_LEN := 0.36
 const ROTOR_R := 0.17
 const SHADOW_R := 0.42
 
-## v0.8.0 EC: the hull (body), the cap (trim), the arms (grey) and the eye slit (eye) come from EnemyPalettes.
+## The hull (body), the cap (trim), the arms (grey) and the eye slit (eye) come from EnemyPalettes.
 const KIND := WorldReader.KIND_BOMB_DRONE
 const DARK := Color("#24272D")
 const BOMB := Color("#1B1C20")
-## v0.10.5 W3-V4c: the rotors' spin (rad/s) and the bomb's mount under the hull.
+## The rotors' spin (rad/s) and the bomb's mount under the hull.
 const SPIN := 34.0
 const BOMB_AT := Vector3(0, -0.2, 0)
-## v0.10.5 W3-V4c (SoloVat): the raw drives (_vd) and their specs [lo, hi, loop]: the hull's roll and pitch, the
+## SoloVat: the raw drives (_vd) and their specs [lo, hi, loop]: the hull's roll and pitch, the
 ## rotors' spin, the bomb's scale (0: dropped, folded to a point).
 const RX := 0
 const RZ := 1
@@ -41,7 +41,7 @@ var hull: Node3D
 var bomb: Node3D
 var shadow: MeshInstance3D
 var rotors: Array[Node3D] = []
-## v0.10.5 W3-V4c (owner, 2026-11-06: VAT for every regular enemy): true (set before setup(), ActorViews from
+## True (set before setup(), ActorViews from
 ## ViewPrefs.enemy_vat): a VatCrowd draws the body from baked poses; setup() builds only the ground disc.
 var vat := false
 var kind := KIND
@@ -81,8 +81,8 @@ func setup() -> void:
 	_eye_mat.albedo_color = eye
 	_eye_mat.emission_enabled = true
 	_eye_mat.emission = eye
-	_eye_mat.emission_energy_multiplier = 2.2  # (v0.10.5 W3-V4c: a VAT drone's glow_energy too)
-	if vat:  # v0.10.5 W3-V4c: the crowd draws the body
+	_eye_mat.emission_energy_multiplier = 2.2  # (a VAT drone's glow_energy too)
+	if vat:  # The crowd draws the body
 		_pose()
 		return
 	hull = Node3D.new()
@@ -178,7 +178,7 @@ func advance(delta: float) -> void:
 	_pose()
 
 
-## v0.8.0 GF2: the flinch leans the hull about itself, not about the ground under it.
+## The flinch leans the hull about itself, not about the ground under it.
 func _flinch_pivot() -> float:
 	return HOVER_Y
 
@@ -193,7 +193,7 @@ func bomb_armed() -> bool:
 	return _armed > 0.05
 
 
-## v0.10.5 W3-V4c: the pose's numbers first (the hover, the hull's roll and pitch, the spin, the bomb's scale: the
+## The pose's numbers first (the hover, the hull's roll and pitch, the spin, the bomb's scale: the
 ## VAT drives), then the nodes from them (the old path).
 func _pose() -> void:
 	var bob := sin(_t * TAU * BOB_HZ) * BOB_M

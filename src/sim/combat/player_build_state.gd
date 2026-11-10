@@ -5,7 +5,7 @@ extends RefCounted
 ## carry and the gamble shrine reach it by name.
 
 ## The way the character faces (1/4096 turns): the last move direction, -1 before the first move (melee then goes
-## along the aim). Melee swings go this way (L29); shots go along the aim.
+## along the aim). Melee swings go this way; shots go along the aim.
 var facing_angle := -1
 ## The damage remainders the build's per mille leaves (thousandths), so the average damage is exact.
 var melee_residue := 0

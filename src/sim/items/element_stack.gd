@@ -73,7 +73,7 @@ static func falloff_permille(w: World, i: int, e: int) -> int:
 	if t == null or t.stack_falloff_permille.is_empty():
 		return 1000
 	var n := others(w, i, e)
-	# v0.10.5 W3-P10c: C1 Prism on a run without an Element limit (the Blade's): prism_falloff_steps steps softer each
+	# C1 Prism on a run without an Element limit (the Blade's): prism_falloff_steps steps softer each
 	var prisms := Constellations.count(w, Constellations.PRISM) if n > 0 else 0
 	if prisms > 0 and AttackSlots.limit(w, AttackSlots.ELEMENT) < 0:
 		n = maxi(0, n - t.prism_falloff_steps * prisms)
@@ -90,7 +90,7 @@ static func level_permille(w: World, e: int) -> int:
 		var t := w.item_tables[idx]
 		if t.id != id or not CardLevels.is_card(w, idx):
 			continue
-		var over := CardLevels.overlevel_now(w, idx)  # v0.10.5 W3-P3: each overlevel past Lv 3 adds to the share
+		var over := CardLevels.overlevel_now(w, idx)  # Each overlevel past Lv 3 adds to the share
 		var row := t.el_level_permille
 		if row.is_empty():
 			return over
@@ -113,7 +113,7 @@ static func scale(amount: int, permille: int) -> int:
 
 
 ## Element `e`'s bonus multiplier `bonus_mult` (per mille, e.g. Heat sync's 1150) on enemy `i`, its bonus part fallen
-## off (P1); the level shift is not applied to a level's own bonus.
+## off; the level shift is not applied to a level's own bonus.
 static func bonus(w: World, i: int, e: int, bonus_mult: int) -> int:
 	if bonus_mult == 1000 or w.pair_table == null:
 		return bonus_mult

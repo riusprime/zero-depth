@@ -1,6 +1,6 @@
 class_name InputLabels
 extends RefCounted
-## What a binding (an InputDefaults spec) is called on screen (v0.3.0 O). Keys use the engine's key name; mouse and
+## What a binding (an InputDefaults spec) is called on screen. Keys use the engine's key name; mouse and
 ## pad inputs are translation keys.
 
 const MOUSE := {
@@ -37,7 +37,7 @@ const AXES := {
 	JOY_AXIS_TRIGGER_LEFT: ["UI_PAD_LT", "UI_PAD_LT"],
 	JOY_AXIS_TRIGGER_RIGHT: ["UI_PAD_RT", "UI_PAD_RT"],
 }
-## The HUD's short names (v0.6.0 UP): a 52 px ability slot has no room for "Left click" / "Clic izquierdo", so the
+## The HUD's short names: a 52 px ability slot has no room for "Left click" / "Clic izquierdo", so the
 ## slot's corner names a mouse or pad binding by these (the Options list keeps the full names above).
 const SHORT := {
 	"UI_MOUSE_LEFT": "HUD_KEY_MOUSE_LEFT",

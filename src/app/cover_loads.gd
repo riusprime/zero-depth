@@ -14,19 +14,19 @@ extends RefCounted
 ## build in slices of VIEW_BUDGET_MS a frame (ViewBuildQueue), so the cover and its mark are drawn moving on every
 ## frame of the load. `phases` keeps the last load's timings (ms) and `frames` its frames, for the load probe.
 
-## v0.8.0 N12: a load behind the cover finished (the new floor is live, its first tick not yet stepped).
+## A load behind the cover finished (the new floor is live, its first tick not yet stepped).
 signal finished
 
 const COVER_FRAMES := 2
 ## The iris starts closing at this part of the hero's way in (BossFlow's enter progress).
 const PORTAL_COVER_FROM := 0.55
-## v0.8.0 N12: the view's build takes about this much of each frame (a job is never cut; the longest are ~30-45 ms).
+## The view's build takes about this much of each frame (a job is never cut; the longest are ~30-45 ms).
 const VIEW_BUDGET_MS := 6.0
-## v0.8.0 N12: an old floor's view (thousands of nodes; ~100 ms to free in one frame) is freed this long a frame.
+## An old floor's view (thousands of nodes; ~100 ms to free in one frame) is freed this long a frame.
 const FREE_BUDGET_MS := 4.0
 
-## v0.8.0 MI (the load probe's frame breakdown): the frame free_slowly() last ran a slice on, the slice's time and the
-## nodes it freed (a tool reads them; nothing in the game does). v0.8.0 LD: kept only while `probe` is on (the probe
+## The load probe's frame breakdown: the frame free_slowly() last ran a slice on, the slice's time and the
+## nodes it freed (a tool reads them; nothing in the game does). kept only while `probe` is on (the probe
 ## turns it on; off in the game).
 static var probe := false
 static var probe_free_frame := -1
@@ -35,7 +35,7 @@ static var probe_freed := 0
 
 var cover := LoadingCover.new()
 var waiting := false
-## v0.8.0 N12: the last load's timings in ms (the World on its worker, each view job, the longest view job) and the
+## The last load's timings in ms (the World on its worker, each view job, the longest view job) and the
 ## frames drawn while it ran.
 var phases := {}
 var frames := 0
@@ -87,7 +87,7 @@ func portal(tree: SceneTree, ui: Node, driver: SimDriver, next: Callable, still:
 		await _run(next)
 
 
-## v0.8.0 N12: runs `job` (pure work: FloorPlan.build) on a WorkerThreadPool task; the frames go on until it is done.
+## Runs `job` (pure work: FloorPlan.build) on a WorkerThreadPool task; the frames go on until it is done.
 func on_worker(tree: SceneTree, job: Callable, label: String) -> void:
 	var from := Time.get_ticks_usec()
 	var id := WorkerThreadPool.add_task(job, true, label)
@@ -97,7 +97,7 @@ func on_worker(tree: SceneTree, job: Callable, label: String) -> void:
 	phases[label] = (Time.get_ticks_usec() - from) / 1000.0
 
 
-## v0.8.0 LD (owner O70): makes the next view's parts VIEW_BUDGET_MS a frame (WorldViewRoot.prebuild) before Main
+## Makes the next view's parts VIEW_BUDGET_MS a frame (WorldViewRoot.prebuild) before Main
 ## makes the view, so making it holds no frame.
 func prebuild_view(tree: SceneTree) -> void:
 	var from := Time.get_ticks_usec()
@@ -110,7 +110,7 @@ func prebuild_view(tree: SceneTree) -> void:
 	phases["view_parts_frames"] = n + 2
 
 
-## v0.8.0 N12: runs the view's build queue VIEW_BUDGET_MS a frame until it is done, then lets one frame draw before
+## Runs the view's build queue VIEW_BUDGET_MS a frame until it is done, then lets one frame draw before
 ## the floor goes live (the HUD and the input are made in a frame of their own).
 func build_view(tree: SceneTree, q: ViewBuildQueue) -> void:
 	var from := Time.get_ticks_usec()
@@ -125,7 +125,7 @@ func build_view(tree: SceneTree, q: ViewBuildQueue) -> void:
 	phases["view"] = (Time.get_ticks_usec() - from) / 1000.0
 
 
-## v0.8.0 N12: frees `root` (out of the tree already) FREE_BUDGET_MS a frame, its deepest nodes first.
+## Frees `root` (out of the tree already) FREE_BUDGET_MS a frame, its deepest nodes first.
 func free_slowly(tree: SceneTree, root: Node) -> void:
 	var stack: Array[Node] = [root]
 	while not stack.is_empty():

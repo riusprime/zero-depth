@@ -1,6 +1,6 @@
 class_name SiegeEngineClips
 extends RefCounted
-## v0.8.0 BA: the Siege Engine's clips (the owner's Fortress Turret, rigged in code by BossRig: hull, cannon,
+## The Siege Engine's clips (the owner's Fortress Turret, rigged in code by BossRig: hull, cannon,
 ## mortar_l/r and four legs of a thigh and a shin). The legs move through parameters the avatar maps onto them
 ## (SiegeEngineAvatar._pose_legs): gait_a_* (front left and back right) and gait_b_* (front right and back left) for
 ## the walk, squat (every thigh splayed out under the lowered hull), front_kneel and back_kneel (a pair bent),
@@ -35,7 +35,7 @@ static func library() -> Dictionary:
 			_idle(),
 			_walk(),
 			_pattern(),
-			_pattern_shielded(),  # v0.8.0 BS2 (S5)
+			_pattern_shielded(),  # v0.8.0 BS2
 			_grid(),
 			_marks(),
 			_lanes(),
@@ -49,7 +49,7 @@ static func library() -> Dictionary:
 			_death(),
 		]:
 			_lib[c.name] = c
-		BossClip.loosen(_lib, 0.01)  # v0.11.0 O16: the wind-up, the recoil, the idle sway
+		BossClip.loosen(_lib, 0.01)  # The wind-up, the recoil, the idle sway
 	return _lib
 
 
@@ -134,7 +134,7 @@ static func _pattern() -> BossClip:
 	return c
 
 
-## v0.8.0 BS2 (owner O5, S5): the Turret Cross with ricochet shells (shielded): it braces for the volley harder
+## The Turret Cross with ricochet shells (shielded): it braces for the volley harder
 ## than any other pattern, the front pair kneeling and the hull dropped flat behind its shield, cannon levelled low
 ## at the walls; it kicks back with each volley as the hull turns the cross round, and, as the embers come back off
 ## the walls, the hull swings round the other way (watching them return) before it stands.

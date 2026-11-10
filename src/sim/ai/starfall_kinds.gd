@@ -1,6 +1,6 @@
 class_name StarfallKinds
 extends RefCounted
-## v0.11.0 O13d (ENEMIES.md R9, R10; owner: "approved as written"): the Starfall signature enemies.
+## ENEMIES.md R9, R10; owner: "approved as written": the Starfall signature enemies.
 ## - The Star Warper (R9, teleporter): it walks in like any melee kind; in range it marks a star on the floor
 ##   mark_offset_m beside the hero (square to its line to the hero: one side, or the other when a wall is there; behind
 ##   the hero when both are walled) and winds up for its telegraph (1 s, no random stretch). At the windup's end:

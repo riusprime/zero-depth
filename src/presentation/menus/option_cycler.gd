@@ -1,8 +1,8 @@
 class_name OptionCycler
 extends Button
-## A choice that works the same on every device (v0.3.0 O): it shows "‹ value ›"; left / right (arrows, d-pad, stick)
+## A choice that works the same on every device: it shows "‹ value ›"; left / right (arrows, d-pad, stick)
 ## step through the values, and pressing it (click, Enter, pad A) steps forward. No popup to get lost in on a pad.
-## v0.10.5 W3-O18: `astral` (Options) draws it in Astral; `text` still reads "‹ value ›", only the look is drawn:
+## `astral` (Options) draws it in Astral; `text` still reads "‹ value ›", only the look is drawn:
 ## - an on / off choice is a switch: a slim lozenge with a diamond knob (on: right, the lozenge washed in the accent;
 ##   off: left, ink), its word in the value column at the right;
 ## - a longer choice is a field: the value centred between two thin chevrons over a hairline.
@@ -72,7 +72,7 @@ func _show() -> void:
 	queue_redraw()
 
 
-## v0.10.5 W3-O20: the word the Astral look draws (a subclass adds to it: the Wardrobe's locked robe).
+## The word the Astral look draws (a subclass adds to it: the Wardrobe's locked robe).
 func shown_word() -> String:
 	return tr(label_keys[index])
 

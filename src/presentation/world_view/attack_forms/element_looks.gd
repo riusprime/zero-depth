@@ -10,10 +10,10 @@ extends RefCounted
 ## - look: BeamLooks' look id (its strip, scroll and impact shape).
 ## Bleed is dark red everywhere (V1 (a)); V46 (owner "Move the hero's side"): Frost leans a little greener and the Bleed
 ## centre darker, so no hero colour sits near a hostile shot's core (a test pins the distances). The hero's shots never
-## have a dark edge: every edge the forms draw is `core`, never `deep` (V50).
+## have a dark edge: every edge the forms draw is `core`, never `deep`.
 ## Presentation only (EI-07): pure constants and look-ups.
 
-## The elements, in the order the Codex lists them (Q11), plus the retired void element (phase_dash).
+## The elements, in the order the Codex lists them, plus the retired void element (phase_dash).
 const ELEMENTS: Array[StringName] = [&"ember", &"storm", &"frost", &"venom", &"bleed", &"void"]
 const HOT := {
 	&"ember": Color("#FFF4D6"),
@@ -71,7 +71,7 @@ const FALLEN_DEEP := Color("#5A1680")
 static var energy_style := &""
 
 
-## v0.9.0 MP2: the hero's plain energy follows the worn robe (`style`: &"fallen" turns it violet; anything else blue).
+## The hero's plain energy follows the worn robe (`style`: &"fallen" turns it violet; anything else blue).
 static func set_energy(style: StringName) -> void:
 	energy_style = style if style == &"fallen" else &""
 

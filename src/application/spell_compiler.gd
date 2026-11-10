@@ -1,6 +1,6 @@
 class_name SpellCompiler
 extends RefCounted
-## v0.11.0 O10 (owner Q17-Q20; SPELLS.md): the spells and their rules, compiled from SpellDefinition and
+## The spells and their rules, compiled from SpellDefinition and
 ## SpellRulesDefinition (CONTENT_SCHEMA §9: seconds to ticks once, speeds to metres a tick).
 
 

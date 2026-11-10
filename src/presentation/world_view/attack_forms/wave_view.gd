@@ -1,6 +1,6 @@
 class_name WaveView
 extends Node3D
-## v0.9.0 AF3 (owner Q7; ATTACK_FORMS.md F9 "A wide slow wave that rolls forward through everything"): the Wave's look.
+## The Wave's look.
 ## Each Wave shot in flight (WorldReader.wave_shots) is drawn as a band as wide as the sim's (its half width, the area
 ## stat on it) square to its flight:
 ## - a standing crest: a curved sheet of light up to body height (alpha-blended, so it reads on a light floor too),
@@ -8,9 +8,9 @@ extends Node3D
 ##   Lightning, Frost, Venom, Bleed), its ends fading;
 ## - a wash on the ground behind it: a flat fan of the edge colour trailing the crest, so the band's width and way read
 ##   from the iso camera.
-## v0.9.0 VX (VFX_AUDIT.md V30, owner: Wave and Wisps get V30/V31's intent and the element accents): the band unrolls
-## from the hero over UNROLL_TICKS; its colours are the first element's centre and the second's edge (V2); at its foot
-## a skim of dust, or with an element its accent (HeroFx.accent), Medium and High only (V47).
+## VFX_AUDIT.md V30, owner: Wave and Wisps get V30/V31's intent and the element accents: the band unrolls
+## from the hero over UNROLL_TICKS; its colours are the first element's centre and the second's edge; at its foot
+## a skim of dust, or with an element its accent (HeroFx.accent), Medium and High only.
 ## Pooled (WAVES_MAX drawn, the rest skipped). Presentation only (EI-07): the sim decides where, how wide and which
 ## way; the shimmer's clock is the shader's.
 
@@ -19,10 +19,10 @@ const CREST_H := 1.0
 const WASH_LEN := 1.6
 const LIFT := 0.04
 const UNROLL_TICKS := 4.0
-## v0.9.0 VX: the foot's pieces a wave a frame at High (half at Medium).
+## The foot's pieces a wave a frame at High (half at Medium).
 const FOOT_PIECES := 4
 
-## v0.10.0 VX7 (VFX_PACK N4): the crest takes the pack's pillar material (a copy, in the element's colours) on a sheet
+## VFX_PACK N4: the crest takes the pack's pillar material (a copy, in the element's colours) on a sheet
 ## whose UVs run like the pack's pillar (data/vfx/pack_fx_vx7.tres: the wash is the pack's ripple, held while the wave
 ## lives). false: the shader crest and the flat wash as before.
 const PACK_WAVE := true
@@ -75,7 +75,7 @@ var waves := 0
 var widths: Array[float] = []
 var look := &"default"
 
-## v0.10.0 VX7: the pack effects (found through the parent, or set directly), the washes held on the waves by shot id,
+## The pack effects (found through the parent, or set directly), the washes held on the waves by shot id,
 ## and whether the crests wear the pack's material.
 var pack_fx: PackFx = null:
 	set(v):
@@ -89,7 +89,7 @@ var _crest_mat: Array[ShaderMaterial] = []
 var _washes: Array[MeshInstance3D] = []
 var _wash_mat: Array[ShaderMaterial] = []
 var _form := FormLook.new()
-## v0.9.0 VX: each shot's first tick (the unroll), and this sync's waves for the effects layer (place, way, half width).
+## Each shot's first tick (the unroll), and this sync's waves for the effects layer (place, way, half width).
 var _born := {}
 var _seen := {}
 var _pos: Array[Vector2] = []
@@ -251,7 +251,7 @@ static func double_sided(mesh: ArrayMesh) -> ArrayMesh:
 	return out
 
 
-## v0.10.0 VX7: every crest takes a copy of the pack's pillar material on a sheet turned the pack's way up.
+## Every crest takes a copy of the pack's pillar material on a sheet turned the pack's way up.
 func _wear_pack_crest() -> void:
 	var mesh := double_sided(GapPack.flip_v(crest_mesh(PACK_LEAN_M)))
 	_pack_crest.clear()
@@ -271,7 +271,7 @@ func _crest_colors() -> Dictionary:
 	}
 
 
-## v0.10.0 VX7: the wave's wash as the pack's ripple, held behind the crest (the flat wash hides while it shows).
+## The wave's wash as the pack's ripple, held behind the crest (the flat wash hides while it shows).
 func _pack_wash(k: int, id: int, half: float) -> void:
 	if not wash_hold.active():
 		return

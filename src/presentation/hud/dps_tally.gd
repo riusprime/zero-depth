@@ -1,6 +1,6 @@
 class_name DpsTally
 extends RefCounted
-## v0.7.5 PG (owner N20, docs/tools/PLAYGROUND.md): the Playground's DPS meter, counted from the sim's event log. Every
+## The Playground's DPS meter, counted from the sim's event log. Every
 ## DAMAGE event the player owns on another body counts its `amount_applied` (the HP it really took): the basic attack,
 ## child spells and triggers, abilities, procs and damage over time alike. A source is the event's effect id (the
 ## card, ability or engine that made it; none = the basic attack). Reads only; nothing here changes an outcome.

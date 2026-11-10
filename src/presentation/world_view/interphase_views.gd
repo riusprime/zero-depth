@@ -25,7 +25,7 @@ const CORE := Color(0.95, 0.86, 1.0)
 const HOT := Color(1.0, 0.35, 0.55)
 const BEAM_Y := 0.9
 const MAX_ARMS := 5
-## v0.10.0 VX5 (R37): a violet pillar of light where an eruption strikes; false: none.
+## A violet pillar of light where an eruption strikes; false: none.
 const PACK_PILLARS := true
 const MAX_DISCS := 8
 const MAX_STRIPS := 8
@@ -273,7 +273,7 @@ func _note_strikes() -> void:
 			_pack_pillar(e)
 
 
-## R37: the pack's pillar of light, in the Fallen's violet, where an eruption strikes (spikes and floor ring stay).
+## The pack's pillar of light, in the Fallen's violet, where an eruption strikes (spikes and floor ring stay).
 func _pack_pillar(e: Dictionary) -> void:
 	var pack := BossPackHold.find(self) if PACK_PILLARS else null
 	if pack == null or not pack.has_room(&"area"):

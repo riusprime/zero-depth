@@ -1,17 +1,17 @@
 # gdlint: disable=max-public-methods
 class_name Spells
 extends RefCounted
-## v0.11.0 O10 (owner Q17-Q20; docs/roadmap/v0.11.0/SPELLS.md, approved row by row; PLAN E1-E3; SIM_CONTRACTS §8p): the
+## The
 ## elemental spells, a card family in 4 spell slots separate from the wand. Each spell casts by itself on its own
 ## cooldown; nothing is aimed (the sim picks the target).
-## - The offer (Q17): holding an element card (World.items_owned has the spell's element item) puts its element's
+## - The offer: holding an element card (World.items_owned has the spell's element item) puts its element's
 ##   spells in this run's pool. A regular altar's offer gets one spell card from the pool (SpellRules.offer_permille),
 ##   drawn by weight (SpellTable.weight; × SpellRules.affinity_permille when the spell's affinity is the run's rune
 ##   affinity), from a named stream of its own per altar ("loot:spell:<loop>:<floor>:<reward id>", derived from the
 ##   floor's seed), so the loot stream and every other offer stay as they were. It takes the place of one card (the last
 ##   that is neither the leading fresh ability, a Starbound card, the only compatible card nor a jackpot), or appended
 ##   to a short offer. A held spell stays in the pool below its level cap.
-## - The slots (E2): World.spell_slots (spell indices, pick order), spell_levels and spell_cd (ticks left) side by side;
+## - The slots: World.spell_slots (spell indices, pick order), spell_levels and spell_cd (ticks left) side by side;
 ##   run-long (RunCarry; the cooldowns start ready on a new floor). Taking a held spell levels it (Q18: Lv 1-3, Lv 4-5
 ##   from loop 2: cap()); a new one goes in the next free slot; with every slot full it replaces the held spell of the
 ##   lowest level (the leftmost of those), and its card says so before it is taken (Offers.info "replaces", the attack
@@ -36,7 +36,7 @@ extends RefCounted
 ## The view reads the slots (read) and the casts (World.spell_fx_*, never hashed; the balls in flight). Integer damage,
 ## metres as floats; no randomness but the named streams above (EI-05).
 
-## v0.11.0 O11: the rest of the roster and the Lv 5 extras (SpellRoster casts them, SpellZones runs what lasts):
+## The rest of the roster and the Lv 5 extras (SpellRoster casts them, SpellZones runs what lasts):
 ## - Frost Nova Lv 5: a frozen enemy you hit (any hit of yours but its own shatter) shatters: its freeze ends and it
 ##   takes bonus_damage (on_frozen_hit, from Damage.hit).
 ## - Fireball Lv 5: each burst leaves a burning ground (SpellZones.FIRE) of bonus_radius_m for bonus_ticks.
@@ -80,7 +80,7 @@ const FX_NOVA := 0
 const FX_BURST := 1
 const FX_BOLT := 2
 const FX_JUMP := 3
-## v0.11.0 O11: a shard's line, a shatter, a ring of thorns, a spit, a zap, Meteor's strike, a discharge (Static Field,
+## A shard's line, a shatter, a ring of thorns, a spit, a zap, Meteor's strike, a discharge (Static Field,
 ## Ball Lightning's end), Hemorrhage's burst, a drain line.
 const FX_LANCE := 4
 const FX_SHATTER := 5
@@ -120,7 +120,7 @@ static func level(w: World, k: int) -> int:
 	return w.spell_levels[s] if s >= 0 and s < w.spell_levels.size() else 0
 
 
-## The highest level now (Q18): SpellRules.loop1_max_level in loop 1, LEVELS from loop 2.
+## The highest level now: SpellRules.loop1_max_level in loop 1, LEVELS from loop 2.
 static func cap(w: World) -> int:
 	if w.loop >= 2 or w.spell_rules == null:
 		return LEVELS
@@ -139,7 +139,7 @@ static func full(w: World) -> bool:
 	return w.spell_slots.size() >= slots(w)
 
 
-## Spell k's element card is held (Q17).
+## Spell k's element card is held.
 static func unlocked(w: World, t: SpellTable) -> bool:
 	return t != null and t.element_item >= 0 and w.items_owned.has(t.element_item)
 
@@ -290,7 +290,7 @@ static func advance(w: World) -> void:
 	_advance_balls(w)
 	_advance_pushes(w)
 	_cast_slots(w)
-	SpellZones.advance(w)  # v0.11.0 O11: what lasts pulses (a new one the tick it is cast) and ends
+	SpellZones.advance(w)  # What lasts pulses (a new one the tick it is cast) and ends
 	_tick_holds(w)
 
 
@@ -322,7 +322,7 @@ static func cast(w: World, s: int, t: SpellTable) -> bool:
 			return _fireball(w, t, lv)
 		SKY_STRIKE:
 			return _sky_strike(w, t, lv, s)
-	return SpellRoster.cast(w, t, lv)  # v0.11.0 O11: the other twelve
+	return SpellRoster.cast(w, t, lv)  # The other twelve
 
 
 ## Enemy i can be a spell's target: a living actor of the enemy team.
@@ -497,7 +497,7 @@ static func _advance_pushes(w: World) -> void:
 			w.spell_push_left.remove_at(j)
 
 
-## B1: count balls at the densest packs (class doc), locked now.
+## Count balls at the densest packs (class doc), locked now.
 static func _fireball(w: World, t: SpellTable, lv: int) -> bool:
 	var from := w.player_pos()
 	var r := SpellTable.at_f(t.radius_m, lv, 3.0)
@@ -638,7 +638,7 @@ static func nearest(w: World, at: Vector2, reach: float, skip: PackedInt32Array)
 	return best
 
 
-## v0.11.0 O11: up to `n` living enemies within `reach` of `at`, nearest first (ties: the lower index).
+## Up to `n` living enemies within `reach` of `at`, nearest first (ties: the lower index).
 static func nearest_n(w: World, at: Vector2, reach: float, n: int) -> PackedInt32Array:
 	var picked := PackedInt32Array()
 	var dists := PackedFloat32Array()
@@ -652,7 +652,7 @@ static func nearest_n(w: World, at: Vector2, reach: float, n: int) -> PackedInt3
 	return picked.slice(0, n)
 
 
-## v0.11.0 O11: the ids of the first `n` living enemies a line from `from` through `to` meets within `reach` of
+## The ids of the first `n` living enemies a line from `from` through `to` meets within `reach` of
 ## `from` (nearest along it first; an enemy counts when its body is within LINE_HALF_M of the line). `first`, the aimed
 ## enemy, is always on it.
 static func line(
@@ -699,7 +699,7 @@ static func fx(w: World, kind: int, from: Vector2, to: Vector2, size: float, spe
 	w.spell_fx_spell.append(spell)
 
 
-# --- The holds (v0.11.0 O11) ------------------------------------------------------------------------------------
+# --- The holds ------------------------------------------------------------------------------------
 ## Holds enemy i `ticks` at `permille` of its speed (0: it stands still and acts not). One hold an enemy: the longer
 ## and the stronger win. Never a freeze-immune actor (a boss).
 static func hold(w: World, i: int, ticks: int, permille: int) -> void:
@@ -768,7 +768,7 @@ static func hash_into(w: World, h: StateHasher) -> void:
 		h.add_f32(p.y)
 	h.add_ints(w.spell_push_id)
 	h.add_ints(w.spell_push_left)
-	SpellZones.hash_into(w, h)  # v0.11.0 O11: the lasting spells and the holds
+	SpellZones.hash_into(w, h)  # The lasting spells and the holds
 
 
 ## For the HUD and the pick (WorldReader.spells): the slot count and each held slot's spell, id, name key, element,

@@ -5,7 +5,7 @@ extends Node3D
 ## arcane runes arranged around the altar. Glowing blue symbols, with optional small crystals or jewels around the
 ## sides"; "Prefer a reusable altar scene with configurable colors, rune objects, animation timing, sound, and
 ## activation triggers"): the altar the hero arrives on. One scene, two looks (Look):
-## - arrival(): floor 1 of a run (Q16), blue (the hero's player_core), its trigger the arrival's progress
+## - arrival(): floor 1 of a run, blue (the hero's player_core), its trigger the arrival's progress
 ##   (PortalTransitView poses it from WorldReader.arrival_progress);
 ## - final(): the final approach's altar (FA, C28: "more ominous purple"), its trigger the pylons' activation and the
 ##   buildup's progress (FinalApproachView poses it from WorldReader.final_approach_*).
@@ -13,7 +13,7 @@ extends Node3D
 ## across (3 × the 2.2 m receiver, C7), four low faceted stone steps to a 4.4 m top, carved rune panels inlaid in the
 ## top, a landing circle, and jewel sockets on the second step. The floating runes (fx_cast_sigils cells on the sigil
 ## material, FxTextures; plain glowing diamonds without the sheet) and the jewels are separate objects so each lights on
-## its own and the runes orbit (C10, C24); the owner's model replaces only the stone. v0.9.0 MI2: the owner's altar
+## its own and the runes orbit; the owner's model replaces only the stone. the owner's altar
 ## (delivered 2026-10-22, scripts/assets/mi2_prep.py) is listed: his stone, his six jewel sockets holding the code
 ## jewels (MODEL_SOCKETS), the landing on his top; on the final approach his stone tinted purple (Look.model_tint).
 ## The timeline (fractions of the trigger's progress 0..1, Look): idle (the empty altar) → the runes and jewels light
@@ -45,14 +45,14 @@ const LANDING_R := 0.7
 const BURST_REACH := 2.2
 const LIGHT_IDLE := 0.0
 const LIGHT_PEAK := 7.0
-## v0.9.0 MI2: the owner's altar as prepared (it fills ShopModels' 6.6 x 0.45 x 6.6 m box): its top (m), and its six
+## The owner's altar as prepared (it fills ShopModels' 6.6 x 0.45 x 6.6 m box): its top (m), and its six
 ## cup sockets on the second step, measured from the prepared model: their angles (degrees, atan2(z, x) on the 3D
 ## floor), their ring's radius (m) and the height a jewel stands at in them (m).
 const MODEL_TOP := 0.45
 const MODEL_SOCKETS: Array[float] = [-146.0, -83.0, -17.0, 35.0, 97.0, 161.0]
 const MODEL_SOCKET_R := 2.4
 const MODEL_JEWEL_Y := 0.46
-## v0.10.5 (owner: "you can clearly see the character half body inside it"): the owner's model's steps, measured from
+## The owner's model's steps, measured from
 ## the prepared model (the top of its stone at each distance from the centre): (out to this radius m, this height m).
 const MODEL_STEPS: Array[Vector2] = [
 	Vector2(2.58, 0.45), Vector2(2.95, 0.275), Vector2(3.25, 0.155)
@@ -62,13 +62,13 @@ const BOB := 0.06
 const BOB_HZ := 0.35
 
 
-## One configuration of the altar (C23): colours, the rune set, the jewels, the timeline and the sound.
+## One configuration of the altar: colours, the rune set, the jewels, the timeline and the sound.
 class Look:
 	extends RefCounted
 	var color := BLUE
 	var core := BLUE_CORE
 	var stone := STONE
-	## v0.9.0 MI2: the owner's stone's tint (white: as delivered, neutral grey).
+	## The owner's stone's tint (white: as delivered, neutral grey).
 	var model_tint := Color.WHITE
 	var runes := 10
 	var rune_radius := 2.75
@@ -170,7 +170,7 @@ func setup(sim_pos: Vector2) -> void:
 	pose(progress, share)
 
 
-## v0.10.5 (owner: "you can clearly see the character half body inside it"): the height (m) of the altar's surface
+## The height (m) of the altar's surface
 ## under the floor point `at` (the altar's parent's frame), 0 off it. The sim has no height (ROADMAP §6), so
 ## ActorViews draws whoever stands here on the stone instead of sunk into it (presentation only).
 func height_at(at: Vector3) -> float:

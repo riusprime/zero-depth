@@ -1,6 +1,6 @@
 class_name LiveBoltLook
 extends RefCounted
-## v0.8.0 HV (owner O89: "lag mostly comes from shooting hordes with multiple modifiers"): a live player bolt's look
+## A live player bolt's look
 ## read once and typed, so each bolt drawn a frame costs no string-key look-ups, cue scans, new points Array or new
 ## Dictionary (AttackFormCanvas drew up to LIVE_BOLTS_MAX of them a frame that way). It is kept on the look itself
 ## (under KEY) the first time a bolt of that look draws. draw() lays a live bolt out exactly as
@@ -83,11 +83,11 @@ static func draw(c: AttackFormCanvas, b: Dictionary, info: LiveBoltLook, now: fl
 	var look: Dictionary = b["look"]
 	var h := AttackFormCanvas.BOLT_H
 	var trail: PackedVector2Array = b["trail"]
-	var size := float(b.get("scale", 1.0))  # v0.6.5 WN3: a charged shot, the charging orb
+	var size := float(b.get("scale", 1.0))  # A charged shot, the charging orb
 	# v0.9.0 VX V18 (a full-charge Lance ball reads heavier) and V36 (a Spiral bolt's corkscrew reads): the long trail.
 	var long := info.streak or info.helix or size >= FULL_CHARGE_SCALE
 	var cap := AttackFormCanvas.STREAK_SEGMENTS if long else AttackFormCanvas.TAIL_SEGMENTS
-	# v0.10.0 VX2 (R1): a shot the pack draws (HeroPulseViews) has its own trail and body: no segments, no rim here.
+	# A shot the pack draws (HeroPulseViews) has its own trail and body: no segments, no rim here.
 	var packed := c.pulse_hold != null and c.pulse_hold.has(int(b["id"]))
 	var segs := 0 if packed else mini(trail.size() - 1, cap)
 	var w: float = info.thick * 2.2 * size
@@ -119,7 +119,7 @@ static func draw(c: AttackFormCanvas, b: Dictionary, info: LiveBoltLook, now: fl
 	var pts := c._pts
 	pts.clear()
 	pts.append(at)
-	if info.mine and (b["vel"] as Vector2).length() < 0.0001:  # v0.6.5 WN3: a waiting mine
+	if info.mine and (b["vel"] as Vector2).length() < 0.0001:  # A waiting mine
 		var ground := SimPlane.to_3d(b["pos"], AttackFormCanvas.GROUND_H)
 		c._ring_at(ground, AttackFormCanvas.MINE_RING_M, look, 0.6, pts)
 	if info.accent != &"" and c.vfx != null and int(b["id"]) >= 0:

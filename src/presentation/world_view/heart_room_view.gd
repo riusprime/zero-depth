@@ -1,6 +1,6 @@
 class_name HeartRoomView
 extends Node3D
-## v0.11.0 O14b (owner Q-O14b "Both"; OWNER_QUESTIONS §J N1, N2; RUNIC_CLUES.md): the hidden room under the Hollow
+## The hidden room under the Hollow
 ## Crown's throne, reading only (WorldReader.heart_*). Out of sight until its cracked wall breaks (BreakablesView draws
 ## the wall and its rubble); then:
 ## - the room: a floating slab of the arena's dark stone beyond the ring, walled round in the ring's stone (the near
@@ -9,7 +9,7 @@ extends Node3D
 ##   (RunicGlyphs strokes, as the Runic Stone's ring: thin violet emissive ribbons), never translated;
 ## - the pedestal in the middle: a stone column holding the City's Heart (a code crystal, crimson) in the pack's flare
 ##   orb glow (PD-13: `o14b_heart_glow`, magic_orb_flare_vfx_02 tinted crimson), both gone once it is taken;
-## - the sealed door (N2) on the far wall: a stone frame taller than the walls and a dark leaf with a faint crimson
+## - the sealed door on the far wall: a stone frame taller than the walls and a dark leaf with a faint crimson
 ##   seam; within its reach the Runic Stone's speech bubble (RuneBubble) speaks its line
 ##   (RunicLinesDefinition.sealed_line, "THE CROWN IS NOT YET REMEMBERED") in runes.
 ## The shock ring of a saved blow is RelicPulseView's (any floor). Presentation only: nothing here writes the sim.

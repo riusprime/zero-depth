@@ -1,6 +1,6 @@
 class_name AchievementDefinition
 extends ContentDef
-## v0.7.5 AC (owner N7: "the local achievements"): one achievement, or (kind CODEX_EACH) one achievement per entry of
+## One achievement, or (kind CODEX_EACH) one achievement per entry of
 ## a Codex page, so a new boss or biome in the data gets its own without a new file. Kept in the profile, outside
 ## the run and the sim; the app layer evaluates the condition (AchievementBook, AchievementTracker) from the Codex's
 ## counters (CodexStore) and its own run counters (`stat`, recorded from WorldReader and SimEvents). The kinds:
@@ -33,11 +33,11 @@ const STATS: Array[StringName] = [
 	&"curses:chest_card",
 	&"cores:stolen",
 	&"shards:spent",
-	&"final:won",  # v0.8.0 FB1 (FINAL_BOSS.md F8): the final boss beaten,
+	&"final:won",  # FINAL_BOSS.md F8: the final boss beaten,
 	&"final:no_hit_phase",  # a body beaten without a hit,
 	&"final:won_looped",  # and beaten after an Ascension loop
-	&"final:won_gun",  # v0.9.5 SL: beaten with the Gun (unlocks the Blade)
-	&"runs:loop_best",  # v0.10.5 O5a: the deepest loop reached (raised, not counted: RunRecords.LOOP_STAT)
+	&"final:won_gun",  # Beaten with the Gun (unlocks the Blade)
+	&"runs:loop_best",  # The deepest loop reached (raised, not counted: RunRecords.LOOP_STAT)
 ]
 const CODEX_COUNTERS := {
 	&"cards": [&"offered", &"taken", &"level"],

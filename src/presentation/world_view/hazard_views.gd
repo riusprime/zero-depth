@@ -1,6 +1,6 @@
 class_name HazardViews
 extends Node3D
-## v0.11.0 F8 (owner 4.2; PD-13: the premade packs): the bosses' arena hazards, read through WorldReader.boss_hazards
+## The bosses' arena hazards, read through WorldReader.boss_hazards
 ## (EI-07). Nothing here decides.
 ## - Warning (before it arms): only a ring at its full radius, nothing inside it; a rock's ring is gold and the rock
 ##   falls into it from above (the kit's boulder, the same KitModels piece the Stone Thrower's fallback throws).
@@ -38,7 +38,7 @@ const RUBBLE_SINK_M := 0.6
 ## The falling rock: its start height (m) and size.
 const FALL_M := 9.0
 const FALL_SCALE := 1.1
-## The landing: the pack's rock impact, without its smoke and core (S3).
+## The landing: the pack's rock impact, without its smoke and core.
 const IMPACT_ID := &"vx1_impact_other"
 const IMPACT_SCALE := 0.8
 const IMPACT_HIDE := ["Core", "Smoke", "Ground_Impact", "Impact_Streaks1", "Impact_Streaks2"]

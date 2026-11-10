@@ -16,7 +16,7 @@ extends RefCounted
 ##   run into (lanes_strike: the very clear_run the lane is drawn and hit with stops at the pillar). The first
 ##   stuns_per_phase breaks of a phase stun the boss stun_ticks (BossAi.STAGGERED, its old reel; its attack ends) and
 ##   it takes stun_permille of every hit meanwhile (taken_permille); a later break only removes the pillar.
-## - The hint (O2): every standing quake pillar is an objective (ObjectiveMarkers.GATEKEEPER_PILLAR) while it stands.
+## - The hint: every standing quake pillar is an objective (ObjectiveMarkers.GATEKEEPER_PILLAR) while it stands.
 ## No immunity window is added. Pure: the ai stream only (the placement).
 
 ## A quake pillar's pillar_until: it never sinks by time.
@@ -301,7 +301,7 @@ static func stuns_of(w: World, boss_id: int) -> int:
 # --- the hint and the end of the fight -----------------------------------------------------------------------------
 
 
-## The hint (O2) points at each of boss `boss_id`'s standing quake pillars, and at nothing once none stands.
+## The hint points at each of boss `boss_id`'s standing quake pillars, and at nothing once none stands.
 static func _point(w: World, boss_id: int) -> void:
 	w.objectives.clear(ObjectiveMarkers.GATEKEEPER_PILLAR)
 	for k in pillars_of(w, boss_id):

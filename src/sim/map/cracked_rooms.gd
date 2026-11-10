@@ -16,7 +16,7 @@ extends RefCounted
 const STREAM := "map:cracked_wall"
 
 
-## v0.10.5 S15d: the chance (per mille) of a cracked wall on floor `floor_index` (1 = first): `per_floor`'s entry,
+## The chance (per mille) of a cracked wall on floor `floor_index` (1 = first): `per_floor`'s entry,
 ## the last entry for a later floor or loop; 0 with no entries.
 static func chance(per_floor: PackedInt32Array, floor_index: int) -> int:
 	if per_floor.is_empty():

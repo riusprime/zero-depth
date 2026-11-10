@@ -13,7 +13,7 @@ extends RefCounted
 static func apply(w: World, run: RunState, repo: ContentRepository) -> void:
 	var player := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(player, repo.get_def(&"build", run.build_id))
-	var aff := FloorPlan.affinity_def(repo, run)  # v0.9.0 RB: as FloorPlan (A2 Storm's dash; the offer bias)
+	var aff := FloorPlan.affinity_def(repo, run)  # As FloorPlan (A2 Storm's dash; the offer bias)
 	if aff != null and not aff.is_none():
 		player.dash_cooldown_ticks += SimTick.seconds_to_ticks(aff.dash_cooldown_add_seconds)
 	w.player = player
@@ -38,11 +38,11 @@ static func apply(w: World, run: RunState, repo: ContentRepository) -> void:
 	w.legendary_table = RunContentCompiler.compile_legendary(
 		repo.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables
 	)
-	# v0.8.0 FL: floor-paced loot (LootPacing)
+	# Floor-paced loot (LootPacing)
 	w.loot_pacing = RunContentCompiler.compile_loot_pacing(repo.get_def(&"loot_pacing", &"pacing"))
 	if w.heat != null:
 		w.heat.table = ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock"))
-	if w.affinity != null:  # v0.9.0 RB: the affinity's numbers (its ward and counts stay)
+	if w.affinity != null:  # The affinity's numbers (its ward and counts stay)
 		var t := RunContentCompiler.compile_affinity(aff, w.item_tables)
 		if t != null:
 			w.affinity.table = t

@@ -1,6 +1,6 @@
 class_name ModifierCompiler
 extends RefCounted
-## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md; CONTENT_SCHEMA "Modifiers"): ModifierDefinition → ModifierTable in sim
+## docs/design/MODIFIER_ENGINE.md; CONTENT_SCHEMA "Modifiers": ModifierDefinition → ModifierTable in sim
 ## units. ContentCompiler.compile_item compiles an item's modifiers with it.
 
 ## v0.6.5 WN3/WN4: the wand pools in the order they shipped (ItemDefinition.requires_weapon): their cards take item
@@ -26,7 +26,7 @@ static func compile_modifier(def: ModifierDefinition) -> ModifierTable:
 	return t
 
 
-## One op in sim units, at `stage` (v0.6.0 MX4: a hook's child ops, its delay and its condition too).
+## One op in sim units, at `stage` (a hook's child ops, its delay and its condition too).
 static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 	var o := ModifierOp.new()
 	o.op = int(d.op)
@@ -48,32 +48,32 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 	o.when = int(d.hook_when)
 	o.trigger_gun = d.hook_trigger_gun  # v0.6.5 WN1
 	o.casts = d.hook_casts  # v0.6.5 WN5b
-	o.per_level_after = d.per_level_after  # v0.8.0 BL (B2)
+	o.per_level_after = d.per_level_after  # v0.8.0 BL
 	o.alt = d.alt  # v0.8.0 MR
 	for r: Resource in d.hook_ops:
 		var c := r as ModifierOpDefinition
 		if c != null:
 			o.child_ops.append(compile_op(c, c.stage_in(stage)))
 	if d.op == ModifierOpDefinition.Op.HOOK or d.op == ModifierOpDefinition.Op.REMNANT:
-		o.per_level = d.per_level  # v0.6.5 WN3: per mille of the hook's damage share
+		o.per_level = d.per_level  # Per mille of the hook's damage share
 	if d.op == ModifierOpDefinition.Op.REMNANT:
 		o.remnant = compile_remnant(d)  # v0.8.0 RM
 	if d.is_numeric() and ModifierOpDefinition.FIELD_STAGE.has(d.field):
 		var map: Array = ModifierOpDefinition.FIELD_STAGE[d.field]  # [stage, sim field, unit]
 		o.field = map[1]
 		o.value = _units(d, map, d.value)
-		for v in d.level_values:  # v0.9.5 CLV: each level's value in sim units
+		for v in d.level_values:  # Each level's value in sim units
 			o.level_values.append(_units(d, map, v))
-		if d.per_level != 0.0:  # v0.6.5 WN3: the step per level, in the same units
+		if d.per_level != 0.0:  # The step per level, in the same units
 			o.per_level = _units(d, map, d.value + d.per_level) - o.value
 			if d.op == ModifierOpDefinition.Op.MUL_PERMILLE:
-				o.per_level = d.per_level  # v0.8.0 BL: per mille as is (Flurry's 250 / 3), rounded per level
+				o.per_level = d.per_level  # Per mille as is (Flurry's 250 / 3), rounded per level
 			elif String(map[2]) == "" and AttackSpec.is_int_field(map[1]):
-				o.per_level = d.per_level  # v0.8.0 MR: a whole field's step as is, rounded per level (Flurry's ½)
+				o.per_level = d.per_level  # A whole field's step as is, rounded per level (Flurry's ½)
 	return o
 
 
-## v0.8.0 RM (owner O91; Remnants): a REMNANT op's remnant in sim units (seconds to ticks, m/s and degrees/s to a
+## A REMNANT op's remnant in sim units (seconds to ticks, m/s and degrees/s to a
 ## tick's step, degrees to 1/4096 turns).
 static func compile_remnant(d: ModifierOpDefinition) -> RemnantRule:
 	var r := RemnantRule.new()
@@ -126,12 +126,12 @@ static func _units(d: ModifierOpDefinition, map: Array, v: float) -> float:
 	return out
 
 
-## v0.6.0 MX4: the item definitions in item index order: the items of kinds before MODIFIER in id order (v0.5's
-## order, which saves name by index), then the modifier cards (ItemDefinition.Kind.MODIFIER) in id order; v0.6.5 WN1:
+## The item definitions in item index order: the items of kinds before MODIFIER in id order (v0.5's
+## order, which saves name by index), then the modifier cards (ItemDefinition.Kind.MODIFIER) in id order;
 ## then the wand's trigger cards (Kind.TRIGGER) in id order; v0.6.5 WN3/WN4: then the wand's pool cards (Kind.WAND),
 ## pool by pool in WAND_POOL_ORDER (the Gun's G cards, then the Blade's B cards), each in id order, so every earlier
-## index still names the same card. v0.6.5 WN5b: the legendary trigger cards (Kind.TRIGGER, rarity LEGENDARY) last.
-## v0.8.0 BL: then the cards of each later index wave (ItemDefinition.index_wave 1, 2, ...), wave by wave, each in id
+## index still names the same card. the legendary trigger cards (Kind.TRIGGER, rarity LEGENDARY) last.
+## Then the cards of each later index wave (ItemDefinition.index_wave 1, 2,...), wave by wave, each in id
 ## order, whatever their kind or pool: a card added to a pool later never moves an index a save holds.
 static func item_defs(repo: ContentRepository) -> Array:
 	var waves := {}
@@ -153,13 +153,13 @@ static func _wave_zero(repo: ContentRepository) -> Array:
 	var old := []
 	var cards := []
 	var triggers := []
-	var legend := []  # v0.6.5 WN5b: the legendary triggers, after every pool (no earlier index moves)
+	var legend := []  # The legendary triggers, after every pool (no earlier index moves)
 	var pools := []
 	for _p in WAND_POOL_ORDER:
 		pools.append([])
 	for def: ItemDefinition in repo.all_of(&"items"):
 		if def.index_wave > 0:
-			continue  # v0.8.0 BL: a later wave's card (item_defs)
+			continue  # A later wave's card (item_defs)
 		match def.kind:
 			ItemDefinition.Kind.MODIFIER:
 				cards.append(def)
@@ -178,7 +178,7 @@ static func _wave_zero(repo: ContentRepository) -> Array:
 	return out + legend
 
 
-## v0.6.0 MX4: an item's numbers past the v0.5 ones: Venom Core's poison engine; a modifier card tagged heat needs a
+## An item's numbers past the v0.5 ones: Venom Core's poison engine; a modifier card tagged heat needs a
 ## run with heat (Heat Sink Rounds, Meltdown Edge), as the v0.5 heat items do.
 static func compile_item_extras(def: ItemDefinition, t: ItemTable) -> void:
 	if def.kind == ItemDefinition.Kind.MODIFIER and def.tags.has("heat"):
@@ -219,7 +219,7 @@ static func compile_item_extras(def: ItemDefinition, t: ItemTable) -> void:
 	t.bleed_move_period_ticks = SimTick.seconds_to_ticks(def.bleed_move_period_seconds)  # v0.6.5 WN5a
 	t.name_key_gun = def.name_key_gun
 	t.desc_key_gun = def.desc_key_gun
-	t.offer_weight_permille = def.offer_weight_permille  # v0.8.0 RM: a mutation's low weight
+	t.offer_weight_permille = def.offer_weight_permille  # A mutation's low weight
 	t.loot_category = maxi(0, ItemDefinition.LOOT_CATEGORIES.find(def.loot_category))  # v0.8.0 FL
 	t.slot_category = maxi(0, ItemDefinition.SLOT_CATEGORIES.find(def.slot_category))  # v0.9.0 AS
 
@@ -232,7 +232,7 @@ static func compile_modifiers(repo: ContentRepository) -> Array[ModifierTable]:
 	return out
 
 
-## v0.6.0 MX2: the ability's modifier numbers (AbilityDefinition: every_attacks, the kill streak) and its modifiers
+## The ability's modifier numbers (AbilityDefinition: every_attacks, the kill streak) and its modifiers
 ## (AbilityDefinition.modifiers, compiled; an unknown id is a validation error and is left out here).
 static func compile_ability_extras(
 	t: AbilityTable, def: AbilityDefinition, repo: ContentRepository

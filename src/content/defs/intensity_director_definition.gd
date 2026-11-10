@@ -6,7 +6,7 @@ extends ContentDef
 ## raise it a little every tick, and it drains only after calm_seconds with no hit taken and no enemy close. The
 ## ordinary floor spawning (SpawnDirector) runs BUILD_UP (today's packs) until intensity reaches peak_intensity, holds
 ## the PEAK for peak_seconds_min..max, then PULL_BACK (no new packs, the ones out stay) until few enemies are near or
-## pull_back_max_seconds pass, then QUIET (no new packs) for its drawn quiet_seconds_min..max (v0.10.5 O4: it ends on
+## pull_back_max_seconds pass, then QUIET (no new packs) for its drawn quiet_seconds_min..max (it ends on
 ## time; intensity then drops to at most relax_intensity), then builds up again. The lengths are drawn from the
 ## `ai:intensity:<cycle>` stream. Every number is a starting value the owner tunes by play.
 
@@ -31,7 +31,7 @@ extends ContentDef
 @export var pull_back_radius_m := 8.0
 @export var pull_back_enemies := 2
 @export var pull_back_max_seconds := 8.0
-## QUIET (no new packs) lasts a draw between these (v0.10.5 O4: on time; intensity then drops to relax_intensity).
+## QUIET (no new packs) lasts a draw between these (on time; intensity then drops to relax_intensity).
 @export var quiet_seconds_min := 10.0
 @export var quiet_seconds_max := 20.0
 @export var relax_intensity := 300

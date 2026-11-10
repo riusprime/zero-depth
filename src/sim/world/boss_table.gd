@@ -4,7 +4,7 @@ extends RefCounted
 ## BossDefinition by ContentCompiler.compile_bosses; give the list to World.set_boss_tables.
 ## The arena (arena_cells, arena_template) is what the floor generator reads to build the boss room.
 
-## v0.8.0 FB3: a mimic body's stances (BossNemesis; doc at `mimic` below).
+## A mimic body's stances (BossNemesis; doc at `mimic` below).
 const STANCE_ECHO := 0
 const STANCE_MIRROR := 1
 const STANCE_CLOSE := 2
@@ -38,7 +38,7 @@ var phase_cd_permille := PackedInt32Array()
 ## The boss room: size in cells and its interior template (a FloorLayout.Template value).
 var arena_cells := Vector2i(2, 2)
 var arena_template := 0
-## v0.7.5 BF1 (N18): the room an older save's floor is rebuilt with (BossDefinition.legacy_arena_cells).
+## The room an older save's floor is rebuilt with (BossDefinition.legacy_arena_cells).
 var legacy_arena_cells := Vector2i(2, 2)
 ## Boss challenge (v0.3.0 BX, L17 and L26; BossChallenge). Distances are from the boss's edge to the player's centre.
 ## Ranged armour: the player's hits deal 1000 per mille up to ranged_full_m, falling linearly to ranged_far_permille
@@ -56,7 +56,7 @@ var weak_ticks := 0
 var weak_range_m := 2.5
 var weak_mult_permille := 1000
 var weak_stagger_permille := 1000
-## v0.4.0 BO: while the weak point is open the front armour doesn't apply (the Warlord lifts its shield).
+## While the weak point is open the front armour doesn't apply (the Warlord lifts its shield).
 var weak_drops_armour := false
 ## Closing arena: it starts at phase close_phase (-1 = not by phase) or after close_after_ticks of fighting (0 = not
 ## by time); every close_step_ticks the band moves close_step_m inward (0 = never closes), each step marked
@@ -72,7 +72,7 @@ var hazard_damage := 0
 var hazard_ticks := 30
 ## Harder AI: attacks aim where the player will be in lead_ticks at their current velocity.
 var lead_ticks := 0
-## v0.3.5 AI (owner F3): aimed windups keep tracking the player until their last commit_ticks (0 = they lock at the
+## Aimed windups keep tracking the player until their last commit_ticks (0 = they lock at the
 ## start); for dash_read_ticks after a dash, aimed attacks go at its landing point (0 = off); beyond
 ## gap_distance_m for gap_ticks, it performs gap_attack, its gap-closer (-1 = none).
 var commit_ticks := 0
@@ -80,16 +80,16 @@ var dash_read_ticks := 0
 var gap_distance_m := 0.0
 var gap_ticks := 0
 var gap_attack := -1
-## v0.10.5 W3-O2 (owner F19; BossLava.closes_escape): true makes the boss keep its floor lines (its `flood` and
+## True makes the boss keep its floor lines (its `flood` and
 ## `row_flood` lanes and the molten floor they leave) and its shots apart in time: no line attack starts while any of
 ## its shots fly, and no `pattern` volley starts while its lines burn or its lava lies (the pick waits). The Foundry.
 var lines_clear_shots := false
-## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): a boss with sig_every_ticks > 0 performs its phase's signature (its first
+## BOSSES_4_5.md N1; BossTide: a boss with sig_every_ticks > 0 performs its phase's signature (its first
 ## `tide` attack) on a cadence, every sig_every_ticks from one start to the next, the first sig_first_ticks after it
 ## rises, instead of by the weighted pick (0 = no cadence: every other boss).
 var sig_every_ticks := 0
 var sig_first_ticks := 0
-## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): a boss with twin_kind >= 0 rises as two bodies, itself and a twin of that
+## BOSSES_4_5.md N2; BossTwin: a boss with twin_kind >= 0 rises as two bodies, itself and a twin of that
 ## actor kind twin_m away, sharing one HP and joined by a chain held between chain_min_m and chain_max_m long that
 ## burns a touching player chain_burn every chain_burn_ticks (a strip chain_half_m each side of its line); the twin
 ## keeps flank_m from the player beside it. A hit on one body angers the other for anger_ticks, its speed × anger
@@ -104,7 +104,7 @@ var chain_half_m := 0.0
 var flank_m := 0.0
 var anger_permille := 1000
 var anger_ticks := 0
-## v0.11.0 O5 (owner L7, Q11, Q29; BossTwin): the phases' roles. The body standing back casts attack twin_bolt (an
+## The phases' roles. The body standing back casts attack twin_bolt (an
 ## index, -1 = none) every twin_bolt_ticks; in the last phase every twin_expose_ticks the exposed body swaps, taking
 ## twin_expose_permille while the other takes twin_guard_permille. The twin's attacks: BossAttackTable.twin_body.
 var twin_bolt := -1
@@ -112,16 +112,16 @@ var twin_bolt_ticks := 240
 var twin_expose_ticks := 600
 var twin_expose_permille := 1000
 var twin_guard_permille := 1000
-## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): a boss with echo_points > 0 (the Clockwork Judge) keeps the player's last
+## BOSSES_4_5.md N3; BossJudge: a boss with echo_points > 0 (the Clockwork Judge) keeps the player's last
 ## echo_points positions, one every echo_gap_ticks (its echo attacks'), for its echo to replay (0 = none).
 var echo_points := 0
 var echo_gap_ticks := 1
-## v0.9.0 NB4 (BOSSES_4_5.md N4; BossShade): a boss with lamp_count > 0 (the Lantern Shade) puts lamp_count lanterns
+## BOSSES_4_5.md N4; BossShade: a boss with lamp_count > 0 (the Lantern Shade) puts lamp_count lanterns
 ## on its room's edge (lamp_inset_m in from each wall's middle). Once its Lights Out snuffs the room only light_m round
 ## the player and lamp_m round each lit lantern stay lit; a lantern burns lamp_ticks after it was lit, and the player
 ## passing within relight_m relights it (from its Lights Out attacks). NB4b: the dark lasts dark_hold_ticks, then the
 ## room is lit again until the next Lights Out (0 = until the Shade dies).
-## v0.11.0 O4 (owner Q10 a): the light lasts light_hold_ticks, then the dark falls again on its own (0 = lit until the
+## The light lasts light_hold_ticks, then the dark falls again on its own (0 = lit until the
 ## next Lights Out); the Shade takes dark_mult_permille of a hit standing in the dark and lit_mult_permille standing in
 ## a lit lantern's pool (never 0: no immunity).
 var light_hold_ticks := 0
@@ -134,7 +134,7 @@ var lamp_m := 0.0
 var lamp_ticks := 0
 var relight_m := 0.0
 var dark_hold_ticks := 0
-## v0.8.0 FB2 (owner F7, "Phase-by-phase mix"; FINAL_BOSS.md F5, F7; BossPrism): a body whose HP is set as it rises
+## A body whose HP is set as it rises
 ## from the player's measured damage per second (FinalFight's meter: the last dps_seconds closed seconds, at least
 ## dps_min_seconds of them, else its own hp): hp = dps × dps_target_ticks / 60 × window_permille / 1000, clamped to
 ## dps_hp_min..dps_hp_max. window_permille is the share of its Cross's cycle that is a window (compiled from its
@@ -152,7 +152,7 @@ var floats_home := false
 var shard_count := 0
 var shard_orbit_m := 0.0
 var shard_turn_milli := 0
-## v0.8.0 PR (owner O84: "he shouldnt have all 3 spells at the same time, we should rotate"; BossPrism.next_spell): a
+## A
 ## body whose phase attacks are a fixed rotation, cast in their listed order, one at a time, with no draw from the ai
 ## stream; each waits until every shot the body fired is gone.
 var rotation := false
@@ -190,7 +190,7 @@ var shots_max := 12
 var reach_max_m := 4.5
 var blast_min_m := 1.0
 var blast_max_m := 3.0
-## v0.8.0 N2 (owner O41; FinalPace; FINAL_BOSS.md "N2"): a paced body. Its HP is set from the player's measured damage
+## A paced body. Its HP is set from the player's measured damage
 ## per second (the meter's last dps_seconds, at least dps_min_seconds of them: as it rises, or the first tick the
 ## meter holds them) so that at that rate it lasts pace_ref_ticks × sqrt(pace_ref_dps / dps), within pace_min_ticks ..
 ## pace_max_ticks (× window_permille: the Prism's windows), clamped to dps_hp_min..dps_hp_max; and it takes at most
@@ -202,7 +202,7 @@ var pace_ref_ticks := 7200
 var pace_min_ticks := 3600
 var pace_max_ticks := 10800
 var pace_burst_ticks := 600
-## v0.8.0 N2 (owner O42, O52; BossNemesis): The Fallen copies the build only in windows: window_ticks long, one every
+## The Fallen copies the build only in windows: window_ticks long, one every
 ## window_every_ticks, the first window_first_ticks after it rises (past its rise), each shown window_warn_ticks ahead.
 ## In a window the player's damage on it is pulled to the reference level (FinalPace.nerf_permille, at least
 ## nerf_min_permille) and their move speed to the base (at most 1000 per mille). 0 window_ticks: it copies all the time.
@@ -211,7 +211,7 @@ var window_every_ticks := 1200
 var window_first_ticks := 720
 var window_warn_ticks := 90
 var nerf_min_permille := 100
-## v0.9.5 BH4 (BOSSES_HARD.md T2, T3; BossStream): per phase, the attack index of its ring stream (-1 = none) and the
+## BOSSES_HARD.md T2, T3; BossStream: per phase, the attack index of its ring stream (-1 = none) and the
 ## ticks between rings; of its crossing wave, the attack index, the ticks between waves and how many form at once.
 ## `streams` is true when any phase has one (the streams run the whole fight, beside the attack rotation).
 var streams := false
@@ -220,11 +220,11 @@ var phase_ring_ticks := PackedInt32Array()
 var phase_wave_atk := PackedInt32Array()
 var phase_wave_ticks := PackedInt32Array()
 var phase_wave_n := PackedInt32Array()
-## v0.9.5 BH6 (HC4-HC6): The Fallen's interphases and dashes between moves (null: none).
+## HC4-HC6: The Fallen's interphases and dashes between moves (null: none).
 var interphase: InterphaseTable = null
-## v0.11.0 O3 (owner L5, Q9 a; BossQuake): the Gatekeeper's quake pillars (null: none).
+## The Gatekeeper's quake pillars (null: none).
 var quake: QuakeTable = null
-## v0.11.0 F8 (owner 4.2; BossHazard): the boss's arena hazards, in sim units (null: none).
+## The boss's arena hazards, in sim units (null: none).
 var hazard: HazardTable = null
 
 

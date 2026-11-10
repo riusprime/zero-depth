@@ -1,7 +1,7 @@
 class_name RunRecap
 extends RefCounted
 ## The run recap's numbers (EndPanel, the pause menu's run line): floor reached, run time and kills over every floor,
-## shards when the world counts them, and the items held. (v0.9.0 HB: moved here from Main.run_recap, unchanged.)
+## shards when the world counts them, and the items held. (moved here from Main.run_recap, unchanged.)
 
 
 static func of(run: RunState, driver: SimDriver) -> Dictionary:
@@ -17,22 +17,22 @@ static func of(run: RunState, driver: SimDriver) -> Dictionary:
 		"seconds": float(run.total_ticks(w)) / SimTick.TICKS_PER_SECOND,
 		"kills": run.total_kills(w),
 		"items": names,
-		"routes": run.routes.duplicate(),  # v0.5.0 RT: the route of each floor reached
-		"loop": run.loop,  # v0.7.5 AP: the loop reached and the loops cleared
+		"routes": run.routes.duplicate(),  # The route of each floor reached
+		"loop": run.loop,  # The loop reached and the loops cleared
 		"loops_cleared": run.loops_cleared(w),
-		"true_ending": run.final_fight and driver.reader.final_won(),  # v0.8.0 FB1: the final boss beaten
+		"true_ending": run.final_fight and driver.reader.final_won(),  # The final boss beaten
 		"final_reached": run.final_fight,
-		"fragments": RuneFragments.total(run, w),  # v0.9.0 MP: Rune Fragments (the end panel banks them)
-		"rules": rule_keys(run),  # v0.10.5 O5b: the loop rules held (name keys)
+		"fragments": RuneFragments.total(run, w),  # Rune Fragments (the end panel banks them)
+		"rules": rule_keys(run),  # The loop rules held (name keys)
 	}
 	if &"shards" in w:
 		out["shards"] = int(w.get(&"shards"))
-	out["threat"] = driver.reader.threat()  # v0.5.0 EV: threat T now, and the run's peak
+	out["threat"] = driver.reader.threat()  # Threat T now, and the run's peak
 	out["threat_peak"] = driver.reader.threat_peak()
 	return out
 
 
-## v0.10.5 O5b: the name keys of the loop rules `run` holds, in the order drawn.
+## The name keys of the loop rules `run` holds, in the order drawn.
 static func rule_keys(run: RunState) -> PackedStringArray:
 	var out := PackedStringArray()
 	for id in run.loop_rules:

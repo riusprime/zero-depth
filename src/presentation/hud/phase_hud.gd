@@ -5,16 +5,16 @@ extends VBoxContainer
 ## seconds a brighter line when a new phase begins or an enemy kind the run hasn't met yet first appears ("New:
 ## Sniper"). Reads WorldReader only (phase, phase_name_key, new_kinds, kind_alive); it decides nothing. Hidden on a
 ## floor without a curve.
-## v0.6.0 UP: the queue and the line on screen keep translation keys, not text, and are translated again on every
+## The queue and the line on screen keep translation keys, not text, and are translated again on every
 ## sync, so a language switch while "New: Charger" shows turns it into "Nuevo: Cargador" at once.
-## v0.6.1 R1: the announcement sits in a stone plaque (v0.8.0 MU; the banner's gold, Plaques.USE_FAMILY); the
+## The announcement sits in a stone plaque (v0.8.0 MU; the banner's gold, Plaques.USE_FAMILY); the
 ## plaque's plain middle stretches to the line's width.
-## v0.10.5 W3-O17 (UI style Astral): the phase line is letter-spaced Cinzel small caps (the mock's
+## UI style Astral: the phase line is letter-spaced Cinzel small caps (the mock's
 ## "CALM") and the announcement sits on the store window's veil (AstralChrome.veil) instead of the stone plaque, in
 ## Cinzel, silver-white.
 
 const ANNOUNCE_SECONDS := 4.0
-## v0.10.5 W3-O20: the phase line's top when nothing is over it (px at the 1920 x 1080 base; Hud stacks it lower
+## The phase line's top when nothing is over it (px at the 1920 x 1080 base; Hud stacks it lower
 ## under the boss bar or a room banner).
 const TOP := 150.0
 const NEW_COLOR := Color("#FFD27A")
@@ -27,7 +27,7 @@ var announce := HudStyle.label(18, true)
 var banner := PanelContainer.new()
 var _phase := -1
 var _announced := {}
-## v0.11.0 O9: the surges already announced on this floor.
+## The surges already announced on this floor.
 var _surges := 0
 ## Waiting announcements, each [format key, argument key] ("" when the key is the whole line).
 var _queue: Array[PackedStringArray] = []
@@ -42,7 +42,7 @@ func _init() -> void:
 	grow_horizontal = Control.GROW_DIRECTION_BOTH
 	alignment = BoxContainer.ALIGNMENT_CENTER
 	offset_top = TOP
-	add_theme_constant_override("separation", 8)  # v0.10.5 W3-O20: the veil's star clears the larger phase line
+	add_theme_constant_override("separation", 8)  # The veil's star clears the larger phase line
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for l: Label in [phase_label, announce]:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -77,7 +77,7 @@ func _init() -> void:
 
 
 func sync(reader: WorldReader) -> void:
-	# v0.8.0 N19 (N17's shots): hidden while an event panel is open, whose title sits where its line would show
+	# N17's shots: hidden while an event panel is open, whose title sits where its line would show
 	if not reader.has_curve() or not reader.has_floor() or reader.event_open():
 		visible = false
 		return
@@ -92,14 +92,14 @@ func sync(reader: WorldReader) -> void:
 		if not _announced.has(kind) and reader.kind_alive(kind):
 			_announced[kind] = true
 			_queue.append(PackedStringArray(["HUD_NEW_ENEMY", String(reader.enemy_name_key(kind))]))
-	# v0.11.0 O9 (owner Q15): a horde surge's line goes first (it is happening now)
+	# A horde surge's line goes first (it is happening now)
 	var surges := reader.surges_started()
 	if surges < _surges:  # a new floor
 		_surges = surges
 	if surges > _surges:
 		_surges = surges
 		_queue.insert(0, PackedStringArray(["HUD_SURGE", ""]))
-	for key in reader.pairing_names():  # v0.10.5 O15: an enemy duo's first appearance in the run
+	for key in reader.pairing_names():  # An enemy duo's first appearance in the run
 		if not _announced.has(key):
 			_announced[key] = true
 			_queue.append(PackedStringArray(["HUD_NEW_ENEMY", String(key)]))

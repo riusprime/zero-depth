@@ -1,6 +1,6 @@
 class_name ArcCasterAvatar
 extends AvatarBase
-## v0.11.0 F6: the Arc Caster's body is the Cinder Priest's model now (CinderPriestAvatar, in its own palette), so this
+## The Arc Caster's body is the Cinder Priest's model now (CinderPriestAvatar, in its own palette), so this
 ## class no longer draws anything. It stays as the shared shape kit the other code-made bodies call: the flat-shaded
 ## frustum and octahedron.
 

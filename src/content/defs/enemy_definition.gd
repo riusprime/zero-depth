@@ -9,7 +9,7 @@ const POSITIVE_SHAPE_PARAMS: Array[String] = [
 ]
 
 @export var name_key: StringName
-## v0.7.5 CX: the Codex's line about this enemy (a locale key; empty shows no line).
+## The Codex's line about this enemy (a locale key; empty shows no line).
 @export var desc_key: StringName
 @export var behaviour_id: StringName
 @export var behaviour_params := {}
@@ -18,11 +18,11 @@ const POSITIVE_SHAPE_PARAMS: Array[String] = [
 @export var move_speed_mps := 3.0
 @export var attacks: Array[AttackDefinition] = []
 @export var stress_tags := PackedStringArray()
-## Economy (v0.3.0 E, L6): shards a kill grants. By default × (1 + 0.25 × danger tier) (RewardsDefinition);
+## Economy: shards a kill grants. By default × (1 + 0.25 × danger tier) (RewardsDefinition);
 ## with shards_by_floor (bosses) × the floor number instead. 0 = drops none.
 @export var shards := 0
 @export var shards_by_floor := false
-## v0.10.5 O10 (owner P3 "yes"; docs/roadmap/v0.10.5/O10_STRESS_MATRIX.md): the form or element this kind is weak to
+## The form or element this kind is weak to
 ## and the one it resists: a form card's modifier id (gun_laser) or an element id (ModifierOpDefinition.ELEMENTS);
 ## empty: none. A matching hit or damage-over-time tick of the player's takes the multiplier (per mille; Matchups).
 @export var weak_to := &""
@@ -55,7 +55,7 @@ func validate() -> Array[ValidationIssue]:
 		)
 		return issues
 	_check_keys(issues, "behaviour_params", behaviour_params, schema["params"])
-	if BehaviourSchemas.base_of(behaviour_id) == &"warden":  # v0.11.0 O13a: the Rubble Warden too
+	if BehaviourSchemas.base_of(behaviour_id) == &"warden":  # The Rubble Warden too
 		_check_armour(issues)
 	_check_horde(issues)
 	var specs: Array = schema.get("attacks", [{"shape": schema.get("shape"), "shape_params": []}])
@@ -81,7 +81,7 @@ func validate() -> Array[ValidationIssue]:
 				)
 			)
 		_check_attack(issues, atk, spec["shape"], schema.get("shape_params", spec["shape_params"]))
-		# v0.3.5 AI: an enemy's attacks share one damage number (RunState scales it per floor).
+		# An enemy's attacks share one damage number (RunState scales it per floor).
 		if atk.damage != attacks[0].damage:
 			issues.append(
 				ValidationIssue.new(&"damage", resource_path, "every attack takes the same damage")
@@ -127,7 +127,7 @@ func _check_attack(
 		)
 	check_duration(issues, "active_seconds", atk.active_seconds)
 	check_duration(issues, "recovery_seconds", atk.recovery_seconds)
-	if atk.damage <= 0 and behaviour_id != &"frost_spitter":  # v0.11.0 O13c: its blob hurts nobody (R7)
+	if atk.damage <= 0 and behaviour_id != &"frost_spitter":  # Its blob hurts nobody
 		issues.append(ValidationIssue.new(&"not_positive", resource_path, "damage must be > 0"))
 
 
@@ -170,7 +170,7 @@ func _check_armour(issues: Array[ValidationIssue]) -> void:
 		)
 
 
-## v0.10.5 O10: a weakness raises (1001..2000 per mille), a resistance softens without blocking (1..999), and the
+## A weakness raises (1001..2000 per mille), a resistance softens without blocking (1..999), and the
 ## two name different ids. Whether each id exists is cross_check's.
 func _check_matchup(issues: Array[ValidationIssue]) -> void:
 	if weak_permille <= 1000 or weak_permille > 2000:
@@ -191,7 +191,7 @@ func _check_matchup(issues: Array[ValidationIssue]) -> void:
 		)
 
 
-## v0.10.5 O10: every enemy's weak_to and resists name an element (ModifierOpDefinition.ELEMENTS) or a modifier.
+## Every enemy's weak_to and resists name an element (ModifierOpDefinition.ELEMENTS) or a modifier.
 static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 	var issues: Array[ValidationIssue] = []
 	var ids := {}
@@ -214,7 +214,7 @@ static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 	return issues
 
 
-## The horde kinds (v0.4.0 EN): counts, heals and times that must be positive, and a shield arc within 0..360.
+## The horde kinds: counts, heals and times that must be positive, and a shield arc within 0..360.
 func _check_horde(issues: Array[ValidationIssue]) -> void:
 	var bp := behaviour_params
 	for k in [
@@ -225,9 +225,9 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 		"heal_range_m",
 		"mine_life_seconds",
 		"drop_seconds",
-		"contact_damage",  # v0.11.0 O9: the horde critters
+		"contact_damage",  # The horde critters
 		"contact_cd_seconds",
-		"crust_hp",  # v0.11.0 O13a: the biome variants
+		"crust_hp",  # The biome variants
 		"patch_radius_m",
 		"patch_seconds",
 		"dark_beyond_m",
@@ -238,7 +238,7 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 		"burn_period_seconds",
 		"slick_ease_seconds",
 		"split_degrees",
-		"max_cables",  # v0.11.0 O13b: the Ruins and Night Rocks signatures
+		"max_cables",  # The Ruins and Night Rocks signatures
 		"post_hp",
 		"post_radius_m",
 		"cable_period_seconds",
@@ -251,7 +251,7 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 		"rock_seconds",
 		"rock_half_m",
 		"max_rocks",
-		"burst_delay_seconds",  # v0.11.0 O13c: R5-R8
+		"burst_delay_seconds",  # R5-R8
 		"burst_radius_m",
 		"burst_damage",
 		"burst_enemy_damage",
@@ -267,7 +267,7 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 		"chunk_speed_mps",
 		"chunk_seconds",
 		"chunk_damage",
-		"mark_offset_m",  # v0.11.0 O13d: the Starfall signatures
+		"mark_offset_m",  # The Starfall signatures
 		"mark_radius_m",
 		"stun_seconds",
 		"pull_radius_m",
@@ -298,7 +298,7 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 	_check_starfall(issues)  # v0.11.0 O13d
 
 
-## v0.11.0 O13a: an Ember Charger's fire burns only once it has shown for the telegraph minimum, and a Split Sniper's
+## An Ember Charger's fire burns only once it has shown for the telegraph minimum, and a Split Sniper's
 ## shot splits inside its range.
 func _check_variant(issues: Array[ValidationIssue]) -> void:
 	var bp := behaviour_params
@@ -331,7 +331,7 @@ func _check_variant(issues: Array[ValidationIssue]) -> void:
 		)
 
 
-## v0.11.0 O13d (ENEMIES.md R9): a Star Warper's star lies off the hero (standing still is no cancel: mark_radius_m
+## ENEMIES.md R9: a Star Warper's star lies off the hero (standing still is no cancel: mark_radius_m
 ## under mark_offset_m) and its strike reaches where the hero stood (radius_m over mark_offset_m): move to answer.
 func _check_starfall(issues: Array[ValidationIssue]) -> void:
 	var bp := behaviour_params
@@ -369,7 +369,7 @@ func _check_keys(
 			)
 
 
-## v0.11.0 O13c (ENEMIES.md R5-R8): every warning shows for at least the telegraph minimum before it hurts: the Kiln
+## ENEMIES.md R5-R8: every warning shows for at least the telegraph minimum before it hurts: the Kiln
 ## Beetle's burst delay and the Cinder Priest's vent pulse (inside its period).
 func _check_canyon_shore(issues: Array[ValidationIssue]) -> void:
 	var bp := behaviour_params

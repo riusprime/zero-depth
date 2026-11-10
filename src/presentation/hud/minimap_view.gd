@@ -4,7 +4,7 @@ extends Control
 ## the player moves a pixel or turns: no nodes per room. The corner map is a window that scrolls with you at a fixed
 ## scale; the full map fits the whole floor in the middle of the screen, with a legend. Both turn with the iso camera
 ## (up on the map is up on screen). Reads WorldReader and a MinimapState; writes neither.
-## v0.10.5 W3-V3 (DRAW_GROWTH: ~470 drawn objects per room found, 85-88 % of a late floor's frame): the rooms, doors,
+## DRAW_GROWTH: ~470 drawn objects per room found, 85-88 % of a late floor's frame: the rooms, doors,
 ## icons (and the full map's backdrop, panel and legend) are drawn once into a texture, a SubViewport rendered once
 ## (UPDATE_ONCE) each time MinimapState.revision, the view's size, its screen scale or the language changes. Each
 ## frame draws that texture (one object; the corner scrolls it under the hero, snapped to whole screen pixels) and,
@@ -31,7 +31,7 @@ const LEGEND: Array = [
 	[&"arena", "MAP_LEGEND_ARENA"],  # v0.5.5 AR
 	[&"shop", "MAP_LEGEND_SHOP"],
 ]
-## v0.9.0 RB: A4 Astral's secret mark (the void violet) and its legend row, shown only with Astral.
+## A4 Astral's secret mark (the void violet) and its legend row, shown only with Astral.
 const SECRET := Color("#A982FF")
 const LEGEND_SECRET: Array = [&"secret", "MAP_LEGEND_SECRET"]
 ## W3-V3: the corner layer's margin around the floor's rooms (px at the corner's scale): the stubs (34 px at most),
@@ -273,7 +273,7 @@ func to_map(p: Vector2) -> Vector2:
 
 ## A sim-plane offset turned to the screen's axes, as the iso camera shows it (IsoRig: yaw +45 degrees about +Y,
 ## sim (x, y) is 3D (x, -y)): screen right is sim (+1, +1) / sqrt 2 and screen up (away from the camera) is
-## sim (-1, +1) / sqrt 2. v0.3.5 F14: the vertical used to be (y - x), which mirrored the map top to bottom.
+## sim (-1, +1) / sqrt 2. the vertical used to be (y - x), which mirrored the map top to bottom.
 static func turn(v: Vector2) -> Vector2:
 	return Vector2((v.x + v.y) * C45, (v.x - v.y) * C45 * MinimapStyle.SQUASH)
 
@@ -320,18 +320,18 @@ func _draw_full_panel(map_rect: Rect2) -> void:
 	_ci.draw_style_box(_panel(), whole)
 
 
-## True when this view draws a dark panel behind the map: the full map only (v0.5.5 A5: the corner map floats).
+## True when this view draws a dark panel behind the map: the full map only (the corner map floats).
 func draws_backdrop() -> bool:
 	return full or MinimapStyle.CORNER_PANEL
 
 
-## v0.5.5 A5: small L-ticks at the corner map's corners, over a dark halo, so its window reads without a
+## Small L-ticks at the corner map's corners, over a dark halo, so its window reads without a
 ## panel.
 func _draw_corner_ticks() -> void:
-	_draw_astral_ticks(MinimapStyle.TICK_ARM)  # v0.10.5 W3-O17: Astral's frame (1 px lines, small ornaments)
+	_draw_astral_ticks(MinimapStyle.TICK_ARM)  # Astral's frame (1 px lines, small ornaments)
 
 
-## v0.10.5 W3-O17: the corner window in Astral: at each corner a 1 px silver L over a dark halo, a fainter inner L 4 px
+## The corner window in Astral: at each corner a 1 px silver L over a dark halo, a fainter inner L 4 px
 ## in, and a small diamond on the corner; a four-point star under the window's foot and a diamond over its head.
 func _draw_astral_ticks(arm: float) -> void:
 	var w := roundf(size.x)
@@ -378,7 +378,7 @@ func _place() -> Rect2:
 	var lo := Vector2.INF
 	var hi := -Vector2.INF
 	for r in reader.floor_room_count():
-		if state.hidden.has(r):  # v0.9.0 TD: fitted without the hidden rooms (their size gives nothing away)
+		if state.hidden.has(r):  # Fitted without the hidden rooms (their size gives nothing away)
 			continue
 		for c in _corners(reader.floor_room(r)):
 			var t := _turn(c)
@@ -436,7 +436,7 @@ func _outline(room: int, col: Color, width: float) -> void:
 		var cuts: Array[Vector2] = []
 		for i in reader.floor_door_count():
 			var d := reader.floor_door_rooms(i)
-			if (d.x != room and d.y != room) or state.door_hidden(reader, i):  # v0.9.0 TD: a plain wall
+			if (d.x != room and d.y != room) or state.door_hidden(reader, i):  # A plain wall
 				continue
 			var dr := reader.floor_door_rect(i).grow(0.05)
 			if not _touches(dr, a, b):
@@ -467,9 +467,9 @@ func _touches(dr: Rect2, a: Vector2, b: Vector2) -> bool:
 ## arrowhead past it.
 func _draw_doors() -> void:
 	var boss_door := reader.floor_boss_door()
-	var over: Dictionary = reader.overrun()  # v0.4.0 AB: the Overrun room's doorways in red
+	var over: Dictionary = reader.overrun()  # The Overrun room's doorways in red
 	var over_doors: PackedInt32Array = over["doors"] if over["active"] else PackedInt32Array()
-	var arena_doors := _arena_doors()  # v0.5.5 AR: an arena's doorways in amber (dim once cleared)
+	var arena_doors := _arena_doors()  # An arena's doorways in amber (dim once cleared)
 	for i in reader.floor_door_count():
 		if not state.door_known(reader, i):
 			continue
@@ -506,7 +506,7 @@ func _draw_doors() -> void:
 		)
 
 
-## v0.5.5 AR: doorway -> colour for the discovered regular arenas' doorways (amber; dim once cleared).
+## Doorway -> colour for the discovered regular arenas' doorways (amber; dim once cleared).
 func _arena_doors() -> Dictionary:
 	var out := {}
 	var a := reader.arenas()
@@ -551,17 +551,17 @@ func _draw_icons() -> void:
 			draw_icon(&"altar", p, k)
 		else:
 			draw_icon(&"chest" if reader.reward_affordable(i) else &"chest_poor", p, k)
-	# v0.3.0 L19: the gamble shrine; v0.9.0 SH: any shrine kind (Fortune, Blood, Chaos)
+	# The gamble shrine; any shrine kind (Fortune, Blood, Chaos)
 	if reader.has_shrine_site() and state.is_discovered(reader.floor_room_of(reader.gamble_pos())):
 		draw_icon(&"shrine", to_map(reader.gamble_pos()), k)
-	for e in reader.event_count():  # v0.5.0 EV: event pedestals in rooms you have seen
+	for e in reader.event_count():  # Event pedestals in rooms you have seen
 		if state.is_discovered(reader.event_room(e)):
 			var spent := reader.event_state(e) == WorldReader.EVENT_DONE
 			draw_icon(&"event_spent" if spent else &"event", to_map(reader.event_pos(e)), k)
-	var over := reader.overrun()  # v0.4.0 AB: the Overrun room, once seen (dim once cleared)
+	var over := reader.overrun()  # The Overrun room, once seen (dim once cleared)
 	if over["active"] and state.is_discovered(over["room"]):
 		draw_icon(&"overrun_cleared" if over["cleared"] else &"overrun", to_map(over["center"]), k)
-	var ar := reader.arenas()  # v0.5.5 AR: each arena, once seen (dim once cleared)
+	var ar := reader.arenas()  # Each arena, once seen (dim once cleared)
 	if ar["active"]:
 		for room: int in ar["rooms"]:
 			if room != ar["overrun"] and state.is_discovered(room):
@@ -572,7 +572,7 @@ func _draw_icons() -> void:
 					k
 				)
 	if reader.has_shop() and state.is_discovered(reader.shop_room()):
-		draw_icon(&"shop", to_map(reader.shop_pos()), k)  # v0.5.0 SH: the shop terminal
+		draw_icon(&"shop", to_map(reader.shop_pos()), k)  # The shop terminal
 	if state.is_discovered(reader.floor_portal_room()):
 		draw_icon(
 			&"portal" if reader.portal_active() else &"portal_sealed",
@@ -585,7 +585,7 @@ func _draw_icons() -> void:
 				to_map(reader.deep_portal_pos()),
 				k
 			)
-	if reader.affinity_maps_secrets():  # v0.9.0 RB: A4 Astral marks a room holding a secret once entered
+	if reader.affinity_maps_secrets():  # A4 Astral marks a room holding a secret once entered
 		for s: Dictionary in reader.secret_spots():
 			var room := int(s["room"])
 			if state.is_discovered(room) and not bool(s["found"]):
@@ -687,20 +687,20 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 				_ci.draw_circle(p, s * 1.6, Color(MinimapStyle.EVENT, MinimapStyle.GLOW_ALPHA))
 			_ci.draw_colored_polygon(hexa, col)
 			_ci.draw_circle(p, s * 0.35, Color(0.05, 0.05, 0.08, 0.9))
-		&"overrun", &"overrun_cleared":  # v0.4.0 AB: a red crossed-swords mark in a square
+		&"overrun", &"overrun_cleared":  # A red crossed-swords mark in a square
 			var col := MinimapStyle.OVERRUN if kind == &"overrun" else MinimapStyle.PORTAL_SEALED
 			if kind == &"overrun":
 				_ci.draw_circle(p, s * 1.6, Color(col, MinimapStyle.GLOW_ALPHA))
 			_ci.draw_rect(Rect2(p - Vector2(s, s), Vector2(s * 2, s * 2)), col, false, 2.0)
 			_ci.draw_line(p - Vector2(s, s) * 0.7, p + Vector2(s, s) * 0.7, col, 2.0)
 			_ci.draw_line(p + Vector2(-s, s) * 0.7, p + Vector2(s, -s) * 0.7, col, 2.0)
-		&"arena", &"arena_cleared":  # v0.5.5 AR: an amber square with a bar across its doors' line
+		&"arena", &"arena_cleared":  # An amber square with a bar across its doors' line
 			var col := MinimapStyle.ARENA if kind == &"arena" else MinimapStyle.PORTAL_SEALED
 			if kind == &"arena":
 				_ci.draw_circle(p, s * 1.6, Color(col, MinimapStyle.GLOW_ALPHA))
 			_ci.draw_rect(Rect2(p - Vector2(s, s), Vector2(s * 2, s * 2)), col, false, 2.0)
 			_ci.draw_rect(Rect2(p - Vector2(s * 0.45, s * 0.45), Vector2(s * 0.9, s * 0.9)), col)
-		&"shop":  # v0.5.0 SH: a storefront (a box under a roof), in the shards' violet
+		&"shop":  # A storefront (a box under a roof), in the shards' violet
 			var house := PackedVector2Array(
 				[
 					p + Vector2(0, -s * 1.3),
@@ -717,7 +717,7 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			)
 		&"portal_sealed":
 			_ci.draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_SEALED, 1.5, true)
-		&"secret":  # v0.9.0 RB: A4 Astral's mark, a violet four-point star in a glow
+		&"secret":  # A4 Astral's mark, a violet four-point star in a glow
 			var star := PackedVector2Array()
 			for j in 8:
 				var rr := s * (1.3 if j % 2 == 0 else 0.4)

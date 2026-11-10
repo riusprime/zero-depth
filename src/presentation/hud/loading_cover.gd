@@ -15,7 +15,7 @@ extends Control
 ## Reduced motion (ViewPrefs): a plain fade in the cover's colour, and the mark breathes instead of spinning.
 ## Presentation only: it reads the sim's portal progress (Main passes it) and its own screen clock; no outcome waits
 ## on it (EI-03), and it never takes the mouse, the focus or input. No text: the mark is a symbol.
-## v0.10.5 W3-O18 (the menus in Astral): the plain cover is Astral's ink, not black, and the mark is drawn in Astral:
+## The menus in Astral: the plain cover is Astral's ink, not black, and the mark is drawn in Astral:
 ## a hairline ring, a thin arc turning round it and a small four-point star at its heart.
 
 ## HIDDEN: nothing drawn; COVERING: a portal's iris closing (set_closing); COVERED: the screen is covered (a load may
@@ -153,7 +153,7 @@ func unveil(seconds: float) -> void:
 	_apply()
 
 
-## v0.8.0 N12: the cover's own clock (s), which turns the mark and moves the iris: it advances every drawn frame.
+## The cover's own clock (s), which turns the mark and moves the iris: it advances every drawn frame.
 func clock() -> float:
 	return _spin
 
@@ -168,7 +168,7 @@ func showing() -> bool:
 	return phase != Phase.HIDDEN
 
 
-## v0.8.0 N18: the cover hides the screen (closing or closed; while it fades out, what is under it shows).
+## The cover hides the screen (closing or closed; while it fades out, what is under it shows).
 func shut() -> bool:
 	return phase == Phase.COVERING or phase == Phase.COVERED
 

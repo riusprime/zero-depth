@@ -1,6 +1,6 @@
 class_name LanternShadeClips
 extends RefCounted
-## v0.9.0 NB4: the Lantern Shade's clips (the owner's tall floating wraith in a torn violet-black cloak with an empty
+## The Lantern Shade's clips (the owner's tall floating wraith in a torn violet-black cloak with an empty
 ## hood, cut into parts in its file: body (the cloak and hood), the two long arms from the shoulders, and the held
 ## lantern on its chain hanging from the right hand; BossModels rigs each as a bone, the lantern under arm_r). Model
 ## frame: +X the front, +Z its right, -Z its left. A turn about Z swings an arm forward (+) or back (-); a turn about X
@@ -47,7 +47,7 @@ static func library() -> Dictionary:
 			_death(),
 		]:
 			_lib[c.name] = c
-		BossClip.loosen(_lib, 0.03)  # v0.11.0 O16: the wind-up, the recoil, the idle sway
+		BossClip.loosen(_lib, 0.03)  # The wind-up, the recoil, the idle sway
 	return _lib
 
 

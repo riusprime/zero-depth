@@ -1,6 +1,6 @@
 class_name CollectibleView
 extends Node3D
-## v0.9.0 CL (COLLECTIBLES.md): the floor's collectibles as the sim shows them (WorldReader.collectibles): once a
+## COLLECTIBLES.md: the floor's collectibles as the sim shows them (WorldReader.collectibles): once a
 ## source gives one, its pickup (CollectibleLooks, in the collectible's colour) floats where it lies; taken, it flares
 ## and rises away. A final body's piece shows and goes the same tick (it comes to the hero): its flare plays where the
 ## hero stands. Reads the reader only (EI-07).

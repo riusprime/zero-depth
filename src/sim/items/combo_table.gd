@@ -1,6 +1,6 @@
 class_name ComboTable
 extends RefCounted
-## One named combo compiled to sim units (v0.3.0 G): its two items (indices into World.item_tables) and its
+## One named combo compiled to sim units: its two items (indices into World.item_tables) and its
 ## effect's numbers. Built from ComboDefinition by ContentCompiler.compile_combos.
 
 ## Appended, never renumbered (mirrors ComboDefinition.Effect).
@@ -25,7 +25,7 @@ enum Effect {
 
 var id := &""
 var effect := 0
-## v0.10.5 O1: a deleted combo's stub (CardOrder.RETIRED_COMBOS): no halves, never earned; a save's entry is dropped.
+## A deleted combo's stub (CardOrder.RETIRED_COMBOS): no halves, never earned; a save's entry is dropped.
 var retired := false
 var item_a := -1
 var item_b := -1

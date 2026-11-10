@@ -9,7 +9,7 @@ extends BossAvatar
 ## for the dive (the leap). At half HP it splits (the deploy): the three pods drift off its rim during the windup and
 ## are gone once the drones are out. While its weak point is open the iris core shows gold; staggered, it sags and
 ## wobbles.
-## v0.7.5 BM: the owner's model (assets/models/bosses/hive_lens.glb, rigged by the owner: a 23-joint Tripo skeleton)
+## The owner's model (assets/models/bosses/hive_lens.glb, rigged by the owner: a 23-joint Tripo skeleton)
 ## replaces the code-built body, which stays as the fallback when the file is missing. 1.9 m across its two side pods,
 ## floating with its sphere's centre HOVER_Y up, it is posed from its bones, one function per layer (_pose_rig): a
 ## bob and a slow roll, the crown spinning, the three cable tails swaying with a lag down each chain and trailing its
@@ -30,7 +30,7 @@ const RED := Color("#D8433A")
 const IRIS := Color("#FF2A22")
 const PUPIL := Color("#1B1C20")
 const TIP := Color("#FF3A26")
-## v0.7.5 BM: the owner's model's bones (Tripo names as Godot imports them) and its eye's front at rest (metres,
+## The owner's model's bones (Tripo names as Godot imports them) and its eye's front at rest (metres,
 ## model frame; evidence/BOSS_MODELS.md).
 const SPINE_1 := &"tripo__Spine_1"
 const CROWN_BASE := &"tripo__Spine_2"
@@ -71,19 +71,19 @@ var pods: Array[Node3D] = []
 var tails: Array[Node3D] = []
 var _pod_glow: Array[MeshInstance3D] = []
 var _split := 0.0
-# v0.7.5 BM: the cables' lagged drag (one per chain segment, model frame x/z) and the crown's spin angle.
+# The cables' lagged drag (one per chain segment, model frame x/z) and the crown's spin angle.
 var _drag: Array[Vector2] = []
 var _spin := 0.0
 
 
-## v0.7.5 BF2: its dodge-first moves pose as the old ones: a pattern (the spiral, the petals, the rings) as its prism
+## Its dodge-first moves pose as the old ones: a pattern (the spiral, the petals, the rings) as its prism
 ## fan (the crown spins up), the Focus Beam's tracked lines as its beam (the iris stretches, the body rocks back).
 ## The Prism Spiral's eye closing is the "shielded" pose (WorldReader.boss_shielded).
 func apply_state(s: Dictionary) -> void:
 	super(s)
 	if _move == WorldReader.MOVE_PATTERN:
 		_move = WorldReader.MOVE_BOLT_FAN
-	elif _move == WorldReader.MOVE_LANES or _move == WorldReader.MOVE_GAZE:  # v0.8.0 BS2: the Gaze too
+	elif _move == WorldReader.MOVE_LANES or _move == WorldReader.MOVE_GAZE:  # The Gaze too
 		_move = WorldReader.MOVE_RAIL
 
 
@@ -279,12 +279,12 @@ func _pose(dt: float) -> void:
 	shadow.scale = Vector3(s, 1, s)
 
 
-# --- The owner's model (v0.7.5 BM), posed from its bones -------------------------------------------------------
+# --- The owner's model, posed from its bones -------------------------------------------------------
 # Turns are in the model frame: +Z tips a part's top back (a hanging tail forward), +X tips it toward the left (a
 # hanging tail out to the left, -Z), +Y turns it to its left.
 
 
-## v0.8.0 BA: the owner's model plays its keyframed clips (HiveLensClips); this adds what follows them: the crown's
+## The owner's model plays its keyframed clips (HiveLensClips); this adds what follows them: the crown's
 ## spin (the clips set its speed), the eye turning to the player, the tails' lagging sway and trail (the clips curl,
 ## splay and sweep them), the open pose while the weak point is open and the pods' split, and every turn of the body
 ## about its sphere's centre.

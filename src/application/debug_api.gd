@@ -6,7 +6,7 @@ extends RefCounted
 
 signal reseed_requested(seed_value: int)
 
-## v0.10.5 W3-V1: the view switches the dev panel shows (it cannot see the views; a view registers its own, e.g.
+## The view switches the dev panel shows (it cannot see the views; a view registers its own, e.g.
 ## ViewPrefs' enemy VAT): id -> [the button's text key, a Callable that flips it, a Callable returning it (bool)].
 static var view_switches := {}
 
@@ -17,20 +17,20 @@ var ticks_last_frame := 0
 var god := false
 ## The boss the panel spawns next (an index into World.boss_tables), and a spawn waiting for the tick boundary.
 var boss_choice := 0
-## v0.3.5 AI: the normal enemy kind the panel spawns next (an index into enemy_kinds()), and a spawn waiting.
+## The normal enemy kind the panel spawns next (an index into enemy_kinds()), and a spawn waiting.
 var enemy_choice := 0
 ## v0.4.0 BS forced loadouts: the ability the panel grants next (an index into World.ability_tables), and grants
 ## waiting for the tick boundary (each one a new slot or a level, as a card would).
 var ability_choice := 0
-## v0.6.0 MX4: the modifier card grant_mod gives (an item index picked with next_mod; -1 = the first one not held).
+## The modifier card grant_mod gives (an item index picked with next_mod; -1 = the first one not held).
 var mod_choice := -1
 var _kill_boss := false
 var _grants := PackedInt32Array()
-## v0.6.0 MX2: attack-item modifiers queued by grant_mod (each the first one not held that the build may take).
+## Attack-item modifiers queued by grant_mod (each the first one not held that the build may take).
 var _mod_grants := 0
-## v0.4.0 AB: a dev route to the Overrun door waiting for the tick boundary.
+## A dev route to the Overrun door waiting for the tick boundary.
 var _to_overrun := false
-## v0.5.5 AR: dev routes to an arena door and to clear the sealed arena's wave, waiting for the tick boundary.
+## Dev routes to an arena door and to clear the sealed arena's wave, waiting for the tick boundary.
 var _to_arena := false
 var _clear_wave := false
 var _next_phase := false
@@ -38,12 +38,12 @@ var _steps := 0
 var _boss_pending := -1
 var _enemy_pending := -1
 var _curse_chest := false
-## v0.6.0 CU (TEST HELPER, dev runs only); v0.9.0 EL: the next elite archetype to spawn (-1 none), and the one after.
+## v0.6.0 CU (TEST HELPER, dev runs only); the next elite archetype to spawn (-1 none), and the one after.
 var _elite_pending := -1
 var _elite_next := 0
 
 
-## v0.10.5 W3-V1: adds (or replaces) a dev panel view switch (see view_switches).
+## Adds (or replaces) a dev panel view switch (see view_switches).
 static func register_view_switch(
 	id: StringName, label_key: String, flip: Callable, state: Callable
 ) -> void:
@@ -100,7 +100,7 @@ func reseed(seed_value: int) -> void:
 	reseed_requested.emit(seed_value)
 
 
-## Bosses (v0.3.0 C): picks the next compiled boss for request_boss.
+## Bosses: picks the next compiled boss for request_boss.
 func next_boss() -> void:
 	if not world.boss_tables.is_empty():
 		boss_choice = (boss_choice + 1) % world.boss_tables.size()
@@ -112,7 +112,7 @@ func request_boss() -> void:
 		_boss_pending = boss_choice
 
 
-## The normal enemy kinds the world has tables for, in kind order (v0.3.5 AI: the panel's enemy spawn).
+## The normal enemy kinds the world has tables for, in kind order (the panel's enemy spawn).
 func enemy_kinds() -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for k in range(ActorStore.Kind.CHARGER, ActorStore.Kind.size()):
@@ -138,7 +138,7 @@ func request_enemy() -> void:
 		_enemy_pending = enemy_choice % enemy_kinds().size()
 
 
-## v0.6.0 CU, TEST HELPER (dev runs only); v0.9.0 EL: queues the next elite archetype (Breaker, Rift Hunter, Conduit
+## v0.6.0 CU, TEST HELPER (dev runs only); queues the next elite archetype (Breaker, Rift Hunter, Conduit
 ## in turn) to spawn, with its core, about 6 m from the player at the next tick boundary.
 func request_elite() -> void:
 	var kind: int = Elites.KINDS[_elite_next % Elites.KINDS.size()]
@@ -161,7 +161,7 @@ func apply_pending() -> int:
 		return -1
 	var k := _boss_pending
 	_boss_pending = -1
-	BossChallenge.dissolve_floor(world)  # BX (L20): a summoned boss clears the floor.
+	BossChallenge.dissolve_floor(world)  # BX: a summoned boss clears the floor.
 	return world.spawn_boss(k, boss_spot(world, world.boss_tables[k].radius_m))
 
 
@@ -182,7 +182,7 @@ static func boss_spot(w: World, r: float) -> Vector2:
 	return p + Vector2(6, 0)
 
 
-## v0.4.0 BS: picks the next compiled ability for grant_ability. v0.10.5 O1: never a retired one (a deleted
+## Picks the next compiled ability for grant_ability. never a retired one (a deleted
 ## ability's stub, CardOrder.RETIRED_ABILITIES).
 func next_ability() -> void:
 	var n := world.ability_tables.size()
@@ -202,13 +202,13 @@ func grant_ability() -> void:
 		_grants.append(ability_choice)
 
 
-## v0.6.0 MX2: queues the next attack-item modifier (the first slot item not held that the build may use) for the next
+## Queues the next attack-item modifier (the first slot item not held that the build may use) for the next
 ## tick boundary; with the six slots full it opens the Swap, as a found card would (Offers.apply).
 func grant_mod() -> void:
 	_mod_grants += 1
 
 
-## v0.6.0 MX4: picks the next modifier card (an item that takes a slot) for grant_mod, in item order. v0.10.5 O1:
+## Picks the next modifier card (an item that takes a slot) for grant_mod, in item order.
 ## never a retired one (a deleted card's stub).
 func next_mod() -> void:
 	var n := world.item_tables.size()
@@ -219,20 +219,20 @@ func next_mod() -> void:
 			return
 
 
-## v0.4.0 AB (dev route): puts the player just outside the Overrun room's first doorway at the next tick boundary,
+## Dev route: puts the player just outside the Overrun room's first doorway at the next tick boundary,
 ## so walking on goes through the red frame.
 func go_overrun() -> void:
 	_to_overrun = true
 
 
-## v0.5.5 AR (dev route): puts the player just outside the first doorway of the nearest arena that isn't cleared (a
+## Dev route: puts the player just outside the first doorway of the nearest arena that isn't cleared (a
 ## regular one), at the next tick boundary, so walking on seals it.
 func go_arena() -> void:
 	_to_arena = true
 
 
-## v0.5.5 AR (dev runs only): kills every enemy inside the sealed arena at the next tick boundary (one wave).
-## v0.9.0 LK: a sealed Lockdown's fighters too (one formation).
+## Dev runs only: kills every enemy inside the sealed arena at the next tick boundary (one wave).
+## A sealed Lockdown's fighters too (one formation).
 func clear_wave() -> void:
 	_clear_wave = true
 
@@ -259,7 +259,7 @@ static func arena_door_outside(w: World, m: float) -> Vector2:
 	return best
 
 
-## v0.4.0 TU (dev route): moves the floor's clock to the start of the next difficulty phase at the next tick
+## Dev route: moves the floor's clock to the start of the next difficulty phase at the next tick
 ## boundary, so a phase can be seen without waiting for it.
 func next_phase() -> void:
 	_next_phase = true
@@ -277,7 +277,7 @@ static func overrun_door_outside(w: World, m: float) -> Vector2:
 	return f.door_centers[d] - into * (f.door_depths[d] * 0.5 + m)
 
 
-## v0.5.0 EV (dev runs only): the next chest offer rolled is cursed.
+## Dev runs only: the next chest offer rolled is cursed.
 func curse_next_chest() -> void:
 	_curse_chest = true
 
@@ -309,7 +309,7 @@ func _apply_commands() -> void:
 				):
 					world.actors.invuln[i] = 0
 					Damage.hit(world, i, world.actors.hp[i] * 10, 0, 0, world.take_root(), 0, p, p)
-		if Lockdowns.holds_spawns(world):  # v0.9.0 LK: a sealed Lockdown's fighters (one formation)
+		if Lockdowns.holds_spawns(world):  # A sealed Lockdown's fighters (one formation)
 			for i in Lockdowns.fighters(world):
 				var p := world.actors.pos(i)
 				world.actors.invuln[i] = 0
@@ -320,7 +320,7 @@ func _apply_commands() -> void:
 		if at != Vector2.INF:
 			world.actors.set_pos(0, at)
 	for idx in _grants:
-		Offers.apply(world, Offers.ability_code(idx))  # v0.6.0 MX2: a seventh modifier opens the Swap
+		Offers.apply(world, Offers.ability_code(idx))  # A seventh modifier opens the Swap
 	_grants.clear()
 	while _mod_grants > 0 and not BuildSlots.swapping(world):
 		_mod_grants -= 1
@@ -329,8 +329,8 @@ func _apply_commands() -> void:
 			and mod_choice < world.item_tables.size()
 			and not world.item_tables[mod_choice].retired
 			and CardLevels.can_take(world, mod_choice, CardLevels.MAX_LEVEL)
-		):  # v0.8.0 FL: no floor ceiling
-			Offers.apply(world, mod_choice)  # v0.6.0 MX4: the chosen card (v0.6.5 WN3: or its level-up)
+		):  # No floor ceiling
+			Offers.apply(world, mod_choice)  # The chosen card (or its level-up)
 			continue
 		for k in world.item_tables.size():
 			if (

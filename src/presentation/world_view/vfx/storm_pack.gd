@@ -1,6 +1,6 @@
 class_name StormPack
 extends RefCounted
-## v0.10.0 VX6 (VFX_PACK N1, lightning in the pack's style): the VfxLayer's storm looks (a bolt or chain line, a shock
+## VFX_PACK N1, lightning in the pack's style: the VfxLayer's storm looks (a bolt or chain line, a shock
 ## field, a shock ring, a storm blast, the shock on an enemy), moved out of vfx_layer.gd. The layer asks here; every
 ## look draws the pack's version (ZdBolt, assets/vfx_zd/lightning: a jagged ribbon in the beam's shader, plus the
 ## pack's ripple, rim and pulse areas, ids vx6_* in data/vfx/pack_fx_vx6.tres and the VX1 storm spark) and falls back to
@@ -27,7 +27,7 @@ const FIELD_STRIKE_TICKS := 24.0
 const SHOCK_STRIKE_TICKS := 18.0
 const SHOCK_REACH_M := 0.5
 const SHOCK_FORKS := 2
-## v0.10.5 S10 (owner, on the VFX pack: "the sparks should go around it and be way smaller"): the shock ring's sparks
+## The shock ring's sparks
 ## are short arcs that ride the ring's edge, orbiting round it (not bolts spanning the edge). Starting values.
 const RING_SPARK_SIZE := 0.33  # their length and width, over the old edge arcs (0.8 of each gap, width 0.4)
 const RING_SPARK_ORBIT_PER_TICK := 0.05  # radians per tick they travel round the ring
@@ -36,7 +36,7 @@ const RING_SPARK_MAX := 6  # at most this many (the old 8 would crowd at a third
 var layer: VfxLayer
 var holds := PackHold.new()
 var _seen := {}  # seed -> bolts asked for it this frame
-## v0.10.5 W3-Q7: colors() made once (ElementLooks' storm entries are constants), not for every bolt a frame.
+## colors() made once (ElementLooks' storm entries are constants), not for every bolt a frame.
 var _cols := colors()
 
 
@@ -101,7 +101,7 @@ func _bolt(
 		return false
 	var n: int = _seen.get(sd, 0)
 	_seen[sd] = n + 1
-	# v0.10.5 W3-Q7: the hit spark on the bolt's first touch (PackHold.spawned), not a new closure per bolt a frame
+	# The hit spark on the bolt's first touch (PackHold.spawned), not a new closure per bolt a frame
 	var node := holds.touch(((sd * 64 + n) * 8) + 1, BOLT, &"bolt", a, 1.0, _cols) as ZdBolt
 	if node == null:
 		return false

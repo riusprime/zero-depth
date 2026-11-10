@@ -5,7 +5,7 @@ extends RefCounted
 ## bindings). Display changes are skipped when headless, so tests never resize a window.
 
 const BUSES: Array[String] = ["Master", "Music", "Effects", "Ambience", "SFX", "UI"]
-## Where each bus sends (v0.3.0 AU): world sounds (SFX, ducked under boss telegraphs) and menus/alerts (UI) both
+## Where each bus sends: world sounds (SFX, ducked under boss telegraphs) and menus/alerts (UI) both
 ## sit under Effects, so the Effects volume covers them; the biome loops have their own Ambience volume.
 const BUS_SENDS := {
 	"Music": "Master", "Effects": "Master", "Ambience": "Master", "SFX": "Effects", "UI": "Effects"
@@ -20,13 +20,13 @@ const VOLUME_BUSES := {
 const WINDOW_MODES: Array[String] = ["windowed", "fullscreen"]
 const RENDER_SCALES: Array[String] = ["50", "67", "75", "85", "100"]
 const COLOUR_MODES: Array[String] = ["off", "protanopia", "deuteranopia", "tritanopia"]
-## v0.6.0 MX3: the attack effects' density (ViewPrefs.effects_density, AttackFormView).
+## The attack effects' density (ViewPrefs.effects_density, AttackFormView).
 const EFFECTS_DENSITIES: Array[String] = ["low", "medium", "high"]
-## v0.7.5 SM (N8, accessibility): the interface scale (%): every menu, the HUD and their text grow or shrink with it
+## N8, accessibility: the interface scale (%): every menu, the HUD and their text grow or shrink with it
 ## (the window's content scale; the 3D view is not scaled). Layouts are built for 1920×1080 at 100; 110 is the most the
 ## pick panel takes at 1280×720 (at 125 its column overflows the 864 px it is given: v0.7.5 evidence/SMALL_THINGS.md).
 const UI_SCALES: Array[String] = ["90", "100", "110"]
-## Starting values (v0.3.0 O); the shipped look stays the default.
+## Starting values; the shipped look stays the default.
 const DEFAULTS := {
 	"audio/master": 80,
 	"audio/sfx": 80,
@@ -43,12 +43,12 @@ const DEFAULTS := {
 	"effects_density": "high",
 	"frame_cap": "off",
 	"language": "en",
-	"hints": "on",  # v0.7.5 SM: the first-run hints (HintStore)
-	"boss_hints": "on",  # v0.11.0 O2 (Q12): the boss hint arrow (MechanicHints)
-	"ui_scale": "100",  # v0.7.5 SM: UI_SCALES
-	"hit_stop": "on",  # v0.8.0 GF3: the Blade's hit-stop, a look only (read by the view)
-	"enemy_shadows": "proxy",  # v0.10.5 PA: ViewPrefs.enemy_shadows ("proxy" or "blob"), a look only
-	"enemy_vat": "on",  # v0.10.5 W3-V1: ViewPrefs.enemy_vat ("on" / "off"), a look only (on: owner, 2026-11-06)
+	"hints": "on",  # The first-run hints (HintStore)
+	"boss_hints": "on",  # The boss hint arrow (MechanicHints)
+	"ui_scale": "100",  # UI_SCALES
+	"hit_stop": "on",  # The Blade's hit-stop, a look only (read by the view)
+	"enemy_shadows": "proxy",  # ViewPrefs.enemy_shadows ("proxy" or "blob"), a look only
+	"enemy_vat": "on",  # ViewPrefs.enemy_vat ("on" / "off"), a look only (on: owner, 2026-11-06)
 }
 
 

@@ -11,15 +11,15 @@ extends Node3D
 
 const CUBE := 0.7
 const BAR_W := 0.55
-## v0.4.0 SC: projectile nodes kept for reuse per look, at most this many idle (hordes fire hundreds a second).
+## Projectile nodes kept for reuse per look, at most this many idle (hordes fire hundreds a second).
 const PROJECTILE_POOL_MAX := 400
-## v0.4.0 SC: enemy models farther than this from the hero (off screen) stop their frame-time animation. v0.8.0 HV:
+## Enemy models farther than this from the hero (off screen) stop their frame-time animation.
 ## only without a camera (`cull` unset: a view built alone, as the unit tests do); the game uses the camera's view.
 const ANIMATE_RADIUS_M := 24.0
-## v0.9.0 VP (owner C56: "enemies in range lean into it"): an enemy a Void shot pulls tilts toward the pull, this much
+## An enemy a Void shot pulls tilts toward the pull, this much
 ## (radians) at the pull's top speed.
 const LEAN_RAD := 0.35
-## v0.7.5 NB1: body colours under this saturation count as grey (stone, metal, bone) for the biome's enemy cast.
+## Body colours under this saturation count as grey (stone, metal, bone) for the biome's enemy cast.
 const GREY_SATURATION := 0.3
 ## A body material's rest emission without a role glow: [colour, energy] (flashable's dark white).
 const NO_GLOW := [Color.WHITE, 0.0]
@@ -30,7 +30,7 @@ const NO_GLOW := [Color.WHITE, 0.0]
 ## hero are untouched. The hit flash and the status tints still win while they last, then the glow comes back.
 ## Starting value (the measured line-up: docs/roadmap/v0.8.0/evidence/N1_FIXES.md).
 const ROLE_GLOW := 0.45
-## v0.11.0 F2 (owner: "some of these models appear slightly too dark"): the new kinds' textured plates' albedo
+## The new kinds' textured plates' albedo
 ## multiplier (on the map, so the model's own light and dark stay), the darker models most. Not listed: not lifted.
 const MODEL_LIFT := {
 	WorldReader.KIND_SCRAP_HOUND: 1.45,
@@ -40,87 +40,87 @@ const MODEL_LIFT := {
 	WorldReader.KIND_CINDER_PRIEST: 1.6,
 }
 
-## v0.8.0 N1: the role glow's energy the views build with (ROLE_GLOW; the line-up shot script sweeps it, 0 = none).
+## The role glow's energy the views build with (ROLE_GLOW; the line-up shot script sweeps it, 0 = none).
 static var role_glow_energy := ROLE_GLOW
 
-## v0.5.9: the floor's lighting mood; with one, the hero carries a small warm light (StageKit.hero_light).
+## The floor's lighting mood; with one, the hero carries a small warm light (StageKit.hero_light).
 var hero_mood: BiomeMood
 ## How many frames a hit flashes the actor white (PRESENTATION §6, starting value).
 var flash_frames := 3
 var outline_color := Color("#1A1A22")
 ## The look of new player bolts (ItemVisuals sets it from the items owned).
 var bolt_look := {}
-## v0.5.5 LK (owner A2): the heat tier (HeatLooks.TIER_*) read each sync; a new player bolt takes its colour
+## The heat tier (HeatLooks.TIER_*) read each sync; a new player bolt takes its colour
 ## (HeatLooks.attack_color: the bolt's own below Hot, orange at Hot, red at Overclock) and keeps it while it flies.
 var heat_tier := HeatLooks.TIER_COOL
-## v0.10.5 (owner: "you can clearly see the character half body inside it"): the floor's altars (floor 1's arrival
+## The floor's altars (floor 1's arrival
 ## altar, the final approach's); an actor on one is drawn on its stone (AltarStage.height_at), not sunk into it.
 var grounds: Array[AltarStage] = []
-## v0.7.5 NB1: the biome's cast on enemies (BiomeLook.enemy_tint): their grey and bone parts pulled toward its colour
-## by its alpha (0: none). Red parts (v0.8.0 EC: the role-coloured parts, EnemyPalettes, all at or over
+## The biome's cast on enemies (BiomeLook.enemy_tint): their grey and bone parts pulled toward its colour
+## by its alpha (0: none). Red parts (the role-coloured parts, EnemyPalettes, all at or over
 ## GREY_SATURATION), rings and bars keep their colours, so identity never changes (PRESENTATION §3).
 var enemy_tint := Color(0, 0, 0, 0)
-## v0.8.0 N4 (owner O57): the damage chunks on the bars over enemies and the hero (one MultiMesh for all).
+## The damage chunks on the bars over enemies and the hero (one MultiMesh for all).
 var bar_chunks := BarChunks.new(BAR_W)
-## v0.9.0 RB: the hero's robe and rune (a Wardrobe.look dictionary; {}: Cream, no rune), set before the hero shows.
+## The hero's robe and rune (a Wardrobe.look dictionary; {}: Cream, no rune), set before the hero shows.
 var hero_look := {}
-## v0.8.0 HV (owner O89): the camera's view (WorldViewRoot refreshes it each tick): an enemy model animates unless it
+## The camera's view (WorldViewRoot refreshes it each tick): an enemy model animates unless it
 ## is wholly out of the picture (ScreenCull.keeps, past its largest radius + the margin, with hysteresis).
 var cull: ScreenCull
-## v0.10.5 W3-V1 (the enemy VAT pilot): the crowd drawing the VatCrowd.KINDS enemies while ViewPrefs.enemy_vat is on
+## The enemy VAT pilot: the crowd drawing the VatCrowd.KINDS enemies while ViewPrefs.enemy_vat is on
 ## (null until the first).
 var vat_crowd: VatCrowd
-## v0.11.0 O9c (owner Q16-c: "Batch now"): the horde critters, drawn with no node each (CritterCrowd; made with the
+## The horde critters, drawn with no node each (CritterCrowd; made with the
 ## first sync). actor_node() is null for a critter; flash, hold_flash and set_tint reach it by id.
 var critters: CritterCrowd
 var _actors := {}
 var _projectiles := {}
 var _proj_last := {}
 var _flash := {}
-## v0.8.0 GF3 (owner O22, the Blade's hit-stop): frame seconds an actor's flash is held lit and uncounted, by id.
+## Frame seconds an actor's flash is held lit and uncounted, by id.
 var _flash_hold := {}
 ## A steady glow per actor id (e.g. burning), shown when not flashing: [color, energy].
 var _tint := {}
-## v0.8.0 HV: the glow state last written to each actor's body materials, by id ([true] lit, [false] rest, or
+## The glow state last written to each actor's body materials, by id ([true] lit, [false] rest, or
 ## [false, colour, energy] a tint), so an unchanged one is not written again every tick (a burning horde's ~10
 ## materials each, every tick).
 var _shown := {}
-## v0.8.0 HV: whether each enemy model was animating at the last sync (the hysteresis's state), by id.
+## Whether each enemy model was animating at the last sync (the hysteresis's state), by id.
 var _anim_on := {}
 ## Projectile materials by look (see _projectile_material), and one mesh per look.
 var _proj_mats := {}
 var _proj_meshes := {}
-## v0.4.0 SC: idle projectile nodes by look key (hidden, kept as children), reused before building new ones.
+## Idle projectile nodes by look key (hidden, kept as children), reused before building new ones.
 var _proj_pool := {}
 var _proj_pooled := 0
 ## P-6: the last look key per side (0 hostile, 1 player) and the [size, colour, energy] it was built from, so a shot of
 ## an unchanged look doesn't format its key again (a horde fires hundreds a second).
 var _proj_key: Array[String] = ["", ""]
 var _proj_key_of: Array = [[], []]
-## v0.10.5 Q5: each actor node's parts, read once from its metas (get_meta every sync was most of actors.update), by
+## Each actor node's parts, read once from its metas (get_meta every sync was most of actors.update), by
 ## id: [facing, bar, elite bar or null, dazed or null, hero avatar or null, enemy avatar or null, is a boss, the yaw
-## last written (INF: write it), the blob shadow or null (v0.10.5 PA)].
+## last written (INF: write it), the blob shadow or null].
 var _parts := {}
-## v0.10.5 W3-V1: the switch's value the actors were built with (a flip rebuilds them).
+## The switch's value the actors were built with (a flip rebuilds them).
 var _vat_on := ViewPrefs.enemy_vat
 
 
 func sync(reader: WorldReader) -> void:
 	heat_tier = reader.heat_tier()
-	if _vat_on != ViewPrefs.enemy_vat:  # v0.10.5 W3-V1: the dev switch flipped: those kinds are built again
+	if _vat_on != ViewPrefs.enemy_vat:  # The dev switch flipped: those kinds are built again
 		_vat_on = ViewPrefs.enemy_vat
 		_rebuild_vat_kinds()
 	if bar_chunks.get_parent() == null:
 		add_child(bar_chunks)
 	var alive := {}
 	var hero := reader.player_pos()
-	var leans := reader.void_leans()  # v0.9.0 VP: empty unless a Void shot pulls someone
+	var leans := reader.void_leans()  # Empty unless a Void shot pulls someone
 	var latched := reader as LatchedReader  # v0.10.5 W3-Q8
 	var crowd := _critters()
 	for i in reader.actor_count():
 		var id := reader.actor_id(i)
 		alive[id] = true
-		if CritterCrowd.takes(reader.actor_kind(i)):  # v0.11.0 O9c: the crowd draws it (below)
+		if CritterCrowd.takes(reader.actor_kind(i)):  # The crowd draws it (below)
 			continue
 		var node: Node3D = _actors.get(id)
 		var fresh := node == null
@@ -130,12 +130,12 @@ func sync(reader: WorldReader) -> void:
 			)
 			_actors[id] = node
 			add_child(node)
-			if node.has_meta(&"elite"):  # v0.9.0 EL: its own framed bar with its name (EliteBar)
+			if node.has_meta(&"elite"):  # Its own framed bar with its name (EliteBar)
 				_add_elite_bar(node, tr(reader.elite_name_key(i)))
 			if reader.actor_team(i) != 0:
-				tint_greys(node, VariantLooks.cast(reader.actor_kind(i), enemy_tint))  # O13a: a variant's own
+				tint_greys(node, VariantLooks.cast(reader.actor_kind(i), enemy_tint))  # A variant's own
 				lift_model(node, WorldReader.body_kind(reader.actor_kind(i)))  # v0.11.0 F2
-				role_glow(node, WorldReader.body_kind(reader.actor_kind(i)), role_glow_energy)  # v0.8.0 N1 (O39)
+				role_glow(node, WorldReader.body_kind(reader.actor_kind(i)), role_glow_energy)  # v0.8.0 N1
 		var at := reader.actor_pos(i)
 		var pos := SimPlane.to_3d(at)
 		for g in grounds:
@@ -144,7 +144,7 @@ func sync(reader: WorldReader) -> void:
 			var t_tb := PerfMarks.start()
 			_start_from_tick_before(node, latched.actor_pos_before(i))
 			PerfMarks.add(&"actors.tick_before", t_tb)
-		node.position = pos  # v0.10.5 Q5: written once
+		node.position = pos  # Written once
 		var t_up := PerfMarks.start()
 		var parts := _parts_of(node, id)
 		_update_actor(node, reader, i, parts)
@@ -153,13 +153,13 @@ func sync(reader: WorldReader) -> void:
 		if not leans.is_empty() and leans.has(id):
 			_lean(node, leans[id])
 			parts[7] = INF  # the lean turned the facing's basis: the yaw is written again next sync
-		if parts[5] != null:  # v0.4.0 SC: off-screen crowds don't animate
+		if parts[5] != null:  # Off-screen crowds don't animate
 			var t_an := PerfMarks.start()
 			_animate_if_seen(node, id, at, hero)
 			PerfMarks.add(&"actors.animate", t_an)
 		if fresh:
 			node.reset_physics_interpolation()
-	# v0.10.5 W3-Q6: every live actor has its node by now, so as many nodes as live actors means none is gone: no walk
+	# Every live actor has its node by now, so as many nodes as live actors means none is gone: no walk
 	# over the nodes' and the per-id state's keys on a sync where nobody died.
 	var t_cc := PerfMarks.start()
 	crowd.grounds = grounds
@@ -181,9 +181,9 @@ func sync(reader: WorldReader) -> void:
 	var live := {}
 	for i in reader.projectile_count():
 		if reader.projectile_look(i) != "":
-			continue  # v0.7.5 BF1: a fireball (FireballViews draws them)
+			continue  # A fireball (FireballViews draws them)
 		if reader.projectile_team(i) == 0 and not reader.projectile_is_shard(i):
-			continue  # v0.8.0 GF1: the hero's shots are blue pulses (HeroPulseViews draws them)
+			continue  # The hero's shots are blue pulses (HeroPulseViews draws them)
 		var id := reader.projectile_id(i)
 		live[id] = true
 		var p := reader.projectile_pos(i)
@@ -210,7 +210,7 @@ func sync(reader: WorldReader) -> void:
 				_proj_last.erase(id)
 
 
-## v0.10.5 W3-Q8 (the hero and the enemies judder under 60 fps): the views sync once a frame (Q5), so on a frame that
+## The hero and the enemies judder under 60 fps: the views sync once a frame, so on a frame that
 ## ran two ticks or more the physics interpolation's previous place was the last sync's, two ticks or more back: the
 ## node was drawn a tick or more behind, then caught up on the next frame. Its previous place is set to the tick
 ## before the latest (`before`, LatchedReader.actor_pos_before), so it is drawn between the last two ticks as on a
@@ -228,11 +228,11 @@ func _start_from_tick_before(node: Node3D, before: Variant) -> void:
 	node.reset_physics_interpolation()
 
 
-## v0.8.0 HV (owner O89: never skipped on screen): an enemy model animates while the camera could show it
+## An enemy model animates while the camera could show it
 ## (ScreenCull.keeps: within its largest radius + the margin of the view, with hysteresis); without a camera, within
 ## ANIMATE_RADIUS_M of the hero as before. Turning back on, it runs a few short steps at once, so its smoothed pose has
 ## caught up before it can reach the screen (its own _process runs again before this frame is drawn).
-## v0.10.5 PA (owner, perf wave 2: "let's try it"): the same test decides its physics interpolation: an enemy the camera
+## The same test decides its physics interpolation: an enemy the camera
 ## could show (the view's rectangle + AVATAR_RADIUS_M + MARGIN_M, + HYSTERESIS_M while on: every enemy on screen and
 ## ~10 m past its edges) keeps it; a far one is set to PHYSICS_INTERPOLATION_MODE_OFF, and back on (with
 ## reset_physics_interpolation, so it never glides from where it was) when it comes near. The hero and the camera are
@@ -248,7 +248,7 @@ func _animate_if_seen(node: Node3D, id: int, pos: Vector2, hero: Vector2) -> voi
 	var first := not _anim_on.has(id)
 	_anim_on[id] = on
 	avatar.set_process(on)
-	if first or on != was:  # v0.10.5 PA: physics interpolation only where it could show
+	if first or on != was:  # Physics interpolation only where it could show
 		node.physics_interpolation_mode = (
 			Node.PHYSICS_INTERPOLATION_MODE_INHERIT if on else Node.PHYSICS_INTERPOLATION_MODE_OFF
 		)
@@ -259,7 +259,7 @@ func _animate_if_seen(node: Node3D, id: int, pos: Vector2, hero: Vector2) -> voi
 			avatar.call(&"advance", 0.05)
 
 
-## v0.9.0 VP: tilts the body (its facing node, turned this frame by _update_actor) toward the Void's pull `step` (m a
+## Tilts the body (its facing node, turned this frame by _update_actor) toward the Void's pull `step` (m a
 ## tick): LEAN_RAD at the top speed (1 m/s), less as it weakens.
 func _lean(node: Node3D, step: Vector2) -> void:
 	var d3 := SimPlane.to_3d(step)
@@ -290,7 +290,7 @@ func actor_node(id: int) -> Node3D:
 	return _actors.get(id)
 
 
-## v0.11.0 O9c: whether actor `id` is drawn (its own node, or a critter in the crowd).
+## Whether actor `id` is drawn (its own node, or a critter in the crowd).
 func draws(id: int) -> bool:
 	return _actors.has(id) or _is_critter_id(id)
 
@@ -299,7 +299,7 @@ func _is_critter_id(id: int) -> bool:
 	return critters != null and critters.has(id)
 
 
-## v0.11.0 O9c: the critter crowd (made with the first sync), on the floor's look.
+## The critter crowd (made with the first sync), on the floor's look.
 func _critters() -> CritterCrowd:
 	if critters == null:
 		critters = CritterCrowd.new()
@@ -319,7 +319,7 @@ func flash(id: int, frames: int = 0) -> void:
 	if _actors.has(id) or _is_critter_id(id):
 		var lit := _flash.has(id)
 		_flash[id] = maxi(frames if frames > 0 else flash_frames, _flash.get(id, 0))
-		if not lit:  # v0.8.0 HV: already flashing, only its frames grow (the materials are lit already)
+		if not lit:  # Already flashing, only its frames grow (the materials are lit already)
 			_set_flash(_actors.get(id), true, id)
 
 
@@ -327,7 +327,7 @@ func is_flashing(id: int) -> bool:
 	return _flash.has(id)
 
 
-## v0.8.0 GF3: holds actor `id`'s flash (lit, its frames not counted down) for `seconds` of frame time.
+## Holds actor `id`'s flash (lit, its frames not counted down) for `seconds` of frame time.
 func hold_flash(id: int, seconds: float) -> void:
 	if _flash.has(id):
 		_flash_hold[id] = maxf(seconds, float(_flash_hold.get(id, 0.0)))
@@ -357,7 +357,7 @@ func set_tint(id: int, c: Color, energy: float) -> void:
 		_tint.erase(id)
 	else:
 		var was: Array = _tint.get(id, [])
-		if was.is_empty() or was[0] != c or was[1] != energy:  # v0.8.0 HV: kept when unchanged
+		if was.is_empty() or was[0] != c or was[1] != energy:  # Kept when unchanged
 			_tint[id] = [c, energy]
 	if (_actors.has(id) or _is_critter_id(id)) and not _flash.has(id):
 		_set_flash(_actors.get(id), false, id)
@@ -367,7 +367,7 @@ func set_tint(id: int, c: Color, energy: float) -> void:
 ## material's shader, and switching it compiles a new shader variant (and frees it again when no material uses
 ## it), which stalled the frame on every hit (docs/roadmap/v0.2.0/evidence/DAMAGE_LAG.md). Flashable materials
 ## are built with emission on at energy 0 (flashable()).
-## v0.8.0 HV: an actor's materials are written only when its glow state changes (_shown), whatever writes them.
+## An actor's materials are written only when its glow state changes (_shown), whatever writes them.
 func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
 	var tint: Array = _tint.get(id, [])
 	if id >= 0:
@@ -384,7 +384,7 @@ func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
 			if was.size() == 3 and was[1] == tint[0] and was[2] == tint[1]:
 				return
 			_shown[id] = [false, tint[0], tint[1]]
-	if node == null:  # v0.11.0 O9c: a critter (no node): its crowd instance takes the same hit look
+	if node == null:  # A critter (no node): its crowd instance takes the same hit look
 		if critters != null:
 			critters.set_hit(
 				id,
@@ -396,10 +396,10 @@ func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
 			)
 		return
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
-		var rest: Array = tint if not tint.is_empty() else m.get_meta(&"rest", NO_GLOW)  # N1: the role glow
+		var rest: Array = tint if not tint.is_empty() else m.get_meta(&"rest", NO_GLOW)  # The role glow
 		m.emission = Color.WHITE if on else rest[0]
 		m.emission_energy_multiplier = 1.6 if on else rest[1]
-	if node.has_meta(&"hit_look"):  # v0.8.0 HR: an avatar on shared materials takes it per piece
+	if node.has_meta(&"hit_look"):  # An avatar on shared materials takes it per piece
 		(node.get_meta(&"hit_look") as AvatarBase).show_hit(
 			on or not tint.is_empty(),
 			Color.WHITE if on else (tint[0] if not tint.is_empty() else Color.WHITE),
@@ -407,7 +407,7 @@ func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
 		)
 
 
-## v0.10.5 Q5: actor `id`'s parts (_parts), read from its node's metas the first time.
+## Actor `id`'s parts (_parts), read from its node's metas the first time.
 func _parts_of(node: Node3D, id: int) -> Array:
 	var parts: Array = _parts.get(id, [])
 	if parts.is_empty():
@@ -431,16 +431,16 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int, parts: Array = [])
 		parts = _parts_of(node, reader.actor_id(i))
 	var facing: Node3D = parts[0]
 	var yaw := SimPlane.yaw_of(reader.actor_facing(i))
-	if yaw != parts[7]:  # v0.10.5 Q5: write only what changed
+	if yaw != parts[7]:  # Write only what changed
 		facing.rotation = Vector3(0, yaw, 0)
 		parts[7] = yaw
 	var spawning := reader.actor_spawning(i)
 	var enemy_avatar: Object = parts[5]
-	# Enemy models play their own rise-in while spawning (v0.2.0 L17); the others stay hidden until they arrive.
+	# Enemy models play their own rise-in while spawning; the others stay hidden until they arrive.
 	var show_facing := not spawning or enemy_avatar != null
-	if facing.visible != show_facing:  # v0.9.5 PF3: write only what changed
+	if facing.visible != show_facing:  # Write only what changed
 		facing.visible = show_facing
-	# v0.4.0 SC: an enemy's bar shows once it is hurt (a crowd at full health draws none); the hero's always.
+	# An enemy's bar shows once it is hurt (a crowd at full health draws none); the hero's always.
 	var bar: Node3D = parts[1]
 	var hp := reader.actor_hp(i)
 	var max_hp := reader.actor_max_hp(i)
@@ -448,12 +448,12 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int, parts: Array = [])
 	var show_bar: bool = not spawning and not parts[6] and (hp < max_hp or hero)
 	if bar.visible != show_bar:
 		bar.visible = show_bar
-	if parts[2] != null:  # v0.9.0 EL: the elite's bar shows while it is out (gone while it has vanished)
+	if parts[2] != null:  # The elite's bar shows while it is out (gone while it has vanished)
 		bar.visible = false
 		var eb := parts[2] as EliteBar
 		eb.visible = not spawning and not reader.elite_vanished(i)
 		eb.set_fraction(float(hp) / maxf(1.0, max_hp))
-	if bar.visible:  # v0.8.0 N4 (O57): its chunk and refill (BarChunks scales the bar to the trail's fill)
+	if bar.visible:  # Its chunk and refill (BarChunks scales the bar to the trail's fill)
 		var frac := clampf(float(hp) / maxf(1.0, max_hp), 0.0, 1.0)
 		bar_chunks.feed(reader.actor_id(i), bar, frac, hero)
 	if parts[3] != null:
@@ -461,26 +461,26 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int, parts: Array = [])
 		var recovering := reader.actor_recovering(i)
 		if dz.visible != recovering:
 			dz.visible = recovering
-	if reader.actor_egg_permille(i) >= 0:  # v0.8.0 BS1 (S3): still an egg (BossSignatureViews draws it)
+	if reader.actor_egg_permille(i) >= 0:  # Still an egg (BossSignatureViews draws it)
 		facing.visible = false
 		bar.visible = false
 	if parts[4] != null:
 		var t_pa := PerfMarks.start()
 		(parts[4] as PlayerAvatar).sync(reader)
 		PerfMarks.add(&"actors.hero_sync", t_pa)
-	# Enemy models (v0.2.0 L17): each kind's own node, animated in frame time from the sim state.
+	# Enemy models: each kind's own node, animated in frame time from the sim state.
 	if enemy_avatar != null:
 		var t_en := PerfMarks.start()
 		enemy_avatar.call(&"sync", reader, i)
 		PerfMarks.add(&"actors.enemy_sync", t_en)
-	if parts[8] != null:  # v0.10.5 PA: the blob goes with the body (an egg, a vanished elite)
+	if parts[8] != null:  # The blob goes with the body (an egg, a vanished elite)
 		var blob := parts[8] as Node3D
 		var shown := facing.visible and (enemy_avatar == null or (enemy_avatar as Node3D).visible)
 		if blob.visible != shown:
 			blob.visible = shown
 
 
-## v0.10.5 W3-V1: drops every actor node of a VatCrowd kind (marked "vat_kind"), so the next sync builds each again
+## Drops every actor node of a VatCrowd kind (marked "vat_kind"), so the next sync builds each again
 ## with the switch's new value (in the same sync: they are missing from _actors).
 func _rebuild_vat_kinds() -> void:
 	for id: int in _actors.keys():
@@ -493,7 +493,7 @@ func _rebuild_vat_kinds() -> void:
 			d.erase(id)
 
 
-## v0.10.5 W3-V1: the VAT crowd (made with the first VAT enemy).
+## The VAT crowd (made with the first VAT enemy).
 func _vat_crowd() -> VatCrowd:
 	if vat_crowd == null:
 		vat_crowd = VatCrowd.new()
@@ -501,7 +501,7 @@ func _vat_crowd() -> VatCrowd:
 	return vat_crowd
 
 
-## v0.4.0 SC: a projectile gone from the sim goes back to its look's pool (hidden) instead of being freed.
+## A projectile gone from the sim goes back to its look's pool (hidden) instead of being freed.
 func _pool_missing(live: Dictionary) -> void:
 	for id in _projectiles.keys():
 		if live.has(id):
@@ -529,9 +529,9 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 		if not alive.has(id):
 			var node: Node3D = nodes[id]
 			nodes.erase(id)
-			if node.has_meta(&"blob"):  # v0.10.5 PA: a falling body's blob goes at once
+			if node.has_meta(&"blob"):  # A falling body's blob goes at once
 				(node.get_meta(&"blob") as Node3D).visible = false
-			# v0.7.5 BM: a boss whose body falls when it dies keeps drawing its fall a moment, then goes.
+			# A boss whose body falls when it dies keeps drawing its fall a moment, then goes.
 			# (has_meta first: get_meta with a null default still reports a missing key, e.g. for a dummy)
 			var boss: Variant = (
 				node.get_meta(&"enemy_avatar") if node.has_meta(&"enemy_avatar") else null
@@ -540,16 +540,16 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 				(boss as Node).set_process(true)
 				get_tree().create_timer(BossAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
 			elif boss is EliteAvatar and is_inside_tree() and (boss as EliteAvatar).die():
-				# v0.9.0 EL: an elite topples a moment, its bars gone.
+				# An elite topples a moment, its bars gone.
 				(boss as Node).set_process(true)
 				for m: StringName in [&"bar", &"elite_bar"]:
 					if node.has_meta(m):
 						(node.get_meta(m) as Node3D).visible = false
 				get_tree().create_timer(EliteAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
 			elif boss is RockLurkerAvatar and is_inside_tree() and (boss as RockLurkerAvatar).die():
-				(boss as RockLurkerAvatar).fall(node)  # v0.11.0 O17b: it collapses back into a rock
+				(boss as RockLurkerAvatar).fall(node)  # It collapses back into a rock
 			elif boss is AvatarBase and boss.has_method(&"die") and is_inside_tree() and boss.die():
-				# v0.8.0 MI: an owner's model falls a moment (v0.11.0 O17c: any with a die()), its bar gone.
+				# An owner's model falls a moment (any with a die()), its bar gone.
 				(boss as Node).set_process(true)
 				if node.has_meta(&"bar"):
 					(node.get_meta(&"bar") as Node3D).visible = false
@@ -565,7 +565,7 @@ func _unshaded(c: Color) -> StandardMaterial3D:
 	return m
 
 
-## v0.7.5 NB1: pulls an actor's grey and bone body materials (saturation under GREY_SATURATION, untextured) toward
+## Pulls an actor's grey and bone body materials (saturation under GREY_SATURATION, untextured) toward
 ## `tint` by its alpha. Each avatar builds its own materials, so no other actor or biome is touched.
 static func tint_greys(node: Node3D, tint: Color) -> void:
 	if tint.a <= 0.0:
@@ -576,7 +576,7 @@ static func tint_greys(node: Node3D, tint: Color) -> void:
 		m.albedo_color = grey_tinted(m.albedo_color, tint)
 
 
-## v0.8.0 HR: a body colour under the biome's cast (tint_greys' rule: a grey, under GREY_SATURATION, is pulled toward
+## A body colour under the biome's cast (tint_greys' rule: a grey, under GREY_SATURATION, is pulled toward
 ## `tint` by its alpha; any other colour, or no cast, comes back as it was). HordeAvatar picks its shared materials
 ## with it.
 static func grey_tinted(c: Color, tint: Color) -> Color:
@@ -586,12 +586,12 @@ static func grey_tinted(c: Color, tint: Color) -> Color:
 	return Color(c.lerp(cold, tint.a), c.a)
 
 
-## v0.8.0 HR: whether a body colour takes the role glow (role_glow's rule: saturation at or over GREY_SATURATION).
+## Whether a body colour takes the role glow (role_glow's rule: saturation at or over GREY_SATURATION).
 static func role_glows(c: Color) -> bool:
 	return c.s >= GREY_SATURATION
 
 
-## v0.11.0 F2: the textured plates of a kind in MODEL_LIFT take its albedo multiplier.
+## The textured plates of a kind in MODEL_LIFT take its albedo multiplier.
 static func lift_model(node: Node3D, kind: int) -> void:
 	var k: float = MODEL_LIFT.get(kind, 1.0)
 	if k == 1.0:
@@ -601,7 +601,7 @@ static func lift_model(node: Node3D, kind: int) -> void:
 			m.albedo_color = Color(m.albedo_color * k, m.albedo_color.a)
 
 
-## v0.8.0 N1 (O39): a normal kind's role-coloured materials glow `energy` of their own colour (ROLE_GLOW) at rest;
+## A normal kind's role-coloured materials glow `energy` of their own colour (ROLE_GLOW) at rest;
 ## the rest state is kept on the material (meta "rest") for the flash to come back to. Kinds outside EnemyPalettes
 ## (bosses, the hero) and grey or textured materials keep none.
 static func role_glow(node: Node3D, kind: int, energy: float) -> void:
@@ -678,12 +678,12 @@ func _add_rings(root: Node3D, radius: float, team_color: Color) -> void:
 
 
 func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
-	# v0.11.0 O13a: a biome variant is drawn as its base's body (VariantLooks), never by the VAT crowd (p_kind).
+	# A biome variant is drawn as its base's body (VariantLooks), never by the VAT crowd (p_kind).
 	var kind := WorldReader.body_kind(p_kind)
 	var root := Node3D.new()
 	var body_color := ThemePalette.color(&"player_body" if is_player else &"enemy_body")
 	var team_color := ThemePalette.color(&"player_core" if is_player else &"enemy_body")
-	# v0.11.0 O9b (owner Q16-b: "No ring on critters"): a horde critter has neither the contact disc nor the team
+	# A horde critter has neither the contact disc nor the team
 	# ring (its body and its shadow only: two draws fewer each, in a crowd of up to the surge's cap).
 	if not CritterBodies.is_critter(kind):
 		_add_rings(root, radius, team_color)
@@ -694,11 +694,11 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 	var height := CUBE
 	match kind:
 		WorldReader.KIND_CHARGER:
-			# The clawed hooded crawler (v0.2.0 L17): its own node under the facing, animated in frame time.
+			# The clawed hooded crawler: its own node under the facing, animated in frame time.
 			var avatar := ChargerAvatar.new()
 			avatar.enemy_tint = VariantLooks.cast(p_kind, enemy_tint)  # v0.8.0 HR; O13a: a variant's cast
 			avatar.role_glow = role_glow_energy
-			if VatCrowd.supports(p_kind):  # v0.10.5 W3-V4a: drawn by the VAT crowd while the switch is on
+			if VatCrowd.supports(p_kind):  # Drawn by the VAT crowd while the switch is on
 				avatar.vat = ViewPrefs.enemy_vat
 				root.set_meta(&"vat_kind", true)
 			avatar.setup()
@@ -720,7 +720,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.add_child(dazed)
 			root.set_meta(&"dazed", dazed)
 		WorldReader.KIND_WARDEN:
-			# The rock golem (owner, v0.2.0 L17): its own node, animated in frame time.
+			# The rock golem: its own node, animated in frame time.
 			height = 1.25
 			var warden := WardenAvatar.new()
 			_solo_vat(root, warden, p_kind)  # v0.10.5 W3-V4c
@@ -729,7 +729,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"enemy_avatar", warden)
 			root.set_meta(&"mats", warden.body_materials.duplicate())
 		WorldReader.KIND_NEEDLE:
-			# The walking turret (v0.2.0 L17): its own node under the facing, animated in frame time.
+			# The walking turret: its own node under the facing, animated in frame time.
 			var needle := NeedleAvatar.new()
 			_solo_vat(root, needle, p_kind)  # v0.10.5 W3-V4c
 			needle.setup()
@@ -738,10 +738,10 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"enemy_avatar", needle)
 			root.set_meta(&"mats", needle.body_materials.duplicate())
 		WorldReader.KIND_ARC_CASTER:
-			# v0.11.0 F6: the Arc Caster wears the Cinder Priest's model in its own colours (CinderPriestAvatar.LOOKS).
+			# The Arc Caster wears the Cinder Priest's model in its own colours (CinderPriestAvatar.LOOKS).
 			height = CinderPriestAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_BOMB_DRONE:
-			# The Bomb Drone (v0.3.5 AI): drawn hovering, its shadow on the ground where the sim has it.
+			# The Bomb Drone: drawn hovering, its shadow on the ground where the sim has it.
 			var drone := BombDroneAvatar.new()
 			_solo_vat(root, drone, p_kind)  # v0.10.5 W3-V4c
 			drone.setup()
@@ -750,7 +750,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"enemy_avatar", drone)
 			root.set_meta(&"mats", drone.body_materials.duplicate())
 		WorldReader.KIND_LENS_DRONE:
-			# The Hive Lens's drones (v0.4.0 BO): drawn hovering, their shadow where the sim has them.
+			# The Hive Lens's drones: drawn hovering, their shadow where the sim has them.
 			var lens := LensDroneAvatar.new()
 			_solo_vat(root, lens, p_kind)  # v0.11.0 S4
 			lens.setup()
@@ -758,25 +758,25 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			height = LensDroneAvatar.HEIGHT
 			root.set_meta(&"enemy_avatar", lens)
 			root.set_meta(&"mats", lens.body_materials.duplicate())
-		WorldReader.KIND_SCRAP_HOUND:  # v0.11.0 O17a: the owner's model, animated in code, on VAT
+		WorldReader.KIND_SCRAP_HOUND:  # The owner's model, animated in code, on VAT
 			height = ScrapHoundAvatar.attach(self, root, facing)
-		WorldReader.KIND_ROCK_LURKER:  # v0.11.0 O17b: the owner's model, animated (RockLurkerAvatar)
+		WorldReader.KIND_ROCK_LURKER:  # The owner's model, animated (RockLurkerAvatar)
 			height = RockLurkerAvatar.attach(root, facing, _solo_vat)
-		WorldReader.KIND_STONE_THROWER:  # v0.11.0 O17c: the owner's model, posed in code, on the VAT crowd
+		WorldReader.KIND_STONE_THROWER:  # The owner's model, posed in code, on the VAT crowd
 			height = StoneThrowerAvatar.attach(self, root, facing, p_kind)
-		WorldReader.KIND_CINDER_PRIEST:  # v0.11.0 O17d: the owner's model, animated in code
+		WorldReader.KIND_CINDER_PRIEST:  # The owner's model, animated in code
 			height = CinderPriestAvatar.attach(self, root, facing, p_kind)
-		WorldReader.KIND_KILN_BEETLE:  # v0.11.0 O17e: the owner's model, animated in code, on VAT
+		WorldReader.KIND_KILN_BEETLE:  # The owner's model, animated in code, on VAT
 			height = KilnBeetleAvatar.attach(self, root, facing)
 		WorldReader.KIND_HATCHLING:
-			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
+			# The Brood Mother's hatchling: a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()
-			hatch.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials
+			hatch.enemy_tint = enemy_tint  # They pick its shared materials
 			hatch.role_glow = role_glow_energy
-			if VatCrowd.supports(p_kind):  # v0.10.5 W3-V4a: drawn by the VAT crowd while the switch is on
+			if VatCrowd.supports(p_kind):  # Drawn by the VAT crowd while the switch is on
 				hatch.vat = ViewPrefs.enemy_vat
 				root.set_meta(&"vat_kind", true)
-			hatch.setup(WorldReader.KIND_HATCHLING)  # v0.8.0 EC: its colours
+			hatch.setup(WorldReader.KIND_HATCHLING)  # Its colours
 			root.set_meta(&"hit_look", hatch)
 			hatch.scale = Vector3.ONE * 0.66
 			facing.add_child(hatch)
@@ -784,7 +784,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"enemy_avatar", hatch)
 			root.set_meta(&"mats", hatch.body_materials.duplicate())
 		_ when WorldReader.is_boss_kind(kind):
-			# The bosses (v0.3.0 C): their own models; their HP shows in the HUD's boss bar, not over them.
+			# The bosses: their own models; their HP shows in the HUD's boss bar, not over them.
 			var boss: BossAvatar = (
 				{
 					WorldReader.KIND_GATEKEEPER: GatekeeperAvatar,
@@ -793,11 +793,11 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 					WorldReader.KIND_WARLORD: WarlordAvatar,  # v0.4.0 BO
 					WorldReader.KIND_HIVE_LENS: HiveLensAvatar,
 					WorldReader.KIND_FOUNDRY: FoundryAvatar,
-					WorldReader.KIND_COLOSSUS: ColossusAvatar,  # v0.8.0 FB1: the final boss's bodies
+					WorldReader.KIND_COLOSSUS: ColossusAvatar,  # The final boss's bodies
 					WorldReader.KIND_PRISM: PrismAvatar,
 					WorldReader.KIND_NEMESIS: NemesisAvatar,
 					WorldReader.KIND_TIDECALLER: TidecallerAvatar,  # v0.9.0 NB1
-					WorldReader.KIND_TWIN_WARDEN: TwinWardenAvatar,  # v0.9.0 NB2: the amber body
+					WorldReader.KIND_TWIN_WARDEN: TwinWardenAvatar,  # The amber body
 					WorldReader.KIND_TWIN_WARDEN_VIOLET: TwinWardenVioletAvatar,  # its twin
 					WorldReader.KIND_CLOCKWORK_JUDGE: ClockworkJudgeAvatar,  # v0.9.0 NB3
 					WorldReader.KIND_LANTERN_SHADE: LanternShadeAvatar,  # v0.9.0 NB4
@@ -811,7 +811,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"boss", true)
 			root.set_meta(&"mats", boss.body_materials.duplicate())
 		_ when EliteAvatar.is_elite_kind(kind):
-			# v0.9.0 EL: the owner's elite models, posed in code; their own bar (EliteBar, added by sync()).
+			# The owner's elite models, posed in code; their own bar (EliteBar, added by sync()).
 			var elite := EliteAvatar.new()
 			elite.enemy_tint = enemy_tint  # they pick its shared materials
 			elite.role_glow = role_glow_energy
@@ -822,14 +822,14 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"mats", elite.body_materials.duplicate())
 			root.set_meta(&"hit_look", elite)
 			root.set_meta(&"elite", true)
-		_ when StarfallAvatar.takes(kind):  # v0.11.0 O13d: the Starfall signatures' stand-ins
+		_ when StarfallAvatar.takes(kind):  # The Starfall signatures' stand-ins
 			height = StarfallAvatar.make(root, facing, kind)
 		_ when HordeAvatar.is_horde_kind(kind):
-			# The horde kinds (v0.4.0 EN): one code-built model per kind.
+			# The horde kinds: one code-built model per kind.
 			var horde := HordeAvatar.new()
 			horde.enemy_tint = VariantLooks.cast(p_kind, enemy_tint)  # v0.8.0 HR (tint_greys, role_glow); O13a
 			horde.role_glow = role_glow_energy
-			if VatCrowd.supports(p_kind):  # v0.10.5 W3-V1: drawn by the VAT crowd while the switch is on
+			if VatCrowd.supports(p_kind):  # Drawn by the VAT crowd while the switch is on
 				horde.vat = ViewPrefs.enemy_vat
 				root.set_meta(&"vat_kind", true)
 			horde.setup(kind)
@@ -837,19 +837,19 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			height = horde.height
 			root.set_meta(&"enemy_avatar", horde)
 			root.set_meta(&"mats", horde.body_materials.duplicate())
-			root.set_meta(&"hit_look", horde)  # v0.8.0 HR: the flash and tints (_set_flash)
-		_ when RuinsRocksAvatar.draws(kind):  # v0.11.0 O13b: the Ruins and Night Rocks signatures, the posts
+			root.set_meta(&"hit_look", horde)  # The flash and tints (_set_flash)
+		_ when RuinsRocksAvatar.draws(kind):  # The Ruins and Night Rocks signatures, the posts
 			height = RuinsRocksAvatar.attach(root, facing, kind)
 		_ when kind == WorldReader.KIND_PLAYER and is_player:
 			# The hooded wanderer (owner, 2026-10-07): its own node, animated in frame time.
 			height = 1.0
 			var avatar := PlayerAvatar.new()
 			avatar.setup()
-			avatar.set_look(hero_look)  # v0.9.0 RB: the Wardrobe's robe and the run's rune
+			avatar.set_look(hero_look)  # The Wardrobe's robe and the run's rune
 			root.add_child(avatar)
 			root.set_meta(&"avatar", avatar)
 			root.set_meta(&"mats", avatar.body_materials.duplicate())
-			var glow := StageKit.hero_light(hero_mood)  # v0.5.9: the hero's warm light
+			var glow := StageKit.hero_light(hero_mood)  # The hero's warm light
 			if glow != null:
 				root.add_child(glow)
 		_:  # kept deliberately: the grey-cube fallback draws a kind without its own model (a new enemy kind; P-18)
@@ -860,10 +860,10 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			)
 			if is_player:
 				_add_core_panels(facing, size)
-	if not is_player and root.has_meta(&"boss"):  # v0.9.5 PF4: a boss's largest pieces cast its shadow
+	if not is_player and root.has_meta(&"boss"):  # A boss's largest pieces cast its shadow
 		ShadowTrim.trim(facing, ShadowTrim.BOSS_KEEP)
 	elif not is_player and _vat_avatar(root) != null:
-		# v0.10.5 W3-V1: the crowd draws the body and its proxy shadow; a blob stays a node of the actor's.
+		# The crowd draws the body and its proxy shadow; a blob stays a node of the actor's.
 		var vat_avatar := _vat_avatar(root)
 		var blob := ViewPrefs.enemy_shadows == "blob"
 		if blob:
@@ -872,8 +872,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			)
 		_vat_crowd().add(root, facing, vat_avatar, outline_color, not blob)
 	elif not is_player:
-		RigMerge.merge_actor(root, kind)  # v0.9.5 PF5: the enemy's pieces become one skinned mesh
-		# v0.10.5 PA: its parts cast nothing; one stand-in shaped like it (or a blob) casts its shadow.
+		RigMerge.merge_actor(root, kind)  # The enemy's pieces become one skinned mesh
+		# Its parts cast nothing; one stand-in shaped like it (or a blob) casts its shadow.
 		var host: Node3D = facing
 		if root.has_meta(&"enemy_avatar"):
 			host = root.get_meta(&"enemy_avatar")
@@ -882,7 +882,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 		)
 		if stand_in != null and stand_in.name == EnemyShadows.BLOB_NAME:
 			root.set_meta(&"blob", stand_in)
-	VariantLooks.dress(root, facing, p_kind)  # v0.11.0 O13a: the Rubble Warden's crust (after the merge: it falls)
+	VariantLooks.dress(root, facing, p_kind)  # The Rubble Warden's crust (after the merge: it falls)
 	# Floating health bar, as in the reference; it shrinks toward its centre as HP drops.
 	var bar_root := Node3D.new()
 	bar_root.position = Vector3(0, height + 0.55, 0)
@@ -904,7 +904,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 	return root
 
 
-## v0.9.0 EL: the elite's framed bar and name (EliteBar), above its head on the actor's root (it never turns with
+## The elite's framed bar and name (EliteBar), above its head on the actor's root (it never turns with
 ## the facing).
 func _add_elite_bar(root: Node3D, name_text: String) -> void:
 	var eb := EliteBar.new()
@@ -945,8 +945,8 @@ func bolt_color() -> Color:
 
 
 ## Hostile shots are yellow streaks; the player's bolts were short cyan darts (reserved colours, PRESENTATION §3).
-## v0.8.0 GF1: only the hero's shrapnel shards are still drawn here as darts (HeroPulseViews draws the hero's shots).
-## v0.4.0 SC: a node of the same look comes back from the pool when there is one; the mesh is shared per look.
+## Only the hero's shrapnel shards are still drawn here as darts (HeroPulseViews draws the hero's shots).
+## A node of the same look comes back from the pool when there is one; the mesh is shared per look.
 func _make_projectile(is_player: bool = false) -> Node3D:
 	var size := Vector3(0.55, 0.05, 0.08)
 	if is_player:
@@ -997,7 +997,7 @@ func _projectile_material(c: Color, energy: float) -> StandardMaterial3D:
 	return _proj_mats[key]
 
 
-## v0.10.5 W3-V4c: a Needle, Warden, Arc Caster, Bomb Drone or Lens Drone `avatar` (before its setup) drawn by the VAT
+## A Needle, Warden, Arc Caster, Bomb Drone or Lens Drone `avatar` (before its setup) drawn by the VAT
 ## crowd while the switch is on: it takes the floor's cast and role glow for its baked look (its own materials take
 ## them after it is built, tint_greys / role_glow, on the old path) and the flash and tints per instance (hit_look).
 func _solo_vat(root: Node3D, avatar: AvatarBase, kind: int) -> void:
@@ -1011,12 +1011,12 @@ func _solo_vat(root: Node3D, avatar: AvatarBase, kind: int) -> void:
 		root.set_meta(&"hit_look", avatar)
 
 
-## v0.10.5 W3-V1: the actor's avatar when a VAT crowd draws it, else null (v0.10.5 W3-V4a: any avatar with `vat` on).
+## The actor's avatar when a VAT crowd draws it, else null (any avatar with `vat` on).
 static func _vat_avatar(root: Node3D) -> AvatarBase:
 	var a := _meta_or_null(root, &"enemy_avatar") as AvatarBase
 	return a if a != null and &"vat" in a and bool(a.get(&"vat")) else null
 
 
-## v0.10.5 Q5: a meta's value, or null when the node has none (get_meta with a null default still reports an error).
+## A meta's value, or null when the node has none (get_meta with a null default still reports an error).
 static func _meta_or_null(node: Node, key: StringName) -> Variant:
 	return node.get_meta(key) if node.has_meta(key) else null

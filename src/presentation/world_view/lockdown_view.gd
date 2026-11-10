@@ -11,7 +11,7 @@ extends Node3D
 ##   then the biome's hazard (Ruins sparking cables `hazard_cable`, Night Rocks a falling rock `hazard_rock`, Red
 ##   Canyon a heat vent `hazard_vent`, Frozen Shore cracking ice `hazard_ice`, Starfall a falling star `hazard_star`;
 ##   through ShopModels by those ids, code stand-ins until the owner's files arrive) bursts or falls there for IMPACT_S.
-## - v0.9.0 BV (W71): per biome (InteractionLooks): the owner's bars tinted (the stand-in rods in the biome's metal) and
+## - v0.9.0 BV: per biome (InteractionLooks): the owner's bars tinted (the stand-in rods in the biome's metal) and
 ##   each warning disc ringed by a dark band (`warn_rim`; ART_DIRECTION's hazard "orange with a dark band") so the
 ##   hostile orange reads on Red Canyon's red ground too. The hazard stand-ins read against their own ground and stay
 ##   out of the hero's attack colours: Ruins a dark cable post with a hostile-yellow spark (it was storm blue), Night
@@ -36,7 +36,7 @@ const RISE_S := 1.3
 const ROD_GAP := 0.32
 const WARN := Color("#FF5A1F")
 const IMPACT_S := 0.6
-## v0.9.0 BV: the hazard stand-ins' bodies (dark against their ground; Frozen Shore's deep ice, Starfall's pale-gold
+## The hazard stand-ins' bodies (dark against their ground; Frozen Shore's deep ice, Starfall's pale-gold
 ## star) and the hot parts (the cable's hostile-yellow spark, the vent's plume): none in the hero's attack colours.
 const STAND_IN_BODY := {
 	&"hazard_cable": Color("#2E2B29"),
@@ -52,7 +52,7 @@ const THUD := 0.35
 var uses_model := false
 var hazard_id := &""
 var hazard_uses_model := false
-## v0.9.0 BV: the biome whose look is drawn (InteractionLooks.resolve).
+## The biome whose look is drawn (InteractionLooks.resolve).
 var biome := &""
 ## The bars came down since the last take_thud (the camera's thud).
 var _thud := false
@@ -67,7 +67,7 @@ var _iron := StandardMaterial3D.new()
 var _impact: Node3D
 var _impact_left := 0.0
 var _landed := -1
-## v0.9.0 BV: the warnings' dark band.
+## The warnings' dark band.
 var _rim_mat := StandardMaterial3D.new()
 
 
@@ -101,7 +101,7 @@ func setup(reader: WorldReader, p_biome: StringName) -> void:
 	sync(reader)
 
 
-## v0.9.5 DR (owner Q6: "falling bars on every seal"): the Lockdowns' read, plus the Overrun room as one more sealed
+## The Lockdowns' read, plus the Overrun room as one more sealed
 ## room (its waves stay the Arenas'; the bars, the thud and the sounds are these), the Normal kind. A floor with only
 ## an Overrun reads as no Lockdowns beside it.
 static func _read(reader: WorldReader) -> Dictionary:
@@ -377,7 +377,7 @@ static func _stand_in_mat(id: StringName) -> StandardMaterial3D:
 	return m
 
 
-## v0.9.0 BV: the stand-in's hot part, a child of its body (it moves with it): the cable's spark, the vent's plume, the
+## The stand-in's hot part, a child of its body (it moves with it): the cable's spark, the vent's plume, the
 ## ice's two smaller spikes; none on the rock and the star.
 static func _stand_in_detail(body: MeshInstance3D, id: StringName) -> void:
 	var glow := StandardMaterial3D.new()

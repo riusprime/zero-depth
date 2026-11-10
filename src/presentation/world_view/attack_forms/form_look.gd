@@ -26,7 +26,7 @@ var spread := 0
 
 ## Reads the Gun shot's look again when the build changed (true when it did).
 func refresh(reader: WorldReader) -> bool:
-	var d := reader.attack_digest() + String(ElementLooks.energy_style)  # MP2: the robe's energy too
+	var d := reader.attack_digest() + String(ElementLooks.energy_style)  # The robe's energy too
 	if read_once and d == digest:
 		return false
 	read_once = true

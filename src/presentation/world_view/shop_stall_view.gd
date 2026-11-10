@@ -100,7 +100,7 @@ func setup(reader: WorldReader, p_biome: StringName) -> void:
 	vendor.position = Vector3(counter_x - depth_c * 0.5 - 0.42, 0, 0)
 	root.add_child(vendor)
 	vendor.setup(biome)
-	# v0.8.0 SR: the owner's stall has its vendor fused into the mesh (no piece to cut out), so the code vendor stays
+	# The owner's stall has its vendor fused into the mesh (no piece to cut out), so the code vendor stays
 	# hidden over it; it still runs (its reactions are read by the lantern below) and shows again with a stall model
 	# that has no vendor of its own.
 	vendor.visible = not tent_from_model

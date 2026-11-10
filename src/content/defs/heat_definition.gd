@@ -11,7 +11,7 @@ extends ContentDef
 @export var gain_swing := 2.5
 @export var gain_finisher := 5.0
 @export var gain_bolt := 0.9
-## v0.9.5 HT: a Gun run's heat fills by time spent firing (the primary attack held and armed), whatever the form:
+## A Gun run's heat fills by time spent firing (the primary attack held and armed), whatever the form:
 ## 0 to max_heat in gun_fill_seconds. gain_bolt no longer applies on a Gun run (the Blade's gains are unchanged).
 @export var gun_fill_seconds := 14.0
 ## Heat starts to fall this long after the last gain (a firing tick or a landed Blade attack), at this rate.
@@ -31,10 +31,10 @@ extends ContentDef
 ## vent_damage_per_heat, and resets heat to 0.
 @export var vent_radius_m := 2.5
 @export var vent_damage_per_heat := 0.5
-## v0.9.5 HT: Vent needs at least vent_min_heat and then waits vent_cooldown_seconds before it can go again.
+## Vent needs at least vent_min_heat and then waits vent_cooldown_seconds before it can go again.
 @export var vent_min_heat := 40.0
 @export var vent_cooldown_seconds := 6.0
-## v0.10.5 S12 (theory audit P5; owner 2026-11-01): starting value. A Vent at this many heat points or more (out of
+## Starting value. A Vent at this many heat points or more (out of
 ## max_heat) ends the dash cooldown at once.
 @export var perfect_vent_from := 90
 

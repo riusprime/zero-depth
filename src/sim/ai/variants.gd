@@ -1,6 +1,6 @@
 class_name Variants
 extends RefCounted
-## v0.11.0 O13a (PLAN M3; docs/roadmap/v0.11.0/ENEMIES.md V1-V5, approved 2026-11-07; owner Q23): the five biome
+## The five biome
 ## variants. Each runs its base's behaviour (EnemyAi.behaviour_of: walk, aim, windup, hit) and adds one twist here;
 ## its numbers are its EnemyTable's (VariantCompiler, from data/enemies/<id>.tres; starting values). What they leave
 ## on the floor is World.variants (VariantState). Pure: no stream is drawn.

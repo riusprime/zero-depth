@@ -1,16 +1,16 @@
 class_name HubView
 extends Node3D
-## v0.9.0 HB (owner Q27; HUB_MOCKUPS option A, the Rune Ring): the hub drawn from its plan (HubLayout) and the hero
+## The hub drawn from its plan (HubLayout) and the hero
 ## walking it, read from the hub's World through WorldReader once per tick (EI-07). One round plaza in one iso view:
 ## the Portal Machine in the centre (HubMachine), the 16 floor runes ringing it (lit per collectible: set_runes, CL),
 ## the stations (HubStations: the Rune Archive, the Trophy Area, the Wardrobe, the Progression Station, the Credits
 ## stone), the sealed north gate and the alcove past it (set_gate). The evolving states (HubFlags) arrive as plain
-## values; no toast (W46).
+## values; no toast.
 ## v0.9.0 HB3 (owner: "a bit bigger … separate the runes a bit from the portal … use the top part of the hub to place
 ## all the interactive things, looking into the middle … decoration, floor … different walls"): a 16 m plaza, the
 ## runes on the centre medallion's sockets 7.8 m out, every station along the top half turned to the middle, and the
 ## owner's floor, walls, pillar braziers, gate and props (HubDressing). The camera sees more (VIEW_SIZE) and leans a
-## little more toward the hero. v0.9.5 (owner: "a bit of zoom at the hub … like a 15%"): 22.5 → 19.1 m.
+## little more toward the hero. 22.5 → 19.1 m.
 ## v0.9.0 HB2 (owner: "click, choose weapon and then the character walks upstairs towards the portal and crosses
 ## it"): walk_into_portal() moves the hero up the machine's steps and through its ring (HubPortalWalk), the portal
 ## flaring and the camera easing in; `walk_finished` when the hero is through (HubSession starts the run's load).
@@ -24,16 +24,16 @@ const CAMERA_LEAN := 0.25
 ## The point the camera leans from (plan m): with the hero at the spawn the view holds the machine, the stations
 ## along the top and the spawn.
 const CAMERA_BIAS := Vector2(0.0, 4.4)
-## v0.9.0 HB3: the hub's view height (m; the run's 17 m showed a 25 m plaza, this one is 32 m).
+## The hub's view height (m; the run's 17 m showed a 25 m plaza, this one is 32 m).
 const VIEW_SIZE := 19.1
-## v0.9.0 HB2: during the walk the camera eases toward the machine's ring and closes in this much (1: none).
+## During the walk the camera eases toward the machine's ring and closes in this much (1: none).
 const WALK_ZOOM := 1.18
 ## A soft fill from the camera's side (no shadows), so the stations' fronts read against the mood's back light.
 const FILL_ENERGY := 0.45
 const RUNE_R := 0.38
-## v0.9.5 RS1: how long (s) the Runic Stone's pulse lasts.
+## How long (s) the Runic Stone's pulse lasts.
 const PULSE_S := 1.2
-## v0.9.0 HB3: a lit rune: the owner's stone with its carved grooves glowing (the albedo's dark grooves -> `glow`).
+## A lit rune: the owner's stone with its carved grooves glowing (the albedo's dark grooves -> `glow`).
 const RUNE_SHADER := """
 shader_type spatial;
 uniform sampler2D albedo_tex : source_color, filter_linear_mipmap;
@@ -56,7 +56,7 @@ var rig := IsoRig.new()
 var ink := InkPass.new()
 ## The plan frame: plan (x, y) is local (x, 0, -y) (HubLayout: the plan's north is the screen's top).
 var plan := Node3D.new()
-## v0.10.5 W3-O5 (owner F2): the dark void and fog past the walls.
+## The dark void and fog past the walls.
 var void_view := HubVoid.new()
 var hero := Node3D.new()
 var avatar := PlayerAvatar.new()
@@ -68,13 +68,13 @@ var rune_glows: Array[Dictionary] = []
 var gate: Node3D
 var gate_seal: Node3D
 var alcove: Node3D
-## v0.9.0 CL: the Keystone on the alcove's pedestal (null until shown: set_keystone).
+## The Keystone on the alcove's pedestal (null until shown: set_keystone).
 var keystone: Node3D
-## v0.9.0 HB3: the pillar braziers' fires (their lights flicker).
+## The pillar braziers' fires (their lights flicker).
 var fires: Array[Dictionary] = []
 ## The station the hero stands at (brightened).
 var focused := &""
-## v0.9.0 HB2: the walk into the portal (null: none) and what it started from.
+## The walk into the portal (null: none) and what it started from.
 var walk: HubPortalWalk
 var _walk_tick := 0
 var _walk_cam := Vector3.ZERO
@@ -82,13 +82,13 @@ var _walk_told := false
 var _rune_dark: Material
 var _rune_lit: ShaderMaterial
 var _t := 0.0
-## v0.9.5 RS1: seconds into the Runic Stone's pulse (-1: none) and whether its veins are lit.
+## Seconds into the Runic Stone's pulse (-1: none) and whether its veins are lit.
 var _pulse_t := -1.0
 var _veins_on := false
 
 
-## v0.9.5 (seams): the member nodes are parented only by setup(); a view freed without it (a test) frees them too,
-## so none is left an orphan (v0.10.5 W3-S11: the void too).
+## Seams: the member nodes are parented only by setup(); a view freed without it (a test) frees them too,
+## so none is left an orphan (the void too).
 func _notification(what: int) -> void:
 	if what != NOTIFICATION_PREDELETE:
 		return
@@ -114,9 +114,9 @@ func setup(
 	stage.mood = mood
 	stage.palette = palette
 	stage.lighting = lighting
-	add_child(ParticleShadowOff.new())  # v0.10.5 PB: the hub's particles cast no shadow
+	add_child(ParticleShadowOff.new())  # The hub's particles cast no shadow
 	add_child(stage)
-	stage.build_lighting_only()  # v0.10.5 W3-O5 (owner F2): no biome backdrop; the void and fog (HubVoid)
+	stage.build_lighting_only()  # No biome backdrop; the void and fog (HubVoid)
 	var fill := DirectionalLight3D.new()
 	fill.name = "Fill"
 	fill.rotation_degrees = Vector3(-35.0, IsoRig.YAW_DEG, 0.0)  # along the camera's view
@@ -127,7 +127,7 @@ func setup(
 	plan.name = "Plan"
 	plan.rotation.y = PI * 0.25  # HubLayout.to_sim's 45°, on the 3D floor
 	add_child(plan)
-	HubDressing.ground(plan, layout.hub)  # v0.9.0 HB3: the owner's floor, walls, pillars, props
+	HubDressing.ground(plan, layout.hub)  # The owner's floor, walls, pillars, props
 	HubDressing.walls(plan, layout.hub)
 	var tex: Texture2D = (
 		load(HubDressing.GROUND_TEX) if ResourceLoader.exists(HubDressing.GROUND_TEX) else null
@@ -140,7 +140,7 @@ func setup(
 		mood.void_color if mood != null else palette.get("edge", Color(0.05, 0.04, 0.035))
 	)
 	plan.add_child(void_view)
-	HubDressing.training_door(plan, layout.hub)  # v0.10.5 O17: the Training Room's south door
+	HubDressing.training_door(plan, layout.hub)  # The Training Room's south door
 
 	fires = HubDressing.pillars(plan, layout.hub)
 	HubDressing.props(plan, layout.hub)
@@ -173,7 +173,7 @@ func setup(
 	rig.snap_to(rig.target)
 
 
-## After every hub tick: the hero and the camera (v0.9.0 HB2: not while the hero walks into the portal).
+## After every hub tick: the hero and the camera (not while the hero walks into the portal).
 func sync() -> void:
 	if walk != null:
 		return
@@ -184,7 +184,7 @@ func sync() -> void:
 	rig.target = SimPlane.to_3d(look)
 
 
-## v0.9.0 HB2: the hero walks from where it stands up the machine's steps and through its ring (HubPortalWalk);
+## The hero walks from where it stands up the machine's steps and through its ring (HubPortalWalk);
 ## `walk_finished` once it is through. Its length (s).
 func walk_into_portal() -> float:
 	walk = HubPortalWalk.new(HubLayout.to_plan(reader.player_pos()), machine.walk_points())
@@ -195,7 +195,7 @@ func walk_into_portal() -> float:
 	return walk.duration()
 
 
-## v0.9.0 HB2: a press skips the rest of the walk (the hero is through at once).
+## A press skips the rest of the walk (the hero is through at once).
 func finish_walk() -> void:
 	if walk != null:
 		walk.t = walk.duration()
@@ -267,7 +267,7 @@ func set_runes(lit: Array) -> void:
 	for i in runes.size():
 		var on := i < lit.size() and bool(lit[i])
 		runes[i].set_meta(&"lit", on)
-		if _rune_lit != null:  # v0.9.0 HB3: the owner's stone, its grooves glowing
+		if _rune_lit != null:  # The owner's stone, its grooves glowing
 			runes[i].material_override = _rune_lit if on else _rune_dark
 		else:
 			(runes[i].material_override as StandardMaterial3D).emission_energy_multiplier = (
@@ -292,7 +292,7 @@ func show_collected(count: int) -> void:
 		(slots[i] as MeshInstance3D).set_meta(&"lit", on)
 
 
-## v0.9.0 CL: the Archive's shelf, one niche per collectible in shelf order: a found one's niche glows in its own
+## The Archive's shelf, one niche per collectible in shelf order: a found one's niche glows in its own
 ## colour (`colors[i]`), the rest stay dark stone.
 func show_found(found: Array[bool], colors: Array[Color]) -> void:
 	var slots: Array = stations.get(&"archive", {}).get("slots", [])
@@ -305,7 +305,7 @@ func show_found(found: Array[bool], colors: Array[Color]) -> void:
 		(slots[i] as MeshInstance3D).set_meta(&"lit", on)
 
 
-## v0.9.0 CL: the Keystone on the alcove's pedestal (`c` its colour; shown: it waits there to be taken), drawn in
+## The Keystone on the alcove's pedestal (`c` its colour; shown: it waits there to be taken), drawn in
 ## layers: a faceted stone turning slowly, a white-hot halo, a glow pooled on the pedestal, a light and motes.
 func set_keystone(shown: bool, c: Color = HubProps.BLUE) -> void:
 	if keystone == null and shown:
@@ -314,12 +314,12 @@ func set_keystone(shown: bool, c: Color = HubProps.BLUE) -> void:
 		keystone.visible = shown
 
 
-## v0.9.0 CL: whether the Keystone shows on its pedestal.
+## Whether the Keystone shows on its pedestal.
 func keystone_shown() -> bool:
 	return keystone != null and keystone.visible
 
 
-## v0.9.0 RB: the hero wears the Wardrobe's choice in the hub (a Wardrobe.look: the robe's colours and the chosen
+## The hero wears the Wardrobe's choice in the hub (a Wardrobe.look: the robe's colours and the chosen
 ## affinity's rune), and the Wardrobe's stand-in robe takes the cloak's colour.
 func set_look(look: Dictionary) -> void:
 	if look.is_empty():
@@ -411,7 +411,7 @@ func _build_gate(open: bool) -> void:
 	set_gate(open)
 
 
-## The 16 floor runes on the medallion's sockets (HubLayout.rune_points): the owner's rune stone (v0.9.0 HB3), or a
+## The 16 floor runes on the medallion's sockets (HubLayout.rune_points): the owner's rune stone, or a
 ## dark slate disc with a carved cross; a lit one's grooves glow blue (RUNE_SHADER on his stone, an emissive glyph on
 ## the stand-in), with its sigil's glow on the floor and a small light.
 func _build_runes() -> void:
@@ -459,7 +459,7 @@ func _build_stations(trophies: Array[bool]) -> void:
 		var root := Node3D.new()
 		root.name = "Station_%s" % s.id
 		root.position = _p(s.at)
-		root.rotation.y = HubLayout.facing(s.at)  # v0.9.0 HB3: its front to the plaza's middle
+		root.rotation.y = HubLayout.facing(s.at)  # Its front to the plaza's middle
 		plan.add_child(root)
 		var parts := build_station(root, s, trophies)
 		parts["root"] = root
@@ -467,7 +467,7 @@ func _build_stations(trophies: Array[bool]) -> void:
 		HubProps.set_glow(parts["glow"], 0.75)
 
 
-## Station `s`'s look under `root` (HubStations, by its panel); returns its parts. v0.9.0 HE: the hub editor
+## Station `s`'s look under `root` (HubStations, by its panel); returns its parts. the hub editor
 ## (tools/hub_editor) draws the stations with it too.
 static func build_station(
 	root: Node3D, s: HubStationDefinition, trophies: Array[bool]
@@ -481,22 +481,22 @@ static func build_station(
 			return HubStations.wardrobe(root, s.half, s.height_m)
 		&"progression":
 			return HubStations.progression(root, s.half, s.height_m)
-	return HubStations.runic(root, s.half, s.height_m)  # v0.9.5 RS1: the Runic Stone (was the Credits stone)
+	return HubStations.runic(root, s.half, s.height_m)  # The Runic Stone (was the Credits stone)
 
 
-## v0.9.5 RS1 (RUNIC_STONE.md S3): the Runic Stone's veins lit violet (awake) or dark (locked: no glow at all).
+## RUNIC_STONE.md S3: the Runic Stone's veins lit violet (awake) or dark (locked: no glow at all).
 func set_runic(awake: bool) -> void:
 	_veins_on = awake
 	_apply_veins(0.0)
 
 
-## v0.9.5 RS1 (S5): the veins flare once (about 1.2 s) and settle.
+## The veins flare once (about 1.2 s) and settle.
 func pulse_runic() -> void:
 	if _veins_on:
 		_pulse_t = 0.0
 
 
-## v0.9.5 RS2 (S6): the full stone's ring of the 24 runes around its base, turning slowly (RuneRingView), shown or gone.
+## The full stone's ring of the 24 runes around its base, turning slowly (RuneRingView), shown or gone.
 func set_runic_full(full: bool) -> void:
 	var st: Dictionary = stations.get(&"runic", {})
 	if st.is_empty():

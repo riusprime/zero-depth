@@ -84,7 +84,7 @@ static func _gun(w: World, book: AttackBook) -> Dictionary:
 	if spec.share_permille > 0 and spec.seekers <= 0:
 		d = Attacks.share_of(d, spec.share_permille)
 	d = Attacks.merged_damage(d, want, fit)
-	var milli := ItemEffects.shot_period_milli_of(w, spec)  # v0.10.5 W3-P9: the exact period the shots average
+	var milli := ItemEffects.shot_period_milli_of(w, spec)  # The exact period the shots average
 	var volley := fit * d + _repeat_damage(spec, fit * d)
 	var area_mm := int(round(_area_m(spec) * 1000.0))
 	var nums := {

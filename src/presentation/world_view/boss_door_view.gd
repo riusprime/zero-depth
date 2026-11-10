@@ -7,11 +7,11 @@ extends Node3D
 ##
 ## Local frame: the gap spans local Z, local +X points into the boss room; setup() turns +X to the sim angle.
 ##
-## v0.8.0 BD (owner O82): the biome's own door (BossDoorModels; setup's `biome`) in place of the stone, about 18 %
+## The biome's own door (BossDoorModels; setup's `biome`) in place of the stone, about 18 %
 ## bigger (owner: "15-20% bigger"; a 2.6 m slab): its jambs stand unscaled at the gap's sides, its lintel and slab
 ## stretch along the gap to the sim's width (the slab is exactly the gap), the seal sits in the slab's socket on each
-## face. No model for the biome (or no file): the code-made door, as before (L15).
-## v0.8.0 BD (owner O83: "opening the door now is a press button"): on a floor with the press (WorldReader
+## face. No model for the biome (or no file): the code-made door, as before.
+## On a floor with the press (WorldReader
 ## boss_door_progress >= 0) the slab follows the sim's opening (shut until pressed, down as the sim opens it, its
 ## landing a small shake: `landed`); the sealing behind you, and the door after the fight, as before.
 ## v0.8.0 BW (owner, 2026-10-18: "doors are too thin … looks like someone ctrl-c ctrl-v'd it"; "Yes, build the
@@ -30,7 +30,7 @@ const SLIDE_RATE := 2.4
 const SEAL_RED := Color("#E2321F")
 const SEAL_ENERGY := 2.4
 const SEAL_ENERGY_SPENT := 0.15
-## v0.8.0 BW: how far (m) each frame stands proud of its wall face; the lining's thickness (m, into the wall), how far
+## How far (m) each frame stands proud of its wall face; the lining's thickness (m, into the wall), how far
 ## it stands into the passage (m, off the wall's cut end), its height (m, about the ruin's tops) and how far it tucks
 ## under each frame (m); one tile of the wall texture on it (m, procedural_wall's FACE_M_DEFAULT).
 const FRAME_PROUD := 0.05
@@ -41,16 +41,16 @@ const LINING_TUCK := 0.2
 const LINING_TEX_M := 4.0
 
 var slab: MeshInstance3D
-## v0.8.0 BD: the biome's model is drawn (false: the code-made door), and its frame's parts.
+## The biome's model is drawn (false: the code-made door), and its frame's parts.
 var from_model := false
 var jamb_n: MeshInstance3D
 var jamb_p: MeshInstance3D
 var lintel: MeshInstance3D
-## v0.8.0 BW: the frames (one, or the front and the back on a thick wall: each holds its jambs and lintel; jamb_n,
+## The frames (one, or the front and the back on a thick wall: each holds its jambs and lintel; jamb_n,
 ## jamb_p and lintel above are the front one's) and the lining's two sides (none with one frame).
 var frames: Array[Node3D] = []
 var lining: Array[MeshInstance3D] = []
-## v0.8.0 BD: the slab landed this frame (the sim's door finished opening); the world view shakes the camera.
+## The slab landed this frame (the sim's door finished opening); the world view shakes the camera.
 var landed := false
 var seal_material := StandardMaterial3D.new()
 ## 0 = shut, 1 = sunk into the floor.
@@ -127,8 +127,8 @@ func setup(
 	_apply()
 
 
-## v0.8.0 BD: the biome's door from `model` (BossDoorModels.get_model), the gap `width` m; false (nothing built) when
-## there is none. v0.8.0 BW: a frame on each face of a wall `half_thick` m a side thicker than the frame, lined with
+## The biome's door from `model` (BossDoorModels.get_model), the gap `width` m; false (nothing built) when
+## there is none. a frame on each face of a wall `half_thick` m a side thicker than the frame, lined with
 ## the `biome`'s wall stone between them.
 func _build_model(model: Dictionary, width: float, half_thick: float, biome: StringName) -> bool:
 	if model.is_empty():
@@ -190,7 +190,7 @@ func _part(
 	return node
 
 
-## v0.8.0 BW: the lining, `length` m along the passage (X) on each side of the gap `width` m: the biome's wall face
+## The lining, `length` m along the passage (X) on each side of the gap `width` m: the biome's wall face
 ## texture in world metres (Ruins' when the biome has none; the plain stone when there is no texture).
 func _line(length: float, width: float, biome: StringName) -> void:
 	var mat := _stone
@@ -235,7 +235,7 @@ func _seal(parent: Node3D, at: Vector3, r: float, face: float) -> void:
 		parent.add_child(stud)
 
 
-## Reads the sim: open while you approach, shut once sealed, the seal spent when the portal opens. v0.8.0 BD: on a
+## Reads the sim: open while you approach, shut once sealed, the seal spent when the portal opens. on a
 ## floor with the press, before the fight the slab is where the sim's opening is (boss_door_progress).
 func sync(reader: WorldReader) -> void:
 	_sealed = reader.boss_door_sealed()
@@ -275,7 +275,7 @@ func _process(delta: float) -> void:
 
 func _apply() -> void:
 	if slab != null:
-		var rest := 0.0 if from_model else _slab_h * 0.5  # v0.8.0 BD: the model's slab is pivoted on the floor
+		var rest := 0.0 if from_model else _slab_h * 0.5  # The model's slab is pivoted on the floor
 		slab.position = Vector3(0, rest - open_amount * (_slab_h + 0.05), 0)
 		slab.visible = open_amount < 0.999
 

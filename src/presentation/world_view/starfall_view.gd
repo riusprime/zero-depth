@@ -1,6 +1,6 @@
 class_name StarfallView
 extends Node3D
-## v0.10.5 W3-P10e (owner W7: "don't get crazy with visuals for explosions"; G1 V1, V2): the Starfall Constellation.
+## The Starfall Constellation.
 ## A star (STAR event) falls fast onto its target for STAR_TICKS (0.2 s). A meteor (METEOR_LAUNCH, then METEOR_LAND
 ## METEOR_DELAY_TICKS later) falls diagonally from high up onto its landing point and bursts there at its radius.
 ## v0.10.5 W3-P10l (owner, 2026-11-05: "for the meteor we could use some of the new vfx premade pack"; "same with
