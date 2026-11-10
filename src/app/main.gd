@@ -634,8 +634,9 @@ func toggle_dev_panel() -> void:
 		else:
 			driver.debug = null
 		return
-	driver.debug = DebugApi.new(driver.world)
-	driver.debug.reseed_requested.connect(_reseed)
+	if driver.debug == null:  # else God is still on from an earlier visit: the panel shows it
+		driver.debug = DebugApi.new(driver.world)
+		driver.debug.reseed_requested.connect(_reseed)
 	_dev = DevPanel.new(driver.debug)
 	ui.add_child(_dev)
 

@@ -59,7 +59,10 @@ func test_find_the_shrine_win_fail_and_spend_it_with_keyboard_and_pad() -> void:
 	var shrine := main.view.gamble_shrine
 	assert_not_null(shrine, "the shrine is drawn")
 	assert_eq(shrine.root.position, SimPlane.to_3d(w.gamble_pos), "at the sim's shrine position")
+	# No God here: it outlasts the panel now, and a hero who can't be hurt is shoved off the shrine by the room's
+	# enemies for the whole test. The panel still opens and closes, so the walk starts on the tick it always did.
 	await e.tap(KEY_QUOTELEFT)
+	await _click(e, main, "God")
 	await _click(e, main, "God")
 	await e.tap(KEY_QUOTELEFT)
 	var front := Gamble.front(w.gamble_pos, layout.door_approaches(room, 1.0)[0])

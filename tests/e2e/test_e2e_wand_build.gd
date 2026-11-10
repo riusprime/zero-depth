@@ -115,6 +115,7 @@ func _four(e: E2e) -> Main:
 			guard += 1
 		await _click(e, main, "GrantMod")
 		await e.frames(2)
+	await _click(e, main, "God")  # off again: God outlasts the panel now, and the replay below has no debug hooks
 	await e.tap(KEY_QUOTELEFT)  # the dev panel closes (and with it the debug hooks: the frames alone drive the sim)
 	await e.frames(2)
 	assert_eq(w.mod_slots.size(), 4, "four wand cards fill floor 1's wand")
