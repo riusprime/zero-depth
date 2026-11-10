@@ -93,22 +93,27 @@ are cited in the "Audit" column below). Progress: [`PROGRESS.md`](PROGRESS.md).
 | 19 | The line cap can't be dodged | A1 | `tests/arch`: the files that disable `max-file-lines` must equal a listed set, each with a reason; stale disables removed; wrapper-only overflow files folded back where the file now fits; the rule in CLAUDE.md | The arch test | S |
 | 20 | Walls fade when the wall list changes | Audit §10 | `world_view_root.gd:856` (the check compares an array with itself) | A unit test that adds a wall after the first sync | S |
 
-### Wave 3: cheap performance (same results, measured)
+### Wave 3: performance, from the baseline (same results, measured)
 
-| Step | Outcome | Audit | Where | Done when | Agent |
+Re-planned 2026-11-10 from [`evidence/PERF_BASELINE.md`](evidence/PERF_BASELINE.md). The frame is bound by script,
+not by the GPU: with 120 enemies the GPU takes 4.7 ms of a 29.6 ms frame. Each step starts by splitting its own
+bucket, and reports the same probe before and after.
+
+| Step | Outcome | Audit | What the baseline shows | Done when | Agent |
 |---|---|---|---|---|---|
-| 21 | A baseline on the owner's PC | — | `--perf-log` on a fixed stress scene (a full horde with a bullet-heavy build) and `sim_bench` | `evidence/PERF_BASELINE.md` with the raw output | lead |
-| 22 | The tick allocates less | S3–S6 | `rng_stream.gd`, `SimEvent.ancestry`, `surges.gd:69`, per-kind lookup arrays for `enemy_ai.gd` and `world.gd` | Goldens identical; `sim_bench` before and after | O |
-| 23 | A hit allocates nothing it doesn't need | S2 | `damage.gd`, `matchups.gd`, `stats.gd` and the boss multipliers | Goldens identical; bench | O |
-| 24 | Projectiles find their row at once | S1, S9 | A row column in `ProjectileStore` (derived, rebuilt on load, not hashed); one-pass removal | Goldens identical; bench | O |
-| 25 | Card parameters are typed and shared | S7, R2, S8 | One `CardParams` for the nine `*_mods.gd`; a typed Laser beam | Goldens identical; bench | O |
-| 26 | An enemy spawn builds no mesh | V2, V4 | `actor_views.gd`: shared disc, ring and bar; a typed actor record | View tests; perf log | O |
-| 27 | The VAT loop makes no dynamic calls | V3 | `vat_crowd.gd`, `vat_bake.gd`, typed virtuals on `AvatarBase` | VAT tests; perf log | O |
-| 28 | Effect pools look after themselves | V5, V6 | `empty_draw_cull.gd`, `particle_shadow_off.gd`, the 16 km cull margins, `pack_fx.gd` | View tests; perf log | O |
-| 29 | The HUD redraws on change | U1, U2 | `hud_bar.gd`, `danger_meter.gd`, `ability_squares.gd`, `spell_squares.gd`, `heat_meter.gd`, `boss_bar.gd`, `kit_hud.gd`, `build_card.gd` | A draw-count test per widget | S |
-| 30 | Content is checked only in debug builds, and one enemy's kind is read without compiling it. **Cut down, measured:** the per-floor content load is 30 ms and all compilers under 50 ms (E2E_FIXED_COST), so caching them buys nothing | U4, U5 | `content_repository.gd` (validation in debug builds only), the six `compile_enemy(x).kind` sites | Content tests; run and save e2e | S |
-| 31 | Sounds reuse their players | U6 | `audio_director.gd` | Audio tests; perf log | S |
-| 32 | The gain is measured | — | The step 21 commands again | `evidence/PERF_AFTER.md`; the 144 fps target on the owner's PC reported met or missed | lead |
+| 21 | A baseline on the owner's PC | — | Tick: 5.3 ms in the horde bench, 2.9–4.0 ms in the stress benches (targets 4 and 2). Frame: 14.8 ms at 20 enemies, 36.7 ms at 60 with a heavy build, 29.6 ms at 120 swarmers; 1 % lows 10–28 fps | **Done:** `evidence/PERF_BASELINE.md` | lead |
+| 22 | An enemy costs less a tick | S6 (and S2, S4 only if the split shows them) | The tick is linear in enemies, about 35 µs each: `ai` 1.47 ms and `move` 1.48 ms at 120 (steer 0.55, pairs 0.44, walls 0.35, `ai.plan` 0.45) | `horde_phases.gd` before and after, its outcome hash chain identical; goldens identical | O |
+| 24 | The hero's attacks cost less a tick | S1, S7, S8, S9 | `phase.dash_abilities` is 1.0–1.7 ms a frame with a p99 of 4–9 ms; `proj` 0.3–0.4 ms | Goldens identical; the heavy scene's phases before and after | O |
+| 26 | An enemy spawn no longer hitches the frame | V2, V3, V4 | `view.actors` averages 2.8 ms but its p99 is 25–40 ms: the frames in which an enemy's view is built. These are the 10 fps 1 % lows | The frame probe's p99 and 1 % low before and after; view tests | O |
+| 28 | A view with nothing to show does no work | V5, V7 | `attack_form_view.gd` runs 1.2–2.5 ms every frame; about forty idle views sync at 60–130 µs each; `status_visuals` 0.3–0.7 ms | The breakdown before and after; view tests | O |
+| 31 | The draw is understood, then cut | V5, V9 | 20,000 objects are drawn a frame with 20 enemies (over every pass, shadows included); the draw takes 3.9–7.1 ms of the main thread | First a count of what the objects are (per pass); then the cut that count supports | O |
+| 30 | Content is checked only in debug builds; an enemy's kind is read without compiling it | U4, U5 | Not on the frame; a load-time and tidiness item | Content tests; run and save e2e | S |
+| 32 | The gain is measured | — | The step 21 commands again | `evidence/PERF_AFTER.md`; the 144 fps target reported met or missed | lead |
+
+**Dropped from this wave by the baseline:** the HUD's redraw-on-change (step 29: the HUD is under 0.3 ms a frame),
+the sound players' pool (old step 31: audio does not show in any bucket), and hits without allocations as a step
+of its own (old step 23: `resolve` is 0.3–0.6 ms; it rides with step 22 only if the split shows it). Old steps 25
+and 27 are inside steps 24 and 26.
 
 ### Wave 4: aim assist (sim input + tests; visible)
 
@@ -130,7 +135,7 @@ are cited in the "Audit" column below). Progress: [`PROGRESS.md`](PROGRESS.md).
 
 | Step | Outcome | Audit | Where | Done when | Agent |
 |---|---|---|---|---|---|
-| 39 | Every enemy is drawn by the crowd | V1 | Each VAT kind onto the `CritterCrowd` model, a few kinds per step, behind the `enemy_vat` switch. Built only if step 32 still shows the per-enemy nodes as a main cost | Perf log per batch; **the owner's feel check per batch** (flinch, rise-in, death) | O |
+| 39 | ~~Every enemy is drawn by the crowd~~ **Not supported by the baseline:** the enemies' own `_process` is 0.37 ms for 120 of them (3 µs each, not the 40 µs the audit quoted); the cost in `view.actors` is the per-frame update and the spawn, which step 26 takes on. Re-decided after step 32 | V1 | — | — | — |
 | 40 | A room builds only the views it needs | V7 | `world_view_root.gd` | View and e2e tests; perf log | O |
 | 41 | One row table for the card states | R1 | `modifier_state.gd` (hash order kept) | Goldens identical | O |
 | 42 | Enemy avatars share one base; pools share one helper | R3, R4 | `OwnerModelAvatar`, a MultiMesh pool helper | View tests; one shot per enemy kind touched | O |

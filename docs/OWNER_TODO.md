@@ -4,6 +4,13 @@ Only what is **still open**: tests, decisions and art. Anything you answered or 
 answers live in [`roadmap/v0.8.0/PLAN.md`](roadmap/v0.8.0/PLAN.md) (owner lines O39–O50 and "Owner decisions"). Last
 rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
 
+- [ ] **v0.11.1, the 144 fps target (2026-11-10):** measured on your PC, the stress scenes run at 67 fps (20 enemies)
+  and 27–34 fps (60–120 enemies), with 1 % lows of 10–28 fps
+  ([`roadmap/v0.11.1/evidence/PERF_BASELINE.md`](roadmap/v0.11.1/evidence/PERF_BASELINE.md)). The GPU alone takes
+  4.8 ms of the 6.9 ms a 144 fps frame allows. Wave 3 goes after the script cost; say whether 144 fps stays the
+  target, or what you want held instead (for example: never under 60 in a horde).
+- [ ] **v0.11.1, small:** the hub station stand-in panel can no longer be opened in the game (only a test builds it):
+  delete it?
 - [ ] **v0.11.1 "Clean and fast" (2026-11-10), one answer:** aim assist on mouse and gamepad, or gamepad only
   (default being planned: both, on, with an Options switch; [`roadmap/v0.11.1/PLAN.md`](roadmap/v0.11.1/PLAN.md)
   "Open items"). The golden reset is answered (yes, once). Later, yours to feel: aim assist once built, and each batch of enemies moved to the crowd.
