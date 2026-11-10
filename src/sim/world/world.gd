@@ -15,6 +15,11 @@ const WALL_SKIP_M := 0.5
 ## aoe_candidates' query grows by this past the reach (and the largest radius), over float rounding.
 const AOE_MARGIN_M := 0.01
 
+## Where a new world gets its optional native mover (NativeMove): the app layer sets it when the native library is
+## loaded and switched on (the sim itself never looks a class up). An empty Callable: every world runs the GDScript
+## collision passes.
+static var mover_factory := Callable()
+
 var tick := 0
 var freeze_ticks := 0
 var seed_value := 0
@@ -592,6 +597,8 @@ var surge_spawned := 0
 ## The perf probe's phase timer (scripts/checks/perf_probe.gd --phases); null in play. Told where each tick
 ## phase begins and ends (begin/end with the phase's name), it never reads or writes state: not hashed, not copied.
 var phase_probe: Object = null
+## The native collision passes (NativeMove), or null. Not hashed, not copied: a copy makes its own from the factory.
+var native_mover: Object = null
 ## Tests only: -1 off; 0 or more counts the aoe_candidates calls that left out an actor the full scan's
 ## distance test would take (it must stay 0: the candidates are a superset).
 var debug_aoe_misses := -1
@@ -608,6 +615,8 @@ var _hit_grid := DenseGrid.new()
 var _hit_grid_state := 0
 ## 1.. n - 1 for n actors (aoe_candidates' full scan; it depends on the count only).
 var _every_index := PackedInt32Array()
+## Bumped whenever the wall grid changes, so the native mover knows to take the walls again.
+var _wall_rev := 0
 ## Run flow: a wall prepared for adding in play, and its flow field (prepare_wall).
 var _wall_next: Obb
 var _nav_next: NavField
@@ -635,6 +644,8 @@ func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZER
 	rng_crit = RngStream.derive(p_seed, "crit")  # v0.4.0 BS
 	rng_ability = RngStream.derive(p_seed, "ability")
 	player = p_player
+	if mover_factory.is_valid():
+		native_mover = mover_factory.call()
 	var id := take_id()
 	actors.add(
 		id,
@@ -1195,6 +1206,7 @@ func blink_may_land(from: Vector2, at: Vector2) -> bool:
 func add_barrier(o: Obb) -> void:
 	walls.append(o)
 	_wall_grid.add(o.bounds())
+	_wall_rev += 1
 
 
 ## Removes barriers (each matched by its shape; a restored world holds copies), then rebuilds the wall
@@ -1239,6 +1251,7 @@ func rebuild_wall_grid() -> void:
 	for x in walls:
 		rects.append(x.bounds())
 	_wall_grid.build(rects)
+	_wall_rev += 1
 
 
 ## Enemies queued for phase 9's arrival (Splitlings, boss adds) that aren't actors yet (Arenas waits for them).
@@ -1299,6 +1312,7 @@ func _nav_targets() -> PackedInt32Array:
 func add_wall_now(o: Obb) -> void:
 	walls.append(o)
 	_wall_grid.add(o.bounds())
+	_wall_rev += 1
 	if o == _wall_next and _nav_next != null:
 		_nav_open = nav
 		nav = _nav_next
@@ -2001,6 +2015,19 @@ func _move_and_collide() -> void:
 		for i in actors.size():
 			through.append(1 if BossAi.passes_through(self, i) or RuinsRocks.hidden(self, i) else 0)
 			heavy.append(1 if BossAi.is_boss_kind(actors.kinds[i]) else 0)
+	if native_mover != null:
+		NativeMove.resolve(self, through, heavy)
+	else:
+		_resolve_bodies(through, heavy)
+	if ruins_rocks.cable_count() > 0:  # A live cable is a wall to the hero alone
+		RuinsRocks.block_hero(self, hero_from)
+	if pp != null:
+		pp.end(&"move.walls")
+
+
+## The collision passes in GDScript (walls, grid and pairs; NativeMove runs the native ones instead).
+func _resolve_bodies(through: PackedInt32Array, heavy: PackedInt32Array) -> void:
+	var pp := phase_probe
 	# A body with no wall within WALL_SKIP_M of it skips the wall checks while it stays within that of
 	# where it was looked at (walls that far off give no push, so the result is the same).
 	var open_x := PackedFloat32Array()
@@ -2099,10 +2126,6 @@ func _move_and_collide() -> void:
 		if pp != null:
 			pp.end(&"move.pairs")
 			pp.begin(&"move.walls")
-	if ruins_rocks.cable_count() > 0:  # A live cable is a wall to the hero alone
-		RuinsRocks.block_hero(self, hero_from)
-	if pp != null:
-		pp.end(&"move.walls")
 
 
 ## A boss's shove moves body i by `delta` only as far as the first wall on the way (its radius swept), so a

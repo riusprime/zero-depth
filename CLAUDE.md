@@ -158,6 +158,7 @@ godot --headless --path . -s scripts/checks/hitch_probe.gd             # real-ti
 godot --headless --path . -s scripts/bench/sim_bench.gd                # bench → paste into evidence
 godot --path . --position -10000,-10000 -s scripts/shots/tour.gd -- lang=en   # screenshot tour (renderer, off screen; lang=es too) → build/shots/<config/version>/<lang>/
 gdformat --check src scripts tests && gdlint src scripts tests         # lint (pip install -r requirements-dev.txt)
+bash scripts/native/build.sh [debug|release|all]                       # the native library (native/README.md; optional, the switch is off by default)
 godot --path . -- --perf-log[=light]; python scripts/perf/summarize_perf.py <csv>   # log normal play, F9 marks (docs/process/PERF_LOG.md)
 ```
 

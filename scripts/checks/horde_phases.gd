@@ -6,6 +6,7 @@ extends SceneTree
 ## a hash chain of World.state_hash every 60 ticks (the outcome: the same before and after a speed-up).
 ## Writes nothing tracked; paste the output into evidence by hand.
 ##   godot --headless --path . -s scripts/checks/horde_phases.gd [-- --counts=20,40,60] [-- --ticks=1800]
+## `--native=1`: the move phase's collision passes run native (NativeSwitch); it stops if the library is missing.
 
 const BENCH := preload("res://scripts/bench/sim_bench.gd")
 const RUN_SEED := 20261007
@@ -28,6 +29,7 @@ const PHASES: Array[StringName] = [
 	&"move.walls",
 	&"move.grid",
 	&"move.pairs",
+	&"move.native",
 	&"actions",
 	&"resolve",
 	&"proj"
@@ -42,6 +44,12 @@ func _initialize() -> void:
 		for s in String(args["--counts"]).split(","):
 			counts.append(int(s))
 	var ticks := int(args.get("--ticks", 1800))
+	var native := String(args.get("--native", "0")) == "1"
+	if NativeSwitch.install(native) != native:
+		push_error("horde_phases: --native=1 but the native library is not loaded")
+		quit(1)
+		return
+	print("native_move %s" % ("on" if native else "off"))
 	var repo := ContentRepository.load_all()
 	for n in counts:
 		_measure(repo, n, ticks)

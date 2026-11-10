@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+# The game's native library (GDExtension): builds godot-cpp's bindings, then native/bin/zd_native.<platform>.<target>.<arch>.
+# Run it through `bash scripts/native/build.sh`, which fetches the pinned bindings and finds the compiler:
+#   scons godot_cpp=godot-cpp custom_api_file=api/extension_api.json [vcvars=<vcvars64.bat>]
+#         [target=template_debug|template_release]
+# vcvars: the Visual Studio environment script, for a Visual Studio SCons can't find by itself (a preview channel:
+# vswhere lists it only with -prerelease, which SCons doesn't pass, and godot-cpp clears any version given). The
+# script's PATH, INCLUDE, LIB and LIBPATH are read once and handed to the compiler and linker.
+import os
+import subprocess
+
+godot_cpp = ARGUMENTS.get("godot_cpp", os.environ.get("GODOT_CPP", "godot-cpp"))
+vcvars = ARGUMENTS.get("vcvars", os.environ.get("ZD_VCVARS", ""))
+
+
+def vcvars_settings(script):
+    out = subprocess.run(
+        'cmd /d /c ""{}" >nul && set"'.format(script), capture_output=True, text=True, shell=True, check=True
+    ).stdout
+    keep = {"PATH", "INCLUDE", "LIB", "LIBPATH"}
+    found = {}
+    for line in out.splitlines():
+        key, sep, value = line.partition("=")
+        if sep and key.upper() in keep:
+            found[key.upper()] = value
+    return found
+
+
+base = {}
+settings = None
+if vcvars:
+    settings = vcvars_settings(vcvars)
+    base["MSVC_USE_SETTINGS"] = settings  # So SCons's msvc tool counts as present (godot-cpp asks it)
+env = Environment(tools=["default"], PLATFORM="", **base)
+env = SConscript(os.path.join(godot_cpp, "SConstruct"), exports={"env": env})
+if settings:
+    for key, value in settings.items():
+        env["ENV"][key] = value
+    if not env.get("MSVS_VERSION"):
+        env["MSVS_VERSION"] = "14.5"  # The DLL linker's emitter wants a version; the detection set none
+
+# The library's own flags go on a copy: SCons reads flags when it builds, so adding them to `env` would change the
+# bindings' command lines too, and with them every cached bindings object.
+lib = env.Clone()
+lib.Append(CPPPATH=["src/"])
+
+# Floating point: the sim's results are recorded on Windows (MSVC) and checked on Linux (gcc), so both must round
+# every float operation the same way, one IEEE single-precision step at a time:
+# - no fast-math (it reorders sums and assumes no NaN, so the result depends on the optimiser);
+# - no contraction of a*b+c into a fused multiply-add (one rounding instead of two);
+# - the x86-64 baseline (SSE2, which godot-cpp's -march=x86-64 and MSVC's x64 default give): no FMA instruction
+#   exists to emit, and no -march=native (each CPU its own code).
+if lib.get("is_msvc", False):
+    # /fp:precise: IEEE rounding, no contraction on x64 without /arch:AVX2. It is MSVC's default, written so a
+    # changed default can't change it. /fp:strict would add exception semantics the sim doesn't need.
+    lib.Append(CCFLAGS=["/fp:precise"])
+    banned = ("/fp:fast", "/fp:contract", "/arch:AVX", "/arch:AVX2", "/arch:AVX10.1", "/arch:AVX512")
+else:
+    # gcc's default is -ffp-contract=fast (it fuses whenever the target has FMA): off, whatever the target.
+    lib.Append(CCFLAGS=["-ffp-contract=off", "-fno-fast-math"])
+    banned = ("-ffast-math", "-Ofast", "-march=native", "-mfma", "-mavx", "-mavx2", "-ffp-contract=fast")
+flags = [str(f) for f in lib.Flatten([lib.get("CCFLAGS", []), lib.get("CXXFLAGS", []), lib.get("CFLAGS", [])])]
+bad = [f for f in flags if f in banned]
+if bad:
+    raise UserError("These flags break float determinism across compilers: {}".format(bad))
+
+sources = Glob("src/*.cpp")
+library = lib.SharedLibrary(
+    "bin/zd_native{}{}".format(lib["suffix"], lib["SHLIBSUFFIX"]),
+    source=sources,
+    SHLIBPREFIX="",  # The same file name on every platform (the .gdextension lists them)
+)
+lib.NoCache(library)
+
+# The .gdextension Godot loads, written beside its tracked template only after a library built: without it (a fresh
+# clone, a failed build) Godot never looks for the library, so it prints no import error and every world runs the
+# GDScript passes.
+gdext = lib.Command("zd_native.gdextension", "zd_native.gdextension.in", Copy("$TARGET", "$SOURCE"))
+lib.Depends(gdext, library)
+Default(library, gdext)
