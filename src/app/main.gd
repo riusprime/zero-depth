@@ -23,6 +23,7 @@ var profile: ProfileStore
 var driver: SimDriver
 var view: WorldViewRoot
 var ui := CanvasLayer.new()
+var fps_counter := FpsCounter.new()
 ## The run in progress (null outside one): floors, biome order, carry, totals. _stage_seed is its run seed.
 var run: RunState
 ## Sounds, ambience and captions; it outlives floors so the ambience can crossfade.
@@ -110,6 +111,8 @@ func _ready() -> void:
 	hints.setup(hint_store)
 	ui.add_child(hints)
 	add_child(GameCursor.new())  # The cursor
+	add_child(fps_counter)
+	fps_counter.apply(profile)
 	PackFxSessionWarm.start(self)  # v0.10.0 VX-W: the VFX pack warms up behind the menu
 	show_main_menu()
 	var perf_mode := PerfRecorder.mode_of(OS.get_cmdline_user_args())
@@ -261,6 +264,7 @@ func close_pause_options() -> void:
 
 ## A setting changed in Options: what lives in the view follows at once (GameSettings already applied the engine's).
 func _on_setting_changed(_key: String) -> void:
+	fps_counter.apply(profile)
 	ViewPrefs.apply_settings(profile)
 	if hub != null:  # Options from the hub's pause
 		hub.apply_settings(profile)

@@ -247,6 +247,7 @@ func _build_section(id: StringName) -> VBoxContainer:
 		&"display":
 			_cycler(box, "UI_WINDOW_MODE", "window_mode", GameSettings.WINDOW_MODES)
 			_cycler(box, "UI_VSYNC", "vsync", ["on", "off"])
+			_cycler(box, "UI_SHOW_FPS", FpsCounter.SETTING, ["on", "off"])
 			_cycler(box, "UI_FRAME_CAP", "frame_cap", GameSettings.FRAME_CAPS)
 			_cycler(box, "UI_RENDER_SCALE", "render_scale", GameSettings.RENDER_SCALES)
 			_cycler(box, "UI_OUTLINE", "outline", ["off", "ink", "sketch", "paper"])
