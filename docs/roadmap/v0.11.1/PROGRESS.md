@@ -7,8 +7,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 
 - **Waves 1 and 2 are done, and step 45.** Seams on `060e883b`: **674 of 674, 1,396 s of tests, 1,606 s wall** (it
   was 669, 3,185 s, 3,442 s at `ee42eafa`): [`evidence/SEAMS_TIMING.md`](evidence/SEAMS_TIMING.md).
-- **Committed after that seams run** (not yet under a seams run): step 18 (comments only; code proven identical) and
-  the test floor builder's opt-in (`26bdbb20`; its ten files 96 of 96). **Run seams before pushing.**
+- **Seams on `386a502d` (the pushed head): 674 of 674,** 1,303 s of tests, 1,537 s wall. Two agents ran Godot at
+  the same time, so the seconds are not a measurement; the pass is. It covers step 18 and the test floor builder's
+  opt-in (`26bdbb20`).
 - **Left over from Wave 2, small:** the HUD and menu half of the dead-code scan; the menu backdrop's ember mode and
   the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: the
   owner was asked whether to delete it); the duplicate final-boss texture (needs model prep).
@@ -17,7 +18,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   horde scenes, 1 % lows 10–28 fps. Steps 22, 24, 26, 28, 31 replace the audit's list; 23, 29 and the audio step are
   dropped; step 39 (every enemy on the crowd) is not supported by the numbers.
 - **Next:** steps 22 (an enemy costs less a tick) and 26 (a spawn no longer hitches the frame).
-- **Not pushed yet:** everything since `c339458a` is local on `claude/v0110`.
+- **Pushed** (owner, 2026-11-10: "Yes, push"): `claude/v0110` up to the docs commit after `386a502d`, and the tag
+  `archive/scripts-2026-11` (the deleted shot scripts). Steps 22 and 26 are with agents, on local branches.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
   approved.
@@ -121,3 +123,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 - 2026-11-10 (lead): step 21 done. The baseline overturned the audit's ranking for Wave 3 (V1 first): the enemies'
   own per-frame cost is small; the tick's per-enemy work, the spawn hitch, one always-on view script and the draw's
   object count are where the frame goes. Wave 3 rewritten in the PLAN.
+- 2026-11-10 (lead): seams on `386a502d`: 674/674 (1,303 s of tests, 1,537 s wall, with two agents running Godot
+  alongside). Pushed `claude/v0110` and the tag `archive/scripts-2026-11` on the owner's "Yes, push".
