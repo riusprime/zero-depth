@@ -19,8 +19,6 @@ rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-ferm
   3. **Every enemy on the crowd renderer** (step 39): also cuts the 8–9 draws each enemy costs today.
   4. **Native code (C# or C++) for enemy AI and movement:** only if the three above fall short; it changes the
      toolchain.
-- [ ] **v0.11.1, look at the lighter effects (step 47, 2026-11-10):** a before/after sheet of every pack effect whose
-  mesh was simplified will be sent; you approve the look (`OWNER ONLY`).
 - [ ] **v0.11.1, the HUD's draw calls (2026-11-10):** the HUD is a flat 389 draw calls a frame (43 % of all draws
   with 20 enemies) because its icons are drawn in code. Turning them into textures would cut that and slightly
   change their edges. Not planned unless you ask.

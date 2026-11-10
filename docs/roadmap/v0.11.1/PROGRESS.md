@@ -17,8 +17,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   with other Godot processes running; **step 32 (the quiet-machine re-measure) is what counts.**
 - **Built on branches, NOT merged, waiting on the owner or on clean numbers:**
   - step 47 (`v0111-s47`, `b61433f9`): pack effect primitives at lower detail (beams 558,848 → about 70,000 triangles
-    with every particle alive; the catalogue's sum 9.7 M → 1.8 M). **The owner approves the look** from the contact
-    sheet sent on 2026-11-10. Open: pack effects are still about 40 % of the heavy scene's triangles, and
+    with every particle alive; the catalogue's sum 9.7 M → 1.8 M). **Look approved by the owner** (2026-11-10, from eight separate
+    before/after pairs: "Great job on the VFX go for those I can't see any difference, so the gain is real"); merge it. Open: pack effects are still about 40 % of the heavy scene's triangles, and
     200–300 k of them are not explained by the per-effect rows.
   - step 48 (`v0111-s48`, `14c6c93f`): the sim on its own thread, a switch off by default. Deterministic (hash per
     tick identical, goldens pass with it on). Its numbers were taken with 12 other Godot processes running and are
@@ -155,3 +155,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   merged strings). Seams on `83478dd3`: 694/694. The owner asked how aim assist behaves on charged attacks ("I dont
   want the character snapping into the enemy"): the pull now fades in over the outer third of the cone (it came on
   whole at the edge). Steps 47 and 48 are built on their branches and wait on the owner and on clean numbers.
+- 2026-11-10 (owner): step 47's look approved from eight before/after pairs (beam, rail, dust, frost status, fumes,
+  fire explosion, impact, poison bubbles): "Great job on the VFX go for those I can't see any difference, so the gain is
+  real". Merged once the quiet-machine measurement frees the lead's worktree.
