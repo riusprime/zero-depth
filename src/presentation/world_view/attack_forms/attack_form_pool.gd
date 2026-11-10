@@ -46,9 +46,12 @@ func add(xf: Transform3D, c: Color) -> bool:
 	return true
 
 
+## Each write is a RenderingServer call, so a pool that shows the same as last frame writes nothing.
 func finish() -> void:
-	multimesh.visible_instance_count = used
-	visible = used > 0
+	if multimesh.visible_instance_count != used:
+		multimesh.visible_instance_count = used
+	if visible != (used > 0):
+		visible = used > 0
 
 
 ## The instance's transform and colour as last added (tests).

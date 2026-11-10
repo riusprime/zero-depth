@@ -30,6 +30,8 @@ const MAX_ARMS := 8
 const PACK_BEAMS := true
 
 var last := PrismLastViews.new()
+## True once a sync outside her fight drew the empty state: later syncs do nothing until the fight is back.
+var quiet := false
 var _cross := {}
 var _shards := PackedVector2Array()
 var _at := Vector2.ZERO
@@ -166,10 +168,15 @@ func _flare(c: Color) -> MeshInstance3D:
 
 func sync(reader: WorldReader) -> void:
 	_tick = reader.tick()
+	var i := reader.boss_index()
+	var fight := i >= 0 and reader.final_fight()
+	# Outside her fight, once a draw has hidden everything, a redraw would only hide it again
+	if not fight and quiet:
+		return
+	quiet = not fight
 	_cross = {}
 	_shards = PackedVector2Array()
-	var i := reader.boss_index()
-	if i >= 0 and reader.final_fight():
+	if fight:
 		_cross = reader.boss_cross(i)
 		_shards = reader.boss_shards(i)
 		_at = reader.actor_pos(i)

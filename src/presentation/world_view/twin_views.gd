@@ -69,6 +69,8 @@ void fragment() {
 
 static var _glow_tex: GradientTexture2D
 
+## True once a frame with nothing to show drew it all hidden: later frames return at once.
+var quiet := false
 var _links := MultiMeshInstance3D.new()
 var _cores := MultiMeshInstance3D.new()
 var _halos := MultiMeshInstance3D.new()
@@ -275,6 +277,13 @@ func _process(delta: float) -> void:
 
 ## Frame-time animation (the tests and the shot scripts call it too).
 func advance(delta: float) -> void:
+	# No chain, no lane and every fade done: the last frame drew all of it hidden, so another would change nothing
+	if _settled():
+		if quiet:
+			return
+		quiet = true
+	else:
+		quiet = false
 	var reduced := ViewPrefs.reduced_motion
 	_clock += delta * (0.4 if reduced else 1.0)
 	var shown := _chain.size() == 2
@@ -292,6 +301,20 @@ func advance(delta: float) -> void:
 		_burn.position = _burn_at
 		_burn.scale = Vector3.ONE * (0.6 + 0.8 * _burn_t)
 		_burn_mat.albedo_color = Color(1.0, 0.9, 0.7, 0.9 * (1.0 - _burn_t))
+
+
+func _settled() -> bool:
+	return (
+		_chain.size() != 2
+		and _gaps.is_empty()
+		and not _hot
+		and _heat == 0.25
+		and _show == 0.0
+		and _anger_a == 0.0
+		and _anger_v == 0.0
+		and _lash_t >= 1.0
+		and _burn_t >= 1.0
+	)
 
 
 ## Where the chain hangs at f (0 the amber Warden's shackle, 1 the violet's), in world space.
