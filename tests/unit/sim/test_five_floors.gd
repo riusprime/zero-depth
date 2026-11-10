@@ -6,11 +6,12 @@ extends GutTest
 ## v0.11.1 Step 2: the generation and loot seed loops are in test_five_floors_soak.gd (not a seam; GitHub runs it).
 ## The v0.8.0 shape (three_floors) stays loadable for old saves (test_old_saves).
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
 const LONG := 1 << 24
 const ROOMS_MIN := [9, 12, 14, 16, 18]
 const ROOMS_MAX := [11, 14, 16, 18, 19]
 
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 var _repo: ContentRepository
 
 
@@ -235,7 +236,7 @@ func test_every_floor_spawns_only_its_biomes_roster_over_a_thousand_seeds() -> v
 			open["%s/%d" % [id, f]] = _open_kinds(_repo.get_def(&"biomes", id), f, tables)
 	var variant_floors := {}
 	var signature_floors := {}
-	for s in SEEDS:
+	for s in _seeds:
 		var r := RunState.start(1000 + s * 7919, _table())
 		var again := RunState.start(1000 + s * 7919, _table())
 		assert_eq(r.biome_order, again.biome_order, "seed %d: the same order" % s)
@@ -265,8 +266,8 @@ func test_every_floor_spawns_only_its_biomes_roster_over_a_thousand_seeds() -> v
 		assert_gt(int(variant_floors.get(id, 0)), 0, "%s's variant spawns on its floors" % id)
 	for k: int in signature_of:  # v0.11.0 O13b: every built signature appears on its own biome's floors
 		assert_gt(int(signature_floors.get(k, 0)), 0, "signature kind %d spawns on its floors" % k)
-	gut.p("variant floors over %d runs: %s" % [SEEDS, variant_floors])
-	gut.p("signature floors over %d runs: %s" % [SEEDS, signature_floors])
+	gut.p("variant floors over %d runs: %s" % [_seeds, variant_floors])
+	gut.p("signature floors over %d runs: %s" % [_seeds, signature_floors])
 
 
 ## The roster reaches the real floor: FloorPlan gives each floor its biome's own kinds, and on a floor where a biome's

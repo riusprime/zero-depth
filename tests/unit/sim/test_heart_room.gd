@@ -5,9 +5,10 @@ extends GutTest
 ## cracked wall, its pedestal (the City's Heart: once a run the first killing blow leaves 1 HP and pulses a 4 m ring;
 ## the second kills) and its door, which stays sealed (N2's hook says no). Snapshots restore it exactly.
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
 
 static var _repo: ContentRepository
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 
 
 func _content() -> ContentRepository:
@@ -114,7 +115,7 @@ func test_without_the_flag_the_final_approach_is_as_it_was_on_1000_seeds() -> vo
 	)
 	var changed := 0
 	var added_only := 0
-	for s in SEEDS:
+	for s in _seeds:
 		var seed_value := RngStream.derive(s + 1, "o14b").next_u32()
 		var off := FinalArena.approach_layout(seed_value, def.radius_m, def.segments)
 		var again := FinalArena.approach_layout(seed_value, def.radius_m, def.segments)
@@ -137,9 +138,9 @@ func test_without_the_flag_the_final_approach_is_as_it_was_on_1000_seeds() -> vo
 		same = same and on.pylons == off.pylons and on.altar_pos == off.altar_pos
 		if same:
 			added_only += 1
-	gut.p("HEART_1000| seeds=%d off_changed=%d on_added_only=%d" % [SEEDS, changed, added_only])
+	gut.p("HEART_1000| seeds=%d off_changed=%d on_added_only=%d" % [_seeds, changed, added_only])
 	assert_eq(changed, 0, "flag off: the final approach's layout is the plain one, seed for seed")
-	assert_eq(added_only, SEEDS, "flag on: the room only adds to it")
+	assert_eq(added_only, _seeds, "flag on: the room only adds to it")
 
 
 func test_the_floors_do_not_read_the_flag() -> void:

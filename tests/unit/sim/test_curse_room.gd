@@ -9,8 +9,9 @@ extends GutTest
 ## Deep included), Echo Mirror only once a stat is raised. Saved and hashed; a floor saved before N17 keeps its event
 ## rooms as they were, one saved under N17 its N17 curse room.
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
 
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 var _rules: EventRules
 var _gamble: GambleTable
 var _tables: Dictionary
@@ -56,7 +57,7 @@ func test_about_forty_percent_of_normal_floors_get_one_in_an_allowed_small_room(
 	var small := 0
 	var could_be_small := 0
 	var bad := 0
-	for s in SEEDS:
+	for s in _seeds:
 		var seed_value := 1 + s * 7919
 		var layout := _layout(seed_value)
 		var shut := _shut(layout)
@@ -80,8 +81,8 @@ func test_about_forty_percent_of_normal_floors_get_one_in_an_allowed_small_room(
 		if not ok:
 			bad += 1
 			gut.p("seed %d: curse room %d" % [seed_value, r])
-	var permille := with * 1000 / SEEDS
-	gut.p("curse rooms: %d of %d floors (%d per mille)" % [with, SEEDS, permille])
+	var permille := with * 1000 / _seeds
+	gut.p("curse rooms: %d of %d floors (%d per mille)" % [with, _seeds, permille])
 	gut.p("in a small room: %d (of %d floors with a small room allowed)" % [small, could_be_small])
 	assert_eq(
 		bad, 0, "every curse room is an allowed room, small when one can be, the same on a rebuild"

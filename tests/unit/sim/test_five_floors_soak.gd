@@ -3,10 +3,11 @@ extends GutTest
 ## 10, 13, 15, 17 and 19 rooms plus the boss room; altars and chests by the floor's rooms), moved here so the seams
 ## run keeps only test_five_floors.gd's roster seam. The GitHub full suite runs this file (shard sim_c).
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
 const ROOMS_MIN := [9, 12, 14, 16, 18]
 const ROOMS_MAX := [11, 14, 16, 18, 19]
 
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 var _repo: ContentRepository
 
 
@@ -32,7 +33,7 @@ func test_generation_holds_for_every_floor_over_a_thousand_seeds() -> void:
 		var hi := 0
 		# v0.11.1 Step 3: the floor's map is compiled once per floor, not once per seed (FloorGenerator only reads it)
 		var p := FloorShape.size_floor(r, RunContentCompiler.compile_map(map_def), f)
-		for s in SEEDS:
+		for s in _seeds:
 			var seed_value := 7 + s * 7919 + f * 104729
 			var layout := FloorGenerator.generate(seed_value, p)
 			var n := layout.room_count()
@@ -49,7 +50,7 @@ func test_generation_holds_for_every_floor_over_a_thousand_seeds() -> void:
 			if s < 15 and not _walk(layout, tag, s < 3):
 				return
 		counts[f] = [lo, hi]
-		gut.p("floor %d: %d-%d rooms over %d seeds" % [f, lo, hi, SEEDS])
+		gut.p("floor %d: %d-%d rooms over %d seeds" % [f, lo, hi, _seeds])
 	assert_eq(counts.size(), 5)
 
 

@@ -8,8 +8,9 @@ extends GutTest
 ## the start hall on the floor's open ground and keeps clear of every wall; it is a big room (2 x 2 cells or more)
 ## whenever the floor has a big room that fits, and it is placed on (nearly) every floor, so floor 3's warranty holds.
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
 
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 var _repo: ContentRepository
 var _maps := {}
 var _arenas: ArenaTable
@@ -72,7 +73,7 @@ func test_the_purple_room_is_big_off_the_main_path_and_always_reached() -> void:
 	var could_be_big := 0
 	var bad := 0
 	var tried := 0
-	for s in SEEDS:
+	for s in _seeds:
 		var floor_index := 2 + s % 2
 		var seed_value := 9001 + s * 7919
 		var f := _layout(seed_value, run, floor_index)
@@ -120,7 +121,9 @@ func test_the_purple_room_is_big_off_the_main_path_and_always_reached() -> void:
 		)
 	)
 	assert_eq(bad, 0, "never a special room, off the main path, its dais reached and clear")
-	assert_gte(placed, SEEDS * 99 / 100, "placed on (nearly) every floor: floor 3's warranty holds")
+	assert_gte(
+		placed, _seeds * 99 / 100, "placed on (nearly) every floor: floor 3's warranty holds"
+	)
 	assert_gte(
 		big,
 		could_be_big * 9 / 10,

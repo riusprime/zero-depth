@@ -8,12 +8,13 @@ extends GutTest
 ## spawn points clear; large rooms take a purpose at the stated share; every purpose appears in each of its biomes.
 ## The same seed gives the same floor, and only the purpose rooms change. Each template varies inside its bounds.
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
 const PLAYER_RADIUS := 0.35
 const BIOMES: Array[StringName] = [
 	&"ruins", &"frozen_shore", &"starfall", &"red_canyon", &"night_rocks"
 ]
 
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 var _map: FloorParams
 var _arena: ArenaTable
 var _tables: Array[RoomPurposeTable] = []
@@ -96,7 +97,7 @@ func test_purpose_rooms_over_many_floors() -> void:
 	var seen := {}
 	var failures := 0
 	var groups_dropped := 0
-	for s in SEEDS:
+	for s in _seeds:
 		var seed_value := 7000 + s * 7919
 		var biome := BIOMES[s % BIOMES.size()]
 		var f := _floor(seed_value)
@@ -121,7 +122,7 @@ func test_purpose_rooms_over_many_floors() -> void:
 		. p(
 			(
 				"room purposes: %d floors, %d large candidate rooms, %d purposed (%d per mille), kinds %s"
-				% [SEEDS, candidates, purposed, share, str(seen.keys())]
+				% [_seeds, candidates, purposed, share, str(seen.keys())]
 			)
 		)
 	)

@@ -8,7 +8,9 @@ extends GutTest
 ## reachable on foot from its host through the doorway (the reach grid at 0.5 m clearance). At the data's 25 % the
 ## share tried is near it.
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
+
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 
 
 func _layout(seed_value: int, map: FloorParams, spec: BossArenaSpec, arenas: int) -> FloorLayout:
@@ -31,7 +33,7 @@ func test_every_cracked_wall_is_off_the_way_and_opens_onto_its_room() -> void:
 	var natural := 0
 	var with_both := 0
 	var bad := 0
-	for s in SEEDS:
+	for s in _seeds:
 		var seed_value := 7001 + s * 7919
 		var f := _layout(seed_value, map, spec, arenas.share_permille)
 		if RngStream.derive(seed_value, CrackedRooms.STREAM).chance_permille(
@@ -64,15 +66,15 @@ func test_every_cracked_wall_is_off_the_way_and_opens_onto_its_room() -> void:
 		. p(
 			(
 				"CRACKED_WALLS| seeds=%d placed_when_tried=%d with_timed_and_runes=%d natural_floor2=%d bad=%d"
-				% [SEEDS, placed, with_both, natural, bad]
+				% [_seeds, placed, with_both, natural, bad]
 			)
 		)
 	)
 	assert_eq(bad, 0, "every cracked wall off the way, its room reachable once broken")
-	assert_gt(placed, SEEDS * 5 / 10, "most floors have a dead end that fits one")
-	var want := CrackedRooms.chance(secrets.crack_floor_permille, 2) * SEEDS / 1000
+	assert_gt(placed, _seeds * 5 / 10, "most floors have a dead end that fits one")
+	var want := CrackedRooms.chance(secrets.crack_floor_permille, 2) * _seeds / 1000
 	assert_between(
-		natural, want - SEEDS / 20, want + SEEDS / 20, "floor 2's share of floors are tried"
+		natural, want - _seeds / 20, want + _seeds / 20, "floor 2's share of floors are tried"
 	)
 
 

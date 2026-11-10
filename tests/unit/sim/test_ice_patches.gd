@@ -6,8 +6,9 @@ extends GutTest
 ## doorways, walls, item spots, the start and the gates; on ice the hero speeds up and stops slowly (a slide), the
 ## dash is unchanged; ice is not hashed itself (laid from the seed), its slide is.
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
 
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 var _repo: ContentRepository
 var _specs: Array[BossArenaSpec] = []
 var _field: IceField
@@ -59,79 +60,18 @@ func test_same_seed_same_patches_and_no_floor_stream_moves() -> void:
 		assert_eq(a.rng_map.state, map_state, "the map stream is untouched")
 
 
-## A floor's layout as FloorScenario.build lays it (boss room, Overrun room, shop) and its walls with the gate.
-func _layout(seed_value: int, spec: BossArenaSpec) -> Array:
-	var f := FloorGenerator.generate(seed_value)
-	BossRoomBuilder.attach(f, spec)
-	OverrunRooms.mark(f)
-	ShopPlacement.pick(f)
-	var walls: Array[Obb] = f.walls.duplicate()
-	walls.append(FloorScenario.gate_collider(f))
-	return [f, walls]
-
-
-## The rules one floor's patches break, as short strings (empty: none). Counted, not asserted one by one, so
-## 1,000 floors stay quick.
-func _broken(f: FloorLayout, walls: Array[Obb], rects: Array[Rect2]) -> PackedStringArray:
-	var out := PackedStringArray()
-	var c := _field.clearance_m - 0.001
-	for r in rects:
-		var room := f.room_of(r.get_center())
-		if room < 0:
-			out.append("outside every room")
-			continue
-		if room in [f.start_room, f.boss_room, f.portal_room, f.shop_room]:
-			out.append("in the start, boss, portal or shop room")
-		if not f.rooms[room].grow(-c).encloses(r):
-			out.append("too close to its room's walls")
-		var grown := r.grow(c)
-		for i in f.door_centers.size():
-			if grown.intersects(f.door_rect(i)):
-				out.append("on a doorway")
-		for o in walls:
-			if grown.intersects(o.bounds()):
-				out.append("on a wall or cover")
-		for p in [f.start_pos, f.portal_pos]:
-			if grown.has_point(p):
-				out.append("on the start or the gate")
-		for p in f.item_spots:
-			if grown.has_point(p):
-				out.append("on an item spot")
-		if minf(r.size.x, r.size.y) < _field.size_min_dm / 10.0 - 0.001:
-			out.append("too small")
-		if maxf(r.size.x, r.size.y) > _field.size_max_dm / 10.0 + 0.001:
-			out.append("too big")
-	for i in rects.size():
-		for j in range(i + 1, rects.size()):
-			if rects[i].intersects(rects[j]):
-				out.append("overlapping")
-	return out
-
-
+## v0.11.1 Step 4: the loop is SurfaceSoak's, shared with test_starglow_patches.gd.
 func test_patches_keep_their_rules_over_1000_seeds() -> void:
-	var total := 0
-	var floors_with_ice := 0
-	var broken := {}
-	var t0 := Time.get_ticks_msec()
-	for s in SEEDS:
-		var seed_value := 9100 + s * 7919
-		var lw := _layout(seed_value, _specs[s % _specs.size()])
-		var field := _fresh()
-		IcePatches.lay(lw[0], lw[1], seed_value, field)
-		total += field.rects.size()
-		floors_with_ice += 1 if not field.rects.is_empty() else 0
-		for why in _broken(lw[0], lw[1], field.rects):
-			if not broken.has(why):
-				broken[why] = "seed %d" % seed_value
+	var out := SurfaceSoak.soak(_seeds, 9100, _specs, _fresh, _field)
 	gut.p(
 		(
 			"ice over %d floors: %d patches, %d floors with ice (%d ms)"
-			% [SEEDS, total, floors_with_ice, Time.get_ticks_msec() - t0]
+			% [_seeds, out.total, out.floors_with, out.ms]
 		)
 	)
-	assert_eq(broken, {}, "no rule broken (rule -> first seed)")
-	assert_gt(floors_with_ice, SEEDS * 8 / 10, "most Frozen Shore floors have ice")
-	assert_lt(total, SEEDS * 12, "ice stays a few patches a floor, not a rink")
+	assert_eq(out.broken, {}, "no rule broken (rule -> first seed)")
+	assert_gt(out.floors_with, _seeds * 8 / 10, "most Frozen Shore floors have ice")
+	assert_lt(out.total, _seeds * 12, "ice stays a few patches a floor, not a rink")
 
 
 ## A world with one patch under the hero (or none), the hero run right for 30 ticks and then released.
