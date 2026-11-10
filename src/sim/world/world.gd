@@ -933,12 +933,15 @@ func step(frame: InputFrame) -> void:
 		pp.begin(&"resolve")
 	# 6. Hits: enemy attacks, then projectile sweeps.
 	var critter_rows := PackedInt32Array()  # The critters touch after the others (CritterAi)
+	var roles := EnemyAi.roles  # One table read per actor (EnemyAi.role_of; a local: a static read costs more)
 	for i in range(1, actors.size()):
-		if CritterAi.takes(actors.kinds[i]):
+		var kind := actors.kinds[i]
+		var role := roles[kind] if (kind & -EnemyAi.KIND_SLOTS) == 0 else EnemyAi.role_of(kind)
+		if role == EnemyAi.Role.CRITTER:
 			critter_rows.append(i)
-		elif BossAi.is_boss_kind(actors.kinds[i]) and actors.dead[i] == 0:
+		elif role == EnemyAi.Role.BOSS and actors.dead[i] == 0:
 			BossAi.resolve(self, i)  # Bosses.
-		elif EnemyAi.is_enemy_kind(actors.kinds[i]) and actors.dead[i] == 0:
+		elif role == EnemyAi.Role.ENEMY and actors.dead[i] == 0:
 			EnemyAi.resolve(self, i)
 	if not critter_rows.is_empty():
 		CritterAi.touch_all(self, critter_rows)
@@ -1812,17 +1815,20 @@ func _run_ai() -> void:
 		if pp != null:
 			pp.end(&"ai.grid")
 	var critter_rows := PackedInt32Array()  # The critters think in one loop after the others (CritterAi)
+	var roles := EnemyAi.roles  # One table read per actor (EnemyAi.role_of; a local: a static read costs more)
 	for i in range(1, actors.size()):
-		if CritterAi.takes(actors.kinds[i]):
+		var kind := actors.kinds[i]
+		var role := roles[kind] if (kind & -EnemyAi.KIND_SLOTS) == 0 else EnemyAi.role_of(kind)
+		if role == EnemyAi.Role.CRITTER:
 			critter_rows.append(i)
 			continue
-		if BossAi.is_boss_kind(actors.kinds[i]):
+		if role == EnemyAi.Role.BOSS:
 			BossAi.think(self, i)  # Bosses.
 			continue
-		if EnemyAi.is_enemy_kind(actors.kinds[i]):
+		if role == EnemyAi.Role.ENEMY:
 			EnemyAi.think(self, i)  # (its plan is timed as ai.plan inside)
 			continue
-		if actors.kinds[i] != ActorStore.Kind.DUMMY:
+		if kind != ActorStore.Kind.DUMMY:
 			continue
 		var id := actors.ids[i]
 		if (tick + id) % SimTick.AI_HEAVY_PERIOD == 0:
@@ -1939,14 +1945,17 @@ func _move_and_collide() -> void:
 	# Dummies steer toward the player plus their jitter.
 	var target := p
 	var critter_rows := PackedInt32Array()  # The critters step in one loop after the others (CritterAi)
+	var roles := EnemyAi.roles  # One table read per actor (EnemyAi.role_of; a local: a static read costs more)
 	for i in range(1, actors.size()):
-		if CritterAi.takes(actors.kinds[i]):
+		var kind := actors.kinds[i]
+		var role := roles[kind] if (kind & -EnemyAi.KIND_SLOTS) == 0 else EnemyAi.role_of(kind)
+		if role == EnemyAi.Role.CRITTER:
 			critter_rows.append(i)
 			continue
-		if BossAi.is_boss_kind(actors.kinds[i]):
+		if role == EnemyAi.Role.BOSS:
 			BossAi.move(self, i)  # Bosses.
 			continue
-		if EnemyAi.is_enemy_kind(actors.kinds[i]):
+		if role == EnemyAi.Role.ENEMY:
 			EnemyAi.move(self, i)
 			continue
 		var at := actors.pos(i)
@@ -1980,37 +1989,39 @@ func _move_and_collide() -> void:
 	# where it was looked at (walls that far off give no push, so the result is the same).
 	var open_x := PackedFloat32Array()
 	var open_y := PackedFloat32Array()
-	open_x.resize(actors.size())
-	open_y.resize(actors.size())
-	for i in actors.size():
-		var r := actors.radius[i] + WALL_SKIP_M
+	var n := actors.size()
+	open_x.resize(n)
+	open_y.resize(n)
+	# The wall passes read and write local copies of the columns (handed back after each pass), as the pairs pass does.
+	var px := actors.pos_x
+	var py := actors.pos_y
+	var rad := actors.radius
+	var no_solids := solids.is_empty()
+	for i in n:
+		var r := rad[i] + WALL_SKIP_M
 		open_x[i] = INF
-		if (
-			not _wall_grid.any_in_rect(
-				Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0)  # No list built
-			)
-			and not solids.any_near(
-				Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0)
-			)
-		):
-			open_x[i] = actors.pos_x[i]
-			open_y[i] = actors.pos_y[i]
+		var box := Rect2(px[i] - r, py[i] - r, r * 2.0, r * 2.0)
+		if not _wall_grid.any_in_rect(box) and (no_solids or not solids.any_near(box)):  # No list built
+			open_x[i] = px[i]
+			open_y[i] = py[i]
 	for _iter in SimTick.COLLIDE_ITERS:
-		for i in actors.size():
+		px = actors.pos_x
+		py = actors.pos_y
+		for i in n:
 			if not through.is_empty() and through[i] == 1:
 				continue
-			if (
-				absf(actors.pos_x[i] - open_x[i]) < WALL_SKIP_M
-				and absf(actors.pos_y[i] - open_y[i]) < WALL_SKIP_M
-			):
+			if absf(px[i] - open_x[i]) < WALL_SKIP_M and absf(py[i] - open_y[i]) < WALL_SKIP_M:
 				continue
-			var ap := actors.pos(i)
-			var r := actors.radius[i]
+			var ap := Vector2(px[i], py[i])
+			var r := rad[i]
 			for w in _wall_grid.query_rect(Rect2(ap.x - r, ap.y - r, r * 2.0, r * 2.0)):
 				ap += Collide.circle_vs_obb(ap, r, walls[w])
-			if not solids.is_empty():  # Solid props block bodies, not shots or sight
+			if not no_solids:  # Solid props block bodies, not shots or sight
 				ap += solids.push(ap, r)
-			actors.set_pos(i, ap)
+			px[i] = ap.x
+			py[i] = ap.y
+		actors.pos_x = px
+		actors.pos_y = py
 		if pp != null:
 			pp.end(&"move.walls")
 			pp.begin(&"move.grid")
@@ -2022,10 +2033,9 @@ func _move_and_collide() -> void:
 		# The pass works on local copies of the position columns (one native copy on the first push,
 		# handed back after; an actor-store lookup per read was most of its cost) and starts each body's candidates
 		# past its own index (bsearch: the grid's list is ascending), with the same arithmetic in the same order.
-		var px := actors.pos_x
-		var py := actors.pos_y
-		var rad := actors.radius
-		for a in actors.size():
+		px = actors.pos_x
+		py = actors.pos_y
+		for a in n:
 			if ghost and a == 0:
 				continue
 			var ra := rad[a]

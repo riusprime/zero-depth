@@ -31,6 +31,9 @@ enum State { SPAWN, MOVE, WINDUP, ACTIVE, RECOVER }
 ## The Arc Caster's spells (ActorStore.pick).
 enum Spell { BOLT, SPREAD, RUNE }
 
+## How World's per-actor loops step a kind (role_of): a critter (CritterAi), a boss (BossAi), a normal enemy, other.
+enum Role { OTHER, CRITTER, BOSS, ENEMY }
+
 const STRAFE_PERMILLE := 600
 ## Kinds that keep a distance band (_keeps_away).
 const KEEP_AWAY: Array[int] = [
@@ -100,6 +103,25 @@ const VARIANT_BASE := {
 	ActorStore.Kind.FROST_CHARGER: ActorStore.Kind.CHARGER,
 	ActorStore.Kind.SPLIT_SNIPER: ActorStore.Kind.SNIPER,
 }
+## The kinds the per-kind lookups below cover (every ActorStore.Kind; a kind past them takes the slow test).
+const KIND_SLOTS := 256
+## Bits of a kind's flags_of: each one a pure test of the kind alone.
+const F_ELITE := 1  # EliteAi.is_elite_kind
+const F_VARIANT := 2  # Variants.is_variant
+const F_CANYON := 4  # CanyonShore.owns
+const F_RUINS := 8  # RuinsRocks.takes
+const F_CRITTER := 16  # is_critter
+const F_KEEPS_AWAY := 32  # _keeps_away
+const F_TURNS_SLOWLY := 64  # _turns_slowly (and armoured: the same test)
+const F_CHARGES := 128  # _charges
+
+## The per-kind lookups, indexed by kind: each enemy's tick asks these tests many times, and a table read is cheaper
+## than the Dictionary lookups, `in` scans and or-chains. Built once at load from the slow tests themselves (so they
+## agree for every kind; test_enemy_ai checks it); they come from the code, not the world: nothing to hash or save.
+static var _behaviour := _build_behaviour()
+static var _flags := _build_flags()
+## role_of by kind (World reads it in its loops).
+static var roles := _build_roles()
 
 
 static func is_enemy_kind(kind: int) -> bool:
@@ -108,7 +130,79 @@ static func is_enemy_kind(kind: int) -> bool:
 
 ## A horde critter (contact damage only).
 static func is_critter(kind: int) -> bool:
-	return kind in CRITTERS
+	return (flags_of(kind) & F_CRITTER) != 0
+
+
+## The F_* bits of a kind.
+static func flags_of(kind: int) -> int:
+	if (kind & -KIND_SLOTS) == 0:
+		return _flags[kind]
+	return _slow_flags(kind)
+
+
+## The Role a kind is stepped as: the checks World's loops make, in their order.
+static func role_of(kind: int) -> int:
+	if (kind & -KIND_SLOTS) == 0:
+		return roles[kind]
+	return _slow_role(kind)
+
+
+static func _slow_role(kind: int) -> int:
+	if CritterAi.takes(kind):
+		return Role.CRITTER
+	if BossAi.is_boss_kind(kind):
+		return Role.BOSS
+	return Role.ENEMY if is_enemy_kind(kind) else Role.OTHER
+
+
+static func _slow_behaviour(kind: int) -> int:
+	if kind == ActorStore.Kind.LENS_DRONE:
+		return ActorStore.Kind.NEEDLE
+	return VARIANT_BASE.get(kind, CanyonShore.BASE.get(kind, kind))  # The Beetle and Turtle: a Warden
+
+
+static func _slow_flags(kind: int) -> int:
+	var base := _slow_behaviour(kind)
+	var f := 0
+	f |= F_ELITE if EliteAi.is_elite_kind(kind) else 0
+	f |= F_VARIANT if Variants.is_variant(kind) else 0
+	f |= F_CANYON if CanyonShore.owns(kind) else 0
+	f |= F_RUINS if RuinsRocks.takes(kind) else 0
+	f |= F_CRITTER if kind in CRITTERS else 0
+	f |= F_KEEPS_AWAY if base in KEEP_AWAY else 0
+	var slow_turn := base == ActorStore.Kind.WARDEN or kind == ActorStore.Kind.SHIELD_BEARER
+	f |= F_TURNS_SLOWLY if slow_turn else 0
+	var charges := (
+		base == ActorStore.Kind.CHARGER
+		or base == ActorStore.Kind.HATCHLING
+		or base == ActorStore.Kind.SWARMER
+	)
+	f |= F_CHARGES if charges else 0
+	return f
+
+
+static func _build_behaviour() -> PackedInt32Array:
+	var out := PackedInt32Array()
+	out.resize(KIND_SLOTS)
+	for k in KIND_SLOTS:
+		out[k] = _slow_behaviour(k)
+	return out
+
+
+static func _build_flags() -> PackedInt32Array:
+	var out := PackedInt32Array()
+	out.resize(KIND_SLOTS)
+	for k in KIND_SLOTS:
+		out[k] = _slow_flags(k)
+	return out
+
+
+static func _build_roles() -> PackedByteArray:
+	var out := PackedByteArray()
+	out.resize(KIND_SLOTS)
+	for k in KIND_SLOTS:
+		out[k] = _slow_role(k)
+	return out
 
 
 ## ENEMIES.md H2: enemy i flies low (the Cave Bat), so the floor's hazards never reach it: today the hero's
@@ -121,34 +215,31 @@ static func flies(w: World, i: int) -> bool:
 ## The behaviour an actor kind runs: its own, except the Hive Lens's drones, which run the Needle's, and
 ## v0.11.0 O13a the biome variants, which run their base's (VARIANT_BASE; their twists: Variants).
 static func behaviour_of(kind: int) -> int:
-	if kind == ActorStore.Kind.LENS_DRONE:
-		return ActorStore.Kind.NEEDLE
-	return VARIANT_BASE.get(kind, CanyonShore.BASE.get(kind, kind))  # The Beetle and Turtle: a Warden
+	if (kind & -KIND_SLOTS) == 0:
+		return _behaviour[kind]
+	return _slow_behaviour(kind)
 
 
-## Chargers, the Brood Mother's hatchlings (v0.3.0 C, a small Charger) and Swarmers run the charge.
-static func _charges(p_kind: int) -> bool:
-	var kind := behaviour_of(p_kind)  # The Ember and Frost Chargers charge
-	return (
-		kind == ActorStore.Kind.CHARGER
-		or kind == ActorStore.Kind.HATCHLING
-		or kind == ActorStore.Kind.SWARMER
-	)
+## Chargers, the Brood Mother's hatchlings (a small Charger) and Swarmers run the charge (the Ember and
+## Frost Chargers too).
+static func _charges(kind: int) -> bool:
+	return (flags_of(kind) & F_CHARGES) != 0
 
 
 ## Kinds that keep a distance band and shoot, lob, heal or lay mines from it (v0.3.5 AI, v0.4.0 EN).
 static func _keeps_away(kind: int) -> bool:
-	return behaviour_of(kind) in KEEP_AWAY
+	return (flags_of(kind) & F_KEEPS_AWAY) != 0
 
 
-## Kinds that turn at a limited rate while they walk and hold their facing once they attack.
+## Kinds that turn at a limited rate while they walk and hold their facing once they attack: a Warden's behaviour, or
+## the Shield Bearer.
 static func _turns_slowly(kind: int) -> bool:
-	return behaviour_of(kind) == ActorStore.Kind.WARDEN or kind == ActorStore.Kind.SHIELD_BEARER
+	return (flags_of(kind) & F_TURNS_SLOWLY) != 0
 
 
-## Kinds whose hits are softened or blocked by the direction they come from (Damage.target_mult).
+## Kinds whose hits are softened or blocked by the direction they come from (Damage.target_mult): the slow turners.
 static func armoured(kind: int) -> bool:
-	return behaviour_of(kind) == ActorStore.Kind.WARDEN or kind == ActorStore.Kind.SHIELD_BEARER
+	return (flags_of(kind) & F_TURNS_SLOWLY) != 0
 
 
 ## The Mender: the target to kill first. The view marks it.
@@ -174,39 +265,42 @@ static func tracking(w: World, i: int) -> bool:
 
 static func think(w: World, i: int) -> void:
 	var a := w.actors
-	if EliteAi.is_elite_kind(a.kinds[i]):  # The elite archetypes run their own (its walk is plan's)
+	var kind := a.kinds[i]  # Read once: an actor's kind never changes
+	var f := flags_of(kind)
+	if (f & F_ELITE) != 0:  # The elite archetypes run their own (its walk is plan's)
 		EliteAi.think(w, i)
 		return
-	var planning := plans_now(w, i)
+	var planning := posmod(w.tick, PLAN_PERIOD) == posmod(a.ids[i], PLAN_PERIOD)  # plans_now, not an elite
 	if planning:  # The staggered plan (before the frozen check: a thawed enemy has a fresh one)
 		if w.phase_probe != null:  # The perf probe's phase timer (null in play)
 			w.phase_probe.begin(&"ai.plan")
 		plan(w, i)
 		if w.phase_probe != null:
 			w.phase_probe.end(&"ai.plan")
-	if Variants.is_variant(a.kinds[i]):  # The Rubble Warden's crust falls at half HP
+	if (f & F_VARIANT) != 0:  # The Rubble Warden's crust falls at half HP
 		Variants.on_think(w, i)
-	if CanyonShore.owns(a.kinds[i]):  # A Cinder Priest takes or plants its vent
+	if (f & F_CANYON) != 0:  # A Cinder Priest takes or plants its vent
 		CanyonShore.on_think(w, i)
-	if a.frozen_t[i] > 0 or Spells.held_still(w, i):  # Engines: frozen holds still; a spell stun
+	# Engines: frozen holds still; a spell stun (no call while no spell holds anyone)
+	if a.frozen_t[i] > 0 or (not w.spell_hold_id.is_empty() and Spells.held_still(w, i)):
 		return
-	var t := w.enemy_table(a.kinds[i])
+	var t := w.enemy_table(kind)
 	a.state_t[i] += 1
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
-	if RuinsRocks.takes(a.kinds[i]):  # The Ruins and Night Rocks signatures
+	if (f & F_RUINS) != 0:  # The Ruins and Night Rocks signatures
 		RuinsRocks.think(w, i, t, planning)
 		return
 	if a.state[i] >= BossSignatures.EGG:  # An egg waits, hatches or bursts
 		BossSignatures.egg_think(w, i)
 		return
-	if is_critter(a.kinds[i]):  # Rises in, then only walks (its touch is resolve's)
+	if (f & F_CRITTER) != 0:  # Rises in, then only walks (its touch is resolve's)
 		if a.state[i] == State.SPAWN and a.state_t[i] >= w.tuning.spawn_in_ticks:
 			enter_state(a, i, State.MOVE)
 		elif a.state[i] == State.MOVE and planning:
 			a.facing[i] = Kin.angle_of(w.player_pos() - a.pos(i))
 		return
-	if StarfallKinds.is_node(a.kinds[i]):  # It floats in place and never attacks
+	if kind == ActorStore.Kind.GRAVITY_NODE:  # StarfallKinds.is_node: it floats in place and never attacks
 		if a.state[i] == State.SPAWN and a.state_t[i] >= w.tuning.spawn_in_ticks:
 			enter_state(a, i, State.MOVE)
 		return
@@ -218,24 +312,23 @@ static func think(w: World, i: int) -> void:
 		State.MOVE:
 			var to_player := w.player_pos() - a.pos(i)
 			var dist := Kin.length(to_player)
+			var beh := behaviour_of(kind)
 			# A Needle backs off before it shoots; the others attack as soon as they're in range.
-			var too_close := (
-				behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE and dist < t.flee_distance_m
-			)
+			var too_close := beh == ActorStore.Kind.NEEDLE and dist < t.flee_distance_m
 			var attack := alive and a.cd[i] == 0 and dist <= t.attack_range_m and not too_close
 			# v0.9.0 (owner 2026-10-23: "when there are closed rooms the enemies can attack from outside, that should not
 			# happen"): no attack starts without a clear line to the player (walls, sealed doorways' barriers).
 			attack = attack and sees_player(w, a.pos(i))
 			# A walker faces the player on its plan ticks and as it attacks; the slow turners (Warden,
 			# Shield Bearer) turn every tick (their facing is their armour).
-			if _turns_slowly(a.kinds[i]):
+			if (f & F_TURNS_SLOWLY) != 0:
 				a.facing[i] = Kin.turn_toward(a.facing[i], Kin.angle_of(to_player), t.turn_rate)
 			elif attack or planning:
 				a.facing[i] = Kin.angle_of(to_player)
-			if a.kinds[i] == ActorStore.Kind.MENDER:
+			if kind == ActorStore.Kind.MENDER:
 				_mend(w, i)  # Heals instead of attacking.
 				return
-			if behaviour_of(a.kinds[i]) == ActorStore.Kind.SNIPER and a.pick[i] == 1:
+			if beh == ActorStore.Kind.SNIPER and a.pick[i] == 1:
 				_end_relocation(w, a, i)
 			if attack and _may_attack(w, i):
 				_start_windup(w, i, Kin.angle_of(to_player))
@@ -373,38 +466,38 @@ static func on_death(w: World, i: int) -> void:
 
 static func move(w: World, i: int) -> void:
 	var a := w.actors
-	var t := w.enemy_table(a.kinds[i])
+	var kind := a.kinds[i]  # Read once: an actor's kind never changes
+	var f := flags_of(kind)
+	var t := w.enemy_table(kind)
 	var at := a.pos(i)
 	# Items: a Frost Core slow scales both the walk and the charge (1.0 when not slowed).
 	var slow := ItemProcs.slow_factor(w, i)
-	if RuinsRocks.takes(a.kinds[i]) and RuinsRocks.moves(w, i, t, slow):  # v0.11.0 O13b
+	if (f & F_RUINS) != 0 and RuinsRocks.moves(w, i, t, slow):  # The Ruins and Night Rocks walk their own
 		return
-	var hovering := a.kinds[i] == ActorStore.Kind.BOMB_DRONE and a.state[i] == State.WINDUP
-	if a.kinds[i] == ActorStore.Kind.GRAVITY_NODE:  # It holds its spot
+	var state := a.state[i]
+	var hovering := kind == ActorStore.Kind.BOMB_DRONE and state == State.WINDUP
+	if kind == ActorStore.Kind.GRAVITY_NODE:  # It holds its spot
 		StarfallKinds.hold(w, i)
 		return
-	if (
-		a.state[i] == State.MOVE
-		and behaviour_of(a.kinds[i]) == ActorStore.Kind.SNIPER
-		and a.pick[i] == 1
-	):
+	var beh := behaviour_of(kind)
+	if state == State.MOVE and beh == ActorStore.Kind.SNIPER and a.pick[i] == 1:
 		_relocate(w, i, t, slow)
 		return
-	if a.state[i] == State.MOVE or hovering:
+	if state == State.MOVE or hovering:
 		# The walk follows the last plan (every PLAN_PERIOD ticks); a melee walker still stops the
 		# tick it touches the player.
 		var dir := Vector2(a.plan_x[i], a.plan_y[i])
 		if dir == Vector2.ZERO or w.player_dead():
 			return
 		if (
-			behaviour_of(a.kinds[i]) != ActorStore.Kind.NEEDLE
-			and not _keeps_away(a.kinds[i])
+			beh != ActorStore.Kind.NEEDLE
+			and (f & F_KEEPS_AWAY) == 0
 			and Kin.length(w.player_pos() - at) <= t.radius_m + w.player.radius_m + 0.1
 		):
 			return
 		a.set_pos(i, at + dir * (t.speed * slow))
-	elif a.state[i] == State.ACTIVE:
-		if _charges(a.kinds[i]) and a.lock_len[i] > 0.0:
+	elif state == State.ACTIVE:
+		if (f & F_CHARGES) != 0 and a.lock_len[i] > 0.0:
 			# The charge bends toward the player, at most charge_turn a tick.
 			if t.charge_turn > 0 and not w.player_dead():
 				var want := Kin.angle_of(w.player_pos() - at)
@@ -545,13 +638,14 @@ static func resolve(w: World, i: int) -> void:
 	if a.state[i] == BossSignatures.EGG_BURST and not Engines.frozen(w, i):
 		BossSignatures.egg_burst(w, i)  # A phase-3 egg bursts into its acid star
 		return
-	if EliteAi.is_elite_kind(a.kinds[i]):  # An elite's contact, plain attack and ability
+	var f := flags_of(a.kinds[i])
+	if (f & F_ELITE) != 0:  # An elite's contact, plain attack and ability
 		EliteAi.resolve(w, i)
 		return
-	if is_critter(a.kinds[i]):  # v0.11.0 O9
+	if (f & F_CRITTER) != 0:  # A critter hurts by touch
 		_critter_touch(w, i)
 		return
-	if RuinsRocks.takes(a.kinds[i]):  # v0.11.0 O13b
+	if (f & F_RUINS) != 0:  # The Ruins and Night Rocks signatures
 		RuinsRocks.resolve(w, i)
 		return
 	if a.state[i] != State.ACTIVE or w.player_dead() or Engines.frozen(w, i):
