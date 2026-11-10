@@ -1,6 +1,6 @@
 extends GutTest
 ## v0.9.0 CL (owner: "collectibles are fine", COLLECTIBLES.md as drafted) through main.tscn with real input only:
-## 1. Run seed 5's floor-2 save (a Blood Shrine) is continued from the menu (Enter); God from the dev panel (clicked);
+## 1. Run seed 27's floor-2 save (a Blood Shrine) is continued from the menu (Enter); God from the dev panel (clicked);
 ##    the stick walks up to the shrine, E pays its price, the Blood Coin shows beside it (drawn), the stick walks onto
 ##    it: the profile has it at once, a toast says "Added to the Rune Archive", the run's fragments rise by one. The
 ##    pause menu goes to the hub: its first floor rune is lit and the Blood Coin's niche on the Archive's shelf glows;
@@ -9,7 +9,10 @@ extends GutTest
 ## 2. A profile with 12 found: Play; the hub's north gate is open and the Keystone waits on the alcove's pedestal; the
 ##    stick walks through the gate to it: taken (the profile, its fragment), its rune lit, the hub's line says so.
 
-const BLOOD_SEED := 5
+## v0.11.0 O13b: seed 5's floor 2 (Ruins) now has a Wire Weaver string its cable across the walk; the stick pushed
+## into it until the hero died (the dev panel's God lasts only while the panel is open). Seed 27's floor 2 (Frozen
+## Shore) holds a Blood shrine and the Blood Coin with a clear walk.
+const BLOOD_SEED := 27
 const FLOOR := 2
 
 
