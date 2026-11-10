@@ -274,6 +274,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 	if BossSignatures.has_extra(base):  # v0.8.0 BS1/BS2: the flow field goes round them again
 		BossSignatures.set_nav_extra(base, false)
 	base.nav.dist = (nav["dist"] as PackedInt32Array).duplicate()
+	base.nav.dist_rev += 1  # The native flood's cache takes the restored distances (NativeNav.sync)
 	base.nav.set(&"_flooded", nav["flooded"])
 	base.nav.last_work = int(nav["work"])
 	base.nav.restore_build(nav["build"])

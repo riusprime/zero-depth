@@ -131,21 +131,29 @@ func _measure(repo: ContentRepository, n: int, ticks: int) -> void:
 ## The flood alone, on the world as the run left it (its hero's cell and its enemies' cells as targets): NavField.flood
 ## from scratch FLOOD_REPS times; the min and median ms (the min is the least noisy on a busy machine), its work and
 ## the grid's cells, and a hash of the distances (the same before and after a speed-up).
+## With the native flood on (NativeWorld.NAV) it prints a second line, the same flood run native.
 func _flood_bench(w: World) -> void:
+	_flood_line(w, "flood_alone", null)
+	if (w.native_on & NativeWorld.NAV) != 0:
+		_flood_line(w, "flood_native", w.native)
+
+
+func _flood_line(w: World, label: String, kernel: Object) -> void:
 	var targets: PackedInt32Array = w._nav_targets()
 	var times := []
 	for r in FLOOD_REPS:
 		w.nav._flooded = Vector3i(-1, -1, -1)
 		var t0 := Time.get_ticks_usec()
-		w.nav.flood(w.player_pos(), NavField.WORLD_FLOOD_STEPS, targets)
+		w.nav.flood(w.player_pos(), NavField.WORLD_FLOOD_STEPS, targets, kernel)
 		times.append((Time.get_ticks_usec() - t0) / 1000.0)
 	times.sort()
 	var h := StateHasher.new()
 	h.add_ints(w.nav.dist)
 	print(
 		(
-			"  flood_alone min %.3f  median %.3f ms  work %d  cells %d  targets %d  dist_hash %s"
+			"  %s min %.3f  median %.3f ms  work %d  cells %d  targets %d  dist_hash %s"
 			% [
+				label,
 				times[0],
 				times[FLOOD_REPS / 2],
 				w.nav.last_work,

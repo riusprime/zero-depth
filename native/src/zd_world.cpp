@@ -218,7 +218,11 @@ void ZdWorld::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("kind_layout"), &ZdWorld::kind_layout);
 	ClassDB::bind_method(D_METHOD("ai_hero_layout"), &ZdWorld::ai_hero_layout);
 
-	// slot: nav
+	// The flow field's flood (zd_nav.cpp)
+	ClassDB::bind_method(D_METHOD("set_nav_extra", "extra"), &ZdWorld::set_nav_extra);
+	ClassDB::bind_method(D_METHOD("nav_flood", "seeds", "max_steps", "targets"), &ZdWorld::nav_flood);
+	ClassDB::bind_method(D_METHOD("nav_dist"), &ZdWorld::nav_dist);
+	ClassDB::bind_method(D_METHOD("nav_directions", "xy"), &ZdWorld::nav_directions);
 
 	// The projectile sweep (zd_shots.cpp)
 	ClassDB::bind_method(D_METHOD("sweep_shots", "projectiles", "actors", "skip", "walls_only"),

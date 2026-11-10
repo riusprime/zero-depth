@@ -70,6 +70,10 @@ var extra := PackedByteArray()
 ## The work (cells taken from the buckets) of the last flood; a build's budget per slice is a
 ## SLICES-th of it. Copied in a snapshot, carried when the world swaps fields.
 var last_work := 0
+## Counts of the changes the native flood's cache must follow (NativeNav.sync): the grid or its extra cells (a
+## build, set_extra), and the distances written here rather than by the native flood. Derived, never hashed.
+var grid_rev := 0
+var dist_rev := 0
 var _adj_start := PackedInt32Array()
 var _adj := PackedInt32Array()
 ## Each step's cost (ORTHO or DIAG), beside _adj.
@@ -117,6 +121,7 @@ var _f_work := 0
 func build(walls: Array[Obb]) -> void:
 	cancel_build()  # The walls or extra cells change: a build in progress is dropped
 	_flooded = Vector3i(-1, -1, -1)
+	grid_rev += 1
 	extra = PackedByteArray()
 	_walls = walls.duplicate()
 	if walls.is_empty() or skip_build:
@@ -153,6 +158,7 @@ func build(walls: Array[Obb]) -> void:
 func set_extra(boxes: Array[Obb], melts: Array = []) -> void:
 	cancel_build()  # The walls or extra cells change: a build in progress is dropped
 	_flooded = Vector3i(-1, -1, -1)
+	grid_rev += 1
 	if (boxes.is_empty() and melts.is_empty()) or size == Vector2i.ZERO:
 		extra = PackedByteArray()
 		return
@@ -183,6 +189,7 @@ func set_extra(boxes: Array[Obb], melts: Array = []) -> void:
 func build_reference(walls: Array[Obb]) -> void:
 	cancel_build()  # The walls or extra cells change: a build in progress is dropped
 	_flooded = Vector3i(-1, -1, -1)
+	grid_rev += 1
 	_walls = walls.duplicate()
 	if walls.is_empty():
 		size = Vector2i.ZERO
@@ -275,18 +282,34 @@ func region_near(p: Vector2) -> int:
 ## last of them to settle; cells past that keep UNREACHED or a not-yet-final distance (an upper bound) that no enemy
 ## stands on. A target that is never reached (another region, past the bound) leaves the flood whole.
 ## Floods at once (the walls changed: add_wall_now, remove_wall_now, set_nav_extra; or the first flood);
-## a build in progress (begin_build) is dropped.
-func flood(goal: Vector2, max_steps: int = UNREACHED, targets := PackedInt32Array()) -> void:
+## a build in progress (begin_build) is dropped. `kernel` (World.native with its NAV bit on, else null): the fill
+## runs there (NativeNav), with the same result.
+func flood(
+	goal: Vector2, max_steps: int = UNREACHED, targets := PackedInt32Array(), kernel: Object = null
+) -> void:
 	cancel_build()
 	if size == Vector2i.ZERO:
 		return
+	if kernel != null:
+		NativeNav.sync(kernel, self)
 	var g := cell_of(goal)
 	if _skips(g, max_steps, targets):
 		return
 	_flooded = Vector3i(g.x, g.y, max_steps)
 	if not inside(g):
 		dist.fill(UNREACHED)
+		dist_rev += 1
+		if kernel != null:
+			NativeNav.sync(kernel, self)
 		return
+	if kernel != null:
+		var r := NativeNav.fill(kernel, _seeds(g, extra.is_empty()), max_steps, targets)
+		if r[1] == 1:
+			_flooded.z = -1 - max_steps  # stopped at its targets: the cells past them aren't finished
+		last_work = r[0]
+		dist = kernel.nav_dist()
+		return
+	dist_rev += 1
 	var n := size.x * size.y
 	if _ring.size() < RING * n:
 		_ring.resize(RING * n)
@@ -380,6 +403,7 @@ func advance() -> void:
 	last_work = _f_work
 	_back = dist
 	dist = _f_d
+	dist_rev += 1
 	_b_ring = _f_ring
 	_b_want = _f_want
 	_f_d = PackedInt32Array()
@@ -816,6 +840,7 @@ func flood_reference(goal: Vector2) -> void:
 	if size == Vector2i.ZERO:
 		return
 	dist.fill(UNREACHED)
+	dist_rev += 1
 	var g := cell_of(goal)
 	if not inside(g):
 		return
