@@ -188,3 +188,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   prints an ERROR on every start (CI fails the import on that), so it is written by the build from a tracked `.in`.
 - 2026-11-10 (owner): "Yes, port the rest" (L17). Wave 7 written into the PLAN; steps 50 (the permanent build) and 51
   (the design) started. Steps 37 and 38 are paused until the flip; step 36 rides with it.
+- 2026-11-10 (lead): step 51 done: [`NATIVE_CORE.md`](NATIVE_CORE.md) (the agent's commit `00c03cdc` on
+  `v0111-s51`; the document copied here, the branch not merged because it sits on the spike). It changes one thing
+  the lead had told the owner: enemies are NOT made to decide less often. Planning already runs 7.5 times a second,
+  staggered by id; in C++ the per-tick part costs about 0.02 ms, so a lower rate would save nothing measurable and
+  would delay attack starts. The one rate change is the path flood, run whole in one tick.
