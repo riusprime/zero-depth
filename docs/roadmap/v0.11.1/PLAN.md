@@ -183,8 +183,8 @@ version; the long run moves to the machine nobody is waiting on.
 
 - **Aim assist, which devices (step 33):** the old decision was gamepad only. Default being built: mouse and
   gamepad, one Options switch, on by default. The owner's answer changes only the default.
-- **The VFX-lab branch** (`claude/v0110-vfxlab-317952`, unmerged): steps 14 and 18 touch every avatar and every
-  comment, so they run after it merges or is dropped.
+- **The VFX-lab branch** (`claude/v0110-vfxlab-317952`, unmerged) touches only `src/app/galleries/` (three effects
+  files), the locale and its own assets (checked 2026-11-10), so it blocks no step; step 18 skips those three files.
 - **Not planned here, done when the file is next touched:** asserts that pin tuning numbers (T8), e2e tests that
   write into the sim (T10), the 322 test-only accessors, per-instance material copies (V9), inline shaders (V10),
   the sprite buffer (V8), the unused pack scenes (H5), `WorldReader`'s re-exported constants (A4, an ARCHITECTURE

@@ -5,11 +5,14 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 ## Where we are
 (The lead keeps this block current at every push. Updated 2026-11-10.)
 
-- **Wave 1 nearly done (owner, 2026-11-10: "go for the full plan until finished").** Steps 1, 2, 3, 4, 5, 7, 8, 9
-  and 10 are merged; step 6 is dropped (measured). Step 45 (a floor builds its walls and paths once) is with an agent
-  (worktree `wt-s45`). Then step 11: the seams re-measure.
-- **The baseline:** seams took 3,442 s at `ee42eafa` (669/669); one test that is not a seam was 1,549.9 s of it and
-  is out of the seams run since step 2.
+- **Wave 1 done except its re-measure** (owner, 2026-11-10: "go for the full plan until finished"): steps 1, 2, 3, 4,
+  5, 7, 8, 9, 10 merged; 6 dropped (measured). Step 11 (the seams re-measure) runs at the next quiet point.
+- **Wave 2 under way:** steps 12, 14, 15 (sim, application, content half), 16 and 19 merged. With agents: step 13
+  (menus in Astral, `wt-s13`) and step 45 (a floor builds its walls and paths once, `wt-s45`).
+- **Left in Wave 2:** 15b (the presentation half of the dead code), 16b (the VAT bake verifier out of the game), 17,
+  18, 20.
+- **The baseline:** seams took 3,442 s at `ee42eafa` (669/669). No seams run since: every merge was checked by its
+  own tests, an import and lint. **Run seams before pushing.**
 - **What the measurements say:** the e2e fixed cost is the floor build (about 2.5 s world + 2.2 s view per run
   start), not the boot, the hub or the content compile ([`evidence/E2E_FIXED_COST.md`](evidence/E2E_FIXED_COST.md)).
 - **Not pushed yet:** everything since `c339458a` is local on `claude/v0110`.
@@ -43,6 +46,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 | 2 | The seams run no longer generates five thousand floors: the generation and loot tests moved to `test_five_floors_soak.gd` (GitHub's `sim_c` shard). `test_five_floors.gd`: 1,619.0 s → 28.8 s (the after time with three Godot processes running) | `4200f6bf`, merge `9645f5a4` |
 | 4 | Seed loops run 200 seeds here and 1,000 in the GitHub full suite (`Seeds.count`, `ZD_FULL_SEEDS`). 14 loop files; every count threshold was already a share of the seed count, so it scales exactly; no test had to stay at 1,000; three files also passed at 1,000 | `47caac3f`, merge `9645f5a4` |
 | 8 | The modifier smoke no longer repeats itself (21.3 s of seams); the e2e tests share one dev-panel click helper (`E2e.click_dev`, 81 files, 199 call sites; 120 of 120). The other copied helpers (`_walk`, `_focused`, `_take_at_altar`) differ between files and stay until next touched | `bca5cb87`, `9abea87b` |
+| 12 | The HUD has one style: LINE, BARE, SLATE and EMBER are gone (987 lines out, 348 in, 34 files). 1,515 of 1,515 presentation tests; a before/after shot compared by HUD region shows no bar, plate, frame or text changed. 18 asserts about the removed styles went. The Astral key labels have no fit test yet (the old one measured a removed pill) | `40d2fea3`, merge `a70e0dee` |
+| 16 | The fight bot, the lab-room scenario and the combo card live in `tests/support`. Left in `src/`: `KernelScenario` and `ScriptedInput` (the export smoke runs them inside the pack); left in `data/`: the combat-lab encounter and the patch notes (moving either changes the content manifest hash) | `35176162`, merge `d8362cd8` |
+| 15 (a) | Unreferenced sim, application and content code is gone: 34 functions, 34 constants, 25 translation keys (249 lines). Left: names that stand for stored values, and `HeartRoom.take_tick` (hashed, read nowhere: for step 36) | `62d24bee`, merge `0ef222b0` |
+| 19 | The line cap can't be switched off quietly: `tests/arch/test_line_cap.gd` lists the ten exempt files with reasons; the rule is in CLAUDE.md | `63ce6be5` |
+| 14 | The avatars carry no outline or X-ray plumbing (894 lines out, 456 in, 87 files; `technique` 139 → 0). 1,516 of 1,516 presentation tests. Proof of an unchanged look: a dump of every avatar's pieces, meshes and material values is byte-identical before and after (935 lines). The shot scripts could not prove it: they differ as much between two runs of the same code. **For the owner's eye in the next playtest** | `e8828f65`, merge `4437fd20` |
 | 3 | Tests take the game's content from one shared repository per run (`SharedContent`); the per-seed map compiles are hoisted. 608 of 608 in its runs. The gain was not measurable on a busy machine: step 11 measures it | `94060a2f`, merge `130c0b15` |
 
 ## Goldens changed on purpose
@@ -93,3 +101,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   Audit findings T1, T5 and U3 overestimated their costs.
 - 2026-11-10 (lead): steps 2 and 4 merged (`9645f5a4`), step 8 done (`bca5cb87`, `9abea87b`). Seams not re-run yet:
   it waits for step 45, so one quiet run measures the whole wave (step 11).
+- 2026-11-10 (lead): Wave 2 steps 12, 14, 15a, 16, 19 merged (`4437fd20`); the merged tree imports with no script
+  error and lints clean. No seams run yet on the merged tree.
