@@ -959,11 +959,17 @@ func step(frame: InputFrame) -> void:
 	ItemEffects.dash_hits(self, before_move)  # Items: Kinetic Dash.
 	if affinity != null:
 		Affinities.dash_shock(self, before_move)  # A2 Storm's crackle
+	if pp != null:
+		pp.begin(&"da.abilities")
 	Abilities.advance(self)  # Auto abilities, the blink shock, stat regen.
+	if pp != null:
+		pp.end(&"da.abilities")
+		pp.begin(&"da.starfall_spells")
 	Starfall.advance(self)  # The meteors due land
 	if Spells.touched(self):
 		Spells.advance(self)  # The spells cast by themselves, the Fireballs fly
 	if pp != null:
+		pp.end(&"da.starfall_spells")
 		pp.end(&"dash_abilities")
 		pp.begin(&"statuses")
 	# 7. The effect queue arrives with the engine work. 8. Statuses: Ember Edge burns (Items).
@@ -1460,13 +1466,23 @@ func _check_aoe(center: Vector2, reach: float, got: PackedInt32Array) -> void:
 			debug_aoe_misses += 1
 
 
+## The live non-player actors whose bodies reach within `r` of `center`, ascending. The hero's area attacks ask
+## many times a tick, so the columns are read directly; the distance is Kin.length of actors.pos(i) - center, the
+## same Vector2 difference and the same arithmetic.
 func enemies_near(center: Vector2, r: float) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	var g := r + 1.0
+	var n := actors.size()
+	var teams := actors.teams
+	var dead := actors.dead
+	var px := actors.pos_x
+	var py := actors.pos_y
+	var rad := actors.radius
 	for i in _actor_grid.query_rect(Rect2(center.x - g, center.y - g, g * 2.0, g * 2.0)):
-		if i >= actors.size() or actors.teams[i] == ActorStore.TEAM_PLAYER or actors.dead[i] == 1:
+		if i >= n or teams[i] == ActorStore.TEAM_PLAYER or dead[i] == 1:
 			continue
-		if Kin.length(actors.pos(i) - center) <= r + actors.radius[i]:
+		var d := Vector2(px[i], py[i]) - center
+		if sqrt(float(d.x) * d.x + float(d.y) * d.y) <= r + rad[i]:
 			out.append(i)
 	return out
 

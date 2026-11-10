@@ -18,6 +18,10 @@ var by_key := {}
 ## activation finds its rule and its cast; derived like by_key), and the consumers (Grand Finale) in key order.
 var remnant_hooks := {}
 var consumers: Array[AttackHook] = []
+## ElementCards: each element's held card (an item index, -1 none, ElementCards.UNKNOWN not looked up), found in
+## the items held element_owned. A lookup cache only (it gives what a scan of the items gives), never hashed.
+var element_owned := PackedInt32Array()
+var element_idx := PackedInt32Array()
 
 
 func add(s: AttackSpec) -> void:

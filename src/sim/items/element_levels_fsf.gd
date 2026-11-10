@@ -24,8 +24,20 @@ const FIRE_ID := &"ember_core"
 const WINDOW := 60  # a budget's "second", in ticks
 
 
-## The index of the owned wand card of `which` (FIRE, STORM, FROST), or -1.
+## The index of the owned wand card of `which` (FIRE, STORM, FROST), or -1. Every hero hit asks, so the answer is
+## kept until the items held change (ElementCards).
 static func _find(w: World, which: int) -> int:
+	if which < FIRE or which > FROST:
+		return _scan(w, which)
+	var slot := ElementCards.FSF_BASE + which
+	var idx := ElementCards.cached(w, slot)
+	if idx == ElementCards.UNKNOWN:
+		idx = _scan(w, which)
+		ElementCards.keep(w, slot, idx)
+	return idx
+
+
+static func _scan(w: World, which: int) -> int:
 	for idx in w.items_owned:
 		var t := w.item_tables[idx]
 		var mine := false
