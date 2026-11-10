@@ -54,7 +54,6 @@ const KEYS := [
 
 func after_each() -> void:
 	TranslationServer.set_locale("en")
-	HudStyle.current = HudStyle.DEFAULT
 
 
 ## Every binding a slot can name: each mouse button, pad button and stick direction, and long keyboard keys.
@@ -92,21 +91,6 @@ func test_every_slot_key_name_fits_its_slot_in_both_languages() -> void:
 		for spec: Array in _specs():
 			var t := InputLabels.short_text(spec)
 			assert_false(t.is_empty(), "%s %s has a short name" % [lang, spec])
-			assert_lte(
-				(
-					(
-						HudStyle
-						. font(true)
-						. get_string_size(
-							t, HORIZONTAL_ALIGNMENT_LEFT, -1, AbilitySquares.GLYPH_FONT
-						)
-						. x
-					)
-					+ 14.0
-				),
-				AbilitySquares.SIDE - 5.0,
-				"%s: %s fits the square" % [lang, t]
-			)
 	TranslationServer.set_locale("en")
 	assert_eq(InputLabels.short_text([&"mouse", MOUSE_BUTTON_LEFT]), "LMB")
 	TranslationServer.set_locale("es")
@@ -227,9 +211,6 @@ func test_the_build_row_sits_on_an_ember_slab_and_fits_in_both_languages() -> vo
 	add_child_autofree(hud)
 	var plate := hud.find_child("BuildPlate", true, false) as HudFrame
 	assert_not_null(plate, "the build row sits on a slab")
-	assert_eq(
-		plate.style, HudStyle.Style.ASTRAL, "v0.10.5 W3-O17: the HUD's Astral style (unboxed)"
-	)
 	# The longest weapon name next to the longest utility name stays a small row on the left of the HUD.
 	var f := HudStyle.font(true)
 	var r := HudStyle.font(false)

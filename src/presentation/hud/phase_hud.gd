@@ -9,7 +9,7 @@ extends VBoxContainer
 ## sync, so a language switch while "New: Charger" shows turns it into "Nuevo: Cargador" at once.
 ## v0.6.1 R1: the announcement sits in a stone plaque (v0.8.0 MU; the banner's gold, Plaques.USE_FAMILY); the
 ## plaque's plain middle stretches to the line's width.
-## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL the phase line is letter-spaced Cinzel small caps (the mock's
+## v0.10.5 W3-O17 (UI style Astral): the phase line is letter-spaced Cinzel small caps (the mock's
 ## "CALM") and the announcement sits on the store window's veil (AstralChrome.veil) instead of the stone plaque, in
 ## Cinzel, silver-white.
 
@@ -61,18 +61,17 @@ func _init() -> void:
 	add_child(banner)
 	phase_label.add_theme_color_override("font_color", Color(HudStyle.text_color(), 0.7))
 	announce.add_theme_color_override("font_color", NEW_COLOR)
-	if HudStyle.current == HudStyle.Style.ASTRAL:
-		HudStyle.serif_label(phase_label, 12, 4, HudStyle.A_DIM)
-		HudStyle.serif_label(announce, 20, 4, HudStyle.A_LINE_HI)
-		var box := StyleBoxEmpty.new()
-		box.content_margin_left = 120
-		box.content_margin_right = 120
-		box.content_margin_top = 12
-		box.content_margin_bottom = 12
-		banner.add_theme_stylebox_override("panel", box)
-		banner.draw.connect(
-			func() -> void: AstralChrome.veil(banner, Rect2(Vector2.ZERO, banner.size), 110.0)
-		)
+	HudStyle.serif_label(phase_label, 12, 4, HudStyle.A_DIM)
+	HudStyle.serif_label(announce, 20, 4, HudStyle.A_LINE_HI)
+	var box := StyleBoxEmpty.new()
+	box.content_margin_left = 120
+	box.content_margin_right = 120
+	box.content_margin_top = 12
+	box.content_margin_bottom = 12
+	banner.add_theme_stylebox_override("panel", box)
+	banner.draw.connect(
+		func() -> void: AstralChrome.veil(banner, Rect2(Vector2.ZERO, banner.size), 110.0)
+	)
 	announce.visible = false
 	visible = false
 

@@ -2,9 +2,7 @@ class_name GambleStatsPanel
 extends PanelContainer
 ## The stats won at the gamble shrine this run (v0.3.0 L19): one row per stat with its icon, the total it adds and
 ## its wins / cap. On the HUD it shows while you stand at the shrine; the pause menu shows it too.
-## v0.6.0 UP: on the HUD it is an Ember stone slab (HudStyle) with the shrine's colour along its top; inside a menu
-## (the pause screen) it takes the menu's Ember stone look (MenuStyle), so the pause screen reads as one style.
-## v0.10.5 W3-O20 (UI style Astral): in HudStyle.ASTRAL the HUD's Astral side panel in both places, the title in
+## v0.10.5 W3-O20 (UI style Astral): the HUD's Astral side panel on the HUD and in the pause screen, the title in
 ## letter-spaced Cinzel, the lines in Astral's silver-white, the counts and the empty line dim; each stat keeps its
 ## icon's colour (GambleIconView draws its Astral tile).
 
@@ -12,7 +10,7 @@ const ICON := 28.0
 const MARGIN := Vector2(14, 9)
 const LIT_S := 0.6
 
-## Whether it wears the menus' Ember stone (set when it is added to a MenuPanel).
+## Whether it sits in a menu (set when it is added to a MenuPanel).
 var in_menu := false
 ## The reader last shown (read only), to word the panel again on a language switch.
 var _reader: WorldReader
@@ -58,29 +56,17 @@ func _notification(what: int) -> void:
 		sync(_reader)  # the pause menu syncs it once: a language switch from its Options words it again
 
 
-## The panel's box and title colours for where it is: Ember stone in a menu, the HUD's slab otherwise.
+## The panel's box and type (v0.10.5 W3-O20: one Astral panel on the HUD and in the pause).
 func _apply_look() -> void:
-	if HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O20: one Astral panel on the HUD and in the pause
-		add_theme_stylebox_override(
-			"panel", HudStyle.side_panel_box(MARGIN + Vector2(4, 4), GambleIcons.CORE)
-		)
-		HudStyle.serif_label(_title, 18, 4, HudStyle.A_TEXT)
-		HudStyle.style_label(_none, 16)
-		_none.add_theme_color_override("font_color", HudStyle.A_DIM)
-	elif in_menu:
-		add_theme_stylebox_override("panel", MenuStyle.stone_panel(MARGIN))
-		_title.add_theme_color_override("font_color", MenuStyle.EMBER.lerp(Color.WHITE, 0.25))
-		_none.add_theme_color_override("font_color", MenuStyle.DIM)
-	else:
-		add_theme_stylebox_override("panel", HudStyle.side_panel_box(MARGIN, GambleIcons.CORE))
-		_title.add_theme_color_override("font_color", GambleIcons.CORE.lerp(Color.WHITE, 0.4))
-		_none.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
+	add_theme_stylebox_override("panel", HudStyle.side_panel_box(MARGIN + Vector2(4, 4)))
+	HudStyle.serif_label(_title, 18, 4, HudStyle.A_TEXT)
+	HudStyle.style_label(_none, 16)
+	_none.add_theme_color_override("font_color", HudStyle.A_DIM)
 	queue_redraw()
 
 
 func _draw() -> void:
-	if not in_menu or HudStyle.current == HudStyle.Style.ASTRAL:
-		HudStyle.draw_side_panel(self, GambleIcons.CORE)
+	HudStyle.draw_side_panel(self, GambleIcons.CORE)
 
 
 ## Anchors the panel to the top-right corner, `top` px down.
@@ -117,19 +103,16 @@ func sync(reader: WorldReader) -> void:
 		var text := Label.new()
 		text.text = GambleIcons.line(self, id, _shown_bonus(s))
 		text.add_theme_font_size_override("font_size", 17)
-		var tone := GambleIcons.color(id).lerp(Color.WHITE, 0.45)
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(text)
 		var count := Label.new()
 		count.text = "%d / %d" % [_shown_stacks(s), reader.gamble_cap(s)]
 		count.add_theme_font_size_override("font_size", 14)
-		if HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O20: the HUD's type in the pause too
-			HudStyle.style_label(text, 17)
-			HudStyle.style_label(count, 16)
-		text.add_theme_color_override("font_color", HudStyle.pick(HudStyle.A_TEXT, tone))
-		count.add_theme_color_override(
-			"font_color", HudStyle.pick(HudStyle.A_DIM, Color(1, 1, 1, 0.55))
-		)
+		# v0.10.5 W3-O20: the HUD's type in the pause too
+		HudStyle.style_label(text, 17)
+		HudStyle.style_label(count, 16)
+		text.add_theme_color_override("font_color", HudStyle.A_TEXT)
+		count.add_theme_color_override("font_color", HudStyle.A_DIM)
 		row.add_child(count)
 		for l: Label in [text, count]:
 			l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED

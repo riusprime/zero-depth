@@ -33,16 +33,8 @@ func _draw() -> void:
 		_draw_broken(r)
 		return
 	var c := GambleIcons.color(stat_id)
-	if tile and HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O20: Astral's tile
+	if tile:  # v0.10.5 W3-O20: Astral's tile
 		HudStyle.draw_astral_tile(self, r, c)
-		r = r.grow(-size.x * 0.17)
-	elif tile:
-		var box := StyleBoxFlat.new()
-		box.bg_color = Color(0.03, 0.04, 0.07, 0.8)
-		box.set_corner_radius_all(0)  # v0.3.5 F16: square, like the cards
-		box.border_color = Color(c, 0.9)
-		box.set_border_width_all(2)
-		draw_style_box(box, r)
 		r = r.grow(-size.x * 0.17)
 	drawn = GambleIcons.draw(self, stat_id, r, HudStyle.tone(c)) if stat_id != &"" else 0
 

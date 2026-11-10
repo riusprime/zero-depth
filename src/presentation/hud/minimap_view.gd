@@ -325,26 +325,10 @@ func draws_backdrop() -> bool:
 	return full or MinimapStyle.CORNER_PANEL
 
 
-## v0.5.5 A5: four small ember L-ticks at the corner map's corners, over a dark halo, so its window reads without a
+## v0.5.5 A5: small L-ticks at the corner map's corners, over a dark halo, so its window reads without a
 ## panel.
 func _draw_corner_ticks() -> void:
-	var arm := MinimapStyle.TICK_ARM
-	var e := size - Vector2(1.5, 1.5)
-	var o := Vector2(1.5, 1.5)
-	var corners := [
-		[o, Vector2(1, 0), Vector2(0, 1)],
-		[Vector2(e.x, o.y), Vector2(-1, 0), Vector2(0, 1)],
-		[e, Vector2(-1, 0), Vector2(0, -1)],
-		[Vector2(o.x, e.y), Vector2(1, 0), Vector2(0, -1)],
-	]
-	if HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O17: Astral's frame (1 px lines, small ornaments)
-		_draw_astral_ticks(arm)
-		return
-	for c: Array in corners:
-		var p: Vector2 = c[0]
-		var pts := PackedVector2Array([p + c[1] * arm, p, p + c[2] * arm])
-		_ci.draw_polyline(pts, MinimapStyle.SHADOW, 2.0 + MinimapStyle.SHADOW_WIDTH)
-		_ci.draw_polyline(pts, MinimapStyle.TICK, 2.0)
+	_draw_astral_ticks(MinimapStyle.TICK_ARM)  # v0.10.5 W3-O17: Astral's frame (1 px lines, small ornaments)
 
 
 ## v0.10.5 W3-O17: the corner window in Astral: at each corner a 1 px silver L over a dark halo, a fainter inner L 4 px

@@ -5,13 +5,10 @@ extends VBoxContainer
 ## prompt; this shows what the press did, for a few seconds: Blood's price paid and its altar risen (or that you are
 ## too weak), the Chaos challenge's enemies left while it is fought and then its altar, the fountain's heal (or that
 ## you are at full health). Reads WorldReader.shrine() only; it decides nothing.
-## v0.10.5 W3-O20 (UI style Astral): in HudStyle.ASTRAL the title is letter-spaced Cinzel over a fading hairline
+## v0.10.5 W3-O20 (UI style Astral): the title is letter-spaced Cinzel over a fading hairline
 ## (HudStyle.astral_banner); Blood in the rose warning, Chaos in the lilac accent, the fountain a cold moon-blue.
 
 const LINE_SECONDS := 3.5
-const BLOOD := Color("#FF5A6A")
-const CHAOS := Color("#C79BFF")
-const WATER := Color("#8FE3FF")
 
 var title := HudStyle.label(26, true)
 var detail := HudStyle.label(18)
@@ -80,11 +77,11 @@ func _show(k: int, d: Dictionary, blood: bool) -> void:
 			detail.text = tr("SHRINE_CHAOS_DONE")
 		3:
 			title.text = tr("FOUNTAIN_NAME")
-			HudStyle.font_color(title, HudStyle.pick(HudStyle.A_WATER, WATER))
+			HudStyle.font_color(title, HudStyle.A_WATER)
 			detail.text = tr("FOUNTAIN_DONE") % int(d["fountain_healed"])
 		_:
 			title.text = tr("FOUNTAIN_NAME")
-			HudStyle.font_color(title, HudStyle.pick(HudStyle.A_WATER, WATER))
+			HudStyle.font_color(title, HudStyle.A_WATER)
 			detail.text = tr("FOUNTAIN_DENIED")
 
 
@@ -98,10 +95,10 @@ func _process(delta: float) -> void:
 		_left -= delta  # the next sync hides the line
 
 
-## v0.10.5 W3-O20: Blood's and Chaos's title colours (ASTRAL: the rose warning, the lilac accent).
+## v0.10.5 W3-O20: Blood's and Chaos's title colours (the rose warning, the lilac accent).
 static func _blood() -> Color:
-	return HudStyle.pick(HudStyle.A_WARN, BLOOD)
+	return HudStyle.A_WARN
 
 
 static func _chaos() -> Color:
-	return HudStyle.pick(HudStyle.A_ACCENT, CHAOS)
+	return HudStyle.A_ACCENT

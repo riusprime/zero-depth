@@ -24,9 +24,7 @@ func _init() -> void:
 	set_anchors_preset(Control.PRESET_CENTER_RIGHT)
 	custom_minimum_size = Vector2(WIDTH, 0)
 	position = Vector2(-WIDTH - 16, -120)
-	add_theme_stylebox_override(
-		"panel", HudStyle.side_panel_box(Vector2(18, 14), HudStyle.A_ACCENT)
-	)
+	add_theme_stylebox_override("panel", HudStyle.side_panel_box(Vector2(18, 14)))
 	var box := VBoxContainer.new()
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(box)

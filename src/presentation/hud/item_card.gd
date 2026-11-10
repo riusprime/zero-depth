@@ -6,7 +6,7 @@ extends PanelContainer
 ## v0.6.1 R1: the card is a wide plaque (Plaques, PlaqueBox; v0.8.0 MU: a carved Ember stone slab with a glowing
 ## groove in the card's family colour, CardFrames.family); the name and the sentence step down in size until they
 ## fit the plaque's margins (en and es).
-## v0.10.5 W3-O20 (UI style Astral): in HudStyle.ASTRAL the name is letter-spaced Cinzel in Astral's silver-white, the
+## v0.10.5 W3-O20 (UI style Astral): the name is letter-spaced Cinzel in Astral's silver-white, the
 ## sentence silver-white, the caption dim; the icon keeps its colour toned toward Astral's silver (HudStyle.tone).
 
 const WIDTH := 600.0
@@ -73,17 +73,13 @@ func _init() -> void:
 	_name.add_theme_font_override("font", name_font())
 	_caption.add_theme_font_override("font", HudStyle.font(false))
 	_caption.add_theme_font_size_override("font_size", CAPTION_SIZE)
-	_caption.add_theme_color_override(
-		"font_color", HudStyle.pick(HudStyle.A_DIM, Color(1, 1, 1, 0.6))
-	)
+	_caption.add_theme_color_override("font_color", HudStyle.A_DIM)
 	_caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(_name)
 	head.add_child(_caption)
 	_desc.name = "Desc"
 	_desc.add_theme_font_override("font", HudStyle.font(false))
-	_desc.add_theme_color_override(
-		"font_color", HudStyle.pick(HudStyle.A_TEXT, Color(0.86, 0.88, 0.92))
-	)
+	_desc.add_theme_color_override("font_color", HudStyle.A_TEXT)
 	_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.add_child(_desc)
 	for l: Label in [_name, _caption, _desc]:
@@ -104,9 +100,7 @@ func show_item(
 	icon.set_item(id, c)
 	_box.set_plaque(plaque if plaque != &"" else Plaques.of_card(id))
 	_name.text = title
-	_name.add_theme_color_override(
-		"font_color", HudStyle.pick(HudStyle.A_TEXT, c.lerp(Color.WHITE, 0.35))
-	)
+	_name.add_theme_color_override("font_color", HudStyle.A_TEXT)
 	_desc.text = sentence
 	_caption.text = caption
 	_caption.visible = caption != ""
@@ -118,11 +112,9 @@ func show_item(
 		_apply()
 
 
-## v0.10.5 W3-O20: the name's face (Cinzel in ASTRAL, else Atkinson bold); the fit measures with it.
+## v0.10.5 W3-O20: the name's face (Cinzel); the fit measures with it.
 static func name_font() -> Font:
-	if HudStyle.current == HudStyle.Style.ASTRAL:
-		return HudStyle.serif(650, 2)
-	return HudStyle.font(true)
+	return HudStyle.serif(650, 2)
 
 
 func hide_card() -> void:

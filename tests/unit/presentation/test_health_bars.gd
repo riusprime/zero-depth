@@ -111,9 +111,8 @@ func test_the_heros_hud_bar_shows_the_chunk() -> void:
 	hud.sync(reader)
 	assert_almost_eq(bar.shown_fraction(), 0.6, 0.01, "the fill drops at once")
 	assert_almost_eq(bar.chunk_fraction(), 0.4, 0.01, "the chunk keeps the loss")
-	# v0.10.5 W3-O17: ASTRAL's lit chunk is its own (A_CHUNK_BIG)
-	var big := HudBar.A_CHUNK_BIG if bar.style == HudStyle.Style.ASTRAL else HudBar.CHUNK_BIG
-	assert_eq(bar.chunk_color(), big, "a big loss: lit")
+	# v0.10.5 W3-O17: Astral's lit chunk (A_CHUNK_BIG)
+	assert_eq(bar.chunk_color(), HudBar.A_CHUNK_BIG, "a big loss: lit")
 	for k in roundi((HealthBarTrail.HOLD_S + HealthBarTrail.DRAIN_S + 0.1) / DT):
 		bar._process(DT)
 	assert_almost_eq(bar.chunk_fraction(), 0.0, 0.001, "then drains")
