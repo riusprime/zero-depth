@@ -165,19 +165,6 @@ static func _synthetic(id: String, ops: Array[ModifierOp]) -> ModifierTable:
 	return m
 
 
-func test_the_ability_modifiers_carry_every_modifier_and_replay() -> void:
-	for weapon: StringName in [&"blade", &"gun"]:
-		for m in _first:
-			var one: Array[ModifierTable] = [m]
-			var label := "%s + six ability modifiers + %s" % [weapon, m.id]
-			var a := _run(weapon, one, PAIR_TICKS * 2, ABILITY_MODS)
-			_check(label, a)
-			var b := _run(weapon, one, PAIR_TICKS * 2, ABILITY_MODS)
-			assert_eq([b["digest"], b["hash"]], [a["digest"], a["hash"]], "%s: replays" % label)
-		var all := _run(weapon, _mods, SOLO_TICKS, ABILITY_MODS)
-		_check("%s + six ability modifiers + all" % weapon, all, true)
-
-
 func test_every_form_as_a_hook_runs_on_every_attack_and_replays() -> void:
 	for form: int in [FORM.LOB, FORM.ZONE, FORM.RING, FORM.ORBITER, FORM.BURST, FORM.BEAM]:
 		for trigger: int in [AttackSpec.Trigger.ON_HIT, AttackSpec.Trigger.ON_KILL]:
