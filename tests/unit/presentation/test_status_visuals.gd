@@ -17,7 +17,7 @@ func _views(w: World) -> Array:
 
 func _world() -> World:
 	var w := World.new(3, PlayerTable.starting_values())
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	w.set_item_tables(ContentCompiler.compile_items(repo))
 	w.set_combo_tables(ContentCompiler.compile_combos(repo))
 	for k in w.item_tables.size():
@@ -111,7 +111,7 @@ func test_combo_card_shows_both_icons_in_a_special_frame() -> void:
 
 
 func test_hud_shows_the_combo_ticker_line_and_a_badge_when_a_combo_unlocks() -> void:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var player := PlayerTable.starting_values()
 	var w := FloorScenario.build(
 		4,
@@ -147,7 +147,7 @@ func test_hud_shows_the_combo_ticker_line_and_a_badge_when_a_combo_unlocks() -> 
 ## are freed, so they are never laid out or drawn beside their replacements). (The boss bar's phase marks went in
 ## v0.8.0 N4: one full bar per phase, WorldReader.boss_phase_permille.)
 func test_rebuilt_rows_drop_the_old_children_at_once() -> void:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var w := FloorScenario.build(
 		4,
 		PlayerTable.starting_values(),

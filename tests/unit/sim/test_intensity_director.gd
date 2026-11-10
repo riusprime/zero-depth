@@ -11,7 +11,7 @@ const M := IntensityState.Mode
 
 
 func _repo() -> ContentRepository:
-	return ContentRepository.load_all()
+	return SharedContent.repo()
 
 
 func _table() -> IntensityTable:

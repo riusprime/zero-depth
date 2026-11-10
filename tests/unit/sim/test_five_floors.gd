@@ -147,9 +147,10 @@ func test_generation_holds_for_every_floor_over_a_thousand_seeds() -> void:
 	for f in range(1, 6):
 		var lo := 99
 		var hi := 0
+		# v0.11.1 Step 3: the floor's map is compiled once per floor, not once per seed (FloorGenerator only reads it)
+		var p := FloorShape.size_floor(r, RunContentCompiler.compile_map(map_def), f)
 		for s in SEEDS:
 			var seed_value := 7 + s * 7919 + f * 104729
-			var p := FloorShape.size_floor(r, RunContentCompiler.compile_map(map_def), f)
 			var layout := FloorGenerator.generate(seed_value, p)
 			var n := layout.room_count()
 			lo = mini(lo, n)

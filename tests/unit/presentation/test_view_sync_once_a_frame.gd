@@ -6,7 +6,7 @@ extends GutTest
 
 
 func _gun_world() -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var t := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
 	t.crit_chance_permille = 0
 	ContentCompiler.apply_build(t, repo.get_def(&"build", &"gun"))

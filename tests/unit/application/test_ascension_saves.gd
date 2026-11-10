@@ -8,7 +8,7 @@ const DIR := "res://tests/fixtures/saves/"
 
 
 func _run_table() -> RunTable:
-	return ContentCompiler.compile_run(ContentRepository.load_all().get_def(&"run", SaveLab.RUN_ID))
+	return ContentCompiler.compile_run(SharedContent.repo().get_def(&"run", SaveLab.RUN_ID))
 
 
 ## A run moved into loop 2's floor 1 the way finish_floor moves it (the Loop device from the last floor, v0.9.0 FV:

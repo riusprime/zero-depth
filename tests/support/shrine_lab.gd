@@ -11,7 +11,7 @@ static var _repo: ContentRepository
 
 static func repo() -> ContentRepository:
 	if _repo == null:
-		_repo = ContentRepository.load_all()
+		_repo = SharedContent.repo()
 	return _repo
 
 
@@ -34,9 +34,7 @@ static func build(run: RunState) -> World:
 	run.scale_enemies(enemies)
 	var bosses := ContentCompiler.compile_bosses(r)
 	run.scale_bosses(bosses)
-	var boss := FloorShape.boss(
-		run, RunContentCompiler.compile_boss_pools(r, run.table.floors), run.floor_index
-	)
+	var boss := FloorShape.boss(run, SharedContent.boss_pools(run.table.floors), run.floor_index)
 	var arena := RunSaver.boss_arena(run, bosses, boss)
 	var rules := RunSaver.floor_tables(run, r)
 	var w := FloorScenario.build(

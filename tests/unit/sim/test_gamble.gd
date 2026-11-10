@@ -17,7 +17,7 @@ var _enemies: Array[EnemyTable] = []
 
 
 func before_all() -> void:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	_def = repo.get_def(&"gamble", &"shrine")
 	_gamble = ContentCompiler.compile_gamble(_def)
 	_rewards = ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor"))
@@ -347,7 +347,7 @@ func test_without_a_clear_ring_it_falls_back_to_a_clear_spot() -> void:
 
 
 func _floor(seed_value: int) -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	return FloorScenario.build(
 		seed_value,
 		PlayerTable.starting_values(),
@@ -413,7 +413,7 @@ func test_a_floor_has_a_shrine_four_times_in_ten() -> void:
 
 
 func test_the_shrine_stands_in_a_combat_room_clear_and_reachable() -> void:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
 	map.room_layouts = RunContentCompiler.compile_room_layouts(repo)
 	var share := RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena")).share_permille

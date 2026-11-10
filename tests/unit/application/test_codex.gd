@@ -13,7 +13,7 @@ func after_each() -> void:
 
 
 func _catalog() -> CodexCatalog:
-	return CodexCatalog.build(ContentRepository.load_all())
+	return CodexCatalog.build(SharedContent.repo())
 
 
 # --- The store ---------------------------------------------------------------------------------------------------
@@ -101,7 +101,7 @@ func test_a_broken_codex_section_is_repaired_not_fatal() -> void:
 
 
 func test_the_catalog_lists_the_content_by_pool_without_retired_cards() -> void:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var c := CodexCatalog.build(repo)
 	var retired := CodexCatalog.retired_ids(repo)
 	assert_gt(retired.size(), 0, "the migration table retires v0.6 cards")
@@ -157,7 +157,7 @@ func test_the_catalog_lists_the_content_by_pool_without_retired_cards() -> void:
 
 
 func test_enemies_bosses_and_biomes_come_from_the_data() -> void:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var c := CodexCatalog.build(repo)
 	assert_eq(c.size(&"enemies"), repo.count(&"enemies"))
 	assert_eq(
@@ -233,7 +233,7 @@ func test_dying_to_an_enemy_counts_against_it() -> void:
 
 
 func test_a_taken_card_counts_and_keeps_its_level() -> void:
-	var lab := RunLab.new(ContentRepository.load_all(), 7, &"gun")
+	var lab := RunLab.new(SharedContent.repo(), 7, &"gun")
 	var w := lab.floor_world()
 	var parts := _rec(w)
 	var store: CodexStore = parts[0]
@@ -292,7 +292,7 @@ func test_a_reader_from_another_floor_is_ignored() -> void:
 
 ## v0.10.5 W3-P10f: the Starbound cards and Constellations are listed, with their keys.
 func test_starbound_and_constellation_entries() -> void:
-	var c := CodexCatalog.build(ContentRepository.load_all())
+	var c := CodexCatalog.build(SharedContent.repo())
 	assert_eq(
 		c.section_entries(&"cards", &"constellations").size(), CodexCatalog.CONSTELLATION_IDS.size()
 	)
@@ -304,13 +304,13 @@ func test_starbound_and_constellation_entries() -> void:
 
 ## v0.10.5 W3-P10g: a taken Starbound card and a picked Constellation unlock their entries; Meteor needs Fire 3.
 func test_starbound_and_constellations_unlock() -> void:
-	var lab := RunLab.new(ContentRepository.load_all(), 7, &"gun")
+	var lab := RunLab.new(SharedContent.repo(), 7, &"gun")
 	var w := lab.floor_world()
 	var parts := _rec(w)
 	var store: CodexStore = parts[0]
 	var rec: CodexRecorder = parts[1]
 	var r: WorldReader = parts[2]
-	w.starbound_tables = ContentCompiler.compile_starbound(ContentRepository.load_all())
+	w.starbound_tables = ContentCompiler.compile_starbound(SharedContent.repo())
 	rec.observe(r)
 	assert_false(store.is_unlocked(&"cards", &"starbound_fervour"))
 	assert_false(store.is_unlocked(&"cards", &"const_prism"))

@@ -11,7 +11,7 @@ var _tables: Array[ItemTable] = []
 
 
 func before_all() -> void:
-	_tables = ContentCompiler.compile_items(ContentRepository.load_all())
+	_tables = ContentCompiler.compile_items(SharedContent.repo())
 
 
 func _world(kinds: Array = []) -> World:
@@ -214,8 +214,7 @@ func test_the_lunge_lands_before_the_hit() -> void:
 # --- Data -----------------------------------------------------------------------------------------------------
 func _def() -> PlayerDefinition:
 	var d: PlayerDefinition = (
-		(ContentRepository.load_all().get_def(&"player", &"runner") as PlayerDefinition)
-		. duplicate(true)
+		(SharedContent.repo().get_def(&"player", &"runner") as PlayerDefinition).duplicate(true)
 	)
 	return d
 

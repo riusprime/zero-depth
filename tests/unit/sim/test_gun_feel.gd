@@ -10,9 +10,7 @@ const OLD := {"period": 7, "damage": 4, "speed": 18.0 / 60.0, "radius": 0.16, "l
 
 
 func _table() -> PlayerTable:
-	return ContentCompiler.compile_player(
-		ContentRepository.load_all().get_def(&"player", &"runner")
-	)
+	return ContentCompiler.compile_player(SharedContent.repo().get_def(&"player", &"runner"))
 
 
 func test_the_shot_is_bigger_slower_to_fire_harder_hitting_and_a_little_slower() -> void:
@@ -42,7 +40,7 @@ func test_the_kernel_starting_values_match_the_data() -> void:
 
 ## Holds Shoot at one dummy 4 m out for `ticks` and returns the damage it took (no crits).
 func _damage_on_one_dummy(t: PlayerTable, ticks: int) -> int:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	ContentCompiler.apply_build(t, repo.get_def(&"build", &"gun"))
 	t.crit_chance_permille = 0
 	var w := World.new(11, t)

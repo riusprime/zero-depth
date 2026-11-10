@@ -17,7 +17,7 @@ func _world(seed_value: int = 11) -> World:
 	for r in [9.0, 12.0]:
 		for k in 8:
 			w.spawn_points.append(Kin.dir(k * 512) * r)
-	w.spawner = ContentCompiler.compile_floor_spawning(ContentRepository.load_all(), 1)
+	w.spawner = ContentCompiler.compile_floor_spawning(SharedContent.repo(), 1)
 	w.floor_index = 1
 	w.critter_kind = KIND.DUST_MITE
 	w.actors.invuln[0] = LONG

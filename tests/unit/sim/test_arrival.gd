@@ -25,7 +25,7 @@ func _move(dir: Vector2, buttons: int = 0) -> InputFrame:
 func _arriving(floor_index: int, calm: bool = false) -> World:
 	var w := SaveLab.floor_world(SEED, floor_index)
 	w.tuning = RunContentCompiler.compile_sim_tuning(
-		ContentRepository.load_all().get_def(&"tuning", &"sim")
+		SharedContent.repo().get_def(&"tuning", &"sim")
 	)
 	w.boss_flow.set_transit(
 		calm, true, BossFlow.arrival_length(w.tuning, calm, w.run_floor_index() == 1)
@@ -42,9 +42,7 @@ func _enemies(w: World) -> int:
 
 
 func test_the_lengths_are_data_floor_one_longest() -> void:
-	var t := RunContentCompiler.compile_sim_tuning(
-		ContentRepository.load_all().get_def(&"tuning", &"sim")
-	)
+	var t := RunContentCompiler.compile_sim_tuning(SharedContent.repo().get_def(&"tuning", &"sim"))
 	assert_eq(BossFlow.arrival_length(t, false, true), FIRST, "floor 1 of a run: 4.0 s")
 	assert_eq(BossFlow.arrival_length(t, false, false), 48, "a later floor: 0.8 s")
 	assert_eq(BossFlow.arrival_length(t, true, true), 18, "reduced motion: 0.3 s")

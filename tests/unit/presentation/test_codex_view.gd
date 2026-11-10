@@ -14,7 +14,7 @@ func after_each() -> void:
 
 
 func _view(store: CodexStore) -> CodexView:
-	var v := CodexView.new(CodexCatalog.build(ContentRepository.load_all()), store)
+	var v := CodexView.new(CodexCatalog.build(SharedContent.repo()), store)
 	var screen := Control.new()  # the 1920 x 1080 base the game lays its menus out on
 	screen.size = Vector2(1920, 1080)
 	add_child_autofree(screen)
@@ -67,9 +67,7 @@ func test_pages_switch_and_list_the_data() -> void:
 	assert_string_contains(v.counts_label.text, "%s: 5" % tr("UI_CODEX_KILLS"))
 	v.open(&"biomes")
 	await wait_physics_frames(1)
-	assert_eq(
-		v.tiles.size(), ContentRepository.load_all().count(&"biomes"), "every biome of the data"
-	)
+	assert_eq(v.tiles.size(), SharedContent.repo().count(&"biomes"), "every biome of the data")
 	assert_false(v.tile(&"ruins").locked)
 	v.open(&"bosses")
 	await wait_physics_frames(1)
@@ -115,7 +113,7 @@ func test_down_and_up_never_skip_a_short_row() -> void:
 
 func test_it_fits_1080p_in_english_and_spanish() -> void:
 	var store := CodexStore.new(ProfileStore.new(""))
-	for e: Dictionary in CodexCatalog.build(ContentRepository.load_all()).entries(&"cards"):
+	for e: Dictionary in CodexCatalog.build(SharedContent.repo()).entries(&"cards"):
 		store.unlock(&"cards", e["id"])
 	for lang in ["en", "es"]:
 		TranslationServer.set_locale(lang)

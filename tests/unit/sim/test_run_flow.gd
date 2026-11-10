@@ -7,7 +7,7 @@ const LONG := 1 << 24
 
 
 func _repo() -> ContentRepository:
-	return ContentRepository.load_all()
+	return SharedContent.repo()
 
 
 func _run_table() -> RunTable:
@@ -259,9 +259,7 @@ func test_the_carry_names_its_fields_in_one_place() -> void:
 ## v0.5.5 EC (owner Q-S4, "Keep half"): a portal carries half the unspent shards, rounded down; the run's data says
 ## so, and the next floor knows how many were left behind.
 func test_the_portal_keeps_half_the_shards_rounded_down() -> void:
-	var run := ContentCompiler.compile_run(
-		ContentRepository.load_all().get_def(&"run", RunSaver.RUN_ID)
-	)
+	var run := ContentCompiler.compile_run(SharedContent.repo().get_def(&"run", RunSaver.RUN_ID))
 	assert_eq(run.shard_carry_permille, 500, "keep half")
 	var w := CombatLab.world()
 	w.shards = 31

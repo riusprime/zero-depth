@@ -5,7 +5,7 @@ extends GutTest
 
 func _stage(mood: BiomeMood, quality := "high") -> StageView:
 	var stage := StageView.new()
-	stage.palette = ContentRepository.load_all().get_def(&"biomes", &"ruins").palette
+	stage.palette = SharedContent.repo().get_def(&"biomes", &"ruins").palette
 	stage.mood = mood
 	stage.lighting = quality
 	add_child_autofree(stage)
@@ -15,7 +15,7 @@ func _stage(mood: BiomeMood, quality := "high") -> StageView:
 
 
 func test_every_shipped_biome_has_a_valid_mood() -> void:
-	var biomes := ContentRepository.load_all().all_of(&"biomes")
+	var biomes := SharedContent.repo().all_of(&"biomes")
 	assert_eq(biomes.size(), 5)  # v0.7.5 NB1: Frozen Shore; NB2: Starfall
 	for b: BiomeDefinition in biomes:
 		assert_not_null(b.mood, "%s has a mood" % b.id)
@@ -45,7 +45,7 @@ func test_no_mood_keeps_the_old_look() -> void:
 
 
 func test_a_mood_lights_the_stage_and_quality_toggles_ssao_and_ssil() -> void:
-	var mood: BiomeMood = ContentRepository.load_all().get_def(&"biomes", &"ruins").mood
+	var mood: BiomeMood = SharedContent.repo().get_def(&"biomes", &"ruins").mood
 	var stage := _stage(mood)
 	var env := stage.environment
 	assert_eq(env.tonemap_mode, Environment.TONE_MAPPER_AGX)

@@ -9,7 +9,7 @@ const LONG := 1 << 24
 
 
 static func world(first_seed: int = 1) -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	for s in range(first_seed, first_seed + 80):
 		var lab := RunLab.new(repo, s, &"blade")
 		var w := lab.floor_world()
