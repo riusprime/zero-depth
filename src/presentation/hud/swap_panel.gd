@@ -14,7 +14,7 @@ extends ModalPanel
 ## - Reorder: R (pad Y) picks up the chosen card, ←/→ carry it, R / Enter put it down (mouse: drag a card onto a
 ##   slot). The moves reach the sim while the panel is open (the sim ticks while it waits).
 ## It sits over the pick panel and the shop (their input waits while it is open).
-## v0.6.0 UP: a modal choice, so it wears the menus' look (v0.8.0 MU: Ember stone, MenuStyle): the game blurred and
+## v0.6.0 UP: a modal choice, so it wears the menus' look (v0.8.0 MU: Ember stone, now gone): the game blurred and
 ## sunk into the warm dark behind (MenuBackdrop), warm type, stone tablets with their family's colour as the glowing
 ## groove at the foot, the focused tile ember-lit. The incoming card keeps the pick cards' look (StoneCard).
 ## v0.9.0 AS2 (owner "Let me choose"; G2 AS = B): the slot pips over the wand (SlotPips), and a Swap for a full
@@ -22,7 +22,7 @@ extends ModalPanel
 ## can't be chosen, Insert is off, the title says which slot; the sim takes only those answers (BuildSlots.swap_answer).
 ## v0.10.5 W3-O16 (owner 2026-11-04: the shop and the pick in Astral; the Swap's chrome with them): the game blurred
 ## under Astral's cool ink (MenuBackdrop.astral), the title as an Astral heading over a rule, the wand row's tiles,
-## pips and forecast in Astral (WandRow.astral, SlotPips.astral), Skip an Astral plate.
+## pips and forecast in Astral (WandRow, SlotPips), Skip an Astral plate.
 ## v0.11.0 F11: the forecast is the cards' icons in firing order (WandForecastView); the row's cards glide when they
 ## trade places.
 
@@ -81,7 +81,7 @@ func _init() -> void:
 	var col := _centred_column(_col, 12)
 	_title.splits = [": ", " · "]  # "Your 8 modifier slots are full" ◆ "swap one?"
 	for l: Label in [_hint, _hint2]:
-		l.add_theme_font_size_override("font_size", MenuStyle.HINT_SIZE)
+		l.add_theme_font_size_override("font_size", AstralUi.HINT_SIZE)
 		l.add_theme_color_override("font_color", AstralCardArt.DIM)
 	_read_back.name = "ReadBack"
 	_read_back.add_theme_font_size_override("font_size", 18)
@@ -94,8 +94,6 @@ func _init() -> void:
 	style_labels([_hint, _hint2, _read_back])
 	col.add_child(_title)
 	col.add_child(AstralChrome.Rule.new(420.0))
-	row.astral = true  # v0.10.5 W3-O16: the wand row, its pips and its forecast in Astral
-	pips.astral = true
 	var card_box := CenterContainer.new()
 	card_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_card = PickSlot.new(0, 0.8)

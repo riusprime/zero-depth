@@ -1,6 +1,6 @@
 class_name AchievementRow
 extends Button
-## v0.7.5 AC: one achievement on the Codex's Achievements page; v0.8.0 MU: a carved stone row (Ember stone, MenuStyle),
+## v0.7.5 AC: one achievement on the Codex's Achievements page; v0.8.0 MU: a carved stone row (Ember stone),
 ## ember-lit when focused, an unlocked one with a gold rim inlay and groove: its glyph, its name and
 ## sentence, and on the right "Unlocked" or how far along it is ("37 / 100"). A locked one is dimmed with its
 ## sentence; a hidden locked one is "???" with the hidden line. A Button, so keys, the pad and the mouse reach it

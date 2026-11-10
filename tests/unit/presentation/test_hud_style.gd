@@ -269,7 +269,7 @@ func test_the_astral_pause_menu() -> void:
 	assert_not_null(resume, "the rows are Astral rows")
 	assert_true(resume.is_lit(), "the focused row is lit (its star and streak)")
 	assert_false((m.box.get_node("Build") as AstralButton).is_lit(), "the others are not")
-	assert_false(m.marker.visible, "no ember diamond")
+	assert_null(m.find_child("EmberMarker", true, false), "no ember diamond")
 
 
 func test_the_danger_meter_shows_the_tier_number_from_tier_4_and_turns_red_at_10() -> void:

@@ -1,6 +1,6 @@
 class_name CodexTile
 extends Button
-## v0.7.5 CX: one Codex entry in the page's grid; v0.8.0 MU (Ember stone, MenuStyle): a small carved stone tablet,
+## v0.7.5 CX: one Codex entry in the page's grid; v0.8.0 MU (Ember stone): a small carved stone tablet,
 ## its picture (CodexIcon) in a round socket with a glowing inlay ring and its name, the glowing groove at its foot,
 ## both in the card's colour (CardFrames) or the page's colour; the focused tile is ember-lit. A locked entry is a dark,
 ## unlit tablet with a silhouette named "???". It is a Button, so the keyboard, the mouse and the pad reach it through
@@ -21,7 +21,7 @@ var entry := {}
 var locked := true
 var picture := CodexIcon.new()
 var name_label := Label.new()
-var _tint := MenuStyle.EMBER
+var _tint := AstralCardArt.ACCENT
 
 
 func _init() -> void:
@@ -76,7 +76,7 @@ static func tint_of(e: Dictionary) -> Color:
 		return CardFrames.tint(CardFrames.frame_of(fam))
 	if e.get("page", &"") == &"biomes":
 		var palette: Array = e.get("palette", [])
-		return palette[3] if palette.size() > 3 else MenuStyle.EMBER  # its accent
+		return palette[3] if palette.size() > 3 else AstralCardArt.ACCENT  # its accent
 	return CodexIcon.color_of(e)
 
 

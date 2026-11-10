@@ -128,7 +128,7 @@ func test_every_wand_card_name_fits_its_tile_in_both_languages() -> void:
 	var font := HudStyle.font(true)
 	var width := WandRow.TILE.x - 16.0
 	var lowest := ceili(WandRow.NAME_SIZE * TextFit.WORD_FLOOR)
-	var label := WandRow.make_label(WandRow.NAME_SIZE, true, MenuStyle.TEXT)
+	var label := WandRow.make_label(WandRow.NAME_SIZE, true, AstralCardArt.TEXT)
 	add_child_autofree(label)
 	var checked := 0
 	for lang in LANGS:

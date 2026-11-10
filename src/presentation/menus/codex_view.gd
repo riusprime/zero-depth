@@ -1,7 +1,7 @@
 class_name CodexView
 extends Control
 ## v0.7.5 CX (owner N6: "the journal of codex cards"): the Codex, from the main menu and the pause menu. Ember stone
-## (MenuStyle, v0.8.0 MU) over the blurred game or the menu's own ember scene: the title and how much you've found, four
+## (v0.8.0 MU) over the blurred game or the menu's own ember scene: the title and how much you've found, four
 ## pages (Cards, Enemies, Bosses, Biomes), the page's entries as tiles in sections (CodexTile; the Cards page by pool:
 ## Gun, Blade, shared, triggers, legendary, then stat cards, utilities and passives), and beside them the focused entry:
 ## a card as its stone tablet (StoneCard, as in a pick) with its name and sentence (the game's own keys), or an emblem /
@@ -117,7 +117,7 @@ func _init(
 	var margin := MarginContainer.new()
 	margin.name = "Margin"
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", int(MenuStyle.LIST_LEFT))
+	margin.add_theme_constant_override("margin_left", int(AstralMenu.LEFT))
 	margin.add_theme_constant_override("margin_right", 80)
 	margin.add_theme_constant_override("margin_top", 56)
 	margin.add_theme_constant_override("margin_bottom", 44)

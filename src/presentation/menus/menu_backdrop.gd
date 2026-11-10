@@ -1,6 +1,6 @@
 class_name MenuBackdrop
 extends ColorRect
-## The menus' backdrop (v0.8.0 MU, Ember stone; MenuStyle): one canvas shader on a full-screen rect.
+## The menus' backdrop (v0.8.0 MU, Ember stone): one canvas shader on a full-screen rect.
 ## - Over the game (pause, the run recap, the Build page, a modal): the game blurred (a lower mip of the screen) and
 ##   sunk into a warm near-black, darker toward the left where the list sits, a low ember glow rising from the bottom.
 ## - With nothing behind it (the main menu and the screens it opens: the screen behind is one flat colour, or
