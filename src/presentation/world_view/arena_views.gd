@@ -126,18 +126,6 @@ func barrier_count() -> int:
 	return _barriers.size()
 
 
-func veiled_rooms() -> PackedInt32Array:
-	var out := PackedInt32Array()
-	for r in _veils.size():
-		if _veils[r].visible and _veil_target > 0.0:
-			out.append(r)
-	return out
-
-
-func veil_target() -> float:
-	return _veil_target
-
-
 func _build_barriers(reader: WorldReader, overrun: bool) -> void:
 	for b in _barriers:
 		b.queue_free()

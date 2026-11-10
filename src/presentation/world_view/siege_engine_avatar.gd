@@ -54,10 +54,6 @@ func _code_nodes() -> Array[Node]:
 	return [hull, cannon]
 
 
-func _recoils() -> bool:
-	return true
-
-
 func _build() -> void:
 	var p := parts
 	hull.name = "Hull"

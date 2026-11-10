@@ -46,22 +46,15 @@ const SPINS_OUT := 1.5
 ## How far in front of the gate's centre line (m) the hero is drawn to, and how high it rises.
 const PULL_DEPTH := 0.3
 const LIFT := 0.45
-## v0.8.0 N11 (fractions of the arrival's progress): the pop's ring lasts BURST_SPAN. A later floor's flare ends at
-## STEP_FLARE_END, the hero rises over STEP_RISE_FROM..STEP_RISE_TO from STEP_DEPTH m under the floor.
 ## v0.9.0 SA: floor 1's timeline is the altar's (AltarStage.Look: the pop at pop_at); the zoom climbs ZOOM_IN through
 ## its buildup and eases out over the release.
 const ZOOM_IN := 0.14
-const BURST_SPAN := 0.32
 const POP_OVERSHOOT := 3.0
 const TREMBLE := 0.08
 const TREMBLE_PEAK := 0.32
 ## v0.9.0 CV (owner Q17): the arrival vibrates instead of shaking and kicking: the build-up's level climbs from
 ## TREMBLE to TREMBLE_PEAK, the pop and a later floor's step-out each land a thud.
 const POP_THUD := 0.9
-const STEP_FLARE_END := 0.3
-const STEP_RISE_FROM := 0.22
-const STEP_RISE_TO := 0.72
-const STEP_DEPTH := 1.1
 const STEP_THUD := 0.4
 ## v0.9.0 PT (fractions of a later floor's arrival; starting values): the portal grows until STEP_GROW_TO, the hero
 ## steps out over STEP_FROM..STEP_TO from STEP_BACK m behind its spot (the portal's plane), the portal collapses from

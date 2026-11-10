@@ -183,13 +183,6 @@ func core_count() -> int:
 	return _gems.size()
 
 
-func ring_count() -> int:
-	var n := 0
-	for id in _rings:
-		n += 1 if (_rings[id] as Node3D).visible else 0
-	return n
-
-
 ## The colour actor `id`'s core glows (Color.BLACK when none).
 func core_color_of(id: int) -> Color:
 	var gem: Node3D = _gems.get(id)

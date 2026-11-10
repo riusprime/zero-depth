@@ -236,7 +236,7 @@ static func stretch_by(base: Vector3, per: Vector3, pre := Transform3D.IDENTITY)
 	return f
 
 
-## VatBake.pose_error: a random state of `a` from `ranges` ({private var: [lo, hi]}, or [values...] to pick from),
+## VatVerify.pose_error: a random state of `a` from `ranges` ({private var: [lo, hi]}, or [values...] to pick from),
 ## posed (`pose`: the avatar's own pose call) and returned.
 static func sample(
 	a: Object, rng: RandomNumberGenerator, ranges: Dictionary, pose: Callable

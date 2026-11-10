@@ -29,9 +29,9 @@ in the tag `archive/scripts-2026-11`.
 | `o17_priest_clips.gd`, `vat_sheet.gd`, `mi_models.gd` | Animation clip sheets and model contact sheets |
 | `o10_spells.gd` | The auto-spells |
 | `o15_purpose_floor.gd`, `o15_purpose_rooms.gd`, `room_layouts.gd` | Rooms with a purpose and the designed layouts |
-| `starfall.gd`, `walls_n10.gd`, `mock_look.gd` | Biome looks and wall styles |
+| `starfall.gd`, `mock_look.gd` | Biome looks |
 | `hud_style.gd`, `card_pool.gd`, `shop.gd`, `rewards.gd`, `gamble.gd` | HUD, cards, shop, rewards and the shrine |
 | `menus_astral.gd` | The station panels, the Training terminal and the Constellation pick in Astral (v0.11.1 Step 13) |
 | `loading_cover.gd`, `portal_transit.gd` | The loading cover and the portal |
 | `vfx_gallery.gd`, `mock_vfx.gd` | Effect contact sheets |
-| `cvd_sim.py`, `n10_sheet.py`, `n13_sheet.py`, `n15_sheet.py`, `n15_busyness.py` | Python helpers that combine or analyse shots |
+| `cvd_sim.py` | Python helpers that combine or analyse shots |

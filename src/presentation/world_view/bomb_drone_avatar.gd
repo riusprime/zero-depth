@@ -255,18 +255,5 @@ func vat_rig() -> Dictionary:
 	)
 
 
-func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
-	return SoloVat.sample(
-		self,
-		rng,
-		{"_t": [0.0, 40.0], "_rise": [0.0, 1.0], "_armed": [0.0, 1.0], "_fuse": [0.0, 1.0]},
-		_pose
-	)
-
-
-func vat_set(s: Dictionary) -> void:
-	SoloVat.apply(self, s, _pose)
-
-
 func _piece(parent: Node3D, mesh: Mesh, at: Vector3, c: Color) -> void:
 	_body_piece(parent, mesh, at, c)

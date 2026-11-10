@@ -97,11 +97,3 @@ func finish() -> void:
 	for k in range(_n_orb, ORBS):
 		if _orbs[k].visible:
 			_orbs[k].visible = false
-
-
-func strips_used() -> int:
-	return _n_strip
-
-
-func orbs_used() -> int:
-	return _n_orb

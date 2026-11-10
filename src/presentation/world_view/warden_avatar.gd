@@ -407,25 +407,6 @@ func vat_rig() -> Dictionary:
 	return SoloVat.rig("warden", VAT_DRIVES, grids, j, true)
 
 
-func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
-	var ranges := {
-		"_t": [0.0, 40.0],
-		"_phase": [0.0, 40.0],
-		"_walk": [0.0, 1.0],
-		"_raise": [0.0, 1.0],
-		"_slam": [0.0, 1.0],
-		"_rise": [0.0, 1.0],
-		"_shake": [0.0, 1.0],
-		"_windup": [0.0, 1.0],
-		"_state": [WorldReader.STATE_MOVE, WorldReader.STATE_WINDUP],
-	}
-	return SoloVat.sample(self, rng, ranges, _pose.bind(0.0))
-
-
-func vat_set(s: Dictionary) -> void:
-	SoloVat.apply(self, s, _pose.bind(0.0))
-
-
 ## v0.8.0 P1: 0..1 how far the impact's dust ring has run (-1: none showing).
 func dust_amount() -> float:
 	return clampf(_dust_t / DUST_SECONDS, 0.0, 1.0) if _dust_t >= 0.0 else -1.0

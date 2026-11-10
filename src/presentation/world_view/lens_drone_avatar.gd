@@ -242,13 +242,3 @@ func vat_rig() -> Dictionary:
 	if has_model:  # the owner's model's colour map (VatLooks' textured variant)
 		out["albedo_tex"] = EnemyModels.get_model(&"lens_drone")["texture"]
 	return out
-
-
-func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
-	return SoloVat.sample(
-		self, rng, {"_t": [0.0, 40.0], "_rise": [0.0, 1.0], "_charge": [0.0, 1.0]}, _pose
-	)
-
-
-func vat_set(s: Dictionary) -> void:
-	SoloVat.apply(self, s, _pose)

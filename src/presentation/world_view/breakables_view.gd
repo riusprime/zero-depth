@@ -22,7 +22,6 @@ extends Node3D
 const STONE := Color("#5A544C")
 const CRACK := Color("#C9D3D6")  # S15b: lighter than the slab (was #2A2622)
 const WOOD := Color("#7A5634")
-const CLAY := Color("#A0603A")
 const RED := Color("#8E2B1E")
 const FIRE := Color("#FF8A2A")
 const WALL_H := 3.0

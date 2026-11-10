@@ -275,16 +275,6 @@ func vat_rig() -> Dictionary:
 	return ChargerVat.rig(self)
 
 
-## v0.10.5 W3-V4a (VatBake.pose_error): poses a random state (ChargerVat.sample) and returns it.
-func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
-	return ChargerVat.sample(self, rng)
-
-
-## v0.10.5 W3-V4a: poses the state vat_sample made.
-func vat_set(s: Dictionary) -> void:
-	ChargerVat.apply(self, s)
-
-
 func _pose() -> void:
 	var rise := smoothstep(0.0, 1.0, _rise)
 	var lunge := _lunge * (1.0 - _daze)

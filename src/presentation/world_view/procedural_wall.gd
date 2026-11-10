@@ -106,9 +106,6 @@ const FADED_ALPHA := 0.3
 const STEP_FACE := Color(0.86, 0.84, 0.82)
 const TOP_COL := Color(0.97, 0.96, 0.94)
 const RECESS := Color(0.7, 0.68, 0.66)
-## Evidence only (scripts/shots/walls_n10.gd grain=old): the look before O68's fix, to compare: 2.4 m and 3 m tiles,
-## no mipmaps (the textures were first installed without them), no offsets, no variation.
-static var legacy_look := false
 
 
 ## True for a wall this builder draws: structural (kind 0) and axis-aligned.
@@ -160,8 +157,8 @@ static func build(f: Dictionary) -> Dictionary:
 		"doors": f.get("doors", []),
 		"blocks": 0,
 		"stones": {},
-		"face_m": float(f.get("face_m", FACE_M_DEFAULT)) if not legacy_look else 2.4,
-		"top_m": float(f.get("top_m", TOP_M_DEFAULT)) if not legacy_look else 3.0,
+		"face_m": float(f.get("face_m", FACE_M_DEFAULT)),
+		"top_m": float(f.get("top_m", TOP_M_DEFAULT)),
 		"fill": {},
 		"pillars": [],
 		"top_rim": Vector2.ZERO,
@@ -221,7 +218,7 @@ static func _core(ctx: Dictionary) -> void:
 	for j in g.ny:
 		for i in g.nx:
 			if g.cells[j * g.nx + i] >= 0:
-				var deep := depth[j * g.nx + i] >= RIM and not legacy_look
+				var deep := depth[j * g.nx + i] >= RIM
 				fill[j * g.nx + i] = 1 if deep else 0
 				g.cell_h[j * g.nx + i] = _fill_h(ctx, i, j) if deep else _stone_h(ctx, i, j)
 				var area := (g.xs[i + 1] - g.xs[i]) * (g.ys[j + 1] - g.ys[j])
@@ -237,7 +234,7 @@ static func _core(ctx: Dictionary) -> void:
 			var b := _buf(ctx, owner)
 			var h := g.cell_h[j * g.nx + i]
 			var k := g.cell_off[j * g.nx + i]
-			b.top_off = Vector2(k, fposmod(k * 7.31, 1.0)) if not legacy_look else Vector2.ZERO
+			b.top_off = Vector2(k, fposmod(k * 7.31, 1.0))
 			b.u_off = 0.0
 			b.u_flip = 1.0
 			var x0 := (g.xs[i] + g.xs[i + 1]) * 0.5
@@ -529,8 +526,6 @@ static func _face(ctx: Dictionary, run: Dictionary) -> void:
 
 ## The face texture's offset and flip for what is drawn at s on a run: one per stretch of the run's seg_len metres.
 static func _segment(ctx: Dictionary, run: Dictionary, b: Buf, s: float) -> void:
-	if legacy_look:
-		return
 	var seg := floori((s - float(run["a"])) / float(run.get("seg_len", SEGMENT_M.x)))
 	var key: int = run.get("seg_key", 0)
 	var salt: int = ctx["salt"]
@@ -540,8 +535,6 @@ static func _segment(ctx: Dictionary, run: Dictionary, b: Buf, s: float) -> void
 
 ## The low-frequency brightness at a point (VARIATION_LO..1).
 static func _variation(ctx: Dictionary, x: float, y: float) -> float:
-	if legacy_look:
-		return 1.0
 	var lo := 1.0 - (1.0 - VARIATION_LO) * float(ctx.get("calm", WallCalm.BUILDER)["tint"])
 	return lerpf(lo, 1.0, _value(x, y, VARIATION_M, int(ctx["salt"]) + 91))
 
@@ -934,8 +927,6 @@ static func material(
 ) -> ShaderMaterial:
 	var sh := Shader.new()
 	var code := WallCalm.SHADER.replace("//BIAS", str(WallCalm.SOFT_BIAS))
-	if legacy_look:
-		code = code.replace("filter_linear_mipmap_anisotropic", "filter_linear")
 	# W3-S5: the see-through copy blends smoothly (alpha hash was grain) and writes depth, so it sorts with itself.
 	if faded:
 		code = code.replace("render_mode cull_back,", "render_mode cull_back, depth_draw_always,")

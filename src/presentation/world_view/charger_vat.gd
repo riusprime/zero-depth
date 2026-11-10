@@ -214,7 +214,7 @@ static func _leg_joint(
 	return Transform3D.IDENTITY
 
 
-## VatBake.pose_error: poses Charger `c` in a random state, every drive anywhere in its range and mixed freely
+## VatVerify.pose_error: poses Charger `c` in a random state, every drive anywhere in its range and mixed freely
 ## (reachable or not), and returns it (apply poses another Charger the same).
 static func sample(c: ChargerAvatar, rng: RandomNumberGenerator) -> Dictionary:
 	var s := {

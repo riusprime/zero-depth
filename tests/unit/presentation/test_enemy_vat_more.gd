@@ -40,7 +40,7 @@ func test_the_bake_matches_the_live_pose() -> void:
 		var mesh := VatBake.mesh_for(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 		var live := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0)
 		var vat := VatBake.vat_avatar_of(kind)
-		var e := VatBake.pose_error(live, vat, pose, mesh, 40, 5)
+		var e := VatVerify.pose_error(live, vat, pose, mesh, 40, 5)
 		assert_eq(
 			e["vertices"], mesh.surface_get_array_len(0), "kind %d: every vertex compared" % kind
 		)

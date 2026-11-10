@@ -191,10 +191,6 @@ func windup_pose() -> float:
 	return _wind
 
 
-func reel_pose() -> float:
-	return _reel
-
-
 func _pose() -> void:
 	if body == null:
 		return

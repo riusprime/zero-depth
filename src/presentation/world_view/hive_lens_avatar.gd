@@ -32,7 +32,6 @@ const PUPIL := Color("#1B1C20")
 const TIP := Color("#FF3A26")
 ## v0.7.5 BM: the owner's model's bones (Tripo names as Godot imports them) and its eye's front at rest (metres,
 ## model frame; evidence/BOSS_MODELS.md).
-const SPINE_0 := &"tripo__Spine_0"
 const SPINE_1 := &"tripo__Spine_1"
 const CROWN_BASE := &"tripo__Spine_2"
 const CROWN := &"tripo__Head_0"

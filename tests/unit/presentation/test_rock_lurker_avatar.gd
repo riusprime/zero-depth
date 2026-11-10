@@ -261,7 +261,7 @@ func test_it_bakes_within_a_fraction_of_a_pixel_and_keeps_its_drives() -> void:
 	var vat := VatBake.vat_avatar_of(KIND)
 	for calm: bool in [false, true]:
 		ViewPrefs.reduced_motion = calm
-		var e := VatBake.pose_error(live, vat, pose, mesh, 40, 7)
+		var e := VatVerify.pose_error(live, vat, pose, mesh, 40, 7)
 		assert_eq(e["vertices"], mesh.surface_get_array_len(0), "every vertex compared")
 		assert_lt(float(e["max_m"]), 0.002, "well under a pixel (calm %s): %s" % [calm, e])
 	live.free()

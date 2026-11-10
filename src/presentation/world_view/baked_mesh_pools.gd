@@ -51,11 +51,6 @@ func used_total() -> int:
 	return n
 
 
-## The shapes with a pool (tests).
-func shape_count() -> int:
-	return _pools.size()
-
-
 func _pool(mesh: Mesh) -> MultiMeshInstance3D:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D

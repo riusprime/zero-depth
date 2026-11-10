@@ -71,10 +71,6 @@ func _sync_echo(fx: Dictionary) -> void:
 # --- Reads (tests) ------------------------------------------------------------------------------------------
 
 
-func bomb_count() -> int:
-	return _bombs.filter(func(b: Node3D) -> bool: return b.visible).size()
-
-
 func fx_count_of(kind: StringName) -> int:
 	return _fx.count_of(kind)
 

@@ -284,11 +284,6 @@ func form() -> float:
 	return minf(growth, 1.0 - collapse)
 
 
-## Shown at all (a point of light or more).
-func is_shown() -> bool:
-	return visible
-
-
 ## A flare of light (the hero going in: PortalTransitView).
 func flare() -> void:
 	_flare = FLARE_SECONDS

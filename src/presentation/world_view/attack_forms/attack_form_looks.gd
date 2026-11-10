@@ -135,11 +135,6 @@ static func element_color(element: StringName) -> Color:
 	return ELEMENT_CORE.get(element, ElementLooks.player_energy())
 
 
-## v0.9.0 VX V1 (owner "Dark red"): the bleed element's core, the shared palette's dark red (was MX1's tinted cyan).
-static func bleed_core() -> Color:
-	return ElementLooks.core(&"bleed")
-
-
 ## [[kind, colour, share]]: the core element's particles, and with two elements half of each.
 static func particles_of(elements: Array) -> Array:
 	var out := []
