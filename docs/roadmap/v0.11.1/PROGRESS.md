@@ -5,15 +5,14 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 ## Where we are
 (The lead keeps this block current at every push. Updated 2026-11-10.)
 
-- **Wave 1 built; its re-measure (step 11) is the seams run on `060e883b`** (see History for the result).
-- **Wave 2 built except step 18** (the comment tags): steps 12, 13, 14, 15, 16, 17, 19, 20 are merged. Step 45 (a
-  floor builds its flow fields once) is merged too.
+- **Waves 1 and 2 are done, and step 45.** Seams on `060e883b`: **674 of 674, 1,396 s of tests, 1,606 s wall** (it
+  was 669, 3,185 s, 3,442 s at `ee42eafa`): [`evidence/SEAMS_TIMING.md`](evidence/SEAMS_TIMING.md).
+- **Committed after that seams run** (not yet under a seams run): step 18 (comments only; code proven identical) and
+  the test floor builder's opt-in (`26bdbb20`; its ten files 96 of 96). **Run seams before pushing.**
 - **Left over from Wave 2, small:** the HUD and menu half of the dead-code scan; the menu backdrop's ember mode and
-  the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: owner
-  asked whether to delete it); `SaveLab` still builds its floors the eager way (step 45's saving for unit tests).
-- **Next:** step 18, then Wave 3, which starts with the baseline (step 21).
-- **What the measurements say:** the e2e fixed cost is the floor build, not the boot, the hub or the content compile
-  ([`evidence/E2E_FIXED_COST.md`](evidence/E2E_FIXED_COST.md)); step 45 roughly halves that build.
+  the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: the
+  owner was asked whether to delete it); the duplicate final-boss texture (needs model prep).
+- **Next:** Wave 3, which starts with the baseline (step 21): measure before building anything.
 - **Not pushed yet:** everything since `c339458a` is local on `claude/v0110`.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
@@ -49,7 +48,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 | 16 | The fight bot, the lab-room scenario and the combo card live in `tests/support`. Left in `src/`: `KernelScenario` and `ScriptedInput` (the export smoke runs them inside the pack); left in `data/`: the combat-lab encounter and the patch notes (moving either changes the content manifest hash) | `35176162`, merge `d8362cd8` |
 | 15 (a) | Unreferenced sim, application and content code is gone: 34 functions, 34 constants, 25 translation keys (249 lines). Left: names that stand for stored values, and `HeartRoom.take_tick` (hashed, read nowhere: for step 36) | `62d24bee`, merge `0ef222b0` |
 | 19 | The line cap can't be switched off quietly: `tests/arch/test_line_cap.gd` lists the ten exempt files with reasons; the rule is in CLAUDE.md | `63ce6be5` |
-| 45 | A floor builds its flow fields once. A floor build set its walls up to five times (floor, shop, purposes, curse room, fountain) and rebuilt both flow fields each time; no build step reads them, so they are deferred and built once at the end (the wall grid stays current). Floor build, six seeds, before → after (ms, busy machine): 1960 → 876, 901 → 612, 4194 → 1867, 1464 → 642, 1825 → 1285, 1675 → 1200. **Identical on 168 worlds** (30 seeds × floors 1–5, 10 stepped 600 ticks, 5 resumed, 3 final arenas: state hash, snapshot, walls, both fields, grid, spawn points); the lead re-ran the baseline on the tree without the step: 168 of 168 lines equal. 34 + 96 tests | `7f6b6847`, merge `724e8159` |
+| 18 | Code comments say what and why, not which step: the version, step and owner-line tags stripped from 7,659 comment lines in 749 files of `src/` by script; each file's code without comments is byte-identical; 1,926 version mentions remain inside sentences. The rule is in CLAUDE.md | `4c665dae` |
+| 11 | The gain is measured: seams 3,442 s → 1,606 s wall, 3,185 s → 1,396 s of tests, 669 → 674 tests, all passing | evidence `SEAMS_TIMING.md` |
+| 45 | A floor builds its flow fields once. A floor build set its walls up to five times (floor, shop, purposes, curse room, fountain) and rebuilt both flow fields each time; no build step reads them, so they are deferred and built once at the end (the wall grid stays current). Floor build, six seeds, before → after (ms, busy machine): 1960 → 876, 901 → 612, 4194 → 1867, 1464 → 642, 1825 → 1285, 1675 → 1200. **Identical on 168 worlds** (30 seeds × floors 1–5, 10 stepped 600 ticks, 5 resumed, 3 final arenas: state hash, snapshot, walls, both fields, grid, spawn points); the lead re-ran the baseline on the tree without the step: 168 of 168 lines equal. 34 + 96 tests. The test floor builder (`SaveLab`) opted in afterwards: `test_world_snapshot` 147.3 s → 103.2 s, `test_old_saves` 54.6 s → 32.7 s | `7f6b6847`, merge `724e8159`; `26bdbb20` |
 | 13 | Every menu is in the Astral look: the Wardrobe, Progression, Training Terminal and hub station panels; `MenuStyle` and the ember rows are deleted. Hover lights a row like focus (the Astral rule); the codex and build page columns sit 20 px further right. 1,515 + 202 + 57 tests. Shots before and after sent to the owner | `72aa2039`, merge `b1b349c3` |
 | 15 (b) | Unreferenced 3D-view code is gone: 25 functions, 12 constants, `final_stub_clips.gd`, the walls' `legacy_look` and its shot tool (829 lines) | `98628cae`, merge `060e883b` |
 | 16 (b) | The VAT bake verifier lives in `tests/support/vat_verify.gd`; `vat_bake.gd` 831 → 574 lines; `vat_sample`/`vat_set` out of 10 avatars. 1,519 presentation tests | `64c21cb1`, merge `060e883b` |
@@ -110,3 +111,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   error and lints clean. No seams run yet on the merged tree.
 - 2026-11-10 (lead): steps 13, 15b, 16b and 45 merged (`060e883b`); the merged tree imports and lints clean. Seams
   started on it on a quiet machine (the post-merge check and step 11's re-measure).
+- 2026-11-10 (lead): seams on `060e883b`: 674/674 (1,396 s of tests, 1,606 s wall). Steps 18 and 11 done; the test
+  floor builder opted into step 45 (`26bdbb20`). Waves 1 and 2 are complete. Next: Wave 3's baseline (step 21).

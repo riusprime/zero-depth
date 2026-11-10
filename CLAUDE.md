@@ -97,12 +97,18 @@ Deathventory once shipped an agent-written "human playtest" and a smoke test wit
 |---|---|
 | Only docs, or scripts that write only under `docs/` | Nothing local; CI covers it |
 | Installed assets or manifests (`assets/`) | The asset tests |
-| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead, after merging agents' branches: `bash scripts/ci/seams.sh` (the seams, about 20–50 min: 667 tests in 3131 s on 2026-11-08, owner's PC), then push. **No local full suite** |
+| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead, after merging agents' branches: `bash scripts/ci/seams.sh` (the seams: 674 tests in 1,396 s, 27 min with import and lint, on 2026-11-10, owner's PC; it was 3,185 s before v0.11.1), then push. **No local full suite** |
 
 **The full suite runs once per version, on GitHub** (owner, 2026-10-13: "does the full run suite make sense for every
 change? … just testing what the changes need to be tested right?"; then "make those changes statement so every
 session on this proyect gets them"):
 - **Agents** test what they changed: lint, the test folders they touched, and the e2e that reach their change.
+- **Seed loops** (`Seeds.count(1000)`, `tests/support/seeds.gd`) run 200 seeds on a developer machine and in seams,
+  and the full 1,000 in the GitHub full suite (`ZD_FULL_SEEDS=1`; owner, 2026-11-10: "if 200 is enough go for it").
+- **e2e tests start a run directly** (`Main.quick_start`, set by `E2e.boot`; owner, 2026-11-10: "yes skip them"). A
+  test about the hub, the portal, the arrival or the run flow sets `e.real_start = true` before `boot()`.
+- **Batch e2e files into one Godot process:** the first run start in a process costs about 30 s, later ones about
+  6 s (`docs/roadmap/v0.11.1/evidence/E2E_FIXED_COST.md`).
 - **The lead**, after merging branches, runs `scripts/ci/seams.sh` from a clean worktree, fixes what breaks, and
   pushes. The seams are the tests where separate changes meet: content, arch, goldens, application, debug (the dev
   panel's folder list), old saves, the every-card soak, and the run/save/menu/dev-panel e2e. When a cross-step bug
