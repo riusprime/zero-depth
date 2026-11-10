@@ -13,6 +13,10 @@ var main: Main
 ## v0.9.5 SL: boot() unlocks the Blade (SwordLock.grant, the test path) so the e2e that pick it keep working; a test of
 ## the lock itself sets this true before boot().
 var blade_locked := false
+## v0.11.1 T1 (owner L7, "yes skip them"): boot() turns on the test switch Main.quick_start (Play opens the build pick
+## with no hub; the pick starts the run with no walk into the portal; floor 1's arrival runs in one frame). A test of
+## the hub, the portal, the loading cover, the arrival or the run flow sets this true before boot(): the real path.
+var real_start := false
 ## v0.9.0: the window's mouse scale, measured once (the probe move it takes aimed the hero at (100, 100) for a
 ## frame on every mouse_to; AF2, AF3 found shots firing at it).
 var _scale := Vector2.ZERO
@@ -30,6 +34,7 @@ func boot(
 	profile: ProfileStore = null, saves: RunSaveStore = null, seed: int = Main.STAGE_SEED
 ) -> Main:
 	Main.fixed_seed = seed
+	Main.quick_start = not real_start  # static: set on every boot, so no test's choice reaches the next
 	center_sticks()  # v0.8.0 fix: no stick an earlier test left pushed
 	ProfileStore.use_shared(profile if profile != null else ProfileStore.new(""))
 	if not blade_locked:
@@ -139,8 +144,22 @@ func _mouse_scale() -> Vector2:
 ## a fresh profile; Right moves to Gun). v0.4.0 BS (F11): no utility pick; the run starts with weapon, dash, skill
 ## and vent. v0.8.0 N11: then waits for the hero to land on the receiver (`land` false: returns as the floor opens).
 ## v0.9.0 HB (owner Q27): Play goes to the hub; the hero walks (the left stick) to the Portal Machine and presses E,
-## and its build screen starts the run as before.
+## and its build screen starts the run as before. v0.11.1 T1 (owner L7): under Main.quick_start (boot()'s default) Play
+## opens the build screen with no hub and the pick starts the load; landed() then returns on the frame floor 1's arrival
+## ran in, so the World is at the tick a real-path landed() returns at. Either way: a run is live, the hero can act.
 func start_from_menu(build: StringName = &"blade", land: bool = true) -> void:
+	if Main.quick_start:
+		await tap(KEY_ENTER)  # Play: the build screen
+		await frames(2)
+		if build == &"gun":
+			await tap(KEY_RIGHT)
+		await tap(KEY_ENTER)
+		await loaded()
+		if land:
+			await landed()
+		else:
+			await frames(4)
+		return
 	var walk := HubWalk.new(self)
 	await walk.enter()
 	await walk.use(&"portal")

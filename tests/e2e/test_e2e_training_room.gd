@@ -79,6 +79,7 @@ func _to_terminal(e: E2e) -> bool:
 
 func test_walk_in_spawn_a_charger_take_a_card_and_walk_out() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot(_profile())
 	assert_true(await HubWalk.new(e).enter(), "Play goes to the hub")
 	assert_eq((main.get_node("UI/HubHud") as HubHud).station_name(), "", "no station at the spawn")
@@ -125,6 +126,7 @@ func test_walk_in_spawn_a_charger_take_a_card_and_walk_out() -> void:
 
 func test_the_pad_opens_the_terminal_and_spawns_three() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot(_profile())
 	await HubWalk.new(e).enter()
 	assert_true(await _walk_into_training(e))

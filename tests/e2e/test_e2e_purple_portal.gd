@@ -87,6 +87,7 @@ func _take_gate(e: E2e, main: Main, pos: Vector2, angle: int, next: int) -> bool
 
 func test_awaken_the_purple_runes_and_the_boss_opens_the_purple_portal() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot(null, null, SEED)
 	await e.start_from_menu()
 	var w := e.world()

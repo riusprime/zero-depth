@@ -95,6 +95,7 @@ func _note_tier(main: Main, codex: CodexView, at: Dictionary, seen: Dictionary) 
 ## profile from earlier runs: setup); the main menu's Codex row opens it (keys) and the arrows reach all four.
 func test_the_codex_says_each_cards_tier() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	for id in [&"gun_pierce", &"halo_shot", &"gun_twin", &"chain_blast"]:
 		main.codex.unlock(&"cards", id)
@@ -113,6 +114,7 @@ func test_the_codex_says_each_cards_tier() -> void:
 
 func test_the_codex_fills_in_a_run_and_opens_from_both_menus() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	# v0.9.0 HB: the hub's Rune Archive.
 	var walk := HubWalk.new(e)
@@ -240,6 +242,7 @@ func test_the_codex_fills_in_a_run_and_opens_from_both_menus() -> void:
 ## sentence), a line whose system was not met yet is a silhouette.
 func test_the_lore_page_opens_and_shows_its_open_lines() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	var walk := HubWalk.new(e)
 	await walk.enter()

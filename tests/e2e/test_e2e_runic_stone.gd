@@ -10,6 +10,7 @@ func after_each() -> void:
 
 
 func _enter_hub(e: E2e, profile: ProfileStore) -> Main:
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot(profile)
 	assert_true(await HubWalk.new(e).enter(), "Play goes to the hub")
 	return main
@@ -39,6 +40,7 @@ func test_locked_stone_shows_no_prompt_and_only_hums() -> void:
 
 func test_a_purple_activation_wakes_the_stone_on_the_next_visit() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var profile := ProfileStore.new("")
 	var main: Main = await e.boot(profile)
 	# The run's side: the tracker records a purple-rune room activated (AchievementTracker -> the stat).
@@ -69,6 +71,7 @@ func test_a_purple_activation_wakes_the_stone_on_the_next_visit() -> void:
 
 func test_seven_presses_learn_the_third_line() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var profile := ProfileStore.new("")
 	var main: Main = await e.boot(profile)
 	AchievementStore.new(profile).add_stat(RunicStone.PURPLE_STAT)

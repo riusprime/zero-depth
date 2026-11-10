@@ -5,6 +5,7 @@ extends GutTest
 
 func test_the_blade_is_padlocked_and_cannot_be_picked_until_unlocked() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	e.blade_locked = true
 	var main: Main = await e.boot()
 	await HubWalk.new(e).to_build_screen()

@@ -12,6 +12,7 @@ func after_each() -> void:
 
 func test_a_logged_run_with_an_f9_mark() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the log records the hub (the full path)
 	var main: Main = await e.boot()
 	assert_null(main.perf, "no recorder without the flag")
 	assert_false(PerfMarks.on)

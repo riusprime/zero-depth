@@ -29,6 +29,9 @@ var input_source: Callable
 ## v0.8.0 N11 (owner O69): while the world's arrival hasn't played yet and this returns true, the world waits (Main:
 ## the loading cover still shows, so the arrival plays once the cover opened). Empty: never.
 var hold: Callable
+## v0.11.1 T1 (owner L7): a test-only start (Main.quick_start): the world's arrival runs in the first tick frame, every
+## tick of it as in play (no hold), so the World after it is the one a normal arrival leaves. False in the game.
+var rush_arrival := false
 ## v0.6.5 WN2: the frame the last tick stepped with (read only: the e2e tests record a run's frames to replay it).
 var last_frame: InputFrame
 
@@ -65,6 +68,10 @@ func _physics_process(_delta: float) -> void:
 			edited.emit()
 		return
 	if debug != null and not debug.should_step():
+		return
+	if rush_arrival and reader.arriving():
+		while reader.arriving():
+			step_once()
 		return
 	if hold.is_valid() and reader.arriving() and hold.call():
 		return
