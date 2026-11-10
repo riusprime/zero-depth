@@ -231,7 +231,11 @@ void ZdWorld::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("shot_t"), &ZdWorld::shot_t);
 	ClassDB::bind_method(D_METHOD("sweep_one", "projectiles", "actors", "row", "walls_only"), &ZdWorld::sweep_one);
 
-	// slot: strike
+	// Enemy strike (zd_strike.cpp)
+	ClassDB::bind_method(D_METHOD("strike", "actors", "hero"), &ZdWorld::strike);
+	ClassDB::bind_method(D_METHOD("strike_out_i"), &ZdWorld::strike_out_i);
+	ClassDB::bind_method(D_METHOD("strike_out_f"), &ZdWorld::strike_out_f);
+	ClassDB::bind_method(D_METHOD("strike_layout"), &ZdWorld::strike_layout);
 	// ---- end KERNEL BINDINGS ----
 }
 

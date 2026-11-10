@@ -943,19 +943,8 @@ func step(frame: InputFrame) -> void:
 		pp.end(&"move")
 		pp.begin(&"resolve")
 	# 6. Hits: enemy attacks, then projectile sweeps.
-	var critter_rows := PackedInt32Array()  # The critters touch after the others (CritterAi)
-	var roles := EnemyAi.roles  # One table read per actor (EnemyAi.role_of; a local: a static read costs more)
-	for i in range(1, actors.size()):
-		var kind := actors.kinds[i]
-		var role := roles[kind] if (kind & -EnemyAi.KIND_SLOTS) == 0 else EnemyAi.role_of(kind)
-		if role == EnemyAi.Role.CRITTER:
-			critter_rows.append(i)
-		elif role == EnemyAi.Role.BOSS and actors.dead[i] == 0:
-			BossAi.resolve(self, i)  # Bosses.
-		elif role == EnemyAi.Role.ENEMY and actors.dead[i] == 0:
-			EnemyAi.resolve(self, i)
-	if not critter_rows.is_empty():
-		CritterAi.touch_all(self, critter_rows)
+	if (native_on & NativeWorld.STRIKE) == 0 or not NativeStrike.resolve(self):  # Table kinds strike native
+		_resolve_enemies()
 	Mines.advance(self)  # Mines arm and blow.
 	Variants.advance(self)  # The variants' trails burn and melt (after the mines)
 	RuinsRocks.advance(self)  # The cables drop or hurt, the rocks go, the Lurkers hold still
@@ -1843,6 +1832,23 @@ func _buffer_presses(pressed: int) -> void:
 		if pressed & BUTTON_BITS[i]:
 			input_buffer[i] = SimTick.INPUT_BUFFER_TICKS
 	PlayerSkill.buffer(self, pressed)  # Kit
+
+
+## Phase 6's enemy attacks in GDScript: every enemy and boss in row order, then the critters' touches (CritterAi).
+func _resolve_enemies() -> void:
+	var critter_rows := PackedInt32Array()
+	var roles := EnemyAi.roles  # One table read per actor (EnemyAi.role_of; a local: a static read costs more)
+	for i in range(1, actors.size()):
+		var kind := actors.kinds[i]
+		var role := roles[kind] if (kind & -EnemyAi.KIND_SLOTS) == 0 else EnemyAi.role_of(kind)
+		if role == EnemyAi.Role.CRITTER:
+			critter_rows.append(i)
+		elif role == EnemyAi.Role.BOSS and actors.dead[i] == 0:
+			BossAi.resolve(self, i)  # Bosses.
+		elif role == EnemyAi.Role.ENEMY and actors.dead[i] == 0:
+			EnemyAi.resolve(self, i)
+	if not critter_rows.is_empty():
+		CritterAi.touch_all(self, critter_rows)
 
 
 func _run_ai() -> void:
