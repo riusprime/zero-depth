@@ -28,3 +28,12 @@ art_raw/
 
 # The owner's purchased effect packs as downloaded (zips); what the game uses is installed under assets/
 newVFX/
+
+# The native library (native/README.md): built locally, not tracked yet. The build also writes the .gdextension (from
+# its .in): a tracked one would make every machine without the library print an import ERROR (CI fails on those)
+native/bin/
+native/src/*.obj
+native/src/*.o
+.sconsign*.dblite
+native/zd_native.gdextension
+native/zd_native.gdextension.uid

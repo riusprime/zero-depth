@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+# The game's native library (GDExtension): builds godot-cpp's bindings, then native/bin/zd_native.<platform>.<target>.<arch>.
+#   scons godot_cpp=<path to godot-cpp> custom_api_file=<extension_api.json from `godot --dump-extension-api`>
+#         [vcvars=<vcvars64.bat>] [target=template_debug|template_release]
+# vcvars: the Visual Studio environment script, for a Visual Studio SCons can't find by itself (a preview channel:
+# vswhere lists it only with -prerelease, which SCons doesn't pass, and godot-cpp clears any version given). The
+# script's PATH, INCLUDE, LIB and LIBPATH are read once and handed to the compiler and linker.
+import os
+import subprocess
+
+godot_cpp = ARGUMENTS.get("godot_cpp", os.environ.get("GODOT_CPP", "../../godot-cpp"))
+vcvars = ARGUMENTS.get("vcvars", os.environ.get("ZD_VCVARS", ""))
+
+
+def vcvars_settings(script):
+    out = subprocess.run(
+        'cmd /d /c ""{}" >nul && set"'.format(script), capture_output=True, text=True, shell=True, check=True
+    ).stdout
+    keep = {"PATH", "INCLUDE", "LIB", "LIBPATH"}
+    found = {}
+    for line in out.splitlines():
+        key, sep, value = line.partition("=")
+        if sep and key.upper() in keep:
+            found[key.upper()] = value
+    return found
+
+
+base = {}
+settings = None
+if vcvars:
+    settings = vcvars_settings(vcvars)
+    base["MSVC_USE_SETTINGS"] = settings  # So SCons's msvc tool counts as present (godot-cpp asks it)
+env = Environment(tools=["default"], PLATFORM="", **base)
+env = SConscript(os.path.join(godot_cpp, "SConstruct"), exports={"env": env})
+if settings:
+    for key, value in settings.items():
+        env["ENV"][key] = value
+    if not env.get("MSVS_VERSION"):
+        env["MSVS_VERSION"] = "14.5"  # The DLL linker's emitter wants a version; the detection set none
+
+env.Append(CPPPATH=["src/"])
+sources = Glob("src/*.cpp")
+library = env.SharedLibrary(
+    "bin/zd_native{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+    source=sources,
+)
+env.NoCache(library)
+
+# The .gdextension Godot loads, written beside its tracked template only by a build: without it (CI, a fresh clone)
+# Godot never looks for the library, so it prints no import error and every world runs the GDScript passes.
+gdext = env.Command("zd_native.gdextension", "zd_native.gdextension.in", Copy("$TARGET", "$SOURCE"))
+Default(library, gdext)
