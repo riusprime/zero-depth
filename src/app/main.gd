@@ -64,6 +64,8 @@ var _pause_codex: CodexView
 var _codex_catalog: CodexCatalog
 var _achievement_book: AchievementBook
 var _dev: DevPanel
+## God, ticked in the dev panel, carried to the run's next floor (owner, 2026-11-10: "until you untick it").
+var _god_kept := false
 var _devm: DevMasterPanel
 ## The current floor's biome file (the dev panel's lighting edits re-read its mood).
 var _biome_path := ""
@@ -421,6 +423,10 @@ func _floor_nodes(plan: FloorPlan) -> Dictionary:
 	var d := SimDriver.new()
 	d.name = "SimDriver"
 	d.setup(world)
+	if _god_kept:  # God, ticked on an earlier floor of this run, carries on
+		d.debug = DebugApi.new(world)
+		d.debug.god = true
+		d.debug.reseed_requested.connect(_reseed)
 	d.hold = loads.cover.showing  # v0.8.0 N11 (O69): the arrival starts once the loading cover opened
 	d.rush_arrival = quick_start and plan.mode == FloorPlan.Mode.NEW_RUN  # v0.11.1 T1: tests only
 	var v := WorldViewRoot.new()
@@ -623,7 +629,10 @@ func toggle_dev_panel() -> void:
 	if _dev != null:
 		_dev.queue_free()
 		_dev = null
-		driver.debug = null
+		if driver.debug.god:  # God lasts until it is unticked (owner, 2026-11-10), not until the panel closes
+			driver.debug.release()
+		else:
+			driver.debug = null
 		return
 	driver.debug = DebugApi.new(driver.world)
 	driver.debug.reseed_requested.connect(_reseed)
@@ -928,11 +937,13 @@ func _set_menu(m: Control) -> void:
 
 func _end_stage() -> void:
 	_end_floor()
+	_god_kept = false  # a new run starts without it
 	run = null
 
 
 ## Frees one floor's nodes (driver, view, HUD, panels); the run itself stays.
 func _end_floor() -> void:
+	_god_kept = driver != null and driver.debug != null and driver.debug.god
 	close_pause()
 	audio.detach()
 	if codex_recorder != null:

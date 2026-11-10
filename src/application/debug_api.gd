@@ -69,6 +69,13 @@ func toggle_god() -> void:
 	god = not god
 
 
+## The panel closed with God still ticked (owner, 2026-11-10: God lasts "until you untick it"): these commands stay
+## with the driver, and nothing the closed panel can no longer undo keeps holding the sim.
+func release() -> void:
+	paused = false
+	_steps = 0
+
+
 ## Kills the floor's boss at the next tick boundary (through Damage, so the kill and its events are the sim's).
 func kill_boss() -> void:
 	_kill_boss = true

@@ -60,6 +60,9 @@ func _init(p_api: DebugApi) -> void:
 		b.name = spec[0]
 		b.text = spec[1]
 		b.focus_mode = Control.FOCUS_NONE
+		if spec[0] == "God":  # it shows whether God is on: it outlasts the panel (owner, 2026-11-10)
+			b.toggle_mode = true
+			b.button_pressed = api.god
 		b.pressed.connect(spec[2])
 		col.add_child(b)
 	for id: StringName in DebugApi.view_switches:  # v0.10.5 W3-V1: the views' own switches
