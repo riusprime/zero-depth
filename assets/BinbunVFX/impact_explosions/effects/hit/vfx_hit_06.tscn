@@ -82,8 +82,8 @@ alpha_curve = SubResource("CurveTexture_87miy")
 
 [sub_resource type="QuadMesh" id="QuadMesh_k8870"]
 size = Vector2(2, 2)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="Animation" id="Animation_dtgi6"]
 length = 0.001

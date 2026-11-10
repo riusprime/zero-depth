@@ -105,8 +105,8 @@ alpha_curve = SubResource("CurveTexture_k187p")
 [sub_resource type="SphereMesh" id="SphereMesh_loqy2"]
 radius = 0.15
 height = 0.3
-radial_segments = 32
-rings = 16
+radial_segments = 20
+rings = 10
 
 [sub_resource type="Animation" id="Animation_2o0g0"]
 length = 0.001

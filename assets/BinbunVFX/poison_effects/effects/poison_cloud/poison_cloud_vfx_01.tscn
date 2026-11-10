@@ -30,8 +30,8 @@ alpha_curve = SubResource("CurveTexture_qpfas")
 
 [sub_resource type="QuadMesh" id="QuadMesh_venaf"]
 size = Vector2(4, 4)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_qpfas"]
 emission_shape_scale = Vector3(1, 0.5, 1)
@@ -45,8 +45,8 @@ alpha_curve = SubResource("CurveTexture_qpfas")
 
 [sub_resource type="QuadMesh" id="QuadMesh_7x8jy"]
 size = Vector2(3, 3)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="SphereMesh" id="SphereMesh_8gdg2"]
 radius = 2.0
