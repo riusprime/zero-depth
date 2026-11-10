@@ -38,8 +38,6 @@ const GATE_WALL_CLEAR := 1.5
 const OVAL_HALF_W := 0.8
 ## How far the gate's zone reaches either side of its centre line (the oval's clearance; at least the old 2.2 m).
 const GATE_ZONE_HALF_W := OVAL_HALF_W + GATE_WALL_CLEAR
-## Before PT a gate's zone reached this far past its frame's sides (GATE_WIDTH / 2 + 1.0 = 2.2 m).
-const LEGACY_ZONE_SIDE := 1.0
 
 ## The templates' names (for tools and evidence).
 const TEMPLATE_NAMES: Array[String] = [
@@ -93,9 +91,6 @@ var portal_room := 0
 var start_pos := Vector2.ZERO
 ## The centre of the gate's footprint; the gate faces portal_angle (into the room).
 var portal_pos := Vector2.ZERO
-## A floor built under floor rules 1-9 (saved before v0.9.0) keeps its gates against the wall, as it was
-## saved (FloorParams.legacy_gate); otherwise they stand GATE_WALL_CLEAR out from it.
-var legacy_gate := false
 var portal_angle := 0
 ## The Deep gate (Routes.place_deep_gate; only on a run's floors before the last), beside the gate in the
 ## boss room. has_deep_portal is false until it is placed.

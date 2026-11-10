@@ -92,10 +92,8 @@ func _x_span(frame: Node3D) -> Vector2:
 	return Vector2(lo, hi)
 
 
-func _world(rules: int) -> World:
-	var lab := RunLab.new(SharedContent.repo(), 8311, &"blade")
-	lab.run.floor_rules = rules
-	return lab.floor_world()
+func _world() -> World:
+	return RunLab.new(SharedContent.repo(), 8311, &"blade").floor_world()
 
 
 func _press(w: World) -> void:
@@ -108,7 +106,7 @@ func _press(w: World) -> void:
 
 
 func test_the_slab_follows_the_sims_opening_and_lands() -> void:
-	var w := _world(RunState.FLOOR_RULES)
+	var w := _world()
 	var r := WorldReader.new(w)
 	var d := _door(&"ruins", r.boss_door_width())
 	d.sync(r)
@@ -136,7 +134,7 @@ func test_the_seal_goes_dark_after_the_boss_as_before() -> void:
 	assert_almost_eq(d.seal_material.emission_energy_multiplier, BossDoorView.SEAL_ENERGY, 0.001)
 	var discs := d.slab.find_children("*", "MeshInstance3D", false, false)
 	assert_eq(discs.size(), 10, "a disc and four studs on each face")
-	var w := _world(RunState.FLOOR_RULES)
+	var w := _world()
 	var r := WorldReader.new(w)
 	w.actors.invuln[0] = 1 << 24
 	w.actors.set_pos(0, w.floor_layout.boss_door_inside(BossFlow.ENTRY_DEPTH_M + 1.2))
@@ -156,14 +154,3 @@ func test_the_seal_goes_dark_after_the_boss_as_before() -> void:
 	assert_almost_eq(
 		d.seal_material.emission_energy_multiplier, BossDoorView.SEAL_ENERGY_SPENT, 0.001, "dark"
 	)
-
-
-func test_a_floor_before_bd_opens_by_nearness() -> void:
-	var w := _world(RunState.FLOOR_RULES_V080_N19)
-	var r := WorldReader.new(w)
-	var d := _door(&"red_canyon", r.boss_door_width())
-	w.actors.set_pos(0, w.floor_layout.boss_door_outside(1.0))
-	w.step(InputFrame.new())
-	d.sync(r)
-	d.settle()
-	assert_eq(d.open_amount, 1.0, "near: open, as before")

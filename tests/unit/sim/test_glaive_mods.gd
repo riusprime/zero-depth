@@ -477,22 +477,6 @@ func test_a_plain_glaive_hash_has_no_glaive_block() -> void:
 	assert_ne(h.finish_hex(), h2.finish_hex(), "the rows are hashed while set")
 
 
-func test_an_older_save_without_the_rows_loads_empty() -> void:
-	var w := _world([&"gun_echo"], [Vector2(4.0, 0.0)])
-	W.run(w, 20, 0, W.S)
-	assert_true(w.mx.gm_touched())
-	var snap := w.to_snapshot()
-	var mx: Dictionary = (snap["world"] as Dictionary)[&"mx"]
-	for f: StringName in WorldSnapshot.ADDED_SINCE_V05[&"ModifierState"]:
-		if String(f).begins_with("gm_"):
-			assert_true(mx.has(f), "%s is saved" % f)
-			mx.erase(f)
-	var base := _world([&"gun_echo"], [Vector2(4.0, 0.0)])
-	assert_eq(WorldSnapshot.apply(base, snap), "", "an older snapshot restores")
-	assert_false(base.mx.gm_touched(), "with no Glaive rows")
-	W.run(base, 10, 0, 0)
-
-
 func test_rows_are_dropped_when_the_shot_is_no_glaive_any_more() -> void:
 	var w := _world([&"gun_echo"], [Vector2(4.0, 0.0)])
 	_throw(w, 3)

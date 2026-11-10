@@ -85,7 +85,7 @@ func test_a_damaged_save_is_refused_and_kept() -> void:
 
 func test_a_payload_without_every_part_is_refused_as_unreadable() -> void:
 	var p := _payload()
-	(p["run"] as Dictionary).erase("boss_draw")
+	(p["run"] as Dictionary).erase("heart_room")
 	assert_false(RunSaver.is_usable(p))
 	_assert_refused(RunSaveStore.encode(p), RunSaver.REFUSED_UNREADABLE, "a missing key")
 

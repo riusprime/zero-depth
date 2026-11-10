@@ -18,9 +18,6 @@ extends RefCounted
 ##   ItemPool.usable) and, if held, never compiled (compiles(), read by Modifiers.build_modifiers). A card the row
 ##   prunes is never offered either, but compiles when held. The table is the
 ##   Gun's: a Blade run has no form, and every card reads as on there.
-## - An old save (trim(), on load after WandMigration): a wand saved before AS may hold more cards of a category than
-##   its limit; the leftmost ones up to the limit stay and the rest leave the build, refunded as shards (the shop's
-##   salvage price, WandMigration.refund_of), so the run loads with a legal wand.
 ## A world without the table (a lab) has no limits and no cells off: every function here reads as before AS.
 ## Pure: no randomness, no engine calls.
 
@@ -163,32 +160,6 @@ static func usable(w: World, idx: int) -> bool:
 ## Held card `code` is compiled (Modifiers.build_modifiers): every card but an item the form can't use.
 static func compiles(w: World, code: int) -> bool:
 	return Offers.type_of(code) != Offers.MOD or compatible(w, code)
-
-
-## An old save's wand trimmed to the limits (class doc). Returns the shards refunded (0 when it was legal).
-## Deterministic, idempotent.
-static func trim(w: World) -> int:
-	if w.slot_table == null:
-		return 0
-	var counts := {}
-	var over := PackedInt32Array()
-	for s in w.mod_slots.size():
-		var code := w.mod_slots[s]
-		var cat := category(w, code)
-		var lim := limit(w, cat)
-		if lim < 0:
-			continue
-		counts[cat] = int(counts.get(cat, 0)) + 1
-		if int(counts[cat]) > lim:
-			over.append(code)
-	var refund := 0
-	for code in over:
-		refund += WandMigration.refund_of(w, code)
-		var s := w.mod_slots.find(code)
-		if s >= 0:
-			BuildSlots.drop(w, s)
-	w.shards += refund
-	return refund
 
 
 ## The slot counts the Build page shows (WorldReader.wand): per limited category in order, [category, held, limit].

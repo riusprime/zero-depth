@@ -42,25 +42,6 @@ func test_a_loop_two_run_round_trips_through_the_payload() -> void:
 	assert_eq(w2.state_hash(), w.state_hash(), "Continue resumes the same loop-2 state")
 
 
-func test_an_older_last_floor_save_resumes_with_the_ascension_portal() -> void:
-	var run := SaveLab.run_state(77, SaveLab.floors())
-	var w := SaveLab.build_floor(run)
-	CombatLab.idle(w, 20)
-	var p := RunSaver.payload_of(w, run, 77, PackedByteArray())
-	var snap: Dictionary = p["world"]["world"]
-	for f in [&"loop", &"run_floor", &"loop_threat", &"loop_cap_permille"]:
-		snap.erase(f)
-	var flow: Dictionary = snap[&"boss_flow"]
-	for f in [&"ascension", &"ascend_open", &"ascend_declined", &"ascend_choice"]:
-		flow.erase(f)
-	var back := RunSaver.run_from(p, _run_table())
-	var w2 := SaveLab.build_floor(back)
-	assert_eq(WorldSnapshot.apply(w2, p["world"]), "", "a snapshot without the AP fields restores")
-	assert_true(w2.boss_flow.ascension, "the last floor gets the Ascension portal")
-	assert_true(w2.floor_layout.has_loop_device, "v0.8.0 P2: and the Loop device beside it")
-	assert_eq(w2.state_hash(), w.state_hash(), "and the same state")
-
-
 ## v0.8.0 P2 (owner O28): a last-floor save made before P2 (its snapshot holds the retired choice's fields, and the
 ## device taken in the old numbers) restores onto the rebuilt floor, Loop device and all; Ascend's old number is the
 ## Loop device's.

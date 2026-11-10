@@ -237,7 +237,6 @@ stagger_seconds = 2.5
 attacks = Array[ExtResource("1_atk")]([SubResource("A_lights_out"), SubResource("A_lights_out_3"), SubResource("A_wisp_bloom"), SubResource("A_wisp_bloom_2"), SubResource("A_wisp_bloom_3"), SubResource("A_snuff"), SubResource("A_snuff_3"), SubResource("A_lantern_sweep")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
-legacy_arena_cells = Vector2i(4, 4)
 arena_template = 0
 ranged_full_m = 5.0
 ranged_far_m = 12.0

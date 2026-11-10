@@ -458,64 +458,6 @@ func test_the_shot_budget_keeps_the_players_own_shot_and_the_damage() -> void:
 	assert_lte(ShotCap.last_second(w) + ShotCap.reserve(w), 40, "the sim's window agrees")
 
 
-# --- Old saves -----------------------------------------------------------------------------------------------------
-func test_an_over_full_wand_is_trimmed_leftmost_first_and_refunded() -> void:
-	var w := _world()
-	for id: StringName in [
-		&"gun_twin", &"gun_pierce", &"halo_shot", &"gun_homing", &"gun_ricochet", &"ember_core"
-	]:
-		w.add_item(W.item(w, id))  # a save from before AS: no rule held these back
-	BuildSlots.sync(w)
-	var expect := (
-		WandMigration.refund_of(w, W.item(w, &"halo_shot"))
-		+ WandMigration.refund_of(w, W.item(w, &"gun_ricochet"))
-	)
-	var shards := w.shards
-	var refund := AttackSlots.trim(w)
-	assert_eq(
-		_ids(w), [&"gun_twin", &"gun_pierce", &"gun_homing", &"ember_core"], "the leftmost stay"
-	)
-	assert_eq(refund, expect, "the rest are refunded at the salvage price")
-	assert_eq(w.shards, shards + refund)
-	assert_eq(AttackSlots.trim(w), 0, "idempotent")
-
-
-func test_a_run_saved_before_as_loads_trimmed_and_plays_on() -> void:
-	# The save: a Gun run on floor 2 whose wand the code before AS let hold two Patterns and three Secondaries (TEST
-	# HELPER: the cards added without the slot rules, as that code took them), snapshotted mid-fight.
-	var old := SaveLab.floor_world(7, 2, &"gun")
-	old.slot_table = null
-	for id: StringName in [
-		&"gun_twin", &"gun_pierce", &"halo_shot", &"gun_homing", &"gun_ricochet", &"ember_core"
-	]:
-		old.add_item(W.item(old, id))
-	BuildSlots.sync(old)
-	for t in 30:
-		old.step(AttackScenario.frame(t))
-	var snap := WorldSnapshot.take(old)
-	var w := SaveLab.floor_world(7, 2, &"gun")  # the load, as FloorPlan's resume
-	assert_eq(WorldSnapshot.apply(w, snap), "", "the save restores")
-	assert_eq(w.mod_slots.size(), 6, "over-full as saved")
-	var shards := w.shards
-	var expect := (
-		WandMigration.refund_of(w, W.item(w, &"halo_shot"))
-		+ WandMigration.refund_of(w, W.item(w, &"gun_ricochet"))
-	)
-	WandMigration.run(w)
-	var refund := AttackSlots.trim(w)
-	assert_eq(
-		_ids(w),
-		[&"gun_twin", &"gun_pierce", &"gun_homing", &"ember_core"],
-		"the leftmost of each stay"
-	)
-	assert_eq(refund, expect, "Halo and Ricochet are refunded as shards")
-	assert_eq(w.shards, shards + refund)
-	for t in 120:
-		w.step(AttackScenario.frame(t))
-	assert_false(w.player_dead(), "the run plays on")
-	assert_eq(w.mod_slots.size(), 4, "with a legal wand")
-
-
 # --- v0.11.0 S6: the wand read flags a held card the form doesn't use -------------------------------------------------
 func test_the_wand_read_flags_a_held_card_the_current_form_does_not_use() -> void:
 	var w := _world()

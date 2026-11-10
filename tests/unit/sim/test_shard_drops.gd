@@ -153,13 +153,3 @@ func test_a_save_keeps_the_drops() -> void:
 	assert_eq(restored.shard_drops.seqs, w.shard_drops.seqs)
 	assert_eq(restored.shard_drops.next_seq, w.shard_drops.next_seq)
 	assert_eq(restored.state_hash(), w.state_hash(), "hash equal")
-
-
-func test_an_older_save_starts_with_none_lying() -> void:
-	var w := SaveLab.floor_world(77, 1)
-	var snap := WorldSnapshot.take(w)
-	(snap["world"] as Dictionary).erase(&"shard_drops")
-	var base := SaveLab.floor_world(77, 1)
-	assert_eq(WorldSnapshot.apply(base, snap), "", "an old snapshot fits")
-	assert_eq(base.shard_drops.size(), 0, "none lying")
-	assert_eq(base.state_hash(), w.state_hash(), "same state")

@@ -10,7 +10,7 @@ extends RefCounted
 ##   draw from the `map:overrun` sub-stream of the floor seed (never the `map` stream itself, so layouts don't move);
 ## - no candidate (a tiny floor): no Overrun on that floor (overrun_room stays -1).
 ## - v0.9.0 CF (owner: "lets never make it a 1x1"): a candidate has at least `min_cells` grid cells (OverrunTable;
-##   0, a floor saved before CF: any room).
+##   0: any room).
 ## Pure sim code: integers, BFS over the doorway graph.
 
 

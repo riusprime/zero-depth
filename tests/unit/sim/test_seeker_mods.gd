@@ -426,22 +426,6 @@ func test_a_plain_seekers_hash_has_no_seekers_block() -> void:
 	assert_ne(x, h2.finish_hex(), "the rows are hashed while set")
 
 
-func test_an_older_save_without_the_rows_loads_empty() -> void:
-	var w := _world([&"gun_echo"], [Vector2(4.0, 0.0)])
-	W.run(w, 10, 0, W.S)
-	assert_true(w.mx.sk_touched())
-	var snap := w.to_snapshot()
-	var mx: Dictionary = (snap["world"] as Dictionary)[&"mx"]
-	for f: StringName in WorldSnapshot.ADDED_SINCE_V05[&"ModifierState"]:
-		if String(f).begins_with("sk_"):
-			assert_true(mx.has(f), "%s is saved" % f)
-			mx.erase(f)
-	var base := _world([&"gun_echo"], [Vector2(4.0, 0.0)])
-	assert_eq(WorldSnapshot.apply(base, snap), "", "an older snapshot restores")
-	assert_false(base.mx.sk_touched(), "with no Seekers rows")
-	W.run(base, 10, 0, 0)
-
-
 func test_rows_are_dropped_when_the_shot_is_no_seekers_any_more() -> void:
 	var w := _world([&"gun_echo"], [Vector2(4.0, 0.0)])
 	_volley(w, 3)
@@ -497,15 +481,3 @@ func test_fc7b_the_carry_is_hashed_only_while_set_and_round_trips_a_save() -> vo
 	assert_eq(c.state_hash(), w.state_hash())
 	w.mx.sk_carry = 0
 	assert_eq(w.state_hash(), h0, "at 0 the digest is the old one")
-
-
-func test_fc7b_an_older_save_without_the_carry_loads_with_none() -> void:
-	var w := _world([], [Vector2(4.0, 0.0)])
-	SeekerMods.take(w, 750)
-	var snap := w.to_snapshot()
-	var mx: Dictionary = (snap["world"] as Dictionary)[&"mx"]
-	assert_true(mx.has(&"sk_carry"))
-	mx.erase(&"sk_carry")
-	var base := _world([], [Vector2(4.0, 0.0)])
-	assert_eq(WorldSnapshot.apply(base, snap), "", "an older snapshot restores")
-	assert_eq(base.mx.sk_carry, 0)

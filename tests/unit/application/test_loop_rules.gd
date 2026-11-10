@@ -63,7 +63,7 @@ func test_the_loop_device_draws_the_rule_and_the_floor_holds_it() -> void:
 	assert_eq(RunRecap.rule_keys(run), PackedStringArray([LoopRules.name_key(run.loop_rules[0])]))
 
 
-func test_the_rules_round_trip_and_a_world_without_them_restores() -> void:
+func test_the_rules_round_trip() -> void:
 	var run := _loop_two_run(321)
 	var w := SaveLab.build_floor(run)
 	CombatLab.idle(w, 30)
@@ -76,18 +76,6 @@ func test_the_rules_round_trip_and_a_world_without_them_restores() -> void:
 	var w2 := SaveLab.build_floor(back)
 	assert_eq(WorldSnapshot.apply(w2, q["world"]), "", "the snapshot fits")
 	assert_eq(w2.state_hash(), w.state_hash(), "Continue resumes the same state")
-	# A run that holds no rule, over a world snapshot written before O5b (no rule fields).
-	p["run"]["loop_rules"] = PackedStringArray()
-	p["run"]["loop_rule_loop"] = 0
-	var snap: Dictionary = p["world"]["world"]
-	for f in [&"loop_rules", &"loop_shield_permille", &"loop_shield_half_arc"]:
-		snap.erase(f)
-	var old := RunSaver.run_from(p, _run_table())
-	assert_true(old.loop_rules.is_empty(), "the run holds no rule")
-	assert_eq(LoopRules.newest(old), &"", "and announces none")
-	var w3 := SaveLab.build_floor(old)
-	assert_eq(WorldSnapshot.apply(w3, p["world"]), "", "its snapshot restores")
-	assert_true(w3.loop_rules.is_empty())
 
 
 func test_a_loop_one_world_hashes_as_before() -> void:

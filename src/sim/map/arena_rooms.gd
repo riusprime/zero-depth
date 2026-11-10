@@ -9,7 +9,7 @@ extends RefCounted
 ##   (ShopPlacement is a pure function of the layout); event rooms are picked later among the rooms left
 ##   (Events.pick_rooms keeps arenas out);
 ## - a candidate needs at least MIN_SPOTS spawn points (its waves spawn inside), and (v0.9.0 CF, owner: "lets never
-##   make it a 1x1") at least `min_cells` grid cells (ArenaTable; 0, a floor saved before CF: any room); the target
+##   make it a 1x1") at least `min_cells` grid cells (ArenaTable; 0: any room); the target
 ##   still counts every candidate;
 ## - the target is round(combat rooms x share_permille / 1000), at least 1 when there is a candidate;
 ## - the candidates are taken in a fixed order (fewest doorways first, then the most doorway hops from the start hall,

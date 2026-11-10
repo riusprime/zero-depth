@@ -196,43 +196,6 @@ func test_a_snapshot_keeps_the_order_with_equal_hashes() -> void:
 	assert_eq(base.state_hash(), w.state_hash(), "and they play on the same")
 
 
-func test_an_older_save_keeps_its_pick_order_and_every_card() -> void:
-	# A v0.6.0 save (payload 3): six cards in pick order on floor 1, where the wand now has four. v0.6.5 WN5b: they
-	# are v0.6 cards, so each maps onto its wand card in that order or is refunded (WandMigration).
-	var old := _world(1)
-	old.wand_table = null  # v0.6.0: six slots
-	var six := [&"ember_edge", &"long_edge", &"twin_arc", &"overcharge", &"conductor", &"shatter"]
-	_take(old, six)
-	var carry := RunCarry.take(old, 0)
-	var w := _world(1)
-	RunCarry.apply(w, carry)
-	var shards := w.shards
-	Abilities.start_floor(w)
-	assert_eq(
-		_ids(w),
-		[&"ember_core", &"wide_arc", &"double_slash", &"finisher_plus", &"storm_core"],
-		"each in its pick order: S1, B1, B5, B14, S2; Shatter has no wand row (refunded)"
-	)
-	assert_gt(w.shards, shards, "the one without a wand row is refunded")
-
-
-func test_a_v0_5_carry_migrates_into_the_floor_reached_slot_count() -> void:
-	for f in [1, 2]:
-		var probe := _world(f)
-		var items := PackedInt32Array()
-		for id: StringName in [&"heavy", &"whirl", &"flurry", &"thrust", &"wide_arc"]:  # v0.6.5 WN5b
-			items.append(_it(probe, id))
-		var w := _world(f)
-		RunCarry.apply(w, {&"items_owned": items, &"hp": 50})
-		Abilities.start_floor(w)
-		assert_eq(
-			w.mod_slots.size(),
-			mini(5, Wand.slots(w)),
-			"floor %d: the floor's slots, in pickup order" % f
-		)
-		assert_eq(w.mod_slots[0], items[0])
-
-
 func test_catch_up_reads_the_wand_whatever_its_order() -> void:
 	var w := _world(1)
 	w.catch_up_table = CatchUpTable.new()

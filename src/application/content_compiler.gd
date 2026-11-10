@@ -672,9 +672,6 @@ static func compile_boss(def: BossDefinition, repo: ContentRepository) -> BossTa
 		t.phase_cd_permille.append(ph.cooldown_permille)
 		HardCompiler.compile_phase(ph, t)  # The ring stream and the waves
 	t.arena_cells = def.arena_cells
-	t.legacy_arena_cells = (
-		def.legacy_arena_cells if def.legacy_arena_cells != Vector2i.ZERO else def.arena_cells
-	)  # v0.7.5 BF1
 	t.arena_template = def.arena_template
 	_compile_boss_challenge(def, t)
 	if def is FinalBossDefinition:

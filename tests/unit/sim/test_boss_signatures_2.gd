@@ -726,22 +726,6 @@ func test_lava_and_the_melt_are_deterministic_and_survive_a_save() -> void:
 	_round_trip(a, make.call(), "lava")
 
 
-func test_an_older_save_mid_fight_has_no_molten_floor_and_plays_on() -> void:
-	var s := _fight(&"foundry", Vector2(2, 3), Vector2(-4, -6), 11.0)
-	var w: World = s[0]
-	CombatLab.idle(w, 30)
-	var snap := WorldSnapshot.take(w)
-	var bosses: Dictionary = snap["world"][&"bosses"]
-	for f: StringName in WorldSnapshot.ADDED_SINCE_V05[&"BossStore"]:
-		bosses.erase(f)
-	var base := _fight(&"foundry", Vector2(2, 3), Vector2(-4, -6), 11.0)[0] as World
-	assert_eq(WorldSnapshot.apply(base, snap), "", "a save from before BS2 restores")
-	assert_eq(base.state_hash(), w.state_hash(), "the same fight")
-	assert_eq(base.bosses.lava_x.size(), 0)
-	_flood(base, base.boss_id, &"molten_flood")
-	assert_gt(base.bosses.lava_x.size(), 0, "and its next flood leaves lava")
-
-
 func test_the_trimmed_moves_are_gone() -> void:
 	var w := BossLab.world()
 	for spec: Array in [

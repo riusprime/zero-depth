@@ -996,7 +996,7 @@ static func projectile_spec(w: World, pi: int) -> AttackSpec:
 	var p := w.projectiles
 	if p.team[pi] != ActorStore.TEAM_PLAYER:
 		return null
-	var key := p.spec_key[pi] if pi < p.spec_key.size() else ""
+	var key := p.spec_key[pi]
 	if key != "":
 		var s := Modifiers.book(w).find(key)
 		if s != null:

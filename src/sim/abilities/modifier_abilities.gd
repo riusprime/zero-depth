@@ -30,7 +30,6 @@ static func add_ring(
 	travel: Array = []
 ) -> void:
 	var st := w.ab
-	_pad_travel(st)
 	var life := maxi(1, spec.life_ticks)
 	if not travel.is_empty():
 		life = maxi(1, int(travel[4]))
@@ -50,22 +49,10 @@ static func add_ring(
 	st.ring_k.append(int(travel[5]) if not travel.is_empty() else 0)
 
 
-## A save from before N3 holds rings without the travel columns: they are plain rings (zeros).
-static func _pad_travel(st: AbilityState) -> void:
-	var n := st.ring_pos.size()
-	if st.ring_pulse.size() == n and st.ring_k.size() == n:
-		return
-	st.ring_vel.resize(n)
-	st.ring_orb.resize(n)
-	st.ring_orb_a.resize(n)
-	st.ring_pulse.resize(n)
-	st.ring_k.resize(n)
-
-
 ## The radius ring k has grown to at tick `t` (a plain ring: linear from 0 over its life).
 static func ring_radius(w: World, k: int, t: int) -> float:
 	var st := w.ab
-	if k < st.ring_pulse.size() and st.ring_pulse[k] > 0:
+	if st.ring_pulse[k] > 0:
 		return travel_radius(
 			st.ring_r[k], st.ring_pulse[k], st.ring_end[k] - st.ring_start[k], t - st.ring_start[k]
 		)
@@ -116,7 +103,6 @@ static func advance_rings(w: World) -> void:
 	var st := w.ab
 	if st.ring_pos.is_empty():
 		return
-	_pad_travel(st)
 	var a := w.actors
 	var book := Modifiers.book(w)
 	var k := 0

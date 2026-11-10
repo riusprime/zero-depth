@@ -107,16 +107,6 @@ static func draw_legendary(w: World, rng: RngStream) -> int:
 	return mods[rng.range_int(0, mods.size() - 1)]
 
 
-## Old saves, WorldSnapshot.apply: a core on an actor that is neither a boss nor an elite archetype (a
-## ×2 HP elite of a save made before EL: a normal enemy now, its extra HP kept) is dropped, with its stagger and window.
-static func drop_plain(w: World) -> void:
-	var s := w.cores
-	for k in range(s.size() - 1, -1, -1):
-		var i := w.actors.index_of(s.ids[k])
-		if s.boss[k] == 0 and (i < 0 or not EliteAi.is_elite_kind(w.actors.kinds[i])):
-			s.remove_at(k)
-
-
 ## The core entry of actor `id`, or -1.
 static func entry_of(w: World, id: int) -> int:
 	return w.cores.ids.find(id) if not w.cores.ids.is_empty() else -1

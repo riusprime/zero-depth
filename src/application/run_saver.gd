@@ -25,13 +25,11 @@ const RUN_KEYS: Array[String] = [
 	"kills_done",
 	"routes",
 	"threat_by_floor",
-	"floor_rules",
 	"loop",
 	"loop_floors",
 	"final",
 	"purple_floors",
 	"run_id",
-	"boss_draw",
 	"affinity",
 	"fragments",
 	"locked",
@@ -47,8 +45,6 @@ const RUN_ID := &"five_floors"
 ## The main menu's notices for a refused save: written by an older version, or unreadable.
 const REFUSED_OLDER := "UI_SAVE_REFUSED_OLDER"
 const REFUSED_UNREADABLE := "UI_SAVE_REFUSED_UNREADABLE"
-## The designed layouts of floor rules 4 (RT1: data/room_layouts as RT1 shipped them, unchanged since).
-const RT1_LAYOUTS: Array[StringName] = [&"room_2x2_1", &"room_3x2_1", &"room_3x3_1"]
 
 var store: RunSaveStore
 ## Rooms of the current floor entered so far, one byte per room.
@@ -151,101 +147,38 @@ func take_refused() -> String:
 	return out
 
 
-## The floor tables a floor of `run` is built with, compiled from `repo`: {map: FloorParams, arena:
-## ArenaTable, shop: ShopTable}. the map carries the designed room layouts (data/room_layouts) unless the
-## floor was saved before RT (RunState.designed_rooms), which is rebuilt with its rule-built rooms. the shop
-## carries the biomes' shop rooms (data/shop_rooms) unless the floor was saved before SR (RunState.shop_rooms), which
-## is rebuilt with its terminal. A v0.7.0 floor
-## resumed from an older save (RunState.v070_floor) gets v0.7.0's rules on top: FloorParams.v070(), arena share 330 per
-## mille, a shop on every floor (Main and the save tests).
-## Whether run `run`'s current floor puts its shop in its biome's shop room (false: a floor resumed from a
-## save made before SR, floor rules 1-4, keeps the terminal it had).
-static func shop_rooms(run: RunState) -> bool:
-	return run.floor_rules > RunState.FLOOR_RULES_V080_RT1
-
-
+## The floor tables a run's floor is built with, compiled from `repo`: the map (FloorParams, with the designed room
+## layouts, data/room_layouts), the arenas, the shop (with the biomes' shop rooms, data/shop_rooms), the Overrun room,
+## the Lockdowns marked first (`lockdown_first`: null for a world built without a run) and the large rooms' purposes.
 static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
 	var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
 	var arena := RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))
 	var shop := ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal"))
 	var overrun := ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))
-	if ClosedFights.legacy_rooms(run):  # A floor saved before CF keeps its rooms
-		if arena != null:
-			arena.min_cells = 0
-		if overrun != null:
-			overrun.min_cells = 0
-	if run == null or run.designed_rooms():  # A floor saved before RT keeps its rule-built rooms
-		map.room_layouts = RunContentCompiler.compile_room_layouts(repo)
-		if run != null and run.rt1_rooms():  # A floor saved under RT1 keeps RT1's three layouts
-			map.room_layouts = rt1_layouts(map.room_layouts)
-	if shop != null and (run == null or shop_rooms(run)):  # Before SR, the terminal
+	map.room_layouts = RunContentCompiler.compile_room_layouts(repo)
+	if shop != null:
 		shop.rooms = RunContentCompiler.compile_shop_rooms(repo)
-	# A floor saved before v0.9.0 (rules 1-9) keeps its gates against the wall, as it was built.
-	map.legacy_gate = run != null and run.floor_rules <= RunState.FLOOR_RULES_V080_BD
-	if run != null and run.v070_floor():
-		map = FloorParams.v070()
-		map.legacy_gate = true
-		if arena != null:
-			arena.share_permille = ArenaTable.V070_SHARE_PERMILLE
-		if shop != null:
-			shop.first_floor = 1
-			shop.every_floors = 1
-	var first: LockdownTable = null  # A floor built under rules 17 marks its Lockdowns first
-	if run != null and run.floor_rules > RunState.FLOOR_RULES_V090_CF:
-		first = lockdown_table(run, repo)
-	# PLAN P1: the large rooms' purposes (none on a v0.7.0 floor)
-	var purposes: Array[RoomPurposeTable] = []
-	if run == null or not run.v070_floor():
-		purposes = RunContentCompiler.compile_room_purposes(repo)
 	return {
 		&"map": map,
 		&"arena": arena,
 		&"shop": shop,
 		&"overrun": overrun,
-		&"lockdown_first": first,
-		&"purposes": purposes
+		&"lockdown_first": lockdown_table(repo) if run != null else null,
+		&"purposes": RunContentCompiler.compile_room_purposes(repo)
 	}
 
 
-## v0.9.0 LK, EL, CF: the Lockdowns' table a floor of `run` is built with: no Elite Lockdown on a floor saved before
-## EL (rules 1-14), any room size on one saved before CF (1-15). Null without the data.
-static func lockdown_table(run: RunState, repo: ContentRepository) -> LockdownTable:
-	var t := RunContentCompiler.compile_lockdown(repo.get_def(&"lockdown", &"lockdown"))
-	if t != null and run != null and run.floor_rules <= RunState.FLOOR_RULES_V090_SH:
-		t.kind_weights[LockdownTable.Kind.ELITE] = 0  # A floor saved before EL had none
-	if t != null and run != null and run.floor_rules <= RunState.FLOOR_RULES_V095_AQ:
-		t.burst_gap_ticks = 0  # A floor saved before DR keeps its three formations and its arenas
-		t.takes_arenas = false
-	if t != null and run != null and run.floor_rules <= RunState.FLOOR_RULES_V095_BK:
-		t.set_piece_floor = 0  # A floor saved before it keeps its Lockdown order and kinds
-	if t != null and ClosedFights.legacy_rooms(run):  # A floor saved before CF keeps its rooms
-		t.min_cells = 0
-	return t
+## The Lockdowns' table a floor is built with. Null without the data.
+static func lockdown_table(repo: ContentRepository) -> LockdownTable:
+	return RunContentCompiler.compile_lockdown(repo.get_def(&"lockdown", &"lockdown"))
 
 
-## The designed layouts a floor saved under floor rules 4 was built with: RT1_LAYOUTS out of
-## `layouts` (RunContentCompiler.compile_room_layouts), the sizes without one dropped, so its rooms of those sizes
-## draw nothing and keep their rule-built interiors as they did then.
-static func rt1_layouts(layouts: Dictionary) -> Dictionary:
-	var out := {}
-	for key: Vector2i in layouts:
-		var list: Array = []
-		for t: RoomLayoutTable in layouts[key]:
-			if t.id in RT1_LAYOUTS:
-				list.append(t)
-		if not list.is_empty():
-			out[key] = list
-	return out
-
-
-## The boss room floor `run` builds for boss `boss` (an index into `bosses`; -1 = none): today's
-## 4 x 4, or the boss's legacy room on a floor resumed from a save made before BF1 (Main and the labs).
-static func boss_arena(run: RunState, bosses: Array[BossTable], boss: int) -> BossArenaSpec:
+## The boss room built for boss `boss` (an index into `bosses`; -1 = none): its 4 x 4 arena (Main and the labs).
+static func boss_arena(bosses: Array[BossTable], boss: int) -> BossArenaSpec:
 	if boss < 0:
 		return null
 	var t := bosses[boss]
-	var cells := t.legacy_arena_cells if run != null and run.legacy_boss_room() else t.arena_cells
-	return BossArenaSpec.make(cells, t.arena_template, boss)
+	return BossArenaSpec.make(t.arena_cells, t.arena_template, boss)
 
 
 ## The RunDefinition id a payload's run was started with. Compile it for run_from.
@@ -265,7 +198,6 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.kills_done = int(r["kills_done"])
 	run.routes = PackedInt32Array(r["routes"])
 	run.threat_by_floor = PackedInt32Array(r["threat_by_floor"])
-	run.floor_rules = int(r["floor_rules"])
 	run.loop = int(r["loop"])
 	run.loop_floors = int(r["loop_floors"])
 	run.final_fight = bool(r["final"])
@@ -278,7 +210,6 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.marked_done = int(r["marked"])
 	run.loop_rules = _names(r["loop_rules"])
 	run.loop_rule_loop = int(r["loop_rule_loop"])
-	run.boss_draw = int(r["boss_draw"])
 	run.heart_room = bool(r["heart_room"])
 	return run
 
@@ -314,13 +245,11 @@ static func payload_of(
 			"kills_done": run.kills_done,
 			"routes": run.routes.duplicate(),  # Each floor's route
 			"threat_by_floor": run.threat_by_floor.duplicate(),
-			"floor_rules": run.floor_rules,  # The floor's generation rules
 			"loop": run.loop,  # The Ascension loop
 			"loop_floors": run.loop_floors,
 			"final": run.final_fight,  # The final arena
 			"purple_floors": run.purple_floors.duplicate(),  # The floors that held purple runes
 			"run_id": String(run.table.id),  # The run's shape (saved_run_id)
-			"boss_draw": run.boss_draw,  # The run's boss draw rules (RunState.BOSS_DRAW)
 			"affinity": String(run.affinity) if Wardrobe.has_affinity(run.affinity) else "",  # "": None
 			"fragments": run.fragments_done,  # The run's Rune Fragments so far
 			"locked": _ids(run.locked_cards),  # The cards still locked for the run

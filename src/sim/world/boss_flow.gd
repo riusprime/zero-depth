@@ -33,8 +33,8 @@ extends RefCounted
 ## play"): on today's floors (`door` starts at Door.SET, RunState.prepare) the door is shut and solid from the floor's
 ## first tick (its collider joins the walls, Door.SHUT) until the player presses interact within DOOR_REACH_M of its
 ## outer face (interact(): Door.OPENING, BOSS_DOOR_OPENING); DOOR_OPEN_TICKS later the slab is down, its collider
-## leaves the walls and the passage is open (Door.OPEN, BOSS_DOOR_OPENED). Walking in seals it as before. A floor
-## saved before BD (floor rules 1-7) and a world built without a run keep Door.PASSAGE: the doorway open until sealed.
+## leaves the walls and the passage is open (Door.OPEN, BOSS_DOOR_OPENED). Walking in seals it as before. A world
+## built without a run keeps Door.PASSAGE: the doorway open until sealed.
 
 ## Appended, never inserted: the state is hashed.
 enum State { WAITING, FIGHT, OPEN, EXITED, ENTERING }

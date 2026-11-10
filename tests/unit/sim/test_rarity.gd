@@ -201,8 +201,7 @@ func test_chain_blast_is_the_pre_nerf_explosive() -> void:
 		)
 
 
-func test_legendary_picks_is_saved_and_an_older_save_lacks_it() -> void:
-	assert_has(WorldSnapshot.ADDED_SINCE_V05[&"World"], &"legendary_picks")
+func test_legendary_picks_is_saved() -> void:
 	var w := _world()
 	w.legendary_picks = 2
 	var snap := WorldSnapshot.take(w)

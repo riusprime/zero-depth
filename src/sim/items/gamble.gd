@@ -2,11 +2,9 @@ class_name Gamble
 extends RefCounted
 ## The gamble shrine (v0.3.0 PLAN L19). v0.8.0 N14 (owner O72: "shrine should also me rarer, not at the start of every
 ## floor, and have a cap of 3 upgrades with a 30% chance of failing, cost still goes up if it misses, at 3 upgrades it
-## gets blocked"): some floors only, in a combat room away from the start hall (site); a floor resumed from a save made
-## before N14 keeps its shrine in the start hall (spot; RunState.rare_shrine).
+## gets blocked"): some floors only, in a combat room away from the start hall (site).
 ## The player knows it as the Fortune Shrine, one of the floor's three shrine kinds (Shrines
-## draws the kind for the site chosen here); its rules below are unchanged. A floor saved before SH (floor rules
-## 1-13) keeps it as it was: every shrine there is a Fortune Shrine.
+## draws the kind for the site chosen here); its rules below are unchanged.
 ## - Price: GambleTable.price(uses on this floor, floor number): 25 shards on floor 1, then × 1.5 per use (rounded
 ##   half up: 25, 38, 57, 86, 129 ...). Every paid use counts, a failed one too. The count of uses resets on each
 ##   floor (it is not carried), and a later floor's base is raised like the chests' (× 1.5 on floor 2, × 2 on floor 3).
@@ -43,15 +41,12 @@ static func place(w: World, at: Vector2) -> int:
 	return w.gamble_id
 
 
-## Where the floor's shrine stands, or [] for a floor without one. `legacy` (a floor saved before
-## N14): always, in the start hall (spot). Otherwise a draw on STREAM, from the floor seed: a shrine with
+## Where the floor's shrine stands, or [] for a floor without one. A draw on STREAM, from the floor seed: a shrine with
 ## floor_chance_permille; then the candidate rooms (rooms()) in an order drawn from the same stream, the first with a
 ## spot (room_spot) wins. Pure: a function of the layout, the rules and the floor seed.
 static func site(
-	layout: FloorLayout, t: GambleTable, legacy: bool, params: FloorParams = null
+	layout: FloorLayout, t: GambleTable, params: FloorParams = null
 ) -> PackedVector2Array:
-	if legacy:
-		return PackedVector2Array([spot(layout, t)])
 	var rng := stream(layout.seed_value, STREAM)
 	if not rng.chance_permille(t.floor_chance_permille):
 		return PackedVector2Array()
@@ -71,7 +66,7 @@ static func site(
 
 ## The rooms a shrine may stand in, ascending: combat rooms (ArenaRooms.candidates: not the start hall,
 ## the boss room or its host, the portal room, the Overrun room or the shop's room) that are not sealed arenas.
-## Nor a Lockdown (marked first from floor rules 17; none marked yet on an older floor's rules).
+## Nor a Lockdown (marked first: FloorScenario.build).
 static func rooms(layout: FloorLayout) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for r in ArenaRooms.candidates(layout):
@@ -148,44 +143,6 @@ static func front(at: Vector2, toward: Vector2) -> Vector2:
 	if Kin.length(d) <= 0.0:
 		return at + Vector2(FRONT_M, 0.0)
 	return at + d / Kin.length(d) * FRONT_M
-
-
-## Where the shrine of a floor saved before N14 stands, in the start hall (a pure function of the layout and the
-## rules; no stream is drawn): spot_distance_m from the start point, first on the side of the hall away from its exit,
-## then turning by 45° steps (left before right) until the spot is inside the hall and clear of every wall by
-## clear_radius_m. Without one: the hall's spawn point nearest the start that is clear, then the same in the rooms next
-## to the hall, then the start.
-static func spot(layout: FloorLayout, t: GambleTable) -> Vector2:
-	var hall := layout.start_room
-	var start := layout.start_pos
-	var exit_angle := 0
-	for d in layout.door_rooms.size():
-		if layout.door_rooms[d].x == hall:
-			exit_angle = layout.door_angles[d]
-			break
-		if layout.door_rooms[d].y == hall:
-			exit_angle = layout.door_angles[d] + 2048
-			break
-	var back := exit_angle + 2048
-	for turn in [0, 512, -512, 1024, -1024, 1536, -1536, 2048]:
-		var p := start + Kin.dir((back + turn) & 4095) * t.spot_distance_m
-		if _clear(layout, hall, p, t.clear_radius_m):
-			return p
-	var rooms := PackedInt32Array([hall])
-	rooms.append_array(layout.neighbours(hall))
-	for room in rooms:
-		if room >= layout.spawn_points.size():
-			continue
-		var best := Vector2.ZERO
-		var best_d := -1.0
-		for p in layout.spawn_points[room]:
-			var d := Kin.length(p - start)
-			if (best_d < 0.0 or d < best_d) and _clear(layout, room, p, t.clear_radius_m):
-				best = p
-				best_d = d
-		if best_d >= 0.0:
-			return best
-	return start
 
 
 ## The shrine's footprint (a square under its plinth) as a wall, so you walk up to it, not through it.

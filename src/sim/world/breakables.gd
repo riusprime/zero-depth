@@ -24,7 +24,7 @@ extends RefCounted
 ##   containers and, with barrel_room_permille, 1..barrels_max explosive barrels, on its spawn spots DOOR_GAP_M from its
 ##   doorways' approaches, AVOID_M from rewards, pedestals, the shrine, the shop and the puzzles' pieces and PROP_GAP_M
 ##   apart.
-## - v0.9.5 BK (owner Q17 a: "Breakables solid until broken; kept 1.5 m from doorways"): under floor rules 22 each
+## - Owner: "Breakables solid until broken; kept 1.5 m from doorways". Each
 ##   unbroken prop is a Solids entry (crate 0.4 m half-side, urn and barrels 0.3 m), gone the tick it breaks or blows;
 ##   shots still reach it (it is not a wall). Generation drops (never moves) a prop within DOOR_CLEAR_M of a doorway.
 
@@ -77,7 +77,7 @@ var dropped := 0
 
 
 ## Sets up `w`'s destructibles (setup, after the rewards, events, shrine, shop, timed door and rune puzzle).
-static func setup(w: World, rules: SecretRules, bk := false) -> void:
+static func setup(w: World, rules: SecretRules) -> void:
 	var f := w.floor_layout
 	if f == null:
 		return
@@ -94,12 +94,12 @@ static func setup(w: World, rules: SecretRules, bk := false) -> void:
 		var got := Secrets.place_reward(w, f.crack_room, REWARD_STREAM)
 		b.crack_reward_id = got.x
 		b.crack_reward_epic = got.y
-	_place_props(w, b, rules, bk)
+	_place_props(w, b, rules)
 	if b.crack_max == 0 and b.pos.is_empty():
 		w.breakables = null
 
 
-static func _place_props(w: World, b: Breakables, rules: SecretRules, bk: bool) -> void:
+static func _place_props(w: World, b: Breakables, rules: SecretRules) -> void:
 	var f := w.floor_layout
 	var rng := RngStream.derive(f.seed_value, STREAM)
 	var loot := RngStream.derive(f.seed_value, DROP_STREAM)
@@ -132,12 +132,11 @@ static func _place_props(w: World, b: Breakables, rules: SecretRules, bk: bool) 
 				)
 				if dr == Drop.SHARDS:
 					amount = loot.range_int(rules.container_shards_min, rules.container_shards_max)
-			if bk and not _far(spots[k], f.door_centers, DOOR_CLEAR_M):
+			if not _far(spots[k], f.door_centers, DOOR_CLEAR_M):
 				b.dropped += 1  # Dropped, never moved (every draw above is made as before)
 				continue
 			b.add(spots[k], kd, r, dr, amount)
-			if bk:
-				b.make_solid(w, b.pos.size() - 1)
+			b.make_solid(w, b.pos.size() - 1)
 
 
 ## Room `r`'s free spots for props, drawn from rng (none closer than PROP_GAP_M to each other or to `taken`).

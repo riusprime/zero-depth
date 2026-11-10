@@ -6,12 +6,9 @@ extends SceneTree
 ##   one, and the floors holding one in a 1 x 1-cell room.
 ## - Per room footprint seen in a closed fight: its rooms' mean floor area (m2), and per kind the at-once cap there
 ##   (ClosedFights.cap at that mean area, the kind's data) next to today's at-once count on floor 5 (the whole wave).
-## - v0.9.0 CF2: per floor, the floors with 0, 1 and 2 Lockdowns (any kind), and the runs with a purple-rune room on
-##   floor 2 or 3 (`rules=16` is the order before CF2).
-## `rules=15` builds every floor under the floor rules before CF (the rooms a floor saved then rebuilds with:
-## ClosedFights.legacy_rooms): the before; the default is today's. Prints the tables and writes
-## build/balance/closed_fights_rules_<rules>.txt; copy the printed output into evidence by hand.
-##   godot --headless --path . -s scripts/balance/closed_fights.gd -- seeds=1000 [rules=15]
+## - Per floor, the floors with 0, 1 and 2 Lockdowns (any kind), and the runs with a purple-rune room on floor 2 or 3.
+## Prints the tables and writes build/balance/closed_fights.txt; copy the printed output into evidence by hand.
+##   godot --headless --path . -s scripts/balance/closed_fights.gd -- seeds=1000
 
 const Lab := preload("res://tests/support/save_lab.gd")
 const FLOORS := 5
@@ -20,12 +17,9 @@ const KINDS: Array[StringName] = [&"arena", &"overrun", &"lockdown", &"elite_loc
 
 func _initialize() -> void:
 	var seeds := 1000
-	var rules := RunState.FLOOR_RULES
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("seeds="):
 			seeds = int(a.trim_prefix("seeds="))
-		if a.begins_with("rules="):
-			rules = int(a.trim_prefix("rules="))
 	var repo := ContentRepository.load_all()
 	NavField.skip_build = true  # no placement reads the flow field (test_special_room_rules)
 	var with := {}
@@ -46,7 +40,6 @@ func _initialize() -> void:
 		for floor_index in range(1, FLOORS + 1):
 			var run := Lab.run_state(s, floor_index, &"blade", 0, repo)
 			run.purple_floors = purple.duplicate()
-			run.floor_rules = rules
 			var w := Lab.build_floor(run, &"", repo)
 			if w.purple != null and not purple.has(run.run_floor()):
 				purple.append(run.run_floor())
@@ -75,12 +68,7 @@ func _initialize() -> void:
 		if mid:
 			purple_23 += 1
 	var lines := PackedStringArray()
-	lines.append(
-		(
-			"CLOSED_FIGHTS| seeds=%d floors=1-%d (%d floors) floor_rules=%d"
-			% [seeds, FLOORS, floors, rules]
-		)
-	)
+	lines.append("CLOSED_FIGHTS| seeds=%d floors=1-%d (%d floors)" % [seeds, FLOORS, floors])
 	lines.append("")
 	lines.append("| kind | floors with one | floors with one in a 1 x 1 room |")
 	lines.append("|---|---|---|")
@@ -103,9 +91,7 @@ func _initialize() -> void:
 	var text := "\n".join(lines)
 	print(text)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://build/balance"))
-	var out := FileAccess.open(
-		"res://build/balance/closed_fights_rules_%d.txt" % rules, FileAccess.WRITE
-	)
+	var out := FileAccess.open("res://build/balance/closed_fights.txt", FileAccess.WRITE)
 	out.store_string(text + "\n")
 	out.close()
 	quit(0)

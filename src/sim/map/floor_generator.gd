@@ -68,7 +68,6 @@ static func generate(seed_value: int, params: FloorParams = null) -> FloorLayout
 	var rng := RngStream.derive(seed_value, "map")
 	var f := FloorLayout.new()
 	f.seed_value = seed_value
-	f.legacy_gate = p.legacy_gate  # v0.9.0 PT
 	f.cell_size = Vector2(
 		rng.range_int(FloorLayout.cm(p.cell_size_min.x), FloorLayout.cm(p.cell_size_max.x)) / 100.0,
 		rng.range_int(FloorLayout.cm(p.cell_size_min.y), FloorLayout.cm(p.cell_size_max.y)) / 100.0
@@ -108,7 +107,6 @@ static func one_room(seed_value: int, cells: Vector2i, params: FloorParams = nul
 	var rng := RngStream.derive(seed_value, "map")
 	var f := FloorLayout.new()
 	f.seed_value = seed_value
-	f.legacy_gate = p.legacy_gate  # v0.9.0 PT
 	f.cell_size = Vector2(
 		rng.range_int(FloorLayout.cm(p.cell_size_min.x), FloorLayout.cm(p.cell_size_max.x)) / 100.0,
 		rng.range_int(FloorLayout.cm(p.cell_size_min.y), FloorLayout.cm(p.cell_size_max.y)) / 100.0
@@ -620,9 +618,8 @@ static func _furnish_themed(
 
 
 ## Each room's designed layout, turn and mirror, drawn from the map stream in room order. Only
-## when the floor has layouts (FloorParams.room_layouts; none on a floor saved before RT, which then draws nothing
-## here and comes out as it was), and never for the start hall or the portal room (their own rules) or a room whose
-## size has no layout yet (its rule-built interior stays).
+## when the floor has layouts (FloorParams.room_layouts; none: no draw here), and never for the start hall or the
+## portal room (their own rules) or a room whose size has no layout yet (its rule-built interior stays).
 static func _draw_layouts(f: FloorLayout, p: FloorParams, rng: RngStream) -> void:
 	for room in f.room_count():
 		f.room_layout.append(&"")

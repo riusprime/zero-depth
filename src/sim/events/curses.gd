@@ -199,20 +199,6 @@ static func heat_decay(w: World, per_tick: int) -> int:
 	return per_tick if linger == 0 else per_tick * (1000 - linger) / 1000
 
 
-## The curses whose ids are retired (their content deleted). Their places in
-## World.ev.curses are kept by EventCompiler (a retired table, never drawn) so a save's curse indices still name the
-## same curses; a retired curse a save still holds is dropped on load (drop_retired).
-static func drop_retired(w: World) -> void:
-	if w.curses_owned.is_empty():
-		return
-	var kept := PackedInt32Array()
-	for c in w.curses_owned:
-		if c >= w.ev.curses.size() or not w.ev.curses[c].retired:
-			kept.append(c)
-	if kept.size() != w.curses_owned.size():
-		w.curses_owned = kept
-
-
 # --- Cursed chest offers ----------------------------------------------------------------------------------------
 ## Rewards.interact, right after reward i's offer was rolled: a chest may turn cursed (see the class comment).
 static func on_offer_rolled(w: World, i: int) -> void:

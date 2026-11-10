@@ -18,7 +18,7 @@ var up_desc_key := &""
 var threat := 1
 var weight := 0
 ## A retired curse's place (its content deleted: Marked, owner Q25): never drawn (weight 0), no effect, no
-## threat; a save still holding it drops it (Curses.drop_retired).
+## threat.
 var retired := false
 
 

@@ -332,26 +332,6 @@ func test_a_save_mid_challenge_resumes_exactly() -> void:
 	assert_ne(w.state_hash(), h0, "the shrine's state is hashed")
 
 
-func test_a_floor_saved_before_sh_is_rebuilt_as_it_was() -> void:
-	var today := 0
-	for s in range(1, 25):
-		var r := ShrineLab.run_state(s, 2)
-		r.floor_rules = RunState.FLOOR_RULES_V090_LK
-		var old := ShrineLab.build(r)
-		assert_null(old.shrine, "seed %d: no Blood or Chaos shrine, no fountain under rules 13" % s)
-		assert_eq(Gamble.present(old), old.gamble_id >= 0, "its shrine is the gamble shrine")
-		# v0.9.0 CF moved the arenas (never a 1 x 1), and so the shrine's site with them: SH's own rules are compared
-		# under the last floor rules before CF (15)
-		var r15 := ShrineLab.run_state(s, 2)
-		r15.floor_rules = RunState.FLOOR_RULES_V090_EL
-		var now := ShrineLab.build(r15)
-		assert_eq(now.gamble_id >= 0, old.gamble_id >= 0, "the shrine's site is drawn as before")
-		assert_eq(now.gamble_pos, old.gamble_pos)
-		if now.shrine != null:
-			today += 1
-	assert_gt(today, 0, "today's floors have Blood or Chaos shrines or fountains")
-
-
 ## v0.9.0 EL (owner 2026-10-23: "Floors 4-5 only"): on floors 1-3 a Chaos challenge brings no elite, whatever
 ## its chance.
 func test_chaos_brings_no_elite_before_floor_4() -> void:

@@ -1,8 +1,7 @@
 class_name GateClearance
 extends RefCounted
 ## Where a gate stands from the wall
-## it backs onto and the zone kept clear round it, for FloorGenerator, BossRoomBuilder and Routes. A floor built
-## under floor rules 1-9 (FloorLayout.legacy_gate) keeps the placement it was saved with.
+## it backs onto and the zone kept clear round it, for FloorGenerator, BossRoomBuilder and Routes.
 
 
 ## The kept-clear zone of a gate at `pos` facing `angle` on floor `f` (the gate's, or the Deep gate's: Routes.zone):
@@ -17,20 +16,16 @@ static func zone(f: FloorLayout, pos: Vector2, angle: int) -> Rect2:
 	return Rect2(face + t * half_w, Vector2.ZERO).expand(face - t * half_w + n * depth)
 
 
-## How far a gate's centre stands out from the wall it backs onto: GATE_WALL_CLEAR, or (legacy_gate) the old frame's
-## half depth, against the wall.
-static func wall_offset(f: FloorLayout) -> float:
-	return FloorLayout.GATE_HALF_DEPTH if f.legacy_gate else FloorLayout.GATE_WALL_CLEAR
+## How far a gate's centre stands out from the wall it backs onto: GATE_WALL_CLEAR.
+static func wall_offset(_f: FloorLayout) -> float:
+	return FloorLayout.GATE_WALL_CLEAR
 
 
 ## How far a gate's zone reaches past its GATE_WIDTH sides.
-static func zone_side(f: FloorLayout) -> float:
-	if f.legacy_gate:
-		return FloorLayout.LEGACY_ZONE_SIDE
+static func zone_side(_f: FloorLayout) -> float:
 	return FloorLayout.GATE_ZONE_HALF_W - FloorLayout.GATE_WIDTH * 0.5
 
 
-## Whether room rect `room` keeps the oval of a gate at `pos` facing `angle` clear of its walls (always, on a
-## legacy_gate floor: it had no oval).
-static func oval_fits(f: FloorLayout, room: Rect2, pos: Vector2, angle: int) -> bool:
-	return f.legacy_gate or room.encloses(FloorLayout.oval_clear_rect(pos, angle))
+## Whether room rect `room` keeps the oval of a gate at `pos` facing `angle` clear of its walls.
+static func oval_fits(_f: FloorLayout, room: Rect2, pos: Vector2, angle: int) -> bool:
+	return room.encloses(FloorLayout.oval_clear_rect(pos, angle))

@@ -97,9 +97,6 @@ func test_the_chance_per_floor_and_one_a_loop() -> void:
 	assert_eq(PurpleRunes.chance(r, per), 500, "a new loop: the same rule again")
 	r.floor_index = 1
 	assert_eq(PurpleRunes.chance(r, per), 0, "never a loop's floor 1")
-	r.floor_index = 2
-	r.floor_rules = RunState.FLOOR_RULES_V090_RA
-	assert_eq(PurpleRunes.chance(r, per), 0, "a floor saved before DP holds none")
 
 
 func test_floor_two_draws_it_half_the_time() -> void:
@@ -210,17 +207,6 @@ func test_awakened_after_the_boss_died_it_opens_at_once() -> void:
 	assert_false(w.boss_flow.gate_open(Routes.Route.DEEP))
 	_awaken(w)
 	assert_true(w.boss_flow.gate_open(Routes.Route.DEEP), "awakened late: the Deep gate is open")
-
-
-func test_a_floor_saved_before_dp_keeps_the_deep_gate() -> void:
-	var r := SaveLab.run_state(1, 1)
-	r.floor_rules = RunState.FLOOR_RULES_V090_RA
-	var w := SaveLab.build_floor(r)
-	assert_null(w.purple, "no purple runes under the old rules")
-	assert_true(w.boss_flow.routes, "the Deep gate on every floor before the last, as saved")
-	var now := SaveLab.floor_world(1, 1)
-	assert_false(now.boss_flow.routes, "today's floor 1 has none")
-	assert_eq(_walls(w), _walls(now) + 1, "its footprint stands from the start, as before")
 
 
 func test_a_save_after_the_awakening_resumes_exactly() -> void:

@@ -74,12 +74,6 @@ func test_a_run_never_places_the_same_event_twice() -> void:
 	gut.p("common event rooms over %d runs x %d floors: %d" % [WORLD_RUNS, FLOORS, total])
 
 
-func test_a_floor_saved_before_aq_keeps_its_old_draw() -> void:
-	var w := EventLab.world(3, 1)  # the lab's default: the old rules
-	assert_between(w.ev.size(), 1, 2)
-	assert_eq(w.events_seen.size(), 0, "the old draw records nothing")
-
-
 func test_the_list_rides_the_carry_and_the_run_save() -> void:
 	var w := EventLab.world(11, 1, &"blade", [], true, {&"events_seen": PackedInt32Array([2, 5])})
 	assert_true(w.events_seen.has(2) and w.events_seen.has(5), "the carry arrives")
@@ -89,16 +83,3 @@ func test_the_list_rides_the_carry_and_the_run_save() -> void:
 	run.carry = carry
 	var back := SaveLab.run_from(RunSaver.payload_of(w, run, 1, PackedByteArray()))
 	assert_eq(back.carry[&"events_seen"], w.events_seen, "the run save round-trips it")
-
-
-func test_a_carry_without_the_list_loads_as_empty() -> void:
-	var carry := RunCarry.take(EventLab.world(11, 1), 0)
-	carry.erase(&"events_seen")
-	var run := SaveLab.run_state(11, 2)
-	run.carry = carry
-	var back := SaveLab.run_from(
-		RunSaver.payload_of(EventLab.world(11, 1), run, 1, PackedByteArray())
-	)
-	var w := EventLab.world(11, 2, &"blade", [], true, back.carry)
-	assert_false(w.events_seen.has(-1))
-	assert_lte(w.events_seen.size(), 1, "no list: only this floor's own draw")

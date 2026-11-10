@@ -13,7 +13,6 @@ func test_a_run_floor_has_designed_rooms_drawn_with_the_kit() -> void:
 	var w := e.world()
 	var reader := WorldReader.new(w)
 	var f := w.floor_layout
-	assert_true(main.run.designed_rooms(), "a new run: floor rules with the designed rooms")
 	var designed := 0
 	for room in reader.floor_room_count():
 		if reader.floor_room_layout(room) != &"":

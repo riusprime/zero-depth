@@ -5,8 +5,7 @@ extends RefCounted
 ## ContentCompiler so the shared compiler stays as it was.
 ## A deleted curse or event keeps its
 ## place in the id order (a retired table: never drawn on a floor built today, no effect), so the indices a save holds
-## still name the same curses and events. RETIRED_EVENTS' weight is drawn only when a floor saved before EL is rebuilt
-## (`legacy`), so that floor's draws are the ones it was saved with.
+## still name the same curses and events.
 
 ## The five flat curses (Leaky Core, Price Gouge, Swarm Call, Swift Foes,
 ## Withering) are retired the same way.
@@ -18,7 +17,8 @@ const RETIRED_CURSES: Array[StringName] = [
 	&"swift_foes",
 	&"withering",
 ]
-const RETIRED_EVENTS := {&"ambush_cache": 10}
+## The retired events (the Ambush Cache), kept in the id order the same way.
+const RETIRED_EVENTS: Array[StringName] = [&"ambush_cache"]
 
 
 static func compile_curses(repo: ContentRepository) -> Array[CurseTable]:
@@ -68,10 +68,7 @@ static func curse_ids(repo: ContentRepository) -> Array[StringName]:
 
 ## Every event id, the retired ones too, in id order.
 static func event_ids(repo: ContentRepository) -> Array[StringName]:
-	var retired: Array[StringName] = []
-	for k: StringName in RETIRED_EVENTS:
-		retired.append(k)
-	return _ids(repo, &"events", retired)
+	return _ids(repo, &"events", RETIRED_EVENTS)
 
 
 static func _ids(
@@ -90,8 +87,7 @@ static func _ids(
 	return out
 
 
-## `legacy`: a floor saved before EL is being rebuilt; a retired event keeps its old weight there.
-static func compile_events(repo: ContentRepository, legacy := false) -> Array[EventTable]:
+static func compile_events(repo: ContentRepository) -> Array[EventTable]:
 	var curses := curse_ids(repo)
 	var out: Array[EventTable] = []
 	for eid in event_ids(repo):
@@ -100,8 +96,6 @@ static func compile_events(repo: ContentRepository, legacy := false) -> Array[Ev
 			var r := EventTable.new()
 			r.id = eid
 			r.retired = true
-			r.legacy_weight = int(RETIRED_EVENTS.get(eid, 0))
-			r.weight = r.legacy_weight if legacy else 0
 			out.append(r)
 			continue
 		var t := EventTable.new()
@@ -166,22 +160,7 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 	return t
 
 
-## Sets up a built floor's event rooms from the repository (Main, the shot scripts and the tests). `curse_rules`
-## (v0.8.0 N17, N19; Events.CURSE_RULES_*): a floor saved under older floor rules keeps its event rooms as they were
-## (FloorScenario.curse_room_rules_of).
-## `legacy` for a floor saved before EL (FloorScenario.retired_events_of): the retired event keeps its old
-## weight in the draw, so the floor rebuilds as saved. `rare_events` false for a floor saved before AQ.
-static func setup(
-	w: World,
-	repo: ContentRepository,
-	curse_rules: int = Events.CURSE_RULES_N19,
-	legacy := false,
-	rare_events := true
-) -> void:
+## Sets up a built floor's event rooms from the repository (Main, the shot scripts and the tests).
+static func setup(w: World, repo: ContentRepository) -> void:
 	var rules := compile_rules(repo.get_def(&"event_rules", &"floor"))
-	if not rare_events:  # A floor saved before AQ keeps its 1-2 event rooms, repeats allowed
-		rules.rooms_min = 1
-		rules.rooms_max = 2
-		rules.event_floor_chance_permille = 1000
-		rules.events_max_per_run = 0
-	Events.setup(w, compile_events(repo, legacy), compile_curses(repo), rules, curse_rules)
+	Events.setup(w, compile_events(repo), compile_curses(repo), rules)

@@ -74,7 +74,7 @@ func test_the_shop_no_longer_lifts_a_curse() -> void:
 
 
 ## v0.9.0 EL (owner Q25): Marked is deleted. Its place in the curse table stays (a save's indices still name the same
-## curses), retired: never drawn by an event or a cursed chest, and a carried one is dropped at the floor's setup.
+## curses), retired: never drawn by an event or a cursed chest.
 func test_the_marked_curse_is_retired() -> void:
 	var w := _world()
 	var k := EventLab.curse_index(w, &"marked_hunt")
@@ -83,15 +83,6 @@ func test_the_marked_curse_is_retired() -> void:
 	for n in 200:
 		var c := Curses.roll(w)
 		assert_ne(c, k, "never drawn")
-	var carried := _world()
-	carried.curses_owned = PackedInt32Array([k, EventLab.curse_index(carried, &"rooted")])
-	Curses.drop_retired(carried)
-	assert_eq(
-		carried.curses_owned,
-		PackedInt32Array([EventLab.curse_index(carried, &"rooted")]),
-		"a held Marked curse goes, the others stay"
-	)
-	assert_eq(Curses.threat(carried), 1)
 
 
 func test_threat_counts_curses_and_carries_to_the_next_floor() -> void:

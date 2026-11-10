@@ -29,7 +29,7 @@ const SLOTS := 6
 
 # --- What a card is ------------------------------------------------------------------------------------------
 ## An item that takes a modifier slot: it changes attacks (it names modifiers) or it is an ability's mod.
-## or a deleted card's stub (every one was a modifier card), so an old carry keeps its pick order (WandMigration).
+## or a deleted card's stub (every one was a modifier card), so item indices keep their meaning.
 static func is_slot_item(t: ItemTable) -> bool:
 	return not t.modifiers.is_empty() or t.requires_ability >= 0 or t.retired
 
@@ -119,17 +119,6 @@ static func _maybe_modifier(w: World, code: int) -> bool:
 	if Offers.type_of(code) == Offers.MOD and code >= w.item_tables.size():
 		return true
 	return is_modifier(w, code)
-
-
-## A build from before MX2 (a v0.5 save's carry or snapshot, four ability slots and any number of attack items):
-## sync, then the slots past the wand's count (Wand.slots, the floor reached's) leave the build, last
-## first (so the first ones in sync's order stay: the abilities in their slot order, then the items in pickup order).
-## Deterministic; idempotent.
-static func migrate(w: World) -> void:
-	w.mod_slots = PackedInt32Array()  # the fixed order, whatever a partial sync listed before the tables
-	sync(w)
-	while w.mod_slots.size() > Wand.slots(w):
-		drop(w, w.mod_slots.size() - 1)
 
 
 ## Slot `s`'s card leaves the build: an item goes with its combos (Shop.remove_item), an ability with its level and

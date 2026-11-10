@@ -360,29 +360,6 @@ func test_the_paced_fight_is_deterministic_and_round_trips_mid_window() -> void:
 	assert_eq(c.state_hash(), a.state_hash(), "the window, its end and the next go on the same")
 
 
-func test_a_save_from_before_n2_mid_fight_still_loads() -> void:
-	var run := FinalLab.run_state(39)
-	var w := FinalLab.arena(run)
-	w.actors.invuln[0] = NemesisLab.LONG
-	FinalLab.past_rise(w)
-	CombatLab.idle(w, 200)
-	var p := RunSaver.payload_of(w, run, 39, PackedByteArray())
-	var ff: Dictionary = p["world"]["world"][&"final_fight"]
-	for f: StringName in [&"paced", &"pace_dps", &"pace_budget", &"copying"]:
-		assert_true(ff.has(f), "saved: %s" % f)
-		ff.erase(f)  # as a payload written before N2
-	var table := ContentCompiler.compile_run(SharedContent.repo().get_def(&"run", SaveLab.RUN_ID))
-	var w2 := FinalLab.arena(RunSaver.run_from(p, table), false)
-	assert_eq(WorldSnapshot.apply(w2, p["world"]), "", "an FB3 snapshot restores")
-	assert_false(w2.final_fight.paced, "with a fresh pace")
-	var w3 := FinalLab.arena(RunSaver.run_from(p, table), false)
-	assert_eq(WorldSnapshot.apply(w3, p["world"]), "")
-	for k in 600:
-		w2.step(InputFrame.new())
-		w3.step(InputFrame.new())
-	assert_eq(w2.state_hash(), w3.state_hash(), "two restores go on the same")
-
-
 # --- the harder attacks: dashable after their telegraph -------------------------------------------------------------
 
 

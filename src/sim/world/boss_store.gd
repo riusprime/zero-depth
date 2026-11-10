@@ -90,7 +90,7 @@ var pts_x := PackedFloat32Array()
 var pts_y := PackedFloat32Array()
 ## The signature mechanics' standing pieces, lists of their own (not per
 ## boss entry; each names its boss's actor id). Empty until a fight raises one, and hashed only then, so every
-## fight before BS1 hashes as before (WorldSnapshot.ADDED_SINCE_V05 lists them: an older save has none).
+## fight without one hashes as before.
 ## S1, the Gatekeeper's stone pillars: centre, half side (metres), the tick each rose and the tick it sinks. Each is
 ## also a wall (World.walls, as a barrier) while it stands.
 var pillar_x := PackedFloat32Array()
@@ -147,14 +147,13 @@ var melt_exit := PackedInt32Array()
 ## Ticks until molten floor (lava or the melt) may burn the player again (0 while none is down).
 var burn_cd := 0
 ## BossTide: the signature's cadence, one entry per live boss that has one (the Tidecaller): its actor
-## id and the tick its signature is next due. Empty for every other boss, and hashed only while an entry exists
-## (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
+## id and the tick its signature is next due. Empty for every other boss, and hashed only while an entry exists.
 var sig_boss := PackedInt32Array()
 var sig_due := PackedInt32Array()
 ## BossTwin: the twin bosses, one entry per pair alive (the Twin Wardens): the boss's actor id (its
 ## bar, its defeat) and its twin's, the body angry now (its actor id, 0 = neither) and the ticks its anger has left,
 ## and the ticks until the chain may burn the player again. Empty for every other boss, and hashed only while a pair
-## lives (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
+## lives.
 var twin_lead := PackedInt32Array()
 var twin_body := PackedInt32Array()
 var twin_angry := PackedInt32Array()
@@ -170,8 +169,7 @@ var twin_focus := PackedInt32Array()
 ## BossJudge: the Clockwork Judge's echo. echo_boss is the actor id of the Judge recording (-1 = none);
 ## echo_x/echo_y the player's last positions, oldest first (one every echo_gap_ticks, at most echo_points); path_x,
 ## path_y the echo locked as it started (the points left after the safe spot) and path_k each one's step (it strikes
-## on active tick path_k × echo_gap_ticks). Hashed only while a Judge records (WorldSnapshot.ADDED_SINCE_V05: an
-## older save has none).
+## on active tick path_k × echo_gap_ticks). Hashed only while a Judge records.
 var echo_boss := -1
 var echo_x := PackedFloat32Array()
 var echo_y := PackedFloat32Array()
@@ -184,8 +182,7 @@ var path_k := PackedInt32Array()
 ## not dark, or a table with no dark_hold_ticks: dark until the Shade dies); while lit after a dark,
 ## shade_until is the tick the dark falls again (the table's light_hold_ticks; -1 = lit until the next Lights Out);
 ## lamp_x/lamp_y the room's edge lanterns and lamp_t each one's lit ticks left (0 = out). Hashed only while a Shade
-## lives (WorldSnapshot.ADDED_SINCE_V05: an
-## older save has none).
+## lives.
 var shade_boss := -1
 var shade_dark := 0
 var shade_at := -1
@@ -198,8 +195,7 @@ var lamp_t := PackedInt32Array()
 ## ring is due, the rings fired and the tick its next waves form), and one per crossing wave on the floor (its boss's
 ## actor id, its wave attack, the tick it formed, the way it travels (1/4096 turns), 1 once it has hit the player,
 ## the middle of its starting line on the wall, its length, and how far its middle travels). Hashed only while any
-## exists
-## (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
+## exists.
 var str_boss := PackedInt32Array()
 var str_ring_due := PackedInt32Array()
 var str_ring_n := PackedInt32Array()
@@ -216,7 +212,7 @@ var wv_run := PackedFloat32Array()
 ## One entry per live boss that has raised quake pillars (the Gatekeeper,
 ## from its phase 2): its actor id, the phase it counts breaks in, and the stuns its broken pillars gave in that phase.
 ## The pillars themselves are S1 pillars that never sink by time (pillar_until BossQuake.UNTIL). Hashed only while an
-## entry exists (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
+## entry exists.
 var quake_boss := PackedInt32Array()
 var quake_phase := PackedInt32Array()
 var quake_stuns := PackedInt32Array()
@@ -224,7 +220,7 @@ var quake_stuns := PackedInt32Array()
 ## (HazardTable.Kind), centre, radius (m), the tick it was placed, the tick it arms, the tick it ends, its slow (per
 ## mille of the hero's speed, 1000 = none)]. hz_next is the next hz_id, hz_burn_cd the clock of its damage over time,
 ## hz_storm 1 between an Egg Storm's first strike and the storm's chosen egg, hz_egg the eggs that leave a pool when
-## they burst. Hashed only once a fight has used one (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
+## they burst. Hashed only once a fight has used one.
 var hz_id := PackedInt32Array()
 var hz_boss := PackedInt32Array()
 var hz_kind := PackedInt32Array()

@@ -53,26 +53,14 @@ const KILL_CAUSE := -7002
 const CAUSE_KEY := &"CAUSE_LOCKDOWN_HAZARD"
 
 
-## Sets up `w`'s Lockdowns (FloorPlan.add_secrets, last: after the purple-rune room): marks the layout for floor
-## `floor_index` and drops the rooms' horde spawn points (a Lockdown room holds only its encounter). No-op without a
-## table or a room that fits.
-static func setup(w: World, t: LockdownTable, floor_index: int) -> void:
-	var f := w.floor_layout
-	if f == null or t == null:
-		return
-	if LockdownRooms.mark(f, t, floor_index, taken_rooms(w)).is_empty():
-		return
-	begin(w, t)
-
-
-## Sets up `w`'s Lockdowns in the rooms its layout already marks
-## (FloorScenario.build marked them before the other kinds, from floor rules 17), as setup does after marking. No-op
-## without a table or a marked room.
+## Sets up `w`'s Lockdowns in the rooms its layout already marks (FloorScenario.build marked them before the other
+## kinds) and drops the rooms' horde spawn points (a Lockdown room holds only its encounter). No-op without a table or
+## a marked room.
 static func begin(w: World, t: LockdownTable) -> void:
 	var f := w.floor_layout
 	if f == null or t == null:
 		return
-	if f.lockdown_rooms.is_empty() and not (t.takes_arenas and not f.arena_rooms.is_empty()):
+	if f.lockdown_rooms.is_empty() and f.arena_rooms.is_empty():
 		return
 	var s := LockdownState.new()
 	s.table = t
@@ -92,12 +80,13 @@ static func taken_rooms(w: World) -> PackedInt32Array:
 	return out
 
 
-## Whether the floor's arena rooms are locked rooms (rules 20+: the Lockdown table takes them).
+## Whether the floor's arena rooms are locked rooms (a floor with the Lockdowns takes them; a world without, a lab,
+## fights them as wave arenas).
 static func takes_arenas(w: World) -> bool:
-	return w.lockdown != null and w.lockdown.table.takes_arenas
+	return w.lockdown != null
 
 
-## Whether `room` is a locked room on this floor: a Lockdown room, or (rules 20+) an arena room.
+## Whether `room` is a locked room on this floor: a Lockdown room, or an arena room (takes_arenas).
 static func is_locked_room(w: World, room: int) -> bool:
 	var f := w.floor_layout
 	if w.lockdown == null or f == null or room < 0:

@@ -234,8 +234,8 @@ func _final(reader: WorldReader) -> void:
 
 
 ## Sealed rooms: one sealing starts clean; a hit that costs HP spoils it; its clear counts (and counts clean).
-## The locked rooms (lockdowns; on floor rules 20 the arena rooms too) count like the arenas.
-## the locked rooms (lockdowns; on floor rules 20 the arena rooms too) count like the arenas.
+## The locked rooms (lockdowns and the arena rooms) count like the arenas.
+## the locked rooms (lockdowns and the arena rooms) count like the arenas.
 func _rooms(reader: WorldReader) -> void:
 	_cleared_seen = _sealed_source(reader.arenas(), _cleared_seen)
 	_lk_cleared_seen = _sealed_source(reader.lockdown(), _lk_cleared_seen)

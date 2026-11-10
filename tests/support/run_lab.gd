@@ -27,7 +27,7 @@ func floor_world() -> World:
 	var boss := FloorShape.boss(
 		run, RunContentCompiler.compile_boss_pools(repo, run.table.floors), run.floor_index
 	)
-	var arena := RunSaver.boss_arena(run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
+	var arena := RunSaver.boss_arena(bosses, boss)
 	var w := FloorScenario.build(
 		run.floor_seed(),
 		table,
@@ -49,14 +49,7 @@ func floor_world() -> World:
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))
-	# v0.5.0 EV, as Main (N17, N19; v0.9.0 EL)
-	EventCompiler.setup(
-		w,
-		repo,
-		FloorScenario.curse_room_rules_of(run),
-		FloorScenario.retired_events_of(run),
-		FloorScenario.rare_events_of(run)
-	)
+	EventCompiler.setup(w, repo)  # As Main
 	return w
 
 

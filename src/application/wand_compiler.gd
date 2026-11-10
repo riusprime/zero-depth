@@ -29,13 +29,9 @@ static func compile(def: WandDefinition) -> WandTable:
 	return t
 
 
-## The shipped wand (data/wand/wand.tres) from a repository, or null without one; with the old cards'
-## migration (data/wand/migration.tres).
+## The shipped wand (data/wand/wand.tres) from a repository, or null without one.
 static func from_repo(repo: ContentRepository) -> WandTable:
-	var t := compile(repo.get_def(&"wand", &"wand") as WandDefinition)
-	if t != null:
-		add_migration(t, migration(repo))
-	return t
+	return compile(repo.get_def(&"wand", &"wand") as WandDefinition)
 
 
 ## from_repo, with the run's own slots per floor when it has them (RunTable.wand_slots_per_floor: the
@@ -47,20 +43,9 @@ static func for_run(repo: ContentRepository, run: RunTable) -> WandTable:
 	return t
 
 
-## The old cards' map (null without one).
+## The retired v0.6 cards' table (null without one): retire_items marks them.
 static func migration(repo: ContentRepository) -> WandMigrationDefinition:
 	return repo.get_def(&"wand", &"migration") as WandMigrationDefinition
-
-
-## `def`'s rows into `t` (WandMigration reads them on a load).
-static func add_migration(t: WandTable, def: WandMigrationDefinition) -> void:
-	if def == null:
-		return
-	var n := mini(def.old_ids.size(), mini(def.blade_into.size(), def.gun_into.size()))
-	for k in n:
-		t.migrate_ids.append(def.old_ids[k])
-		t.migrate_blade.append(def.blade_into[k])
-		t.migrate_gun.append(def.gun_into[k])
 
 
 ## WAND.md "What happens to the v0.6 cards": the compiled items the migration table retires are marked

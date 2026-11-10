@@ -68,7 +68,7 @@ static func tick(w: World) -> void:
 static func on_kill(w: World, i: int, root: int) -> void:
 	var a := w.actors
 	var m := w.item_mods
-	var n := a.poison_stacks[i] if i < a.poison_stacks.size() else 0
+	var n := a.poison_stacks[i]
 	if w.affinity != null and n > 0:
 		Affinities.on_poison_kill(w, i, n, root)  # A3 Venom's jump to the nearest
 	if n <= 0 or m.poison_spread_m <= 0.0:

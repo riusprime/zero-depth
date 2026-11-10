@@ -5,8 +5,8 @@ extends RefCounted
 ## oriented box that blocks ACTORS (the hero and the enemies: World's wall pass and the enemies' steering) once the
 ## hero is clear of it (CLEAR_M from its surface), so a prop that appears under the hero's feet never traps them, and
 ## leaves with its owner (remove). They are NOT in World.walls: shots, beams, glaives, bombs, area attacks and lines of
-## sight pass over them, as over the shrine and the fountain. A world holds them only under floor rules after
-## FLOOR_RULES_V090_CF2 (`on`): a floor saved before SB has none. Pure: no stream is drawn.
+## sight pass over them, as over the shrine and the fountain. A world holds them only on a run's floor
+## (`on`, rules_on). Pure: no stream is drawn.
 
 ## Owners of an entry (with the owner's own ref).
 enum Kind {
@@ -45,7 +45,7 @@ var placed := PackedByteArray()
 
 ## Whether a run's current floor uses the solids (a new floor; a world built with no run, as the tests do, has none).
 static func rules_on(run: RunState) -> bool:
-	return run != null and run.floor_rules > RunState.FLOOR_RULES_V090_CF2
+	return run != null
 
 
 func size() -> int:

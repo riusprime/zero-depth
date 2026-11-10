@@ -111,7 +111,7 @@ session on this proyect gets them"):
   6 s (`docs/roadmap/v0.11.1/evidence/E2E_FIXED_COST.md`).
 - **The lead**, after merging branches, runs `scripts/ci/seams.sh` from a clean worktree, fixes what breaks, and
   pushes. The seams are the tests where separate changes meet: content, arch, goldens, application, debug (the dev
-  panel's folder list), old saves, the every-card soak, and the run/save/menu/dev-panel e2e. When a cross-step bug
+  panel's folder list), the every-card soak, and the run/save/menu/dev-panel e2e. When a cross-step bug
   gets past the seams, add the test that caught it to `seams.sh`.
 - **The PR into `main`** runs the full suite once on GitHub, as parallel shards (`scripts/ci/gut_shard.sh`; every
   test file is in exactly one shard, and the `verify` job sums them against `tests/MIN_TEST_COUNT`). A red shard is

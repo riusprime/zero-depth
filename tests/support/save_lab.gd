@@ -62,7 +62,7 @@ static func build_floor(
 	var bosses := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(bosses)
 	var boss := FloorShape.boss(run, _boss_pools(repo, run.table.floors), run.floor_index)
-	var arena := RunSaver.boss_arena(run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
+	var arena := RunSaver.boss_arena(bosses, boss)
 	var rules := RunSaver.floor_tables(run, repo)  # v0.7.5 MG, as Main
 	var w := FloorScenario.build(
 		run.floor_seed(),
@@ -112,15 +112,7 @@ static func build_floor(
 	if w.boss_flow != null:  # v0.8.0 N11: floor 1's arrival left out here (Main lands on it; test_arrival covers it)
 		w.boss_flow.set_transit(false, run.floor_index > 1)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))
-	# v0.5.0 EV, as Main: event rooms and curses after the heat (v0.8.0 N17: an older save's floor keeps its rooms;
-	# v0.9.0 EL: and the retired event's weight)
-	EventCompiler.setup(
-		w,
-		repo,
-		FloorScenario.curse_room_rules_of(run),
-		FloorScenario.retired_events_of(run),
-		FloorScenario.rare_events_of(run)
-	)
+	EventCompiler.setup(w, repo)  # As Main: event rooms and curses after the heat
 	FloorPlan.add_secrets(w, repo, run, table.move_speed)  # v0.9.0 TD, RA, DX, as Main
 	CollectibleBook.arm(w, run, CollectibleBook.defs(repo), biome.id)  # v0.9.0 CL, as Main
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))  # v0.5.5 DS

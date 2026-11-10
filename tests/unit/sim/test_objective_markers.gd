@@ -78,14 +78,3 @@ func test_markers_round_trip_through_a_save_and_step_on_equal() -> void:
 		w.step(SaveLab.frame(w, b1))
 		restored.step(SaveLab.frame(restored, b2))
 	assert_eq(restored.state_hash(), w.state_hash(), "equal after 300 more ticks")
-
-
-func test_an_older_save_without_the_field_still_loads() -> void:
-	var w := SaveLab.floor_world(77, 1)
-	var snap := WorldSnapshot.take(w)
-	(snap["world"] as Dictionary).erase("objectives")
-	var restored := World.from_snapshot(snap, SaveLab.floor_world(77, 1))
-	assert_not_null(restored, "a save from before O2 restores")
-	if restored != null:
-		assert_eq(restored.objectives.size(), 0, "pointing at nothing")
-		assert_eq(restored.state_hash(), w.state_hash())

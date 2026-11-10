@@ -10,8 +10,6 @@ const EXEMPT := {
 	"the one read-only facade presentation may use (ARCHITECTURE); it shrinks as unused queries go",
 	"res://src/sim/world/world.gd":
 	"the sim's state and its tick; grouped into state objects in v0.11.1 step 37",
-	"res://src/sim/core/world_snapshot.gd":
-	"carries the old-save field list; under the cap once v0.11.1 step 35 removes it",
 	"res://src/application/content_compiler.gd":
 	"one compiler per content family, by rule in v0.11.1 step 43",
 	"res://src/sim/combat/attacks.gd": "the attack forms' launch code; split with v0.11.1 step 25",

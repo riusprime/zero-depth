@@ -39,7 +39,7 @@ func _layout(seed_value: int) -> FloorLayout:
 
 func _shut(layout: FloorLayout) -> PackedInt32Array:
 	var shut := PackedInt32Array()
-	var shrine := Gamble.site(layout, _gamble, false, _tables[&"map"])
+	var shrine := Gamble.site(layout, _gamble, _tables[&"map"])
 	if not shrine.is_empty():
 		shut.append(layout.room_of(shrine[0]))
 	return shut
@@ -212,18 +212,6 @@ func test_never_the_furnished_shop_room() -> void:
 	assert_gte(f.shop_room, 0, "this floor has its shop")
 	assert_gte(w.ev.curse_k, 0, "and a curse room")
 	assert_ne(w.ev.room[w.ev.curse_k], f.shop_room, "not in the shop's room")
-	var run := SaveLab.run_state(630, 1)
-	run.floor_rules = RunState.FLOOR_RULES_V080_N17
-	var old := SaveLab.build_floor(run)
-	gut.p(
-		(
-			"N17's rules: curse room %d, shop room %d (kept as saved)"
-			% [
-				old.ev.room[old.ev.curse_k] if old.ev.curse_k >= 0 else -1,
-				old.floor_layout.shop_room
-			]
-		)
-	)
 
 
 func test_whispering_deep_is_offered_only_at_the_altar() -> void:
@@ -250,10 +238,6 @@ func test_echo_mirror_is_not_offered_until_a_stat_is_raised() -> void:
 	assert_eq(w.ev.events[echo].requires, Events.Need.STAT_RAISED, "the data's rule")
 	assert_lt(Events.strongest_stat(w), 0, "a fresh run: no stat raised")
 	assert_false(Events.needs_met(w, Events.Need.STAT_RAISED), "so it can't be drawn")
-	assert_true(
-		Events.needs_met(w, Events.Need.STAT_RAISED, Events.CURSE_RULES_N17),
-		"a floor built under N17 drew it on stat cards alone"
-	)
 	var got := 0
 	for i in 200:
 		w.ev.rng = RngStream.derive(i, "loot:event")  # test setup: many draws
@@ -308,90 +292,6 @@ func test_saved_and_hashed() -> void:
 	if back != null:
 		assert_eq(back.state_hash(), h, "restored into a rebuilt floor")
 		assert_eq(back.walls.size(), w.walls.size(), "the same room, its altar and crystals")
-
-
-func test_an_old_saves_floor_keeps_its_event_rooms_and_has_no_altar() -> void:
-	var seed_value := _altar_seed()
-	if seed_value < 0:
-		return
-	var run := SaveLab.run_state(seed_value, 1)
-	run.floor_rules = RunState.FLOOR_RULES_V080_N14  # saved before N17
-	assert_true(FloorScenario.legacy_curse_room_of(run))
-	assert_eq(FloorScenario.curse_room_rules_of(run), Events.CURSE_RULES_BEFORE_N17)
-	assert_false(FloorScenario.legacy_curse_room_of(SaveLab.run_state(seed_value, 1)), "today's")
-	assert_eq(
-		FloorScenario.curse_room_rules_of(SaveLab.run_state(seed_value, 1)), Events.CURSE_RULES_N19
-	)
-	assert_eq(FloorScenario.curse_room_rules_of(null), Events.CURSE_RULES_N19, "no run")
-	var w := SaveLab.build_floor(run)
-	assert_eq(w.ev.curse_k, -1, "an older floor has no curse room")
-	assert_eq(w.floor_layout.curse_room, -1)
-	var snap := w.to_snapshot()
-	var data: Dictionary = (snap["world"] as Dictionary)[&"ev"]
-	assert_true(WorldSnapshot.ADDED_SINCE_V05[&"EventState"].has(&"curse_k"), "listed as new")
-	data.erase(&"curse_k")  # as a snapshot written before N17
-	var again := SaveLab.run_state(seed_value, 1)
-	again.floor_rules = RunState.FLOOR_RULES_V080_N14
-	var back := World.from_snapshot(snap, SaveLab.build_floor(again))
-	assert_not_null(back, "an older save's floor fits")
-	if back == null:
-		return
-	assert_eq(back.ev.curse_k, -1)
-	assert_eq(back.ev.size(), w.ev.size(), "its pedestals as saved")
-	for k in w.ev.size():
-		assert_eq(back.ev.pos(k), w.ev.pos(k))
-		assert_eq(back.ev.event[k], w.ev.event[k])
-		# v0.9.0 EL (owner Q25): a retired event's pedestal (the Ambush Cache) is closed on load (Events.drop_retired)
-		var e := w.ev.event[k]
-		if e >= 0 and w.ev.events[e].retired:
-			assert_eq(back.ev.state[k], Events.State.DONE, "a retired event's pedestal closed")
-	Events.drop_retired(w)  # the floor as a load leaves it
-	assert_eq(back.state_hash(), w.state_hash(), "the same world")
-	var today := World.from_snapshot(snap, SaveLab.floor_world(seed_value, 1))
-	if today != null:
-		assert_eq(today.ev.curse_k, -1, "an older save never gains an altar")
-		assert_eq(today.ev.size(), w.ev.size())
-
-
-## v0.8.0 N19: a floor saved under N17 (floor rules 7) is rebuilt with N17's curse room: the combat room it picked, its
-## interior and spawns kept, no altar solid, the same pedestals and walls.
-func test_a_floor_saved_under_n17_keeps_its_curse_room() -> void:
-	var found := false
-	for s in 80:
-		var seed_value := 300 + s
-		var run := SaveLab.run_state(seed_value, 1)
-		run.floor_rules = RunState.FLOOR_RULES_V080_N17
-		assert_eq(FloorScenario.curse_room_rules_of(run), Events.CURSE_RULES_N17)
-		var old := SaveLab.build_floor(run)
-		if old.ev.curse_k < 0:
-			continue
-		found = true
-		var f := old.floor_layout
-		assert_eq(f.curse_room, -1, "N17's room is not furnished")
-		var room := old.ev.room[old.ev.curse_k]
-		assert_eq(
-			room,
-			Events.curse_site_n17(f, old.seed_value, old.ev.rules, _shut_w(old)),
-			"N17's own pick"
-		)
-		assert_eq(old.ev.pos(old.ev.curse_k), Events.spot(f, room, old.ev.rules)[0], "N17's spot")
-		var snap := old.to_snapshot()
-		var again := SaveLab.run_state(seed_value, 1)
-		again.floor_rules = RunState.FLOOR_RULES_V080_N17
-		var back := World.from_snapshot(snap, SaveLab.build_floor(again))
-		assert_not_null(back, "it restores")
-		if back != null:
-			assert_eq(back.state_hash(), old.state_hash(), "the same world")
-			assert_eq(back.walls.size(), old.walls.size(), "the same walls")
-		break
-	assert_true(found, "a run seed in 300..379 has an N17 curse room on floor 1")
-
-
-func _shut_w(w: World) -> PackedInt32Array:
-	var shut := PackedInt32Array()
-	if Gamble.present(w):
-		shut.append(w.floor_layout.room_of(w.gamble_pos))
-	return shut
 
 
 ## Run seed with a curse room on floor 1 (today's rules), or -1.

@@ -829,29 +829,3 @@ func test_a_snapshot_mid_cross_round_trips() -> void:
 	assert_eq(
 		w2.state_hash(), w.state_hash(), "the Cross, its bolts and the next spell go on the same"
 	)
-
-
-func test_a_save_from_before_fb2_mid_phase_2_restores() -> void:
-	var run := FinalLab.run_state(80)
-	var w := FinalLab.arena(run)
-	w.actors.invuln[0] = LONG
-	FinalLab.past_rise(w)
-	FinalBoss.jump(w, 1)
-	FinalLab.past_rise(w)
-	w.final_fight.dps_t = 0  # an FB1 world never ran the meter (it counted the Colossus's first acting tick)
-	assert_eq(w.final_fight.dps_closed, 0)
-	CombatLab.idle(w, 150)
-	var p := RunSaver.payload_of(w, run, 80, PackedByteArray())
-	var ff: Dictionary = p["world"]["world"][&"final_fight"]
-	for f: StringName in [&"home", &"dps_secs", &"dps_head", &"dps_closed", &"dps_acc", &"dps_t"]:
-		ff.erase(f)  # as a payload written by FB1
-	var back := RunSaver.run_from(
-		p, ContentCompiler.compile_run(ContentRepository.load_all().get_def(&"run", SaveLab.RUN_ID))
-	)
-	var w2 := FinalLab.arena(back, false)
-	assert_eq(WorldSnapshot.apply(w2, p["world"]), "", "an FB1 snapshot restores mid-phase-2")
-	assert_eq(w2.state_hash(), w.state_hash(), "the same state")
-	for k in 300:
-		w.step(InputFrame.new())
-		w2.step(InputFrame.new())
-	assert_eq(w2.state_hash(), w.state_hash(), "and her fight goes on the same")

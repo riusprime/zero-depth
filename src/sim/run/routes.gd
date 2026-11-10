@@ -2,7 +2,7 @@ class_name Routes
 extends RefCounted
 ## Optional routes (v0.5.0 PLAN R5, step RT). After the boss of a run's floor before the last, the boss room opens
 ## two portals: the normal gate and a Deep gate beside it (Routes.place_deep_gate; v0.9.0 DP, owner Q26b: only once
-## the floor's purple runes are awakened, PurpleRunes; a floor saved before DP: always). Walking into one takes that
+## the floor's purple runes are awakened, PurpleRunes). Walking into one takes that
 ## route (BossFlow.route_taken); the other closes. The next floor is then normal or Deep (RunState.routes):
 ## - Deep scaling: enemies' and bosses' HP and damage × RunTable.deep_scale_permille, composed into the floor's own
 ##   factors (RunState.scale_enemies / scale_bosses: one multiplication per table, never applied twice; the danger
