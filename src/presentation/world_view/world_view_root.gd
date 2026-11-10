@@ -255,6 +255,13 @@ var _occlusion_index := {}
 var _occ_specs: Array = []
 
 
+## True when the wall-fade index must be rebuilt: there is none yet, the walls it was built from changed in number (a
+## wall added, the cracked slab appearing or going), or the camera's pitch changed. `wall_count` is counted from the
+## sources (the stage's walls plus the slab), never from the list the index was built from.
+static func occlusion_stale(index: Dictionary, wall_count: int, pitch_deg: float) -> bool:
+	return index.is_empty() or index["count"] != wall_count or index["pitch"] != pitch_deg
+
+
 ## v0.8.0 LD: makes the parts not made yet for about `budget_ms` (one at least); true when every part is made.
 static func prebuild(budget_ms: float) -> bool:
 	var from := Time.get_ticks_usec()
@@ -851,13 +858,10 @@ func sync() -> void:
 				if focus.size() > OCCLUSION_FOCUS_MAX:
 					break
 		# v0.8.0 P3 (owner O32): the floor's walls indexed once (Occlusion.build_index), not all tested every tick.
-		if (
-			_occlusion_index.is_empty()
-			or _occlusion_index["count"] != _occ_specs.size()
-			or _occlusion_index["pitch"] != rig.pitch_deg
-		):
+		var slab := breakables != null and not breakables.slab_spec.is_empty()
+		if occlusion_stale(_occlusion_index, stage.wall_specs.size() + int(slab), rig.pitch_deg):
 			_occ_specs = stage.wall_specs.duplicate()
-			if breakables != null and not breakables.slab_spec.is_empty():  # S15b: the cracked slab joins the walls
+			if slab:  # S15b: the cracked slab joins the walls
 				breakables.slab_index = _occ_specs.size()
 				_occ_specs.append(breakables.slab_spec)
 			_occlusion_index = Occlusion.build_index(rig.pitch_deg, _occ_specs)
