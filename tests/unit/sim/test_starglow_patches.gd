@@ -7,8 +7,9 @@ extends GutTest
 ## pool the hero runs faster (speed_scale) and stops within a short drift; the dash is unchanged; the pools are not
 ## hashed themselves (laid from the seed), the faster step is.
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
 
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 var _repo: ContentRepository
 var _specs: Array[BossArenaSpec] = []
 var _field: IceField
@@ -44,22 +45,12 @@ func test_only_starfall_has_starglow_and_ice_is_unchanged() -> void:
 
 ## A floor as FloorScenario.build lays it (boss room, Overrun room, shop), with the player and its walls.
 func _world(seed_value: int, spec: BossArenaSpec) -> World:
-	var lw := _layout(seed_value, spec)
+	var lw := SurfaceSoak.layout(seed_value, spec)
 	var f: FloorLayout = lw[0]
 	var w := World.new(seed_value, PlayerTable.starting_values(), f.start_pos)
 	w.set_walls(lw[1])
 	w.floor_layout = f
 	return w
-
-
-func _layout(seed_value: int, spec: BossArenaSpec) -> Array:
-	var f := FloorGenerator.generate(seed_value)
-	BossRoomBuilder.attach(f, spec)
-	OverrunRooms.mark(f)
-	ShopPlacement.pick(f)
-	var walls: Array[Obb] = f.walls.duplicate()
-	walls.append(FloorScenario.gate_collider(f))
-	return [f, walls]
 
 
 func test_same_seed_same_pools_on_their_own_stream() -> void:
@@ -81,67 +72,18 @@ func test_same_seed_same_pools_on_their_own_stream() -> void:
 	assert_gt(differs, 2, "map:starglow is not map:ice")
 
 
-## The rules one floor's pools break, as short strings (empty: none).
-func _broken(f: FloorLayout, walls: Array[Obb], rects: Array[Rect2]) -> PackedStringArray:
-	var out := PackedStringArray()
-	var c := _field.clearance_m - 0.001
-	for r in rects:
-		var room := f.room_of(r.get_center())
-		if room < 0:
-			out.append("outside every room")
-			continue
-		if room in [f.start_room, f.boss_room, f.portal_room, f.shop_room]:
-			out.append("in the start, boss, portal or shop room")
-		if not f.rooms[room].grow(-c).encloses(r):
-			out.append("too close to its room's walls")
-		var grown := r.grow(c)
-		for i in f.door_centers.size():
-			if grown.intersects(f.door_rect(i)):
-				out.append("on a doorway")
-		for o in walls:
-			if grown.intersects(o.bounds()):
-				out.append("on a wall or cover")
-		for p in [f.start_pos, f.portal_pos]:
-			if grown.has_point(p):
-				out.append("on the start or the gate")
-		for p in f.item_spots:
-			if grown.has_point(p):
-				out.append("on an item spot")
-		if minf(r.size.x, r.size.y) < _field.size_min_dm / 10.0 - 0.001:
-			out.append("too small")
-		if maxf(r.size.x, r.size.y) > _field.size_max_dm / 10.0 + 0.001:
-			out.append("too big")
-	for i in rects.size():
-		for j in range(i + 1, rects.size()):
-			if rects[i].intersects(rects[j]):
-				out.append("overlapping")
-	return out
-
-
+## v0.11.1 Step 4: the loop is SurfaceSoak's, shared with test_ice_patches.gd.
 func test_pools_keep_their_rules_over_1000_seeds() -> void:
-	var total := 0
-	var floors_with := 0
-	var broken := {}
-	var t0 := Time.get_ticks_msec()
-	for s in SEEDS:
-		var seed_value := 7300 + s * 7919
-		var lw := _layout(seed_value, _specs[s % _specs.size()])
-		var field := _fresh()
-		IcePatches.lay(lw[0], lw[1], seed_value, field)
-		total += field.rects.size()
-		floors_with += 1 if not field.rects.is_empty() else 0
-		for why in _broken(lw[0], lw[1], field.rects):
-			if not broken.has(why):
-				broken[why] = "seed %d" % seed_value
+	var out := SurfaceSoak.soak(_seeds, 7300, _specs, _fresh, _field)
 	gut.p(
 		(
 			"starglow over %d floors: %d pools, %d floors with pools (%d ms)"
-			% [SEEDS, total, floors_with, Time.get_ticks_msec() - t0]
+			% [_seeds, out.total, out.floors_with, out.ms]
 		)
 	)
-	assert_eq(broken, {}, "no rule broken (rule -> first seed)")
-	assert_gt(floors_with, SEEDS * 7 / 10, "most Starfall floors have pools")
-	assert_lt(total, SEEDS * 12, "a few pools a floor, not a carpet")
+	assert_eq(out.broken, {}, "no rule broken (rule -> first seed)")
+	assert_gt(out.floors_with, _seeds * 7 / 10, "most Starfall floors have pools")
+	assert_lt(out.total, _seeds * 12, "a few pools a floor, not a carpet")
 
 
 ## A world with one pool under the hero (or none): [top speed per tick after 30 ticks running right, how far the

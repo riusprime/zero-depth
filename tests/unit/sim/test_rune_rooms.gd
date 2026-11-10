@@ -8,7 +8,9 @@ extends GutTest
 ## each other and 12 m of the carved doorway) and clear of its doorways, no pillar starts solved and each is solved
 ## in 1-3 presses. At the data's 30 % the share tried is near it.
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
+
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 
 
 func _layout(seed_value: int, map: FloorParams, spec: BossArenaSpec, arenas: int) -> FloorLayout:
@@ -32,7 +34,7 @@ func test_every_rune_puzzle_is_solvable_and_never_on_the_way() -> void:
 	var both := 0
 	var bad := 0
 	var worst := 0
-	for s in SEEDS:
+	for s in _seeds:
 		var seed_value := 7001 + s * 7919
 		var f := _layout(seed_value, map, spec, arenas.share_permille)
 		if RngStream.derive(seed_value, RuneRooms.STREAM).chance_permille(secrets.rune_permille):
@@ -76,12 +78,12 @@ func test_every_rune_puzzle_is_solvable_and_never_on_the_way() -> void:
 		. p(
 			(
 				"RUNE_ROOMS| seeds=%d placed_when_tried=%d with_timed_door=%d natural_30pct=%d bad=%d worst_presses=%d"
-				% [SEEDS, placed, both, natural, bad, worst]
+				% [_seeds, placed, both, natural, bad, worst]
 			)
 		)
 	)
 	assert_eq(bad, 0, "every rune puzzle solvable in at most 3 presses a pillar, off the way")
-	assert_gt(placed, SEEDS * 5 / 10, "most floors have a dead end that fits one")
+	assert_gt(placed, _seeds * 5 / 10, "most floors have a dead end that fits one")
 	assert_gt(both, 0, "some floors hold both puzzles")
 	assert_eq(natural, 0, "v0.10.5 S14: the data's chance is 0, so no floor is tried naturally")
 

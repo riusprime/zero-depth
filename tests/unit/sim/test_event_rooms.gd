@@ -5,8 +5,9 @@ extends GutTest
 ## every altar or chest spot; the pick is a pure function of the layout and the seed, and rooms another side-room kind
 ## took (`taken`) are never used.
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
 
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 var _rules: EventRules
 
 
@@ -30,7 +31,7 @@ func _layout(seed_value: int) -> FloorLayout:
 func test_every_floor_gets_one_or_two_side_rooms_with_a_clear_pedestal() -> void:
 	var counts := {}
 	var bad := 0
-	for s in SEEDS:
+	for s in _seeds:
 		var seed_value := 7000 + s * 7919
 		var layout := _layout(seed_value)
 		var rooms := Events.pick_rooms(layout, seed_value, _rules, PackedInt32Array())
@@ -54,7 +55,7 @@ func test_every_floor_gets_one_or_two_side_rooms_with_a_clear_pedestal() -> void
 		if not ok:
 			bad += 1
 			gut.p("seed %d: rooms %s" % [seed_value, rooms])
-	gut.p("event rooms per floor over %d seeds: %s" % [SEEDS, counts])
+	gut.p("event rooms per floor over %d seeds: %s" % [_seeds, counts])
 	assert_eq(bad, 0, "every floor's event rooms are valid side rooms")
 	assert_gt(counts.get(1, 0), 0, "some floors have one")
 	assert_gt(counts.get(2, 0), 0, "some floors have two")

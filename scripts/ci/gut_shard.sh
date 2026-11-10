@@ -11,9 +11,10 @@ cd "$REPO_ROOT"
 SHARDS=(sim_a sim_b sim_c e2e presentation rest)
 # The slowest sim files get a shard of their own (the 2026-10-13 run: sim_b took 68 of its 71 minutes; local
 # JUnit times: these five 2,074 s, the rest of i-z 2,086 s, a-h 2,122 s). Rebalance from build/gut.xml when one
-# shard runs much longer than the others.
+# shard runs much longer than the others. v0.11.1 Step 2: test_five_floors_soak.gd joined (its two loops 1,594 s
+# on the 2026-11-10 seams run, owner's PC).
 HEAVY_SIM=(test_modifier_smoke_mx4.gd test_modifier_smoke.gd test_wand_smoke.gd test_wand_migration.gd
-	test_starglow_patches.gd)
+	test_starglow_patches.gd test_five_floors_soak.gd)
 
 _not_heavy() {
 	local pat
