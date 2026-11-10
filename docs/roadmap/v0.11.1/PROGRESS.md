@@ -17,6 +17,12 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   average frame is 20–31 % shorter (20 enemies 14.8 → 10.2 ms; 60 heavy 36.7 → 27.7 ms; 120 swarmers 29.6 → 23.8 ms),
   the 1 % lows in the horde scenes about doubled (10 → 20 fps), the tick at 120 enemies 4.26 → 3.09 ms. **Every
   target is still missed** (horde tick 4.14 ms against 4; stress 3.31 against 2; no horde frame under 6.94 ms).
+- **The native spike works (step 49, `v0111-s49`, `3b3587b7`, not merged, off by default):** enemy separation and
+  walls in C++ through GDExtension. At 120 enemies the ported work goes from about 0.77 ms to 0.04 ms a tick (about
+  20×; 35–70× in the isolated benchmark), `move` 1.3–1.5 → 0.5–0.6 ms, the tick 3.9–4.3 → 3.0–3.5 ms (the agent's three
+  alternating rounds and the lead's two; other Godot processes ran during both). It replays itself exactly; with the
+  switch off the baseline hash holds; 124 of 124 movement and collision tests pass with it on; the game runs without
+  the library. **The owner decides whether to port the rest** (OWNER_TODO).
 - **Not merged:** step 48 (`v0111-s48`, `14c6c93f`), the sim on its own thread, a switch off by default. Clean
   numbers: 4 %, 9 % and 15 % off the average frame in the three scenes, the 1 % lows unchanged, one rendered frame
   of delay, one e2e fails with it on. **The owner decides** (OWNER_TODO).
@@ -176,3 +182,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   install ran at the same time. Parked.
 - 2026-11-10 (owner): installed the C++ build tools (Visual Studio Community 2026) and restarted the PC; nothing of
   the lead's was running. Steps 49 (the native spike) and 35 started.
+- 2026-11-10 (lead): step 49 reported and re-run by the lead. Build: SCons 4.11.1 does not find a prerelease Visual
+  Studio, so `native/SConstruct` takes the compiler's environment from `vcvars64.bat`; the bindings are built against
+  the API dumped from the engine binary; a clean build takes 3.5 min. A tracked `.gdextension` without its library
+  prints an ERROR on every start (CI fails the import on that), so it is written by the build from a tracked `.in`.
