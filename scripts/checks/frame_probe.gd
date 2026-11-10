@@ -431,6 +431,7 @@ func _sample() -> Array:
 		Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT),
 		particles,
 		emitting,
+		Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
 	]
 
 
@@ -594,16 +595,16 @@ func _finish_biome() -> void:
 		lines
 		. append(
 			(
-				"per-second samples: draw_calls, objects, primitives, video_mem_MB, nodes, resources, orphans, "
-				+ "particle_nodes, emitting"
+				"per-second samples: draw_calls, live_objects (every Object in memory, not what is drawn), primitives, "
+				+ "video_mem_MB, nodes, resources, orphans, particle_nodes, emitting, drawn_objects (all passes)"
 			)
 		)
 	)
 	for s: Array in _samples:
 		lines.append(
 			(
-				"  %d, %d, %d, %.0f, %d, %d, %d, %d, %d"
-				% [s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8]]
+				"  %d, %d, %d, %.0f, %d, %d, %d, %d, %d, %d"
+				% [s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8], s[9]]
 			)
 		)
 	if _fx:

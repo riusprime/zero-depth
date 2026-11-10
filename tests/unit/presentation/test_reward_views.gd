@@ -256,3 +256,36 @@ func _pad(b: JoyButton) -> InputEventJoypadButton:
 	ev.button_index = b
 	ev.pressed = true
 	return ev
+
+
+func test_a_baked_cluster_keeps_its_triangles_in_one_draw_per_material() -> void:
+	var mat := ShardViews.gem_material()
+	var built := ShardMesh.cluster(mat, 4, ShardViews.DROP_HEIGHT, ShardViews.DROP_SPREAD, 21)
+	var tris := {}  # material -> vertices
+	var casters := 0
+	for n in built.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		tris[mi.material_override] = int(tris.get(mi.material_override, 0)) + _verts(mi.mesh)
+		casters += int(mi.cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
+	assert_eq(casters, 4, "built: each crystal casts, each outline does not")
+	var baked := ShardMesh.baked(
+		ShardMesh.cluster(mat, 4, ShardViews.DROP_HEIGHT, ShardViews.DROP_SPREAD, 21)
+	)
+	autofree(baked)
+	autofree(built)
+	var parts := baked.find_children("*", "MeshInstance3D", true, false)
+	assert_eq(parts.size(), 2, "one crystal mesh and one outline mesh")
+	var baked_casters := 0
+	for n in parts:
+		var mi := n as MeshInstance3D
+		assert_eq(_verts(mi.mesh), tris[mi.material_override], "every triangle kept")
+		baked_casters += int(mi.cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
+	assert_eq(baked_casters, 1, "the crystals still cast, the outline still does not")
+	assert_eq(baked.get_meta(&"shards"), 4)
+
+
+static func _verts(m: Mesh) -> int:
+	var n := 0
+	for s in m.get_surface_count():
+		n += (m.surface_get_arrays(s)[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+	return n
