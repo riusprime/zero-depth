@@ -15,6 +15,7 @@ var _ability := Label.new()
 var _mod := Label.new()  # The modifier card GrantMod gives
 var _catch_up := Label.new()
 var _intensity := Label.new()  # The intensity director's readout
+var _native := Label.new()  # Which native kernels this world runs, and which the next one will
 
 
 static func unlocked(debug_build: bool = OS.is_debug_build()) -> bool:
@@ -91,6 +92,9 @@ func _init(p_api: DebugApi) -> void:
 	_intensity.name = "Intensity"
 	_intensity.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	col.add_child(_intensity)
+	_native.name = "NativeCore"
+	_native.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	col.add_child(_native)
 
 
 func _process(_delta: float) -> void:
@@ -124,6 +128,21 @@ func _process(_delta: float) -> void:
 	_mod.text = tr(w.item_tables[mc].name_key) if mc >= 0 and mc < w.item_tables.size() else ""
 	_catch_up.text = catch_up_text(w)
 	_intensity.text = intensity_text(WorldReader.new(w))
+	_native.text = native_text(w.native_on, World.native_kernels)
+
+
+## "native core: move,ai,strike,shots,nav" or "native core: off (script sim)" for the world running now; when the
+## switch has changed since that world was made, also what the next one gets (a World keeps the kernels it was made
+## with).
+static func native_text(live: int, next: int) -> String:
+	var out := "native core: %s" % _kernels(live)
+	if next != live:
+		out += "  ->  %s from the next floor or run" % _kernels(next)
+	return out
+
+
+static func _kernels(bits: int) -> String:
+	return NativeWorld.names_of(bits) if bits != 0 else "off (script sim)"
 
 
 ## The view switches' states (" enemy_vat on"), developers only.
