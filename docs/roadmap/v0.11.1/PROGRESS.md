@@ -252,3 +252,13 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   (the views' sync). The Nemesis test fix merged (`f64e5cb5`).
 - 2026-11-11 (lead): seams on `9bea0088`: 703/703; presentation 1,560/1,560. Pushed. The library built in the owner's
   folder.
+- 2026-11-11 (lead): step 55b reported (`b2e4c304`): only its first stage, the furniture written in C++ (bit-equal to
+  the GDScript pass over 300 frames; 0.25 ms); about 3 ms of per-enemy script remains (step 55c started). Step 58
+  reported (`e4bf34f9`): bulk reads for telegraphs, statuses, cores and kind-specific views, the flying shard gems
+  batched, the per-tick reader copy; a 900-frame state dump is byte-identical and the shard shots differ by 0
+  pixels; about 0.7 ms at 120 swarmers on a busy machine, the 1 % low 23 → 26 fps. It found the shards view's spike
+  is the floor drops, not the bursts (step 60 started). Both merged in the lead's worktree (`b9db14da`).
+- 2026-11-11 (lead): **an engine crash on exit, found by the lead's merge check, not yet explained:** with the
+  library built, `test_native_geom.gd` followed by `test_enemy_vat.gd` in one process passes every test and then
+  the engine segfaults while quitting (exit 139). Not step 55b (it crashes with the C++ crowd writer off); the other
+  order, each file alone, the seams run and a boot of the game all exit 0. An agent is on the cause (`v0111-crash`).
