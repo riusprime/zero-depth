@@ -11,25 +11,37 @@ extends Control
 const A_CHUNK := Color("#E2ACC4", 0.42)
 const A_CHUNK_BIG := Color("#E3C2DA", 0.8)
 
-var color := Color.WHITE
-var warn := false
+var color := Color.WHITE:
+	set(v):
+		if v != color:
+			color = v
+			queue_redraw()
+var warn := false:
+	set(v):
+		if v != warn:
+			warn = v
+			queue_redraw()
 ## A small star past the bar's end.
 var end_star := true
 var trail := HealthBarTrail.new()
 var _t := 0.0
+var _drawn_fill := Color.TRANSPARENT
 
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
-## The sim's fraction; `snap` shows it at once (no chunk, no refill).
+## The sim's fraction; `snap` shows it at once (no chunk, no refill). Redraws only when what the bar draws changed:
+## each tick sets the same fraction most of the time.
 func set_fraction(f: float, snap: bool = false) -> void:
+	var was := [trail.fill, trail.chunk_size(), trail.big > 0.0]
 	if snap:
 		trail.snap(f)
 	else:
 		trail.set_target(f)
-	queue_redraw()
+	if trail.moving() or [trail.fill, trail.chunk_size(), trail.big > 0.0] != was:
+		queue_redraw()
 
 
 ## The sim's fraction (what the bar shows once it settles).
@@ -63,7 +75,7 @@ func _process(delta: float) -> void:
 	if trail.moving():
 		trail.advance(delta)
 		queue_redraw()
-	elif warn:
+	elif warn and fill_color() != _drawn_fill:  # the pulse (steady under reduced motion)
 		queue_redraw()
 
 
@@ -72,6 +84,7 @@ func _draw() -> void:
 	var h := size.y
 	# One continuous fill in a hairline frame (AstralHudParts)
 	var f0 := w * trail.fill
+	_drawn_fill = fill_color()
 	AstralHudParts.bar(
 		self,
 		Rect2(0, 0, w, h),

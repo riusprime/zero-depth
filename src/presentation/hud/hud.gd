@@ -89,6 +89,8 @@ var objective_hints := ObjectiveHints.new()
 var build_hud := BuildHud.new()
 ## The picked cards' icons fly over everything to their HUD slots.
 var flights := CardFlights.new()
+## Draws the parts below from a texture while they do not change (HudStill).
+var still := HudStill.new()
 var swap := SwapPanel.new()
 var _hp_bar := HudBar.new()
 var _hp_text := HudStyle.label(HP_FONT, true)
@@ -142,6 +144,8 @@ var _weapon_name := Label.new()
 var _floor_marks := AstralHudParts.FloorMarks.new()
 var _top_frame := HudFrame.new(Vector2(20, 8))
 var _hp_frame := HudFrame.new(Vector2(16, 10))
+var _corner := VBoxContainer.new()
+var _shard_plate := HudFrame.new(Vector2(14, 5))
 var _t := 0.0
 ## P-7: what each per-tick label last rendered from (slot -> value), so an unchanged one skips its format and its
 ## theme override; cleared on a language switch.
@@ -225,10 +229,38 @@ func _init() -> void:
 	flights.items = _items
 	flights.plate = _hp_frame
 	add_child(flights)
+	add_child(still)
 	# deferred: the HUD's slots sync after the pick panel
 	_pick.card_taken.connect(
 		func(code: int, from: Rect2) -> void: flights.launch.call_deferred(_reader, code, from)
 	)
+
+
+func _ready() -> void:
+	# The run's lasting parts; panels that come and go (the pick, the shop, the swap) draw directly.
+	for part: CanvasItem in [
+		_corner,
+		_top_frame,
+		_shard_plate,
+		_items,
+		_combos,
+		starbound_hud,
+		depths_tag,
+		boss_bar,
+		heat_meter,
+		minimap.corner,  # the map scrolls under the hero: still only while the hero stands
+		minimap.ticks,  # its frame never moves
+		spell_squares,
+		build_hud,
+	]:
+		still.add_part(part)
+	still.add_part(ability_squares, ability_squares.drawn_rect)  # a full-screen Control that draws in a corner
+
+
+## Redraws every item of the HUD (a setting changed how they draw: the palette, reduced motion).
+func redraw_all() -> void:
+	for c in find_children("*", "CanvasItem", true, false):
+		(c as CanvasItem).queue_redraw()
 
 
 func sync(reader: WorldReader) -> void:
@@ -493,7 +525,8 @@ func top_texts() -> PackedStringArray:
 
 
 func _build_corner() -> void:
-	var corner := VBoxContainer.new()
+	var corner := _corner
+	corner.name = "HpCorner"
 	corner.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	corner.position = Vector2(28, -BOTTOM_LINE)  # The plate's bottom on the squares' line
 	corner.grow_vertical = Control.GROW_DIRECTION_BEGIN
@@ -677,7 +710,7 @@ func prompt_poor() -> bool:
 
 
 func _build_rewards() -> void:
-	var plate := HudFrame.new(Vector2(14, 5))
+	var plate := _shard_plate
 	plate.name = "Shards"
 	plate.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	plate.grow_horizontal = Control.GROW_DIRECTION_BEGIN

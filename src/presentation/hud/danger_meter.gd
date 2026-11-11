@@ -38,6 +38,8 @@ var _progress := 0.0
 var _pulse := 0.0
 var _seen := false
 var _clock := 0.0
+## What the last draw showed (look_key): each tick sets the danger, which moves the fill by a pixel only now and then.
+var _drawn_key := []
 
 
 func _init() -> void:
@@ -88,7 +90,7 @@ func set_danger(tier: int, progress: float) -> void:
 	_tier = maxi(0, tier)
 	_progress = clampf(progress, 0.0, 1.0)
 	_seen = true
-	queue_redraw()
+	_redraw_if_changed()
 
 
 func tier_shown() -> int:
@@ -125,15 +127,44 @@ func pulsing() -> bool:
 func _process(delta: float) -> void:
 	if _pulse > 0.0:
 		_pulse = maxf(0.0, _pulse - delta / PULSE_S)
-		queue_redraw()
 	if full():
 		_clock += delta
-		queue_redraw()
 	else:
 		_clock = 0.0
+	_redraw_if_changed()
+
+
+func _redraw_if_changed() -> void:
+	if look_key() != _drawn_key:
+		queue_redraw()
+
+
+## Everything the picture depends on: the fill's pixel, its colour as the screen's 8 bits show it (the ramp follows
+## the fill, a step of 1/255 every few seconds), the rise pulse, the tier number, the size.
+func look_key() -> Array:
+	var f := fill()
+	var x0 := 4.0
+	var x1 := roundf(bar_size.x) - 4.0
+	var p := 0.0 if HudStyle.reduced_motion else _pulse
+	var col := color_at(f)
+	if p > 0.0:
+		col = col.lerp(Color.WHITE, 0.5 * p)
+	var lit := level()
+	return [
+		roundf(x0 + (x1 - x0) * f),
+		f >= 1.0,
+		Color(col.r * lit, col.g * lit, col.b * lit, 1.0).to_rgba32(),
+		col.to_rgba32(),  # the tier number's colour
+		p,
+		_tier if show_number and shows_number(_tier) else -1,
+		TranslationServer.get_locale(),
+		bar_size,
+		size,
+	]
 
 
 func _draw() -> void:
+	_drawn_key = look_key()
 	var p := 0.0 if HudStyle.reduced_motion else _pulse
 	var top := floorf((size.y - 14.0) * 0.5) if size.y > 14.0 else 0.0
 	draw_astral(self, Rect2(0, top, bar_size.x, 14.0), fill(), level(), p, FULL_TIER)

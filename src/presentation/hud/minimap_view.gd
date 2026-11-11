@@ -7,10 +7,11 @@ extends Control
 ## DRAW_GROWTH: ~470 drawn objects per room found, 85-88 % of a late floor's frame: the rooms, doors,
 ## icons (and the full map's backdrop, panel and legend) are drawn once into a texture, a SubViewport rendered once
 ## (UPDATE_ONCE) each time MinimapState.revision, the view's size, its screen scale or the language changes. Each
-## frame draws that texture (one object; the corner scrolls it under the hero, snapped to whole screen pixels) and,
-## live, the hero's arrow and the corner ticks. The texture is rendered at the screen's own pixel density, so it is
-## never scaled; it holds premultiplied colour and is drawn with a premultiplied-alpha blend, which composites exactly
-## as drawing the shapes straight onto the screen did. A floor too big for a texture falls back to the direct draw.
+## frame draws that texture (one object; the corner moves it under the hero, snapped to whole screen pixels,
+## without drawing it again) and, live, the hero's arrow; the corner's frame is its own Control (CornerTicks). The
+## texture is rendered at the screen's own pixel density, so it is never scaled; it holds premultiplied colour and is
+## drawn with a premultiplied-alpha blend, which composites as the shapes drawn straight on the screen did.
+## A floor too big for a texture falls back to the direct draw.
 
 const C45 := 0.70710678118654752
 ## Door sides: direction from room .x to room .y for door angles 0, 1024, 2048, 3072.
@@ -77,6 +78,26 @@ var _layer_sub := Vector2.ZERO
 var _locale_gen := 0
 
 
+## The corner window's frame (the ticks, the diamonds, the star), drawn by its own Control over the corner view, with
+## the same rect and the same clip: it never moves while the map under it scrolls, so the HUD keeps it in a texture
+## (HudStill) and redraws only the map.
+class CornerTicks:
+	extends Control
+
+	func _init(view: MinimapView) -> void:
+		name = "MinimapTicks"
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+			set_anchor(side, view.get_anchor(side))
+			set_offset(side, view.get_offset(side))
+		custom_minimum_size = view.custom_minimum_size
+		clip_contents = view.clip_contents
+		visible = false
+
+	func _draw() -> void:
+		MinimapView.draw_astral_ticks(self, MinimapStyle.TICK_ARM)
+
+
 ## W3-V3: the Node2D inside the layer's SubViewport; its draw is the view's static part.
 class MapLayer:
 	extends Node2D
@@ -103,7 +124,7 @@ func _init(p_full: bool = false) -> void:
 	add_child(_layer_vp)
 	_image.name = "MapLayerImage"
 	_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_image.show_behind_parent = true  # under the arrow and ticks this view draws itself
+	_image.show_behind_parent = true  # under the arrow this view draws itself
 	_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST  # one texel per screen pixel
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
@@ -131,6 +152,9 @@ func refresh() -> void:
 	var px := (reader.player_pos() * _scale).round()
 	arrow_dir()
 	var rendered := _sync_layer()
+	if rendered:
+		_image.queue_redraw()
+	_place_image()
 	if (
 		rendered
 		or state.revision != _drawn_revision
@@ -145,7 +169,6 @@ func refresh() -> void:
 		_drawn_move = reader.move_intent()
 		_drawn_size = size
 		queue_redraw()
-		_image.queue_redraw()
 
 
 ## How many times it has drawn (tests check it doesn't redraw every frame for nothing).
@@ -224,21 +247,30 @@ func _layer_screen_at() -> Vector2:
 	var at := _layer_frame.position
 	if not full:
 		at += size * 0.5 - _turn(reader.player_pos()) * MinimapStyle.CORNER_PX_PER_M
-	return get_viewport().get_final_transform() * _image.get_global_transform_with_canvas() * at
+	return get_viewport().get_final_transform() * get_global_transform_with_canvas() * at
 
 
 ## W3-V3: the layer's texture, placed on whole screen pixels so its pixels land 1:1 on the screen's. The layer was
 ## rendered shifted by the sub-pixel phase the map had then (_layer_sub), so while the hero stands where it was
 ## rendered the map sits exactly where the direct draw put it; walking, it is within half a pixel, as the direct
-## draw's own redraw-per-pixel was.
+## draw's own redraw-per-pixel was. The image draws the texture at its own origin and moves (_place_image) as the
+## map scrolls, so a step moves it without drawing it again.
 func _draw_image() -> void:
 	if not _cached or reader == null or state == null or not reader.has_floor():
 		return
-	var xf := get_viewport().get_final_transform() * _image.get_global_transform_with_canvas()
-	var at := xf.affine_inverse() * (_layer_screen_at() - _layer_sub).round()
 	_image.draw_texture_rect(
-		_layer_vp.get_texture(), Rect2(at, Vector2(_layer_vp.size) / _layer_px), false
+		_layer_vp.get_texture(), Rect2(Vector2.ZERO, Vector2(_layer_vp.size) / _layer_px), false
 	)
+
+
+## Puts the image where the texture's top-left lands on a whole screen pixel this frame.
+func _place_image() -> void:
+	if not _cached or reader == null or not reader.has_floor():
+		return
+	var xf := get_viewport().get_final_transform() * get_global_transform_with_canvas()
+	var at := xf.affine_inverse() * (_layer_screen_at() - _layer_sub).round()
+	if _image.position != at:
+		_image.position = at
 
 
 ## W3-V3: the static part, drawn into the layer `ci` (MapLayer._draw): in the corner, at the corner's scale with the
@@ -296,11 +328,8 @@ func _draw() -> void:
 		_draw_doors()
 		_draw_icons()
 	_draw_player()
-	if full:
-		if not _cached:
-			_draw_legend(Vector2(map_rect.end.x + 40, map_rect.position.y))
-	else:
-		_draw_corner_ticks()
+	if full and not _cached:
+		_draw_legend(Vector2(map_rect.end.x + 40, map_rect.position.y))
 
 
 func _panel() -> StyleBoxFlat:
@@ -327,15 +356,12 @@ func draws_backdrop() -> bool:
 
 ## Small L-ticks at the corner map's corners, over a dark halo, so its window reads without a
 ## panel.
-func _draw_corner_ticks() -> void:
-	_draw_astral_ticks(MinimapStyle.TICK_ARM)  # Astral's frame (1 px lines, small ornaments)
-
-
-## The corner window in Astral: at each corner a 1 px silver L over a dark halo, a fainter inner L 4 px
-## in, and a small diamond on the corner; a four-point star under the window's foot and a diamond over its head.
-func _draw_astral_ticks(arm: float) -> void:
-	var w := roundf(size.x)
-	var h := roundf(size.y)
+## The corner window in Astral, on `ci` (CornerTicks, the corner's size): at each corner a 1 px silver L over a dark
+## halo, a fainter inner L 4 px in, and a small diamond on the corner; a four-point star under the window's foot and a
+## diamond over its head.
+static func draw_astral_ticks(ci: Control, arm: float) -> void:
+	var w := roundf(ci.size.x)
+	var h := roundf(ci.size.y)
 	var halo := Color(MinimapStyle.SHADOW, 0.6)
 	for c: Array in [
 		[0.0, 0.0, 1.0, 1.0],
@@ -356,14 +382,14 @@ func _draw_astral_ticks(arm: float) -> void:
 			var px := x + sx * d
 			var py := y + sy * d
 			if d == 0.0:
-				_ci.draw_rect(Rect2(minf(px, px + sx * a) - 1.0, py - 1.0, a + 2.0, 3.0), halo)
-				_ci.draw_rect(Rect2(px - 1.0, minf(py, py + sy * a) - 1.0, 3.0, a + 2.0), halo)
-			AstralChrome.hline(self, px, px + sx * a, py, col)
-			AstralChrome.vline(self, px, py, py + sy * a, col)
-		AstralChrome.dia(self, Vector2(x + 0.5, y + 0.5), 3.0, MinimapStyle.TICK, HudStyle.A_INK)
-	AstralChrome.star4(self, Vector2(roundf(w * 0.5) + 0.5, h + 8.5), 6.0, MinimapStyle.TICK, 0.18)
+				ci.draw_rect(Rect2(minf(px, px + sx * a) - 1.0, py - 1.0, a + 2.0, 3.0), halo)
+				ci.draw_rect(Rect2(px - 1.0, minf(py, py + sy * a) - 1.0, 3.0, a + 2.0), halo)
+			AstralChrome.hline(ci, px, px + sx * a, py, col)
+			AstralChrome.vline(ci, px, py, py + sy * a, col)
+		AstralChrome.dia(ci, Vector2(x + 0.5, y + 0.5), 3.0, MinimapStyle.TICK, HudStyle.A_INK)
+	AstralChrome.star4(ci, Vector2(roundf(w * 0.5) + 0.5, h + 8.5), 6.0, MinimapStyle.TICK, 0.18)
 	AstralChrome.dia(
-		self, Vector2(roundf(w * 0.5) + 0.5, -5.5), 2.5, MinimapStyle.TICK, HudStyle.A_INK
+		ci, Vector2(roundf(w * 0.5) + 0.5, -5.5), 2.5, MinimapStyle.TICK, HudStyle.A_INK
 	)
 
 
