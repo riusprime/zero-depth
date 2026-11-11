@@ -292,3 +292,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 - 2026-11-11 (owner, after playing): "feels really smooth, barely falls under 60 fps and I like that"; suspects the
   light effects of some attack forms, Ring for example. The lead first measured a scene without Ring (the probe's
   heavy build is Rune Explosion): omni lights off changed nothing there, which says nothing about Ring.
+- 2026-11-11 (owner): answered the eight questions (OWNER_QUESTIONS "Answers"; PLAN L20). The frame target is now
+  "never below 60 fps" with 144 as the ceiling. Step 54b (the native core the only one) and step 61 (the station
+  stand-in panel) go ahead; the thread trial is dropped; the PR into `main` opens when the flip and seams are in.

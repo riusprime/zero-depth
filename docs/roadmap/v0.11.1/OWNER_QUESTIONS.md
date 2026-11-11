@@ -14,3 +14,16 @@ the morning"). Each row says what it blocks and what was done meanwhile. Answer 
 | Q6 | **Delete the hub station stand-in panel?** It can no longer be opened in the game; only a test builds it | Nothing | Left in place |
 | Q7 | **After you have played it: delete the script versions of the ported loops?** That is the real flip (step 54b): the C++ core becomes the only one and the goldens are re-recorded | The deletion and the golden re-record | The C++ core is ON by default in your folder (step 54a) and every script path is still there, so one switch in the dev panel (F10) goes back to the script sim for comparison. I did not delete anything: how fights feel is yours to judge, and CI has not yet shown that Linux gives the same results as this PC (Q3). Recommendation: delete after your playtest and the PR's first green run |
 | Q8 | **Lightning bolts: bright core on top of the glow, always?** A bolt is a core line and a wider glow shell. Which drew on top used to vary from bolt to bolt by accident; step 57 made it the same for every bolt | Nothing | Core on top (the agent's choice; every pixel matches one of the two old looks). The other option is glow on top; say if you prefer it when you see lightning in play |
+
+## Answers (owner, 2026-11-11, in chat)
+
+| # | The owner's words | What the lead does |
+|---|---|---|
+| Q1 | "If we get never below 60 fps and cealing is 144fps, as much as we can get during not busy but the target is not doing 144fps all the time as a final objective, I think we optimized the game a lot already" | The frame target becomes: never under 60 fps; up to 144 when the scene allows; 144 on every frame is no longer the objective. The performance work stops after the Ring measurement and the last quiet run |
+| Q2 | "drop it once the native core is in" | The sim-on-a-thread trial is dropped: its worktree and branch removed, its commit kept under the tag `archive/sim-thread-2026-11` |
+| Q3 | "When done open PR for github main" | The PR into `main` is opened once the flip (Q7) and the last seams run are in |
+| Q4 | "windows and linux for now yes" | The library is built for Windows and Linux only |
+| Q5 | "both is fine" | Aim assist stays on mouse and gamepad |
+| Q6 | "Sure" | The hub station stand-in panel is deleted (step 61) |
+| Q7 | "C++ becomes the only one if performance is better" | It is (tick at 120 enemies 3.3 → 0.56 ms, PERF_NATIVE): step 54b goes ahead: the script versions of the ported loops are deleted and the goldens re-recorded |
+| Q8 | "Core on top yeah" | Lightning bolts stay as step 57 left them |
