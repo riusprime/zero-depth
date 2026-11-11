@@ -297,8 +297,8 @@ func advance(delta: float) -> void:
 	if _die_t >= 0.0:
 		_die_t += dt
 	# The walk's pace from how fast the body moves (the critters' too: the crab's slide)
-	if (_is_model or CritterBodies.is_critter(kind)) and is_inside_tree():
-		var at := global_position
+	if (_is_model or CritterBodies.is_critter(kind)) and (is_inside_tree() or detached):
+		var at := _view_position()
 		var speed := (
 			0.0
 			if _last_at == Vector3.INF

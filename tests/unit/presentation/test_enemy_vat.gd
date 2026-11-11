@@ -258,7 +258,7 @@ func test_actor_views_draw_vat_chargers_and_hatchlings() -> void:
 		var avatar := node.get_meta(&"enemy_avatar") as ChargerAvatar
 		assert_true(avatar.vat)
 		if avatar.kind == WorldReader.KIND_CHARGER:
-			assert_true(node.has_meta(&"dazed"), "the dazed ring stays the actor's")
+			assert_true(node.has_meta(&"dazed_y"), "its dazed ring is the batch's (EnemyBatch)")
 	views.vat_crowd._process(DT)
 	assert_eq(views.vat_crowd.drawn, 3)
 	var hatch := views.actor_node(ids[2]).get_meta(&"enemy_avatar") as ChargerAvatar

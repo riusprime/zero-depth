@@ -18,6 +18,8 @@ extends Node3D
 ## its own vat_rig(): the Charger and the Hatchling). The drives are VatBake.drives_of (the avatar's vat_drives(), or a
 ## horde avatar's four); a rig with more than four sends the rest in a per-look drive texture, one row per instance
 ## (written with the buffer, in the same order), and its lift is the avatar's vat_lift().
+## A batched enemy (EnemyBatch: its root, facing and avatar outside the tree) is drawn the same way at the place the
+## batch reckons for it (EnemyBatch.body_at), its visibility its own nodes' flags.
 ## Presentation only (EI-07): it reads the avatars, never the sim.
 
 ## The kinds a VAT crowd can draw (the pilot: the Swarmer, the most numerous horde kind: a pack of 8;
@@ -63,6 +65,8 @@ const BOX_M := 500.0
 ## The instances drawn by the last frame (bodies, shadows; tests, probes).
 var drawn := 0
 var shadows_drawn := 0
+## The batch placing the batched enemies (ActorViews sets it).
+var batch: EnemyBatch
 ## The body sets by look key and the shadow sets by kind: {mmi, mm, entries [[root, facing, avatar]], buf, stride,
 ## pose, drawn; a rig with more than four drives: dbuf, dtex, mat (its drive texture's floats, the texture)}.
 var _looks := {}
@@ -85,8 +89,10 @@ func _init() -> void:
 
 
 ## Draws `avatar` (built with `vat` on, under `facing` under the actor `root`) in the look it was built with; with
-## `shadow`, its proxy shadow too.
-func add(root: Node3D, facing: Node3D, avatar: AvatarBase, outline: Color, shadow: bool) -> void:
+## `shadow`, its proxy shadow too. `id` >= 0: a batched enemy (placed by `batch`).
+func add(
+	root: Node3D, facing: Node3D, avatar: AvatarBase, outline: Color, shadow: bool, id := -1
+) -> void:
 	var kind: int = avatar.get(&"kind")
 	var key := VatBake.look_key(kind, avatar.enemy_tint, avatar.role_glow, outline)
 	if not _looks.has(key):
@@ -94,14 +100,15 @@ func add(root: Node3D, facing: Node3D, avatar: AvatarBase, outline: Color, shado
 		var pose := VatBake.pose_for(kind)
 		var mat := VatLooks.material(pose, bool(mesh.get_meta(&"two_sided", false)))
 		_looks[key] = _new_set(mesh, mat, true, pose)
-	(_looks[key]["entries"] as Array).append([root, facing, avatar])
+	var entry := [root, facing, avatar] if id < 0 else [root, facing, avatar, id]
+	(_looks[key]["entries"] as Array).append(entry)
 	if shadow:
 		if not _shadows.has(kind):
 			var proxy := shadow_mesh(kind)
 			if proxy == null:
 				return
 			_shadows[kind] = _new_set(proxy, null, false)
-		(_shadows[kind]["entries"] as Array).append([root, facing, avatar])
+		(_shadows[kind]["entries"] as Array).append(entry)
 
 
 ## The rest-pose shadow stand-in of `kind` (EnemyShadows': the same mesh a node enemy casts with). Once made it is
@@ -146,7 +153,7 @@ func instance_of(avatar: Node3D) -> Dictionary:
 		var buf: PackedFloat32Array = s["buf"]
 		var k := 0
 		for e: Array in s["entries"]:
-			if not _drawable(e):
+			if not _alive(e) or not _drawable(e):  # (a test may look after a free, before the next write)
 				continue
 			if e[2] == avatar:
 				if k >= int(s["drawn"]):
@@ -212,16 +219,19 @@ func _write(s: Dictionary, body: bool) -> int:
 			dbuf.resize(mm.instance_count * dn)
 	var n := 0
 	for e: Array in entries:
-		if not _drawable(e):
+		if e.size() <= 3 and not _drawable(e):  # (a batched one: body_at below says)
 			continue
 		var avatar: AvatarBase = e[2]
 		var root: Node3D = e[0]
-		var xf: Transform3D = (
-			inv
-			* root.get_global_transform_interpolated()
-			* (e[1] as Node3D).transform
-			* avatar.transform
-		)
+		var at: Transform3D
+		if e.size() > 3:  # A batched enemy: outside the tree, at the place the batch reckons
+			var bo := batch.body_at(e[3])
+			if bo.x == INF:  # hidden (an egg, a vanished one)
+				continue
+			at = Transform3D(Basis.IDENTITY, bo)
+		else:
+			at = inv * root.get_global_transform_interpolated()
+		var xf: Transform3D = at * (e[1] as Node3D).transform * avatar.transform
 		if body and avatar is HordeAvatar:  # The body's own moves (the Swarmer's: its lift)
 			xf = xf * (avatar as HordeAvatar).vat_offset()
 		elif body:
@@ -289,6 +299,8 @@ static func _alive(e: Array) -> bool:
 
 
 static func _drawable(e: Array) -> bool:
+	if e.size() > 3:  # Outside the tree: its own nodes' flags (the avatar sits right under the facing)
+		return (e[0] as Node3D).visible and (e[1] as Node3D).visible and (e[2] as Node3D).visible
 	return (e[2] as Node3D).is_visible_in_tree()
 
 
