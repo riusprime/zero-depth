@@ -417,7 +417,7 @@ func test_actor_views_draw_every_horde_kind_through_the_crowd_and_let_the_models
 	views.sync(WorldReader.new(w))
 	views.vat_crowd._process(DT)
 	var shield := avatars[WorldReader.KIND_SHIELD_BEARER] as HordeAvatar
-	var sniper := avatars[WorldReader.KIND_SNIPER] as HordeAvatar
+	var sniper: Variant = avatars[WorldReader.KIND_SNIPER]
 	assert_true(shield.dying(), "the Shield Bearer's model falls")
 	assert_false(views.vat_crowd.instance_of(shield).is_empty(), "drawn while it falls")
-	assert_true(views.vat_crowd.instance_of(sniper).is_empty(), "a code body goes at once")
+	assert_false(is_instance_valid(sniper), "a code body goes at once: its root freed with it")

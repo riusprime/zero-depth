@@ -525,7 +525,7 @@ func _rebuild_vat_kinds() -> void:
 		_actors.erase(id)
 		if batch != null:
 			batch.release(id, false)
-		node.queue_free()
+		EnemyBatch.let_go(node)  # (a batched root is in no tree: freed now, not left an orphan)
 		for d: Dictionary in [_flash, _flash_hold, _shown, _anim_on, _parts]:
 			d.erase(id)
 

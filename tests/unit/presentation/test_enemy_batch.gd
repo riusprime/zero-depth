@@ -140,7 +140,7 @@ func test_a_kill_removes_its_instances_the_same_frame() -> void:
 	var views := _views(w)
 	_ripen(w)
 	views.sync(WorldReader.new(w))
-	var sniper: AvatarBase = views.actor_node(gone).get_meta(&"enemy_avatar")
+	var sniper: Variant = views.actor_node(gone).get_meta(&"enemy_avatar")
 	var shield: AvatarBase = views.actor_node(falls).get_meta(&"enemy_avatar")
 	for id in [gone, falls]:
 		var i := w.actors.index_of(id)
@@ -155,7 +155,8 @@ func test_a_kill_removes_its_instances_the_same_frame() -> void:
 	views.vat_crowd._process(DT)
 	assert_false(views.batch.has(gone), "its slot went")
 	assert_true(views.batch.parts_of(gone, EnemyBatch.Part.DISC).is_empty(), "no disc")
-	assert_true(views.vat_crowd.instance_of(sniper).is_empty(), "no body")
+	assert_false(is_instance_valid(sniper), "no body: its root is freed with its slot")
+	assert_eq(views.vat_crowd.drawn, 1, "only the falling body is drawn")
 	assert_true(views.batch.has(falls), "the falling one stays a moment")
 	assert_false(views.vat_crowd.instance_of(shield).is_empty(), "its body falls")
 	assert_eq(views.batch.parts_of(falls, EnemyBatch.Part.DISC).size(), 1, "its disc stays")

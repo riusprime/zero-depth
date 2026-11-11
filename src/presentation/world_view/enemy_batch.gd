@@ -354,7 +354,19 @@ func drop(id: int, node: Node3D) -> void:
 		get_tree().create_timer(av.DEATH_SECONDS).timeout.connect(node.queue_free)
 		return
 	release(id, false)
-	node.queue_free()
+	let_go(node)
+
+
+## Frees a batched enemy's root its owner lets go of: now, as it is in no tree (a queued free of an object outside the
+## tree waits for the end of the frame, and one whose view goes first in that frame is never freed); a root in the
+## tree (the path without the batch) is queued as before.
+static func let_go(node: Node3D) -> void:
+	if not is_instance_valid(node):
+		return
+	if node.is_inside_tree():
+		node.queue_free()
+	else:
+		node.free()
 
 
 ## Enemy `id` left the sim: its slot goes now, or (`falls`) stays without its bar and blob until its root is freed.
