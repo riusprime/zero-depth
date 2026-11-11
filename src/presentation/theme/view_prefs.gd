@@ -23,8 +23,10 @@ static var enemy_vat := false  # until apply_settings reads the profile (the gam
 
 
 static func apply_settings(profile: ProfileStore) -> void:
+	# Static functions, not a lambda: a lambda left in DebugApi's static dictionary at exit is freed after the
+	# script that made it, and the engine crashed on quit
 	DebugApi.register_view_switch(
-		&"enemy_vat", "UI_DEV_ENEMY_VAT", flip_enemy_vat, func() -> bool: return enemy_vat
+		&"enemy_vat", "UI_DEV_ENEMY_VAT", ViewPrefs.flip_enemy_vat, ViewPrefs.enemy_vat_on
 	)
 	reduced_motion = String(GameSettings.get_value(profile, "reduced_motion")) == "on"
 	HudStyle.reduced_motion = reduced_motion  # Steady HUD pulses
@@ -44,6 +46,11 @@ static func apply_settings(profile: ProfileStore) -> void:
 ## The dev panel's enemy VAT switch (ActorViews rebuilds those enemies on its next sync).
 static func flip_enemy_vat() -> void:
 	enemy_vat = not enemy_vat
+
+
+## The dev panel's enemy VAT switch's state.
+static func enemy_vat_on() -> bool:
+	return enemy_vat
 
 
 ## How many of `n` sparks a burst throws.
