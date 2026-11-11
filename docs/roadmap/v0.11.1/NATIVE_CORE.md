@@ -1,3 +1,6 @@
+> **This is the design as written before the build** (history, not maintained). The as-built contract is
+> [`../../architecture/NATIVE_CORE.md`](../../architecture/NATIVE_CORE.md); where the two differ, that page and the code win.
+
 # The native core: design (v0.11.1 step 51)
 
 - **Status:** design, for steps 52 to 55 (PLAN Wave 7; owner L15, L16, L17).

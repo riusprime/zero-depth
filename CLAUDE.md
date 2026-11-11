@@ -55,6 +55,11 @@ Superseded rules are listed in ROADMAP §3.
   - `sin`/`cos`/`atan2`/`pow`/`exp`/`log`.
 
   The arch lint enforces this.
+- **The sim's hot loops are C++** (`native/`, LOCKED_DECISIONS 2026-11-11): enemy thinking, steering and strikes, the
+  collision passes, the projectile sweep and the path flood. Both languages obey the purity rules above; the C++ draws
+  no random number, keeps no state between calls, and its results must stay deterministic and identical across the
+  Windows (MSVC) and Linux (gcc) builds. Read [`docs/architecture/NATIVE_CORE.md`](docs/architecture/NATIVE_CORE.md)
+  before touching `native/` or a kernel's GDScript bridge (`src/sim/world/native_*.gd`).
 - **One clock** (EI-03). `World.tick` at 60 Hz is the only gameplay time. No `Timer`, tween or animation decides
   an outcome.
 - **Input is an `InputFrame` per tick** (EI-04). Randomness comes only from named streams (EI-05).
@@ -220,6 +225,10 @@ The owner also runs Claude Code on their own PC (i7-10700K, RTX 3060), from the 
 | Versions, exit gates, release checklist | [`docs/roadmap/ROADMAP.md`](docs/roadmap/ROADMAP.md) |
 | Layers, folders, loop, input, save, Deathventory reuse | [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) |
 | Tick, `InputFrame`, events, damage, procs, caps, hashing | [`docs/architecture/SIM_CONTRACTS.md`](docs/architecture/SIM_CONTRACTS.md) |
+| The native (C++) core: its kernels, intents, data model, determinism rules, how to add a kernel or an enemy kind | [`docs/architecture/NATIVE_CORE.md`](docs/architecture/NATIVE_CORE.md); the build: [`native/README.md`](native/README.md) |
+| The batched display: enemies, cubes, shards, bolts and the HUD drawn as instances, and how the look is proven | [`docs/architecture/PRESENTATION_CONTRACTS.md`](docs/architecture/PRESENTATION_CONTRACTS.md) §11 |
+| Measuring performance: every tool, the quiet-machine protocol, the misreadings to avoid, the evidence index | [`docs/process/PERF_TOOLS.md`](docs/process/PERF_TOOLS.md) |
+| The native core's and the batched display's tests | [`docs/architecture/TEST_MATRIX.md`](docs/architecture/TEST_MATRIX.md) §7 |
 | Balance metrics, bots, sim rules, gap-analysis reports | [`docs/balance/SCORECARD.md`](docs/balance/SCORECARD.md) |
 | The five design pillars (the audit framework) | [`docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md`](docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md) |
 | Palettes, shapes, lighting, art requests | [`docs/art/ART_DIRECTION.md`](docs/art/ART_DIRECTION.md) |
