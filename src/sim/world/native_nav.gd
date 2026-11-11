@@ -1,12 +1,12 @@
 class_name NativeNav
 extends RefCounted
-## The flow field's flood run by the native side (World.native, NativeWorld.NAV): NavField.flood's bucketed octile
-## Dijkstra, whole in one call, giving the same distances cell for cell (integer steps, the same step and bucket
-## order). With the kernel on, the world's periodic flood is that whole flood on its PERIOD tick instead of a build
-## sliced over SLICES ticks, so the field the enemies follow is never older than its flood tick. NavField.dist stays
-## the truth (a GDScript array, snapshotted); the native side keeps a cache of the field it floods last: its grid,
-## extra cells and distances, sent again whenever the world floods another field or the field's grid or distances
-## changed in GDScript (NavField.grid_rev, dist_rev).
+## The flow field's flood, run by the native side (World.native, or a field's own: NavField.flood;
+## native/src/zd_nav.cpp): a bucketed octile Dijkstra in integer steps, whole in one call, cell for cell what
+## NavField.flood_reference (the GDScript oracle the tests keep) gives. The world's periodic flood is that whole flood
+## on its PERIOD tick, so the field the enemies follow is never older than its flood tick. NavField.dist stays the
+## truth (a GDScript array, snapshotted); the native side keeps a cache of the field it floods last: its grid, extra
+## cells and distances, sent again whenever another field is flooded or the field's grid or distances changed in
+## GDScript (NavField.grid_rev, dist_rev). The enemy kernels read the same cache (NativeAi.ready syncs it).
 
 
 ## The native side's cache made current for `f`: the whole grid when it holds another field or this one was rebuilt

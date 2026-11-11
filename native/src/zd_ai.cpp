@@ -112,7 +112,6 @@ struct Ctx {
 	const float *tu = nullptr;
 	float hx = 0, hy = 0, hvx = 0, hvy = 0, hr = 0, land_x = 0, land_y = 0;
 	bool dead = false, dashing = false;
-	bool flow_native = false;
 
 	void read_hero(const PackedFloat32Array &hero) {
 		const float *h = hero.ptr();
@@ -155,7 +154,7 @@ int pattern_slot(const int32_t *ri, int32_t pick) {
 // think (phase 3)
 
 int ZdWorld::think(Object *actors, const PackedFloat32Array &hero, int tick, const PackedByteArray &held,
-		const PackedInt32Array &mine_owners, bool flow_native) {
+		const PackedInt32Array &mine_owners) {
 	AiScratch &s = ai_;
 	s.out_i.clear();
 	s.out_f.clear();
@@ -214,7 +213,6 @@ int ZdWorld::think(Object *actors, const PackedFloat32Array &hero, int tick, con
 
 	Ctx c;
 	c.read_hero(hero);
-	c.flow_native = flow_native;
 	const float *tu = kinds_.tuning.data();
 	const int period = std::max(1, int(tu[kt::T_PLAN_PERIOD]));
 	const int egg = int(tu[kt::T_EGG_STATE]);
@@ -358,9 +356,7 @@ int ZdWorld::think(Object *actors, const PackedFloat32Array &hero, int tick, con
 				s.plan_block[size_t(i)] = blocked ? 1 : 0;
 				if (blocked) {
 					float fx, fy;
-					if (!flow_native) {
-						s.emit(I_FLOW, i, 0, len);
-					} else if (nav_direction(nav_, ax, ay, fx, fy)) {
+					if (nav_direction(nav_, ax, ay, fx, fy)) {
 						dx = fx * len;
 						dy = fy * len;
 					}
@@ -551,7 +547,7 @@ int ZdWorld::think(Object *actors, const PackedFloat32Array &hero, int tick, con
 // move (phase 5): the steering; the collision passes follow (resolve_actors)
 
 int ZdWorld::move(Object *actors, const PackedFloat32Array &hero, const PackedFloat32Array &slow,
-		float slow_permille, bool flow_native) {
+		float slow_permille) {
 	AiScratch &s = ai_;
 	s.out_i.clear();
 	s.out_f.clear();
@@ -632,11 +628,7 @@ int ZdWorld::move(Object *actors, const PackedFloat32Array &hero, const PackedFl
 			factor = slowed;
 		}
 		const int st = state[i];
-		if (st == S_MOVE && (f & kt::RELOCATES) != 0 && pick[i] == 1) { // EnemyAi._relocate
-			if (!flow_native) {
-				s.emit(I_RELOCATE_STEP, i);
-				continue;
-			}
+		if (st == S_MOVE && (f & kt::RELOCATES) != 0 && pick[i] == 1) { // a Sniper walks to its next spot
 			const float tx = s.lock_x[size_t(i)] - x, ty = s.lock_y[size_t(i)] - y;
 			const double d = length(tx, ty);
 			if (d <= 0.0001) {
@@ -744,14 +736,12 @@ PackedInt32Array ZdWorld::kind_layout() const {
 PackedInt32Array ZdWorld::ai_hero_layout() const {
 	PackedInt32Array out;
 	out.push_back(HERO_SIZE);
-	out.push_back(I_FLOW);
 	out.push_back(I_THINK_TICK);
 	out.push_back(I_MOVE_TICK);
 	out.push_back(I_WINDUP_START);
 	out.push_back(I_WINDUP_END);
 	out.push_back(I_RELOCATE);
 	out.push_back(I_CHARGE_STEP);
-	out.push_back(I_RELOCATE_STEP);
 	return out;
 }
 

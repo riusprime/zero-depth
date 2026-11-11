@@ -1,9 +1,9 @@
 #pragma once
-// The move phase's collision kernel (World._resolve_bodies' rules): each pass pushes the bodies out of the walls
-// and the standing solids, then parts overlapping bodies, half to each. A body flagged `through` is skipped by both;
-// a heavy body against a light one shoves the light one the whole way, stopped at the first wall on the way.
-// Deterministic against itself: fixed iteration order, single-precision floats, no threads. Not bit-for-bit the
-// GDScript passes: its own grid, and the pairs are visited in its grid's order.
+// The move phase's collision kernel (World._move_and_collide calls it through NativeMove), the only collision
+// passes: each pass pushes the bodies out of the walls and the standing solids, then parts overlapping bodies, half
+// to each. A body flagged `through` is skipped by both; a heavy body against a light one shoves the light one the
+// whole way, stopped at the first wall on the way. Deterministic: fixed iteration order (its own grid's), single-
+// precision floats, no threads; the same on every compiler by the fixtures (tests/golden/test_native_fixtures.gd).
 // ZdWorld's methods resolve, resolve_actors, get_x, get_y, bench_pairs, touch and determinism_probe are defined
 // in zd_collide.cpp; this header holds the kernel's working state (scratch, rebuilt on every call).
 

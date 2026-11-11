@@ -6,8 +6,6 @@ extends SceneTree
 ## a hash chain of World.state_hash every 60 ticks (the outcome: the same before and after a speed-up).
 ## Writes nothing tracked; paste the output into evidence by hand.
 ##   godot --headless --path . -s scripts/checks/horde_phases.gd [-- --counts=20,40,60] [-- --ticks=1800]
-## `--native=move,ai,...` (or `all`; `1` is `move`): those kernels run native (NativeSwitch); it stops if the library
-## is missing.
 
 const BENCH := preload("res://scripts/bench/sim_bench.gd")
 const RUN_SEED := 20261007
@@ -51,18 +49,10 @@ func _initialize() -> void:
 		for s in String(args["--counts"]).split(","):
 			counts.append(int(s))
 	var ticks := int(args.get("--ticks", 1800))
-	var native := NativeSwitch.parse(String(args.get("--native", "0")))
-	if native < 0:
-		push_error(
-			"horde_phases: --native names an unknown kernel (move, ai, strike, shots, nav, all)"
-		)
+	if not NativeWorld.available():
+		NativeWorld.report_missing()
 		quit(1)
 		return
-	if NativeSwitch.install(native) != native:
-		push_error("horde_phases: --native asks for kernels but the native library is not loaded")
-		quit(1)
-		return
-	print("native %s" % (NativeWorld.names_of(native) if native != 0 else "off"))
 	var repo := ContentRepository.load_all()
 	for n in counts:
 		_measure(repo, n, ticks)
@@ -129,31 +119,23 @@ func _measure(repo: ContentRepository, n: int, ticks: int) -> void:
 
 
 ## The flood alone, on the world as the run left it (its hero's cell and its enemies' cells as targets): NavField.flood
-## from scratch FLOOD_REPS times; the min and median ms (the min is the least noisy on a busy machine), its work and
-## the grid's cells, and a hash of the distances (the same before and after a speed-up).
-## With the native flood on (NativeWorld.NAV) it prints a second line, the same flood run native.
+## (native, on the world's side) from scratch FLOOD_REPS times; the min and median ms (the min is the least noisy on
+## a busy machine), its work and the grid's cells, and a hash of the distances (the same before and after a speed-up).
 func _flood_bench(w: World) -> void:
-	_flood_line(w, "flood_alone", null)
-	if (w.native_on & NativeWorld.NAV) != 0:
-		_flood_line(w, "flood_native", w.native)
-
-
-func _flood_line(w: World, label: String, kernel: Object) -> void:
 	var targets: PackedInt32Array = w._nav_targets()
 	var times := []
 	for r in FLOOD_REPS:
 		w.nav._flooded = Vector3i(-1, -1, -1)
 		var t0 := Time.get_ticks_usec()
-		w.nav.flood(w.player_pos(), NavField.WORLD_FLOOD_STEPS, targets, kernel)
+		w.nav.flood(w.player_pos(), NavField.WORLD_FLOOD_STEPS, targets, w.native)
 		times.append((Time.get_ticks_usec() - t0) / 1000.0)
 	times.sort()
 	var h := StateHasher.new()
 	h.add_ints(w.nav.dist)
 	print(
 		(
-			"  %s min %.3f  median %.3f ms  work %d  cells %d  targets %d  dist_hash %s"
+			"  flood_alone min %.3f  median %.3f ms  work %d  cells %d  targets %d  dist_hash %s"
 			% [
-				label,
 				times[0],
 				times[FLOOD_REPS / 2],
 				w.nav.last_work,

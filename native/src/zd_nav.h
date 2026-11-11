@@ -1,7 +1,7 @@
 #pragma once
-// The flow field's flood toward the hero (NavField, NATIVE_CORE.md §3.6): the same bucketed octile Dijkstra as
-// NavField._run, over the nav grid cache (ZdWorld::nav_), run whole in one call. Integer arithmetic only, the same
-// step order and the same bucket order, so the distances are NavField.flood's cell for cell. The goal's seeds (a
+// The flow field's flood toward the hero (NavField.flood, NATIVE_CORE.md §3.6), the only implementation: a bucketed
+// octile Dijkstra over the nav grid cache (ZdWorld::nav_), run whole in one call. Integer arithmetic only, so the
+// distances are NavField.flood_reference's (the GDScript oracle) cell for cell on every platform. The goal's seeds (a
 // hero in a blocked cell seeds the free cells near it, a test against the walls' boxes) come from GDScript
 // (NavField._seeds), so the native side never repeats that float test.
 

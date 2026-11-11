@@ -1,30 +1,18 @@
-# gdlint: disable=max-file-lines
 class_name EnemyAi
 extends RefCounted
-## The v0.1.0 behaviours (owner Q3, 2026-10-06): Charger, Warden, Needle. A Warden turns only while it
-## walks: once it starts a slam it is committed, so baiting the slam opens its back (the way to flank it).
-## Each enemy is a small state machine in ActorStore (state, state_t, facing, lock_*, cd, fire_cd, windup, pick).
-## think() runs in tick phase 3, move() in phase 5, resolve() in phase 6. Every attack's area comes from one function
-## here, which the telegraph view also draws (EI-07): charge_lane, locked_disc, burst_lines, bolt_lanes, rune_disc.
-## Each windup's length is drawn per attack (the ai:enemy stream); aimed shots lead the
-## player by its velocity and keep tracking until the last COMMIT_TICKS of the windup; a charge turns toward the
-## player at a limited rate; the Needle's burst fans out; enemies spread around the player instead of stacking.
-## Two new kinds: the Arc Caster (a fast bolt, a 3-bolt spread, a rune that erupts under you) and the Bomb Drone
-## (lobs a bomb whose circle fills until it lands). The drone hovers only in the view: here it is a ground body.
-## v0.4.0 EN, six horde kinds: the Swarmer (a tiny Charger whose charge is a short lunge bite), the Splitter (swipes a
-## disc ahead of it; dies into Splitlings, which swipe too and never split), the Shield Bearer (blocks from the front,
-## turns slowly, bashes a short lane), the Mender (keeps away and heals hurt allies through a beam, no attack), the
-## Mine Layer (drops mines; Mines) and the Sniper (a 60-tick line, a hit down it, then a walk to a new spot). Their
-## shapes: locked_disc, bash_lane, snipe_lane, Mines.telegraph.
-## The Arc Caster's bolt and spread, the Lens
-## Drone's burst and the Bomb Drone's bomb become slow fireball patterns (EnemyTable.patterns, fired by BulletPatterns
-## with its caps and fairness rules): a fan of 3 plasma balls (narrow or wide), a ring of 6 orbs, a lobbed fireball
-## that bursts into an X of 4. They draw no line or circle on the ground: their windup is a body cue only ("cast",
-## and the Bomb Drone's flying fireball "lob", both "ground": false). The Needle, the Sniper, the melee kinds, the
-## Arc Caster's rune, the Mine Layer and the Mender are unchanged.
-## The Needle, the Sniper and the melee kinds keep their shapes but go "ground": false too.
-## v0.8.0 P1 (owner O25, playtest 2: "The large ground-smashing enemy no longer displays its red circular attack
-## warning"): the Warden's slam disc is drawn on the ground again, the third exception with the rune and the mines.
+## The normal enemies' rules that stay in GDScript, and the shapes every attack is drawn and hit with. The table kinds
+## (the horde, the critters, the biome variants: NativeKindTable's NATIVE and HOOKED kinds) think, steer and strike in
+## the native library (NativeAi, NativeStrike; native/src/zd_ai.cpp, zd_strike.cpp); what they hand back runs here:
+## the random draws (_plan_relocation, the windup's length in NativeAi), the Mender's heal (_mend), the bolts and
+## pattern waves (_fire, fire_wave), the hooked kinds' active rules (_resolve_horde), the Arc Caster's aim (_aim).
+## think() / move() / resolve() run the rows the table leaves to GDScript (ZdWorld.rows_for_script): elites (EliteAi),
+## the Ruins and Night Rocks signatures (RuinsRocks), the Cinder Priest (its plain state machine; its vent is
+## CanyonShore's) and eggs (BossSignatures); their walk is plan()'s, every PLAN_PERIOD ticks.
+## Every attack's area comes from one function here, which the telegraph view also draws (EI-07): charge_lane,
+## locked_disc, burst_lines, bolt_lanes, rune_disc, bash_lane, snipe_lanes. The per-kind lookups (behaviour_of,
+## flags_of, role_of) are what NativeKindTable builds the native side's table from.
+## The Warden's slam disc, the Arc Caster's rune and the Mine Layer's mines are drawn on the ground; the other
+## normal enemies' windups are told by their bodies ("ground": false).
 
 enum State { SPAWN, MOVE, WINDUP, ACTIVE, RECOVER }
 
@@ -84,7 +72,7 @@ const MEND_SCAN_TICKS := 15
 ## A Splitter's halves appear this far to either side of where it died.
 const SPLIT_OFFSET_M := 0.45
 ## PLAN H1; owner Q14: the five horde critters, one per biome, one rule set: no attack and no windup; they
-## chase the hero straight (no flanking: "fast but dumb") and hurt by touch (_critter_touch), contact_damage at most
+## chase the hero straight (no flanking: "fast but dumb") and hurt by touch (zd_strike's TOUCH), contact_damage at most
 ## every contact_cd_ticks (their own clock, ActorStore.cd). A touch counts within CRITTER_TOUCH_M of contact (the walk
 ## stops 0.1 m short of it, and the collision pass pushes the bodies apart).
 const CRITTERS: Array[int] = [
@@ -247,22 +235,9 @@ static func is_priority(kind: int) -> bool:
 	return kind == ActorStore.Kind.MENDER
 
 
-## True while actor i's windup aims a shot that still follows the player (it commits COMMIT_TICKS before it fires).
-## A Sniper's line follows until SNIPE_COMMIT_TICKS before the shot.
-static func tracking(w: World, i: int) -> bool:
-	var a := w.actors
-	var sniper := behaviour_of(a.kinds[i]) == ActorStore.Kind.SNIPER
-	var commit := w.tuning.ai_snipe_commit_ticks if sniper else w.tuning.ai_commit_ticks
-	if a.state[i] != State.WINDUP or a.state_t[i] >= a.windup[i] - commit:
-		return false
-	return (
-		sniper
-		or behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE
-		or (a.kinds[i] == ActorStore.Kind.ARC_CASTER and a.pick[i] != Spell.RUNE)
-		or a.kinds[i] == ActorStore.Kind.BOMB_DRONE
-	)  # Its landing follows you until it commits
-
-
+## Phase 3 for a row GDScript runs (ZdWorld.rows_for_script: the table kinds think natively, NativeAi): an elite's
+## own (EliteAi), else the staggered plan, the clocks, and a signature's (RuinsRocks), an egg's (BossSignatures) or the
+## plain state machine (the Cinder Priest: its vent is CanyonShore's).
 static func think(w: World, i: int) -> void:
 	var a := w.actors
 	var kind := a.kinds[i]  # Read once: an actor's kind never changes
@@ -277,8 +252,6 @@ static func think(w: World, i: int) -> void:
 		plan(w, i)
 		if w.phase_probe != null:
 			w.phase_probe.end(&"ai.plan")
-	if (f & F_VARIANT) != 0:  # The Rubble Warden's crust falls at half HP
-		Variants.on_think(w, i)
 	if (f & F_CANYON) != 0:  # A Cinder Priest takes or plants its vent
 		CanyonShore.on_think(w, i)
 	# Engines: frozen holds still; a spell stun (no call while no spell holds anyone)
@@ -294,16 +267,6 @@ static func think(w: World, i: int) -> void:
 	if a.state[i] >= BossSignatures.EGG:  # An egg waits, hatches or bursts
 		BossSignatures.egg_think(w, i)
 		return
-	if (f & F_CRITTER) != 0:  # Rises in, then only walks (its touch is resolve's)
-		if a.state[i] == State.SPAWN and a.state_t[i] >= w.tuning.spawn_in_ticks:
-			enter_state(a, i, State.MOVE)
-		elif a.state[i] == State.MOVE and planning:
-			a.facing[i] = Kin.angle_of(w.player_pos() - a.pos(i))
-		return
-	if kind == ActorStore.Kind.GRAVITY_NODE:  # StarfallKinds.is_node: it floats in place and never attacks
-		if a.state[i] == State.SPAWN and a.state_t[i] >= w.tuning.spawn_in_ticks:
-			enter_state(a, i, State.MOVE)
-		return
 	var alive := not w.player_dead()
 	match a.state[i]:
 		State.SPAWN:
@@ -312,78 +275,25 @@ static func think(w: World, i: int) -> void:
 		State.MOVE:
 			var to_player := w.player_pos() - a.pos(i)
 			var dist := Kin.length(to_player)
-			var beh := behaviour_of(kind)
-			# A Needle backs off before it shoots; the others attack as soon as they're in range.
-			var too_close := beh == ActorStore.Kind.NEEDLE and dist < t.flee_distance_m
-			var attack := alive and a.cd[i] == 0 and dist <= t.attack_range_m and not too_close
+			var attack := alive and a.cd[i] == 0 and dist <= t.attack_range_m
 			# v0.9.0 (owner 2026-10-23: "when there are closed rooms the enemies can attack from outside, that should not
 			# happen"): no attack starts without a clear line to the player (walls, sealed doorways' barriers).
 			attack = attack and sees_player(w, a.pos(i))
-			# A walker faces the player on its plan ticks and as it attacks; the slow turners (Warden,
-			# Shield Bearer) turn every tick (their facing is their armour).
-			if (f & F_TURNS_SLOWLY) != 0:
-				a.facing[i] = Kin.turn_toward(a.facing[i], Kin.angle_of(to_player), t.turn_rate)
-			elif attack or planning:
+			if attack or planning:  # A walker faces the player on its plan ticks and as it attacks
 				a.facing[i] = Kin.angle_of(to_player)
-			if kind == ActorStore.Kind.MENDER:
-				_mend(w, i)  # Heals instead of attacking.
-				return
-			if beh == ActorStore.Kind.SNIPER and a.pick[i] == 1:
-				_end_relocation(w, a, i)
-			if attack and _may_attack(w, i):
+			if attack:
 				_start_windup(w, i, Kin.angle_of(to_player))
 		State.WINDUP:
-			if tracking(w, i) and alive:
-				_aim(w, i)
 			if a.state_t[i] >= a.windup[i]:
-				if StarfallKinds.is_warper(a.kinds[i]) and StarfallKinds.cancel(w, i):
-					return  # The hero on the star: no blink, the Warper stunned
 				enter_state(a, i, State.ACTIVE)
 				a.fire_cd[i] = 0
 		State.ACTIVE:
-			var done := false
-			var pat := pattern_of(w, i)
-			if pat != null:  # A pattern attack runs until its last wave
-				if a.state_t[i] >= maxi(t.active_ticks, pat.duration_ticks()):
-					enter_state(a, i, State.RECOVER)
-				return
-			match behaviour_of(a.kinds[i]):
-				ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
-					done = a.lock_len[i] <= 0.0
-				ActorStore.Kind.NEEDLE:
-					done = a.fire_cd[i] >= t.burst_count and a.state_t[i] >= t.active_ticks
-				_:
-					done = a.state_t[i] >= t.active_ticks
-			if done:
+			if a.state_t[i] >= t.active_ticks:
 				enter_state(a, i, State.RECOVER)
 		State.RECOVER:
 			if a.state_t[i] >= t.recover_ticks:
 				enter_state(a, i, State.MOVE)
 				a.cd[i] = t.cooldown_ticks
-				if behaviour_of(a.kinds[i]) == ActorStore.Kind.SNIPER:
-					_plan_relocation(w, i)
-
-
-## Whether a horde kind may start its attack now (v0.4.0 EN; always true for the others): a Shield Bearer only at a
-## player in front of it, a Mine Layer below its mine count, a Sniper once it has relocated.
-static func _may_attack(w: World, i: int) -> bool:
-	var a := w.actors
-	match behaviour_of(a.kinds[i]):
-		ActorStore.Kind.SHIELD_BEARER:
-			var aim := Kin.angle_of(w.player_pos() - a.pos(i))
-			return Kin.angle_diff(aim, a.facing[i]) <= w.enemy_table(a.kinds[i]).front_half_arc
-		ActorStore.Kind.MINE_LAYER:
-			return Mines.count_of(w, a.ids[i]) < w.enemy_table(a.kinds[i]).max_mines
-		ActorStore.Kind.SNIPER:
-			return a.pick[i] == 0
-	return true
-
-
-## A relocating Sniper is done once within RELOCATE_DONE_M of its spot or after RELOCATE_MAX_TICKS.
-static func _end_relocation(w: World, a: ActorStore, i: int) -> void:
-	var near := Kin.length(Vector2(a.lock_x[i], a.lock_y[i]) - a.pos(i)) <= RELOCATE_DONE_M
-	if near or a.state_t[i] >= w.tuning.ai_relocate_max_ticks:
-		a.pick[i] = 0
 
 
 ## A Sniper's next spot: around the player by 45-90 degrees (a side drawn from ai:enemy), in the middle
@@ -464,50 +374,30 @@ static func on_death(w: World, i: int) -> void:
 		w.queue_enemy(ActorStore.Kind.SPLITLING, a.pos(i) + side * off)
 
 
+## Phase 5 for a row GDScript runs (the table kinds steer natively, NativeAi): a signature's own walk (RuinsRocks),
+## else the walk along its last plan; a melee walker stops the tick it touches the player.
 static func move(w: World, i: int) -> void:
 	var a := w.actors
 	var kind := a.kinds[i]  # Read once: an actor's kind never changes
 	var f := flags_of(kind)
 	var t := w.enemy_table(kind)
 	var at := a.pos(i)
-	# Items: a Frost Core slow scales both the walk and the charge (1.0 when not slowed).
+	# Items: a Frost Core slow scales the walk (1.0 when not slowed).
 	var slow := ItemProcs.slow_factor(w, i)
 	if (f & F_RUINS) != 0 and RuinsRocks.moves(w, i, t, slow):  # The Ruins and Night Rocks walk their own
 		return
-	var state := a.state[i]
-	var hovering := kind == ActorStore.Kind.BOMB_DRONE and state == State.WINDUP
-	if kind == ActorStore.Kind.GRAVITY_NODE:  # It holds its spot
-		StarfallKinds.hold(w, i)
+	if a.state[i] != State.MOVE:
 		return
-	var beh := behaviour_of(kind)
-	if state == State.MOVE and beh == ActorStore.Kind.SNIPER and a.pick[i] == 1:
-		_relocate(w, i, t, slow)
+	var dir := Vector2(a.plan_x[i], a.plan_y[i])
+	if dir == Vector2.ZERO or w.player_dead():
 		return
-	if state == State.MOVE or hovering:
-		# The walk follows the last plan (every PLAN_PERIOD ticks); a melee walker still stops the
-		# tick it touches the player.
-		var dir := Vector2(a.plan_x[i], a.plan_y[i])
-		if dir == Vector2.ZERO or w.player_dead():
-			return
-		if (
-			beh != ActorStore.Kind.NEEDLE
-			and (f & F_KEEPS_AWAY) == 0
-			and Kin.length(w.player_pos() - at) <= t.radius_m + w.player.radius_m + 0.1
-		):
-			return
-		a.set_pos(i, at + dir * (t.speed * slow))
-	elif state == State.ACTIVE:
-		if (f & F_CHARGES) != 0 and a.lock_len[i] > 0.0:
-			# The charge bends toward the player, at most charge_turn a tick.
-			if t.charge_turn > 0 and not w.player_dead():
-				var want := Kin.angle_of(w.player_pos() - at)
-				a.lock_a[i] = Kin.turn_toward(a.lock_a[i], want, t.charge_turn)
-				a.facing[i] = a.lock_a[i]
-			var step := minf(t.charge_speed * slow, a.lock_len[i])
-			a.lock_len[i] -= step
-			a.set_pos(i, at + Kin.dir(a.lock_a[i]) * step)
-			if t.trail != Variants.TRAIL_NONE:  # The Ember and Frost Chargers' trails
-				Variants.on_charge_step(w, i, t)
+	if (
+		behaviour_of(kind) != ActorStore.Kind.NEEDLE
+		and (f & F_KEEPS_AWAY) == 0
+		and Kin.length(w.player_pos() - at) <= t.radius_m + w.player.radius_m + 0.1
+	):
+		return
+	a.set_pos(i, at + dir * (t.speed * slow))
 
 
 ## Where enemy i would walk this tick before the spread push and walls (ZERO = stand still): toward the player,
@@ -574,29 +464,9 @@ static func plan(w: World, i: int) -> void:
 	a.plan_y[i] = dir.y
 
 
-## A Sniper walking to its next spot, RELOCATE_SPEED_PERMILLE of its speed.
-static func _relocate(w: World, i: int, t: EnemyTable, slow: float) -> void:
-	var a := w.actors
-	var at := a.pos(i)
-	var to := Vector2(a.lock_x[i], a.lock_y[i]) - at
-	var d := Kin.length(to)
-	if d <= 0.0001:
-		return
-	var step := minf(t.speed * slow * w.tuning.ai_relocate_speed_permille / 1000.0, d)
-	a.set_pos(i, at + steer(w, at, to / d, t.radius_m) * step)
-
-
-## The push that keeps enemy i off the other normal enemies near it: the sum, over each one closer than
-## SPREAD_RADIUS_M, of the direction away from it weighted by how close it is (0 when alone).
-static func spread_push(w: World, i: int) -> Vector2:
-	var every := PackedInt32Array()
-	for j in range(1, w.actors.size()):
-		every.append(j)
-	return _spread_over(w, i, every)
-
-
-## spread_push over the candidates `js` (ascending actor indices; any superset of the enemies near i gives the same
-## sum, added in the same order).
+## The push that keeps enemy i off the other normal enemies near it, over the candidates `js` (ascending actor
+## indices; any superset of the enemies near i gives the same sum, added in the same order): the sum, over each one
+## closer than the spread radius, of the direction away from it weighted by how close it is (0 when alone).
 static func _spread_over(w: World, i: int, js: PackedInt32Array) -> Vector2:
 	var a := w.actors
 	var at := a.pos(i)
@@ -633,6 +503,8 @@ static func _unit(v: Vector2) -> Vector2:
 	return v / l if l > 0.0001 else Vector2.ZERO
 
 
+## Phase 6 for a row GDScript runs (the table kinds strike natively, NativeStrike): a bursting egg, an elite's
+## attacks (EliteAi), a signature's (RuinsRocks). The Cinder Priest's harm is its vent's (CanyonShore.advance).
 static func resolve(w: World, i: int) -> void:
 	var a := w.actors
 	if a.state[i] == BossSignatures.EGG_BURST and not Engines.frozen(w, i):
@@ -641,50 +513,8 @@ static func resolve(w: World, i: int) -> void:
 	var f := flags_of(a.kinds[i])
 	if (f & F_ELITE) != 0:  # An elite's contact, plain attack and ability
 		EliteAi.resolve(w, i)
-		return
-	if (f & F_CRITTER) != 0:  # A critter hurts by touch
-		_critter_touch(w, i)
-		return
-	if (f & F_RUINS) != 0:  # The Ruins and Night Rocks signatures
+	elif (f & F_RUINS) != 0:  # The Ruins and Night Rocks signatures
 		RuinsRocks.resolve(w, i)
-		return
-	if a.state[i] != State.ACTIVE or w.player_dead() or Engines.frozen(w, i):
-		return
-	var t := w.enemy_table(a.kinds[i])
-	var p := w.player_pos()
-	var pr := w.player.radius_m
-	var pat := pattern_of(w, i)
-	if pat != null:  # v0.7.5 EF
-		_resolve_pattern(w, i, t, pat)
-		return
-	match behaviour_of(a.kinds[i]):
-		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
-			var reach := t.radius_m + pr + CONTACT_SLOP_M
-			if a.fire_cd[i] == 0 and Kin.length(p - a.pos(i)) <= reach:
-				a.fire_cd[i] = 1
-				_hit_player(w, i, t.damage, SimEvent.TAG_MELEE)
-		ActorStore.Kind.WARDEN:
-			if a.state_t[i] == 0:
-				var disc := locked_disc(w, i)
-				if AttackShapes.disc_touches(disc[0], disc[1], p, pr):
-					_hit_player(w, i, t.damage, SimEvent.TAG_AREA)
-		ActorStore.Kind.NEEDLE:
-			if a.fire_cd[i] < t.burst_count and a.state_t[i] % t.burst_gap_ticks == 0:
-				var k := a.fire_cd[i]
-				a.fire_cd[i] += 1
-				var ang := burst_angle(t, a.lock_a[i], k)
-				_fire(w, i, ang, t.bolt_speed, t.bolt_radius_m, t.bolt_life_ticks, t.damage)
-				if a.kinds[i] == ActorStore.Kind.DIM_NEEDLE:  # Dark until near (Variants)
-					w.set_pending_look(Variants.DIM_LOOK)
-				BossRicochet.arm_turret(w, i)  # Phase 3's turrets ricochet too
-		ActorStore.Kind.ARC_CASTER:  # the rune (its bolt and spread are patterns, above)
-			if a.state_t[i] == 0 and a.pick[i] == Spell.RUNE:
-				var d := rune_disc(w, i)
-				if AttackShapes.disc_touches(d[0], d[1], p, pr):
-					_hit_player(w, i, t.damage, SimEvent.TAG_AREA, d[0])
-		_:
-			if a.state_t[i] == 0:
-				_resolve_horde(w, i, t, p, pr)
 
 
 ## The pattern enemy i is firing now (EnemyTable.patterns: the Arc Caster's by its spell,
@@ -698,24 +528,8 @@ static func pattern_of(w: World, i: int) -> BulletPatternTable:
 	return t.patterns[k] if k >= 0 and k < t.patterns.size() else null
 
 
-## A pattern attack's active tick st. Each wave tick fires its wave toward the locked aim: from the body
-## (the fans, the ring), or, for a lobbed BURST, from where it lands (lock_x / lock_y) once it has flown lob_ticks;
-## the landing fireball itself hurts within land_radius_m (no circle is drawn for it: the flying fireball is the
-## cue, "lob"). Damage is the attack's (floor-scaled by RunState), powered by the danger tier and the catch-up.
-static func _resolve_pattern(w: World, i: int, t: EnemyTable, pat: BulletPatternTable) -> void:
-	var a := w.actors
-	var st := a.state_t[i]
-	var burst := pat.kind == BulletPatternTable.Kind.BURST
-	var target := Vector2(a.lock_x[i], a.lock_y[i])
-	if burst and st == pat.lob_ticks:
-		if AttackShapes.disc_touches(target, pat.land_radius_m, w.player_pos(), w.player.radius_m):
-			_hit_player(w, i, t.damage, SimEvent.TAG_AREA, target)
-	var k := BulletPatterns.wave_at(pat, st)
-	if k >= 0:
-		fire_wave(w, i, t, pat, k)
-
-
-## Wave k of enemy i's pattern pat toward its locked aim: from its body, or from a lobbed BURST's landing.
+## Wave k of enemy i's pattern pat toward its locked aim (NativeStrike's WAVE): from its body, or from a lobbed
+## BURST's landing (lock_x / lock_y). Damage is the attack's (floor-scaled by RunState), powered by the danger tier.
 static func fire_wave(w: World, i: int, t: EnemyTable, pat: BulletPatternTable, k: int) -> void:
 	var a := w.actors
 	var burst := pat.kind == BulletPatternTable.Kind.BURST
@@ -725,16 +539,10 @@ static func fire_wave(w: World, i: int, t: EnemyTable, pat: BulletPatternTable, 
 	BulletPatterns.fire(w, i, pat, k, origin, a.lock_a[i], r, powered(w, i, t.damage))
 
 
-## The horde kinds' hits, on their active tick.
+## The hooked kinds' own rule on their active tick (NativeStrike's ACTIVE_HOOK): a Split Sniper's lanes, a Mine
+## Layer's mine, a Frost Spitter's blob, a Star Warper's blink and strike.
 static func _resolve_horde(w: World, i: int, t: EnemyTable, p: Vector2, pr: float) -> void:
 	match behaviour_of(w.actors.kinds[i]):
-		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
-			var d := locked_disc(w, i)
-			if AttackShapes.disc_touches(d[0], d[1], p, pr):
-				_hit_player(w, i, t.damage, SimEvent.TAG_MELEE)
-		ActorStore.Kind.SHIELD_BEARER:
-			if Collide.circle_vs_obb(p, pr, bash_lane(w, i)) != Vector2.ZERO:
-				_hit_player(w, i, t.damage, SimEvent.TAG_MELEE)
 		ActorStore.Kind.SNIPER:  # A Split Sniper's three branches too (one hit at most)
 			for lane in snipe_lanes(w, i):
 				if Collide.circle_vs_obb(p, pr, lane) != Vector2.ZERO:
@@ -1033,6 +841,8 @@ static func lob_telegraph(w: World, i: int) -> Dictionary:
 	}
 
 
+## A script row's attack start (EnemyAi.think's plain state machine; the table kinds start theirs natively,
+## NativeAi): WINDUP, locked where it stands along `aim`, its length drawn per attack, never under the data's telegraph.
 static func _start_windup(w: World, i: int, aim: int) -> void:
 	var a := w.actors
 	var t := w.enemy_table(a.kinds[i])
@@ -1042,37 +852,9 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 	a.lock_a[i] = aim
 	a.lock_len[i] = 0.0
 	a.pick[i] = 0
-	# The windup's length is drawn per attack, never under the data's telegraph.
 	a.windup[i] = t.windup_ticks
 	if t.windup_max_ticks > t.windup_ticks:
 		a.windup[i] = w.rng_enemy.range_int(t.windup_ticks, t.windup_max_ticks)
-	match behaviour_of(a.kinds[i]):
-		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
-			a.lock_len[i] = clear_run(w, a.pos(i), aim, t.charge_distance_m, t.radius_m)
-		ActorStore.Kind.NEEDLE, ActorStore.Kind.SNIPER:
-			_aim(w, i)
-		ActorStore.Kind.STAR_WARPER:  # Its star beside the hero (StarfallKinds)
-			var star := StarfallKinds.mark_spot(w, i)
-			a.lock_x[i] = star.x
-			a.lock_y[i] = star.y
-		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
-			var c := a.pos(i) + Kin.dir(aim) * t.reach_m
-			a.lock_x[i] = c.x
-			a.lock_y[i] = c.y
-		ActorStore.Kind.SHIELD_BEARER:
-			a.lock_a[i] = a.facing[i]  # it bashes the way its shield faces
-		ActorStore.Kind.ARC_CASTER:
-			a.pick[i] = maxi(0, w.rng_enemy.pick_weighted(t.spell_weights))
-			if a.pick[i] == Spell.RUNE:
-				a.windup[i] = t.rune_windup_ticks
-				a.lock_x[i] = w.player_pos().x
-				a.lock_y[i] = w.player_pos().y
-			else:
-				_aim(w, i)
-		ActorStore.Kind.BOMB_DRONE:
-			_aim(w, i)  # The landing follows the player until it commits
-		ActorStore.Kind.FROST_SPITTER:  # Its blob lands where you stand (tracked to the commit)
-			_aim(w, i)
 
 
 ## Points actor i's shot at where the player will be when it arrives: the player's position plus its
@@ -1168,21 +950,3 @@ static func powered(w: World, i: int, amount: int) -> int:
 static func enter_state(a: ActorStore, i: int, s: int) -> void:
 	a.state[i] = s
 	a.state_t[i] = 0
-
-
-## PLAN H1; owner Q14: "contact damage, ~6-10 HP, fast but dumb": a walking critter touching the hero hurts
-## it for its damage (the authored contact_damage, floor-scaled; powered by its tier, as every enemy hit), then waits
-## contact_cd_ticks before its next touch.
-## Readable by its body (no telegraph, as an elite's touch: ReadableCause); its recap line is EndPanel's.
-static func _critter_touch(w: World, i: int) -> void:
-	var a := w.actors
-	if a.state[i] != State.MOVE or a.cd[i] > 0 or w.player_dead() or Engines.frozen(w, i):
-		return
-	var t := w.enemy_table(a.kinds[i])
-	if t == null or t.damage <= 0:
-		return
-	var reach := t.radius_m + w.player.radius_m + CRITTER_TOUCH_M
-	if Kin.length(w.player_pos() - a.pos(i)) > reach:
-		return
-	a.cd[i] = t.contact_cd_ticks
-	_hit_player(w, i, t.damage, SimEvent.TAG_MELEE)

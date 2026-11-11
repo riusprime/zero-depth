@@ -3,10 +3,10 @@ extends SceneTree
 ## enemies kept alive, the hero's bolts topped up to 200 in flight, FightBot playing) and `stress` (60 firing dummies,
 ## about 300 projectiles, 36 inner walls). Per tick it times World.step and the projectile phase with its parts
 ## (World.phase_probe, probe-only: it changes no outcome), prints the ms mean / p99 per phase and the mean live
-## projectiles, and a hash chain of World.state_hash every 60 ticks (the outcome, to compare a kernel against itself).
+## projectiles, and a hash chain of World.state_hash every 60 ticks (the outcome, to compare a build against itself).
+## Needs the native library (it stops with the one error without it).
 ## Writes nothing tracked; paste the output into evidence by hand.
 ##   godot --headless --path . -s scripts/checks/shot_phases.gd [-- --scenes=horde,stress] [-- --ticks=1800]
-## `--native=shots` (or any NativeSwitch list): those kernels run native; it stops if the library is missing.
 
 const BENCH := preload("res://scripts/bench/sim_bench.gd")
 const PHASES: Array[StringName] = [
@@ -25,18 +25,10 @@ func _initialize() -> void:
 	var args := ScriptArgs.parse()
 	var scenes := String(args.get("--scenes", "horde,stress")).split(",")
 	var ticks := int(args.get("--ticks", 1800))
-	var native := NativeSwitch.parse(String(args.get("--native", "0")))
-	if native < 0:
-		push_error(
-			"shot_phases: --native names an unknown kernel (move, ai, strike, shots, nav, all)"
-		)
+	if not NativeWorld.available():
+		NativeWorld.report_missing()
 		quit(1)
 		return
-	if NativeSwitch.install(native) != native:
-		push_error("shot_phases: --native asks for kernels but the native library is not loaded")
-		quit(1)
-		return
-	print("native %s" % (NativeWorld.names_of(native) if native != 0 else "off"))
 	for s in scenes:
 		match s:
 			"horde":

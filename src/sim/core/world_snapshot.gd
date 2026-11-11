@@ -56,15 +56,14 @@ const WORLD_KEPT := {
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
 	&"_nav_next": "setup (prepare_wall): only whether it is still pending is copied",
-	&"nav": "rebuilt from walls; its last flood and a build in progress (NF) are copied",
+	&"nav": "rebuilt from walls; its last flood is copied",
 	&"_nav_open": "rebuilt: the field before the door sealed (apply's add_wall_now keeps it)",
 	&"_nav_deferred": "setup (v0.11.1 S45): false once the floor's build ends (World.build_nav)",
 	&"_nav_due": "setup (v0.11.1 S45): null once the floor's build ends (World.build_nav)",
 	&"_nav_next_due": "setup (v0.11.1 S45): null once the floor's build ends (World.build_nav)",
 	&"curse_totals": "rebuilt: Curses.total's cache, summed from curses_owned (v0.7.0 audit C-12)",
 	&"phase_probe": "debug (v0.8.0 HS): the perf probe's phase timer, null in play, not state",
-	&"native": "setup: the optional native side (World.native_factory), caches only, not state",
-	&"native_on": "setup: the native kernels switched on (World.native_kernels), not state",
+	&"native": "setup: the native side (NativeWorld.make), caches only, not state",
 	&"_wall_rev":
 	"derived: counts the wall grid's changes (the native side's cue to take the walls again)",
 	&"debug_aoe_misses": "debug (v0.8.0 HS): a test's superset check, off in play",
@@ -208,8 +207,7 @@ static func take(w: World, errors: PackedStringArray = PackedStringArray()) -> D
 		"size": w.nav.size,
 		"dist": w.nav.dist.duplicate(),
 		"flooded": w.nav.get(&"_flooded"),
-		"work": w.nav.last_work,  # The next build's budget
-		"build": w.nav.build_state(),  # The flood being built ({} none), run again on restore
+		"work": w.nav.last_work,
 	}
 	data[&"_wall_next"] = w.get(&"_wall_next") != null
 	data[&"_nav_next"] = w.get(&"_nav_next") != null
@@ -253,7 +251,6 @@ static func apply(base: World, snap: Dictionary) -> String:
 	if err != "":
 		return err
 	Modifiers.invalidate(base)  # The restored build's specs compile on their next read
-	base.drop_retired_combos()  # A held combo deleted since the save (CardOrder.RETIRED_COMBOS) goes
 	Curses.invalidate(base)  # The curse sums are summed again from what was restored
 	# A sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
 	# so only the wall grid is rebuilt for them.
@@ -277,7 +274,6 @@ static func apply(base: World, snap: Dictionary) -> String:
 	base.nav.dist_rev += 1  # The native flood's cache takes the restored distances (NativeNav.sync)
 	base.nav.set(&"_flooded", nav["flooded"])
 	base.nav.last_work = int(nav["work"])
-	base.nav.restore_build(nav["build"])
 	for f: StringName in [&"_wall_next", &"_nav_next"]:
 		if not bool(data.get(f, false)):
 			base.set(f, null)

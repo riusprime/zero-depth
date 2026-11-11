@@ -36,7 +36,7 @@ const NAMES: Array[String] = [
 
 func _initialize() -> void:
 	var args := ScriptArgs.parse()
-	var m: Object = NativeSwitch.make()
+	var m: Object = NativeWorld.make()
 	if m == null:
 		push_error("native_columns_bench: the native library is not loaded")
 		quit(1)

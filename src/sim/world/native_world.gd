@@ -1,38 +1,56 @@
 class_name NativeWorld
 extends RefCounted
-## The native side of one World (World.native: the ZdWorld class of the game's GDExtension, made by the app layer's
-## World.native_factory). It holds only caches derived from the world's walls, tables and tuning, so the snapshot
-## never carries it: GDScript keeps every hashed column, and a kernel reads them by name and writes the ones it
-## changed back as new arrays (NATIVE_CORE.md §2). Each kernel is switched on by its own bit (World.native_on); the
-## bridges (NativeMove and the others in src/sim/world/native_*.gd) call the sync functions here first, so the caches
-## follow the world after a wall change, a new set of enemy tables, a new tuning or a restore.
+## The native side of one World (World.native): the ZdWorld class of the game's C++ library
+## (native/zd_native.gdextension, built by `bash scripts/native/build.sh`). The sim's hot loops run there and only
+## there: the enemies' thinking and steering (NativeAi), the collision passes (NativeMove), the enemies' strikes
+## (NativeStrike), the projectile sweep (NativeShots) and the flow field's flood (NativeNav). It holds only caches
+## derived from the world's walls, tables and tuning, so the snapshot never carries it: GDScript keeps every hashed
+## column, and a kernel reads them by name and writes the ones it changed back as new arrays (native/README.md).
+## The bridges call the sync functions here first, so the caches follow the world after a wall change, a new set of
+## enemy tables, a new tuning or a restore.
+##
+## This file is the one place in src/sim that looks the class up (tests/arch/test_sim_purity.gd allows exactly
+## `ClassDB.class_exists(CLASS)` and `ClassDB.instantiate(CLASS)` here): instantiating the sim's own kernel is not a
+## node, a clock, content loading, randomness or library trigonometry (EI-02, LOCKED_DECISIONS 2026-11-11). Without
+## the library a World gets no native side: make() reports MISSING once a process and World.step does nothing but
+## count its tick, so a run without it is never quietly a different sim.
 
-## The kernels, one bit each (World.native_kernels, World.native_on).
-const MOVE := 1
-const AI := 2
-const STRIKE := 4
-const SHOTS := 8
-const NAV := 16
-const ALL := MOVE | AI | STRIKE | SHOTS | NAV
-## The kernels by the names the switch takes (NativeSwitch), in bit order.
-const NAMES := {&"move": MOVE, &"ai": AI, &"strike": STRIKE, &"shots": SHOTS, &"nav": NAV}
-## The kernels that read the per-kind table (NativeKindTable).
-const READ_KINDS := AI | STRIKE
+## The library's class.
+const CLASS := &"ZdWorld"
+## The one error a process prints when the library is not loaded.
+const MISSING := (
+	"Zero Depth's native library is not loaded (native/zd_native.gdextension and native/bin/). Build it with"
+	+ " `bash scripts/native/build.sh` (see native/README.md), then import twice:"
+	+ " `godot --headless --path . --editor --import --quit`. The sim does not run without it."
+)
+
+## Whether MISSING was printed in this process (a flag, not a callable: nothing static here holds a lambda).
+static var _reported := false
 
 
-## A new world's one-time setup: the direction tables, the same 513 floats Kin reads.
-static func setup(w: World) -> void:
-	if not w.native.set_trig(Kin.cos_table(), Kin.sin_table()):
+## Whether the native library is loaded.
+static func available() -> bool:
+	return ClassDB.class_exists(CLASS)
+
+
+## A fresh native side with its direction tables set (what every World gets in its _init), or null without the
+## library (MISSING printed once).
+static func make() -> Object:
+	if not available():
+		report_missing()
+		return null
+	var m: Object = ClassDB.instantiate(CLASS)
+	if not m.set_trig(Kin.cos_table(), Kin.sin_table()):
 		push_error("NativeWorld: the native side refused the direction tables")
+	return m
 
 
-## The names of the kernels in `bits`, joined by commas ("" for none).
-static func names_of(bits: int) -> String:
-	var out := PackedStringArray()
-	for k: StringName in NAMES:
-		if (bits & int(NAMES[k])) != 0:
-			out.append(String(k))
-	return ",".join(out)
+## Prints MISSING, once a process.
+static func report_missing() -> void:
+	if _reported:
+		return
+	_reported = true
+	push_error(MISSING)
 
 
 ## The walls again when they changed (World._wall_rev), and the solids standing now.
@@ -69,11 +87,9 @@ static func send_kinds(w: World) -> void:
 	m.set_meta(&"kinds_for", w.tuning)
 
 
-## The world's enemy tables changed: the table goes again, now when a kernel that reads it is on.
+## The world's enemy tables changed: the table goes again before the next kernel that reads it (sync_kinds).
 static func tables_changed(w: World) -> void:
 	w.native.remove_meta(&"kinds_for")
-	if (w.native_on & READ_KINDS) != 0:
-		send_kinds(w)
 
 
 ## Oriented boxes as the native side reads them: 8 floats each (centre, axis u, axis v, half-extents).

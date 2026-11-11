@@ -164,34 +164,6 @@ func bonus(h: float = PROP_HALF_M) -> float:
 	return h if on else 0.0
 
 
-## The standing footprints' push on a circle of radius r at `at` (the sum over the entries it overlaps).
-func push(at: Vector2, r: float) -> Vector2:
-	var out := Vector2.ZERO
-	for i in kind.size():
-		if placed[i] == 1:
-			var reach := r + half[i].length()
-			if absf(at.x - center[i].x) <= reach and absf(at.y - center[i].y) <= reach:
-				out += Collide.circle_vs_obb(at + out, r, obb(i))
-	return out
-
-
-## Whether a standing footprint may touch the box `rect`.
-func any_near(rect: Rect2) -> bool:
-	# A footprint clearly outside the grown box (BROAD_MARGIN_M over rounding) skips the exact test.
-	var lo := rect.position
-	var hi := rect.end
-	for i in kind.size():
-		if placed[i] != 1:
-			continue
-		var c := center[i]
-		var h := half[i].length() + BROAD_MARGIN_M
-		if c.x < lo.x - h or c.x > hi.x + h or c.y < lo.y - h or c.y > hi.y + h:
-			continue
-		if rect.grow(half[i].length()).has_point(c):
-			return true
-	return false
-
-
 ## Whether a body of radius r sweeping from a to b meets a standing footprint (the enemies' steering).
 ## v0.11.0 O9b (a surge's 120 critters each plan the line to the hero through every footprint: most of their plan's
 ## cost): a footprint whose centre lies farther than its reach from the segment's box is skipped before its Obb is

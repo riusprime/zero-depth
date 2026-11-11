@@ -10,16 +10,8 @@ const BUTTON_BITS: Array[int] = [
 	InputFrame.PRIMARY, InputFrame.UTILITY, InputFrame.DASH, InputFrame.INTERACT
 ]
 const DASH_SLOT := 2
-## How far a body may drift during the collision passes before its wall check is redone (_move_and_collide).
-const WALL_SKIP_M := 0.5
 ## aoe_candidates' query grows by this past the reach (and the largest radius), over float rounding.
 const AOE_MARGIN_M := 0.01
-
-## Where a new world gets its optional native side (NativeWorld): the app layer sets it when the native library is
-## loaded and switched on (the sim itself never looks a class up). An empty Callable: every world runs GDScript.
-static var native_factory := Callable()
-## The native kernels a new world runs (NativeWorld.MOVE, AI, ...); 0: none, and no native side is made.
-static var native_kernels := 0
 
 var tick := 0
 var freeze_ticks := 0
@@ -207,8 +199,8 @@ var objectives := ObjectiveMarkers.new()
 ## The share of max HP restored when the boss room seals (per mille; RunState.prepare sets it
 ## from the run's per-floor table: floor 1 full, later floors none). Setup, not hashed.
 var boss_room_heal_permille := 0
-## Enemy pathing: a flow field toward the player, rebuilt every NavField.PERIOD ticks (derived, not hashed;
-## built over NavField.SLICES ticks, its build in progress saved by WorldSnapshot).
+## Enemy pathing: a flow field toward the player, flooded whole (natively) every NavField.PERIOD ticks (derived, not
+## hashed; its last flood is saved by WorldSnapshot).
 var nav := NavField.new()
 
 # --- Items ---------------------------------------------------------------------------------------
@@ -405,15 +397,11 @@ var echo_overcharged := false
 var echo_wave := 0
 ## Slipstream: the first tick it may refund the dash again.
 var slipstream_next := 0
-## The last of each payoff, for the views: shock discharge (tick, from, jump ends), Plasma Arc (tick, from, to),
-## Shatter Dash, bleed burst, Wildfire and Blood Harvest (tick, where), Resonance, Shrapnel Storm, Spiked Phase,
-## Slipstream and Frozen Bastion (tick).
+## The last of each payoff, for the views: shock discharge (tick, from, jump ends), Shatter Dash, bleed burst,
+## Wildfire and Blood Harvest (tick, where), Spiked Phase and Slipstream (tick).
 var discharge_tick := -1
 var discharge_from := Vector2.ZERO
 var discharge_to := PackedVector2Array()
-var plasma_tick := -1
-var plasma_from := Vector2.ZERO
-var plasma_to := Vector2.ZERO
 var shatter_tick := -1
 var shatter_pos := Vector2.ZERO
 var burst_tick := -1
@@ -422,11 +410,8 @@ var wildfire_tick := -1
 var wildfire_pos := Vector2.ZERO
 var harvest_tick := -1
 var harvest_pos := Vector2.ZERO
-var resonance_tick := -1
-var shrapnel_tick := -1
 var spiked_tick := -1
 var slipstream_tick := -1
-var bastion_tick := -1
 ## Transient within a tick (not hashed): the payoff effects running right now (the ancestry), and the event seq when
 ## this tick began (the watchdog's per-tick count).
 var engine_chain := PackedStringArray()
@@ -592,10 +577,10 @@ var surge_spawned := 0
 ## The perf probe's phase timer (scripts/checks/perf_probe.gd --phases); null in play. Told where each tick
 ## phase begins and ends (begin/end with the phase's name), it never reads or writes state: not hashed, not copied.
 var phase_probe: Object = null
-## The native side (NativeWorld), or null, and the kernels it runs (NativeWorld bits). Not hashed, not copied: a
-## copy makes its own from the factory.
+## The native side (NativeWorld.make: the C++ library's ZdWorld), where the hot loops of phases 3, 5 and 6 run; null
+## only without the library, and then step() does nothing but count its tick (NativeWorld.MISSING is printed). Not
+## hashed, not copied: it holds caches only, and a restored world makes its own.
 var native: Object = null
-var native_on := 0
 ## Tests only: -1 off; 0 or more counts the aoe_candidates calls that left out an actor the full scan's
 ## distance test would take (it must stay 0: the candidates are a superset).
 var debug_aoe_misses := -1
@@ -641,11 +626,7 @@ func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZER
 	rng_crit = RngStream.derive(p_seed, "crit")  # v0.4.0 BS
 	rng_ability = RngStream.derive(p_seed, "ability")
 	player = p_player
-	if native_kernels != 0 and native_factory.is_valid():
-		native = native_factory.call()
-		if native != null:
-			native_on = native_kernels
-			NativeWorld.setup(self)
+	native = NativeWorld.make()
 	var id := take_id()
 	actors.add(
 		id,
@@ -849,6 +830,9 @@ func player_projectiles_of(id: StringName) -> int:
 
 ## Advances exactly one tick. The phase order is part of the contract (SIM_CONTRACTS §2).
 func step(frame: InputFrame) -> void:
+	if native == null:  # No native library: NativeWorld.MISSING was printed; nothing runs but the clock
+		tick += 1
+		return
 	if _nav_deferred:  # A floor whose build left its flow fields (FloorPlan builds them first)
 		build_nav()
 	# 0. a wand reorder (InputFrame.pick = PICK_WAND_MOVE_BASE + from × 16 + to) is input, applied first
@@ -916,13 +900,11 @@ func step(frame: InputFrame) -> void:
 	Solids.step(self)  # A prop's footprint joins the walls once the hero is clear of it
 	# 3. AI (the flow field refreshes on fixed ticks).
 	var pp := phase_probe  # The perf probe's phase timer (null in play)
-	# The flood starts on those ticks and is built over NavField.SLICES ticks, then swapped in.
-	if not enemy_tables.is_empty() and (tick % NavField.PERIOD == 0 or nav.building()):
+	# The flood runs whole, natively, on those ticks (NativeNav).
+	if not enemy_tables.is_empty() and tick % NavField.PERIOD == 0:
 		if pp != null:
 			pp.begin(&"nav_flood")
-		if tick % NavField.PERIOD == 0:
-			_begin_nav_flood()  # Bounded; stops past the enemies
-		nav.advance()
+		_begin_nav_flood()  # Bounded; stops past the enemies
 		if pp != null:
 			pp.end(&"nav_flood")
 	if pp != null:
@@ -943,8 +925,7 @@ func step(frame: InputFrame) -> void:
 		pp.end(&"move")
 		pp.begin(&"resolve")
 	# 6. Hits: enemy attacks, then projectile sweeps.
-	if (native_on & NativeWorld.STRIKE) == 0 or not NativeStrike.resolve(self):  # Table kinds strike native
-		_resolve_enemies()
+	NativeStrike.resolve(self)  # The table kinds strike natively, then the script rows and the critters' touches
 	Mines.advance(self)  # Mines arm and blow.
 	Variants.advance(self)  # The variants' trails burn and melt (after the mines)
 	RuinsRocks.advance(self)  # The cables drop or hurt, the rocks go, the Lurkers hold still
@@ -1070,7 +1051,7 @@ func enemy_table(kind: int) -> EnemyTable:
 func set_enemy_tables(tables: Array[EnemyTable]) -> void:
 	for t in tables:
 		enemy_tables[t.kind] = t
-	if native != null:
+	if native != null:  # (null only without the library)
 		NativeWorld.tables_changed(self)
 
 
@@ -1135,10 +1116,8 @@ func refresh_build(announce: bool) -> void:
 
 
 ## Owns every combo whose two items are owned (new ones appended in combo order); `announce` emits COMBO_UNLOCKED
-## for each new one (amount = its combo index). a combo deleted since a save was written (a retired stub,
-## CardOrder.RETIRED_COMBOS) leaves combos_owned here, the first time the tables meet the restored state.
+## for each new one (amount = its combo index).
 func _refresh_combos(announce: bool) -> void:
-	drop_retired_combos()
 	var earned := Engines.combos_for(combo_tables, items_owned)
 	for c in earned:
 		if combos_owned.has(c):
@@ -1149,23 +1128,6 @@ func _refresh_combos(announce: bool) -> void:
 			var e := emit_event(SimEvent.Kind.COMBO_UNLOCKED, pid, pid, pid, player_pos())
 			e.amount = c
 			e.effect_id = combo_tables[c].id
-	combo_mask = 0
-	for c in combos_owned:
-		combo_mask |= 1 << combo_tables[c].effect
-
-
-## A held combo that was deleted (its table a retired stub, CardOrder.RETIRED_COMBOS) or is past the
-## tables goes (a carry or snapshot written before O1; WorldSnapshot.apply calls it too). No-op without tables.
-func drop_retired_combos() -> void:
-	if combo_tables.is_empty():
-		return
-	var kept := PackedInt32Array()
-	for c in combos_owned:
-		if c < combo_tables.size() and not combo_tables[c].retired:
-			kept.append(c)
-	if kept.size() == combos_owned.size():
-		return
-	combos_owned = kept
 	combo_mask = 0
 	for c in combos_owned:
 		combo_mask |= 1 << combo_tables[c].effect
@@ -1266,35 +1228,22 @@ func prepare_wall(o: Obb) -> void:
 ## The world's flood of the flow field from the player, bounded (WORLD_FLOOD_STEPS) and
 ## stopped a margin past the farthest live enemy (their cells are its targets), skipped while the player keeps its
 ## cell and every enemy is still in the field, and with no enemy alive.
-## This floods at once (the walls or extra cells changed) and drops a build in progress.
+## This floods at once (the walls or extra cells changed).
 func flood_nav() -> void:
-	nav.cancel_build()
 	var targets := _nav_targets()
 	if targets.is_empty():
 		return  # nobody reads the field; the first flood with enemies about runs (the key is the old one)
-	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS, targets, _nav_kernel())
+	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS, targets, native)
 
 
-## The periodic flood, from the player's cell and the enemies' cells of this tick,
-## built over NavField.SLICES ticks (NavField.begin_build; World.step advances it) and swapped in when done, so the
-## field enemies follow is up to that many ticks older. Skipped by flood's rules; a field not yet flooded since its
-## build floods at once (the floor's first flood: enemies never walk an empty field). With the native flood on
-## (NativeNav) the flood runs whole on its tick instead: the field is never older than its flood tick.
+## The periodic flood, from the player's cell and the enemies' cells of this tick, whole in one native call on its
+## NavField.PERIOD tick (NativeNav): the field the enemies follow is never older than its flood tick. Skipped by
+## flood's rules.
 func _begin_nav_flood() -> void:
 	var targets := _nav_targets()
 	if targets.is_empty():
 		return
-	if (native_on & NativeWorld.NAV) != 0:
-		nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS, targets, native)
-	elif nav.never_flooded():
-		nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS, targets)
-	else:
-		nav.begin_build(player_pos(), NavField.WORLD_FLOOD_STEPS, targets)
-
-
-## The native side when its flood is on (NativeNav), else null: NavField.flood's `kernel`.
-func _nav_kernel() -> Object:
-	return native if (native_on & NativeWorld.NAV) != 0 else null
+	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS, targets, native)
 
 
 ## The live enemies' cells (NavField.target_cell), the flood's targets.
@@ -1315,7 +1264,6 @@ func add_wall_now(o: Obb) -> void:
 	if o == _wall_next and _nav_next != null:
 		_nav_open = nav
 		nav = _nav_next
-		_nav_open.cancel_build()  # The kept field holds no build; the flood's work carries over
 		nav.last_work = _nav_open.last_work
 	else:
 		nav.build(walls)
@@ -1339,7 +1287,6 @@ func remove_wall_now(o: Obb, again: bool = false) -> void:
 		if again and _wall_next == null:
 			_wall_next = o
 			_nav_next = nav
-		nav.cancel_build()  # The field swapped out holds no build; the flood's work carries over
 		_nav_open.last_work = nav.last_work
 		nav = _nav_open
 	else:
@@ -1746,13 +1693,11 @@ func _hash_engines(h: StateHasher) -> void:
 	h.add_int(slipstream_next)
 	proc_ledger.hash_into(h)
 	actors.hash_statuses(h)
-	for v in [discharge_tick, plasma_tick, shatter_tick, burst_tick, wildfire_tick, harvest_tick]:
+	for v in [discharge_tick, shatter_tick, burst_tick, wildfire_tick, harvest_tick]:
 		h.add_int(v)
-	for v in [resonance_tick, shrapnel_tick, spiked_tick, slipstream_tick, bastion_tick]:
+	for v in [spiked_tick, slipstream_tick]:
 		h.add_int(v)
-	for p: Vector2 in [
-		discharge_from, plasma_from, plasma_to, shatter_pos, burst_pos, wildfire_pos
-	]:
+	for p: Vector2 in [discharge_from, shatter_pos, burst_pos, wildfire_pos]:
 		h.add_f32(p.x)
 		h.add_f32(p.y)
 	h.add_f32(harvest_pos.x)
@@ -1834,52 +1779,18 @@ func _buffer_presses(pressed: int) -> void:
 	PlayerSkill.buffer(self, pressed)  # Kit
 
 
-## Phase 6's enemy attacks in GDScript: every enemy and boss in row order, then the critters' touches (CritterAi).
-func _resolve_enemies() -> void:
-	var critter_rows := PackedInt32Array()
-	var roles := EnemyAi.roles  # One table read per actor (EnemyAi.role_of; a local: a static read costs more)
-	for i in range(1, actors.size()):
-		var kind := actors.kinds[i]
-		var role := roles[kind] if (kind & -EnemyAi.KIND_SLOTS) == 0 else EnemyAi.role_of(kind)
-		if role == EnemyAi.Role.CRITTER:
-			critter_rows.append(i)
-		elif role == EnemyAi.Role.BOSS and actors.dead[i] == 0:
-			BossAi.resolve(self, i)  # Bosses.
-		elif role == EnemyAi.Role.ENEMY and actors.dead[i] == 0:
-			EnemyAi.resolve(self, i)
-	if not critter_rows.is_empty():
-		CritterAi.touch_all(self, critter_rows)
-
-
+## Phase 3: the table kinds think natively (NativeAi.think), then the rows GDScript runs (bosses, elites, the
+## signatures, eggs, dummies). The body grid is built first: the script rows' plans and the hero's phase-4 attacks
+## read it (actors_near, enemies_near).
 func _run_ai() -> void:
-	var target := player_pos()
 	var pp := phase_probe  # v0.8.0 HS
-	if not enemy_tables.is_empty():  # The grid the enemies' staggered plans query (EnemyAi.plan)
+	if not enemy_tables.is_empty():  # The grid the script rows' staggered plans query (EnemyAi.plan)
 		if pp != null:
 			pp.begin(&"ai.grid")
 		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
 		if pp != null:
 			pp.end(&"ai.grid")
-	if (native_on & NativeWorld.AI) != 0 and NativeAi.think(self):  # The table kinds think native
-		return
-	var critter_rows := PackedInt32Array()  # The critters think in one loop after the others (CritterAi)
-	var roles := EnemyAi.roles  # One table read per actor (EnemyAi.role_of; a local: a static read costs more)
-	for i in range(1, actors.size()):
-		var kind := actors.kinds[i]
-		var role := roles[kind] if (kind & -EnemyAi.KIND_SLOTS) == 0 else EnemyAi.role_of(kind)
-		if role == EnemyAi.Role.CRITTER:
-			critter_rows.append(i)
-			continue
-		if role == EnemyAi.Role.BOSS:
-			BossAi.think(self, i)  # Bosses.
-			continue
-		if role == EnemyAi.Role.ENEMY:
-			EnemyAi.think(self, i)  # (its plan is timed as ai.plan inside)
-			continue
-		if kind == ActorStore.Kind.DUMMY:
-			dummy_think(i, target)
-	if not critter_rows.is_empty():
-		CritterAi.think_all(self, critter_rows)
+	NativeAi.think(self)
 
 
 ## Phase 3 for dummy i (the kernel's movers): its jitter, and its shot at `target` on its fire period.
@@ -1996,13 +1907,12 @@ func _move_and_collide() -> void:
 	var pp := phase_probe  # v0.8.0 HS
 	if pp != null:
 		pp.begin(&"move.steer")
-	if (native_on & NativeWorld.AI) == 0 or not NativeAi.move(self):  # The table kinds steer native
-		_steer_actors(p)
+	NativeAi.move(self)  # The script rows steer in GDScript, then the table kinds natively
 	PlayerSkill.push(self)  # Kit: Scatter Blast knockback, before walls resolve it.
 	if pp != null:
 		pp.end(&"move.steer")
 		pp.begin(&"move.walls")
-	# Resolve: walls first, then actor pairs in ascending index order. A boss in the air or underground passes
+	# Resolve (natively, NativeMove): walls first, then actor pairs. A boss in the air or underground passes
 	# through both; a boss on the ground isn't shoved: the other body takes the whole push.
 	var through := PackedInt32Array()
 	var heavy := PackedInt32Array()
@@ -2011,35 +1921,11 @@ func _move_and_collide() -> void:
 		for i in actors.size():
 			through.append(1 if BossAi.passes_through(self, i) or RuinsRocks.hidden(self, i) else 0)
 			heavy.append(1 if BossAi.is_boss_kind(actors.kinds[i]) else 0)
-	if (native_on & NativeWorld.MOVE) != 0:
-		NativeMove.resolve(self, through, heavy)
-	else:
-		_resolve_bodies(through, heavy)
+	NativeMove.resolve(self, through, heavy)
 	if ruins_rocks.cable_count() > 0:  # A live cable is a wall to the hero alone
 		RuinsRocks.block_hero(self, hero_from)
 	if pp != null:
 		pp.end(&"move.walls")
-
-
-## Phase 5's steering in GDScript: every actor but the hero, toward the hero at `target`.
-func _steer_actors(target: Vector2) -> void:
-	var critter_rows := PackedInt32Array()  # The critters step in one loop after the others (CritterAi)
-	var roles := EnemyAi.roles  # One table read per actor (EnemyAi.role_of; a local: a static read costs more)
-	for i in range(1, actors.size()):
-		var kind := actors.kinds[i]
-		var role := roles[kind] if (kind & -EnemyAi.KIND_SLOTS) == 0 else EnemyAi.role_of(kind)
-		if role == EnemyAi.Role.CRITTER:
-			critter_rows.append(i)
-			continue
-		if role == EnemyAi.Role.BOSS:
-			BossAi.move(self, i)  # Bosses.
-			continue
-		if role == EnemyAi.Role.ENEMY:
-			EnemyAi.move(self, i)
-			continue
-		dummy_steer(i, target)
-	if not critter_rows.is_empty():
-		CritterAi.move_all(self, critter_rows)
 
 
 ## Phase 5 for dummy i: toward `target` plus its jitter (kept dummy_keep_distance off it), at most dummy_speed.
@@ -2058,191 +1944,12 @@ func dummy_steer(i: int, target: Vector2) -> void:
 	actors.set_pos(i, at)
 
 
-## The collision passes in GDScript (walls, grid and pairs; NativeMove runs the native ones instead).
-func _resolve_bodies(through: PackedInt32Array, heavy: PackedInt32Array) -> void:
-	var pp := phase_probe
-	# A body with no wall within WALL_SKIP_M of it skips the wall checks while it stays within that of
-	# where it was looked at (walls that far off give no push, so the result is the same).
-	var open_x := PackedFloat32Array()
-	var open_y := PackedFloat32Array()
-	var n := actors.size()
-	open_x.resize(n)
-	open_y.resize(n)
-	# The wall passes read and write local copies of the columns (handed back after each pass), as the pairs pass does.
-	var px := actors.pos_x
-	var py := actors.pos_y
-	var rad := actors.radius
-	var no_solids := solids.is_empty()
-	for i in n:
-		var r := rad[i] + WALL_SKIP_M
-		open_x[i] = INF
-		var box := Rect2(px[i] - r, py[i] - r, r * 2.0, r * 2.0)
-		if not _wall_grid.any_in_rect(box) and (no_solids or not solids.any_near(box)):  # No list built
-			open_x[i] = px[i]
-			open_y[i] = py[i]
-	for _iter in SimTick.COLLIDE_ITERS:
-		px = actors.pos_x
-		py = actors.pos_y
-		for i in n:
-			if not through.is_empty() and through[i] == 1:
-				continue
-			if absf(px[i] - open_x[i]) < WALL_SKIP_M and absf(py[i] - open_y[i]) < WALL_SKIP_M:
-				continue
-			var ap := Vector2(px[i], py[i])
-			var r := rad[i]
-			for w in _wall_grid.query_rect(Rect2(ap.x - r, ap.y - r, r * 2.0, r * 2.0)):
-				ap += Collide.circle_vs_obb(ap, r, walls[w])
-			if not no_solids:  # Solid props block bodies, not shots or sight
-				ap += solids.push(ap, r)
-			px[i] = ap.x
-			py[i] = ap.y
-		actors.pos_x = px
-		actors.pos_y = py
-		if pp != null:
-			pp.end(&"move.walls")
-			pp.begin(&"move.grid")
-		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
-		if pp != null:
-			pp.end(&"move.grid")
-			pp.begin(&"move.pairs")
-		var ghost := dash_ticks_left > 0 and ModifierRuntime.intangible(self)  # Phase Dash
-		# The pass works on local copies of the position columns (one native copy on the first push,
-		# handed back after; an actor-store lookup per read was most of its cost) and starts each body's candidates
-		# past its own index (bsearch: the grid's list is ascending), with the same arithmetic in the same order.
-		px = actors.pos_x
-		py = actors.pos_y
-		for a in n:
-			if ghost and a == 0:
-				continue
-			var ra := rad[a]
-			var near := _actor_grid.query_rect(Rect2(px[a] - ra, py[a] - ra, ra * 2.0, ra * 2.0))
-			for q in range(near.bsearch(a + 1), near.size()):
-				var b := near[q]
-				# Bodies whose boxes are clearly apart get no push; skip the call (the margin covers
-				# rounding, so the result is the same).
-				var rb := rad[b]
-				var reach := ra + rb + 0.001
-				if absf(px[b] - px[a]) >= reach or absf(py[b] - py[a]) >= reach:
-					continue
-				# The circle-circle push, applied half to each (a gets it, b its negation; coincident centres part
-				# along x). Inlined here for speed; test_collision drives it through this pass.
-				var d := Vector2(px[a], py[a]) - Vector2(px[b], py[b])
-				var rr := ra + rb
-				var dist2 := float(d.x) * d.x + float(d.y) * d.y
-				if dist2 >= rr * rr:
-					continue
-				var push := Vector2(rr * 0.5, 0.0)
-				if dist2 != 0.0:
-					var dist := sqrt(dist2)
-					push = d * ((rr - dist) * 0.5 / dist)
-				if not through.is_empty():
-					if through[a] == 1 or through[b] == 1:
-						continue
-					if heavy[a] != heavy[b]:
-						actors.pos_x = px  # _shove reads and writes the store: hand the columns back first
-						actors.pos_y = py
-						if heavy[a] == 1:
-							_shove(b, -push * 2.0)
-						else:
-							_shove(a, push * 2.0)
-						px = actors.pos_x
-						py = actors.pos_y
-						continue
-				var na := Vector2(px[a], py[a]) + push
-				px[a] = na.x
-				py[a] = na.y
-				var nb := Vector2(px[b], py[b]) - push
-				px[b] = nb.x
-				py[b] = nb.y
-		actors.pos_x = px
-		actors.pos_y = py
-		if pp != null:
-			pp.end(&"move.pairs")
-			pp.begin(&"move.walls")
-
-
-## A boss's shove moves body i by `delta` only as far as the first wall on the way (its radius swept), so a
-## boss landing beside a body at a wall can't push it through the wall (the faster Colossus leap found it: a hero in
-## the final ring was shoved out of it). The pass's other pushes are unchanged.
-func _shove(i: int, delta: Vector2) -> void:
-	var a := actors.pos(i)
-	var b := a + delta
-	var r := actors.radius[i]
-	var t := 1.0
-	for w in _wall_grid.query_rect(Rect2(a, Vector2.ZERO).expand(b).grow(r)):
-		var hit := Collide.sweep_vs_obb(a, b, r, walls[w])
-		if hit >= 0.0 and hit < t:
-			t = hit
-	actors.set_pos(i, a + delta * t)
-
-
+## Phase 6's projectiles: the steering in GDScript, the sweep natively, the contacts through ProjectileContacts
+## (NativeShots). aoe_candidates may build its grid while the contacts run.
 func _projectile_hits() -> void:
-	_hit_grid_state = 0 if debug_aoe_full else 1  # aoe_candidates may build its grid from here on
-	if (native_on & NativeWorld.SHOTS) != 0:
-		NativeShots.sweep(self)
-		_hit_grid_state = 0
-		return
-	var dead := PackedInt32Array()
-	var pp := phase_probe  # v0.8.0 HS
-	var pull := StarfallKinds.nodes(self) if not enemy_tables.is_empty() else PackedFloat32Array()
-	for i in projectiles.size():
-		if pp != null:
-			pp.begin(&"proj.sweep")
-		var held := ProjectileMoves.steer(self, i)  # Orbit first, homing, the way back
-		if not pull.is_empty() and not held:  # A Gravity Node bends it (after its form's steering)
-			StarfallKinds.bend_projectile(self, i, pull)
-		if GlaiveMods.hold(self, i):  # A Mine disc spins in place (no sweep), hitting
-			if pp != null:
-				pp.end(&"proj.sweep")
-			continue
-		var a := Vector2(projectiles.pos_x[i], projectiles.pos_y[i])
-		var v := Vector2(projectiles.vel_x[i], projectiles.vel_y[i])
-		var b := a + v
-		var r := projectiles.radius[i]
-		# Walls and actors are inserted with their full extent, so the segment only grows by its own radius.
-		var span := Rect2(a, Vector2.ZERO).expand(b).grow(r)
-		var best_t := 2.0
-		var best_actor := -1
-		var best_wall := -1
-		for w in _wall_grid.query_rect(span):
-			var t := Collide.sweep_vs_obb(a, b, r, walls[w])
-			if t >= 0.0 and t < best_t:
-				best_t = t
-				best_wall = w
-		# A Void shot passes through bodies (its aura hurts them, VoidShots); only walls end it.
-		# So does a Wave shot (its band hits them, WaveShots).
-		var bodies := (
-			PackedInt32Array()
-			if VoidShots.is_void_projectile(self, i) or WaveShots.is_wave_projectile(self, i)
-			else _actor_grid.query_rect(span)
-		)
-		for k in bodies:
-			if actors.teams[k] == projectiles.team[i] or actors.dead[k] == 1:
-				continue
-			# A body clearly outside the segment's box can't be hit; skip the sweep (same result).
-			var reach := actors.radius[k] + 0.001
-			if (
-				actors.pos_x[k] + reach < span.position.x
-				or actors.pos_x[k] - reach > span.end.x
-				or actors.pos_y[k] + reach < span.position.y
-				or actors.pos_y[k] - reach > span.end.y
-			):
-				continue
-			var t := Collide.sweep_vs_circle(a, b, r, actors.pos(k), actors.radius[k])
-			# A tie keeps the earlier find: the wall, else the lower actor index (the grid returns them ascending).
-			if t >= 0.0 and t < best_t:
-				best_t = t
-				best_actor = k
-		if pp != null:
-			pp.end(&"proj.sweep")
-		if ProjectileContacts.apply(self, i, a, v, best_t, best_actor, best_wall):
-			dead.append(i)
+	_hit_grid_state = 0 if debug_aoe_full else 1
+	NativeShots.sweep(self)
 	_hit_grid_state = 0
-	if pp != null:
-		pp.begin(&"proj.remove")
-	projectiles.remove_sorted(dead)
-	if pp != null:
-		pp.end(&"proj.remove")
 
 
 func _remove_dead() -> void:

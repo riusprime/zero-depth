@@ -9,7 +9,7 @@ TARGET_DIR="${1:-res://tests}"
 cd "$REPO_ROOT"
 mkdir -p build
 
-godot --headless --path . --editor --import --quit > build/import.log 2>&1 || true
+bash scripts/native/ensure.sh debug  # The sim runs only in the native library; this also imports
 if sed -E 's/\x1B\[[0-9;]*[mK]//g' build/import.log | grep -E -q "^(ERROR|SCRIPT ERROR)"; then
 	sed -E 's/\x1B\[[0-9;]*[mK]//g' build/import.log | grep -E "^(ERROR|SCRIPT ERROR)" | head -10 >&2
 	echo "verify: import reported errors" >&2

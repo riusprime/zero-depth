@@ -25,7 +25,7 @@ enum Effect {
 
 var id := &""
 var effect := 0
-## A deleted combo's stub (CardOrder.RETIRED_COMBOS): no halves, never earned; a save's entry is dropped.
+## A deleted combo's stub (CardOrder.RETIRED_COMBOS): no halves, never earned.
 var retired := false
 var item_a := -1
 var item_b := -1

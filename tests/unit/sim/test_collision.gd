@@ -22,7 +22,7 @@ func test_rotated_box() -> void:
 	assert_eq(Collide.circle_vs_obb(Vector2(1.9, 0), 0.3, box), Vector2.ZERO)
 
 
-## The actor-pair push lives inlined in World._move_and_collide (the hot path), so it is tested there: two still
+## The actor-pair push runs in the native collision passes (World._move_and_collide, NativeMove), so it is tested there: two still
 ## bodies, far from the player and with no walls.
 func _two_bodies(a: Vector2, b: Vector2) -> World:
 	var w := World.new(9, PlayerTable.starting_values())

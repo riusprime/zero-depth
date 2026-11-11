@@ -146,13 +146,12 @@ public:
 	// walk plan on its staggered ticks and the state machine; held (a byte a row, or empty) is a spell's stun,
 	// mine_owners the Mine Layers' mines (MineStore.owner). move: phase 5, the steering before the collision passes;
 	// slow (a float a row, or empty: then frozen 0, slowed slow_permille / 1000, else 1) is ItemProcs.slow_factor.
-	// flow_native: the flow field is the native nav grid's (else a blocked plan is a FLOW intent, and a relocating
-	// Sniper's walk a RELOCATE_STEP). Both return the number of intents (ai_intents_i / _f, stride 4), or -1 when a
-	// cache is missing (nothing changes).
+	// A blocked walk follows the flow field in the nav cache (nav_, kept current by NativeNav.sync). Both return the
+	// number of intents (ai_intents_i / _f, stride 4), or -1 when a cache is missing (nothing changes).
 	int think(godot::Object *actors, const godot::PackedFloat32Array &hero, int tick,
-			const godot::PackedByteArray &held, const godot::PackedInt32Array &mine_owners, bool flow_native);
+			const godot::PackedByteArray &held, const godot::PackedInt32Array &mine_owners);
 	int move(godot::Object *actors, const godot::PackedFloat32Array &hero, const godot::PackedFloat32Array &slow,
-			float slow_permille, bool flow_native);
+			float slow_permille);
 	godot::PackedInt32Array ai_intents_i() const;
 	godot::PackedFloat32Array ai_intents_f() const;
 	// zd_kinds.h's constants in LAYOUT order, and [HERO_SIZE, the intent codes]: what the tests compare with

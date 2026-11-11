@@ -60,6 +60,8 @@ LIST="$(files_of "$SHARD" | paste -sd, -)"
 	exit 1
 }
 mkdir -p build
+# The sim runs only in the native library: built and registered first (CI restores it: ZD_NATIVE_PREBUILT=1)
+bash scripts/native/ensure.sh debug
 set +e
 godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest="$LIST" \
 	-gjunit_xml_file="build/gut_$SHARD.xml" -gexit 2>&1 | tee "build/gut_$SHARD.log"

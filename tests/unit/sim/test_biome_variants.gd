@@ -343,7 +343,7 @@ func test_an_outer_branch_hits_where_the_straight_line_misses() -> void:
 	w.actors.state[i] = EnemyAi.State.ACTIVE
 	w.actors.state_t[i] = 0
 	var hp := w.actors.hp[0]
-	EnemyAi.resolve(w, i)
+	NativeStrike.resolve(w)  # phase 6: its active tick (the split lanes: ACTIVE_HOOK)
 	assert_eq(w.actors.hp[0], hp - t.damage, "one hit")
 	# a plain Sniper's line misses the same spot
 	var v := _world(true)
@@ -355,7 +355,7 @@ func test_an_outer_branch_hits_where_the_straight_line_misses() -> void:
 	v.actors.state[j] = EnemyAi.State.ACTIVE
 	v.actors.state_t[j] = 0
 	var hp2 := v.actors.hp[0]
-	EnemyAi.resolve(v, j)
+	NativeStrike.resolve(v)
 	assert_eq(v.actors.hp[0], hp2, "the plain Sniper's line misses there")
 
 
