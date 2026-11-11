@@ -112,9 +112,11 @@ static func install_from_args() -> int:
 ## World after an e2e's Main is gone runs the sim it ran before. Returns the kernels now on.
 static func install_for_game(main: Node) -> int:
 	main.tree_exiting.connect(
-		NativeSwitch._restore.bind(World.native_factory, World.native_kernels), CONNECT_ONE_SHOT
+		NativeSwitch._restore.bind(World.native_factory, World.native_kernels, EnemyBatch.native),
+		CONNECT_ONE_SHOT
 	)
 	var on := install(for_game())
+	EnemyBatch.native = on != 0  # The batched enemies' native writer goes with the core
 	if on != 0:
 		core_kernels = on
 	if available():
@@ -131,14 +133,17 @@ static func core_on() -> bool:
 
 
 ## The dev panel's switch: off goes to the script sim, on gives core_kernels again. A live World keeps the kernels
-## it was made with (its native caches are set up at its start), so the change applies from the next floor or run.
+## it was made with (its native caches are set up at its start), so the change applies from the next floor or run;
+## the batched enemies' native writer (EnemyBatch.native) follows it from the next frame.
 static func flip_core() -> void:
 	install(0 if core_on() else core_kernels)
+	EnemyBatch.native = core_on()
 
 
-static func _restore(factory: Callable, kernels: int) -> void:
+static func _restore(factory: Callable, kernels: int, crowd: bool) -> void:
 	World.native_factory = factory
 	World.native_kernels = kernels
+	EnemyBatch.native = crowd
 	DebugApi.view_switches.erase(SWITCH)
 
 

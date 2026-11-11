@@ -4,6 +4,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "zd_crowd.h"
 #include "zd_world.h"
 
 using namespace godot;
@@ -13,6 +14,7 @@ static void initialize_zd_native(ModuleInitializationLevel p_level) {
 		return;
 	}
 	GDREGISTER_CLASS(zd::ZdWorld);
+	GDREGISTER_CLASS(zd::ZdCrowd); // The batched enemies' furniture writer (presentation, not a sim kernel)
 }
 
 static void uninitialize_zd_native(ModuleInitializationLevel p_level) {
