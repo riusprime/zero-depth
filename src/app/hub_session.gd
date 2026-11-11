@@ -8,7 +8,7 @@ extends Node
 ## reading the hero's position. The hub never touches a run's save (RunSaver never sees this World) and reads the
 ## profile only (HubFlags).
 ## The stations whose panels Main owns (the Portal Machine's build pick, the Codex, the achievements) go
-## out as `station_used`; the stand-in panels (the Wardrobe, the Progression Station) and the hub's pause menu (Esc /
+## out as `station_used`; the Wardrobe's and Progression Station's panels and the hub's pause menu (Esc /
 ## Start: Resume, Options, Main menu) are this node's own (`overlay`).
 ## COLLECTIBLES.md #16, W47: the Archive's shelf lights each collectible found (HubView.show_found); once
 ## the north gate is open (12 on the shelves) the Keystone waits on the alcove's pedestal, and walking up to it takes
@@ -315,18 +315,12 @@ func _prices(wares: Array) -> Array[int]:
 	return out
 
 
-## A stand-in station's panel (none left: the Wardrobe has its own; MP: the Progression Station too).
+## The own panel of a station this node handles (the Wardrobe, the Progression Station).
 func _open_stand_in(id: StringName) -> void:
 	if id == &"wardrobe":
 		open_wardrobe()
-		return
-	if id == &"progression":
+	elif id == &"progression":
 		open_progression()
-		return
-	var keys := layout.keys_of(id)
-	var p := HubStationPanel.new(id, String(keys[0]), "HUB_%s_SOON" % String(id).to_upper())
-	p.back_pressed.connect(close_overlay)
-	_show_overlay(p)
 
 
 func _show_overlay(m: MenuPanel) -> void:

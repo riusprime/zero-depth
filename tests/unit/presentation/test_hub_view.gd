@@ -294,7 +294,3 @@ func test_the_small_menu_and_the_end_panel_rows() -> void:
 	assert_eq(
 		(end.box.get_node("Hub") as Button).text, "UI_TO_HUB", "the second row goes to the hub"
 	)
-	var panel := HubStationPanel.new(&"wardrobe", "HUB_WARDROBE", "HUB_WARDROBE_SOON")
-	add_child_autofree(panel)
-	assert_eq(panel.name, &"HubPanel_wardrobe")
-	assert_not_null(panel.box.get_node_or_null("Back"))

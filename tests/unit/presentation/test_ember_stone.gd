@@ -146,7 +146,6 @@ func test_every_menu_wears_astral() -> void:
 		PauseMenu.new(),
 		EndPanel.new(false, 0),
 		HubPauseMenu.new(),
-		HubStationPanel.new(&"wardrobe", "HUB_WARDROBE", "HUB_WARDROBE_SOON"),
 		ProgressionPanel.new(MetaProgress.wares(repo), [] as Array[bool], 0, false),
 		WardrobePanel.new(
 			Wardrobe.robes(repo),
