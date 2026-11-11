@@ -34,4 +34,5 @@ in the tag `archive/scripts-2026-11`.
 | `menus_astral.gd` | The station panels, the Training terminal and the Constellation pick in Astral (v0.11.1 Step 13) |
 | `loading_cover.gd`, `portal_transit.gd` | The loading cover and the portal |
 | `vfx_gallery.gd`, `mock_vfx.gd` | Effect contact sheets |
+| `gpu_fx_pairs.gd` | A fixed, seeded scene per effect drawn on the GPU (the lightning bolts), for before/after pixel diffs (`test_bolt_strip.gd`) |
 | `cvd_sim.py` | Python helpers that combine or analyse shots |

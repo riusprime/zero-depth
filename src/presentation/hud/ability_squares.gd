@@ -71,7 +71,9 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
+## Redraws only when a square's look changed (a ready row with no flash draws nothing a tick).
 func sync(reader: WorldReader) -> void:
+	var was := _slots.duplicate(true)
 	_slots.clear()
 	var blade := reader.weapon_id() == &"combo_sword"
 	_slots.append(
@@ -118,7 +120,8 @@ func sync(reader: WorldReader) -> void:
 			_flash[id] = FLASH_SECONDS
 		_was_cooling[id] = cooling
 	visible = true
-	queue_redraw()
+	if _slots != was:
+		queue_redraw()
 
 
 func _slot(
@@ -262,6 +265,16 @@ func rect_of(id: StringName) -> Rect2:
 			var r := _rect_of(k)
 			return Rect2(r.position + global_position, r.size)
 	return Rect2()
+
+
+## Where the squares draw (global px): their rects (the arcs, stars and key caps reach a few px past them; HudStill
+## adds its margin).
+func drawn_rect() -> Rect2:
+	var out := Rect2()
+	for k in _slots.size():
+		var r := _rect_of(k)
+		out = r if k == 0 else out.merge(r)
+	return Rect2(out.position + global_position, out.size)
 
 
 ## Blink's charge count is printed in the corner circle only above one.

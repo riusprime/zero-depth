@@ -136,7 +136,7 @@ func sync(reader: WorldReader) -> void:
 	_alive.clear()
 	for i in reader.actor_count():
 		var id := reader.actor_id(i)
-		var node := actors.actor_node(id)
+		var node := actors.anchor_node(id)  # (a batched enemy's anchor in the tree)
 		if node == null:
 			continue
 		_scratch.clear()
@@ -208,6 +208,8 @@ func _build(node: Node3D, r: float) -> Dictionary:
 	var bar_y := 1.3
 	if node.has_meta(&"bar"):
 		bar_y = (node.get_meta(&"bar") as Node3D).get_parent().position.y
+	elif node.has_meta(&"bar_y"):  # A batched enemy's anchor (its bar is the batch's)
+		bar_y = node.get_meta(&"bar_y")
 	var v := {
 		"root": root,
 		"bar_y": bar_y,

@@ -42,8 +42,10 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 
+## Redraws only when a slot's look changed (a held, ready row draws nothing a tick).
 func sync(reader: WorldReader) -> void:
 	var sp := reader.spells()
+	var was := [_slots, _max]
 	_slots = sp["slots"]
 	_max = maxi(int(sp["max"]), _slots.size())
 	if _cast_seen.size() != _max:
@@ -59,7 +61,8 @@ func sync(reader: WorldReader) -> void:
 				_flash[k] = 0.0 if ViewPrefs.reduced_motion else FLASH_SECONDS
 			_cast_seen[k] = cast
 	visible = not _slots.is_empty()
-	queue_redraw()
+	if [_slots, _max] != was:
+		queue_redraw()
 
 
 ## The squares shown (tests): the slot count.

@@ -348,7 +348,7 @@ func _begin_measure(now: int) -> void:
 
 ## Strafe, aim and refill the enemies, once per frame (cheap: the refill runs once a second).
 func _drive(now: int) -> void:
-	var t := (now - _t0) / 1e6
+	var t := _spans.frames / 60.0 if _spans.frame_clock else (now - _t0) / 1e6  # (--shot-at: on frames)
 	_spans.per_frame()
 	if _ab.has("low_hp"):  # W3-O6: the probe (not the sim) holds the hero's HP at 20 %
 		var a := _main.driver.world.actors

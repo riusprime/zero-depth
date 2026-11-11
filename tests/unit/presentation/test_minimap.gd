@@ -156,7 +156,7 @@ func test_the_views_draw_once_per_change() -> void:
 	map.sync(r)
 	await get_tree().process_frame
 	assert_eq(map.corner.draw_count(), drawn + 1, "a step redraws once")
-	assert_eq(map.get_child_count(), 2, "two Controls, no node per room")
+	assert_eq(map.get_child_count(), 3, "two views and the corner's frame, no node per room")
 
 
 func test_the_arrow_follows_the_walk_not_only_the_aim() -> void:

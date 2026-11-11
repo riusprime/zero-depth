@@ -102,11 +102,14 @@ func test_a_bolt_rejitters_while_it_lives_and_fades_out() -> void:
 	assert_lt(b.brightness(), 0.05, "gone after its fade")
 
 
-func test_a_bolt_builds_a_two_layer_ribbon() -> void:
+func test_a_bolt_draws_a_two_layer_ribbon_shell_then_core() -> void:
 	var b := _bolt()
 	b.set_ends(A, B, 9, 0.12)
-	var mesh := (b.get_child(0) as MeshInstance3D).mesh as ArrayMesh
-	assert_eq(mesh.get_surface_count(), 2, "shell and core")
+	var shell := b.get_child(0) as MeshInstance3D
+	var core := b.get_child(1) as MeshInstance3D
+	assert_true(shell.get_surface_override_material(0).get_shader_parameter(&"outer"), "shell")
+	assert_false(core.get_surface_override_material(0).get_shader_parameter(&"outer"), "core")
+	assert_gt(core.sorting_offset, shell.sorting_offset, "the core always draws over its shell")
 
 
 # --- Where bolts go ------------------------------------------------------------------------------------------------

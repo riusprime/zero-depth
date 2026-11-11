@@ -1,7 +1,8 @@
 class_name ActorViews
 extends Node3D
 ## One node per live actor and projectile, keyed by entity id. Transforms are written right after each sim
-## tick, and Godot's physics interpolation smooths them between ticks (PRESENTATION_CONTRACTS §2).
+## tick, and Godot's physics interpolation smooths them between ticks (PRESENTATION_CONTRACTS §2). The horde
+## critters are CritterCrowd's, and the enemies of EnemyBatch.KINDS the batch's: their roots stay outside the tree.
 ## Each enemy behaviour has its own silhouette, readable in greyscale (PRESENTATION §3), from the enemy sheet
 ## (docs/art/enemies_visual_reference.png): the Charger a red hooded crawler on four clawed legs, the Warden a
 ## hulking rock golem under a red shell (fists in front, a glowing weak spot on its back; no shield), the Needle a
@@ -11,7 +12,7 @@ extends Node3D
 const CUBE := 0.7
 const BAR_W := 0.55
 ## Projectile nodes kept for reuse per look, at most this many idle (hordes fire hundreds a second).
-const PROJECTILE_POOL_MAX := 400
+const PROJECTILE_POOL_MAX := ShotViews.POOL_MAX
 ## Enemy models farther than this from the hero (off screen) stop their frame-time animation.
 ## only without a camera (`cull` unset: a view built alone, as the unit tests do); the game uses the camera's view.
 const ANIMATE_RADIUS_M := 24.0
@@ -41,6 +42,9 @@ const MODEL_LIFT := {
 
 ## The role glow's energy the views build with (ROLE_GLOW; the line-up shot script sweeps it, 0 = none).
 static var role_glow_energy := ROLE_GLOW
+## Whether the EnemyBatch.KINDS enemies are batched (no node of theirs in the tree); off, each has its node tree in
+## the tree as before (the frame probe's before/after switch, --ab=no_batch).
+static var batch_enemies := true
 
 ## The floor's lighting mood; with one, the hero carries a small warm light (StageKit.hero_light).
 var hero_mood: BiomeMood
@@ -69,14 +73,19 @@ var cull: ScreenCull
 ## The enemy VAT pilot: the crowd drawing the VatCrowd.KINDS enemies while ViewPrefs.enemy_vat is on
 ## (null until the first).
 var vat_crowd: VatCrowd
+## The EnemyBatch.KINDS enemies the VAT crowd draws, with no node of theirs in the tree: their discs, rings, dazed
+## rings, bars and blobs as instances written once a frame (null until the first).
+var batch: EnemyBatch
+## This view's own batching switch (null: the shared batch_enemies; the probe's twin sets false).
+var batching: Variant = null
+## The plain shots (ShotViews: their nodes hang under this view).
+var shots := ShotViews.new(self)
 ## The horde critters, drawn with no node each (CritterCrowd; made with the
 ## first sync). actor_node() is null for a critter; flash, hold_flash and set_tint reach it by id.
 var critters: CritterCrowd
 ## The disc, rings and bar every actor wears, shared per size and colour (a spawn builds none of them).
 var shared_parts := ActorParts.new()
 var _actors := {}
-var _projectiles := {}
-var _proj_last := {}
 var _flash := {}
 ## Frame seconds an actor's flash is held lit and uncounted, by id.
 var _flash_hold := {}
@@ -88,28 +97,21 @@ var _tint := {}
 var _shown := {}
 ## Whether each enemy model was animating at the last sync (the hysteresis's state), by id.
 var _anim_on := {}
-## Projectile materials by look (see _projectile_material), and one mesh per look.
-var _proj_mats := {}
-var _proj_meshes := {}
-## Idle projectile nodes by look key (hidden, kept as children), reused before building new ones.
-var _proj_pool := {}
-var _proj_pooled := 0
-## P-6: the last look key per side (0 hostile, 1 player) and the [size, colour, energy] it was built from, so a shot of
-## an unchanged look doesn't format its key again (a horde fires hundreds a second).
-var _proj_key: Array[String] = ["", ""]
-var _proj_key_of: Array = [[], []]
 ## Each actor node's parts, read once from its metas (get_meta every sync was most of actors.update), by
-## id: [facing, bar, elite bar or null, dazed or null, hero avatar or null, enemy avatar or null, is a boss, the yaw
-## last written (INF: write it), the blob shadow or null].
+## id: [facing, bar (null for a batched enemy), elite bar or null, dazed or null, hero avatar or null, enemy avatar or
+## null, is a boss, the yaw last written (INF: write it), the blob shadow or null, batched (EnemyBatch draws it)].
 var _parts := {}
-## The switch's value the actors were built with (a flip rebuilds them).
+## The switches' values the actors were built with (a flip rebuilds them).
 var _vat_on := ViewPrefs.enemy_vat
+var _batch_on := batch_enemies
 
 
 func sync(reader: WorldReader) -> void:
 	heat_tier = reader.heat_tier()
-	if _vat_on != ViewPrefs.enemy_vat:  # The dev switch flipped: those kinds are built again
-		_vat_on = ViewPrefs.enemy_vat
+	var batch_now := batch_enemies if batching == null else bool(batching)
+	if _vat_on != ViewPrefs.enemy_vat or _batch_on != batch_now:  # A dev or probe switch flipped
+		_vat_on = ViewPrefs.enemy_vat  # (those kinds are built again)
+		_batch_on = batch_now
 		_rebuild_vat_kinds()
 	if bar_chunks.get_parent() == null:
 		add_child(bar_chunks)
@@ -118,6 +120,8 @@ func sync(reader: WorldReader) -> void:
 	var leans := reader.void_leans()  # Empty unless a Void shot pulls someone
 	var latched := reader as LatchedReader  # v0.10.5 W3-Q8
 	var crowd := _critters()
+	var cols: Array = []  # The batched enemies' columns, read once (the first batched enemy's)
+	var batch_was := batch
 	for i in reader.actor_count():
 		var id := reader.actor_id(i)
 		alive[id] = true
@@ -125,13 +129,21 @@ func sync(reader: WorldReader) -> void:
 			continue
 		var node: Node3D = _actors.get(id)
 		var fresh := node == null
+		var at := reader.actor_pos(i)
+		var pos := _grounded(at)
 		if fresh:
 			var t_sp := PerfMarks.start()
 			node = _make_actor(
-				reader.actor_kind(i), reader.actor_team(i) == 0, reader.actor_radius(i)
+				reader.actor_kind(i), reader.actor_team(i) == 0, reader.actor_radius(i), id
 			)
 			_actors[id] = node
-			add_child(node)
+			if node.has_meta(&"batched"):  # No node of it in the tree: the batch draws it
+				var heights := Vector2(node.get_meta(&"bar_y"), node.get_meta(&"dazed_y", -1.0))
+				var blob := ViewPrefs.enemy_shadows == "blob"
+				var av: AvatarBase = node.get_meta(&"enemy_avatar")
+				_batch().add(id, node, av, pos, reader.actor_radius(i), heights, blob)
+			else:
+				add_child(node)
 			if node.has_meta(&"elite"):  # Its own framed bar with its name (EliteBar)
 				_add_elite_bar(node, tr(reader.elite_name_key(i)))
 			if reader.actor_team(i) != 0:
@@ -139,29 +151,41 @@ func sync(reader: WorldReader) -> void:
 				lift_model(node, WorldReader.body_kind(reader.actor_kind(i)))  # v0.11.0 F2
 				role_glow(node, WorldReader.body_kind(reader.actor_kind(i)), role_glow_energy)  # v0.8.0 N1
 			PerfMarks.add(&"actors.spawn", t_sp)  # Building new actors' nodes (a horde's top-up)
-		var at := reader.actor_pos(i)
-		var pos := SimPlane.to_3d(at)
-		for g in grounds:
-			pos.y = maxf(pos.y, g.height_at(pos))
-		if latched != null and not fresh and node.is_physics_interpolated_and_enabled():
-			var t_tb := PerfMarks.start()
-			_start_from_tick_before(node, latched.actor_pos_before(i))
-			PerfMarks.add(&"actors.tick_before", t_tb)
-		node.position = pos  # Written once
-		var t_up := PerfMarks.start()
 		var parts := _parts_of(node, id)
-		_update_actor(node, reader, i, parts)
-		VariantLooks.show_crust(node, reader, i)  # v0.11.0 O13a
+		var t_up := PerfMarks.start()
+		if parts[9]:
+			if not fresh:  # (the tick before the latest moves its anchor, as a node is moved below)
+				var b: Variant = latched.actor_pos_before(i) if latched != null else null
+				batch.place(id, pos, null if b == null else _grounded(b))
+			node.position = pos
+			if cols.is_empty():
+				cols = [
+					reader.actor_facing_column(),
+					reader.actor_state_column(),
+					reader.actor_hp_column(),
+					reader.actor_max_hp_column(),
+				]
+			batch.update(id, reader, i, parts, cols)
+		else:
+			if latched != null and not fresh and node.is_physics_interpolated_and_enabled():
+				var t_tb := PerfMarks.start()
+				_start_from_tick_before(node, latched.actor_pos_before(i))
+				PerfMarks.add(&"actors.tick_before", t_tb)
+			node.position = pos  # Written once
+			_update_actor(node, reader, i, parts)
+			VariantLooks.show_crust(node, reader, i)  # v0.11.0 O13a
 		PerfMarks.add(&"actors.update", t_up)
 		if not leans.is_empty() and leans.has(id):
 			_lean(node, leans[id])
 			parts[7] = INF  # the lean turned the facing's basis: the yaw is written again next sync
 		if parts[5] != null:  # Off-screen crowds don't animate
 			var t_an := PerfMarks.start()
-			_animate_if_seen(node, id, at, hero)
+			_animate_if_seen(node, id, at, hero, parts[9])
 			PerfMarks.add(&"actors.animate", t_an)
-		if fresh:
+		if fresh and not parts[9]:
 			node.reset_physics_interpolation()
+	if batch != null and batch != batch_was:  # Made this sync: it first runs next frame, so draw this one now
+		batch.write_furniture()
 	# Every live actor has its node by now, so as many nodes as live actors means none is gone: no walk
 	# over the nodes' and the per-id state's keys on a sync where nobody died.
 	var t_cc := PerfMarks.start()
@@ -183,36 +207,7 @@ func sync(reader: WorldReader) -> void:
 	for id in _tint.keys():  # (set_tint may name an id with no node: walked whenever a glow is held)
 		if not alive.has(id):
 			_tint.erase(id)
-	var live := {}
-	for i in reader.projectile_count():
-		if reader.projectile_look(i) != "":
-			continue  # A fireball (FireballViews draws them)
-		if reader.projectile_team(i) == 0 and not reader.projectile_is_shard(i):
-			continue  # The hero's shots are blue pulses (HeroPulseViews draws them)
-		var id := reader.projectile_id(i)
-		live[id] = true
-		var p := reader.projectile_pos(i)
-		var node: Node3D = _projectiles.get(id)
-		var fresh := node == null
-		if fresh:
-			node = _make_projectile(reader.projectile_team(i) == 0)
-			_projectiles[id] = node
-			if node.get_parent() == null:  # a pooled node is already here
-				add_child(node)
-		var last: Vector2 = _proj_last.get(id, p - reader.projectile_vel(i))
-		var dir := p - last
-		if dir.length() > 0.0001:
-			node.rotation = Vector3(0, atan2(dir.y, dir.x), 0)
-		node.position = SimPlane.to_3d(p, SimPlane.CORE_HEIGHT)
-		_proj_last[id] = p
-		if fresh:
-			node.reset_physics_interpolation()
-	if _projectiles.size() != live.size():  # W3-Q6: every live shot has its node: equal sizes, none ended
-		_pool_missing(live)
-	if _proj_last.size() != live.size():
-		for id in _proj_last.keys():
-			if not live.has(id):
-				_proj_last.erase(id)
+	shots.sync(reader)
 
 
 ## The hero and the enemies judder under 60 fps: the views sync once a frame, so on a frame that
@@ -224,13 +219,19 @@ func sync(reader: WorldReader) -> void:
 func _start_from_tick_before(node: Node3D, before: Variant) -> void:
 	if before == null:
 		return
-	var b := SimPlane.to_3d(before as Vector2)
-	for g in grounds:
-		b.y = maxf(b.y, g.height_at(b))
+	var b := _grounded(before as Vector2)
 	if node.position.is_equal_approx(b):
 		return
 	node.position = b
 	node.reset_physics_interpolation()
+
+
+## A sim place in the view, on an altar's stone where one is under it.
+func _grounded(at: Vector2) -> Vector3:
+	var p := SimPlane.to_3d(at)
+	for g in grounds:
+		p.y = maxf(p.y, g.height_at(p))
+	return p
 
 
 ## An enemy model animates while the camera could show it
@@ -241,8 +242,10 @@ func _start_from_tick_before(node: Node3D, before: Variant) -> void:
 ## could show (the view's rectangle + AVATAR_RADIUS_M + MARGIN_M, + HYSTERESIS_M while on: every enemy on screen and
 ## ~10 m past its edges) keeps it; a far one is set to PHYSICS_INTERPOLATION_MODE_OFF, and back on (with
 ## reset_physics_interpolation, so it never glides from where it was) when it comes near. The hero and the camera are
-## never touched.
-func _animate_if_seen(node: Node3D, id: int, pos: Vector2, hero: Vector2) -> void:
+## never touched. A batched enemy's interpolation is the batch's (EnemyBatch.set_interpolated), by the same test.
+func _animate_if_seen(
+	node: Node3D, id: int, pos: Vector2, hero: Vector2, batched: bool = false
+) -> void:
 	var avatar := node.get_meta(&"enemy_avatar") as Node
 	var was: bool = _anim_on.get(id, false)
 	var on := false
@@ -253,7 +256,9 @@ func _animate_if_seen(node: Node3D, id: int, pos: Vector2, hero: Vector2) -> voi
 	var first := not _anim_on.has(id)
 	_anim_on[id] = on
 	avatar.set_process(on)
-	if first or on != was:  # Physics interpolation only where it could show
+	if batched and (first or on != was):
+		batch.set_interpolated(id, on)
+	elif first or on != was:  # Physics interpolation only where it could show
 		node.physics_interpolation_mode = (
 			Node.PHYSICS_INTERPOLATION_MODE_INHERIT if on else Node.PHYSICS_INTERPOLATION_MODE_OFF
 		)
@@ -291,8 +296,23 @@ func retune_hero_light(mood: BiomeMood) -> void:
 		fresh.free()
 
 
+## Actor `id`'s root: its node in the tree, or for a batched enemy (EnemyBatch) its root outside the tree, which
+## still holds its facing, avatar and metas (HitFeel, HitStop and the tests read them).
 func actor_node(id: int) -> Node3D:
 	return _actors.get(id)
+
+
+## A node in the tree at actor `id`'s place for what hangs from it (status marks): its own root, or a batched enemy's
+## anchor (EnemyBatch.anchor, made the first time).
+func anchor_node(id: int) -> Node3D:
+	if batch != null and batch.has(id):
+		return batch.anchor(id)
+	return _actors.get(id)
+
+
+## The enemies drawn with no node in the tree (EnemyBatch; the probe's count).
+func batched_count() -> int:
+	return batch.ids().size() if batch != null else 0
 
 
 ## Whether actor `id` is drawn (its own node, or a critter in the crowd).
@@ -316,7 +336,7 @@ func _critters() -> CritterCrowd:
 
 
 func projectile_node(id: int) -> Node3D:
-	return _projectiles.get(id)
+	return shots.node(id)
 
 
 ## Flashes an actor white for a few frames (`frames` > 0: that many instead, e.g. a longer flash on a finisher).
@@ -418,7 +438,7 @@ func _parts_of(node: Node3D, id: int) -> Array:
 	if parts.is_empty():
 		parts = [
 			node.get_meta(&"facing"),
-			node.get_meta(&"bar"),
+			_meta_or_null(node, &"bar"),
 			_meta_or_null(node, &"elite_bar"),
 			_meta_or_null(node, &"dazed"),
 			_meta_or_null(node, &"avatar"),
@@ -426,6 +446,7 @@ func _parts_of(node: Node3D, id: int) -> Array:
 			node.has_meta(&"boss"),
 			INF,
 			_meta_or_null(node, &"blob"),
+			node.has_meta(&"batched"),
 		]
 		_parts[id] = parts
 	return parts
@@ -493,6 +514,8 @@ func _rebuild_vat_kinds() -> void:
 		if not node.has_meta(&"vat_kind"):
 			continue
 		_actors.erase(id)
+		if batch != null:
+			batch.release(id, false)
 		node.queue_free()
 		for d: Dictionary in [_flash, _flash_hold, _shown, _anim_on, _parts]:
 			d.erase(id)
@@ -503,30 +526,38 @@ func _vat_crowd() -> VatCrowd:
 	if vat_crowd == null:
 		vat_crowd = VatCrowd.new()
 		add_child(vat_crowd)
+	vat_crowd.batch = batch
 	return vat_crowd
 
 
-## A projectile gone from the sim goes back to its look's pool (hidden) instead of being freed.
-func _pool_missing(live: Dictionary) -> void:
-	for id in _projectiles.keys():
-		if live.has(id):
-			continue
-		var node: Node3D = _projectiles[id]
-		_projectiles.erase(id)
-		if _proj_pooled >= PROJECTILE_POOL_MAX:
-			node.queue_free()
-			continue
-		node.visible = false
-		var key: String = node.get_meta(&"look")
-		if not _proj_pool.has(key):
-			_proj_pool[key] = []
-		(_proj_pool[key] as Array).append(node)
-		_proj_pooled += 1
+## The enemy batch (made with the first batched enemy), after the bar chunks so it reads their fill this frame.
+func _batch() -> EnemyBatch:
+	if batch == null:
+		batch = EnemyBatch.new()
+		batch.views = self
+		add_child(batch)
+		bar_chunks.locate = batch.bar_point
+		if vat_crowd != null:
+			vat_crowd.batch = batch
+	return batch
+
+
+## Whether a new actor of kind `p_kind` is batched: an enemy of EnemyBatch.KINDS the VAT crowd draws, while batching
+## is on.
+func _batches(p_kind: int, is_player: bool) -> bool:
+	var on := batch_enemies if batching == null else bool(batching)
+	return (
+		on
+		and not is_player
+		and ViewPrefs.enemy_vat
+		and EnemyBatch.takes(p_kind)
+		and VatCrowd.supports(p_kind)
+	)
 
 
 ## Idle projectile nodes waiting for reuse (tests).
 func pooled_projectiles() -> int:
-	return _proj_pooled
+	return shots.pooled()
 
 
 func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
@@ -534,6 +565,9 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 		if not alive.has(id):
 			var node: Node3D = nodes[id]
 			nodes.erase(id)
+			if batch != null and batch.has(id):
+				batch.drop(id, node)
+				continue
 			if node.has_meta(&"blob"):  # A falling body's blob goes at once
 				(node.get_meta(&"blob") as Node3D).visible = false
 			# A boss whose body falls when it dies keeps drawing its fall a moment, then goes.
@@ -648,15 +682,18 @@ func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color, _team_c: Color
 	root.set_meta(&"mats", mats)
 
 
-func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
+## Actor `id`'s view (id >= 0 from the sync: a batched kind's is built for the batch, with no disc, ring, dazed ring,
+## bar or blob node, its root never added to the tree).
+func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3D:
 	# A biome variant is drawn as its base's body (VariantLooks), never by the VAT crowd (p_kind).
 	var kind := WorldReader.body_kind(p_kind)
+	var batched := id >= 0 and _batches(p_kind, is_player)
 	var root := Node3D.new()
 	var body_color := ThemePalette.color(&"player_body" if is_player else &"enemy_body")
 	var team_color := ThemePalette.color(&"player_core" if is_player else &"enemy_body")
 	# A horde critter has neither the contact disc nor the team
 	# ring (its body and its shadow only: two draws fewer each, in a crowd of up to the surge's cap).
-	if not CritterBodies.is_critter(kind):
+	if not CritterBodies.is_critter(kind) and not batched:
 		shared_parts.add_rings(root, radius, team_color, outline_color)
 	# The body turns with the actor's facing (+X is the front).
 	var facing := Node3D.new()
@@ -678,7 +715,10 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"enemy_avatar", avatar)
 			root.set_meta(&"mats", avatar.body_materials.duplicate())
 			height = ChargerAvatar.HEIGHT
-			root.set_meta(&"dazed", shared_parts.add_dazed(root, height + 0.35))
+			if batched:
+				root.set_meta(&"dazed_y", height + 0.35)
+			else:
+				root.set_meta(&"dazed", shared_parts.add_dazed(root, height + 0.35))
 		WorldReader.KIND_WARDEN:
 			# The rock golem: its own node, animated in frame time.
 			height = 1.25
@@ -826,11 +866,13 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 		# The crowd draws the body and its proxy shadow; a blob stays a node of the actor's.
 		var vat_avatar := _vat_avatar(root)
 		var blob := ViewPrefs.enemy_shadows == "blob"
-		if blob:
+		if blob and not batched:  # (a batched enemy's blob is an instance of the batch's)
 			root.set_meta(
 				&"blob", EnemyShadows.apply(root, facing, vat_avatar, kind, radius, "blob")
 			)
-		_vat_crowd().add(root, facing, vat_avatar, outline_color, not blob)
+		if batched:
+			_batch()
+		_vat_crowd().add(root, facing, vat_avatar, outline_color, not blob, id if batched else -1)
 	elif not is_player:
 		RigMerge.merge_actor(root, kind)  # The enemy's pieces become one skinned mesh
 		# Its parts cast nothing; one stand-in shaped like it (or a blob) casts its shadow.
@@ -843,6 +885,10 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 		if stand_in != null and stand_in.name == EnemyShadows.BLOB_NAME:
 			root.set_meta(&"blob", stand_in)
 	VariantLooks.dress(root, facing, p_kind)  # The Rubble Warden's crust (after the merge: it falls)
+	if batched:  # The batch draws its disc, ring, dazed ring and bar at these heights
+		root.set_meta(&"batched", true)
+		root.set_meta(&"bar_y", height + 0.55)
+		return root
 	# Floating health bar, as in the reference; it shrinks toward its centre as HP drops.
 	var bar_c := ThemePalette.color(&"player_bar" if is_player else &"enemy_bar")
 	var pivot := shared_parts.add_bar(root, height + 0.55, bar_c)
@@ -888,59 +934,6 @@ func bolt_color() -> Color:
 	return AttackView.edge_color(
 		bolt_look.get("color", ThemePalette.color(&"player_core")), heat_tier
 	)
-
-
-## Hostile shots are yellow streaks; the player's bolts were short cyan darts (reserved colours, PRESENTATION §3).
-## Only the hero's shrapnel shards are still drawn here as darts (HeroPulseViews draws the hero's shots).
-## A node of the same look comes back from the pool when there is one; the mesh is shared per look.
-func _make_projectile(is_player: bool = false) -> Node3D:
-	var size := Vector3(0.55, 0.05, 0.08)
-	if is_player:
-		size = bolt_look.get("size", Vector3(0.38, 0.07, 0.07))
-	var role := &"player_core" if is_player else &"proj_hostile"
-	var c := ThemePalette.color(role)
-	if is_player:
-		c = bolt_color()
-	var energy: float = bolt_look.get("energy", 2.5) if is_player else 2.5
-	var side := 1 if is_player else 0
-	var of := [size, c, energy]
-	if of != _proj_key_of[side]:
-		_proj_key_of[side] = of
-		_proj_key[side] = "%s|%s|%s" % [size, c.to_html(), energy]
-	var key := _proj_key[side]
-	var idle: Array = _proj_pool.get(key, [])
-	if not idle.is_empty():
-		var reused: Node3D = idle.pop_back()
-		_proj_pooled -= 1
-		reused.visible = true
-		return reused
-	if not _proj_meshes.has(key):
-		var box := BoxMesh.new()
-		box.size = size
-		_proj_meshes[key] = box
-	var n := MeshInstance3D.new()
-	n.mesh = _proj_meshes[key]
-	n.material_override = _projectile_material(c, energy)
-	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var holder := Node3D.new()
-	holder.set_meta(&"look", key)
-	holder.add_child(n)
-	return holder
-
-
-## One shared material per bolt look, kept for the view's life. A fresh material per shot meant that whenever the
-## last shot of a look was freed its shader variant went with it, and the next shot compiled it again (a stall).
-func _projectile_material(c: Color, energy: float) -> StandardMaterial3D:
-	var key := "%s|%s" % [c.to_html(), energy]
-	if not _proj_mats.has(key):
-		var m := StandardMaterial3D.new()
-		m.albedo_color = c
-		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		m.emission_enabled = true
-		m.emission = c
-		m.emission_energy_multiplier = energy
-		_proj_mats[key] = m
-	return _proj_mats[key]
 
 
 ## A Needle, Warden, Arc Caster, Bomb Drone or Lens Drone `avatar` (before its setup) drawn by the VAT

@@ -178,7 +178,7 @@ static func _rings(node: Node3D) -> int:
 
 
 ## v0.11.0 O9b (owner Q16-b: "No ring on critters"); v0.11.0 O9c: a critter has no node at all, so no disc and no
-## ring; a Swarmer keeps both.
+## ring; a Swarmer keeps both (the batch's instances).
 func test_no_ring_on_critters() -> void:
 	ViewPrefs.enemy_vat = true
 	var w := CombatLab.world()
@@ -191,7 +191,12 @@ func test_no_ring_on_critters() -> void:
 	views.sync(WorldReader.new(w))
 	for k in KINDS.size():
 		assert_null(views.actor_node(ids[k]), "kind %d: no node, no disc, no ring" % KINDS[k])
-	assert_eq(_rings(views.actor_node(swarmer)), 2, "a Swarmer keeps its disc and its ring")
+	# A Swarmer keeps both: the batch draws them (EnemyBatch), one instance each
+	views.batch.write_furniture()
+	assert_eq(
+		views.batch.parts_of(swarmer, EnemyBatch.Part.DISC).size(), 1, "a Swarmer keeps its disc"
+	)
+	assert_eq(views.batch.parts_of(swarmer, EnemyBatch.Part.RING).size(), 1, "and its ring")
 
 
 func test_the_bat_flies_the_mote_floats_the_flea_hops_and_the_crab_slides() -> void:

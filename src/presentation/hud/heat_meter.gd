@@ -32,6 +32,8 @@ var _last_tier_tick := -2
 var _last_tier := 0
 var _last_overheat := -1
 var _t := 0.0
+## What the last draw showed (look_key), so a tick or a frame that changes nothing on screen draws nothing.
+var _drawn_key := []
 
 
 func _init() -> void:
@@ -62,7 +64,7 @@ func sync(reader: WorldReader) -> void:
 		if _last_overheat != -1 or int(_s["overheat_tick"]) >= 0:
 			_flash = FLASH_S
 		_last_overheat = _s["overheat_tick"]
-	queue_redraw()
+	_redraw_if_changed()
 
 
 func _process(delta: float) -> void:
@@ -70,7 +72,38 @@ func _process(delta: float) -> void:
 		return
 	_t += delta
 	_flash = maxf(0.0, _flash - delta)
-	queue_redraw()
+	_redraw_if_changed()
+
+
+func _redraw_if_changed() -> void:
+	if look_key() != _drawn_key:
+		queue_redraw()
+
+
+## Everything the bar's picture depends on: the fill's pixel and colours, the marks, the words, the flash and the
+## pulse (only while it shows: overheated, or near the end).
+func look_key() -> Array:
+	if _s.is_empty():
+		return []
+	var h := heat()
+	var mx := float(_s["max"])
+	var animated := stalled() or h >= mx * WARN_SHARE
+	var fc := astral_color()
+	return [
+		roundf(x_of(h)),
+		fc,
+		_flash,
+		HudStyle.pulse(_t * 1.5) if animated else -1.0,
+		_s["tier"],
+		_s["hot"],
+		_s["overclock"],
+		mx,
+		h >= float(_s["hot"]),
+		h >= float(_s["overclock"]),
+		tier_text(),
+		vent_text(),
+		size,
+	]
 
 
 # --- Reads (tests) ------------------------------------------------------------------------------------------
@@ -138,6 +171,7 @@ func x_of(h: float) -> float:
 
 # --- Drawing ------------------------------------------------------------------------------------------------
 func _draw() -> void:
+	_drawn_key = look_key()
 	if _s.is_empty():
 		return
 	var r := bar_rect()
