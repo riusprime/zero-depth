@@ -7,8 +7,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 
 - **Waves 1 and 2 are done, and step 45.** Seams on `060e883b`: **674 of 674, 1,396 s of tests, 1,606 s wall** (it
   was 669, 3,185 s, 3,442 s at `ee42eafa`): [`evidence/SEAMS_TIMING.md`](evidence/SEAMS_TIMING.md).
-- **Seams on `9bea0088` (the native core on by default; steps 55, 57, 59 merged): 703 of 703,** 1,215 s of tests,
-  1,478 s wall, with the library built; and the whole presentation folder, 1,560 of 1,560. Two agents ran alongside.
+- **Seams on `a213977c` (everything merged so far): 703 of 703,** 1,208 s of tests, 1,446 s wall, with the library
+  built; and the native, presentation and arch folders in ONE process, 1,607 of 1,607, exit 0 (the order that used
+  to crash the engine on exit). One agent ran alongside.
 - **Left over from Wave 2, small:** the HUD and menu half of the dead-code scan; the menu backdrop's ember mode and
   the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: the
   owner was asked whether to delete it); the duplicate final-boss texture (needs model prep).
@@ -25,15 +26,16 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   goldens unchanged), step 56 (a dead enemy's cubes are one draw and last 0.5 s at any frame rate), the
   frame-attribution tooling (`scripts/checks/frame_attribution.sh`, `frame_spans.gd`).
 - **Not merged:** step 48 (`v0111-s48`), the sim on its own thread: parked (OWNER_QUESTIONS Q2).
-- **Wave 8 (the display layer, owner L19):** merged and pushed: step 55 (nine enemy kinds batched), 57 (lightning
-  bolts by shader), 59 (the HUD). Quiet run ([`evidence/PERF_W8.md`](evidence/PERF_W8.md)): 20 enemies 8.2 ms
-  (122 fps), 60 heavy 24.9 ms (40 fps), 120 swarmers 18.5 ms (54 fps). **With agents:** step 55b (batched enemies
-  posed and written in C++: the per-enemy script loop, about 4 ms at 120) and step 58 (the views' sync).
-- **The owner's folder** has the library built (`bash scripts/native/build.sh all`), so the game there runs the
-  native core; F10 → Tools → "Native core on/off (next floor)" compares with the script sim.
-- **Next:** merge 55b and 58, a last quiet run, seams, push; the owner playtests.
+- **Wave 8 (the display layer, owner L19):** merged and pushed: steps 55 (nine enemy kinds batched), 55b (their
+  furniture written in C++), 57 (lightning bolts by shader), 58 (views read in bulk and skip when nothing changed),
+  59 (the HUD), 60 (shard drops as instances), and the exit-crash fix. Last quiet run, before 55b, 58 and 60
+  ([`evidence/PERF_W8.md`](evidence/PERF_W8.md)): 20 enemies 8.2 ms (122 fps), 60 heavy 24.9 ms, 120 swarmers
+  18.5 ms. **With an agent:** step 55c (a batched enemy's pose and body in C++: about 3 ms at 120 swarmers).
+- **The owner's folder** has the library rebuilt on this head; the game there runs the native core; F10 → Tools →
+  "Native core on/off (next floor)" compares with the script sim.
+- **Next:** merge 55c when it reports; a last quiet run; seams; push. The owner playtests.
 - **Questions for the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md).
-- **Pushed:** `claude/v0110` up to the docs commit after `9bea0088`, and the tag `archive/scripts-2026-11`.
+- **Pushed:** `claude/v0110` up to the docs commit after `a213977c`, and the tag `archive/scripts-2026-11`.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
   approved.
@@ -275,3 +277,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   native + arch + golden 40/40, ten e2e files 29/29, all exit 0.
 - Open, small: batched enemies' roots leak when the enemy-VAT switch is flipped or a view is freed while bodies fall
   (GUT counts them as orphans; given to step 55c); `scripts/checks/hit_soak.gd` never reaches a fight (tests nothing).
+- 2026-11-11 (lead): seams on `a213977c`: 703/703; native + presentation + arch in one process 1,607/1,607, exit 0.
+  Pushed; the library rebuilt in the owner's folder.
