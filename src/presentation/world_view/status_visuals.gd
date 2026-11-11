@@ -63,6 +63,9 @@ var statuses_culled := 0
 ## Payoffs drawn into the effects layer last frame, and skipped as off screen (tests, the perf probe).
 var shots_drawn := 0
 var shots_culled := 0
+## The syncs that visited actors; a sync with no status anywhere, before or now, goes straight to the payoffs
+## (tests read it).
+var worked := 0
 ## Kept for the view's life, one per look (see the class note).
 var _mats := {}
 var _box := BoxMesh.new()
@@ -129,12 +132,21 @@ func sync(reader: WorldReader) -> void:
 	_last_tick = tick
 	_plus_fire = reader.element_plus(true)  # v0.9.5 EE2
 	_plus_frost = reader.element_plus(false)
+	# Only the actors that show something are visited: the hero with guard charges, and the ones the sim's status
+	# columns mark (one bulk read, not a status check and an anchor lookup per actor).
+	var shown := reader.status_indices()
+	if reader.guard_charges() > 0 and reader.actor_count() > 0:
+		shown.insert(0, 0)
+	_on.clear()
+	if shown.is_empty() and _views.is_empty() and _entries.is_empty():
+		_sync_payoffs(reader)  # Nothing on any actor, before or now
+		return
+	worked += 1
 	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
 	if cam != null:
 		_right = cam.global_transform.basis.x
-	_on.clear()
 	_alive.clear()
-	for i in reader.actor_count():
+	for i in shown:
 		var id := reader.actor_id(i)
 		var node := actors.anchor_node(id)  # (a batched enemy's anchor in the tree)
 		if node == null:

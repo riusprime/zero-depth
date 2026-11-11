@@ -1981,6 +1981,131 @@ func any_telegraph() -> bool:
 	)
 
 
+## The actors telegraph(i) can be non-empty for (winding up, acting, or a Mine Layer), ascending: every other
+## actor's telegraph is {}. A view walks these instead of asking every actor; the search runs in the engine's array
+## code, so a horde with few windups costs few steps.
+func telegraph_indices() -> PackedInt32Array:
+	var a := _w.actors
+	var out := PackedInt32Array()
+	_append_indices(a.state, EnemyAi.State.WINDUP, out)
+	_append_indices(a.state, EnemyAi.State.ACTIVE, out)
+	var i := a.kinds.find(ActorStore.Kind.MINE_LAYER)
+	while i >= 0:
+		if a.state[i] != EnemyAi.State.WINDUP and a.state[i] != EnemyAi.State.ACTIVE:
+			out.append(i)
+		i = a.kinds.find(ActorStore.Kind.MINE_LAYER, i + 1)
+	out.sort()
+	return out
+
+
+## The actors in `state` (actor_state's raw value, not the latched one), ascending.
+func indices_in_state(state: int) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	_append_indices(_w.actors.state, state, out)
+	return out
+
+
+## The actors other than the player (index 0) that carry a status any_status(i) is true for, ascending. A column
+## with no stacks at all is skipped whole, so a fight without statuses costs one count per column.
+func status_indices() -> PackedInt32Array:
+	var a := _w.actors
+	var n := a.size()
+	var out := PackedInt32Array()
+	var cols: Array[PackedInt32Array] = []
+	for col: PackedInt32Array in [
+		a.burn_stacks, a.shock_stacks, a.bleed_stacks, a.frost_stacks, a.poison_stacks, a.frozen_t
+	]:
+		if col.count(0) < col.size():
+			cols.append(col)
+	if cols.is_empty() or n < 2:
+		return out
+	var mark := PackedByteArray()
+	mark.resize(n)
+	for col in cols:
+		for i in range(1, mini(n, col.size())):
+			if col[i] > 0:
+				mark[i] = 1
+	var k := mark.find(1)
+	while k >= 0:
+		out.append(k)
+		k = mark.find(1, k + 1)
+	return out
+
+
+## The actors other than the player that burn or are frozen (burn_stacks(i) > 0 or actor_frozen(i)), ascending.
+func burn_or_frozen_indices() -> PackedInt32Array:
+	var a := _w.actors
+	var out := PackedInt32Array()
+	var burn := a.burn_stacks.count(0) < a.burn_stacks.size()
+	var frozen := a.frozen_t.count(0) < a.frozen_t.size()
+	if not burn and not frozen:
+		return out
+	for i in range(1, a.size()):
+		if (burn and a.burn_stacks[i] > 0) or (frozen and a.frozen_t[i] > 0):
+			out.append(i)
+	return out
+
+
+## The actors other than the player whose kind is one of `kinds`, ascending (a view that draws a few kinds walks
+## these instead of every actor).
+func indices_of_kinds(kinds: Array) -> PackedInt32Array:
+	var col := _w.actors.kinds
+	var out := PackedInt32Array()
+	for kind: int in kinds:
+		var i := col.find(kind, 1)
+		while i >= 0:
+			out.append(i)
+			i = col.find(kind, i + 1)
+	if kinds.size() > 1:
+		out.sort()
+	return out
+
+
+## The actors other than the player that carry a core (actor_core(i) is that core's card), ascending.
+func core_indices() -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for id in _w.cores.ids:
+		var i := _w.actors.index_of(id)
+		if i >= 1 and not out.has(i):
+			out.append(i)
+	out.sort()
+	return out
+
+
+## Every actor's id, by index (a copy: the caller may keep it past the tick).
+func actor_ids() -> PackedInt32Array:
+	return _w.actors.ids.duplicate()
+
+
+## Every actor's x and y on the plane, by index (copies; actor_pos(i) is Vector2(xs[i], ys[i])).
+func actor_xs() -> PackedFloat32Array:
+	return _w.actors.pos_x.duplicate()
+
+
+func actor_ys() -> PackedFloat32Array:
+	return _w.actors.pos_y.duplicate()
+
+
+## Every projectile's id and place, by index (copies; projectile_pos(i) is Vector2(xs[i], ys[i])).
+func projectile_ids() -> PackedInt32Array:
+	return _w.projectiles.ids.duplicate()
+
+
+func projectile_xs() -> PackedFloat32Array:
+	return _w.projectiles.pos_x.duplicate()
+
+
+func projectile_ys() -> PackedFloat32Array:
+	return _w.projectiles.pos_y.duplicate()
+
+
+static func _append_indices(col: PackedInt32Array, value: int, out: PackedInt32Array) -> void:
+	var i := col.find(value)
+	while i >= 0:
+		out.append(i)
+		i = col.find(value, i + 1)
+
+
 ## The actor index of the first live boss, or -1 (the boss bar shows it).
 func boss_index() -> int:
 	if not any_boss():
