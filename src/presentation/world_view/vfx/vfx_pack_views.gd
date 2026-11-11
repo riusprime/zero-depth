@@ -253,7 +253,11 @@ func liquid_field(c: Vector3, r: float, fade: float, sd: int, toxic: bool) -> bo
 func ring(kind: StringName, c: Vector3, r: float, fade: float, sd: int) -> bool:
 	var id: StringName = RING_IDS[kind]
 	var cols := kind_colors(kind, true)
-	if zone_holds.touch(zkey(sd, 6, c), id, &"area", c, r * float(ZONE_PER_M[id]), cols) == null:
+	var s := r * float(ZONE_PER_M[id])
+	if (
+		zone_holds.touch(layer.ring_key(sd, 6, c), id, &"area", c, s, cols, layer.ring_setup())
+		== null
+	):
 		return false
 	if kind == &"fire":
 		layer._light(c + Vector3(0, 0.8, 0), VfxLayer.WARM, 2.0 * fade, r + 2.5)

@@ -226,16 +226,22 @@ func ring(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
 	var y := Vector3(0, 0.35, 0)
 	var rim: Node3D = null
 	if _pack():
-		rim = holds.touch(VfxPackViews.zkey(sd, 32, c), RING, &"area", c, r * AREA_PER_M, _cols)
+		rim = holds.touch(
+			layer.ring_key(sd, 32, c), RING, &"area", c, r * AREA_PER_M, _cols, layer.ring_setup()
+		)
 	if rim != null:
-		var n := clampi(int(r * 1.5 * layer.density), 3, RING_SPARK_MAX)
+		# A followed ring's sparks keep their bolts: they re-strike each tick (a new shape), as the ring's look has it
+		var mix := int(age) if layer.ring_follow else 0
+		var n := (
+			clampi(int(r * 1.5 * layer.density), 3, RING_SPARK_MAX) if VfxLayer.ring_sparks else 0
+		)
 		for k in n:
 			var a0 := TAU * k / n + RING_SPARK_ORBIT_PER_TICK * age
 			var a1 := a0 + TAU / n * 0.8 * RING_SPARK_SIZE
 			var p := c + y + Vector3(cos(a0), 0, sin(a0)) * r
 			var q := c + y + Vector3(cos(a1), 0, sin(a1)) * r
 			var f := fade * (0.7 + 0.3 * VfxCore.h(sd + int(age / 3.0), k))
-			lightning(p, q, f, age, sd + k * 5, cold, 0.4 * RING_SPARK_SIZE, false, 0, false)
+			lightning(p, q, f, age, sd + k * 5, cold, 0.4 * RING_SPARK_SIZE, false, mix, false)
 		layer._light(c + Vector3(0, 0.6, 0), cold, 1.6 * fade, r + 2.5)
 		return
 	var n := clampi(int(r * 3.0 * layer.density), 6, 18)  # P-13: Effects density, as its siblings

@@ -151,6 +151,22 @@ func test_a_storm_ring_holds_a_rim_and_bolts_along_it() -> void:
 	assert_gte(_live(&"vx6_bolt").size(), 3)
 
 
+func test_a_travelling_ring_followed_by_its_seed_keeps_its_rim_and_bolts_as_it_flies() -> void:
+	var at := func(k: int) -> Vector3: return Vector3(2 + 0.3 * k, 0, 2 + 0.2 * k)
+	_frame(10.0, func() -> void: _layer.ring(&"storm", at.call(0), 3.0, 1.0, 10.0, 6, true))
+	var rim := _live(&"vx6_ring")
+	assert_eq(rim.size(), 1)
+	var spawned := _fx.spawned
+	for k in range(1, 11):
+		var t := 10.0 + k
+		_frame(t, func() -> void: _layer.ring(&"storm", at.call(k), 3.0, 1.0, t, 6, true))
+	assert_eq(_fx.spawned, spawned, "nothing taken again from PackFx while the ring moved 3.6 m")
+	assert_eq(_live(&"vx6_ring"), rim, "the same rim, following the ring")
+	assert_almost_eq(rim[0].global_position.x, (at.call(10) as Vector3).x, 0.001)
+	var anim := rim[0].get_node("AnimationPlayer") as AnimationPlayer
+	assert_almost_eq(anim.current_animation_position, 0.0, 0.0001, "held at its animation's start")
+
+
 func test_a_storm_burst_is_one_pulse_and_three_to_five_bolts() -> void:
 	for u in [0.1, 0.2, 0.3]:
 		_frame(10.0 + u, func() -> void: _layer.burst(&"storm", Vector3(2, 0, 2), 2.0, u, 8))

@@ -263,7 +263,9 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 		var f := r.duplicate()
 		f["kind"] = &"ring"
 		f["look"] = look
-		f["seed"] = _seed_at(r["from"], int(r["start"]))  # Where it left (a ring may travel)
+		# Where it left and its heading: the rings of one launch that leave one point stay apart (FormRing.draw holds a
+		# travelling ring's effects by this seed)
+		f["seed"] = _seed_at(r["from"], int(r["start"])) + _seed_at(r["vel"] * 50.0, 0)
 		_live_forms.append(f)
 		if int(look.get("ring_layout", 0)) > 0:
 			order_rings.append(f)

@@ -28,6 +28,8 @@ extends RefCounted
 ## the same build, for a before/after run.
 ## --ab=no_native_crowd writes the batched enemies' furniture in GDScript (EnemyBatch.native off) with the native
 ## library loaded: the native writer's before/after.
+## --ab=no_ring hides the element rings (VfxLayer.ring: the Ring form's rings, their light and sparks);
+## --ab=no_ring_light keeps them but drops their light; --ab=no_ring_sparks drops the storm ring's edge sparks.
 ## Every report says how many nodes are in the tree under the actors' view, by class (the last frame).
 ## --shot-at=N:<png> saves the viewport at the scenario's Nth frame, the probe's scripted strafe and aim on frames
 ## (run it with --fixed-fps 60 for the same frame twice: a before/after pair).
@@ -48,6 +50,9 @@ const AB := [
 	"no_omni",
 	"no_3d",
 	"no_viewport",
+	"no_ring",
+	"no_ring_light",
+	"no_ring_sparks",
 ]
 const VSYNC := {
 	"off": DisplayServer.VSYNC_DISABLED,
@@ -186,6 +191,12 @@ func setup(tree: SceneTree, main: Node, ab: PackedStringArray) -> void:
 				tree.root.disable_3d = true
 			"no_viewport":  # the root viewport is not drawn at all (the engine still syncs and presents)
 				RenderingServer.viewport_set_active(tree.root.get_viewport_rid(), false)
+			"no_ring":
+				VfxLayer.rings_drawn = false
+			"no_ring_light":
+				VfxLayer.ring_lights = false
+			"no_ring_sparks":
+				VfxLayer.ring_sparks = false
 
 
 func _hide_hud_parts(main: Node) -> void:
@@ -579,6 +590,9 @@ func restore() -> void:
 		_detached_parent.add_child(_detached)
 	_detached = null
 	ActorViews.batch_enemies = true
+	VfxLayer.rings_drawn = true
+	VfxLayer.ring_lights = true
+	VfxLayer.ring_sparks = true
 	for c in _cut:
 		if is_instance_valid(c):
 			c.free()
