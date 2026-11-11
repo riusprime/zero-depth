@@ -153,6 +153,7 @@ func sync(reader: WorldReader, i: int) -> void:
 ## The same as sync(), from plain values (tests drive the avatar with this); "windup" (0..1, optional) is the
 ## windup's progress.
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	var tick: int = s["tick"]
 	var pos: Vector2 = s["pos"]
 	_tell_p = clampf(float(s.get("windup", 0.0)), 0.0, 1.0)
@@ -169,6 +170,7 @@ func apply_state(s: Dictionary) -> void:
 
 ## Advances the animation by `delta` seconds of frame time.
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0 or (body == null and not vat):
 		return
@@ -192,20 +194,24 @@ func advance(delta: float) -> void:
 
 ## 0..1 how far into the wind-up pose (reared back, claws raised).
 func windup_amount() -> float:
+	_peek()
 	return _wind
 
 
 ## 0..1 how deep the windup crouch is (from the windup's progress).
 func crouch_amount() -> float:
+	_peek()
 	return tell_crouch(_tell_p) if _state == WorldReader.STATE_WINDUP else 0.0
 
 
 func visor_energy() -> float:
+	_peek()
 	return _visor_e
 
 
 ## The accent's glow (the visor's; VatCrowd reads it as it reads a horde kind's).
 func glow_energy() -> float:
+	_peek()
 	return _visor_e
 
 
@@ -234,6 +240,7 @@ func rig_spec() -> Dictionary:
 
 ## The body's height above its rest pose, in metres (negative when it sinks: dazed, or before the rise).
 func body_lift() -> float:
+	_peek()
 	if vat:
 		return _vat_lift + _y_now
 	return _model.position.y + body.position.y
@@ -244,11 +251,13 @@ func body_lift() -> float:
 
 ## How far the whole body is lifted now (m): the rise-in's sink, the part of the pose VatCrowd moves the instance by.
 func vat_lift() -> float:
+	_peek()
 	return _vat_lift
 
 
 ## The drives now (ChargerVat's, 0..1; VatCrowd sends them per instance): this pose's own numbers.
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	var d := PackedFloat32Array()
 	d.resize(ChargerVat.DRIVES)
 	d[ChargerVat.WIND] = _wind

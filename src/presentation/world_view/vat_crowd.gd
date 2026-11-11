@@ -71,6 +71,7 @@ var batch: EnemyBatch
 ## pose, drawn; a rig with more than four drives: dbuf, dtex, mat (its drive texture's floats, the texture)}.
 var _looks := {}
 var _shadows := {}
+var _next_index := 0
 
 
 ## A horde kind drawn by the owner's model is baked from that model; without its file (EnemyModels)
@@ -101,14 +102,24 @@ func add(
 		var mat := VatLooks.material(pose, bool(mesh.get_meta(&"two_sided", false)))
 		_looks[key] = _new_set(mesh, mat, true, pose)
 	var entry := [root, facing, avatar] if id < 0 else [root, facing, avatar, id]
-	(_looks[key]["entries"] as Array).append(entry)
+	var sets := Vector2i(_looks[key]["index"], -1)
+	_note_entry(_looks[key], entry)
 	if shadow:
 		if not _shadows.has(kind):
 			var proxy := shadow_mesh(kind)
-			if proxy == null:
-				return
-			_shadows[kind] = _new_set(proxy, null, false)
-		(_shadows[kind]["entries"] as Array).append(entry)
+			if proxy != null:
+				_shadows[kind] = _new_set(proxy, null, false)
+		if _shadows.has(kind):
+			sets.y = _shadows[kind]["index"]
+			_note_entry(_shadows[kind], entry)
+	if id >= 0:  # The batch draws it from its slot's columns (write_bodies), by these sets' indices
+		root.set_meta(&"vat_sets", sets)
+
+
+func _note_entry(s: Dictionary, entry: Array) -> void:
+	(s["entries"] as Array).append(entry)
+	if entry.size() <= 3:
+		s["nodes"] = int(s["nodes"]) + 1
 
 
 ## The rest-pose shadow stand-in of `kind` (EnemyShadows': the same mesh a node enemy casts with). Once made it is
@@ -185,21 +196,93 @@ func instance_of(avatar: Node3D) -> Dictionary:
 func _process(_delta: float) -> void:
 	drawn = 0
 	shadows_drawn = 0
+	var native := _write_native()
 	for s: Dictionary in _looks.values():
-		drawn += _write(s, true)
+		if not native.has(s["index"]):
+			drawn += _write(s, true)
 	for s: Dictionary in _shadows.values():
-		shadows_drawn += _write(s, false)
+		if not native.has(s["index"]):
+			shadows_drawn += _write(s, false)
+
+
+## The sets of batched enemies only, written by the batch's native avatars in one call (EnemyBatch.write_bodies),
+## each then handed to its MultiMesh; returns their indices ({} when the batch's avatars run in GDScript). A set's
+## dead entries are dropped only when the batch lost a slot (its entries die with their slots).
+func _write_native() -> Dictionary:
+	var done := {}
+	if batch == null:
+		return done
+	var want: Array = []
+	var sets: Array[Dictionary] = []
+	for group: Dictionary in [_looks, _shadows]:
+		for s: Dictionary in group.values():
+			if int(s["seen"]) != batch.removed:
+				_compact(s)
+				s["seen"] = batch.removed
+			if int(s["nodes"]) > 0 or (s["entries"] as Array).is_empty():
+				continue
+			var body: bool = s["stride"] == BODY_STRIDE
+			var pose: Dictionary = s["pose"]
+			want.append(
+				[
+					s["index"],
+					body,
+					float(pose.get("period", 0.0)),
+					int(pose.get("drive_texels", 0)) * 4 if body else 0,
+					(s["mm"] as MultiMesh).instance_count
+				]
+			)
+			sets.append(s)
+	if want.is_empty():
+		return done
+	var got := batch.write_bodies(want)
+	if got.is_empty():  # (the avatars run in GDScript)
+		return done
+	for j in sets.size():
+		var s := sets[j]
+		var r: Array = got[j]
+		var n: int = r[0]
+		var mm: MultiMesh = s["mm"]
+		if int(r[1]) != mm.instance_count:
+			mm.instance_count = r[1]
+		var dn: int = want[j][3]
+		if n > 0:
+			mm.buffer = r[2]
+			if dn > 0:
+				_upload_drives(s, r[3], dn / 4, mm.instance_count)
+		mm.visible_instance_count = n
+		s["buf"] = r[2]
+		if dn > 0:
+			s["dbuf"] = r[3]
+		s["drawn"] = n
+		if want[j][1]:
+			drawn += n
+		else:
+			shadows_drawn += n
+		done[s["index"]] = true
+	return done
+
+
+## Drops set `s`'s dead entries (kept in their order) and counts its node ones.
+func _compact(s: Dictionary) -> int:
+	var entries: Array = s["entries"]
+	var keep := 0
+	var nodes := 0
+	for e: Array in entries:
+		if _alive(e):
+			entries[keep] = e
+			keep += 1
+			if e.size() <= 3:
+				nodes += 1
+	entries.resize(keep)
+	s["nodes"] = nodes
+	return keep
 
 
 ## One instance per drawable enemy of set `s`; returns how many.
 func _write(s: Dictionary, body: bool) -> int:
 	var entries: Array = s["entries"]
-	var keep := 0
-	for e: Array in entries:
-		if _alive(e):
-			entries[keep] = e
-			keep += 1
-	entries.resize(keep)
+	var keep := _compact(s)
 	var mm: MultiMesh = s["mm"]
 	var stride: int = s["stride"]
 	var buf: PackedFloat32Array = s["buf"]
@@ -329,8 +412,18 @@ func _new_set(mesh: Mesh, mat: Material, body: bool, pose := {}) -> Dictionary:
 	var stride := BODY_STRIDE if body else SHADOW_STRIDE
 	buf.resize(START_CAPACITY * stride)
 	var out := {
-		"mmi": mmi, "mm": mm, "entries": [], "buf": buf, "stride": stride, "pose": pose, "drawn": 0
+		"mmi": mmi,
+		"mm": mm,
+		"entries": [],
+		"buf": buf,
+		"stride": stride,
+		"pose": pose,
+		"drawn": 0,
+		"index": _next_index,  # (a batched slot names its sets by it)
+		"nodes": 0,  # its live entries that are nodes (not batched)
+		"seen": -1,  # the batch's removals when its dead entries were last dropped
 	}
+	_next_index += 1
 	if body and int(pose.get("drive_texels", 0)) > 0:
 		out["dbuf"] = PackedFloat32Array()
 		out["mat"] = mat
