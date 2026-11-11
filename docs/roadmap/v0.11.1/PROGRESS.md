@@ -7,8 +7,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 
 - **Waves 1 and 2 are done, and step 45.** Seams on `060e883b`: **674 of 674, 1,396 s of tests, 1,606 s wall** (it
   was 669, 3,185 s, 3,442 s at `ee42eafa`): [`evidence/SEAMS_TIMING.md`](evidence/SEAMS_TIMING.md).
-- **Seams on `36c644f7` (the native core merged and on by default in the game): 703 of 703,** 1,388 s of tests, 1,759 s
-  wall, with the library built: the e2e files booted the game 61 times on the native core. Agents ran alongside.
+- **Seams on `9bea0088` (the native core on by default; steps 55, 57, 59 merged): 703 of 703,** 1,215 s of tests,
+  1,478 s wall, with the library built; and the whole presentation folder, 1,560 of 1,560. Two agents ran alongside.
 - **Left over from Wave 2, small:** the HUD and menu half of the dead-code scan; the menu backdrop's ember mode and
   the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: the
   owner was asked whether to delete it); the duplicate final-boss texture (needs model prep).
@@ -25,13 +25,15 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   goldens unchanged), step 56 (a dead enemy's cubes are one draw and last 0.5 s at any frame rate), the
   frame-attribution tooling (`scripts/checks/frame_attribution.sh`, `frame_spans.gd`).
 - **Not merged:** step 48 (`v0111-s48`), the sim on its own thread: parked (OWNER_QUESTIONS Q2).
-- **Wave 8 (the display layer, owner L19):** built on branches, merging next: step 57 (`v0111-s57` `efc8547d`:
-  lightning bolts drawn by a shader; the rest of the effects layer was already instanced), step 59 (`v0111-s59`
-  `6b23f3f4`: the HUD 346 → 70 draw calls, redraws 7 → 3; **its timing gain is not proven**, a quiet run decides
-  whether the still-part textures stay on). With an agent: step 55 (enemies as instances). Then step 58.
-- **Next:** merge 57, 59 and the Nemesis test fix; step 55; the quiet run; build the library in the owner's folder.
+- **Wave 8 (the display layer, owner L19):** merged and pushed: step 55 (nine enemy kinds batched), 57 (lightning
+  bolts by shader), 59 (the HUD). Quiet run ([`evidence/PERF_W8.md`](evidence/PERF_W8.md)): 20 enemies 8.2 ms
+  (122 fps), 60 heavy 24.9 ms (40 fps), 120 swarmers 18.5 ms (54 fps). **With agents:** step 55b (batched enemies
+  posed and written in C++: the per-enemy script loop, about 4 ms at 120) and step 58 (the views' sync).
+- **The owner's folder** has the library built (`bash scripts/native/build.sh all`), so the game there runs the
+  native core; F10 → Tools → "Native core on/off (next floor)" compares with the script sim.
+- **Next:** merge 55b and 58, a last quiet run, seams, push; the owner playtests.
 - **Questions for the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md).
-- **Pushed:** `claude/v0110` up to the docs commit after `36c644f7`, and the tag `archive/scripts-2026-11`.
+- **Pushed:** `claude/v0110` up to the docs commit after `9bea0088`, and the tag `archive/scripts-2026-11`.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
   approved.
@@ -248,3 +250,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   (122 fps), 60 heavy 24.9 ms, 120 swarmers 18.5 ms: 2.7–3.7 ms shorter than before steps 55, 57 and 59. The HUD's
   still textures stay on. Step 55 alone is worth 0.15 ms: started step 55b (the per-enemy loop in C++) and step 58
   (the views' sync). The Nemesis test fix merged (`f64e5cb5`).
+- 2026-11-11 (lead): seams on `9bea0088`: 703/703; presentation 1,560/1,560. Pushed. The library built in the owner's
+  folder.
