@@ -71,6 +71,9 @@ Superseded rules are listed in ROADMAP §3.
 - **Comments say what and why, not when** (owner, 2026-11-10). No version, step id, owner-line id or date in a code
   comment (`# v0.9.0 P3 (owner O32): …`): git and the PLAN hold the history. A decision's reason belongs in the
   sentence itself.
+- **No lambda in a static var** (found twice in v0.11.1). An inline function kept in a `static var` (or in a static
+  table such as `DebugApi.view_switches`) until the engine quits can crash the engine on exit, depending on which
+  script loaded first. Store a named static function. And check a test run's exit code, not only its pass count.
 - **The 1,000-line file cap is not dodged** (owner, 2026-11-10: the lead decides the cap; it stays 1,000). Split a
   file by responsibility, never just to fit, and never into a helper that only holds the overflow. An exemption
   (`# gdlint: disable=max-file-lines`) needs a row with its reason in `tests/arch/test_line_cap.gd`.
