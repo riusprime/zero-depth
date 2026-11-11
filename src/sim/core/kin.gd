@@ -95,7 +95,7 @@ static func _octant_index(ax: float, ay: float) -> int:
 
 
 ## The tables dir and angle_of read: cos and sin of i/4096 turns for i in 0..512. The native side takes these same
-## 513 floats (NativeWorld.setup), so both read one table.
+## 513 floats (NativeWorld.make), so both read one table.
 static func cos_table() -> PackedFloat32Array:
 	return _cos
 

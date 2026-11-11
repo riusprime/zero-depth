@@ -1,75 +1,19 @@
 extends GutTest
-## The native side (NativeWorld, the ZdWorld class of native/zd_native.gdextension): every kernel off by default,
-## each switched on by its own name; the collision passes (NativeMove) give the same rules as the GDScript passes
-## and the same result from the same start; the per-kind table the enemy kernels read agrees with EnemyAi for every
-## kind, and the native side holds what was sent. Without the library (a checkout that hasn't run
-## scripts/native/build.sh) the tests that need it are pending.
+## The native side (NativeWorld, the ZdWorld class of native/zd_native.gdextension), the only sim: the collision
+## passes (NativeMove) part bodies and clear walls by their rules and give the same result from the same start; the
+## fixed scene of the collision kernel gives the value recorded with MSVC; the per-kind table the enemy kernels read
+## agrees with EnemyAi for every kind, and the native side holds what was sent.
 
 ## ZdWorld.determinism_probe() as built by MSVC (Visual Studio 2026, /fp:precise) on the owner's PC.
 const DETERMINISM_PROBE := "fc67776bc3d14796"
+## The deepest body after the crowd test's 3 ticks with the GDScript passes, the last time they ran (v0.11.1 step
+## 54b's comparison): the native passes must leave the crowd no deeper, give or take 0.05 m.
+const GDSCRIPT_CROWD_DEPTH_M := 0.0808
 const K := ActorStore.Kind
 const T := preload("res://src/sim/ai/native_kind_table.gd")
 
-var _kept := Callable()
-var _kept_kernels := 0
-
-
-func before_all() -> void:
-	# A run with the native hook keeps its factory and kernels for the files after this one
-	_kept = World.native_factory
-	_kept_kernels = World.native_kernels
-
-
-func after_all() -> void:
-	World.native_factory = _kept
-	World.native_kernels = _kept_kernels
-
-
-func test_the_native_kernels_are_off_by_default() -> void:
-	assert_eq(NativeSwitch.install(0), 0)
-	var w := World.new(9, PlayerTable.starting_values())
-	assert_null(w.native, "no factory: GDScript")
-	assert_eq(w.native_on, 0)
-
-
-func test_the_switch_takes_each_kernel_by_name() -> void:
-	assert_eq(NativeSwitch.parse("move"), NativeWorld.MOVE)
-	assert_eq(NativeSwitch.parse("ai,move"), NativeWorld.MOVE | NativeWorld.AI)
-	assert_eq(
-		NativeSwitch.parse(" strike , shots,nav "),
-		NativeWorld.STRIKE | NativeWorld.SHOTS | NativeWorld.NAV
-	)
-	assert_eq(NativeSwitch.parse("all"), NativeWorld.ALL)
-	assert_eq(NativeSwitch.parse("1"), NativeWorld.MOVE, "the older --native=1")
-	assert_eq(NativeSwitch.parse("0"), 0)
-	assert_eq(NativeSwitch.parse(""), 0)
-	assert_eq(NativeSwitch.parse("move,warp"), -1, "an unknown kernel")
-	assert_eq(NativeWorld.names_of(NativeWorld.ALL), "move,ai,strike,shots,nav")
-	assert_eq(NativeWorld.names_of(NativeWorld.AI | NativeWorld.NAV), "ai,nav")
-
-
-func test_one_kernel_on_leaves_the_others_off() -> void:
-	if not _built():
-		return
-	assert_eq(NativeSwitch.install(NativeWorld.AI), NativeWorld.AI)
-	var w := World.new(9, PlayerTable.starting_values())
-	assert_not_null(w.native, "a kernel on: the world has a native side")
-	assert_eq(w.native_on, NativeWorld.AI)
-	assert_true(w.native.has_trig(), "the direction tables went at the world's start")
-	# The move kernel is off: the GDScript passes run, so the result is GDScript's to the bit
-	var nat := _dummies([Vector2(5, 0), Vector2(5.8, 0.1)], [], NativeWorld.AI)
-	var gd := _dummies([Vector2(5, 0), Vector2(5.8, 0.1)], [], 0)
-	nat._move_and_collide()
-	gd._move_and_collide()
-	assert_eq(nat.actors.pos_x, gd.actors.pos_x)
-	assert_eq(nat.actors.pos_y, gd.actors.pos_y)
-	assert_eq(NativeSwitch.install(NativeWorld.ALL), NativeWorld.ALL)
-	assert_eq(World.new(9, PlayerTable.starting_values()).native_on, NativeWorld.ALL)
-
 
 func test_bodies_part_half_each() -> void:
-	if not _built():
-		return
 	var w := _dummies([Vector2(5, 0), Vector2(5.8, 0)], [])
 	w._move_and_collide()
 	assert_almost_eq(w.actors.pos_x[1], 4.9, 1e-5)
@@ -83,8 +27,6 @@ func test_bodies_part_half_each() -> void:
 
 ## The kernel reads the columns by name and sets new arrays: an array read before the call keeps its old values.
 func test_the_columns_come_back_as_new_arrays() -> void:
-	if not _built():
-		return
 	var w := _dummies([Vector2(5, 0), Vector2(5.8, 0)], [])
 	var before := w.actors.pos_x
 	w._move_and_collide()
@@ -93,38 +35,30 @@ func test_the_columns_come_back_as_new_arrays() -> void:
 
 
 func test_a_body_in_a_wall_is_pushed_clear() -> void:
-	if not _built():
-		return
 	var wall := Obb.make(Vector2(8, 0), Vector2(1, 3), 512)  # turned 45 degrees
 	var w := _dummies([Vector2(7.8, 0.3)], [wall])
 	w._move_and_collide()
 	assert_lt(_depth(w, wall), 1e-4, "the body is clear of the wall")
 
 
-## A crowd shoved into a wall: the passes end with a pair pass, so crowded bodies may be left a little inside (the
-## GDScript passes too, by rule); the native passes leave them no deeper than the GDScript ones, give or take.
-func test_a_crowd_at_a_wall_ends_no_deeper_than_with_gdscript() -> void:
-	if not _built():
-		return
+## A crowd shoved into a wall: the passes end with a pair pass, so crowded bodies may be left a little inside (by
+## rule); the native passes leave them no deeper than the GDScript passes did (GDSCRIPT_CROWD_DEPTH_M), give or take.
+func test_a_crowd_at_a_wall_ends_no_deeper_than_the_gdscript_passes_did() -> void:
 	var wall := Obb.make(Vector2(8, 0), Vector2(1, 3), 512)
 	var starts: Array[Vector2] = []
 	for k in 12:
 		starts.append(Vector2(6.6 + 0.25 * k, -1.5 + 0.25 * k))
-	var nat := _dummies(starts, [wall])
-	var gd := _dummies(starts, [wall])
-	gd.native_on = 0
+	var w := _dummies(starts, [wall])
 	for t in 3:
-		nat._move_and_collide()
-		gd._move_and_collide()
-	var dn := _depth(nat, wall)
-	var dg := _depth(gd, wall)
-	gut.p("deepest body in the wall after 3 ticks: native %.4f m, gdscript %.4f m" % [dn, dg])
-	assert_lt(dn, dg + 0.05, "native %.4f m against gdscript %.4f m" % [dn, dg])
+		w._move_and_collide()
+	var d := _depth(w, wall)
+	gut.p("deepest body in the wall after 3 ticks: %.4f m" % d)
+	assert_lt(
+		d, GDSCRIPT_CROWD_DEPTH_M + 0.05, "%.4f m against %.4f m" % [d, GDSCRIPT_CROWD_DEPTH_M]
+	)
 
 
 func test_the_same_start_gives_the_same_result() -> void:
-	if not _built():
-		return
 	var a := _crowd_hashes()
 	var b := _crowd_hashes()
 	assert_eq(a, b, "native: the same hashes tick for tick")
@@ -133,9 +67,7 @@ func test_the_same_start_gives_the_same_result() -> void:
 ## The extension's fixed scene through the collision kernel gives the hash recorded on Windows (MSVC). Another
 ## compiler (gcc in CI), or changed float flags, that rounds one operation differently fails here, before any golden.
 func test_the_floats_match_the_recorded_compiler() -> void:
-	if not _built():
-		return
-	var m: Object = NativeSwitch.make()
+	var m: Object = NativeWorld.make()
 	assert_eq(m.call(&"determinism_probe"), DETERMINISM_PROBE, "native/README.md: the float rules")
 
 
@@ -284,15 +216,13 @@ func test_the_table_numbers_are_the_enemy_tables() -> void:
 	assert_eq(tun[T.T_EGG_STATE], float(BossSignatures.EGG))
 
 
-## The table goes to the native side when a kernel that reads it is on, and again for a new tuning; the native side
+## The table goes to the native side before a kernel reads it, and again for a new tuning; the native side
 ## gives back what it holds, and lists the rows GDScript runs itself.
 func test_the_native_side_holds_the_kind_table() -> void:
-	if not _built():
-		return
-	NativeSwitch.install(NativeWorld.AI)
 	var w := CombatLab.world()
 	var m: Object = w.native
-	assert_eq(m.kind_count(), T.kind_count(), "sent by set_enemy_tables")
+	NativeWorld.sync_kinds(w)  # sent before the first kernel that reads it
+	assert_eq(m.kind_count(), T.kind_count())
 	var built := T.build(w)
 	var ints: PackedInt32Array = built[0]
 	var floats: PackedFloat32Array = built[1]
@@ -323,37 +253,13 @@ func test_the_native_side_holds_the_kind_table() -> void:
 	assert_true(is_same(m.get_meta(&"kinds_for"), w.tuning))
 
 
-## Only the kernels that read the table pay for building it.
-func test_the_move_kernel_alone_sends_no_kind_table() -> void:
-	if not _built():
-		return
-	NativeSwitch.install(NativeWorld.MOVE)
-	var w := CombatLab.world()
-	assert_eq(w.native.kind_count(), 0)
-	NativeWorld.sync_kinds(w)
-	assert_eq(w.native.kind_count(), T.kind_count())
-
-
-func _built() -> bool:
-	if NativeSwitch.available():
-		return true
-	# CI sets this when it built the library for the job: a library that then fails to load is a failure there
-	if OS.get_environment("ZD_NATIVE_REQUIRED") == "1":
-		fail_test("ZD_NATIVE_REQUIRED=1, but the native library did not load")
-		return false
-	pending("the native library is not built (native/README.md)")
-	return false
-
-
 func _f32(v: float) -> float:
 	return PackedFloat32Array([v])[0]
 
 
-func _dummies(at: Array, walls: Array, kernels := NativeWorld.MOVE) -> World:
-	NativeSwitch.install(kernels)
+func _dummies(at: Array, walls: Array) -> World:
 	var w := World.new(9, PlayerTable.starting_values())
-	if kernels != 0:
-		assert_not_null(w.native, "the factory made a native side")
+	assert_not_null(w.native, "every World has its native side")
 	var list: Array[Obb] = []
 	list.assign(walls)
 	w.set_walls(list)

@@ -1,10 +1,11 @@
 #pragma once
 // The enemy AI kernels (NATIVE_CORE.md §3.2, §3.3): ZdWorld::think (tick phase 3: the staggered walk plan and the
 // per-tick state machine) and ZdWorld::move (phase 5: the table kinds' steering, before the collision passes) for
-// every row whose kind is NATIVE or HOOKED in the per-kind table (zd_kinds.h). The rules are EnemyAi's and
-// CritterAi's (src/sim/ai/enemy_ai.gd, critter_ai.gd): the same speeds, ranges, cooldowns, turn rates and windup
-// timings. What needs a random draw or a GDScript rule is handed back as an intent, ascending by row, then by code,
-// which GDScript applies in that order (NativeAi, src/sim/world/native_ai.gd). The kernels draw nothing and keep
+// every row whose kind is NATIVE or HOOKED in the per-kind table (zd_kinds.h). These kernels are the only
+// implementation of those kinds' thinking and steering (the speeds, ranges, cooldowns, turn rates and windup
+// timings come from the table). What needs a random draw or a GDScript rule is handed back as an intent, ascending
+// by row, then by code, which GDScript applies in that order (NativeAi, src/sim/world/native_ai.gd). The kernels
+// draw nothing and keep
 // nothing between calls: every value they change goes back into the store's columns.
 // ZdWorld's methods think, move, ai_intents_i, ai_intents_f and kind_layout are defined in zd_ai.cpp.
 
@@ -29,16 +30,15 @@ enum Hero : int {
 	HERO_SIZE,
 };
 
-// Intent codes (NativeAi.Intent), in the order a row's intents are listed.
+// Intent codes (NativeAi.Intent), in the order a row's intents are listed. Codes 1 and 8 are unused: they were the
+// fallbacks to the GDScript flow field, which the kernels no longer need (they read nav_ themselves).
 enum Intent : int32_t {
-	I_FLOW = 1, // think: a plan blocked by a wall; GDScript takes the flow field's way (f0: the walk's length)
 	I_THINK_TICK = 2, // think: Variants.on_think (the Rubble Warden's crust), before the frozen check
 	I_MOVE_TICK = 3, // think: the Mender's _mend, in place of an attack
 	I_WINDUP_START = 4, // think: an attack began (a: its aim); GDScript draws its length and runs the kind's extras
 	I_WINDUP_END = 5, // think: a windup ran out for a kind that may cancel (the Star Warper); GDScript decides
 	I_RELOCATE = 6, // think: a Sniper's RECOVER ended; GDScript draws its next spot
 	I_CHARGE_STEP = 7, // move: a charge stepped for a kind with a trail (Variants.on_charge_step)
-	I_RELOCATE_STEP = 8, // move: a relocating Sniper's walk, left to GDScript while the flow field is GDScript's
 };
 
 // EnemyAi.State

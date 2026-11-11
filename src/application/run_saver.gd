@@ -12,7 +12,8 @@ extends RefCounted
 ## The payload has one version. A payload of any other version, one without every part, or a file that can't be read
 ## is refused (EI-09): Continue doesn't offer it, the file is set aside on disk under run.bad.<time>.save
 ## (RunSaveStore.reject: kept, never deleted or written over), and the main menu says so once (`take_refused`).
-const PAYLOAD_VERSION := 5
+## 6: the native core is the only sim (its snapshot holds no flood build in progress, and the dead World fields went).
+const PAYLOAD_VERSION := 6
 ## The run's keys every payload holds (payload_of writes each one).
 const RUN_KEYS: Array[String] = [
 	"run_seed",

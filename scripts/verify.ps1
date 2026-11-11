@@ -1,5 +1,5 @@
 # Ported from riusprime/deathventory@1d697803:scripts/verify.ps1.
-# Changes: import first; --fixed-fps 60; JUnit output; summary guards (passing count, error strings).
+# Changes: the native library built first, import; --fixed-fps 60; JUnit output; summary guards (passing count, error strings).
 param(
     [string]$TestDirectory = "res://tests"
 )
@@ -12,7 +12,20 @@ New-Item -ItemType Directory -Force -Path build | Out-Null
 # On CI the console wrapper is called by full path (it can't be renamed); locally `godot` on PATH works.
 $Godot = if ($env:GODOT_CONSOLE) { $env:GODOT_CONSOLE } else { "godot" }
 
+# The sim runs only in the native library (native/README.md): built first (bash scripts/native/build.sh, from Git
+# Bash; ZD_NATIVE_PREBUILT=1 when the job built it already), then imported; the first import after a new library only
+# registers the extension, so it imports again while Godot doesn't list it.
+if ($env:ZD_NATIVE_PREBUILT -ne "1") {
+    & bash scripts/native/build.sh debug *> build/native_build.log
+    if ($LASTEXITCODE -ne 0) {
+        Get-Content build/native_build.log -Tail 20
+        Write-Error "verify: the native library did not build (build/native_build.log)"
+    }
+}
+if (-not (Test-Path native/zd_native.gdextension)) { Write-Error "verify: native/zd_native.gdextension is missing" }
+$registered = (Test-Path .godot/extension_list.cfg) -and (Select-String -Path .godot/extension_list.cfg -Pattern 'zd_native' -Quiet)
 & $Godot --headless --path . --editor --import --quit *> build/import.log
+if (-not $registered) { & $Godot --headless --path . --editor --import --quit *> build/import.log }
 $importErrors = Select-String -Path build/import.log -Pattern '^(ERROR|SCRIPT ERROR)'
 if ($importErrors) { $importErrors | Select-Object -First 10; Write-Error "verify: import reported errors" }
 

@@ -1,7 +1,6 @@
 extends GutTest
 ## The native side's shared geometry (native/src/zd_geom.*): its direction tables are Kin's, sent at setup, so
-## dir, angle_of and turn_toward give Kin's answers exactly; and its nav grid slot takes a world's field. Pending
-## without the native library.
+## dir, angle_of and turn_toward give Kin's answers exactly; and its nav grid slot takes a world's field.
 
 
 func test_dir_is_kin_for_every_angle() -> void:
@@ -100,25 +99,13 @@ func test_the_nav_grid_slot_takes_a_world_field() -> void:
 	m.set_nav_dist(nav.dist)
 
 
-## A native side made the way a world makes it (World.native_factory, NativeWorld.setup).
+## A native side made the way a world makes it (World._init: NativeWorld.make, the direction tables sent).
 func _world_side() -> Object:
-	if _side() == null:
-		return null
-	var kept := World.native_factory
-	var kept_kernels := World.native_kernels
-	NativeSwitch.install(NativeWorld.MOVE)
 	var w := World.new(1, PlayerTable.starting_values())
-	World.native_factory = kept
-	World.native_kernels = kept_kernels
 	assert_true(w.native.has_trig())
 	return w.native
 
 
+## A bare native side, nothing sent yet.
 func _side() -> Object:
-	if NativeSwitch.available():
-		return NativeSwitch.make()
-	if OS.get_environment("ZD_NATIVE_REQUIRED") == "1":
-		fail_test("ZD_NATIVE_REQUIRED=1, but the native library did not load")
-		return null
-	pending("the native library is not built (native/README.md)")
-	return null
+	return ClassDB.instantiate(NativeWorld.CLASS)

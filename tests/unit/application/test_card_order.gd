@@ -90,44 +90,6 @@ func test_every_migration_row_names_a_stub_or_a_live_card() -> void:
 		)
 
 
-## A save whose world names a deleted combo (Plasma Arc) loads: the combo is dropped, and the run plays on.
-func test_a_save_with_a_deleted_combo_loads_and_plays_on() -> void:
-	var saved_run := SaveLab.run_state(41, 1, &"blade", 0, _repo)
-	var p := RunSaver.payload_of(
-		SaveLab.build_floor(saved_run, &"", _repo), saved_run, 1, PackedByteArray()
-	)
-	assert_true(RunSaver.is_usable(p))
-	var plasma := CardOrder.COMBOS.find(&"plasma_arc")
-	var harvest := CardOrder.COMBOS.find(&"blood_harvest")
-	var snap: Dictionary = p["world"]
-	snap["world"][&"combos_owned"] = PackedInt32Array([plasma])
-	var run := SaveLab.run_from(p)
-	var w := SaveLab.build_floor(run)
-	assert_eq(WorldSnapshot.apply(w, snap), "", "the snapshot fits the floor")
-	assert_false(w.combos_owned.has(plasma), "the deleted combo is dropped on load")
-	assert_eq(w.combo_mask, 0, "no combo effect stays on")
-	for idx in w.items_owned:
-		assert_false(w.item_tables[idx].retired, "%s still held" % w.item_tables[idx].id)
-	for idx in w.ability_owned:
-		assert_false(w.ability_tables[idx].retired, "%s still held" % w.ability_tables[idx].id)
-	for t in 120:
-		w.step(AttackScenario.frame(t))
-	assert_false(w.player_dead(), "the run plays on")
-	assert_false(w.combos_owned.has(plasma))
-	assert_true(
-		harvest >= 0 and not w.combo_tables[harvest].retired, "a live combo keeps its index"
-	)
-
-
-## A carry holding the deleted combo: the next floor drops it.
-func test_a_carry_with_a_deleted_combo_drops_it() -> void:
-	var plasma := CardOrder.COMBOS.find(&"plasma_arc")
-	var w := SaveLab.floor_world(7, 1)
-	RunCarry.apply(w, {&"combos_owned": PackedInt32Array([plasma])})
-	Abilities.start_floor(w)
-	assert_false(w.combos_owned.has(plasma), "dropped when the build refreshes")
-
-
 func test_the_dev_panel_never_picks_a_deleted_card() -> void:
 	var w := SaveLab.floor_world(3, 1)
 	var api := DebugApi.new(w)

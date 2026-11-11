@@ -1,15 +1,16 @@
 class_name NativeStrike
 extends RefCounted
-## The enemies' strikes (tick phase 6's per-enemy loop) run by the native side (World.native, NativeWorld.STRIKE):
-## ZdWorld.strike tests every table row's hit shape on its tick against the hero (contact, the locked disc, the bash
-## lane, the snipe lane, the rune, a lobbed burst's landing), with the sight test, and counts the Needle's burst and a
-## pattern's waves, for the rows whose kind the per-kind table runs (NativeKindTable: NATIVE and HOOKED). The rules are
-## EnemyAi.resolve's and CritterAi.touch_all's. It reads the store and writes nothing: it hands back a list, ascending
-## by row and then by code, applied below in that order: the damage, the counters that spend a hit or a shot (fire_cd,
-## a critter's cd), the bolts, the pattern waves and the hooked kinds' own rules. Every random draw stays here.
+## The enemies' strikes (tick phase 6's per-enemy loop), run by the native side (World.native): ZdWorld.strike
+## (native/src/zd_strike.cpp) tests every table row's hit shape on its tick against the hero (contact, the locked disc,
+## the bash lane, the snipe lane, the rune, a lobbed burst's landing), with the sight test, and counts the Needle's
+## burst and a pattern's waves, for the rows whose kind the per-kind table runs (NativeKindTable: NATIVE and HOOKED,
+## the critters' touch too). It reads the store and writes nothing: it hands back a list, ascending by row and then by
+## code, applied below in that order: the damage, the counters that spend a hit or a shot (fire_cd, a critter's cd),
+## the bolts, the pattern waves and the hooked kinds' own rules (EnemyAi._fire, fire_wave, _resolve_horde). Every
+## random draw stays here.
 ## The order: the table rows' strikes, then the rows GDScript runs (bosses, elites, signatures, eggs:
-## ZdWorld.rows_for_script), then every critter's touch, as World's loop puts the critters last. A row's entries wait
-## on the hero alive, the row alive and not frozen when they are applied, as the per-enemy checks do.
+## ZdWorld.rows_for_script; BossAi.resolve, EnemyAi.resolve), then every critter's touch. A row's entries wait on the
+## hero alive, the row alive and not frozen when they are applied, as the per-enemy checks do.
 ## No local here holds a store column across a native call: each read goes through the store again.
 
 ## The list's codes (zd_strike.h StrikeOut).
@@ -24,37 +25,32 @@ enum Out {
 const STRIDE := 4
 
 
-## Phase 6's enemy strikes for world w. False when the native side refused (nothing changed: the caller runs the
-## GDScript loop).
-static func resolve(w: World) -> bool:
+## Phase 6's enemy strikes for world w.
+static func resolve(w: World) -> void:
 	if not NativeAi.ready(w):
-		return false
+		return
 	var a := w.actors
 	var m: Object = w.native
 	var n: int = m.strike(a, NativeAi.hero_of(w))
 	if n < 0:
 		push_error("NativeStrike: the native side refused strike")
-		return false
+		return
 	var ii := PackedInt32Array()
 	var ff := PackedFloat32Array()
 	if n > 0:
 		ii = m.strike_out_i()
 		ff = m.strike_out_f()
 		_apply(w, ii, ff, false)
-	var critters := PackedInt32Array()
 	for i in m.rows_for_script(a):
-		var role := EnemyAi.role_of(a.kinds[i])
-		if role == EnemyAi.Role.CRITTER:
-			critters.append(i)
-		elif role == EnemyAi.Role.BOSS and a.dead[i] == 0:
-			BossAi.resolve(w, i)
-		elif role == EnemyAi.Role.ENEMY and a.dead[i] == 0:
-			EnemyAi.resolve(w, i)
+		if a.dead[i] != 0:
+			continue
+		match EnemyAi.role_of(a.kinds[i]):
+			EnemyAi.Role.BOSS:
+				BossAi.resolve(w, i)
+			EnemyAi.Role.ENEMY, EnemyAi.Role.CRITTER:
+				EnemyAi.resolve(w, i)
 	if n > 0:
 		_apply(w, ii, ff, true)
-	if not critters.is_empty():
-		CritterAi.touch_all(w, critters)
-	return true
 
 
 ## The list's entries: the critters' touches only (touches) or every other entry.

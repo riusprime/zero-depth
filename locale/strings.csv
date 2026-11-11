@@ -145,7 +145,6 @@ UI_RECAP_ITEMS,Items: %s,Objetos: %s
 UI_RECAP_NO_ITEMS,Items: none,Objetos: ninguno
 UI_DEV_GOD,God mode,Modo dios
 UI_DEV_KILL_BOSS,Kill boss,Matar jefe
-UI_DEV_NATIVE,Native core on/off (next floor),Núcleo nativo sí/no (próximo piso)
 UI_CHOOSE_BUILD,CHOOSE YOUR WEAPON,ELIGE TU ARMA
 BUILD_BLADE,BLADE,HOJA
 BUILD_BLADE_DESC,Slash enemies up close.,Corta a los enemigos de cerca.

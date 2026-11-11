@@ -1,5 +1,5 @@
 #pragma once
-// The projectile sweep (World._projectile_hits' segment tests, NATIVE_CORE.md §3.5): each projectile's segment for
+// The projectile sweep (World._projectile_hits through NativeShots, NATIVE_CORE.md §3.5): each projectile's segment for
 // this tick, thickened by its radius, against the walls and the bodies, with the sweep's rules: a body of the
 // projectile's own team or a dead one is never hit, a Void or Wave shot (walls_only) meets walls only, the earliest
 // t wins, and a tie keeps the wall, then the lower wall index, then the lower body index. A projectile that meets

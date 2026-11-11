@@ -117,7 +117,7 @@ int ZdWorld::strike(Object *actors, const PackedFloat32Array &hero) {
 	}
 	const float *h = hero.ptr();
 	if (h[H_DEAD] != 0.0f) {
-		return 0; // Every table row's strike waits on a live hero (EnemyAi.resolve, CritterAi.touch_all)
+		return 0; // Every table row's strike waits on a live hero
 	}
 	const float hx = h[H_X], hy = h[H_Y], hr = h[H_RADIUS];
 	const PackedInt32Array c_kinds = cols::i32(actors, names_.kinds);
@@ -176,7 +176,7 @@ int ZdWorld::strike(Object *actors, const PackedFloat32Array &hero) {
 		const int32_t f = ri[kt::K_FLAGS];
 		const int32_t damage = ri[kt::K_DAMAGE];
 		const int st = state_t[i];
-		if ((f & kt::CRITTER) != 0) { // CritterAi.touch_all: a walking critter touching the hero
+		if ((f & kt::CRITTER) != 0) { // a critter's touch: a walking critter touching the hero
 			if (state[i] != S_MOVE || cd[i] > 0 || damage <= 0) {
 				continue;
 			}

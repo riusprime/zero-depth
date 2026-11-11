@@ -257,35 +257,6 @@ func test_round_trip_in_a_crowd() -> void:
 	_round_trip(w, _rich_floor(9, 3), "crowd")
 
 
-## v0.8.0 NF (owner O90): a save taken while the flow field's flood is being built (over NavField.SLICES ticks)
-## restores the build where it stood (its slices run again), and the restored world steps as the uninterrupted one;
-## after each slice count.
-func test_round_trip_while_the_flood_is_built() -> void:
-	var kept := World.native_kernels
-	World.native_kernels &= ~NativeWorld.NAV  # the sliced build is the script flood's; the native one is whole at once
-	for slices in [1, 2]:
-		var w := _rich_floor(9, 3)
-		w.actors.hp[0] = 1000000
-		w.actors.max_hp[0] = 1000000
-		SaveLab.run(w, FightBot.new(2), 600)
-		var p := w.player_pos()
-		for i in 60:  # a ring of enemies: a flood with work enough for every slice
-			var at := p + Kin.dir((i * 4096 / 60) & 4095) * (6.0 + float(i % 7))
-			w.add_enemy(K.SWARMER, at)
-		var found := false
-		for t in 400:
-			# A small budget on each flood tick, so the build takes its slices (last_work is saved with it).
-			if w.tick % NavField.PERIOD == 0:
-				w.nav.last_work = 150
-			w.step(SaveLab.frame(w, FightBot.new(2)))
-			if w.nav.building() and int(w.nav.build_state()["slices"]) == slices:
-				found = true
-				break
-		assert_true(found, "a build after %d slice(s)" % slices)
-		_round_trip(w, _rich_floor(9, 3), "mid-build after %d slice(s)" % slices)
-	World.native_kernels = kept
-
-
 ## The snapshot is a copy: stepping the world after take() doesn't change it.
 func test_the_snapshot_does_not_alias_the_world() -> void:
 	var w := _rich_floor(3, 1)

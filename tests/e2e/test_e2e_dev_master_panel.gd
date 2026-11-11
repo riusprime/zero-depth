@@ -110,39 +110,17 @@ func test_resume_from_pause_keeps_the_master_panel_paused() -> void:
 	assert_false(main.driver.paused, "closing the panel resumes the run")
 
 
-## The game runs the native core when the library is built; F10's Tools page switches it off, and the floor running
-## keeps its kernels until the next one (Restart floor builds it); on again the same way. Without the library the
-## game runs the script sim and the page has no switch.
-func test_the_native_core_switch_applies_from_the_next_floor() -> void:
+## The game runs the native core, the only sim: the world it starts has its native side, and F10's Tools page has no
+## switch for it (there is nothing to switch to).
+func test_the_game_runs_the_native_core_and_the_tools_page_has_no_switch_for_it() -> void:
 	_e = E2e.new(self)
 	var main := await _e.boot()
 	main.tuning.save_path = SAVE
 	await _e.start_from_menu()
-	var built := NativeSwitch.available()
-	assert_eq(
-		_e.world().native_on, NativeSwitch.for_game() if built else 0, "the sim the game starts on"
-	)
+	assert_not_null(_e.world().native, "the world the game started has its native side")
 	var panel := await _tools_page(main)
-	var sw := panel.find_child("Switch_native", true, false) as Button
-	if not built:
-		assert_null(sw, "no library: no switch")
-		return
-	assert_not_null(sw, "the Tools page has the switch")
-	var live := _e.world()
-	await _e.click_at(sw.get_global_rect().get_center())
-	assert_eq(World.native_kernels, 0, "the next floor runs the script sim")
-	assert_eq(live.native_on, NativeSwitch.for_game(), "the floor running keeps its kernels")
-	await _e.frames(1)
-	var readout := panel.find_child("NativeCore", true, false) as Label
-	assert_string_contains(readout.text, "off (script sim) from the next floor or run")
-	await _restart(panel)
-	assert_eq(_e.world().native_on, 0, "the rebuilt floor runs the script sim")
-	assert_null(_e.world().native)
-	panel = await _tools_page(main)
-	sw = panel.find_child("Switch_native", true, false) as Button
-	await _e.click_at(sw.get_global_rect().get_center())
-	await _restart(panel)
-	assert_eq(_e.world().native_on, NativeSwitch.for_game(), "on again from the next floor")
+	assert_null(panel.find_child("Switch_native", true, false), "no native-core switch")
+	assert_null(panel.find_child("NativeCore", true, false), "no native-core readout")
 
 
 ## F10, then a click on the list's Tools row; the open panel.
@@ -159,15 +137,6 @@ func _tools_page(main: Main) -> DevMasterPanel:
 	await _e.click_at(t.get_global_rect().position + t.get_item_area_rect(item).get_center())
 	await _e.frames(2)
 	return panel
-
-
-## Restart floor (Enter on it: GUT's output window covers the top bar's right end).
-func _restart(panel: DevMasterPanel) -> void:
-	for b: Button in panel.find_children("*", "Button", true, false):
-		if b.text == "UI_DEVM_RESTART":
-			b.grab_focus()
-	await _e.tap(KEY_ENTER)
-	await _e.frames(4)
 
 
 ## Types `text` as key presses that carry their characters (a text field reads the unicode, not the key).

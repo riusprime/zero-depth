@@ -43,8 +43,8 @@ jobs:
           if (-not $v.StartsWith("$env:GODOT_VERSION.stable")) { Write-Error "Godot version is not the pin"; exit 1 }
 
       # The native library (native/README.md): the release build goes into the export, the debug build is what the
-      # editor binary loads for the import and the golden replays. Both from MSVC, found through vswhere. Unlike the
-      # Verify workflow this one fails when the build fails: an export without its library would ship broken.
+      # editor binary loads for the import and the golden replays. Both from MSVC, found through vswhere. The sim runs
+      # only in the library, so a failed build fails the job here.
       - name: Cache the compiled bindings (SCONS_CACHE)
         uses: actions/cache@v4
         with:
@@ -67,11 +67,17 @@ jobs:
           $errors = Select-String -Path build/import.log -Pattern '^(ERROR|SCRIPT ERROR)'
           if ($errors) { $errors | Select-Object -First 10; exit 1 }
 
-      - name: Golden replays (cross-OS determinism)
+      - name: Golden replays and the native fixtures (cross-OS determinism; tests/golden)
         shell: pwsh
+        env:
+          ZD_NATIVE_PREBUILT: "1"
         run: |
           if (-not (Test-Path tests/golden)) { Write-Host "No goldens yet (they arrive in v0.0.1 Step 4)"; exit 0 }
           pwsh -ExecutionPolicy Bypass -File scripts/verify.ps1 -TestDirectory res://tests/golden
+
+      - name: The release library gives the recorded fixtures (the build the export ships)
+        shell: bash
+        run: GODOT="$GODOT_CONSOLE" bash scripts/native/check_release.sh
 
       - name: Export release build
         shell: pwsh
@@ -87,6 +93,10 @@ jobs:
           $entries | ForEach-Object { Write-Host " - $_" }
           $forbidden = $entries | Where-Object { $_ -match "tests|docs|scripts|addons/gut|fixtures" }
           if ($forbidden) { Write-Error "Forbidden paths in archive: $forbidden"; exit 1 }
+          # The game needs its native library: the release build ships beside the executable
+          if (-not ($entries | Where-Object { $_ -match "zd_native.windows.template_release.x86_64.dll$" })) {
+            Write-Error "The release native library is missing from the archive"; exit 1
+          }
 
       - name: Upload the Windows build
         uses: actions/upload-artifact@v4

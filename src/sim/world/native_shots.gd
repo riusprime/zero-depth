@@ -1,7 +1,7 @@
 class_name NativeShots
 extends RefCounted
-## The projectile phase with its sweep run by the native side (World.native, NativeWorld.SHOTS). The same rules as
-## World._projectile_hits: each projectile's segment this tick against the walls and the bodies of the other team,
+## The projectile phase (World._projectile_hits) with its sweep run by the native side (World.native;
+## native/src/zd_shots.cpp): each projectile's segment this tick against the walls and the bodies of the other team,
 ## the earliest contact first, a tie going to the wall and then to the lower body; Void and Wave shots meet walls
 ## only; a Mine disc holding is not swept. Three passes:
 ## 1. the steering, in GDScript (ProjectileMoves.steer for every projectile when any has a behaviour, then a Gravity
@@ -9,11 +9,10 @@ extends RefCounted
 ## 2. one native call: projectiles that meet nothing are advanced there (pos_x, pos_y and life come back as new
 ##    arrays), and the rest come back as a list of events, at most one a projectile, in ascending projectile order;
 ## 3. the events in that order, in GDScript: a Mine's pulse (GlaiveMods.hold), the end of range, or the contact run
-##    through ProjectileContacts, the rules both paths share. A contact whose body died earlier in this phase is
-##    swept again (sweep_one), so a dead body is never hit, as in the GDScript loop.
+##    through ProjectileContacts (the hit rules: damage, procs, pierce, bounce, the end hooks). A contact whose body
+##    died earlier in this phase is swept again (sweep_one), so a dead body is never hit.
 ## The bodies are swept where they stood when the phase began, so a body pushed by an earlier hit of the same tick is
-## met at its old place. Not bit for bit the GDScript loop (its own grid, the steering's place), but deterministic
-## against itself; the native side keeps nothing between calls.
+## met at its old place. Deterministic: the native side keeps nothing between calls.
 
 ## The events sweep_shots lists (ShotsScratch::HOLD, CONTACT, END).
 const HOLD := 0

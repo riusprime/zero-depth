@@ -10,7 +10,7 @@ extends RefCounted
 ## v0.9.0 EL: an elite's hit is booked to the attack it was making at the last observe (its ability, its plain attack,
 ## or, while it walked, a touch of its body: ELITE_CONTACT, readable by the body itself, no telegraph needed); its line
 ## is EliteAi's.
-## v0.11.0 O9: a horde critter's hit is its touch (EnemyAi._critter_touch), readable by its body too; its line is
+## v0.11.0 O9: a horde critter's hit is its touch (the native TOUCH), readable by its body too; its line is
 ## EndPanel's.
 
 ## A projectile on screen this long is readable by itself (starting value: the telegraph minimum, 0.4 s).

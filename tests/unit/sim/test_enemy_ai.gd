@@ -163,10 +163,10 @@ func test_a_pack_spreads_around_the_player_instead_of_stacking() -> void:
 func test_the_spread_push_is_zero_alone_and_apart_when_close() -> void:
 	var w := CombatLab.world()
 	var a := w.add_enemy(K.CHARGER, Vector2(5, 0))
-	assert_eq(EnemyAi.spread_push(w, _i(w, a)), Vector2.ZERO)
+	assert_eq(EnemyAi._spread_over(w, _i(w, a), _every(w)), Vector2.ZERO)
 	var b := w.add_enemy(K.CHARGER, Vector2(5.5, 0))
-	assert_lt(EnemyAi.spread_push(w, _i(w, a)).x, 0.0, "pushed away from its neighbour")
-	assert_gt(EnemyAi.spread_push(w, _i(w, b)).x, 0.0)
+	assert_lt(EnemyAi._spread_over(w, _i(w, a), _every(w)).x, 0.0, "pushed away from its neighbour")
+	assert_gt(EnemyAi._spread_over(w, _i(w, b), _every(w)).x, 0.0)
 
 
 # --- F5: the Arc Caster ------------------------------------------------------------------------------------------
@@ -418,3 +418,11 @@ func test_a_slam_begun_before_the_doorway_shuts_lands_on_the_barrier() -> void:
 	var hp := w.actors.hp[0]
 	assert_gte(_until_state(w, id, S.RECOVER), 0, "its slam goes off")
 	assert_eq(w.actors.hp[0], hp, "and stops on the barrier")
+
+
+## Every actor index from 1 (a superset of any enemy's neighbours: EnemyAi._spread_over's candidates).
+func _every(w: World) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for j in range(1, w.actors.size()):
+		out.append(j)
+	return out

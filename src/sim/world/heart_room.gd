@@ -22,10 +22,9 @@ enum Door { SEALED, OPEN }
 const PEDESTAL_REACH_M := 1.6
 const DOOR_REACH_M := 2.5
 
-## The relic on the pedestal (Relics index), whether it was taken here and when (-1 not yet).
+## The relic on the pedestal (Relics index), and whether it was taken here.
 var relic := Relics.CITY_HEART
 var taken := 0
-var take_tick := -1
 ## The sealed door: its state and the tick it opened (-1 never).
 var door := Door.SEALED
 var door_tick := -1
@@ -79,7 +78,6 @@ static func press_pedestal(w: World) -> void:
 		return
 	if Relics.take(w, h.relic):
 		h.taken = 1
-		h.take_tick = w.tick
 	h.sync_registry(w)
 
 
@@ -118,5 +116,5 @@ static func on_fight(w: World, edge_in: float) -> void:
 
 
 func hash_into(h: StateHasher) -> void:
-	for v in [relic, taken, take_tick, door, door_tick]:
+	for v in [relic, taken, door, door_tick]:
 		h.add_int(v)

@@ -107,6 +107,10 @@ Deathventory once shipped an agent-written "human playtest" and a smoke test wit
 | Installed assets or manifests (`assets/`) | The asset tests |
 | Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead, after merging agents' branches: `bash scripts/ci/seams.sh` (the seams: 674 tests in 1,396 s, 27 min with import and lint, on 2026-11-10, owner's PC; it was 3,185 s before v0.11.1), then push. **No local full suite** |
 
+**The native library is required** (the sim runs only in C++, `native/README.md`): `verify.sh`, `seams.sh` and
+`gut_shard.sh` build it first (`scripts/native/ensure.sh`); a GUT run without it stops before its first test with
+one error that says how to build it.
+
 **The full suite runs once per version, on GitHub** (owner, 2026-10-13: "does the full run suite make sense for every
 change? … just testing what the changes need to be tested right?"; then "make those changes statement so every
 session on this proyect gets them"):
@@ -156,6 +160,7 @@ they are taking way too long". Cloud machines have 4 CPUs and Godot runs at half
 ## Commands
 
 ```bash
+bash scripts/native/ensure.sh                                         # the native library, REQUIRED: build (debug) + import twice (native/README.md)
 godot --headless --path . --editor --import --quit                     # import (after clone / new class_name)
 bash scripts/verify.sh                                                 # import + full suite + CI guards
 bash scripts/ci/seams.sh                                               # the lead's check after a merge (no full suite locally)
@@ -166,7 +171,8 @@ godot --headless --path . -s scripts/checks/hitch_probe.gd             # real-ti
 godot --headless --path . -s scripts/bench/sim_bench.gd                # bench → paste into evidence
 godot --path . --position -10000,-10000 -s scripts/shots/tour.gd -- lang=en   # screenshot tour (renderer, off screen; lang=es too) → build/shots/<config/version>/<lang>/
 gdformat --check src scripts tests && gdlint src scripts tests         # lint (pip install -r requirements-dev.txt)
-bash scripts/native/build.sh [debug|release|all]                       # the native library (native/README.md; optional, the switch is off by default)
+bash scripts/native/build.sh [debug|release|all]                       # build the native library only (release: what an export ships)
+bash scripts/native/check_release.sh                                   # the release library gives the recorded native fixtures
 godot --path . -- --perf-log[=light]; python scripts/perf/summarize_perf.py <csv>   # log normal play, F9 marks (docs/process/PERF_LOG.md)
 ```
 

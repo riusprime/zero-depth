@@ -8,7 +8,7 @@ extends RefCounted
 ## dummy, and any kind without an EnemyTable in this world).
 
 enum Mode { NATIVE, HOOKED, SCRIPT }
-## How a kind's attack lands (EnemyAi.resolve's branches).
+## How a kind's attack lands (zd_strike.cpp's shapes).
 enum Shape { NONE, CONTACT, LOCKED_DISC, BASH_LANE, SNIPE_LANE, RUNE_DISC, BURST, PATTERN, HOOK }
 
 const K := ActorStore.Kind
@@ -22,7 +22,7 @@ const CRITTER := 8  # EnemyAi.is_critter
 const FLEES_THEN_STRAFES := 16  # a Needle's behaviour: backs off inside flee_distance_m, strafes in its band
 const STATIONARY := 32  # the Gravity Node holds its spot and never attacks
 const RELOCATES := 64  # a Sniper's behaviour: walks to a new spot after each shot, commits by the snipe ticks
-const TRACKS := 128  # EnemyAi.tracking: the windup's aim follows the hero until the commit
+const TRACKS := 128  # the windup's aim follows the hero until the commit (ai_commit_ticks, snipe)
 const AIM_NO_LEAD := 256  # aimed at where the hero stands, no lead (the Bomb Drone, the Frost Spitter)
 const FACES_ON_PLAN := 512  # faces the hero on its plan ticks and as it attacks (every kind not TURNS_SLOWLY)
 const AIM_AT_START := 1024  # _start_windup aims it (_aim)

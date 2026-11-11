@@ -53,9 +53,9 @@ const DAZED_FLAT := Vector3(1, 0.15, 1)
 ## The native writer's class (native/src/zd_crowd.h).
 const NATIVE_CLASS := &"ZdCrowd"
 
-## Whether the furniture is written by the native library's ZdCrowd when it is loaded (NativeSwitch sets it with the
-## native core: the dev panel's "Native core" switch turns it off with the kernels; the frame probe's
-## --ab=no_native_crowd too). Without the library the GDScript pass runs whatever this says.
+## Whether the furniture is written by the native library's ZdCrowd (on by default; the frame probe's
+## --ab=no_native_crowd and the equality tests turn it off to run the GDScript writer, the reference). The GDScript
+## pass also runs whenever the class is missing.
 static var native := true
 
 ## This batch's own native switch (null: the shared `native`; the equality test runs a GDScript batch beside a native

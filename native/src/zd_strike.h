@@ -3,8 +3,8 @@
 // kind is NATIVE or HOOKED in the per-kind table (zd_kinds.h). For each such row that is ACTIVE (a critter: walking),
 // alive, not frozen, with the hero alive, it tests the kind's hit shape on its tick against the hero (contact, the
 // locked disc, the bash lane, the snipe lane, the rune, a lobbed burst's landing), runs the sight test from the
-// hit's origin (EnemyAi.sees_player), and counts the Needle's burst and a pattern's waves on their ticks. The rules are
-// EnemyAi.resolve's and CritterAi.touch_all's: the same shapes, reaches, ticks and fire rates.
+// hit's origin (EnemyAi.sees_player), and counts the Needle's burst and a pattern's waves on their ticks, with
+// the shapes, reaches, ticks and fire rates the telegraphs draw (EnemyAi's lane and disc functions, EI-07).
 // It reads the store and writes nothing: what lands or fires is handed back as a list, ascending by row and then by
 // code, which GDScript applies in that order (NativeStrike, src/sim/world/native_strike.gd): the damage, the
 // counters that say a hit or a shot was spent (fire_cd, a critter's cd), the projectiles, the pattern waves and the

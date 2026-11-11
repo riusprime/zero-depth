@@ -60,6 +60,24 @@ the order is part of the contract:
 | 10 | **Publish cues** | The tick's events are appended to the event log that presentation reads (§9). |
 | 11 | **Optional hash** | When a checkpoint is due (§10), the `StateHasher` runs. |
 
+**Where the phases run** (v0.11.1 step 54b, [`native/README.md`](../../native/README.md)). The hot loops of phases
+3, 5 and 6 run in the native library, the only implementation; the rules around them stay GDScript:
+- **3, the flow field:** on every `NavField.PERIOD` tick the whole bounded flood runs native in one call
+  (`NativeNav`); `NavField` keeps the grid, the seeds, the skip rule and `dist` (snapshotted). There is no flood
+  sliced over ticks any more, so the field is never older than its flood tick.
+- **3, AI:** the table kinds (`NativeKindTable`: NATIVE and HOOKED; the horde, the critters, the variants) think
+  native (`ZdWorld.think`: the staggered plan, the state machine, aim); GDScript applies the intents it returns in
+  ascending row order (every random draw, on `rng_enemy`; the Mender's heal; the hooks), then the rows the table
+  leaves to GDScript think in ascending order (bosses, elites, signatures, the Cinder Priest, eggs, dummies).
+- **5:** the hero steps (GDScript), the script rows steer (GDScript), then the table kinds steer native
+  (`ZdWorld.move`) and every body goes through the native collision passes (`resolve_actors`); GDScript then
+  builds the body grid its rules query (`actors_near`, `enemies_near`).
+- **6:** the table kinds' hit shapes and sight tests run native (`ZdWorld.strike`); GDScript applies the hits, bolts,
+  waves and hooks in row order, then resolves the script rows, then the critters' touches. Projectiles: GDScript
+  steers those with a behaviour, the native sweep finds each one's first contact (`sweep_shots`), and GDScript runs
+  every contact through `ProjectileContacts` in ascending projectile order.
+- Everything else (input, actions, statuses, deaths, spawns, hashing) is GDScript, unchanged.
+
 **Who calls `step`.** `SimDriver` (in `src/app/`) calls it from `_physics_process`. Godot's project settings
 make that a fixed 60 Hz loop with a catch-up cap ([`ARCHITECTURE.md`](ARCHITECTURE.md) §4). Headless sims,
 replays and tests call `step` directly in a loop, with no scene tree.
@@ -1453,6 +1471,14 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
   - in tests.
 - A replay that doesn't match its checkpoint hash reports the first mismatching checkpoint and diffs the two
   `snapshot()`s.
+- **Determinism with the native core** (v0.11.1 step 54b): the hashed state is the same function over the same
+  GDScript columns; the native kernels hold nothing between calls, so a snapshot restores exactly and a run resumes
+  as it would have gone on. The results are deterministic per build and identical across the Windows (MSVC) and
+  Linux (gcc) builds, debug and release: the C++ uses only IEEE single-precision `+ - * /`, `sqrt` and the shared
+  trig tables, under fixed float flags (`native/README.md`). The cross-compiler fixtures check it on every platform:
+  each kernel's hash on seeded inputs (`tests/golden/fixtures/native_kernels_hash.txt`) and a seeded horde world's
+  state hash after 600 ticks (`native_horde_hash.txt`), recorded from the owner's Windows build and checked by
+  `tests/golden/test_native_fixtures.gd` and, for the release library, `scripts/native/check_release.sh`.
 
 ## 10a. The world snapshot (v0.4.0 SV)
 

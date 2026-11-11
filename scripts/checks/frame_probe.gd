@@ -84,8 +84,6 @@ var _biomes: Array = []
 var _secs := 30.0
 var _warm := 3.0
 var _ab: PackedStringArray = []
-## The sim's native kernels asked for with --native=move,ai,... (NativeSwitch bits; 0: the script paths).
-var _native := 0
 var _shadows := ""  # --enemy-shadows=proxy|blob (v0.10.5 PA)
 var _vat := ""  # --enemy-vat=on|off (v0.10.5 W3-V1)
 var _only := -1  # --only=<kind name> (v0.10.5 W3-V1): ActorStore.Kind, -1 the Playground's whole list
@@ -165,16 +163,11 @@ func _initialize() -> void:
 			_vat = s.trim_prefix("enemy-vat=")
 		elif s.begins_with("only="):  # v0.10.5 W3-V1
 			_only = ActorStore.Kind.keys().find(s.trim_prefix("only=").to_upper())
-		elif s.begins_with("native="):
-			_native = maxi(0, NativeSwitch.parse(s.trim_prefix("native=")))
 		elif s.begins_with("ab="):
 			_ab = s.trim_prefix("ab=").split(",", false)
 		else:
 			_spans.parse(s)
 	_biomes = Array(biome_arg.split(",", false))
-	if _native != 0 and NativeSwitch.install(_native) != _native:
-		push_error("frame_probe: the native library is not built (bash scripts/native/build.sh)")
-	print("native kernels: %d" % (World.native_kernels))
 	var git: Array = []
 	if OS.execute("git", ["rev-parse", "--short", "HEAD"], git) == 0 and git.size() > 0:
 		_sha = String(git[0]).strip_edges()

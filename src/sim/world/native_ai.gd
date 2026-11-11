@@ -1,42 +1,44 @@
 class_name NativeAi
 extends RefCounted
-## The enemies' thinking (tick phase 3) and steering (phase 5) run by the native side (World.native, NativeWorld.AI):
-## ZdWorld.think and ZdWorld.move, for every row whose kind the per-kind table runs (NativeKindTable: NATIVE and
-## HOOKED kinds). The rules are EnemyAi's and CritterAi's: the walk plan on its staggered ticks, the state machine,
-## the aim and turning, the walk and the charge. Each call hands back intents, ascending by row and then by code, for
-## what needs a random draw (every draw stays on the sim's named streams, here) or a GDScript rule; they are applied
-## below in that order. The rows the table leaves to GDScript (bosses, elites, the signatures that run their own, eggs,
-## dummies: ZdWorld.rows_for_script) think and move as before, after the native call in phase 3 and before it in
-## phase 5. So the order changes against the GDScript path (the table rows think first, then the others), and the
-## arithmetic is single precision: a world hashes differently with it on, and the same on every run (NATIVE_CORE.md
-## §2, L16). The native side keeps nothing between calls, so a snapshot restores exactly.
+## The enemies' thinking (tick phase 3) and steering (phase 5), run by the native side (World.native): ZdWorld.think
+## and ZdWorld.move (native/src/zd_ai.cpp), for every row whose kind the per-kind table runs (NativeKindTable: the
+## NATIVE and HOOKED kinds, the horde, the critters and the biome variants). Inside: the walk plan on its staggered
+## ticks (the neighbour push, the wall check, the flow field), the state machine, the aim and turning, the walk and
+## the charge. Each call hands back intents, ascending by row and then by code, for what needs a random draw (every
+## draw stays on the sim's named streams, here) or a GDScript rule; they are applied below in that order. The rows the
+## table leaves to GDScript (bosses, elites, the Ruins and Night Rocks signatures, the Cinder Priest, eggs, dummies:
+## ZdWorld.rows_for_script) think after the native call in phase 3 and steer before it in phase 5 (BossAi, EnemyAi,
+## World.dummy_think / dummy_steer). The arithmetic is single precision and the same on every run and every platform
+## (the fixtures in tests/golden/fixtures/native_*.txt); the native side keeps nothing between calls, so a snapshot
+## restores exactly.
 ## No local here holds a store column across a native call: each read goes through the store again.
 
 ## The intents (zd_ai.h Intent), in the order a row's intents come.
 enum Intent {
-	FLOW = 1,  # a plan the walls block: the flow field's way, at the plan's length (f0)
 	THINK_TICK = 2,  # Variants.on_think (the Rubble Warden's crust)
 	MOVE_TICK = 3,  # the Mender heals instead of attacking
 	WINDUP_START = 4,  # an attack began: its length drawn, and the kind's extras (the spell, the star)
 	WINDUP_END = 5,  # the Star Warper's windup ran out: the hero on the star cancels the blink
 	RELOCATE = 6,  # a Sniper's recovery ended: its next spot is drawn
 	CHARGE_STEP = 7,  # a charge with a trail stepped (Variants.on_charge_step)
-	RELOCATE_STEP = 8,  # a relocating Sniper's walk (EnemyAi.move), while the flow field is GDScript's
 }
 const STRIDE := 4
 ## The hero as the kernels read it (zd_ai.h Hero): x, y, velocity x, y, radius, dead, dashing, the dash's landing x, y.
 const HERO_SIZE := 9
 
 
-## Whether the native side can run the enemy kernels for world w now (its caches sent first). False leaves the
-## phase to GDScript.
+## Makes the native side's caches current for world w (the walls, the per-kind table, the flow field). False (with an
+## error) when it still refuses: the table rows then stand still this phase.
 static func ready(w: World) -> bool:
 	var m: Object = w.native
-	if m == null or not m.has_trig():
-		return false
 	NativeWorld.sync_walls(w)
 	NativeWorld.sync_kinds(w)
-	return m.kind_count() == NativeKindTable.kind_count()
+	if w.nav.size != Vector2i.ZERO:
+		NativeNav.sync(m, w.nav)  # The plans and a relocating Sniper's walk read the field the last flood left
+	if not m.has_trig() or m.kind_count() != NativeKindTable.kind_count():
+		push_error("NativeAi: the native side has no direction tables or no kind table")
+		return false
+	return true
 
 
 static func hero_of(w: World) -> PackedFloat32Array:
@@ -57,17 +59,11 @@ static func hero_of(w: World) -> PackedFloat32Array:
 	)
 
 
-## The flow field is the native nav grid's only once the nav kernel keeps it (NativeWorld.NAV); else GDScript's.
-static func flow_native(w: World) -> bool:
-	return (w.native_on & NativeWorld.NAV) != 0 and w.native.has_nav()
-
-
 # --- Phase 3 ---------------------------------------------------------------------------------------------------
-## The enemies' thinking: the native rows, their intents, then the script rows. False when the native side refused
-## (nothing changed: the caller runs the GDScript phase).
-static func think(w: World) -> bool:
+## The enemies' thinking: the native rows, their intents, then the script rows.
+static func think(w: World) -> void:
 	if not ready(w):
-		return false
+		return
 	var a := w.actors
 	var held := PackedByteArray()  # A spell's stun, a byte a row (none while no spell holds anyone)
 	if not w.spell_hold_id.is_empty():
@@ -80,29 +76,22 @@ static func think(w: World) -> bool:
 	var pp := w.phase_probe
 	if pp != null:
 		pp.begin(&"ai.native")
-	var n: int = m.think(a, hero_of(w), w.tick, held, w.mines.owner, flow_native(w))
+	var n: int = m.think(a, hero_of(w), w.tick, held, w.mines.owner)
 	if pp != null:
 		pp.end(&"ai.native")
 	if n < 0:
 		push_error("NativeAi: the native side refused think")
-		return false
+		return
 	if n > 0:
-		_apply_think(w, m.ai_intents_i(), m.ai_intents_f())
+		_apply_think(w, m.ai_intents_i())
 	_script_think(w, m.rows_for_script(a))
-	return true
 
 
-static func _apply_think(w: World, ii: PackedInt32Array, ff: PackedFloat32Array) -> void:
+static func _apply_think(w: World, ii: PackedInt32Array) -> void:
 	var a := w.actors
 	for k in range(0, ii.size(), STRIDE):
 		var i := ii[k + 1]
 		match ii[k]:
-			Intent.FLOW:
-				var flow := w.nav.direction(a.pos(i))
-				if flow != Vector2.ZERO:
-					var dir := flow * ff[k]
-					a.plan_x[i] = dir.x
-					a.plan_y[i] = dir.y
 			Intent.THINK_TICK:
 				Variants.on_think(w, i)
 			Intent.MOVE_TICK:
@@ -117,8 +106,9 @@ static func _apply_think(w: World, ii: PackedInt32Array, ff: PackedFloat32Array)
 				EnemyAi._plan_relocation(w, i)
 
 
-## EnemyAi._start_windup's draws and extras (the native side set the rest): the windup's length, the Arc Caster's
-## spell (its rune's windup and lock on the hero, or its aim), the Star Warper's star.
+## An attack's start, after the native side set its state, lock and minimum windup: the windup's length drawn on
+## ai:enemy, and the kind's extras (the Arc Caster's spell, its rune's windup and lock on the hero, or its aim; the
+## Star Warper's star).
 static func _windup_start(w: World, i: int) -> void:
 	var a := w.actors
 	var t := w.enemy_table(a.kinds[i])
@@ -139,48 +129,39 @@ static func _windup_start(w: World, i: int) -> void:
 				EnemyAi._aim(w, i)
 
 
-## The rows GDScript runs, as World._run_ai does (the critters in one loop after them).
+## The rows GDScript runs, ascending: bosses (BossAi), the other enemies (EnemyAi: elites, signatures, the priest,
+## eggs, a critter's egg too), dummies.
 static func _script_think(w: World, rows: PackedInt32Array) -> void:
 	var a := w.actors
-	var critters := PackedInt32Array()
 	var target := w.player_pos()
 	for i in rows:
 		match EnemyAi.role_of(a.kinds[i]):
-			EnemyAi.Role.CRITTER:
-				critters.append(i)
 			EnemyAi.Role.BOSS:
 				BossAi.think(w, i)
-			EnemyAi.Role.ENEMY:
+			EnemyAi.Role.ENEMY, EnemyAi.Role.CRITTER:
 				EnemyAi.think(w, i)
 			_:
 				if a.kinds[i] == ActorStore.Kind.DUMMY:
 					w.dummy_think(i, target)
-	if not critters.is_empty():
-		CritterAi.think_all(w, critters)
 
 
 # --- Phase 5 ---------------------------------------------------------------------------------------------------
-## The enemies' steering, after the hero's step and before the collision passes: the script rows as World does,
-## then the native rows and their intents. False when the native side refused (the caller runs the GDScript steer).
-static func move(w: World) -> bool:
+## The enemies' steering, after the hero's step and before the collision passes: the script rows in GDScript, then
+## the native rows and their intents.
+static func move(w: World) -> void:
 	if not ready(w):
-		return false
+		return
 	var a := w.actors
 	var m: Object = w.native
 	var target := w.player_pos()
-	var critters := PackedInt32Array()
 	for i in m.rows_for_script(a):
 		match EnemyAi.role_of(a.kinds[i]):
-			EnemyAi.Role.CRITTER:
-				critters.append(i)
 			EnemyAi.Role.BOSS:
 				BossAi.move(w, i)
-			EnemyAi.Role.ENEMY:
+			EnemyAi.Role.ENEMY, EnemyAi.Role.CRITTER:
 				EnemyAi.move(w, i)
 			_:
 				w.dummy_steer(i, target)
-	if not critters.is_empty():
-		CritterAi.move_all(w, critters)
 	# ItemProcs.slow_factor as a column, only while a pair or a spell could change it (else the native side reads
 	# the freeze and the slow itself)
 	var slow := PackedFloat32Array()
@@ -188,18 +169,14 @@ static func move(w: World) -> bool:
 		slow.resize(a.size())
 		for i in a.size():
 			slow[i] = ItemProcs.slow_factor(w, i)
-	var n: int = m.move(a, hero_of(w), slow, float(w.item_mods.slow_permille), flow_native(w))
+	var n: int = m.move(a, hero_of(w), slow, float(w.item_mods.slow_permille))
 	if n < 0:
 		push_error("NativeAi: the native side refused move")
-		return true  # The script rows have moved: the table rows stand this tick
+		return
 	if n == 0:
-		return true
+		return
 	var ii: PackedInt32Array = m.ai_intents_i()
 	for k in range(0, ii.size(), STRIDE):
 		var i := ii[k + 1]
-		match ii[k]:
-			Intent.CHARGE_STEP:
-				Variants.on_charge_step(w, i, w.enemy_table(a.kinds[i]))
-			Intent.RELOCATE_STEP:
-				EnemyAi.move(w, i)
-	return true
+		if ii[k] == Intent.CHARGE_STEP:
+			Variants.on_charge_step(w, i, w.enemy_table(a.kinds[i]))

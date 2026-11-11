@@ -1,32 +1,15 @@
 extends GutTest
 ## The enemies' thinking and steering run native (NativeAi, ZdWorld.think and ZdWorld.move): the native side reads
-## the per-kind table at NativeKindTable's offsets; every kind the table runs goes through the same states at the same
-## ticks as with GDScript, with one enemy and nothing else to tell the two apart; each intent reaches its GDScript
-## rule; a horde run is the same twice, and a snapshot restored mid-run continues exactly (the native side keeps
-## nothing between calls). Without the library the tests are pending.
+## the per-kind table at NativeKindTable's offsets; every kind the table runs goes through the state machine's steps;
+## each intent reaches its GDScript rule; a blocked walk follows the flow field; a horde run is the same twice, and a
+## snapshot restored mid-run continues exactly (the native side keeps nothing between calls).
 
 const K := ActorStore.Kind
 const S := EnemyAi.State
 const T := preload("res://src/sim/ai/native_kind_table.gd")
-const ON := NativeWorld.MOVE | NativeWorld.AI
-
-var _kept := Callable()
-var _kept_kernels := 0
-
-
-func before_all() -> void:
-	_kept = World.native_factory
-	_kept_kernels = World.native_kernels
-
-
-func after_all() -> void:
-	World.native_factory = _kept
-	World.native_kernels = _kept_kernels
 
 
 func test_the_native_side_reads_the_table_at_its_offsets() -> void:
-	if not _built():
-		return
 	var gd := PackedInt32Array(
 		[
 			T.Mode.NATIVE,
@@ -140,11 +123,11 @@ func test_the_native_side_reads_the_table_at_its_offsets() -> void:
 			T.TUNING
 		]
 	)
-	var native: PackedInt32Array = NativeSwitch.make().kind_layout()
+	var native: PackedInt32Array = NativeWorld.make().kind_layout()
 	assert_eq(native.size(), gd.size(), "as many constants on both sides")
 	for k in mini(native.size(), gd.size()):
 		assert_eq(native[k], gd[k], "constant %d of the layout (zd_kinds.h LAYOUT order)" % k)
-	var codes: PackedInt32Array = NativeSwitch.make().ai_hero_layout()
+	var codes: PackedInt32Array = NativeWorld.make().ai_hero_layout()
 	var want := PackedInt32Array([NativeAi.HERO_SIZE])
 	for c in NativeAi.Intent.values():
 		want.append(c)
@@ -152,11 +135,10 @@ func test_the_native_side_reads_the_table_at_its_offsets() -> void:
 	assert_eq(NativeAi.hero_of(CombatLab.world()).size(), NativeAi.HERO_SIZE)
 
 
-## One enemy of each table kind (NATIVE or HOOKED) by a standing hero: its state and the tick it enters it, its
-## windup's length, for 600 ticks, are the same native as with GDScript.
-func test_every_table_kind_runs_the_gdscript_state_cycle() -> void:
-	if not _built():
-		return
+## One enemy of each table kind (NATIVE or HOOKED) by a standing hero, 600 ticks: it rises in, then only ever takes
+## the state machine's steps (MOVE -> WINDUP -> ACTIVE -> RECOVER -> MOVE, a windup that ends early going to RECOVER),
+## and most kinds attack in the window.
+func test_every_table_kind_runs_the_state_cycle() -> void:
 	var probe := CombatLab.world()
 	var kinds := PackedInt32Array()
 	for kind in T.kind_count():
@@ -164,18 +146,33 @@ func test_every_table_kind_runs_the_gdscript_state_cycle() -> void:
 		if t != null and T.mode_of(kind, t) != T.Mode.SCRIPT:
 			kinds.append(kind)
 	assert_gt(kinds.size(), 25, "the table kinds of the design (NATIVE_CORE.md §4.1)")
+	var next := {
+		S.SPAWN: [S.MOVE],
+		S.MOVE: [S.WINDUP],
+		S.WINDUP: [S.ACTIVE, S.RECOVER],
+		S.ACTIVE: [S.RECOVER],
+		S.RECOVER: [S.MOVE],
+	}
 	var attacked := 0
 	for kind in kinds:
-		var gd := _cycle(kind, 0)
-		var nat := _cycle(kind, ON)
-		assert_eq(nat, gd, "kind %s: the same states, ticks and windups" % K.keys()[kind])
-		attacked += 1 if ",".join(gd).contains(":%d:" % S.WINDUP) else 0
+		var cycle := _cycle(kind)
+		var prev := S.SPAWN
+		for step in cycle:
+			var parts := step.split(":")
+			if parts.size() < 3 or int(parts[0]) == 0:
+				continue
+			var st := int(parts[1])
+			assert_true(
+				(next.get(prev, []) as Array).has(st),
+				"kind %s: %d -> %d at tick %s" % [K.keys()[kind], prev, st, parts[0]]
+			)
+			prev = st
+		attacked += 1 if ",".join(cycle).contains(":%d:" % S.WINDUP) else 0
 	assert_gt(attacked, 20, "most kinds attacked in the window (the cycle is exercised)")
 
 
 ## [tick:state:windup] each time the enemy's state changes.
-func _cycle(kind: int, kernels: int) -> PackedStringArray:
-	NativeSwitch.install(kernels)
+func _cycle(kind: int) -> PackedStringArray:
 	var w := CombatLab.world()
 	w.actors.hp[0] = 1000000
 	w.actors.max_hp[0] = 1000000
@@ -197,8 +194,6 @@ func _cycle(kind: int, kernels: int) -> PackedStringArray:
 
 
 func test_a_mender_heals_a_hurt_ally() -> void:
-	if not _built():
-		return
 	var w := _world_on()
 	var hurt := w.add_enemy(K.CHARGER, Vector2(9, 0))
 	var mender := w.add_enemy(K.MENDER, Vector2(9.8, 0.4))
@@ -212,8 +207,6 @@ func test_a_mender_heals_a_hurt_ally() -> void:
 
 
 func test_a_rubble_warden_sheds_its_crust_at_half_hp() -> void:
-	if not _built():
-		return
 	var w := _world_on()
 	var id := w.add_enemy(K.RUBBLE_WARDEN, Vector2(8, 0))
 	CombatLab.idle(w, 2)
@@ -225,8 +218,6 @@ func test_a_rubble_warden_sheds_its_crust_at_half_hp() -> void:
 
 
 func test_an_ember_charger_leaves_its_trail() -> void:
-	if not _built():
-		return
 	var w := _world_on()
 	w.add_enemy(K.EMBER_CHARGER, Vector2(4, 0))
 	var n := CombatLab.until(w, func(x: World) -> bool: return x.variants.trail_count() > 0, 900)
@@ -234,8 +225,6 @@ func test_an_ember_charger_leaves_its_trail() -> void:
 
 
 func test_a_sniper_relocates_after_its_shot() -> void:
-	if not _built():
-		return
 	var w := _world_on()
 	var id := w.add_enemy(K.SNIPER, Vector2(9, 0))
 	var n := CombatLab.until(
@@ -247,13 +236,10 @@ func test_a_sniper_relocates_after_its_shot() -> void:
 	var from := Kin.length(spot - w.actors.pos(i))
 	CombatLab.idle(w, 30)
 	i = w.actors.index_of(id)
-	assert_lt(Kin.length(spot - w.actors.pos(i)), from, "it walks to its spot (RELOCATE_STEP)")
+	assert_lt(Kin.length(spot - w.actors.pos(i)), from, "it walks to its spot")
 
 
 func test_a_wall_between_sends_the_walk_along_the_flow_field() -> void:
-	if not _built():
-		return
-	NativeSwitch.install(ON)
 	var w := CombatLab.world()
 	var walls: Array[Obb] = [
 		Obb.make(Vector2(5, 0), Vector2(0.4, 3.0), 0),
@@ -276,27 +262,22 @@ func test_a_wall_between_sends_the_walk_along_the_flow_field() -> void:
 	i = w.actors.index_of(id)
 	assert_eq(w.actors.plan_block[i], 1, "the wall blocks the line to the hero")
 	var plan := Vector2(w.actors.plan_x[i], w.actors.plan_y[i])
-	assert_almost_eq(plan.x, flow.x, 0.002, "FLOW: the flow field's way")
+	assert_almost_eq(plan.x, flow.x, 0.002, "the flow field's way")
 	assert_almost_eq(plan.y, flow.y, 0.002)
 
 
 ## A horde of the table kinds: two runs give one hash chain; a snapshot at tick 300 restored into a fresh world gives
 ## the continuous run's hash at 600.
 func test_a_horde_is_the_same_twice_and_resumes_exactly() -> void:
-	if not _built():
-		return
-	var a := _horde_hashes(ON, -1)
-	var b := _horde_hashes(ON, -1)
+	var a := _horde_hashes(-1)
+	var b := _horde_hashes(-1)
 	assert_eq(a.size(), 6)
 	assert_eq(a, b, "the same seed twice")
-	var c := _horde_hashes(ON, 300)
+	var c := _horde_hashes(300)
 	assert_eq(c, a, "restored at 300: the same hashes on to 600")
-	var off := _horde_hashes(0, -1)
-	assert_ne(off[off.size() - 1], a[a.size() - 1], "native on hashes its own way (L16)")
 
 
-func _horde_hashes(kernels: int, restore_at: int) -> PackedStringArray:
-	NativeSwitch.install(kernels)
+func _horde_hashes(restore_at: int) -> PackedStringArray:
 	var kinds := [
 		K.CHARGER,
 		K.SWARMER,
@@ -340,19 +321,7 @@ func _horde_hashes(kernels: int, restore_at: int) -> PackedStringArray:
 
 
 func _world_on() -> World:
-	NativeSwitch.install(ON)
 	var w := CombatLab.world()
 	w.actors.hp[0] = 1000000
 	w.actors.max_hp[0] = 1000000
-	assert_eq(w.native_on, ON)
 	return w
-
-
-func _built() -> bool:
-	if NativeSwitch.available():
-		return true
-	if OS.get_environment("ZD_NATIVE_REQUIRED") == "1":
-		fail_test("ZD_NATIVE_REQUIRED=1, but the native library did not load")
-		return false
-	pending("the native library is not built (native/README.md)")
-	return false

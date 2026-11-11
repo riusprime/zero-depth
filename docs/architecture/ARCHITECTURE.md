@@ -39,6 +39,14 @@ app ──► presentation ──► application ──► sim ──► content
   `InputFrame` bits or debug commands applied at a tick boundary.
 - `scripts/` (bench, checks, content tools; the bot balance sims were retired in v0.5.5, owner P1) may use `application`, `sim` and `content`. Only `scripts/shots/` and
   `scripts/checks/` boot the app (`main.tscn`), because they test the running game.
+- **The sim's native core** (v0.11.1 step 54b; LOCKED_DECISIONS 2026-11-11): the sim's hot loops run only in a C++
+  library (GDExtension, `native/`, [`native/README.md`](../../native/README.md)): the table kinds' thinking, steering
+  and strikes, the collision passes, the projectile sweep and the path flood. It is part of the `sim` layer, not a
+  layer of its own: every `World` makes its native side in `_init` (`NativeWorld.make`, `src/sim/world/native_world.gd`,
+  the one sim file allowed to name `ClassDB`), every hashed column stays in GDScript, and the native side holds only
+  caches, so saves and hashes are GDScript's. The library is required: without it the game stops at its start with one
+  error and exit code 1 (`src/app/native_check.gd`), a GUT run stops before its first test, and a `World` does nothing.
+  Presentation has its own native helper (`ZdCrowd`, the batched enemies), which keeps its GDScript writer.
 
 ## 3. Architecture lint
 
@@ -52,6 +60,8 @@ app ──► presentation ──► application ──► sim ──► content
   - **Scene and engine access:** `Node`, `SceneTree`, `get_tree`, `get_node`, `emit_signal`, `await`, `Tween`,
     `Timer`, `Input`, `Time.`, `OS.`, `Engine.`, `load(`, `preload(` (except the allow-listed kernel tables).
   - **Randomness:** `randi`, `randf`, `randomize`, `RandomNumberGenerator`, `cosmetic`.
+  - **Class lookup:** `ClassDB`, except exactly `ClassDB.class_exists(CLASS)` and `ClassDB.instantiate(CLASS)` in
+    `src/sim/world/native_world.gd` (the native core's seam).
   - **Banned maths:** `sin(`, `cos(`, `tan(`, `atan2(`, `atan(`, `pow(`, `exp(`, `log(`, plus the method forms
     `.angle(`, `.rotated(`, `from_angle(`, `angle_to(`, `angle_to_point(` and `.slerp(`.
 - This widens Deathventory's purity scan (`tests/unit/dv_330/test_statuses_hazards.gd`). That scan read only one

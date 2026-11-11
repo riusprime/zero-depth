@@ -163,7 +163,7 @@ struct BodyGrid {
 };
 
 // The sim's direction tables (Kin, TrigLut): cos and sin of i/4096 turns for i in 0..512, sent once from GDScript
-// (World.native_factory's world, NativeWorld.setup) so both sides read the same 513 floats.
+// (NativeWorld.make, for every World) so both sides read the same 513 floats.
 struct Trig {
 	static constexpr int SIZE = 513;
 	float cos_t[SIZE] = {};

@@ -15,7 +15,6 @@ const NAV_FIELDS: Array[StringName] = [
 	&"_adj_start",
 	&"_adj",
 	&"_adj_w",
-	&"_adj_mid",
 	&"_flooded",
 	&"last_work",
 ]
