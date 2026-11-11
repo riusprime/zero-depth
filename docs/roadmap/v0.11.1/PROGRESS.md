@@ -7,9 +7,12 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 
 - **Waves 1 and 2 are done, and step 45.** Seams on `060e883b`: **674 of 674, 1,396 s of tests, 1,606 s wall** (it
   was 669, 3,185 s, 3,442 s at `ee42eafa`): [`evidence/SEAMS_TIMING.md`](evidence/SEAMS_TIMING.md).
-- **Seams on `a213977c` (everything merged so far): 703 of 703,** 1,208 s of tests, 1,446 s wall, with the library
-  built; and the native, presentation and arch folders in ONE process, 1,607 of 1,607, exit 0 (the order that used
-  to crash the engine on exit). One agent ran alongside.
+- **Seams on `2cb95232` (everything merged, step 55c included): 703 of 703,** 1,259 s of tests, 1,498 s wall, with the
+  library built; and the native, presentation, arch and golden folders in one process, 1,611 of 1,611, exit 0. The
+  owner was playing and an agent was probing during it.
+- **Owner playtest, 2026-11-11** (the build before step 55c, native core on): "tried it, game feels really smooth,
+  barely falls under 60 fps and I like that, but I think a big cost is coming from light effects in some attack forms
+  like ring for example". An agent is measuring the Ring form (`v0111-ring`).
 - **Left over from Wave 2, small:** the HUD and menu half of the dead-code scan; the menu backdrop's ember mode and
   the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: the
   owner was asked whether to delete it); the duplicate final-boss texture (needs model prep).
@@ -26,16 +29,18 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   goldens unchanged), step 56 (a dead enemy's cubes are one draw and last 0.5 s at any frame rate), the
   frame-attribution tooling (`scripts/checks/frame_attribution.sh`, `frame_spans.gd`).
 - **Not merged:** step 48 (`v0111-s48`), the sim on its own thread: parked (OWNER_QUESTIONS Q2).
-- **Wave 8 (the display layer, owner L19):** merged and pushed: steps 55 (nine enemy kinds batched), 55b (their
-  furniture written in C++), 57 (lightning bolts by shader), 58 (views read in bulk and skip when nothing changed),
-  59 (the HUD), 60 (shard drops as instances), and the exit-crash fix. Last quiet run, before 55b, 58 and 60
-  ([`evidence/PERF_W8.md`](evidence/PERF_W8.md)): 20 enemies 8.2 ms (122 fps), 60 heavy 24.9 ms, 120 swarmers
-  18.5 ms. **With an agent:** step 55c (a batched enemy's pose and body in C++: about 3 ms at 120 swarmers).
-- **The owner's folder** has the library rebuilt on this head; the game there runs the native core; F10 → Tools →
-  "Native core on/off (next floor)" compares with the script sim.
-- **Next:** merge 55c when it reports; a last quiet run; seams; push. The owner playtests.
+- **Wave 8 (the display layer, owner L19):** merged and pushed: steps 55, 55b, 55c (nine enemy kinds batched; their
+  furniture, clocks, pose and bodies written in C++, bit-equal to the GDScript path), 57 (lightning bolts by
+  shader), 58 (views read in bulk), 59 (the HUD), 60 (shard drops as instances), and the exit-crash fix. Last quiet
+  run, before 55b, 55c, 58 and 60 ([`evidence/PERF_W8.md`](evidence/PERF_W8.md)): 20 enemies 8.2 ms (122 fps), 60
+  heavy 24.9 ms, 120 swarmers 18.5 ms. **The quiet run after them is NOT YET RUN** (the owner is using the PC).
+- **The owner's folder** is at `932d47a1` (without step 55c) with its library built; the owner is using it, so the
+  lead does not touch it: `git merge --ff-only` to the pushed head and `bash scripts/native/build.sh all` there once
+  the owner says the editor is closed.
+- **Next:** the Ring measurement; the quiet run; the owner's answers in OWNER_QUESTIONS; then 54b and the PR.
 - **Questions for the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md).
-- **Pushed:** `claude/v0110` up to the docs commit after `a213977c`, and the tag `archive/scripts-2026-11`.
+- **Pushed:** `claude/v0110` up to the docs commit after `2cb95232` (pushed from the lead's worktree), and the tag
+  `archive/scripts-2026-11`.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
   approved.
@@ -70,6 +75,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 | 16 | The fight bot, the lab-room scenario and the combo card live in `tests/support`. Left in `src/`: `KernelScenario` and `ScriptedInput` (the export smoke runs them inside the pack); left in `data/`: the combat-lab encounter and the patch notes (moving either changes the content manifest hash) | `35176162`, merge `d8362cd8` |
 | 15 (a) | Unreferenced sim, application and content code is gone: 34 functions, 34 constants, 25 translation keys (249 lines). Left: names that stand for stored values, and `HeartRoom.take_tick` (hashed, read nowhere: for step 36) | `62d24bee`, merge `0ef222b0` |
 | 19 | The line cap can't be switched off quietly: `tests/arch/test_line_cap.gd` lists the ten exempt files with reasons; the rule is in CLAUDE.md | `63ce6be5` |
+| 55c | A batched enemy's clock, pose and body instance are computed and written in C++ (`zd_avatar.*`, `zd_crowd_avatars.cpp`; each avatar's state a row of packed doubles in `BatchAvatars`): the nine kinds' animation clocks, strike, tell, flinch and hold, the pose drives and the body buffers. A native view and a GDScript view of one world, 300 frames with hits, flinches, holds, a dazed Charger, kills and spawns: every buffer equal bit for bit, no tolerance. Busy machine, 120 swarmers: `vat_crowd.gd` 935 → 118 µs, `enemy_batch.gd` 810 → 117, the frame's scripts-and-views span 11.4 → 8.2 ms. Also: a batched enemy's root is freed when its view lets it go (the two tests that left orphans end with none). Not done: the per-sync loop (`actors.update` about 1.5 ms at 120) | `1af155eb`, `b2b8c3a1` |
 | 60 | A shard drop is an instance of a shape built before the fight: the 48 drop shapes are static meshes built once a session at load (about 136 ms behind the cover the first time, 2.5 ms after), each drop an instance in its shape's batches. `shards.drops` 381 / 4,360 → 93 / 401 µs (mean / p99) at 120 swarmers, 292 / 5,011 → 104 / 475 at 60 heavy (busy machine); a new per-frame write of 0.13–0.18 ms while a drop lies. 0 of 518,400 pixels differ on 8 frames. 1,576 presentation tests | `3101a7b9` |
 | 58 | A view is visited when something of its kind changed, and reads the sim in bulk: telegraphs, statuses, cores, burn tints and the kind-specific views walk only the actors concerned (new read-only bulk getters in `WorldReader`); the flying shard gems are two pooled batches; the per-tick reader copies columns whole. A 900-frame state dump is byte-identical; the shard burst shots differ by 0 pixels. About 0.7 ms at 120 swarmers and 0.9 ms at 60 heavy on a busy machine | `e4bf34f9` |
 | 55b | A batched enemy's furniture (disc, ring, dazed ring, bar, blob) is written in C++ (`ZdCrowd`), bit-equal to the GDScript pass over 300 frames, with the GDScript pass as the fallback and the dev panel's switch turning it off; 0.25 ms at 120 swarmers. The first stage only: the avatars' clocks, the body write and the per-sync loop remain (step 55c) | `b2e4c304` |
@@ -279,3 +285,10 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   (GUT counts them as orphans; given to step 55c); `scripts/checks/hit_soak.gd` never reaches a fight (tests nothing).
 - 2026-11-11 (lead): seams on `a213977c`: 703/703; native + presentation + arch in one process 1,607/1,607, exit 0.
   Pushed; the library rebuilt in the owner's folder.
+- 2026-11-11 (lead): step 55c reported and merged (`2cb95232`); seams 703/703; 1,611/1,611 in one process. Pushed from
+  the lead's worktree, because the owner had the editor and the game open on the main checkout (the lead had merged
+  into it and tried to rebuild its library while they were open, before noticing: the build failed on the locked
+  library; the owner was told to restart the game; the library was rebuilt there once the editor was closed).
+- 2026-11-11 (owner, after playing): "feels really smooth, barely falls under 60 fps and I like that"; suspects the
+  light effects of some attack forms, Ring for example. The lead first measured a scene without Ring (the probe's
+  heavy build is Rune Explosion): omni lights off changed nothing there, which says nothing about Ring.
