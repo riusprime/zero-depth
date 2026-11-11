@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 class_name EnemyBatch
 extends Node3D
 ## The enemies drawn with no node of theirs in the tree. A node per enemy (its root, contact disc, team ring, dazed
@@ -56,6 +57,15 @@ const NATIVE_CLASS := &"ZdCrowd"
 ## native core: the dev panel's "Native core" switch turns it off with the kernels; the frame probe's
 ## --ab=no_native_crowd too). Without the library the GDScript pass runs whatever this says.
 static var native := true
+
+## This batch's own native switch (null: the shared `native`; the equality test runs a GDScript batch beside a native
+## one on the same frames).
+var native_override: Variant = null
+## How many slots have gone (VatCrowd drops its dead entries only when this moved).
+var removed := 0
+## The avatars' state as packed rows, synced, stepped and drawn by ZdCrowd while the native writer runs and every
+## batched avatar has a native class (BatchAvatars).
+var avatars := BatchAvatars.new()
 
 ## The view whose shared parts, bar chunks and look it draws with (ActorViews sets it).
 var views: ActorViews
@@ -202,6 +212,7 @@ func add(
 	if blob:
 		_set_index(Part.BLOB, 0.0)
 	avatar.detached = true
+	avatars.add(id, avatar, _facings[k], root.get_meta(&"vat_sets", Vector2i(-1, -1)))
 	_bo_fresh = false
 	synced_frame = Engine.get_process_frames()
 
@@ -262,12 +273,68 @@ func update(id: int, reader: WorldReader, i: int, parts: Array, cols: Array) -> 
 	if facing.visible != shown:
 		facing.visible = shown
 	var avatar: Node3D = parts[5]
+	var k: int = _slot_of[id]
 	var t_en := PerfMarks.start()
-	avatar.call(&"sync", reader, i)
+	if _avatars_native():  # Its inputs, applied with every other batched enemy's in one call (flush_avatars)
+		avatars.facing_moved(k, facing, false)
+		avatars.note_sync(k, reader, i)
+	else:
+		avatar.call(&"sync", reader, i)
 	PerfMarks.add(&"actors.enemy_sync", t_en)
 	show_parts(id, bar and shown, state == WorldReader.STATE_RECOVER, shown and avatar.visible)
-	var k: int = _slot_of[id]
 	_shown[k] = 1 if shown and avatar.visible and (_roots[k] as Node3D).visible else 0
+
+
+## The end of the views' sync: the batched avatars' syncs noted this sync, applied natively in one call.
+func flush_avatars() -> void:
+	if _avatars_native():
+		avatars.flush(_crowd, avatars.frame_columns(_x1, _y1, _z1))
+
+
+## Whether enemy `id`'s avatar runs its frame step (its set_process, as ActorViews' culling turns it).
+func set_processing(id: int, on: bool) -> void:
+	var k: int = _slot_of.get(id, -1)
+	if k < 0:
+		return
+	_avatars[k].set_process(on)
+	avatars.set_processing(k, on)
+
+
+## ActorViews' catch-up as enemy `id` comes on screen: four 0.05 s steps of its avatar after its sync.
+func warm(id: int) -> void:
+	var k: int = _slot_of.get(id, -1)
+	if k < 0:
+		return
+	if _avatars_native():
+		avatars.warm(k)
+		return
+	for q in 4:
+		_avatars[k].advance(0.05)
+
+
+## The Void leaned enemy `id`'s facing (its whole transform is read from now on).
+func facing_leaned(id: int) -> void:
+	var k: int = _slot_of.get(id, -1)
+	if k >= 0:
+		avatars.facing_moved(k, _facings[k], true)
+
+
+## VatCrowd: its sets `sets` ([index, body, period, drive floats, capacity] each) written natively from the avatars'
+## rows (by set: [count, capacity, buffer, drive buffer]), or [] when the avatars run in GDScript.
+func write_bodies(sets: Array) -> Array:
+	if not _avatars_native():
+		return []
+	if not _bo_fresh:  # (the body places are this frame's furniture pass's)
+		write_furniture()
+	return avatars.write_bodies(_crowd, avatars.frame_columns(_x1, _y1, _z1), _bo, sets)
+
+
+## Whether the avatars' rows hold their state now (the native writer on and every avatar covered), turning them on
+## or off to match.
+func _avatars_native() -> bool:
+	var want := _native_on() and avatars.all_native()
+	avatars.set_on(want)
+	return want
 
 
 ## BarChunks.fill_to: enemy `id`'s bar trail shows fill `f` now (1 once its trail is gone).
@@ -282,7 +349,7 @@ func set_fill(id: int, f: float) -> void:
 func drop(id: int, node: Node3D) -> void:
 	var av: Variant = node.get_meta(&"enemy_avatar")
 	if (av as Object).has_method(&"die") and is_inside_tree() and av.die():
-		(av as Node).set_process(true)
+		set_processing(id, true)
 		release(id, true)
 		get_tree().create_timer(av.DEATH_SECONDS).timeout.connect(node.queue_free)
 		return
@@ -379,6 +446,8 @@ static func _place_anchor(a: Node3D, at: Vector3, before: Variant) -> void:
 
 func _remove(k: int) -> void:
 	_bo_fresh = false
+	removed += 1
+	avatars.remove(k)
 	var id := _ids[k]
 	if _live[k] == 0:
 		_falls -= 1
@@ -458,20 +527,23 @@ func advance(delta: float) -> void:
 			_remove(k)
 		k -= 1
 	var t_av := PerfMarks.start()
-	var frame := Engine.get_process_frames()
-	for j in _avatars.size():
-		var a: AvatarBase = _avatars[j]
-		if a.is_processing() and _born[j] != frame:
-			a._process(delta)  # (as the tree ran it, from the frame after it came)
+	if _avatars_native():  # Every avatar's step in one native call
+		avatars.step(_crowd, avatars.frame_columns(_x1, _y1, _z1), _born, delta)
+	else:
+		var frame := Engine.get_process_frames()
+		for j in _avatars.size():
+			var a: AvatarBase = _avatars[j]
+			if a.is_processing() and _born[j] != frame:
+				a._process(delta)  # (as the tree ran it, from the frame after it came)
 	PerfMarks.add(&"batch.avatars", t_av)  # The avatars' frame step (the tree ran it before)
 	var t_wr := PerfMarks.start()
 	write_furniture()
 	PerfMarks.add(&"batch.write", t_wr)
 
 
-## Whether the native writer runs (its class loaded and `native` on), made the first time.
+## Whether the native writer runs (its class loaded and `native` on, or this batch's override), made the first time.
 func _native_on() -> bool:
-	if not native:
+	if not (native if native_override == null else bool(native_override)):
 		return false
 	if _crowd == null:
 		if not ClassDB.class_exists(NATIVE_CLASS):

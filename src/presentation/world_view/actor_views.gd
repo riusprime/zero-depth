@@ -178,12 +178,16 @@ func sync(reader: WorldReader) -> void:
 		if not leans.is_empty() and leans.has(id):
 			_lean(node, leans[id])
 			parts[7] = INF  # the lean turned the facing's basis: the yaw is written again next sync
+			if parts[9]:  # (the batch reads the leaned facing whole from now on)
+				batch.facing_leaned(id)
 		if parts[5] != null:  # Off-screen crowds don't animate
 			var t_an := PerfMarks.start()
 			_animate_if_seen(node, id, at, hero, parts[9])
 			PerfMarks.add(&"actors.animate", t_an)
 		if fresh and not parts[9]:
 			node.reset_physics_interpolation()
+	if batch != null:  # The batched avatars' syncs, applied in one call
+		batch.flush_avatars()
 	if batch != null and batch != batch_was:  # Made this sync: it first runs next frame, so draw this one now
 		batch.write_furniture()
 	# Every live actor has its node by now, so as many nodes as live actors means none is gone: no walk
@@ -255,7 +259,10 @@ func _animate_if_seen(
 		on = (pos - hero).length() <= ANIMATE_RADIUS_M
 	var first := not _anim_on.has(id)
 	_anim_on[id] = on
-	avatar.set_process(on)
+	if batched:  # (the batch steps it: its own switch and the native rows')
+		batch.set_processing(id, on)
+	else:
+		avatar.set_process(on)
 	if batched and (first or on != was):
 		batch.set_interpolated(id, on)
 	elif first or on != was:  # Physics interpolation only where it could show
@@ -264,7 +271,9 @@ func _animate_if_seen(
 		)
 		if on:
 			node.reset_physics_interpolation()
-	if on and not was and avatar.has_method(&"advance"):
+	if on and not was and batched:
+		batch.warm(id)
+	elif on and not was and avatar.has_method(&"advance"):
 		for k in 4:
 			avatar.call(&"advance", 0.05)
 

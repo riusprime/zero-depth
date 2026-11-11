@@ -56,6 +56,10 @@ var role_glow := 0.0
 ## True while its actor is drawn by EnemyBatch: the avatar and its parents stay outside the tree, so its place is
 ## its parents' transforms composed (_view_position).
 var detached := false
+## The batch whose packed columns hold this avatar's state while its enemy is batched natively (BatchAvatars; null:
+## this object holds it). Each event below takes the state back first (touch) and a read gets it (peek), so the
+## avatar's own code still decides every event, while the batch steps and draws every frame without it.
+var native_owner: Object
 var _hit_pieces: Array[GeometryInstance3D] = []
 var _hit := EnemyLooks.HIT_OFF
 # Sim state from the last sync.
@@ -108,6 +112,7 @@ func _view_position() -> Vector3:
 ## Holds the pose still for `seconds` of frame time (the longer of this and a hold already running; never
 ## stacked). A flinch running jumps to its peak first, so the hold shows the impact pose. Presentation only.
 func hold(seconds: float) -> void:
+	_touch()
 	_hold = maxf(_hold, seconds)
 	if flinching() and _flinch_t < FLINCH_PEAK * FLINCH_SECONDS:
 		_flinch_t = FLINCH_PEAK * FLINCH_SECONDS
@@ -115,6 +120,7 @@ func hold(seconds: float) -> void:
 
 
 func holding() -> bool:
+	_peek()
 	return _hold > 0.0
 
 
@@ -131,6 +137,7 @@ func consume_hold(delta: float) -> float:
 ## bolt). False when the last flinch is too young to restart (FLINCH_RETRIGGER_S).
 ## `knock` (0..1, a Blade hit's) also shifts the pose away by up to FLINCH_KNOCK_M.
 func flinch(away: Vector2, strength: float = 1.0, knock: float = 0.0) -> bool:
+	_touch()
 	if flinching() and _flinch_t < FLINCH_RETRIGGER_S:
 		return false
 	if not flinching():
@@ -145,15 +152,18 @@ func flinch(away: Vector2, strength: float = 1.0, knock: float = 0.0) -> bool:
 
 ## How far the pose is knocked away now (metres).
 func knock_amount() -> float:
+	_peek()
 	return maxf(flinch_envelope(_flinch_t / FLINCH_SECONDS), 0.0) * _flinch_knock
 
 
 func flinching() -> bool:
+	_peek()
 	return _flinch_t < FLINCH_SECONDS
 
 
 ## 0..1 (a little under 0 in the snap back): the flinch's envelope now, times its strength.
 func flinch_amount() -> float:
+	_peek()
 	return flinch_envelope(_flinch_t / FLINCH_SECONDS) * _flinch_s
 
 
@@ -341,11 +351,26 @@ func _body_piece(
 ## (ActorViews._set_flash calls it).
 func show_hit(on: bool, c: Color = Color.WHITE, energy: float = 0.0) -> void:
 	var v := EnemyLooks.hit_value(on, c, energy)
+	if native_owner != null:  # (only the colour changes: written straight into the batch's columns)
+		native_owner.call(&"show_hit", self, v)
 	if v == _hit:
 		return
 	_hit = v
 	for piece in _hit_pieces:
 		piece.set_instance_shader_parameter(EnemyLooks.HIT, v)
+
+
+## While the batch's columns hold this avatar's state (native_owner): takes it back before an event changes it, so
+## the event runs on the latest numbers and the batch reads them back before its next step.
+func _touch() -> void:
+	if native_owner != null:
+		native_owner.call(&"touch", self)
+
+
+## The same for a read (tests, tools): the latest numbers, the batch keeping the state.
+func _peek() -> void:
+	if native_owner != null:
+		native_owner.call(&"peek", self)
 
 
 ## RigMerge: how this avatar's rig may be merged into one skinned mesh. "keep": the pieces that must stay
@@ -359,6 +384,7 @@ func rig_spec() -> Dictionary:
 
 ## The HIT now on the body pieces (tests: Vector4 rgb the linear emission x energy, w 1 = shown).
 func hit_look() -> Vector4:
+	_peek()
 	return _hit
 
 

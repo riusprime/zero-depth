@@ -204,6 +204,14 @@ void ZdCrowd::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("write_furniture", "slots", "set_parts", "set_caps", "fraction", "interp_on",
 								 "synced_now", "ticked", "heights"),
 			&ZdCrowd::write_furniture);
+	ClassDB::bind_method(D_METHOD("apply_sync", "state", "cls", "frame", "pending", "tick", "in_state", "in_heal",
+								 "in_windup", "in_x", "in_y", "warm", "consts"),
+			&ZdCrowd::apply_sync);
+	ClassDB::bind_method(D_METHOD("step_avatars", "state", "cls", "frame", "proc", "born", "frame_no", "delta", "consts"),
+			&ZdCrowd::step_avatars);
+	ClassDB::bind_method(D_METHOD("write_bodies", "state", "cls", "frame", "body_of", "shadow_of", "seq", "bo",
+								 "set_index", "body", "period", "dn", "caps", "consts"),
+			&ZdCrowd::write_bodies);
 }
 
 } // namespace zd

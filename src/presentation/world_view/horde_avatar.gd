@@ -196,6 +196,7 @@ func has_model() -> bool:
 ## Starts the death (the owner's model only): the body sinks and tips over DEATH_SECONDS, the Splitter's
 ## halves fly apart (its two Splitlings are already in the sim). False for the code-made body (it goes at once).
 func die() -> bool:
+	_touch()
 	if not _is_model:
 		return false
 	_die_t = 0.0
@@ -203,6 +204,7 @@ func die() -> bool:
 
 
 func dying() -> bool:
+	_peek()
 	return _die_t >= 0.0
 
 
@@ -276,6 +278,7 @@ func apply_state(s: Dictionary) -> void:
 
 
 func _apply(tick: int, state: int, healing: bool, windup: float) -> void:
+	_touch()
 	_healing = healing
 	_tell_p = clampf(windup, 0.0, 1.0)
 	if _fresh or state != _state:
@@ -290,6 +293,7 @@ func _apply(tick: int, state: int, healing: bool, windup: float) -> void:
 
 
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0 or (body == null and not vat):
 		return
@@ -327,21 +331,25 @@ func advance(delta: float) -> void:
 
 ## How far into its windup pose the model is, 0..1 (tests).
 func windup_pose() -> float:
+	_peek()
 	return _wind
 
 
 ## 0..1 how far its strike is out (tests).
 func strike_pose() -> float:
+	_peek()
 	return _strike
 
 
 ## The accent's glow (tests): the eye, seam, crystal or scope.
 func glow_energy() -> float:
+	_peek()
 	return _glow_e
 
 
 ## 0..1 how deep the windup crouch is (0 for a kind without a tell or outside the windup).
 func crouch_amount() -> float:
+	_peek()
 	if _bake_crouch >= 0.0:
 		return _bake_crouch
 	if not TELL_KINDS.has(kind) or _state != WorldReader.STATE_WINDUP:
@@ -351,17 +359,20 @@ func crouch_amount() -> float:
 
 ## The Sniper's muzzle glow (0 when cold; always 0 for the other kinds).
 func muzzle_energy() -> float:
+	_peek()
 	return _muzzle_e if kind == WorldReader.KIND_SNIPER else 0.0
 
 
 ## The frame-time clock the pose runs on (seconds; the VAT crowd reads the legs' phase from it).
 func anim_time() -> float:
+	_peek()
 	return _t
 
 
 ## How far the whole body is lifted now (m, the idle bob and the rise-in's sink): the part of the
 ## body's pose the VAT crowd moves the instance by (VatBake bakes the rest at no bob, fully risen).
 func vat_lift() -> float:
+	_peek()
 	return _vat_lift
 
 
@@ -668,11 +679,13 @@ func vat_bake_pose(u: Vector3, phase: float) -> void:
 ## VatBake.drives_of (the kinds past the Swarmer; the Swarmer's are VatBake's own): the four drives this instance's
 ## shader poses it at (HordeVat: the stance grid's x, y, z, the gait's w), from the last _pose().
 func vat_grid_drives() -> PackedFloat32Array:
+	_peek()
 	return PackedFloat32Array([_vat_d.x, _vat_d.y, _vat_d.z, _vat_d.w])
 
 
 ## VatCrowd: the body's transform in the avatar's space past the baked pose (the Swarmer's: its lift).
 func vat_offset() -> Transform3D:
+	_peek()
 	if kind == WorldReader.KIND_SWARMER:
 		return Transform3D(Basis.IDENTITY, Vector3(0, _vat_lift, 0))
 	return _vat_body

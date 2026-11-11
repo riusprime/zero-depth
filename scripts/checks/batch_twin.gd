@@ -117,6 +117,7 @@ func _body(id: int, a: Node3D, b: Node3D) -> void:
 		dd = maxf(dd, absf(da[k] - db[k]))
 	var aa: AvatarBase = a.get_meta(&"enemy_avatar")
 	var ab: AvatarBase = b.get_meta(&"enemy_avatar")
+	aa.hit_look()  # (a read: the batch's native rows copied into the object first, BatchAvatars.peek)
 	_diff(
 		"body_drives",
 		dd,

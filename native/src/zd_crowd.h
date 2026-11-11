@@ -14,7 +14,10 @@
 #include <godot_cpp/variant/array.hpp>
 #include <godot_cpp/variant/packed_float32_array.hpp>
 #include <godot_cpp/variant/packed_float64_array.hpp>
+#include <godot_cpp/variant/packed_byte_array.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
+#include <godot_cpp/variant/packed_int64_array.hpp>
+#include <godot_cpp/variant/packed_vector3_array.hpp>
 
 namespace zd {
 
@@ -44,6 +47,33 @@ public:
 	godot::Array write_furniture(const godot::Array &slots, const godot::PackedInt32Array &set_parts,
 			const godot::PackedInt32Array &set_caps, double fraction, bool interp_on, bool synced_now, bool ticked,
 			const godot::PackedFloat64Array &heights) const;
+
+	// The avatars of the batched enemies (zd_avatar.h): `state` is every slot's row (av::STRIDE doubles), `cls` its
+	// class; `frame` the slots' places and facings (BatchAvatars.frame_columns: the root's x, y, z, the facing's yaw,
+	// its mode (1: its whole transform is in fx), fx: 12 floats a slot); `consts`: [calm, the five STATE_* values].
+	// apply_sync: the sync of each slot with `pending` (its state, healing, windup and sim place), then four 0.05 s
+	// steps of each slot with `warm` (ActorViews' catch-up as it comes on screen). Returns the new rows.
+	godot::PackedFloat64Array apply_sync(const godot::PackedFloat64Array &state, const godot::PackedInt32Array &cls,
+			const godot::Array &frame, const godot::PackedByteArray &pending, int64_t tick,
+			const godot::PackedInt32Array &in_state, const godot::PackedByteArray &in_heal,
+			const godot::PackedFloat64Array &in_windup, const godot::PackedFloat32Array &in_x,
+			const godot::PackedFloat32Array &in_y, const godot::PackedByteArray &warm,
+			const godot::PackedFloat64Array &consts) const;
+	// The frame step (AvatarBase._process) of each slot processing (proc) and not born this frame (born != frame_no:
+	// the tree first ran a node's _process the frame after it came). Returns the new rows.
+	godot::PackedFloat64Array step_avatars(const godot::PackedFloat64Array &state, const godot::PackedInt32Array &cls,
+			const godot::Array &frame, const godot::PackedByteArray &proc, const godot::PackedInt32Array &born, int64_t frame_no, double delta,
+			const godot::PackedFloat64Array &consts) const;
+	// VatCrowd's instances of the batched slots, one buffer a set: for set j (VatCrowd's index set_index[j]) the slots
+	// whose body set (body_of) or, when body[j] is 0, shadow set (shadow_of) it is, in seq order, those shown (bo not
+	// INF), each at Transform3D(IDENTITY, bo) x its facing x its avatar's transform (x its body offset, for a body).
+	// Returns, by set, [count, capacity, buffer, drive buffer (the drives past four, dn[j] floats a slot)].
+	godot::Array write_bodies(const godot::PackedFloat64Array &state, const godot::PackedInt32Array &cls,
+			const godot::Array &frame, const godot::PackedInt32Array &body_of, const godot::PackedInt32Array &shadow_of,
+			const godot::PackedInt64Array &seq, const godot::PackedVector3Array &bo,
+			const godot::PackedInt32Array &set_index, const godot::PackedByteArray &body,
+			const godot::PackedFloat64Array &period, const godot::PackedInt32Array &dn,
+			const godot::PackedInt32Array &caps, const godot::PackedFloat64Array &consts) const;
 
 protected:
 	static void _bind_methods();
