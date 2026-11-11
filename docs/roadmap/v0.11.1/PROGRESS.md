@@ -327,3 +327,10 @@ path (owner L16: the C++ need not match the GDScript bit for bit), six never-wri
   is faster in five of six. One fight moves with the seed by more than the rule's 1 s, so the rule now compares the
   mean of three fights (seeds 21, 22, 23), still within 1 s; the floor and the ceiling are still asserted on every
   fight. 15/15, 108 s (it was one fight a build). The owner was told. The tolerance was not widened.
+- 2026-11-11 (owner, told of the pace test): "a bit faster for a stronger build is ok what I dont want is stronger
+  builds deleting a boss". That is the test's floor (every body at least a minute, 12 % shorter a loop finished),
+  asserted on every fight and never red. The run's means over three fights (s a body: Colossus, Prism, Fallen): base
+  blade 100.2 / 97.2 / 135.2; strong blade 70.3 / 73.0 / 119.8; absurd gun (loop 3) 82.3 / 66.6 / 82.9; absurd blade
+  (loop 3) 47.0 / 60.2 / 86.1 against a 45.6 s floor.
+- 2026-11-11 (lead): seams on `493f3946` (step 54b, step 61, the Ring fix, the pace test): **730/730, 1,427 s of
+  tests, 1,696 s wall, exit 0**, the library built by `scripts/native/ensure.sh` inside the run. Pushed.
