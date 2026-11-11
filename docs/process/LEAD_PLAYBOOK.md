@@ -81,5 +81,10 @@ git merge --no-ff <agent head SHA> -m "Merge v0.8.0 Step <id>: <outcome>"
 - **Shots:** they render on the GPU in a real window, so no `xvfb-run`, and they take minutes, not tens of minutes.
   Agents' shot scripts that wrap Godot in `xvfb-run -a` work without the wrapper; drop it on Windows.
 - **Timing** (load freezes, fps): measured here, the numbers are real. Paste them as evidence with the machine named.
+  Measure with the tools and the quiet-machine protocol in [`PERF_TOOLS.md`](PERF_TOOLS.md); an agent that touches
+  `native/` or a kernel's bridge reads [`../architecture/NATIVE_CORE.md`](../architecture/NATIVE_CORE.md) first.
+- **The owner's own checkout is theirs:** never merge into it, build in it or rebuild its library while their editor or
+  game is open (a locked library fails the build). Work in a worktree and update their folder when they say it is
+  closed ([`../LESSONS.md`](../LESSONS.md) L26).
 - **Windows:** run the bash scripts from Git Bash, and Godot natively, not inside WSL, so it uses the 3060.
   `scripts/verify.ps1` is the PowerShell version of `verify.sh`.
