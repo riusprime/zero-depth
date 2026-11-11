@@ -25,10 +25,13 @@ workflow, written down. `CLAUDE.md` holds the rules; this is how the lead applie
 
 ## 3. Agents
 
-Use the Agent tool with `isolation: "worktree"`, run in the background, started from inside the repo.
+Use the Agent tool, run in the background. The agent makes its own worktree beside the repo
+(`git worktree add ../wt-<id> -b v0XY-<id> <the lead's SHA>`): the tool's `isolation: "worktree"` has cut worktrees
+from an old `main` instead of the session branch.
 
-**One heavy job at a time.** At most one agent runs Godot tests or shots at once. Others write code, read and lint
-until the lead says "go".
+**One heavy job at a time on a cloud machine.** There, at most one agent runs Godot tests or shots at once; others
+write code, read and lint until the lead says "go". On the owner's PC several heavy jobs may run at once, each with
+its own `APPDATA` folder (CLAUDE.md "The owner's PC"); timing runs still need a quiet machine (§6).
 
 The prompt includes:
 - the step id;

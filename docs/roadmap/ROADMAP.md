@@ -87,9 +87,11 @@ current version. Those changes ship as patch versions.
 See [`../architecture/TEST_MATRIX.md`](../architecture/TEST_MATRIX.md) §5. In short:
 - **docs only:** nothing locally;
 - **assets:** the asset tests;
-- **code, data, tests or project files:** the full suite.
+- **code, data, tests or project files:** an agent runs lint, the tests of the folders it touched and their e2e;
+  the lead, after merging, runs `bash scripts/ci/seams.sh`. There is no local full suite (CLAUDE.md "Testing before a
+  push").
 
-CI runs everything on every PR.
+The full suite runs once per version, on GitHub, on the PR into `main`.
 
 ### 0.6 Session continuity
 
