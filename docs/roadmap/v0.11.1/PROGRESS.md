@@ -3,51 +3,35 @@
 Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c339458a`.
 
 ## Where we are
-(The lead keeps this block current at every push. Updated 2026-11-10.)
+(The lead keeps this block current at every push. Updated 2026-11-11.)
 
-- **Waves 1 and 2 are done, and step 45.** Seams on `060e883b`: **674 of 674, 1,396 s of tests, 1,606 s wall** (it
-  was 669, 3,185 s, 3,442 s at `ee42eafa`): [`evidence/SEAMS_TIMING.md`](evidence/SEAMS_TIMING.md).
-- **Seams on `2cb95232` (everything merged, step 55c included): 703 of 703,** 1,259 s of tests, 1,498 s wall, with the
-  library built; and the native, presentation, arch and golden folders in one process, 1,611 of 1,611, exit 0. The
-  owner was playing and an agent was probing during it.
-- **Owner playtest, 2026-11-11** (the build before step 55c, native core on): "tried it, game feels really smooth,
-  barely falls under 60 fps and I like that, but I think a big cost is coming from light effects in some attack forms
-  like ring for example". **Measured and fixed (step 62, merged on `lead-merge`, not pushed):** the Ring cost 4.7 ms
-  a frame over the Gun alone at 20 enemies; its lights cost nothing measurable; a travelling ring's pack effects were
-  taken again almost every frame. Now 1.3 ms (busy machine). **For the owner to judge:** a travelling void ring's
-  tendrils now stay in place along the ring where they jumped every frame (OWNER_QUESTIONS Q9).
-- **Left over from Wave 2, small:** the HUD and menu half of the dead-code scan; the menu backdrop's ember mode and
-  the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: the
-  owner was asked whether to delete it); the duplicate final-boss texture (needs model prep).
-- **Wave 3 is measured** ([`evidence/PERF_AFTER.md`](evidence/PERF_AFTER.md), quiet machine, `930485be`): the
-  average frame is 20–31 % shorter (20 enemies 14.8 → 10.2 ms; 60 heavy 36.7 → 27.7 ms; 120 swarmers 29.6 → 23.8 ms),
-  the 1 % lows in the horde scenes about doubled (10 → 20 fps), the tick at 120 enemies 4.26 → 3.09 ms. **Every
-  target is still missed** (horde tick 4.14 ms against 4; stress 3.31 against 2; no horde frame under 6.94 ms).
-- **The native core (Wave 7) is merged and pushed:** the spike (49), the build (50), the design (51), the shared
-  core (52a), enemy think and steering (52b), strikes (52c), the projectile sweep (53a), the path flood (53b), and
-  54a: every kernel is on at the game's start when the library is built, with a dev-panel switch back (F10, Tools).
-  Tick at 120 enemies 3.3 → 0.56 ms ([`evidence/PERF_NATIVE.md`](evidence/PERF_NATIVE.md)). **54b (delete the script
-  versions, re-record the goldens) waits for the owner's playtest and the PR's CI** (OWNER_QUESTIONS Q7).
-- **Also merged and pushed:** step 35 (the sim carries no old-save code: 3,900 lines and 57 tests gone, hash and
-  goldens unchanged), step 56 (a dead enemy's cubes are one draw and last 0.5 s at any frame rate), the
-  frame-attribution tooling (`scripts/checks/frame_attribution.sh`, `frame_spans.gd`).
-- **Not merged:** step 48 (`v0111-s48`), the sim on its own thread: parked (OWNER_QUESTIONS Q2).
-- **Wave 8 (the display layer, owner L19):** merged and pushed: steps 55, 55b, 55c (nine enemy kinds batched; their
-  furniture, clocks, pose and bodies written in C++, bit-equal to the GDScript path), 57 (lightning bolts by
-  shader), 58 (views read in bulk), 59 (the HUD), 60 (shard drops as instances), and the exit-crash fix. Last quiet
-  run, before 55b, 55c, 58 and 60 ([`evidence/PERF_W8.md`](evidence/PERF_W8.md)): 20 enemies 8.2 ms (122 fps), 60
-  heavy 24.9 ms, 120 swarmers 18.5 ms. **The quiet run after them is NOT YET RUN** (the owner is using the PC).
-- **The owner's folder** is at `932d47a1` (without step 55c) with its library built; the owner is using it, so the
-  lead does not touch it: `git merge --ff-only` to the pushed head and `bash scripts/native/build.sh all` there once
-  the owner says the editor is closed.
-- **Next:** step 54b (the native core the only one; an agent is on it) reports; the lead merges, runs seams and the
-  final docs pass; the quiet run on the final code; push, the owner's folder, the PR into `main`.
-- **Questions for the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md).
-- **Pushed:** `claude/v0110` up to the docs commit after `2cb95232` (pushed from the lead's worktree), and the tag
-  `archive/scripts-2026-11`.
+- **Everything the owner asked for in v0.11.1 is merged and pushed** (`claude/v0110`), and the PR into `main` is
+  open (owner Q3: "When done open PR for github main"). Its CI is the first full suite of the version, the first
+  Linux build of the C++ library and the first check that Linux gives the same native fixtures as this PC.
+- **Seams on `493f3946`** (the final code): **730 of 730, 1,427 s of tests, 1,696 s wall, exit 0.**
+- **The sim's hot loops run only in C++** (step 54b, owner Q7): the GDScript versions and the switch are gone; the
+  game and the tests stop with one error when the library is missing. Read
+  [`docs/architecture/NATIVE_CORE.md`](../../architecture/NATIVE_CORE.md) before touching `native/`. The goldens
+  were re-recorded ("Goldens changed on purpose"); a run saved mid-floor before the flip is not resumed.
+- **Performance, the final quiet run** ([`evidence/PERF_FINAL.md`](evidence/PERF_FINAL.md), `c7a2dfbc`): 20 enemies
+  8.7–9.2 ms (about 110 fps), 60 heavy 24.3 ms, 120 swarmers 15.5 ms (64 fps); the tick at 120 enemies 0.54 ms. From
+  the baseline: 14.8 / 36.7 / 29.6 ms and 4.26 ms. The probe scenes' 1 % lows are still under 60 fps (43–50, 20–22,
+  31–34); the frame target is now "never under 60 fps" (LOCKED_DECISIONS 2026-11-11) and the owner said the
+  performance work stops here ("I think we optimized the game a lot already").
+- **Owner playtest, 2026-11-11** (before step 55c): "feels really smooth, barely falls under 60 fps and I like
+  that". The Ring they pointed at was measured and fixed (step 62): 4.7 → 0.9 ms a frame over the Gun alone.
+- **Not done in this version** (the lead's reading, told to the owner, not confirmed): Wave 6 (steps 40–44, the
+  structural splits) and steps 37–38 (the golden reset's remaining part) wait for a later version.
+- **Open, small:** the editor crashed once on quitting after an import (once in six imports on 2026-11-11, not
+  reproduced); a real Windows release export with the library is unrun here (no templates: the PR's `windows.yml`
+  is the check); `scripts/checks/hit_soak.gd` never reaches a fight; `CardOrder`'s retired-card stubs stay until the
+  old-save layer is removed; the HUD and menu half of the dead-code scan; the duplicate final-boss texture.
+- **The owner's folder** is on the pushed head with its library built (`bash scripts/native/build.sh all` after
+  every pull that touches `native/`). Never merge or build there while the editor or the game is open.
+- **Next:** the PR's CI: fix a red shard on the branch (re-run only that shard's files locally), raise
+  `tests/MIN_TEST_COUNT` from the green `verify` total; then the owner's playtest of the flip and the merge.
+- **Questions for the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (Q9: the void ring's tendrils).
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
-- **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
-  approved.
 
 ## Owner decisions (2026-11-10)
 - Tests: speed them up; some are unnecessary.
@@ -334,3 +318,8 @@ path (owner L16: the C++ need not match the GDScript bit for bit), six never-wri
   (loop 3) 47.0 / 60.2 / 86.1 against a 45.6 s floor.
 - 2026-11-11 (lead): seams on `493f3946` (step 54b, step 61, the Ring fix, the pace test): **730/730, 1,427 s of
   tests, 1,696 s wall, exit 0**, the library built by `scripts/native/ensure.sh` inside the run. Pushed.
+- 2026-11-11 (lead): the final quiet run ([`evidence/PERF_FINAL.md`](evidence/PERF_FINAL.md), `c7a2dfbc`), after the
+  owner said the PC was free. The 20-enemy scene first read 9.2 ms against PERF_W8's 8.2: the lead measured
+  PERF_W8's build again back to back (8.9 ms today against 8.7 for the final code): the machine, not the code. 120
+  swarmers 18.3 → 15.7 ms back to back. The owner's folder fast-forwarded to the pushed head, its library rebuilt,
+  imported twice, a 600-frame headless boot exit 0; `project.godot` untouched.

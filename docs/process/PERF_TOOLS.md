@@ -181,6 +181,7 @@ output, build and machine.
 | [`PERF_AFTER.md`](../roadmap/v0.11.1/evidence/PERF_AFTER.md) | the GDScript speed-ups, the thread trial | frames 20–31 % shorter; 1 % lows in hordes 10 → 20 fps; tick at 120 4.26 → 3.09 ms; the thread trial 4–15 % |
 | [`PERF_NATIVE.md`](../roadmap/v0.11.1/evidence/PERF_NATIVE.md) | the native kernels off against on; the frame attribution | tick at 120 enemies 3.3 → 0.56 ms; horde frames 2–3 ms shorter; the enemies' nodes 6.0–8.9 ms, the HUD 2.0–2.4 ms |
 | [`PERF_W8.md`](../roadmap/v0.11.1/evidence/PERF_W8.md) | the frame after the first display steps | 20 enemies 8.2 ms (122 fps), 60 heavy 24.9 ms, 120 swarmers 18.5 ms; the HUD about 1 ms; the batch alone 0.15 ms |
+| [`PERF_FINAL.md`](../roadmap/v0.11.1/evidence/PERF_FINAL.md) | the final code of v0.11.1 (the native core the only sim), with PERF_W8's build measured again back to back | 20 enemies 8.7–9.2 ms, 60 heavy 24.3 ms, 120 swarmers 15.5 ms; the tick at 120 enemies 0.54 ms; the Ring 0.9 ms over the Gun alone; a daytime run reads about 0.7 ms higher than a night one |
 
 The quiet run after the batched avatars, the bulk reads and the shard drops is **NOT YET RUN** (PROGRESS "Where we
 are").
