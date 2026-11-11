@@ -17,8 +17,9 @@ extends Node3D
 ##   only for an enemy that shows one (anchor()).
 ## A killed enemy's instances go the same frame, unless its body falls (its avatar's die()): then its disc and ring stay
 ## until the fall ends, as the node's did, and its bar and blob go at once. Presentation only (EI-07): it reads what
-## ActorViews gives it, never the sim. write_furniture() takes the slot columns and fills the buffers: the narrow step a
-## native writer could take over.
+## ActorViews gives it, never the sim. write_furniture() takes the slot columns and fills the buffers: with the native
+## library loaded and `native` on, one call to its ZdCrowd does it (the same numbers: tests/unit/native/
+## test_native_crowd.gd), and GDScript only hands each set's buffer to its MultiMesh; else the GDScript pass below.
 
 ## The set kinds.
 enum Part { DISC, RING, DAZED, BAR, BLOB }
@@ -48,6 +49,13 @@ const DISC_Y := 0.006
 const RING_Y := 0.02
 const RING_FLAT := Vector3(1, 0.08, 1)
 const DAZED_FLAT := Vector3(1, 0.15, 1)
+## The native writer's class (native/src/zd_crowd.h).
+const NATIVE_CLASS := &"ZdCrowd"
+
+## Whether the furniture is written by the native library's ZdCrowd when it is loaded (NativeSwitch sets it with the
+## native core: the dev panel's "Native core" switch turns it off with the kernels; the frame probe's
+## --ab=no_native_crowd too). Without the library the GDScript pass runs whatever this says.
+static var native := true
 
 ## The view whose shared parts, bar chunks and look it draws with (ActorViews sets it).
 var views: ActorViews
@@ -99,6 +107,13 @@ var _facings: Array[Node3D] = []
 var _bo := PackedVector3Array()
 var _bo_fresh := false  # _bo written since the last change (a sync, a slot come or gone)
 var _phys_seen := -1
+## The native writer's inputs kept as columns, written on events instead of read off each enemy every frame: its bar
+## trail's fill (BarChunks.fill_to; 1 without a trail) and whether its root, facing and avatar all show (each sync).
+var _fill := PackedFloat64Array()
+var _shown := PackedByteArray()
+## Slots whose body falls (their root is freed when the fall ends: the frame's drop looks only while there are any).
+var _falls := 0
+var _crowd: RefCounted
 
 
 func _init() -> void:
@@ -177,6 +192,8 @@ func add(
 	_s1.append(1.0)
 	_born.append(Engine.get_process_frames())
 	_bo.append(Vector3.INF)
+	_fill.append(1.0)
+	_shown.append(1 if root.visible and _facings[k].visible and avatar.visible else 0)
 	_disc.append(_set_index(Part.DISC, radius))
 	_ring.append(_set_index(Part.RING, radius))
 	_set_index(Part.BAR, 0.0)  # The sets it can show in later (made now: the pass walks the sets made)
@@ -249,6 +266,15 @@ func update(id: int, reader: WorldReader, i: int, parts: Array, cols: Array) -> 
 	avatar.call(&"sync", reader, i)
 	PerfMarks.add(&"actors.enemy_sync", t_en)
 	show_parts(id, bar and shown, state == WorldReader.STATE_RECOVER, shown and avatar.visible)
+	var k: int = _slot_of[id]
+	_shown[k] = 1 if shown and avatar.visible and (_roots[k] as Node3D).visible else 0
+
+
+## BarChunks.fill_to: enemy `id`'s bar trail shows fill `f` now (1 once its trail is gone).
+func set_fill(id: int, f: float) -> void:
+	var k: int = _slot_of.get(id, -1)
+	if k >= 0:
+		_fill[k] = f
 
 
 ## A batched enemy left the sim: its body falls a moment where its avatar has a death (its disc and ring stay with
@@ -271,6 +297,8 @@ func release(id: int, falls: bool) -> void:
 	if k < 0:
 		return
 	if falls:
+		if _live[k] == 1:
+			_falls += 1
 		_live[k] = 0
 		_bar_on[k] = 0
 		_blob_on[k] = 0
@@ -352,6 +380,8 @@ static func _place_anchor(a: Node3D, at: Vector3, before: Variant) -> void:
 func _remove(k: int) -> void:
 	_bo_fresh = false
 	var id := _ids[k]
+	if _live[k] == 0:
+		_falls -= 1
 	_slot_of.erase(id)
 	if _anchors.has(id):
 		(_anchors[id] as Node).queue_free()
@@ -392,6 +422,8 @@ func _remove(k: int) -> void:
 		&"_s1",
 		&"_born",
 		&"_bo",
+		&"_fill",
+		&"_shown",
 	]:
 		var arr: Variant = get(col)
 		if k != last:
@@ -418,6 +450,8 @@ func _process(delta: float) -> void:
 ## ran its _process), then writes the furniture.
 func advance(delta: float) -> void:
 	var k := _ids.size() - 1
+	if _falls == 0 and _native_on():  # (only a falling body's root is freed while its slot stays)
+		k = -1
 	while k >= 0:
 		var r: Node3D = _roots[k]
 		if not is_instance_valid(r) or r.is_queued_for_deletion():
@@ -435,9 +469,23 @@ func advance(delta: float) -> void:
 	PerfMarks.add(&"batch.write", t_wr)
 
 
+## Whether the native writer runs (its class loaded and `native` on), made the first time.
+func _native_on() -> bool:
+	if not native:
+		return false
+	if _crowd == null:
+		if not ClassDB.class_exists(NATIVE_CLASS):
+			return false
+		_crowd = ClassDB.instantiate(NATIVE_CLASS)
+	return true
+
+
 ## Every slot's disc, ring, dazed ring, bar and blob into its set's buffer (one pass a set over the slot columns, the
-## places reckoned once), then one upload a set.
-func write_furniture() -> void:
+## places reckoned once), then one upload a set: natively when it can (`script` forces the GDScript pass: tests).
+func write_furniture(script := false) -> void:
+	if not script and _native_on():
+		_write_native()
+		return
 	var f := _fraction()
 	var interp_on := _interpolating()
 	var synced_now := synced_frame == Engine.get_process_frames()
@@ -533,6 +581,76 @@ func write_furniture() -> void:
 		mm.visible_instance_count = c
 		s[3] = buf
 		drawn[part] += c
+	_bo_fresh = true
+
+
+## write_furniture's pass in the native library (ZdCrowd.write_furniture: the same numbers from the same columns), then
+## one upload a set: O(sets) here, whatever the number of enemies.
+func _write_native() -> void:
+	var ticked := Engine.get_physics_frames() != _phys_seen  # A tick since the last write
+	_phys_seen = Engine.get_physics_frames()
+	var set_parts := PackedInt32Array()
+	var caps := PackedInt32Array()
+	for s: Array in _sets:
+		set_parts.append(s[0])
+		caps.append((s[2] as MultiMesh).instance_count)
+	var r: Array = (
+		_crowd
+		. call(
+			&"write_furniture",
+			[
+				_x0,
+				_y0,
+				_z0,
+				_x1,
+				_y1,
+				_z1,
+				_interp,
+				_bar_on,
+				_dazed_on,
+				_blob_on,
+				_shown,
+				_bar_y,
+				_dazed_y,
+				_blob_s,
+				_disc,
+				_ring,
+				_fill,
+				_s0,
+				_s1,
+			],
+			set_parts,
+			caps,
+			_fraction(),
+			_interpolating(),
+			synced_frame == Engine.get_process_frames(),
+			ticked,
+			PackedFloat64Array([DISC_Y, RING_Y, EnemyShadows.BLOB_Y])
+		)
+	)
+	_px = r[0]
+	_py = r[1]
+	_pz = r[2]
+	_sx = r[3]
+	_s0 = r[4]
+	_s1 = r[5]
+	_bo = r[6]
+	var counts: PackedInt32Array = r[7]
+	var got_caps: PackedInt32Array = r[8]
+	var bufs: Array = r[9]
+	for p in drawn.size():
+		drawn[p] = 0
+	for j in _sets.size():
+		var s: Array = _sets[j]
+		var mm: MultiMesh = s[2]
+		var c := counts[j]
+		if got_caps[j] != mm.instance_count:
+			mm.instance_count = got_caps[j]
+		if c > 0:
+			mm.buffer = bufs[j]
+		mm.visible_instance_count = c
+		s[3] = bufs[j]
+		drawn[s[0]] += c
 	_bo_fresh = true
 
 

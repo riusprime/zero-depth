@@ -537,6 +537,7 @@ func _batch() -> EnemyBatch:
 		batch.views = self
 		add_child(batch)
 		bar_chunks.locate = batch.bar_point
+		bar_chunks.fill_to = batch.set_fill
 		if vat_crowd != null:
 			vat_crowd.batch = batch
 	return batch

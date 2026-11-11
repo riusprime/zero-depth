@@ -26,6 +26,8 @@ extends RefCounted
 ## (re-applied every frame, so new enemies too) while its root, body and avatar stay: what the furniture's nodes cost.
 ## --ab=no_batch draws the batched enemy kinds with a node each again (ActorViews.batch_enemies off): the old path, in
 ## the same build, for a before/after run.
+## --ab=no_native_crowd writes the batched enemies' furniture in GDScript (EnemyBatch.native off) with the native
+## library loaded: the native writer's before/after.
 ## Every report says how many nodes are in the tree under the actors' view, by class (the last frame).
 ## --shot-at=N:<png> saves the viewport at the scenario's Nth frame, the probe's scripted strafe and aim on frames
 ## (run it with --fixed-fps 60 for the same frame twice: a before/after pair).
@@ -38,6 +40,7 @@ const AB := [
 	"detach_actors",
 	"detach_furniture",
 	"no_batch",
+	"no_native_crowd",
 	"no_particles",
 	"no_hud",
 	"no_still",
@@ -173,6 +176,8 @@ func setup(tree: SceneTree, main: Node, ab: PackedStringArray) -> void:
 				_detached_parent.remove_child(_detached)
 			"no_batch":
 				ActorViews.batch_enemies = false
+			"no_native_crowd":
+				EnemyBatch.native = false
 			"no_hud":
 				(main.get(&"ui") as CanvasLayer).visible = false
 			"no_still":  # every HUD part drawn directly each frame (HudStill's textures off)
