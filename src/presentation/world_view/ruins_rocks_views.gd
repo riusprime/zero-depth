@@ -22,6 +22,13 @@ extends Node3D
 ## - a Scrap Hound's yelp: the pack's plain hit spark (vx1_hit_plain) at its head when a hit stops it.
 ## Nothing here decides.
 
+## The kinds this view draws something for.
+const KINDS := [
+	WorldReader.KIND_WIRE_WEAVER,
+	WorldReader.KIND_STONE_THROWER,
+	WorldReader.KIND_ROCK_LURKER,
+	WorldReader.KIND_SCRAP_HOUND,
+]
 const ROCK_MODEL := &"boulder_small"
 const ROCK_SPREAD := 1.25
 const ROCK_HEIGHT := 0.6
@@ -117,7 +124,7 @@ func sync(reader: WorldReader) -> void:
 	_sync_cables(reader, tick)
 	_sync_rocks(reader.thrown_rocks())
 	var seen := {}
-	for i in range(1, reader.actor_count()):
+	for i in reader.indices_of_kinds(KINDS):  # Only the kinds drawn here, not every actor
 		var kind := reader.actor_kind(i)
 		var id := reader.actor_id(i)
 		match kind:

@@ -12,6 +12,8 @@ extends Node3D
 ##   magic_areas ripple_area_vfx_03).
 ## Nothing here decides.
 
+## The kinds this view draws something for.
+const KINDS := [WorldReader.KIND_STAR_WARPER, WorldReader.KIND_GRAVITY_NODE]
 const STAR_RING := &"o13d_star_ring"
 const STAR_CORE := &"o13d_star_core"
 const BLINK := &"o13d_blink"
@@ -40,7 +42,7 @@ func sync(reader: WorldReader) -> void:
 		return
 	var live_stars := {}
 	var live_swirls := {}
-	for i in range(1, reader.actor_count()):
+	for i in reader.indices_of_kinds(KINDS):  # Only the two kinds drawn here
 		var kind := reader.actor_kind(i)
 		var id := reader.actor_id(i)
 		if kind == WorldReader.KIND_STAR_WARPER:

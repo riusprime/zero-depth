@@ -86,7 +86,7 @@ static func glow_material(c: Color, energy: float) -> StandardMaterial3D:
 func sync(reader: WorldReader) -> void:
 	var live := {}
 	_hero = SimPlane.to_3d(reader.player_pos())
-	for i in range(1, reader.actor_count()):
+	for i in reader.core_indices():  # Only the carriers, not every actor
 		var code := reader.actor_core(i)
 		if code < 0 or reader.actor_dead(i):
 			continue

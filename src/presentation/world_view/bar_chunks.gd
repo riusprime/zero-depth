@@ -17,6 +17,9 @@ const HEIGHT := 0.07
 ## Where a bar fed with no pivot (a batched enemy's, EnemyBatch.bar_point) is drawn now: id -> Vector3, or
 ## Vector3.INF while it is hidden. Its fill is read from its trail by EnemyBatch.
 var locate: Callable
+## Told each batched enemy's bar fill whenever its trail's changes (id, fill), and 1 when its trail goes: the native
+## furniture writer reads the fills as a column (EnemyBatch.set_fill) instead of each trail every frame.
+var fill_to: Callable
 ## Trails by actor id, and the bar pivot each scales (null: a batched enemy's bar, placed by `locate`).
 var _trails := {}
 var _pivots := {}
@@ -61,6 +64,8 @@ func feed(id: int, pivot: Node3D, f: float, snap: bool = false) -> void:
 			t.snap(f)
 	t.set_target(f)
 	if pivot == null:
+		if fill_to.is_valid():
+			fill_to.call(id, t.fill)
 		return
 	var sx := maxf(t.fill, 0.001)
 	if pivot.scale.x != sx:  # A bar at rest is not written again every sync
@@ -69,6 +74,8 @@ func feed(id: int, pivot: Node3D, f: float, snap: bool = false) -> void:
 
 ## Actor `id`'s bar is gone (its actor, or hidden): its trail goes.
 func forget(id: int) -> void:
+	if _trails.has(id) and _pivots[id] == null and fill_to.is_valid():
+		fill_to.call(id, 1.0)
 	_trails.erase(id)
 	_pivots.erase(id)
 
@@ -117,6 +124,8 @@ func advance(delta: float) -> void:
 		var pivot_v: Variant = _pivots[id]
 		var at := Vector3.INF
 		if pivot_v == null:  # A batched enemy's bar
+			if fill_to.is_valid():
+				fill_to.call(id, t.fill)
 			if t.chunk_size() <= 0.0 or not locate.is_valid():
 				continue
 			at = locate.call(id)
