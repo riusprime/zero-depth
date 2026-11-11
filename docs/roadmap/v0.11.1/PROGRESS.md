@@ -7,8 +7,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 
 - **Waves 1 and 2 are done, and step 45.** Seams on `060e883b`: **674 of 674, 1,396 s of tests, 1,606 s wall** (it
   was 669, 3,185 s, 3,442 s at `ee42eafa`): [`evidence/SEAMS_TIMING.md`](evidence/SEAMS_TIMING.md).
-- **Seams on `5736f08e` (everything merged so far, the native switch off): 697 of 697,** 1,857 s of tests, 2,239 s wall,
-  with four agents running Godot alongside (the seconds are not a measurement).
+- **Seams on `36c644f7` (the native core merged and on by default in the game): 703 of 703,** 1,388 s of tests, 1,759 s
+  wall, with the library built: the e2e files booted the game 61 times on the native core. Agents ran alongside.
 - **Left over from Wave 2, small:** the HUD and menu half of the dead-code scan; the menu backdrop's ember mode and
   the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: the
   owner was asked whether to delete it); the duplicate final-boss texture (needs model prep).
@@ -16,18 +16,22 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   average frame is 20–31 % shorter (20 enemies 14.8 → 10.2 ms; 60 heavy 36.7 → 27.7 ms; 120 swarmers 29.6 → 23.8 ms),
   the 1 % lows in the horde scenes about doubled (10 → 20 fps), the tick at 120 enemies 4.26 → 3.09 ms. **Every
   target is still missed** (horde tick 4.14 ms against 4; stress 3.31 against 2; no horde frame under 6.94 ms).
-- **The native core (Wave 7) is being built behind a switch, off by default:** merged and pushed: the spike (49), the
-  permanent build (50), the design (51, [`NATIVE_CORE.md`](NATIVE_CORE.md)), the shared core (52a). Built, on its
-  branch: enemy think and steering (52b, `v0111-s52b` `5dffcf1b`: the tick at 120 enemies about 4.9 → 2.0 ms on a busy
-  machine). With agents: the projectile sweep (53a), the path flood (53b), enemy strikes (52c). Then the flip (54).
+- **The native core (Wave 7) is merged and pushed:** the spike (49), the build (50), the design (51), the shared
+  core (52a), enemy think and steering (52b), strikes (52c), the projectile sweep (53a), the path flood (53b), and
+  54a: every kernel is on at the game's start when the library is built, with a dev-panel switch back (F10, Tools).
+  Tick at 120 enemies 3.3 → 0.56 ms ([`evidence/PERF_NATIVE.md`](evidence/PERF_NATIVE.md)). **54b (delete the script
+  versions, re-record the goldens) waits for the owner's playtest and the PR's CI** (OWNER_QUESTIONS Q7).
 - **Also merged and pushed:** step 35 (the sim carries no old-save code: 3,900 lines and 57 tests gone, hash and
   goldens unchanged), step 56 (a dead enemy's cubes are one draw and last 0.5 s at any frame rate), the
   frame-attribution tooling (`scripts/checks/frame_attribution.sh`, `frame_spans.gd`).
 - **Not merged:** step 48 (`v0111-s48`), the sim on its own thread: parked (OWNER_QUESTIONS Q2).
-- **Next:** merge 52b, 53a, 53b, 52c; the flip; the quiet attribution run; then Wave 8 (the display layer: steps 55,
-  57, 58), which the owner approved before going to sleep (L19). **The owner playtests at the end.**
+- **Wave 8 (the display layer, owner L19):** built on branches, merging next: step 57 (`v0111-s57` `efc8547d`:
+  lightning bolts drawn by a shader; the rest of the effects layer was already instanced), step 59 (`v0111-s59`
+  `6b23f3f4`: the HUD 346 → 70 draw calls, redraws 7 → 3; **its timing gain is not proven**, a quiet run decides
+  whether the still-part textures stay on). With an agent: step 55 (enemies as instances). Then step 58.
+- **Next:** merge 57, 59 and the Nemesis test fix; step 55; the quiet run; build the library in the owner's folder.
 - **Questions for the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md).
-- **Pushed:** `claude/v0110` up to the docs commit after `5736f08e`, and the tag `archive/scripts-2026-11`.
+- **Pushed:** `claude/v0110` up to the docs commit after `36c644f7`, and the tag `archive/scripts-2026-11`.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
   approved.
@@ -62,6 +66,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 | 16 | The fight bot, the lab-room scenario and the combo card live in `tests/support`. Left in `src/`: `KernelScenario` and `ScriptedInput` (the export smoke runs them inside the pack); left in `data/`: the combat-lab encounter and the patch notes (moving either changes the content manifest hash) | `35176162`, merge `d8362cd8` |
 | 15 (a) | Unreferenced sim, application and content code is gone: 34 functions, 34 constants, 25 translation keys (249 lines). Left: names that stand for stored values, and `HeartRoom.take_tick` (hashed, read nowhere: for step 36) | `62d24bee`, merge `0ef222b0` |
 | 19 | The line cap can't be switched off quietly: `tests/arch/test_line_cap.gd` lists the ten exempt files with reasons; the rule is in CLAUDE.md | `63ce6be5` |
+| 54a | The native core is on by default in the game when the library is built (`-- --native=0` turns it off); a dev-panel switch (F10, Tools, "Native core on/off (next floor)") goes back to the script sim from the next floor or run and is not saved; tests and tools stay on the script sim unless they ask. A run saved under one sim resumes under the other, both ways, with an equal state hash. The seams' 25 e2e files pass with the library (native) and without it (script) | `a88a976d`, merge `36c644f7` |
 | 53b | The path flood runs whole in C++ (behind the switch): exact (207,533,900 cells over 40 floors and 2,000 floods, 0 differ); one bounded flood 0.2 ms against 4–8 ms in GDScript, so it runs in one tick instead of sliced; `nav_flood` 0.36 → 0.045 ms a tick at 120 enemies, its worst tick about halved. A save with it on restores with it on. Two tests pin the script flood's slicing; they now turn the kernel off for themselves | `4d4d749c` |
 | 53a | The projectile sweep runs in C++ (behind the switch): the sweep 0.55 → 0.035 ms a tick at 120 enemies; a 300-projectile stress scene's tick 5.7 → 2.0 ms. The hit rules (damage, pierce, bounce, split, procs, homing) stay GDScript, moved unchanged into `projectile_contacts.gd` so both paths run them. 1,072 projectile and weapon tests pass with it on; same outcome hash as GDScript in the horde scenes | `56e598d4` |
 | 52c | Enemy strikes run in C++ (behind the switch): hit shapes, sight and fire timers native, returning hit, shot and hook lists that GDScript applies; `resolve` 0.19 → 0.05 ms at 120. Each of the 29 table kinds lands the same hits on the same ticks for the same damage and fires the same shots over 600 ticks; 293 rule tests pass with it on | `3f29a9dc` |
@@ -229,3 +234,10 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   enemies 3.3 → 0.56 ms with every kernel on; the horde frame gains 2–3 ms. The attribution (kernels on): the
   enemies' nodes cost 6.0 ms at 120 swarmers and 8.9 ms at 60 heavy; the HUD 2.0–2.4 ms in every scene (step 59
   added: step 29 had been dropped wrongly, on script cost alone). Started: 54a, 55, 57, 59.
+- 2026-11-11 (lead): seams on `36c644f7`: 703/703 with the library built. Pushed. Step 57 reported: its premise was
+  mostly wrong (the effects layer's sprite pools are already instanced; a one-pass buffer write measured slower); it
+  converted the one effect still rebuilt in script, the lightning bolt (`bolt.rebuild` 0.77 → 0.06 ms at 120). One
+  visible change: a bolt's core now always draws over its shell (the order used to vary by bolt). Step 59 reported:
+  counts firm, timing unproven on a busy machine. The Nemesis true-ending e2e (outside the seams) was failing since
+  v0.11.0 F16 (God mode carried across floors: the test's second God click now turned it off); the game was fine,
+  the test is fixed (`v0111-nem` `f64e5cb5`). The lead's miss when F16 was made.
