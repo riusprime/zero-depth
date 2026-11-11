@@ -64,6 +64,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 ## Done
 | Step | What (player-facing) | Commit |
 |---|---|---|
+| 54b | The C++ core is the only sim for what it covers (owner Q7: "C++ becomes the only one if performance is better"): the GDScript versions of enemy thinking, steering, strikes, the collision passes, the projectile sweep and the path flood are deleted (`world.gd` 2,319 → about 2,040 lines, `nav_field.gd` 914 → 543, `enemy_ai.gd` 1,188 → about 950), with the switch (`NativeSwitch`, `--native=`, `ZD_NATIVE_*`, the dev panel's row) and `native_compare.gd`. A `World` makes its native side itself (`NativeWorld.make`, the sim's only `ClassDB` use, held by the purity lint). Without the library the game reports one error and exits 1, and a GUT run aborts before its first test (`tests/support/native_required_hook.gd`). Before the deletion, the two paths over 200 seeds (40 enemies, 3,600 ticks): hero damage 1,009.0 script against 1,014.5 native; enemies alive at tick 3,600 17.77 against 17.97; half-dead tick 2,933.5 against 2,912.6. Goldens re-recorded (below). Also from step 36: six never-written `World` fields, `HeartRoom.take_tick` and `drop_retired_combos` gone. `scripts/native/ensure.sh` builds and registers the library for seams, the shards, `verify.sh` and CI; the export smoke runs from an export-like folder (the library beside the executable). The agent's runs: arch + native + app 82/82, application + debug + content 433/433, golden 5/5, sim_b 1,174/1,174, sim_c 21/21, presentation 1,569/1,569, e2e 67/67, sim_a 1,159/1,160 (the pace test, History). **Not run:** a real Windows release export (no templates on this PC) and every GitHub job | `358bdbe4`..`9ed65a3e`, merge `3c464d3d` |
 | 62 | A travelling ring keeps its effects: its held pack effects (the storm rim and its edge sparks, the fire, frost, venom and bleed rims) are keyed by the ring's own seed and move with it, where they were keyed by its position and so released and spawned again as it flew. Gun + Ring at 20 enemies 12.80 → 9.41 ms a frame (Gun alone 8.1); at 60 enemies 24.5 → 22.7 ms; pack spawns in an 18 s fight about 20,000 → 1,100 (busy machine: an agent's tests ran beside it). The ring's own light off, and every light off: no change beyond the spread. The other forms (Seekers, Wisps, Void, Laser, Rune Explosion, Glaive) showed no such churn. The look: rims and glow match in the before/after shot; a travelling void ring's tendrils now stay in place along the ring (they jumped each frame): the owner judges. The frame probe plays a chosen build (`--cards=`, `scripts/checks/probe_build.gd`), counts lights (`light_census.gd`) and has `--ab=no_ring`, `no_ring_light`, `no_ring_sparks`. The ring drawing moved to `form_ring.gd` (the canvas was at its cap) | `80ca8a7e`, merge `1093afd4` |
 | 61 | The hub station stand-in panel is gone (owner Q6: "Sure"): the panel, its two strings and its test lines deleted; `hub_session.gd` no longer builds it | `ca73cc6a`, merge `fbafb862` |
 | 0 | Audit, plan and docs | `17be5d16`, `927aba13` |
@@ -123,7 +124,20 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 | 3 | Tests take the game's content from one shared repository per run (`SharedContent`); the per-seed map compiles are hoisted. 608 of 608 in its runs. The gain was not measurable on a busy machine: step 11 measures it | `94060a2f`, merge `130c0b15` |
 
 ## Goldens changed on purpose
-- None.
+All in step 54b (`9ed65a3e`), recorded from the native core on the owner's PC (MSVC, debug library; the release
+library gives the same fixtures, `scripts/native/check_release.sh`). Why they moved: the native kernels are the only
+path (owner L16: the C++ need not match the GDScript bit for bit), six never-written `World` fields and
+`HeartRoom.take_tick` left the hash, and the AI no longer hands work to the GDScript flow field.
+- `tests/golden/fixtures/replay_ground_plane.json`: final hash `70ac7ca24761…` → `eaabcd52da86…`; all 166 checkpoints.
+- `tests/golden/fixtures/export_smoke_hash.txt`: `e5365ddb6dcb…` → `17691dd5df93…`.
+- `tests/golden/fixtures/modifier_equivalence.json` (digest; hits/damage/kills): blade_plain `b414b533aa1e` →
+  `ff1fa3a464cd` (186/3968/11 → 182/3915/10); blade_wildfire_rider `a13792b66461` → `bcd8839cb7d9` (131/4160/14 →
+  128/4132/13); both_plain `fe38fcaa82cc` → `205647487eec` (215/3757/7 → 207/3685/6); gun_frost_core `e4f357d60671`
+  → `9b3031604da1` and gun_plain `57aa9384fcdc` → `e62d252cf76a` (both 59/317/0 → 61/328/0).
+- New: `tests/golden/fixtures/native_kernels_hash.txt` (one hash a kernel: probe, nav, think, move, collide, strike,
+  shots) and `native_horde_hash.txt` (`6741b6bf50bf…`): the cross-compiler fixtures. Linux (gcc) has not produced
+  them yet: the PR's CI is the first comparison.
+- `RunSaver.PAYLOAD_VERSION` 5 → 6 (a run saved mid-floor before the flip is not resumed).
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -305,3 +319,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   not its lights; see the Done row for step 62. The lead had told the owner the heavy probe scene has no Ring; the
   probe's build list did include it, and the lead said so. Merged with step 61 on `lead-merge` (`1093afd4`); not yet
   under a seams run (it goes with step 54b's merge).
+- 2026-11-11 (lead): step 54b reported with one red test and was merged (`3c464d3d`; the only conflicts were the two
+  generated translation files, rebuilt by an import). **The red test:** `test_final_pace.gd`, "strong blade body 2: no
+  slower than the base build" within 1 s, on one fight (seed 21): base 128.7 s, strong 130.8 s on the native core (it
+  was 141.7 and 141.2 s in GDScript: passing by 0.5 s). The lead ran six seeds on the native core: the Fallen's body
+  takes the base blade 127.0–145.8 s (mean 133.6) and the strong blade 107.3–130.8 s (mean 117.4); the strong build
+  is faster in five of six. One fight moves with the seed by more than the rule's 1 s, so the rule now compares the
+  mean of three fights (seeds 21, 22, 23), still within 1 s; the floor and the ceiling are still asserted on every
+  fight. 15/15, 108 s (it was one fight a build). The owner was told. The tolerance was not widened.

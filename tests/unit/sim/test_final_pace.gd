@@ -41,6 +41,8 @@ const NEW_ATTACKS := [
 const TAIL_TICKS := 150
 ## The whole fight within this (ticks: 12 minutes).
 const LIMIT := 43200
+## The seeds whose fights the "no slower than the base build" rule averages.
+const PACE_SEEDS: Array[int] = [21, 22, 23]
 
 
 static func bigs() -> Dictionary:
@@ -101,39 +103,67 @@ static func fight(b: Array, seed_value: int = 21) -> Array:
 
 
 ## Each body from its rise to the next one's (its rise, the fight, its shatter): at least the pace's minute, at most
-## the pace's three minutes plus the rise and the shatter; the base build's no quicker than the absurd ones'.
+## the pace's three minutes plus the rise and the shatter, in every fight; and a stronger build's body no slower than
+## the base build's on the mean of PACE_SEEDS fights. One fight is not enough for that last rule: the Fallen's time
+## moves with the seed by more than the builds differ in one fight (base blade 127.0 to 145.8 s over six seeds, strong
+## blade 107.3 to 130.8 s; the means 133.6 and 117.4 s).
 func test_each_body_lasts_a_minute_or_more_whatever_the_build() -> void:
 	var base := []
 	for b: Array in BUILDS:
-		var r := fight(b)
-		var bot: Hero = r[3]
-		(
-			gut
-			. p(
-				(
+		var mean := [0.0, 0.0, 0.0]
+		for seed_value: int in PACE_SEEDS:
+			var r := fight(b, seed_value)
+			var bot: Hero = r[3]
+			(
+				gut
+				. p(
 					(
-						"N2 pace %s: won=%s, bodies (s, the Fallen's less its interphases) %s, [max HP, measured dps] %s, "
-						+ "hits taken %d; the Fallen's raw time and interphase time (s) %s"
+						(
+							"N2 pace %s, seed %d: won=%s, bodies (s, the Fallen's less its interphases) %s, "
+							+ "[max HP, measured dps] %s, hits taken %d; the Fallen's raw time and interphase time (s) %s"
+						)
+						% [b[0], seed_value, r[0], r[1], r[2], bot.hits, r[4]]
 					)
-					% [b[0], r[0], r[1], r[2], bot.hits, r[4]]
 				)
 			)
-		)
-		assert_true(r[0], "%s: the fight is won" % b[0])
-		assert_eq((r[1] as Array).size(), 3, "%s: three bodies" % b[0])
-		for k in (r[1] as Array).size():
-			var s: float = r[1][k]
-			# v0.9.5 BH1 (Q11): a looped run's minute is 12 % shorter per loop finished (at most 3)
-			var floor_s := 60.0 * (1000 - 120 * mini(int(b[2]) - 1, 3)) / 1000.0
-			assert_gte(
-				s, floor_s, "%s body %d: never under %.1f s (%.1f s)" % [b[0], k, floor_s, s]
-			)
-			assert_lte(s, 185.0, "%s body %d: never past three minutes (%.1f s)" % [b[0], k, s])
-			if base.is_empty():
-				continue
-			assert_gte(base[k], s - 1.0, "%s body %d: no slower than the base build" % [b[0], k])
+			assert_true(r[0], "%s, seed %d: the fight is won" % [b[0], seed_value])
+			assert_eq((r[1] as Array).size(), 3, "%s, seed %d: three bodies" % [b[0], seed_value])
+			if (r[1] as Array).size() != 3:
+				return
+			for k in 3:
+				var s: float = r[1][k]
+				# a looped run's minute is 12 % shorter per loop finished (at most 3)
+				var floor_s := 60.0 * (1000 - 120 * mini(int(b[2]) - 1, 3)) / 1000.0
+				assert_gte(
+					s,
+					floor_s,
+					(
+						"%s, seed %d, body %d: never under %.1f s (%.1f s)"
+						% [b[0], seed_value, k, floor_s, s]
+					)
+				)
+				assert_lte(
+					s,
+					185.0,
+					(
+						"%s, seed %d, body %d: never past three minutes (%.1f s)"
+						% [b[0], seed_value, k, s]
+					)
+				)
+				mean[k] += s / PACE_SEEDS.size()
+		gut.p("N2 pace %s: mean bodies over %d fights (s) %s" % [b[0], PACE_SEEDS.size(), mean])
 		if base.is_empty():
-			base = r[1]
+			base = mean
+			continue
+		for k in 3:
+			assert_gte(
+				base[k],
+				mean[k] - 1.0,
+				(
+					"%s body %d: no slower than the base build on the mean of %d fights"
+					% [b[0], k, PACE_SEEDS.size()]
+				)
+			)
 
 
 # --- the pace's formula and its cap ---------------------------------------------------------------------------------
