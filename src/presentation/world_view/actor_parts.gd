@@ -37,10 +37,8 @@ func add_rings(root: Node3D, radius: float, team_color: Color, outline: Color) -
 ## The dazed ring over a stunned Charger at `y` (hidden until it recovers).
 func add_dazed(root: Node3D, y: float) -> MeshInstance3D:
 	var dazed := MeshInstance3D.new()
-	dazed.mesh = _torus(0.22, 0.3)
-	dazed.material_override = _material(
-		ThemePalette.color(&"proj_hostile").lightened(0.3), false, false
-	)
+	dazed.mesh = dazed_mesh()
+	dazed.material_override = dazed_material()
 	dazed.position.y = y
 	dazed.scale = Vector3(1, 0.15, 1)
 	dazed.visible = false
@@ -68,6 +66,40 @@ func add_bar(root: Node3D, y: float, color: Color) -> Node3D:
 ## The meshes and materials made so far (tests: a spawn of a size and colour seen before makes none).
 func made() -> int:
 	return _meshes.size() + _mats.size()
+
+
+## The same meshes and materials for EnemyBatch, which draws these pieces as instances of a batched enemy: the disc
+## and the ring of an actor of contact radius `radius`, the dazed ring, the bar's quad, and their materials.
+func disc_mesh(radius: float) -> Mesh:
+	return _disc(radius + 0.1)
+
+
+func ring_mesh(radius: float) -> Mesh:
+	return _torus(radius + 0.16, radius + 0.24)
+
+
+func dazed_mesh() -> Mesh:
+	return _torus(0.22, 0.3)
+
+
+func bar_mesh() -> Mesh:
+	return _quad()
+
+
+func disc_material(outline: Color) -> Material:
+	return _material(Color(outline, DISC_ALPHA), true, false)
+
+
+func ring_material(team_color: Color) -> Material:
+	return _material(team_color, false, false)
+
+
+func dazed_material() -> Material:
+	return _material(ThemePalette.color(&"proj_hostile").lightened(0.3), false, false)
+
+
+func bar_material(color: Color) -> Material:
+	return _material(color, false, true)
 
 
 func _disc(r: float) -> CylinderMesh:

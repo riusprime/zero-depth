@@ -22,12 +22,22 @@ extends RefCounted
 ## it. With --spans or --redraws a run also counts the root viewport's 2D draw calls a frame (count.canvas_dc).
 ## --size=WxH sets the window and the root viewport (default 1920x1080); --vsync=off|on|mailbox|adaptive overrides the
 ## probe's vsync off.
+## --ab=detach_furniture takes every enemy's contact disc, team ring, dazed ring and health bar nodes out of the tree
+## (re-applied every frame, so new enemies too) while its root, body and avatar stay: what the furniture's nodes cost.
+## --ab=no_batch draws the batched enemy kinds with a node each again (ActorViews.batch_enemies off): the old path, in
+## the same build, for a before/after run.
+## Every report says how many nodes are in the tree under the actors' view, by class (the last frame).
+## --shot-at=N:<png> saves the viewport at the scenario's Nth frame, the probe's scripted strafe and aim on frames
+## (run it with --fixed-fps 60 for the same frame twice: a before/after pair).
+## --twin draws the scene a second time the old way and compares every batched enemy with its node (batch_twin.gd).
 
 ## The extra --ab switches handled here.
 const AB := [
 	"no_fti",
 	"hide_actors",
 	"detach_actors",
+	"detach_furniture",
+	"no_batch",
 	"no_particles",
 	"no_hud",
 	"no_still",
@@ -56,10 +66,16 @@ const SPAN_KEYS := [
 var on := false  # --spans
 var redraws := false  # --redraws
 var orphans := false  # --orphans
+var twin := false  # --twin
+var frame_clock := false  # --shot-at: the probe's scripted time runs on frames (1/60 s each), not the clock
+var frames := 0  # per_frame calls since the scenario began
 var size := Vector2i(1920, 1080)
 var vsync := ""
 var hud_hide: PackedStringArray = []  # --hud-hide
 var _ab: PackedStringArray = []
+var _twin: RefCounted
+var _shot_at := -1
+var _shot_path := ""
 var _main: Node
 var _tree: SceneTree
 var _events: Array = []  # [key, usec] since the last gather
@@ -70,6 +86,9 @@ var _draw_n := 0
 var _objects0 := []  # [objects, nodes, resources, orphans] at the measure's start
 var _detached: Node
 var _detached_parent: Node
+var _actors_view: Node
+var _stripped := {}  # enemy roots whose furniture --ab=detach_furniture took out
+var _cut: Array[Node] = []  # the furniture taken out (freed by restore)
 var _hooks: Array = []  # [Signal, Callable]: every connection, cut again by restore
 
 
@@ -86,7 +105,14 @@ class Stamp:
 
 ## True when `s` (an argument without its "--") is one of this file's options.
 func parse(s: String) -> bool:
-	if s == "spans":
+	if s.begins_with("shot-at="):  # --shot-at=N:path: the viewport at the Nth frame of the scenario
+		var p := s.trim_prefix("shot-at=").split(":", true, 1)
+		_shot_at = int(p[0])
+		_shot_path = p[1]
+		frame_clock = true
+	elif s == "twin":
+		twin = true
+	elif s == "spans":
 		on = true
 	elif s == "redraws":
 		redraws = true
@@ -123,6 +149,9 @@ func setup(tree: SceneTree, main: Node, ab: PackedStringArray) -> void:
 		_hook(tree.physics_frame, func() -> void: mark(&"phys_sig"))
 		_hook(RenderingServer.frame_pre_draw, func() -> void: mark(&"pre_draw"))
 		_hook(RenderingServer.frame_post_draw, func() -> void: mark(&"post_draw"))
+	if twin:  # --twin: the batched enemies against a twin view of nodes (batch_twin.gd)
+		_twin = (load("res://scripts/checks/batch_twin.gd") as GDScript).new()
+		_twin.call(&"setup", main)
 	_hook(tree.node_added, _on_node_added)
 	var stack: Array[Node] = [tree.root]
 	while not stack.is_empty():
@@ -131,6 +160,7 @@ func setup(tree: SceneTree, main: Node, ab: PackedStringArray) -> void:
 		_on_node_added(n)
 	var v: Node = main.get(&"view")
 	_hide_hud_parts(main)
+	_actors_view = v.get(&"actors")
 	for f in ab:
 		match f:
 			"no_fti":
@@ -141,6 +171,8 @@ func setup(tree: SceneTree, main: Node, ab: PackedStringArray) -> void:
 				_detached = v.get(&"actors")
 				_detached_parent = _detached.get_parent()
 				_detached_parent.remove_child(_detached)
+			"no_batch":
+				ActorViews.batch_enemies = false
 			"no_hud":
 				(main.get(&"ui") as CanvasLayer).visible = false
 			"no_still":  # every HUD part drawn directly each frame (HudStill's textures off)
@@ -214,6 +246,12 @@ static func _owner_key(n: Node) -> String:
 
 ## Re-applied every frame: pooled effects and lights turn themselves back on.
 func per_frame() -> void:
+	frames += 1
+	if frames == _shot_at:
+		var img := _tree.root.get_texture().get_image()
+		DirAccess.make_dir_recursive_absolute(_shot_path.get_base_dir())
+		img.save_png(_shot_path)
+		print("shot-at: frame %d -> %s" % [frames, _shot_path])
 	var keep: Array[Node] = []
 	for n in _hooked:
 		if not is_instance_valid(n):
@@ -228,6 +266,54 @@ func per_frame() -> void:
 		elif n is Light3D:
 			(n as Light3D).visible = false
 	_hooked = keep
+	if _ab.has("detach_furniture") and is_instance_valid(_actors_view):
+		_detach_furniture()
+
+
+## --ab=detach_furniture: each new enemy root's disc, ring, dazed ring and bar leave the tree (kept as orphans).
+func _detach_furniture() -> void:
+	for root in _actors_view.get_children():
+		if not root.has_meta(&"enemy_avatar") or _stripped.has(root):
+			continue
+		_stripped[root] = true
+		var cut: Array[Node] = []
+		for c in root.get_children():
+			if c is MeshInstance3D:  # the contact disc and the team ring (the dazed ring too)
+				cut.append(c)
+		if root.has_meta(&"bar"):
+			cut.append((root.get_meta(&"bar") as Node).get_parent())
+		for c in cut:
+			root.remove_child(c)
+			_cut.append(c)
+	for root: Node in _stripped.keys():
+		if not is_instance_valid(root):
+			_stripped.erase(root)
+
+
+## The nodes in the tree under the actors' view, by class, and its direct children (one root per node enemy).
+func actor_nodes_line() -> String:
+	if not is_instance_valid(_actors_view) or not _actors_view.is_inside_tree():
+		return "actor view nodes: (not in the tree)"
+	var counts := {}
+	var total := 0
+	var stack: Array[Node] = [_actors_view]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		stack.append_array(n.get_children())
+		counts[n.get_class()] = int(counts.get(n.get_class(), 0)) + 1
+		total += 1
+	var keys: Array = counts.keys()
+	keys.sort_custom(func(a: String, b: String) -> bool: return counts[a] > counts[b])
+	var parts: PackedStringArray = []
+	for k: String in keys:
+		parts.append("%s=%d" % [k, counts[k]])
+	var batched := 0
+	if _actors_view.has_method(&"batched_count"):
+		batched = int(_actors_view.call(&"batched_count"))
+	return (
+		"actor view nodes (last frame): total=%d direct_children=%d batched_enemies=%d  %s"
+		% [total, _actors_view.get_child_count(), batched, ", ".join(parts)]
+	)
 
 
 func begin_measure() -> void:
@@ -342,6 +428,9 @@ func report_lines(bk: Dictionary) -> PackedStringArray:
 	if still != null:
 		for l in still.stats_lines():
 			out.append("hud_still: " + l)
+	out.append(actor_nodes_line())
+	if _twin != null:
+		out.append_array(_twin.call(&"report_lines"))
 	if on:
 		var total := 0.0
 		var parts: PackedStringArray = []
@@ -484,6 +573,11 @@ func restore() -> void:
 	if _detached != null and _detached.get_parent() == null:
 		_detached_parent.add_child(_detached)
 	_detached = null
+	ActorViews.batch_enemies = true
+	for c in _cut:
+		if is_instance_valid(c):
+			c.free()
+	_cut.clear()
 	for h: Array in _hooks:
 		var sig: Signal = h[0]
 		if is_instance_valid(sig.get_object()) and sig.is_connected(h[1]):

@@ -293,6 +293,8 @@ func idle_pool_nodes() -> int:
 	for pool: Node in [telegraphs, status_fx, elite_fx, fireballs]:
 		if pool != null:
 			pieces.append_array(pool.call(&"idle_pieces"))
+	if actors != null and actors.batch != null:  # The batched enemies' roots, outside the tree on purpose
+		pieces.append_array(actors.batch.roots())
 	var n := 0
 	for p in pieces:
 		n += _subtree(p)

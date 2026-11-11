@@ -53,6 +53,9 @@ var body_materials: Array[StandardMaterial3D] = []
 ## flash goes to them, show_hit) and the HIT last set on them.
 var enemy_tint := Color(0, 0, 0, 0)
 var role_glow := 0.0
+## True while its actor is drawn by EnemyBatch: the avatar and its parents stay outside the tree, so its place is
+## its parents' transforms composed (_view_position).
+var detached := false
 var _hit_pieces: Array[GeometryInstance3D] = []
 var _hit := EnemyLooks.HIT_OFF
 # Sim state from the last sync.
@@ -79,6 +82,7 @@ var _strike_s := -1.0
 var _strike_end_s := -1.0
 
 
+## The frame step: the pose, the flinch, the merged rig (EnemyBatch calls it for an avatar outside the tree).
 func _process(delta: float) -> void:
 	var dt := consume_hold(delta)
 	if dt > 0.0:
@@ -86,6 +90,19 @@ func _process(delta: float) -> void:
 		advance_flinch(dt)
 	if merged_rig != null:  # The merged mesh follows the nodes just posed (sync may have moved them too)
 		merged_rig.update_bones()
+
+
+## Where this node stands in the actors' view: its global position in the tree, else its parents' transforms
+## composed up to the top of its branch (a batched enemy's root, outside the tree; the actors' view is at the origin).
+func _view_position() -> Vector3:
+	if is_inside_tree():
+		return global_position
+	var xf := transform
+	var p := get_parent() as Node3D
+	while p != null:
+		xf = p.transform * xf
+		p = p.get_parent() as Node3D
+	return xf.origin
 
 
 ## Holds the pose still for `seconds` of frame time (the longer of this and a hold already running; never
