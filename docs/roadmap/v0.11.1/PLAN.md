@@ -157,7 +157,8 @@ changing the game; each step reports `horde_phases` off against on.
 | 51 | The design of the full port | Which data lives on the native side, the entry points, what returns to GDScript, what stays; enemies decide less often, staggered (the owner asked about lower rates; the main tick stays 60 Hz); the order of work | **Done:** [`NATIVE_CORE.md`](NATIVE_CORE.md). GDScript keeps the hashed columns; one native `ZdWorld` a world holds only caches; one batched call a phase returns intents and contacts that GDScript finishes. Build order: 52a (shared core), then 52b (think and move), 53a (projectile sweep) and 53b (the flood) in parallel, then 52c (strike). **No further rate cuts recommended:** planning already runs at 7.5 Hz, staggered; native makes the rest too cheap to be worth a visible delay. Estimate: the tick 3.08 → about 0.7 ms | O |
 | 52 | Enemy AI and steering run native | `ai` 1.1 ms and `move.steer` 0.36 ms of the 3 ms tick | Behind the switch; the enemy AI rule tests pass with it on; `horde_phases` off against on | O |
 | 53 | Projectiles, hits and the path flood run native | `proj` 0.5 ms, `resolve` 0.17 ms, `nav_flood` 0.28 ms | As 52 | O |
-| 54 | **The flip:** the native core is the only one | The switch goes; the GDScript versions of the ported loops are deleted; **the goldens are re-recorded on purpose** (each named in PROGRESS); step 36's dead state goes with it; a side-by-side balance comparison of the last GDScript build and the native one over many seeds | Seams green; the comparison in evidence; `evidence/PERF_NATIVE.md` on a quiet machine. **Owner playtest: do fights feel the same? (OWNER ONLY)** | lead |
+| 54a | The native core is on by default in the game | When the library is built, every kernel is on at the game's start; a dev-panel switch (and `-- --native=0`) goes back to the script sim from the next floor; tests stay on the script sim unless they ask, so the goldens stay as they are. The lead split the flip while the owner slept: the feel and the Linux results are the two checks the lead cannot make alone | The e2e seams pass with the library built (they then run native); the frame probe and `PERF_NATIVE.md` on a quiet machine | O |
+| 54b | **The flip proper:** the native core is the only one (waits for the owner's playtest and the PR's first CI run; OWNER_QUESTIONS Q7) | The switch goes; the GDScript versions of the ported loops are deleted; **the goldens are re-recorded on purpose** (each named in PROGRESS); step 36's dead state goes with it; a side-by-side balance comparison of the last GDScript build and the native one over many seeds | Seams green; the comparison in evidence; `evidence/PERF_NATIVE.md` on a quiet machine. **Owner playtest: do fights feel the same? (OWNER ONLY)** | lead |
 | 55 | Enemies reach the renderer in one batch | The renderer bridge (old step 39 by another road): positions and animation state written to instance buffers from the native side | Decided from step 54's numbers | O |
 
 **Paused by this wave:** steps 37 and 38 (grouping the world's fields, the reflective hasher) are re-decided after
@@ -165,7 +166,8 @@ the flip, because the native core changes where the state lives. Step 36 rides w
 
 ### Wave 8: the display layer (owner L19)
 
-Sized from the frame attribution run (`scripts/checks/frame_attribution.sh`, quiet machine), which each step repeats.
+Sized from the frame attribution run ([`evidence/PERF_NATIVE.md`](evidence/PERF_NATIVE.md), quiet machine): the enemies' nodes
+cost 6.0–8.9 ms of a horde frame and the HUD 2.0–2.4 ms of every frame. Each step repeats that run.
 The look must not change: each step proves it with a dump or a shot, and the owner judges the feel at the end.
 
 | Step | Outcome | What | Done when | Agent |
@@ -173,6 +175,7 @@ The look must not change: each step proves it with a dump or a shot, and the own
 | 55 | Every enemy is an instance fed in one batch | The renderer bridge (step 39 by another road, NATIVE_CORE §8): one instanced batch an enemy kind with baked animation, its rows written from the native side once a frame; the per-enemy nodes go | The enemy dump or shots match; the attribution run before and after | O |
 | 57 | Effects are drawn by the GPU, not rebuilt in script | The effects layer's drawers and the attack forms (`attack_form_view.gd` is the largest script in a horde frame): instanced batches and shaders fed a few numbers an effect, in place of geometry rebuilt every frame | Shots of each changed effect match; the attribution run before and after | O |
 | 58 | Views react to events instead of polling | The views' sync: a view is visited when the sim says something of its kind changed, not every frame | The idle and wake tests; the attribution run before and after | O |
+| 59 | The HUD costs the frame nothing while it does not change | PERF_NATIVE: hiding the HUD saves 2.0–2.4 ms in every scene (a fifth of the 20-enemy frame): 389 2D draw calls and about 14 controls redrawn a frame (the DPS meter's label 4.6 times). Step 29 had been dropped on the scripts' cost alone; the cost is the engine's 2D drawing | The HUD looks the same (shots); 2D draw calls and redraws counted before and after; the attribution run | O |
 
 ### Wave 6: structural (each one decided from Wave 3's numbers)
 
