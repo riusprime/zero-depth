@@ -13,6 +13,8 @@ extends Node3D
 ##   its shot fires (its four tracer lines are HordeVisuals').
 ## The patches are drawn by draw_fx (a VfxCore drawer); the rocks and the sparks by sync. Nothing here decides.
 
+## The Split Sniper, the one kind whose shot this view sparks.
+const SPLITS := [WorldReader.KIND_SPLIT_SNIPER]
 const ROCK_MODEL := &"boulder_small"
 const CHIP_MODEL := &"rubble_small"
 ## Pieces over a rubble patch, a piece's side (m, min + noise x spread), its height (m) and the fraction of the radius
@@ -139,9 +141,7 @@ func _make_patch(at: Vector3, r: float, sd: int) -> Node3D:
 
 
 func _sync_splits(reader: WorldReader) -> void:
-	for i in range(1, reader.actor_count()):
-		if reader.actor_kind(i) != WorldReader.KIND_SPLIT_SNIPER:
-			continue
+	for i in reader.indices_of_kinds(SPLITS):  # Only the Split Snipers, not every actor
 		var id := reader.actor_id(i)
 		var st := reader.actor_state(i)
 		if st == WorldReader.STATE_ACTIVE and _states.get(id, st) != st and pack_fx != null:

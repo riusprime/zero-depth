@@ -122,6 +122,8 @@ void fragment() {
 ## The enemies winding up or acting this tick (every telegraph, drawn here or told by an avatar): the
 ## hostile threats that dim the hero's effects (HeroFxBudget).
 var threats := 0
+## The syncs that walked the telegraphs; a sync with none showing and none possible returns before (tests read it).
+var worked := 0
 var _nodes := {}
 var _pool := {}  # "shape|style" -> the idle telegraphs (hidden)
 var _fill_mat := StandardMaterial3D.new()
@@ -229,10 +231,18 @@ static func look_of(reader: WorldReader, i: int, tg: Dictionary) -> StringName:
 
 
 func sync(reader: WorldReader) -> void:
+	# Only the actors that can have a telegraph are asked (most of a horde is walking, not winding up)
+	var asked := reader.telegraph_indices()
+	if asked.is_empty() and _nodes.is_empty() and not reader.any_boss():
+		threats = 0  # Nothing shows and nothing can start: no work this frame
+		if not _looks_live.is_empty():
+			_looks_live = {}
+		return
+	worked += 1
 	var seen := {}
 	_looks_live = {}
 	threats = 0
-	for i in range(reader.actor_count() if reader.any_telegraph() else 0):
+	for i in asked:
 		var tg := reader.telegraph(i)
 		if tg.is_empty():
 			continue

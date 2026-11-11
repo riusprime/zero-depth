@@ -171,7 +171,11 @@ func test_heal_orbs_shard_gems_and_dropped_cores_wear_the_shard_look() -> void:
 	add_child_autofree(shards)
 	shards._burst(Vector2.ZERO, 3, 7)
 	assert_eq(shards.count(), 3)
-	assert_eq(_crystals(shards).size(), 3, "every gem an outlined shard")
+	var batches := shards.gem_batches()  # The gems are instances: the crystals and their outline shells
+	assert_eq(batches[0].multimesh.visible_instance_count, 3, "every gem a crystal")
+	assert_eq(batches[1].multimesh.visible_instance_count, 3, "every gem outlined")
+	assert_eq(batches[0].material_override, ShardViews.gem_material())
+	assert_eq(batches[1].material_override, ShardMesh.outline_material())
 	assert_ne(ShardViews.gem_material().shading_mode, BaseMaterial3D.SHADING_MODE_UNSHADED, "lit")
 	var v := RewardViews.new()
 	add_child_autofree(v)

@@ -16,6 +16,8 @@ extends Node3D
 ## the struck enemies held about 2 frames, shared by one swing's hits, rate-limited; a tiny camera kick). In the view
 ## only: the sim's own hit-stop above is unchanged and the sim never reads this one.
 
+## The critter kind whose deaths this view tracks.
+const FLEAS := [WorldReader.KIND_EMBER_FLEA]
 const SHARDS := 7
 const FINISHER_SHAKE := 0.3
 const FINISHER_FLASH_MULT := 2
@@ -213,6 +215,6 @@ func _track_fleas(reader: WorldReader) -> void:
 		if not _fleas.is_empty():
 			_fleas.clear()
 		return
-	for i in range(1, reader.actor_count()):
-		if reader.actor_kind(i) == WorldReader.KIND_EMBER_FLEA and not reader.actor_dead(i):
+	for i in reader.indices_of_kinds(FLEAS):  # Only the fleas, not every actor
+		if not reader.actor_dead(i):
 			_fleas[reader.actor_id(i)] = true

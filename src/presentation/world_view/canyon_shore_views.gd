@@ -17,6 +17,8 @@ extends Node3D
 ##   Hazard Lockdown's ice stand-in, small) on a frost patch (VfxLayer.field &"frost").
 ## Nothing here decides.
 
+## The kinds this view draws something for (the spitters' arcs, the turtles' shells).
+const KINDS := [WorldReader.KIND_FROST_SPITTER, WorldReader.KIND_GLACIER_TURTLE]
 const VENT_MAT := Color("#3A2420")
 const ICE_MAT := Color("#7FB8E0")
 const BLAST_ID := &"explosion_fire_a"
@@ -70,7 +72,7 @@ func sync(reader: WorldReader) -> void:
 	var spitters := reader.any_kind(WorldReader.KIND_FROST_SPITTER)
 	var turtles := reader.any_kind(WorldReader.KIND_GLACIER_TURTLE)
 	if spitters or turtles:
-		for i in range(1, reader.actor_count()):
+		for i in reader.indices_of_kinds(KINDS):  # Only the two kinds drawn here
 			var kind := reader.actor_kind(i)
 			if kind == WorldReader.KIND_FROST_SPITTER:
 				var tg := reader.telegraph(i)

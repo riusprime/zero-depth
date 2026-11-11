@@ -32,18 +32,22 @@ var _tg_tick := -1
 ## The shots (id, place) at the latest tick and the one before, the ticks noted since the last sync,
 ## whether this sync's frame ran two or more, and the earlier tick's places by id (made at its first ask).
 var _last_ids := PackedInt32Array()
-var _last_pos := PackedVector2Array()
+var _last_xs := PackedFloat32Array()
+var _last_ys := PackedFloat32Array()
 var _was_ids := PackedInt32Array()
-var _was_pos := PackedVector2Array()
+var _was_xs := PackedFloat32Array()
+var _was_ys := PackedFloat32Array()
 var _ticks := 0
 var _multi := false
 var _was := {}
 var _was_made := false
 ## The actors (id, place) at the latest tick and the one before, and the earlier tick's places by id.
 var _a_last_ids := PackedInt32Array()
-var _a_last_pos := PackedVector2Array()
+var _a_last_xs := PackedFloat32Array()
+var _a_last_ys := PackedFloat32Array()
 var _a_was_ids := PackedInt32Array()
-var _a_was_pos := PackedVector2Array()
+var _a_was_xs := PackedFloat32Array()
+var _a_was_ys := PackedFloat32Array()
 var _a_was := {}
 var _a_was_made := false
 
@@ -52,35 +56,27 @@ func _init(r: WorldReader) -> void:
 	super(r._w)
 
 
-## Every tick, after the world stepped.
+## Every tick, after the world stepped. The places are kept as the sim's columns (copied whole, not read an actor
+## at a time); the earlier tick's places by id are built only when a sync asks for them.
 func note() -> void:
 	_tg.clear()
 	if super.shot_fired():
 		_shots += 1
-	for i in super.actor_count():
-		if super.actor_state(i) == STATE_ACTIVE:
-			_active[super.actor_id(i)] = true
+	for i in indices_in_state(STATE_ACTIVE):
+		_active[super.actor_id(i)] = true
 	_ticks += 1
 	_was_ids = _last_ids
-	_was_pos = _last_pos
-	var n := super.projectile_count()
-	_last_ids = PackedInt32Array()
-	_last_pos = PackedVector2Array()
-	_last_ids.resize(n)
-	_last_pos.resize(n)
-	for i in n:
-		_last_ids[i] = super.projectile_id(i)
-		_last_pos[i] = super.projectile_pos(i)
+	_was_xs = _last_xs
+	_was_ys = _last_ys
+	_last_ids = projectile_ids()
+	_last_xs = projectile_xs()
+	_last_ys = projectile_ys()
 	_a_was_ids = _a_last_ids
-	_a_was_pos = _a_last_pos
-	var m := super.actor_count()
-	_a_last_ids = PackedInt32Array()
-	_a_last_pos = PackedVector2Array()
-	_a_last_ids.resize(m)
-	_a_last_pos.resize(m)
-	for i in m:
-		_a_last_ids[i] = super.actor_id(i)
-		_a_last_pos[i] = super.actor_pos(i)
+	_a_was_xs = _a_last_xs
+	_a_was_ys = _a_last_ys
+	_a_last_ids = actor_ids()
+	_a_last_xs = actor_xs()
+	_a_last_ys = actor_ys()
 
 
 ## At the start of each sync: the one-tick facts of the ticks noted since the last sync. A sync with no tick noted
@@ -107,7 +103,7 @@ func projectile_pos_before(id: int) -> Variant:
 		_was_made = true
 		_was.clear()
 		for k in _was_ids.size():
-			_was[_was_ids[k]] = _was_pos[k]
+			_was[_was_ids[k]] = Vector2(_was_xs[k], _was_ys[k])
 	return _was.get(id)
 
 
@@ -120,7 +116,7 @@ func actor_pos_before(i: int) -> Variant:
 		_a_was_made = true
 		_a_was.clear()
 		for k in _a_was_ids.size():
-			_a_was[_a_was_ids[k]] = _a_was_pos[k]
+			_a_was[_a_was_ids[k]] = Vector2(_a_was_xs[k], _a_was_ys[k])
 	return _a_was.get(super.actor_id(i))
 
 

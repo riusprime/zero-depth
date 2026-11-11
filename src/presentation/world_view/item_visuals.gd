@@ -90,7 +90,7 @@ func _sync_burns(reader: WorldReader) -> void:
 		return
 	var now := {}
 	var frozen := {}
-	for i in range(1, reader.actor_count()):
+	for i in reader.burn_or_frozen_indices():  # Only the burning and the frozen, not every actor
 		if reader.actor_frozen(i):
 			frozen[reader.actor_id(i)] = true
 			now[reader.actor_id(i)] = 1
