@@ -2,8 +2,7 @@ extends SceneTree
 ## v0.11.1 Step 13 (owner 2026-11-10: "Astral current one live should be the only HUD style for all elements
 ## throughout the game"): one shot per panel moved to the Astral look, each opened in the real main.tscn (a tool, not a
 ## test: it calls the sessions' own open functions and poses the run's Constellation offer directly):
-## - the hub: the Wardrobe's panel (HubSession.open_wardrobe), the Progression Station's (open_progression) and the
-##   stand-in station panel (HubStationPanel, shown as HubSession shows its overlays; no station opens it any more);
+## - the hub: the Wardrobe's panel (HubSession.open_wardrobe), the Progression Station's (open_progression);
 ## - the Training Room: the terminal's panel (TrainingSession.open_panel), the Codex knowing a Charger and a card;
 ## - a run: the new loop's Constellation pick (ConstellationPanel in the run's HUD), the offer posed on the World.
 ## Needs a renderer (off screen):
@@ -82,28 +81,20 @@ func _process(_delta: float) -> bool:
 			if _frames == SETTLE:
 				_shot("progression")
 				main.hub.close_overlay()
-				var p := HubStationPanel.new(&"wardrobe", "HUB_WARDROBE", "HUB_WARDROBE_SOON")
-				p.back_pressed.connect(main.hub.close_overlay)
-				main.hub._show_overlay(p)
-				_next()
-		4:
-			if _frames == SETTLE:
-				_shot("hub_station")
-				main.hub.close_overlay()
 				TrainingFlow.start(main, &"gun")
 				_next()
-		5:
+		4:
 			if _frames == 120:
 				main.training.open_panel()
 				_next()
-		6:
+		5:
 			if _frames == SETTLE:
 				_shot("training")
 				main.training.close_panel()
 				main._end_stage()
 				main.start_stage()
 				_next()
-		7:
+		6:
 			_run_shot()
 	if _frames > 4000:
 		push_error("menus_astral: stuck at step %d" % _step)
