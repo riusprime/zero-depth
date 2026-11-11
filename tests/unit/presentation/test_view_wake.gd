@@ -208,12 +208,17 @@ func test_the_shard_drops_rest_while_none_change() -> void:
 	ShardDrops.drop(w, Vector2(5, 0), 6)
 	s.sync(r)
 	assert_eq(s.drop_count(), 1)
-	var node: Node3D = s._drops.values()[0][0]
-	node.position = Vector3(99, 0, 99)  # Moved by hand: a sync that laid the drops out again would put it back
+	var seq: int = s._drops.keys()[0]
+	s._d_pos[s._drops[seq]] = Vector3(99, 0, 99)  # Moved by hand: a sync that laid the drops out would put it back
+	var place := func() -> Vector3: return s.drawn_transform(s._drops[seq]).origin
 	for k in 60:
 		s.sync(r)
-	assert_eq(node.position, Vector3(99, 0, 99), "60 frames with the same drops: nothing laid out")
+	assert_eq(
+		s._d_pos[s._drops[seq]],
+		Vector3(99, 0, 99),
+		"60 frames with the same drops: nothing laid out"
+	)
 	ShardDrops.drop(w, Vector2(-5, 0), 6)
 	s.sync(r)
 	assert_eq(s.drop_count(), 2, "a new drop shows the frame it lands")
-	assert_eq(node.position, SimPlane.to_3d(Vector2(5, 0)), "and the drops are laid out that frame")
+	assert_eq(place.call(), SimPlane.to_3d(Vector2(5, 0)), "and the drops are laid out that frame")

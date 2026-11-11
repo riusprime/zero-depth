@@ -344,6 +344,11 @@ func queue_setup(
 		)
 	)
 	q.add("views", _setup_views.bind(palette))
+	# The shard drops' shapes, a size a job (built once a session: later loads find them built), then their batches,
+	# so a fight's first drops build nothing.
+	for gems in range(2, ShardViews.DROP_GEMS_MAX + 1):
+		q.add("shard_shapes_%d" % gems, ShardViews.warm_shapes.bind(gems))
+	q.add("shard_drops", shards.prepare)
 	q.add("effects", _setup_effects)
 	q.add("devices", _setup_devices.bind(palette))
 	stage.queue_build(q, reader, palette, arena_half)
