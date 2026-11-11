@@ -225,3 +225,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   compare; the GDScript paths stay and the goldens stay theirs. Step 54b (delete the GDScript versions, re-record
   the goldens) waits for the owner's playtest and for CI's first run on the PR, because both are the only checks
   the lead cannot do alone: how fights feel, and whether Linux gives the same results.
+- 2026-11-11 (lead): the quiet run on `68b92b18` ([`evidence/PERF_NATIVE.md`](evidence/PERF_NATIVE.md)). Tick at 120
+  enemies 3.3 → 0.56 ms with every kernel on; the horde frame gains 2–3 ms. The attribution (kernels on): the
+  enemies' nodes cost 6.0 ms at 120 swarmers and 8.9 ms at 60 heavy; the HUD 2.0–2.4 ms in every scene (step 59
+  added: step 29 had been dropped wrongly, on script cost alone). Started: 54a, 55, 57, 59.
