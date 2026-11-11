@@ -66,7 +66,6 @@ what is drawn), `primitives`, `video_mem_MB`, `nodes`, `resources`, `orphans`, `
 |---|---|
 | `--biome=<id[,id]>`, `--secs=N`, `--warm=N` | the biomes (default `frozen_shore,red_canyon`), seconds measured (30), warm-up (3) |
 | `--enemies=N`, `--heavy`, `--only=<kind>`, `--boss=<index>` | the scene: N enemies, the heavy build, one kind only, one boss instead |
-| `--native=<kernels>` | the sim's native kernels (`move,ai,strike,shots,nav`, `all`, `0`) |
 | `--spans` | cuts every frame into consecutive spans that add up to it: `probe_script`, `nodes_process` (scripts and views, the views' sync), `after_process` (redraws, layout, transforms, the delete queue), `draw` (the engine's draw and present), `after_draw`, and per physics step `physics_pre`, `nodes_physics` (the sim's ticks and their listeners), `physics_post`. The stamps cost a few µs a frame; runs are a little slower than plain ones, so compare inside one page |
 | `--breakdown` | per-bucket script time: every view's sync, every tick listener, the sim's phases, `PerfMarks` |
 | `--process` | `--breakdown` plus every script node's `_process` timed from the probe. It adds 5–7 ms a frame of its own: proportions only (§4.3) |
@@ -115,11 +114,10 @@ tool for "what does X cost the frame".
 
 | Tool | Command | What it gives |
 |---|---|---|
-| `scripts/checks/horde_phases.gd` | `godot --headless --path . -s scripts/checks/horde_phases.gd -- --counts=20,60,120 --ticks=1800 [--native=all]` | floor 3, N real enemies kept alive, FightBot playing: ms mean / p99 / max a tick for `step` and every phase (`nav_flood`, `ai`, `move`, `resolve`, `proj`, …), and an `outcome_hash` chain. The tool for a kernel's off-against-on |
+| `scripts/checks/horde_phases.gd` | `godot --headless --path . -s scripts/checks/horde_phases.gd -- --counts=20,60,120 --ticks=1800` | floor 3, N real enemies kept alive, FightBot playing: ms mean / p99 / max a tick for `step` and every phase (`nav_flood`, `ai`, `move`, `resolve`, `proj`, …), and an `outcome_hash` chain. The tool for a kernel's off-against-on |
 | `scripts/checks/attack_phases.gd` | `… -s scripts/checks/attack_phases.gd -- [--enemies=60] [--ticks=1800] [--calls=1]` | the frame probe's heavy scene without the renderer, fire held: every attack phase and sub-phase a tick, an outcome hash; `--calls=1` times the helpers a landed hit calls |
-| `scripts/checks/shot_phases.gd` | `… -s scripts/checks/shot_phases.gd -- [--scenes=horde,stress] [--ticks=1800] [--native=shots]` | the projectile phase and its parts in the two scenes with the most projectiles, the live projectile count, a hash chain |
+| `scripts/checks/shot_phases.gd` | `… -s scripts/checks/shot_phases.gd -- [--scenes=horde,stress] [--ticks=1800]` | the projectile phase and its parts in the two scenes with the most projectiles, the live projectile count, a hash chain |
 | `scripts/bench/sim_bench.gd` | `godot --headless --path . -s scripts/bench/sim_bench.gd [-- --only=horde,stress_ai]` | the budget scenes (`horde`, `reference`, `reference_boss`, `reference_floor`, `stress`, `stress_ai`): mean, p50, p99, max a tick, `*_in_band`; writes `build/bench.json` |
-| `scripts/checks/native_compare.gd` | `… -s scripts/checks/native_compare.gd -- [--seeds=20] [--enemies=40] [--ticks=3600] [--native=move,ai]` | the same fights in GDScript and native: the half-dead and all-dead ticks, the hero's damage taken, the enemies alive every 600 ticks, means and the largest difference. A balance comparison, not a timing |
 | `scripts/bench/native_columns_bench.gd` | `… -- [--rows=121,500] [--reps=2000]` | the cost of a column crossing by name, read and write |
 | `scripts/bench/native_pairs_bench.gd` | `… -- [--counts=120,500] [--reps=2000]` | the pair pass, GDScript against native, inside and with the call |
 

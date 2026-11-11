@@ -236,7 +236,7 @@ charging kind whose table has a trail), `BOLT` (the Dim Needle's look, applied i
 
 ## 6. Saves, snapshots and the state hash
 
-- `WorldSnapshot.WORLD_KEPT` lists `native` and `native_on` as setup, not state (`src/sim/core/world_snapshot.gd`).
+- `WorldSnapshot.WORLD_KEPT` lists `native` as setup, not state (`src/sim/core/world_snapshot.gd`).
   A snapshot never carries the native side.
 - A restore rebuilds every cache by itself: the wall revision differs, so `sync_walls` resends the walls; the kind
   table is stamped by the `tuning` object's identity, so a new world resends it; `from_snapshot` bumps
@@ -265,12 +265,12 @@ charging kind whose table has a trail), `BOLT` (the Dim Needle's look, applied i
 | `native/src/zd_crowd.{h,cpp}`, `zd_crowd_avatars.cpp`, `zd_avatar.{h,cpp}` | `ZdCrowd`: presentation only ([`PRESENTATION_CONTRACTS.md`](PRESENTATION_CONTRACTS.md) §11) |
 | `native/src/register_types.cpp` | registers `ZdWorld` and `ZdCrowd` |
 | `native/SConstruct`, `scripts/native/build.sh`, `fetch_bindings.sh` | the build, its float flags, the bindings at `native/GODOT_CPP_COMMIT` |
-| `src/app/native_switch.gd` | `NativeSwitch`: whether the library loaded, which kernels a new world gets, the dev panel's switch |
-| `src/sim/world/native_world.gd` | `NativeWorld`: the kernel bits, `setup`, `sync_walls`, `sync_kinds`, `obb_floats` |
+| `src/app/native_check.gd` | `NativeCheck`: the game's start without the library: reports `NativeWorld.MISSING`, shows it in a dialog when there is a display, quits with exit code 1 |
+| `src/sim/world/native_world.gd` | `NativeWorld`: `make` (the sim's only `ClassDB` use), `available`, `MISSING` and `report_missing`, `sync_walls`, `sync_kinds`, `obb_floats` |
 | `src/sim/world/native_move.gd`, `native_ai.gd`, `native_strike.gd`, `native_shots.gd`, `native_nav.gd` | the bridges: the call, the masks, the intent handlers |
 | `src/sim/ai/native_kind_table.gd` | the per-kind table, its modes, flags, hooks and shapes |
 | `src/sim/combat/projectile_contacts.gd` | what a projectile contact does (damage, pierce, bounce, split, procs, the end hooks), shared by both sweep paths |
-| `tests/unit/native/`, `tests/unit/app/test_native_*.gd`, `tests/support/native_move_hook.gd` | the tests ([`TEST_MATRIX.md`](TEST_MATRIX.md) §7) |
+| `tests/unit/native/`, `tests/unit/app/test_native_*.gd`, `tests/golden/test_native_fixtures.gd`, `tests/support/native_fixtures.gd`, `tests/support/native_required_hook.gd` (a GUT run stops at once without the library) | the tests ([`TEST_MATRIX.md`](TEST_MATRIX.md) §7) |
 
 ## 8. Changing or adding a kernel safely
 
@@ -337,12 +337,14 @@ From the code and the native core's rows in
 3. **`think` takes the mines' owners, not a `may` mask:** the kernel counts a Mine Layer's mines itself. The slow
    factor crosses as a float a row (`slow`) only while an element pair or a spell hold could change it, not as a
    permille int column.
-4. **More intents than designed:** `FLOW`, `THINK_TICK`, `CHARGE_STEP` and `RELOCATE_STEP` exist; `strike` adds
+4. **More intents than designed:** `THINK_TICK` and `CHARGE_STEP` exist (`FLOW` and `RELOCATE_STEP`, which handed
+   work back to the GDScript flow field, existed until step 54b); `strike` adds
    `CONTACT` and `TOUCH` and carries the hit's origin in `HIT`.
 5. **The projectile steering pre-pass runs `ProjectileMoves.steer` on every projectile** when any projectile has a
    behaviour or a Gravity Node stands, not only on the rows with a behaviour.
-6. **The cross-compiler fixtures were not built:** there is no `native_horde_hash.txt`, `native_kernels_hash.txt` or
-   `selftest_hash()`. The only pinned value is `determinism_probe` (collision kernel only).
+6. **The cross-compiler fixtures are per kernel, not one `selftest_hash()`:** `native_kernels_hash.txt` and
+   `native_horde_hash.txt` (step 54b; "The fixtures" in §4), recorded from the Windows build. Whether the Linux build
+   gives the same values is first known from the PR's CI.
 7. **The GDScript actor grid stays**; no native `actors_near`.
 8. **No decision-rate change**, as the design recommended: the walk plan stays every 8 ticks, staggered by id. The
    flood runs whole on its `PERIOD` tick (one bounded flood about 0.2 ms native against 4–8 ms in GDScript, by the
