@@ -121,7 +121,7 @@ static func draw(c: AttackFormCanvas, b: Dictionary, info: LiveBoltLook, now: fl
 	pts.append(at)
 	if info.mine and (b["vel"] as Vector2).length() < 0.0001:  # A waiting mine
 		var ground := SimPlane.to_3d(b["pos"], AttackFormCanvas.GROUND_H)
-		c._ring_at(ground, AttackFormCanvas.MINE_RING_M, look, 0.6, pts)
+		FormRing.draw(c, ground, AttackFormCanvas.MINE_RING_M, look, 0.6, pts)
 	if info.accent != &"" and c.vfx != null and int(b["id"]) >= 0:
 		# v0.9.0 VX V6 (the element's particles never drew on a live Orb with the layer on): its accent from the
 		# layer's pools (Fire embers and smoke, a Lightning crackle, Frost shards and glints, Venom and Bleed drips);

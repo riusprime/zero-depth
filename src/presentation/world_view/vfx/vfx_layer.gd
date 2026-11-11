@@ -64,12 +64,20 @@ const PACK_SEEN_TICKS := 180.0
 const PACK_ZONES := true  # fire, frost, venom and bleed patches; the element rings
 const PACK_BURSTS := true  # frost, shatter, venom, bleed and Wildfire bursts
 const PACK_STATUS := true  # burn, poison and frost on an enemy; Bulwark's guard orbs
+## What an element ring draws, for the frame probe's A/B runs (scripts/checks/frame_spans.gd --ab=no_ring,
+## no_ring_light, no_ring_sparks): the ring at all, its light, the storm ring's sparks along its edge. The game
+## never changes them.
+static var rings_drawn := true
+static var ring_lights := true
+static var ring_sparks := true
 ## The pack effects (WorldViewRoot sets it); none: the sprite explosion draws.
 var pack_fx: PackFx = null
 ## How many of the guard orbs the pack draws this frame (StatusVisuals hides that many of its own).
 var guard_orbs_packed := 0
 ## The pack explosion's child nodes the next burst() leaves out (the Mortar Grid's strikes: no Smoke).
 var burst_hide: Array = []
+## ring() is drawing a followed ring (its `follow`), read by the ring drawers' hold keys.
+var ring_follow := false
 var _pack_seen := {}  # seed -> the tick the burst was last drawn
 var _burst_weight := 1.0  # W3-S4: the burst being drawn's weight (burst())
 ## The pack's zones, bursts and statuses (VfxPackViews).
@@ -102,10 +110,42 @@ func field(
 			_gap.void_field(c, r, fade, age, sd)
 
 
-## A ring of radius `r` at `c` now (its front), no fill.
-func ring(kind: StringName, c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
-	if r < 0.1 or fade <= 0.0:
+## A ring of radius `r` at `c` now (its front), no fill. `follow`: `sd` names this one ring wherever it is (a
+## travelling ring), so its held pack effects are keyed by `sd` alone and follow it as it flies; keyed by place they
+## were released and taken again from PackFx every frame the ring moved (about a thousand spawns a second with one
+## Ring). A followed ring's held effects stay at their animation's start, the look the ring was tuned with.
+func ring(
+	kind: StringName, c: Vector3, r: float, fade: float, age: float, sd: int, follow := false
+) -> void:
+	if r < 0.1 or fade <= 0.0 or not rings_drawn:
 		return
+	var was_off := _lights_off
+	_lights_off = was_off or not ring_lights
+	ring_follow = follow
+	_ring_kind(kind, c, r, fade, age, sd)
+	ring_follow = false
+	_lights_off = was_off
+
+
+## The hold key of the ring being drawn's effect in `slot` (ring()'s `follow`).
+func ring_key(sd: int, slot: int, c: Vector3) -> int:
+	return VfxPackViews.zkey(sd, slot, Vector3.ZERO if ring_follow else c)
+
+
+## What a ring's held effect is set up with when it is first taken (none unless the ring is followed).
+func ring_setup() -> Callable:
+	return _hold_at_start if ring_follow else Callable()
+
+
+## Holds a followed ring's new pack effect at its animation's start.
+func _hold_at_start(node: Node3D) -> void:
+	var anim := node.get_node_or_null("AnimationPlayer") as AnimationPlayer
+	if anim != null and anim.is_playing():
+		anim.seek(0.0, true)
+		anim.pause()
+
+
+func _ring_kind(kind: StringName, c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
 	match kind:
 		&"fire":
 			_fire_ring(c, r, fade, age, sd)

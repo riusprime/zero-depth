@@ -6,13 +6,28 @@ extends SceneTree
 ## --fixed-fps 60 the shaders' TIME and the bolts' flicker are the same frame for frame, run for run.
 ##   godot --path . --fixed-fps 60 --resolution 1920x1080 --windowed --position -10000,-10000 --audio-driver Dummy \
 ##     -s scripts/shots/gpu_fx_pairs.gd -- out=build/shots/gpu_fx/<tag>
-## Writes <out>/<scene>.png and prints each path. Scenes: bolts (StormPack's held bolts: strikes, a chain, a fan of
-## short ones, the shock forks on a body).
+## Writes <out>/<scene>.png and prints each path. Scenes (scene=<name>, default bolts): bolts (StormPack's held bolts:
+## strikes, a chain, a fan of short ones, the shock forks on a body); rings (the Ring form's travelling element rings
+## as the attack canvas draws them, VfxLayer.ring followed by their seed: three storm rings of growing size, a fire,
+## a void and a frost one, each flying its own way). keys=place draws the same rings keyed by where they are now (the
+## way a travelling ring was held before it was followed: its effects taken again from PackFx as it moves), for the
+## before/after pair in one build; ab=no_ring_light draws them without their light (the look of that cut).
 
 const SHOT_FRAME := 90
 const NOW := 120.0
+## The rings scene: [kind, start, metres moved a frame, radius, fade], one per ring.
+const RINGS := [
+	[&"storm", Vector3(-2.0, 0.05, 0.5), Vector3(0.06, 0, 0.0), 1.2, 1.0],
+	[&"storm", Vector3(2.0, 0.05, -2.5), Vector3(0.0, 0, 0.06), 2.0, 1.0],
+	[&"storm", Vector3(0.0, 0.05, 2.5), Vector3(0.05, 0, 0.03), 2.8, 0.8],
+	[&"fire", Vector3(-1.5, 0.05, -5.0), Vector3(-0.03, 0, 0.05), 2.0, 1.0],
+	[&"void", Vector3(4.0, 0.05, 1.0), Vector3(0.04, 0, 0.04), 2.0, 1.0],
+	[&"frost", Vector3(-6.0, 0.05, 1.5), Vector3(0.04, 0, 0.05), 1.6, 1.0],
+]
 
 var _out := "res://build/shots/gpu_fx/run"
+var _scene := "bolts"
+var _by_place := false  # keys=place
 var _frame := 0
 var _layer: VfxLayer
 var _fx: PackFx
@@ -23,6 +38,12 @@ func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("out="):
 			_out = "res://" + a.trim_prefix("out=")
+		elif a.begins_with("scene="):
+			_scene = a.trim_prefix("scene=")
+		elif a == "ab=no_ring_light":
+			VfxLayer.ring_lights = false
+		elif a == "keys=place":
+			_by_place = true
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_out))
 	_stage()
 	_fx = PackFx.new()
@@ -91,14 +112,26 @@ func _draw_bolts() -> void:
 	s.shock(Vector3(0.5, 0.0, 0.0), 0.4, 77, 4.0, 0.9)
 
 
+func _draw_rings() -> void:
+	var now := NOW + _frame
+	for k in RINGS.size():
+		var r: Array = RINGS[k]
+		var c: Vector3 = r[1] + r[2] * _frame
+		var sd := int(c.x * 97.0) * 31 + int(c.z * 89.0) if _by_place else 101 + k * 17
+		_layer.ring(r[0], c, r[3], r[4], now, sd, not _by_place)
+
+
 func _process(_delta: float) -> bool:
 	_frame += 1
-	_layer.begin(NOW)
-	_draw_bolts()
+	_layer.begin(NOW + (_frame if _scene == "rings" else 0))
+	if _scene == "rings":
+		_draw_rings()
+	else:
+		_draw_bolts()
 	_layer.finish()
 	if _frame == SHOT_FRAME:
 		var img := root.get_viewport().get_texture().get_image()
-		var path := _out + "/bolts.png"
+		var path := _out + "/%s.png" % _scene
 		img.save_png(path)
 		print("wrote ", ProjectSettings.globalize_path(path))
 	return _frame > SHOT_FRAME

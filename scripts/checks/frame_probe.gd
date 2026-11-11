@@ -31,6 +31,7 @@ extends SceneTree
 ## the aim sweeping a circle, the hero strafing left/right/up/down in 2 s legs.
 ## v0.10.5 O12 (owner P9, the effect budget): --enemies=N keeps N live enemies (default ENEMIES); --heavy also grants
 ## HEAVY_KEYS at level 5 (Twin, Halo, Rapid Fire, Wildfire, Chain Blast, the rune explosion: the most effects a frame);
+## --cards=<id[:level],...> grants exactly those cards instead (scripts/checks/probe_build.gd), e.g. --cards=gun_ring;
 ## v0.10.5 W3-V1 (the enemy VAT pilot): --only=<kind> (an ActorStore.Kind name, e.g. swarmer) makes every live enemy
 ## that kind; --enemy-vat=on|off sets ViewPrefs.enemy_vat (VatCrowd draws the VatCrowd.KINDS enemies):
 ##   ... -s scripts/checks/frame_probe.gd -- --biome=red_canyon --enemies=60 --only=swarmer --enemy-vat=on
@@ -45,24 +46,9 @@ const OUT_DIR := "res://build/perf/"
 const DEFAULT_BIOMES := ["frozen_shore", "red_canyon"]
 const BUDGET_MS := 1000.0 / 144.0
 const ENEMIES := 20
-## [name_key] of the cards granted at level 3: Gun forms and two elements (fire and lightning).
-const BUILD_KEYS: Array[StringName] = [
-	&"ITEM_GUN_GLAIVE",
-	&"ITEM_GUN_RING",
-	&"ITEM_SPLIT_SHOT",
-	&"ITEM_EMBER_CORE",
-	&"ITEM_STORM_CORE",
-]
-## v0.10.5 O12: the extra cards of --heavy, at HEAVY_LEVEL.
-const HEAVY_KEYS: Array[StringName] = [
-	&"ITEM_GUN_TWIN",
-	&"ITEM_HALO_SHOT",
-	&"ITEM_GUN_RAPID_FIRE",
-	&"ITEM_WILDFIRE",
-	&"ITEM_CHAIN_BLAST",
-	&"ITEM_GUN_RUNE_EXPLOSION",
-]
-const HEAVY_LEVEL := 5
+## The build (the default cards, --heavy, --cards=<id[:level],...>): scripts/checks/probe_build.gd.
+const ProbeBuild := preload("res://scripts/checks/probe_build.gd")
+const LightCensus := preload("res://scripts/checks/light_census.gd")
 ## v0.10.5 O12: the pack families the hero's own effects use (enemy_shot is the hostile one).
 const HERO_PACK_FAMILIES: Array[StringName] = [
 	&"hit",
@@ -117,7 +103,6 @@ var _rs_n := 0
 var _samples: Array = []
 var _held := ""
 var _out: PackedStringArray = []
-var _build_names: PackedStringArray = []
 var _saved_atlas := 4096
 var _saved_filter := 4
 var _saved_density := "high"
@@ -140,7 +125,8 @@ var _proc_total_nodes := 0
 var _bk := {}  # bucket -> per-measured-frame microseconds
 var _phase_timer := PerfBreakdown.PhaseTimer.new()
 var _enemies := ENEMIES  # --enemies=N (O12)
-var _heavy := false  # --heavy (O12)
+var _build := ProbeBuild.new()
+var _lights := LightCensus.new()  # --fx: the rings and lights a frame
 var _fx := false  # --fx (O12)
 var _fx_rows := {}  # counter name -> PackedFloat64Array, one value per measured frame
 var _spans := FrameSpans.new()
@@ -166,8 +152,8 @@ func _initialize() -> void:
 			_census = true
 		elif s.begins_with("enemies="):
 			_enemies = int(s.trim_prefix("enemies="))
-		elif s == "heavy":
-			_heavy = true
+		elif _build.parse(s):
+			pass
 		elif s == "fx":
 			_fx = true
 		elif s == "process":
@@ -280,22 +266,15 @@ func _next_biome() -> void:
 func _setup_scenario() -> void:
 	_api = _main.playground.api
 	_api.god = true
-	_build_names.clear()
-	var found := {}
-	for e: Dictionary in _api.catalog():
-		if BUILD_KEYS.has(e["name_key"]):
-			_api.grant_now(e["code"], 3)
-			found[e["name_key"]] = true
-	if _heavy:
-		for e: Dictionary in _api.catalog():
-			if HEAVY_KEYS.has(e["name_key"]):
-				_api.grant_now(e["code"], HEAVY_LEVEL)
-				found[e["name_key"]] = true
-	var keys: Array[StringName] = BUILD_KEYS.duplicate()
-	if _heavy:
-		keys.append_array(HEAVY_KEYS)
-	for k in keys:
-		_build_names.append("%s%s" % [k, "" if found.has(k) else " (MISSING from the catalog)"])
+	var errors := _build.grant(_api)
+	if not errors.is_empty():
+		for e in errors:
+			push_error("frame_probe: " + e)
+		print("frame_probe: the build did not go in (%s); nothing measured" % "; ".join(errors))
+		_restore()
+		quit(2)
+		return
+	print(_build.describe())
 	_saved_atlas = int(
 		ProjectSettings.get_setting("rendering/lights_and_shadows/directional_shadow/size", 4096)
 	)
@@ -315,6 +294,8 @@ func _setup_scenario() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
 	_spans.setup(self, _main, _ab)
+	if _fx:
+		_lights.setup(self)
 	_floor_triplanar = _triplanar_state()
 	_top_up()
 	_t0 = Time.get_ticks_usec()
@@ -552,14 +533,7 @@ func _finish_biome() -> void:
 			)
 		)
 	)
-	lines.append(
-		(
-			"build: "
-			+ ", ".join(_build_names)
-			+ " at level 3 (Glaive, Ring, Split, fire core, lightning core)"
-			+ (" + the --heavy cards at level %d" % HEAVY_LEVEL if _heavy else "")
-		)
-	)
+	lines.append(_build.describe())
 	lines.append(
 		"floor: " + _floor_triplanar + " (no planar path exists: planar_floor NOT AVAILABLE)"
 	)
@@ -634,8 +608,13 @@ func _finish_biome() -> void:
 	var text := "\n".join(lines) + "\n"
 	print(text)
 	var tag := "" if _ab.is_empty() else "_ab-" + "-".join(_ab)
-	if _heavy or _enemies != ENEMIES:
+	if _build.heavy or _enemies != ENEMIES:
 		tag += "_heavy%d" % _enemies
+	if _build.exact:
+		tag += (
+			"_cards-"
+			+ ("-".join(_build.cards).replace(":", "L") if not _build.cards.is_empty() else "none")
+		)
 	if _only >= 0:  # v0.10.5 W3-V1
 		tag += "_only-" + String(ActorStore.Kind.keys()[_only]).to_lower()
 	if not _vat.is_empty():
@@ -693,6 +672,9 @@ func _count_fx() -> void:
 			_fx_add("pack_%s" % fam, pack.live_count(fam))
 		_fx_add("pack_enemy_shot_live", pack.live_count(&"enemy_shot"))
 	_fx_add("telegraphs_drawn", v.telegraphs.count())
+	var lc := _lights.count(_main)
+	for k: String in lc:
+		_fx_add(k, lc[k])
 
 
 func _fx_add(key: String, value: float) -> void:

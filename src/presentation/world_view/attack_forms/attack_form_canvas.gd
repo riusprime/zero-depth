@@ -615,34 +615,9 @@ func _draw_ring(e: Dictionary, look: Dictionary, age: float) -> void:
 			continue
 		fade_all = 1.0 - t * t * t
 		var at := SimPlane.to_3d(e["origin"], GROUND_H)
-		_ring_at(at, float(look["radius"]) * t, look, fade_all, points, int(e["seed"]) * 16 + k + 1)
+		var key := int(e["seed"]) * 16 + k + 1
+		FormRing.draw(self, at, float(look["radius"]) * t, look, fade_all, points, key)
 	_emit(e, look, points, age, fade_all)
-
-
-## A ring at radius `r` now (the RING runner's linear growth: the drawn front is the hit front): its ground-safe fill
-## and its raised front in the heat edge.
-func _ring_at(
-	c: Vector3, r: float, look: Dictionary, fade: float, points: Array[Vector3], key := 0
-) -> void:
-	r = maxf(r, 0.05)
-	var kind := _vfx_kind(look)
-	if kind != &"":
-		vfx.ring(kind, c, r, fade, vfx.now(), int(c.x * 97.0) * 31 + int(c.z * 89.0))
-		return
-	if key != 0 and forms_pack.ground(key, &"vx2_ring_pulse", c, r * FormPack.RING_PER_M, look):
-		return  # (no element here, so no particles: the layer draws every element's)
-	_put(
-		&"ring_fill",
-		Transform3D(Basis.from_scale(Vector3(r, 1, r)), c),
-		lit_color(look["ground"], 0.55 * fade, look["energy"])
-	)
-	_put(
-		&"ring_front",
-		Transform3D(Basis.from_scale(Vector3(r, 0.35 * float(look["width"]), r)), c),
-		lit_color(look["edge"], 0.75 * fade, look["energy"])
-	)
-	for j in 8:
-		points.append(c + Vector3(cos(TAU * j / 8.0), 0.1, sin(TAU * j / 8.0)) * r)
 
 
 func _beam_end(e: Dictionary, look: Dictionary, off: float) -> Vector2:
@@ -986,7 +961,7 @@ func _draw_live_form(f: Dictionary, now: float) -> void:
 				return
 			fade = 1.0 - (smoothstep(TRAVEL_FADE_FROM, 1.0, t) if go else t * t * t)
 			var c3 := SimPlane.to_3d(at[0], GROUND_H)
-			_ring_at(c3, float(at[1]), look, fade, pts, int(f["seed"]) * 16 + 15)
+			FormRing.draw(self, c3, float(at[1]), look, fade, pts, int(f["seed"]) * 16 + 15, go)
 		&"zone":
 			if _off_screen(f["pos"], float(f["radius"]) + CULL_PAD_M):  # v0.8.0 HV
 				return
