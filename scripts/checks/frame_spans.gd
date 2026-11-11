@@ -17,6 +17,9 @@ extends RefCounted
 ##                         the queued calls, the physics interpolation) to the next step or the next frame
 ## The stamps cost a few microseconds a frame; --redraws counts the CanvasItem `draw` signals (one per redraw, which
 ## rebuilds the item's draw commands on the CPU); --orphans lists the nodes outside the tree by class and script.
+## --hud-hide=<part[,part]> hides the HUD's and the UI layer's children whose class name, script class or node name
+## contains a part (for example ItemIcons,BuildHud,DpsMeter): what those parts cost the frame, against a run without
+## it. With --spans or --redraws a run also counts the root viewport's 2D draw calls a frame (count.canvas_dc).
 ## --size=WxH sets the window and the root viewport (default 1920x1080); --vsync=off|on|mailbox|adaptive overrides the
 ## probe's vsync off.
 
@@ -27,6 +30,7 @@ const AB := [
 	"detach_actors",
 	"no_particles",
 	"no_hud",
+	"no_still",
 	"no_sun_shadow",
 	"no_omni",
 	"no_3d",
@@ -54,6 +58,7 @@ var redraws := false  # --redraws
 var orphans := false  # --orphans
 var size := Vector2i(1920, 1080)
 var vsync := ""
+var hud_hide: PackedStringArray = []  # --hud-hide
 var _ab: PackedStringArray = []
 var _main: Node
 var _tree: SceneTree
@@ -90,6 +95,8 @@ func parse(s: String) -> bool:
 	elif s.begins_with("size="):
 		var p := s.trim_prefix("size=").split("x")
 		size = Vector2i(int(p[0]), int(p[1]))
+	elif s.begins_with("hud-hide="):
+		hud_hide = s.trim_prefix("hud-hide=").split(",", false)
 	elif s.begins_with("vsync="):
 		vsync = s.trim_prefix("vsync=")
 	else:
@@ -123,6 +130,7 @@ func setup(tree: SceneTree, main: Node, ab: PackedStringArray) -> void:
 		stack.append_array(n.get_children())
 		_on_node_added(n)
 	var v: Node = main.get(&"view")
+	_hide_hud_parts(main)
 	for f in ab:
 		match f:
 			"no_fti":
@@ -135,10 +143,32 @@ func setup(tree: SceneTree, main: Node, ab: PackedStringArray) -> void:
 				_detached_parent.remove_child(_detached)
 			"no_hud":
 				(main.get(&"ui") as CanvasLayer).visible = false
+			"no_still":  # every HUD part drawn directly each frame (HudStill's textures off)
+				(main.get(&"_hud").get(&"still") as HudStill).set_enabled(false)
 			"no_3d":  # the root viewport draws its 2D (the HUD) only
 				tree.root.disable_3d = true
 			"no_viewport":  # the root viewport is not drawn at all (the engine still syncs and presents)
 				RenderingServer.viewport_set_active(tree.root.get_viewport_rid(), false)
+
+
+func _hide_hud_parts(main: Node) -> void:
+	if hud_hide.is_empty():
+		return
+	var hud: Node = main.get(&"_hud")
+	var parts: Array[Node] = hud.get_children()
+	parts.append_array((main.get(&"ui") as Node).get_children())  # the DPS meter is on the UI layer
+	for h in parts:
+		if h == hud or not h is CanvasItem:
+			continue
+		var script: Script = h.get_script()
+		var label := (
+			"%s %s %s"
+			% [h.get_class(), h.name, script.get_global_name() if script != null else &""]
+		)
+		for part in hud_hide:
+			if label.contains(part) and (h as CanvasItem).visible:
+				(h as CanvasItem).visible = false
+				print("frame_spans: hid the HUD part ", label)
 
 
 func _hook(sig: Signal, cb: Callable) -> void:
@@ -219,6 +249,13 @@ static func _objects() -> Array:
 
 ## This frame's spans into `into` (microseconds), from `start` (the last probe _process) to `now` (this one).
 func gather(start: int, now: int, into: Dictionary) -> void:
+	into["count.canvas_dc"] = float(
+		RenderingServer.viewport_get_render_info(
+			_tree.root.get_viewport_rid(),
+			RenderingServer.VIEWPORT_RENDER_INFO_TYPE_CANVAS,
+			RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME
+		)
+	)
 	if redraws:
 		var n := 0
 		for k: String in _draws:
@@ -299,6 +336,12 @@ func report_lines(bk: Dictionary) -> PackedStringArray:
 		)
 	)
 	out.append("ab_extra: " + ", ".join(_ab_extra()))
+	out.append("hud_hide: " + (", ".join(hud_hide) if not hud_hide.is_empty() else "none"))
+	var hud: Node = _main.get(&"_hud") if _main != null else null
+	var still: HudStill = hud.get(&"still") if hud != null else null
+	if still != null:
+		for l in still.stats_lines():
+			out.append("hud_still: " + l)
 	if on:
 		var total := 0.0
 		var parts: PackedStringArray = []

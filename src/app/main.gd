@@ -267,6 +267,8 @@ func close_pause_options() -> void:
 func _on_setting_changed(_key: String) -> void:
 	fps_counter.apply(profile)
 	ViewPrefs.apply_settings(profile)
+	if _hud != null:  # its parts redraw only on a change of what they show: a palette or a motion setting is one
+		_hud.redraw_all()
 	if hub != null:  # Options from the hub's pause
 		hub.apply_settings(profile)
 	if view != null:

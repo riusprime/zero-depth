@@ -11,7 +11,7 @@ extends RefCounted
 ## colours and the frame only (the map's content is unchanged): lilac-tinted silver rooms, the current room in the
 ## moon-blue accent, the hero near-white, the unexplored stubs moon-blue, the chest pale gold (no orange or brown); the
 ## full map's panel is Astral's ink with a contour line; the corner window's ticks are 1 px silver L's with an inner
-## tick, a small diamond at each corner and a four-point star under its foot (MinimapView._draw_corner_ticks).
+## tick, a small diamond at each corner and a four-point star under its foot (MinimapView.draw_astral_ticks).
 
 const PANEL := Color("#0D1120", 0.93)
 const PANEL_EDGE := Color("#6E76A0", 0.7)

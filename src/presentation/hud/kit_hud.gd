@@ -62,8 +62,10 @@ func sync(reader: WorldReader) -> void:
 		var hot: bool = h["vent_ready"]
 		# The 6 s cooldown, as the ability squares show theirs: a sweep and the seconds left.
 		var left := int(h["vent_cd"])
-		_vent_sweep.share = float(left) / maxf(1.0, float(h["vent_cd_total"]))
-		_vent_sweep.queue_redraw()
+		var share := float(left) / maxf(1.0, float(h["vent_cd_total"]))
+		if share != _vent_sweep.share:  # the sweep moves only while the vent cools
+			_vent_sweep.share = share
+			_vent_sweep.queue_redraw()
 		if left > 0:
 			_vent.text += " %d" % ceili(left / float(SimTick.TICKS_PER_SECOND))
 		_vent.modulate = _hot_color() if hot else Color(1, 1, 1, DIM_ALPHA)
