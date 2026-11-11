@@ -18,9 +18,16 @@ const JITTER := 0.12  # of the bolt's length
 const FORK_MAX := 2
 const FORK_LEN := 0.25  # of the bolt's length
 const SHELL := 3.2  # the shell's width over the core's
+## The strip's points: the longest main line (SEG_MIN + SEG_SPAN - 1 segments) and a fork's.
+const MAIN_POINTS := SEG_MIN + SEG_SPAN
+const FORK_POINTS := 4
+## How much nearer the core sorts than its shell (m): enough to win the tie, too little to pass anything else.
+const CORE_SORT := 0.01
 const MATERIALS: Array[String] = [
 	"res://assets/vfx_zd/lightning/bolt_outer.tres", "res://assets/vfx_zd/lightning/bolt_core.tres"
 ]
+
+static var _strip: ArrayMesh = null
 
 @export var primary_color := Color(0.97, 0.98, 1.0):
 	set(v):
@@ -49,18 +56,29 @@ var _has_ends := false
 var _age := 0.0
 var _clock := 0.0
 var _dirty := false
+## The shell's strip and the core's (the same mesh, one material each). The core sorts a hair nearer, so it always
+## draws over its shell: one mesh with two surfaces left that order to the renderer's sort, which broke the tie
+## differently from bolt to bolt.
 var _mi := MeshInstance3D.new()
-var _mesh := ArrayMesh.new()
+var _core_mi := MeshInstance3D.new()
 var _mats: Array[ShaderMaterial] = []
+## What the materials hold now (the line's [a, b, seed, width] and the fade), so an unchanged one is not written again.
+var _line_set := []
+var _fade_set := -1.0
 
 
 func _init() -> void:
-	_mi.mesh = _mesh
-	_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(_mi)
 	for path in MATERIALS:
-		# (each bolt owns its colours)
+		# (each bolt owns its colours and its line)
 		_mats.append((load(path) as ShaderMaterial).duplicate() as ShaderMaterial)
+	for k in 2:
+		var mi := _mi if k == 0 else _core_mi
+		mi.mesh = strip_mesh()
+		# (a surface override: PackHold.localize copies material overrides, and these are set every reshape)
+		mi.set_surface_override_material(0, _mats[k])
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(mi)
+	_core_mi.sorting_offset = CORE_SORT
 	_paint()
 	visibility_changed.connect(_on_visibility)
 
@@ -97,9 +115,14 @@ func _process(delta: float) -> void:
 	if _dirty:
 		_rebuild()
 	var f := brightness()
-	for m in _mats:
-		m.set_shader_parameter(&"fade", f)
-	_mi.visible = f > 0.01
+	if f != _fade_set:  # (each write is a material update; most frames the fade holds)
+		_fade_set = f
+		for m in _mats:
+			m.set_shader_parameter(&"fade", f)
+	var show := _has_ends and f > 0.01
+	if _mi.visible != show:
+		_mi.visible = show
+		_core_mi.visible = show
 
 
 func _on_visibility() -> void:
@@ -108,7 +131,11 @@ func _on_visibility() -> void:
 		_clock = 0.0
 		flicks = 0
 		_has_ends = false
-		_mesh.clear_surfaces()
+		_mi.visible = false
+		_core_mi.visible = false
+		for m in _mats:
+			m.set_shader_parameter(&"has_ends", false)
+		_line_set = []
 
 
 func _paint() -> void:
@@ -127,7 +154,7 @@ static func hash01(a: int, b: int) -> float:
 
 
 ## The bolt's points (local space) for the current seed and flicker: [main line, fork, fork...]; each is an
-## Array of Vector3. Public for the tests.
+## Array of Vector3. The shader (bolt_ribbon.gdshader) draws the same points; this is their CPU reference (the tests).
 func lines() -> Array[Array]:
 	var la := to_local(_a) if is_inside_tree() else _a - position
 	var lb := to_local(_b) if is_inside_tree() else _b - position
@@ -169,88 +196,64 @@ func lines() -> Array[Array]:
 	return out
 
 
+## The line's numbers into both layers' materials: the shader lays the strip out from them (bolt_ribbon.gdshader
+## follows lines() step for step), so a moved or re-jittered bolt costs a few uniforms, not a new mesh.
 func _rebuild() -> void:
 	_dirty = false
 	rebuilds += 1
-	_mesh.clear_surfaces()
-	var polys := lines()
-	if polys.is_empty():
+	var la := to_local(_a) if is_inside_tree() else _a - position
+	var lb := to_local(_b) if is_inside_tree() else _b - position
+	var seed32 := _seed & 0xFFFFFFFF
+	if seed32 >= 0x80000000:
+		seed32 -= 0x100000000
+	var line := [la, lb, seed32, width]
+	if line == _line_set:  # A flicker alone: one number
+		for m in _mats:
+			m.set_shader_parameter(&"flicks", flicks & 0x7FFFFFFF)
 		return
-	var view := _view_dir()
-	var total := 0.0
-	for poly in polys:
-		total += _poly_len(poly)
-	# v0.10.5 W3-Q7 (a strike's bolts are rebuilt every frame they grow): each point's side, half-width factor and v
-	# are worked out once for both layers, its length along the line kept as it goes (it re-summed the line up to every
-	# point, through a new Array each); the same sums in the same order, so the same mesh.
-	var pts := PackedVector3Array()
-	var sides := PackedVector3Array()
-	var thins := PackedFloat32Array()
-	var tapers := PackedFloat32Array()
+	_line_set = line
+	for m in _mats:
+		m.set_shader_parameter(&"end_a", la)
+		m.set_shader_parameter(&"end_b", lb)
+		m.set_shader_parameter(&"bolt_seed", seed32)
+		m.set_shader_parameter(&"flicks", flicks & 0x7FFFFFFF)
+		m.set_shader_parameter(&"width", width)
+		m.set_shader_parameter(&"has_ends", true)
+	# The strip's own vertices all sit at the origin: the renderer culls by this box (the line, its jitter and forks).
+	var span := la.distance_to(lb)
+	var box := AABB(la, Vector3.ZERO).expand(lb).grow(span * 0.5 + width * SHELL)
+	if not _mi.custom_aabb.is_equal_approx(box):
+		_mi.custom_aabb = box
+		_core_mi.custom_aabb = box
+
+
+## The strip every bolt draws (made once): MAIN_POINTS points of the main line then FORK_MAX forks of FORK_POINTS, two
+## vertices a point (UV.x 0 and 1 across it, UV2 the line and the point's index), the same two triangles a segment as
+## the mesh ZdBolt used to build. The shell and the core each draw it with their own material.
+static func strip_mesh() -> ArrayMesh:
+	if _strip != null:
+		return _strip
 	var uvs := PackedVector2Array()
+	var uv2s := PackedVector2Array()
 	var idx := PackedInt32Array()
-	var run := 0.0
-	for pi in polys.size():
-		var poly: Array = polys[pi]
-		var thin := 1.0 if pi == 0 else 0.55
-		var base := pts.size() * 2
-		var along := 0.0
-		for i in poly.size():
-			var p: Vector3 = poly[i]
-			if i > 0:
-				along += p.distance_to(poly[i - 1] as Vector3)
-			var t: Vector3 = (
-				(poly[mini(i + 1, poly.size() - 1)] as Vector3) - (poly[maxi(i - 1, 0)] as Vector3)
-			)
-			var s := t.cross(view)
-			s = s.normalized() if s.length() > 0.0001 else Vector3.UP
-			var taper := 1.0 if pi == 0 else 1.0 - 0.8 * float(i) / (poly.size() - 1)
-			pts.append(p)
-			sides.append(s)
-			thins.append(thin)
-			tapers.append(taper)
-			var v := (run + along) / maxf(total, 0.001)
-			uvs.append(Vector2(0.0, v))
-			uvs.append(Vector2(1.0, v))
-		for i in poly.size() - 1:
+	for line in FORK_MAX + 1:
+		var count := MAIN_POINTS if line == 0 else FORK_POINTS
+		var base := uvs.size()
+		for i in count:
+			for x in 2:
+				uvs.append(Vector2(x, 0.0))
+				uv2s.append(Vector2(line, i))
+		for i in count - 1:
 			var o := base + i * 2
-			idx.append(o)
-			idx.append(o + 1)
-			idx.append(o + 2)
-			idx.append(o + 1)
-			idx.append(o + 3)
-			idx.append(o + 2)
-		run += along
-	for layer in 2:
-		var w := width * (SHELL if layer == 0 else 1.0) * 0.5
-		var verts := PackedVector3Array()
-		verts.resize(pts.size() * 2)
-		for k in pts.size():
-			var s := sides[k]
-			var d := s * w * thins[k] * tapers[k]
-			verts[k * 2] = pts[k] - d
-			verts[k * 2 + 1] = pts[k] + d
-		var arrays := []
-		arrays.resize(Mesh.ARRAY_MAX)
-		arrays[Mesh.ARRAY_VERTEX] = verts
-		arrays[Mesh.ARRAY_TEX_UV] = uvs
-		arrays[Mesh.ARRAY_INDEX] = idx
-		_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-		_mesh.surface_set_material(layer, _mats[layer])
-		_mats[layer].set_shader_parameter(&"beam_length", maxf(total * 0.6, 1.0))
-
-
-static func _poly_len(poly: Array) -> float:
-	var s := 0.0
-	for i in range(1, poly.size()):
-		s += (poly[i] as Vector3).distance_to(poly[i - 1] as Vector3)
-	return s
-
-
-## The way the camera looks (the iso camera's, or a stand-in).
-func _view_dir() -> Vector3:
-	if is_inside_tree():
-		var cam := get_viewport().get_camera_3d()
-		if cam != null:
-			return -cam.global_transform.basis.z
-	return Vector3(-0.5, -0.7, -0.5).normalized()
+			idx.append_array(PackedInt32Array([o, o + 1, o + 2, o + 1, o + 3, o + 2]))
+	var verts := PackedVector3Array()
+	verts.resize(uvs.size())
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_TEX_UV2] = uv2s
+	arrays[Mesh.ARRAY_INDEX] = idx
+	_strip = ArrayMesh.new()
+	_strip.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return _strip
