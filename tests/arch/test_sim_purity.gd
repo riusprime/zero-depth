@@ -70,7 +70,9 @@ func test_the_native_seam_is_the_one_named_file() -> void:
 	assert_true(FileAccess.file_exists(SEAM_FILE))
 	var world := GdSource.code_only(GdSource.read("res://src/sim/world/world.gd"))
 	assert_true(world.contains("NativeWorld.make()"), "World gets its native side from the seam")
-	assert_eq(violations("var m := ClassDB.instantiate(&\"Foo\")"), PackedStringArray(["\\bClassDB\\b"]))
+	assert_eq(
+		violations('var m := ClassDB.instantiate(&"Foo")'), PackedStringArray(["\\bClassDB\\b"])
+	)
 
 
 func test_the_lint_catches_planted_tokens() -> void:

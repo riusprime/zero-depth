@@ -36,27 +36,24 @@ Terms used on this page:
 ## 2. The tick, phase by phase
 
 Phases as numbered in `World.step` ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §2). Only the rows below changed; every
-other phase is GDScript. Each kernel runs only when its bit is set in `World.native_on` (`NativeWorld.MOVE`, `AI`,
-`STRIKE`, `SHOTS`, `NAV`; the branch is one line in `world.gd` per phase).
-
-**Check after step 54b:** whether the `native_on` bits and the GDScript branches in `world.gd` (`_run_ai`,
-`_move_and_collide`, `_resolve_enemies`, `_projectile_hits`, `_begin_nav_flood`) still exist, and what a refused
-kernel call (`-1`, below) falls back to; this section then describes the only path.
+other phase is GDScript. Since step 54b each kernel is the only path for what it covers: there are no kernel bits
+and no GDScript branch beside them (`world.gd` calls each bridge once a phase: `_run_ai`, `_move_and_collide`,
+`_projectile_hits`, `_begin_nav_flood`, and `NativeStrike.resolve` in place of the old `_resolve_enemies`).
 
 | Phase | Kernel (C++) | Reads | Writes / returns | GDScript after it (bridge) |
 |---|---|---|---|---|
 | 3 nav | `nav_flood(seeds, max_steps, targets)` (`zd_nav.cpp`), on the `NavField.PERIOD` tick, the whole flood in one call | the nav grid cache, its extra cells, the seeds and targets | the distances (`nav_dist()`), the work, whether it stopped at its targets | `NavField.flood` copies `nav_dist()` into `NavField.dist` (`NativeNav.fill`) |
-| 3 ai | `think(actors, hero, tick, held, mine_owners, flow_native)` (`zd_ai.cpp`) | the actor columns, the hero (9 floats, `NativeAi.hero_of`), a spell-stun byte a row (or empty), the mines' owners | `state state_t cd fire_cd pick windup lock_a facing lock_x lock_y lock_len plan_x plan_y plan_block`, each group only when changed; intents | `NativeAi._apply_think`, then the script rows' `think` (`_script_think`) |
-| 5 move (steer) | `move(actors, hero, slow, slow_permille, flow_native)` (`zd_ai.cpp`) | the actor columns; a slow factor a row only while an element pair or a spell hold could change it | `pos_x pos_y lock_x lock_y lock_len lock_a facing`; intents | the script rows steer **before** the call (`NativeAi.move`); `CHARGE_STEP` and `RELOCATE_STEP` intents after it; then `PlayerSkill.push` |
+| 3 ai | `think(actors, hero, tick, held, mine_owners)` (`zd_ai.cpp`) | the actor columns, the hero (9 floats, `NativeAi.hero_of`), a spell-stun byte a row (or empty), the mines' owners | `state state_t cd fire_cd pick windup lock_a facing lock_x lock_y lock_len plan_x plan_y plan_block`, each group only when changed; intents | `NativeAi._apply_think`, then the script rows' `think` (`_script_think`) |
+| 5 move (steer) | `move(actors, hero, slow, slow_permille)` (`zd_ai.cpp`) | the actor columns; a slow factor a row only while an element pair or a spell hold could change it | `pos_x pos_y lock_x lock_y lock_len lock_a facing`; intents | the script rows steer **before** the call (`NativeAi.move`); `CHARGE_STEP` intents after it; then `PlayerSkill.push` |
 | 5 move (collide) | `resolve_actors(actors, through, heavy, ghost0, iters)` (`zd_collide.cpp`) | `pos_x pos_y radius`, the wall and solid caches, the boss flags | `pos_x pos_y`; the number of pair pushes | `NativeMove.resolve` rebuilds `World._actor_grid` from the final positions for the later phases |
 | 6 resolve | `strike(actors, hero)` (`zd_strike.cpp`) | the actor columns, the hero | nothing written; a list of entries | `NativeStrike.resolve`: the list (all but touches), then the script rows' `resolve`, then the critters' touches |
 | 6 proj | `sweep_shots(projectiles, actors, skip, walls_only)` (`zd_shots.cpp`) | the projectile and actor columns, a Mine-hold byte and a walls-only byte a projectile (each empty when unused) | the advanced `pos_x pos_y life` of the projectiles that met nothing; at most one event a projectile | `NativeShots.sweep`: the steering pre-pass runs **before** the call; the events after it, each through `ProjectileContacts` |
 
 Every list a kernel returns is **ascending by row (or projectile), then by code**, and GDScript applies it in that
 order. A kernel returns `-1` and changes nothing when a cache is missing or a column has the wrong length. The
-bridge then logs an error: `think` and `strike` fall back to the GDScript phase (their bridge returns false), `move`
-leaves the table rows standing for that tick (the script rows have already moved), and `sweep_shots` skips the
-phase's contacts.
+bridge then logs an error and nothing falls back to GDScript (there is no GDScript version): `think` and
+`strike` leave that phase's table rows (and its script rows) unrun for the tick, `move` leaves the table rows
+standing (the script rows have already moved), and `sweep_shots` skips the phase's contacts.
 
 ### 2.1 The intent and entry codes
 
@@ -64,17 +61,16 @@ phase's contacts.
 
 | Code | From | Meaning | GDScript does |
 |---|---|---|---|
-| 1 `FLOW` | think | a walk plan the walls block, while the flow field is GDScript's; `f0` the walk's length | `w.nav.direction(pos) * f0` into `plan_x`/`plan_y` |
 | 2 `THINK_TICK` | think | the Rubble Warden's think tick, before the frozen check | `Variants.on_think` |
 | 3 `MOVE_TICK` | think | the Mender heals instead of attacking | `EnemyAi._mend` |
 | 4 `WINDUP_START` | think | an attack began; `a` the aim | `NativeAi._windup_start`: the windup length drawn from `rng_enemy`, the Arc Caster's spell, the Star Warper's star |
 | 5 `WINDUP_END` | think | a windup ran out for a kind that may cancel (the Star Warper) | `StarfallKinds.cancel`, else the row goes ACTIVE |
 | 6 `RELOCATE` | think | a Sniper's recovery ended | `EnemyAi._plan_relocation` (it draws) |
 | 7 `CHARGE_STEP` | move | a charge with a trail stepped | `Variants.on_charge_step` |
-| 8 `RELOCATE_STEP` | move | a relocating Sniper's walk, while the flow field is GDScript's | `EnemyAi.move` for that row |
 
-`FLOW` and `RELOCATE_STEP` are emitted only when `flow_native` is false (the `nav` kernel off).
-**Check after step 54b:** whether `FLOW` and `RELOCATE_STEP` remain once the flood is always native.
+Codes 1 (`FLOW`) and 8 (`RELOCATE_STEP`) are gone since step 54b: they handed a blocked walk and a relocating
+Sniper's walk to the GDScript flow field while the flood could still be GDScript's; the kernels now read the nav
+cache themselves (`NativeAi.ready` keeps it current with `NativeNav.sync`). The numbers stay unused.
 
 `strike` (`zd_strike.h` `StrikeOut`, mirrored in `NativeStrike.Out`):
 
@@ -134,14 +130,16 @@ The rules:
 - **No GDScript local holds a column across a native call.** `var px := a.pos_x`, then a kernel, then `px[i]` reads
   the old array. The bridges read through the store each time (`NativeAi`'s and `NativeStrike`'s headers say so); a
   change to `world.gd` near a kernel call must keep that.
-- **The world gets its native object from the app layer.** `World.native_factory` (a `Callable`, a static var) and
-  `World.native_kernels` (bits) are set by `NativeSwitch.install` (`src/app/native_switch.gd`); `World._init` calls
-  the factory and `NativeWorld.setup`. The sim never names the class. The factory is a named static function
-  (`NativeSwitch.make`), never a lambda (LESSONS L24).
-
-**Check after step 54b:** how a `World` gets its native object (the factory, or a direct `ClassDB` call), what a
-`World` does when the library is missing (the GDScript fallback is deleted), and whether `World.native_kernels` and
-the per-kernel bits survive.
+- **Every World makes its native object itself.** `World._init` calls `NativeWorld.make()`
+  (`src/sim/world/native_world.gd`), which checks `ClassDB.class_exists(&"ZdWorld")`, instantiates it and sends the
+  direction tables. That file is the one place in `src/sim` allowed to name `ClassDB`, with exactly those two calls
+  (`tests/arch/test_sim_purity.gd`). There is no factory, no `World.native_kernels`, no `native_on` and no kernel
+  bits (step 54b deleted `NativeSwitch`). A `NavField` flooded on its own (a test bot's) makes its own native side
+  the same way.
+- **Without the library** `make()` returns null and reports `NativeWorld.MISSING` (how to build it) once a process;
+  that `World`'s `step()` then only counts ticks. The game's start (`NativeCheck.passes`, `src/app/native_check.gd`)
+  shows the message and quits with exit code 1; a GUT run stops before its first test with exit code 1
+  (`tests/support/native_required_hook.gd`, `res://.gutconfig.json`). There is no GDScript fallback.
 
 ### 3.1 A worked example: a kernel needs a new column
 
@@ -175,12 +173,16 @@ breaking it changes a float bit on one compiler or one run and not another.
 
 **The fixtures.** `ZdWorld.determinism_probe()` runs a fixed scene (walls, solids, 240 bodies) through the
 collision kernel for 60 ticks and returns the FNV-1a hash of every result's float bits. `tests/unit/app/
-test_native_move.gd` pins the value MSVC gives (`DETERMINISM_PROBE`). A compiler or flag that rounds one operation
-differently fails that test before any golden. It covers the collision kernel only; the other kernels' cross-compiler
-identity rests on the same flags and on the goldens once they are recorded from the native core. The Linux build's
-first run of this test is on the PR into `main` (GitHub's `verify` workflow); it has not run locally.
-**Check after step 54b:** which golden fixtures were re-recorded from the native core (PROGRESS "Goldens changed on
-purpose") and whether any per-kernel fixture was added.
+test_native_move.gd` pins the value MSVC gives (`DETERMINISM_PROBE`). Since step 54b every kernel has a fixture too
+(`tests/support/native_fixtures.gd`): on a seeded horde world (floor 3 of run 31, 60 table-kind enemies, 120 ticks
+played) each kernel is called once, directly (`nav`, `think`, `move`, `collide`, `strike`, `shots`, plus the probe),
+and its outputs and the columns it writes are hashed (`tests/golden/fixtures/native_kernels_hash.txt`); the same
+world played 600 ticks gives `native_horde_hash.txt`. Both were recorded from the owner's Windows build (MSVC,
+`tests/golden/generate_native_fixtures.gd`). `tests/golden/test_native_fixtures.gd` checks them in every GUT run (the
+debug library) and `scripts/native/check_release.sh` with the release library; a mismatch says "the native core gives
+different results on this compiler/platform" and names the kernel. The first Linux (gcc) run is on the PR into
+`main` (the `verify` workflow's checks job runs both builds); it has not run locally. The goldens re-recorded from
+the native core at step 54b are listed in PROGRESS "Goldens changed on purpose".
 
 ## 5. The per-kind table
 
@@ -223,15 +225,14 @@ charging kind whose table has a trail), `BOLT` (the Dim Needle's look, applied i
      branch in `EnemyAi._resolve_horde`.
    - **SCRIPT** when it has its own walk, its own state machine or reads state another enemy writes in the same phase
      (bosses, elites, the signatures). Give it the boss role, the elite or Ruins flag, or name it in `mode_of`.
-3. Update the lists in `test_the_kinds_run_in_the_modes_of_the_design`, and add the kind to
-   `test_every_table_kind_runs_the_gdscript_state_cycle` and `test_every_table_kind_lands_the_same_hits_and_shots`
-   coverage if it is a table kind (§8).
+3. Update the lists in `test_the_kinds_run_in_the_modes_of_the_design`. A table kind is covered by
+   `test_every_table_kind_runs_the_state_cycle` (`tests/unit/native/test_native_ai.gd`: it only ever takes the state
+   machine's steps) and `test_the_table_kinds_hurt_the_hero_and_fire` (`test_native_strike.gd`) by being in the table;
+   since step 54b there is no GDScript path to compare with, so these are rule tests, and the kind's own behaviour
+   tests (`tests/unit/sim/`) run on the native path.
 4. A new field the kernels must read: add the `K_*`/`KF_*`/`T_*` constant at the end of its block in
    `native_kind_table.gd`, the same constant in `zd_kinds.h`, its place in `kind_layout()` and in the layout test.
    `KI`/`KF` grow by themselves.
-
-**Check after step 54b:** the two per-kind tests compare the native path with the GDScript one; once the GDScript
-path of the table kinds is deleted, confirm what they compare against and update step 3 above.
 
 ## 6. Saves, snapshots and the state hash
 

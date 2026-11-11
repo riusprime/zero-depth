@@ -8,7 +8,7 @@ extends GutTest
 const DETERMINISM_PROBE := "fc67776bc3d14796"
 ## The deepest body after the crowd test's 3 ticks with the GDScript passes, the last time they ran (v0.11.1 step
 ## 54b's comparison): the native passes must leave the crowd no deeper, give or take 0.05 m.
-const GDSCRIPT_CROWD_DEPTH_M := -1.0
+const GDSCRIPT_CROWD_DEPTH_M := 0.0808
 const K := ActorStore.Kind
 const T := preload("res://src/sim/ai/native_kind_table.gd")
 
@@ -53,7 +53,9 @@ func test_a_crowd_at_a_wall_ends_no_deeper_than_the_gdscript_passes_did() -> voi
 		w._move_and_collide()
 	var d := _depth(w, wall)
 	gut.p("deepest body in the wall after 3 ticks: %.4f m" % d)
-	assert_lt(d, GDSCRIPT_CROWD_DEPTH_M + 0.05, "%.4f m against %.4f m" % [d, GDSCRIPT_CROWD_DEPTH_M])
+	assert_lt(
+		d, GDSCRIPT_CROWD_DEPTH_M + 0.05, "%.4f m against %.4f m" % [d, GDSCRIPT_CROWD_DEPTH_M]
+	)
 
 
 func test_the_same_start_gives_the_same_result() -> void:

@@ -1,8 +1,8 @@
 class_name NativeCheck
 extends RefCounted
 ## The game's start without its native library (native/README.md): the sim's hot loops run only there
-## (NativeWorld), so the game does not start without it. It reports NativeWorld.MISSING (once, as an error), shows it in a
-## dialog when there is a display, and quits with exit code 1.
+## (NativeWorld), so the game does not start without it. It reports NativeWorld.MISSING (once, as an error), shows it
+## in a dialog when there is a display, and quits with exit code 1.
 
 
 ## True when the library is loaded. Otherwise reports it, asks `main`'s tree to quit with 1, and returns false (the

@@ -110,8 +110,8 @@ func _measure(m: Object, n: int, reps: int) -> void:
 	print("  speedup gdscript/native_call %.1fx" % [float(gd_us) / maxf(call_us, 1.0)])
 
 
-## The pair loop the GDScript collision passes ran before the native core (a copy kept as this bench's reference), without
-## the boss flags (none in this crowd).
+## The pair loop the GDScript collision passes ran before the native core (a copy kept as this bench's reference),
+## without the boss flags (none in this crowd).
 func _gd_pairs(
 	grid: DenseGrid, px: PackedFloat32Array, py: PackedFloat32Array, rad: PackedFloat32Array
 ) -> int:

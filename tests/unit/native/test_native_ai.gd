@@ -134,6 +134,7 @@ func test_the_native_side_reads_the_table_at_its_offsets() -> void:
 	assert_eq(codes, want, "the hero's size and the intent codes are NativeAi's")
 	assert_eq(NativeAi.hero_of(CombatLab.world()).size(), NativeAi.HERO_SIZE)
 
+
 ## One enemy of each table kind (NATIVE or HOOKED) by a standing hero, 600 ticks: it rises in, then only ever takes
 ## the state machine's steps (MOVE -> WINDUP -> ACTIVE -> RECOVER -> MOVE, a windup that ends early going to RECOVER),
 ## and most kinds attack in the window.
@@ -169,6 +170,7 @@ func test_every_table_kind_runs_the_state_cycle() -> void:
 		attacked += 1 if ",".join(cycle).contains(":%d:" % S.WINDUP) else 0
 	assert_gt(attacked, 20, "most kinds attacked in the window (the cycle is exercised)")
 
+
 ## [tick:state:windup] each time the enemy's state changes.
 func _cycle(kind: int) -> PackedStringArray:
 	var w := CombatLab.world()
@@ -190,6 +192,7 @@ func _cycle(kind: int) -> PackedStringArray:
 			out.append("%d:%d:%d" % [tick, last, w.actors.windup[i]])
 	return out
 
+
 func test_a_mender_heals_a_hurt_ally() -> void:
 	var w := _world_on()
 	var hurt := w.add_enemy(K.CHARGER, Vector2(9, 0))
@@ -202,6 +205,7 @@ func test_a_mender_heals_a_hurt_ally() -> void:
 	assert_gt(healed, 0, "healed (MOVE_TICK: EnemyAi._mend)")
 	assert_eq(w.actors.pick[w.actors.index_of(mender)], hurt, "its patient")
 
+
 func test_a_rubble_warden_sheds_its_crust_at_half_hp() -> void:
 	var w := _world_on()
 	var id := w.add_enemy(K.RUBBLE_WARDEN, Vector2(8, 0))
@@ -212,11 +216,13 @@ func test_a_rubble_warden_sheds_its_crust_at_half_hp() -> void:
 	CombatLab.idle(w, 1)
 	assert_true(w.variants.crusted.has(id), "THINK_TICK: Variants.on_think")
 
+
 func test_an_ember_charger_leaves_its_trail() -> void:
 	var w := _world_on()
 	w.add_enemy(K.EMBER_CHARGER, Vector2(4, 0))
 	var n := CombatLab.until(w, func(x: World) -> bool: return x.variants.trail_count() > 0, 900)
 	assert_gt(n, 0, "CHARGE_STEP: Variants.on_charge_step")
+
 
 func test_a_sniper_relocates_after_its_shot() -> void:
 	var w := _world_on()
@@ -231,6 +237,7 @@ func test_a_sniper_relocates_after_its_shot() -> void:
 	CombatLab.idle(w, 30)
 	i = w.actors.index_of(id)
 	assert_lt(Kin.length(spot - w.actors.pos(i)), from, "it walks to its spot")
+
 
 func test_a_wall_between_sends_the_walk_along_the_flow_field() -> void:
 	var w := CombatLab.world()
@@ -258,6 +265,7 @@ func test_a_wall_between_sends_the_walk_along_the_flow_field() -> void:
 	assert_almost_eq(plan.x, flow.x, 0.002, "the flow field's way")
 	assert_almost_eq(plan.y, flow.y, 0.002)
 
+
 ## A horde of the table kinds: two runs give one hash chain; a snapshot at tick 300 restored into a fresh world gives
 ## the continuous run's hash at 600.
 func test_a_horde_is_the_same_twice_and_resumes_exactly() -> void:
@@ -267,6 +275,7 @@ func test_a_horde_is_the_same_twice_and_resumes_exactly() -> void:
 	assert_eq(a, b, "the same seed twice")
 	var c := _horde_hashes(300)
 	assert_eq(c, a, "restored at 300: the same hashes on to 600")
+
 
 func _horde_hashes(restore_at: int) -> PackedStringArray:
 	var kinds := [
@@ -310,9 +319,9 @@ func _horde_hashes(restore_at: int) -> PackedStringArray:
 			out.append(w.state_hash())
 	return out
 
+
 func _world_on() -> World:
 	var w := CombatLab.world()
 	w.actors.hp[0] = 1000000
 	w.actors.max_hp[0] = 1000000
 	return w
-

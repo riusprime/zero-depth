@@ -11,7 +11,9 @@ extends RefCounted
 const KERNELS_FILE := "res://tests/golden/fixtures/native_kernels_hash.txt"
 const SCENE_FILE := "res://tests/golden/fixtures/native_horde_hash.txt"
 ## The kernels in the order they are checked (and the first one that differs is named).
-const ORDER: Array[StringName] = [&"probe", &"nav", &"think", &"move", &"collide", &"strike", &"shots"]
+const ORDER: Array[StringName] = [
+	&"probe", &"nav", &"think", &"move", &"collide", &"strike", &"shots"
+]
 const RUN_SEED := 31
 const FLOOR := 3
 const ENEMIES := 60
@@ -142,10 +144,14 @@ static func kernel_hashes() -> Dictionary:
 
 ## The columns the enemy kernels write.
 static func _hash_actors(h: StateHasher, a: ActorStore) -> void:
-	for col: PackedInt32Array in [a.state, a.state_t, a.cd, a.fire_cd, a.facing, a.lock_a, a.windup, a.pick]:
+	for col: PackedInt32Array in [
+		a.state, a.state_t, a.cd, a.fire_cd, a.facing, a.lock_a, a.windup, a.pick
+	]:
 		h.add_ints(col)
 	h.add_ints(a.plan_block)
-	for col: PackedFloat32Array in [a.pos_x, a.pos_y, a.lock_x, a.lock_y, a.lock_len, a.plan_x, a.plan_y]:
+	for col: PackedFloat32Array in [
+		a.pos_x, a.pos_y, a.lock_x, a.lock_y, a.lock_len, a.plan_x, a.plan_y
+	]:
 		h.add_f32s(col)
 
 
@@ -186,20 +192,30 @@ static func differences() -> PackedStringArray:
 	var where := "%s, %s library" % [OS.get_name(), target if target != "" else "template_debug"]
 	for k in ORDER:
 		if String(want.get(k, "")) != String(got.get(k, "")):
-			out.append(
-				(
-					"the native core gives different results on this compiler/platform (%s): kernel %s gives %s, the"
-					+ " recorded fixture is %s (tests/golden/fixtures/native_kernels_hash.txt)"
+			(
+				out
+				. append(
+					(
+						(
+							"the native core gives different results on this compiler/platform (%s): kernel %s gives %s, the"
+							+ " recorded fixture is %s (tests/golden/fixtures/native_kernels_hash.txt)"
+						)
+						% [where, k, got.get(k, ""), want.get(k, "(missing)")]
+					)
 				)
-				% [where, k, got.get(k, ""), want.get(k, "(missing)")]
 			)
 	var scene := scene_hash()
 	if scene != read_scene():
-		out.append(
-			(
-				"the native core gives different results on this compiler/platform (%s): the horde scene ends on %s,"
-				+ " the recorded fixture is %s (tests/golden/fixtures/native_horde_hash.txt)"
+		(
+			out
+			. append(
+				(
+					(
+						"the native core gives different results on this compiler/platform (%s): the horde scene ends on %s,"
+						+ " the recorded fixture is %s (tests/golden/fixtures/native_horde_hash.txt)"
+					)
+					% [where, scene, read_scene()]
+				)
 			)
-			% [where, scene, read_scene()]
 		)
 	return out

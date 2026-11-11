@@ -82,9 +82,7 @@ func test_a_wall_raised_during_the_windup_stops_the_hit() -> void:
 	w.set_walls(walls)
 	var hp := w.actors.hp[0]
 	CombatLab.until(
-		w,
-		func(x: World) -> bool: return x.actors.state[x.actors.index_of(id)] == S.RECOVER,
-		300
+		w, func(x: World) -> bool: return x.actors.state[x.actors.index_of(id)] == S.RECOVER, 300
 	)
 	assert_eq(w.actors.hp[0], hp, "the wall stops the slam")
 
@@ -141,5 +139,3 @@ func _horde_hashes(restore_at: int) -> PackedStringArray:
 		if t % 100 == 99:
 			out.append(w.state_hash())
 	return out
-
-

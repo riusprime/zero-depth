@@ -832,7 +832,12 @@ func player_projectiles_of(id: StringName) -> int:
 func step(frame: InputFrame) -> void:
 	if native == null:  # No native library: NativeWorld.MISSING was printed; nothing runs but the clock
 		tick += 1
-		return
+	else:
+		_step(frame)
+
+
+## One tick's phases (step, with the native side present).
+func _step(frame: InputFrame) -> void:
 	if _nav_deferred:  # A floor whose build left its flow fields (FloorPlan builds them first)
 		build_nav()
 	# 0. a wand reorder (InputFrame.pick = PICK_WAND_MOVE_BASE + from × 16 + to) is input, applied first

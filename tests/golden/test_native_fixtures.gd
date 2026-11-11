@@ -27,4 +27,8 @@ func test_the_horde_scene_gives_the_recorded_hash() -> void:
 
 
 func test_the_same_inputs_give_the_same_hashes_twice() -> void:
-	assert_eq(NativeFixtures.kernel_hashes(), NativeFixtures.kernel_hashes(), "self-determinism in one process")
+	assert_eq(
+		NativeFixtures.kernel_hashes(),
+		NativeFixtures.kernel_hashes(),
+		"self-determinism in one process"
+	)

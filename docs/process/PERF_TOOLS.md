@@ -36,11 +36,13 @@ A timing is evidence only when it was taken like this. Anything else is an indic
 ## 3. The tools
 
 Headless tools build a `World` directly. Tools that need a renderer boot `main.tscn` or the Playground.
-**Which sim a tool runs:** a tool that boots `main.tscn` gets the game's default (every native kernel on, unless
-`-- --native=…` or `ZD_NATIVE_*` says otherwise). A headless tool runs the GDScript sim unless it takes `--native`:
-`horde_phases`, `shot_phases` and `native_compare` do; `sim_bench` and `attack_phases` do not, so they measure the
-GDScript sim. **Check after step 54b:** once the native core is the only sim, every tool runs it and the `--native`
-options go; correct this paragraph.
+**Which sim a tool runs:** since step 54b there is one: every tool, headless or not, runs the native core, and the
+`--native` options (`horde_phases`, `shot_phases`, the frame probe, `frame_attribution.sh`'s `NATIVE`) and
+`ZD_NATIVE_*` are gone, as is `native_compare` (it compared the GDScript and native paths). A headless tool that checks
+stops with the one error and exit code 1 without the library (`horde_phases`, `shot_phases`, the benches,
+`native_fixtures`); `scripts/checks/native_fixtures.gd` checks the loaded library against the recorded fixtures, and
+`scripts/native/check_release.sh` does it with the release build. The crowd writer keeps its own switch
+(`--ab=no_native_crowd`).
 
 ### 3.1 The frame probe: `scripts/checks/frame_probe.gd` (with `frame_spans.gd`)
 

@@ -21,7 +21,9 @@ func test_the_native_flood_equals_the_reference_flood_on_generated_floors() -> v
 	var diffs := 0
 	for i in floors:
 		var w := SaveLab.floor_world(11 + i, 1 + i % 3)
-		var r := _floor_parity(w.native, w.nav, 9000 + i, "floor %d (seed %d)" % [1 + i % 3, 11 + i])
+		var r := _floor_parity(
+			w.native, w.nav, 9000 + i, "floor %d (seed %d)" % [1 + i % 3, 11 + i]
+		)
 		cases += r[0]
 		diffs += r[1]
 	gut.p("nav parity: %d floors, %d floods, %d cells differ" % [floors, cases, diffs])
@@ -68,7 +70,11 @@ func _floor_parity(m: Object, f: NavField, rng_seed: int, label: String) -> Arra
 					diff += 1
 			assert_eq(diff, 0, "%s goal %d extra %d: every distance" % [label, gi, pass_extra])
 			var back: PackedInt32Array = m.nav_dist()
-			assert_eq(back, f.dist, "%s goal %d: the native cache holds the field's distances" % [label, gi])
+			assert_eq(
+				back,
+				f.dist,
+				"%s goal %d: the native cache holds the field's distances" % [label, gi]
+			)
 			out[0] += 1
 			out[1] += diff
 		var none: Array[Obb] = []

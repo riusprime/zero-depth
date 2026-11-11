@@ -398,12 +398,13 @@ look does not change**, and a probe or a test proves it.
   doubles, floats where it stores into a `PackedFloat32Array`, and the engine's own `sin`, `cos`, `exp`, `asin`
   ([`NATIVE_CORE.md`](NATIVE_CORE.md) §4).
 - **The GDScript writer stays** as the reference the tests compare against and as the fallback: without the library,
-  with `EnemyBatch.native` off (the dev panel's native core switch, the frame probe's `--ab=no_native_crowd`), or with
+  with `EnemyBatch.native` off (the frame probe's `--ab=no_native_crowd`, the equality tests), or with
   any batched avatar no native class covers, each enemy's GDScript runs as before. `ActorViews.batch_enemies` off
   (`--ab=no_batch`) puts every enemy back on its own node tree.
 
-**Check after step 54b:** whether the dev panel's native core switch (`NativeSwitch.flip_core`, which sets
-`EnemyBatch.native`) survives the flip; the GDScript writer stays either way as the test reference.
+Since step 54b the dev panel has no native core switch (`NativeSwitch` is deleted: the sim is native only);
+`EnemyBatch.native` is on by default and only the frame probe and the tests turn it off. The GDScript writer stays as
+the test reference and the fallback without the library.
 
 ### 11.3 What still has a node, and why
 
