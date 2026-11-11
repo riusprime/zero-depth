@@ -12,7 +12,10 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   owner was playing and an agent was probing during it.
 - **Owner playtest, 2026-11-11** (the build before step 55c, native core on): "tried it, game feels really smooth,
   barely falls under 60 fps and I like that, but I think a big cost is coming from light effects in some attack forms
-  like ring for example". An agent is measuring the Ring form (`v0111-ring`).
+  like ring for example". **Measured and fixed (step 62, merged on `lead-merge`, not pushed):** the Ring cost 4.7 ms
+  a frame over the Gun alone at 20 enemies; its lights cost nothing measurable; a travelling ring's pack effects were
+  taken again almost every frame. Now 1.3 ms (busy machine). **For the owner to judge:** a travelling void ring's
+  tendrils now stay in place along the ring where they jumped every frame (OWNER_QUESTIONS Q9).
 - **Left over from Wave 2, small:** the HUD and menu half of the dead-code scan; the menu backdrop's ember mode and
   the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: the
   owner was asked whether to delete it); the duplicate final-boss texture (needs model prep).
@@ -37,7 +40,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 - **The owner's folder** is at `932d47a1` (without step 55c) with its library built; the owner is using it, so the
   lead does not touch it: `git merge --ff-only` to the pushed head and `bash scripts/native/build.sh all` there once
   the owner says the editor is closed.
-- **Next:** the Ring measurement; the quiet run; the owner's answers in OWNER_QUESTIONS; then 54b and the PR.
+- **Next:** step 54b (the native core the only one; an agent is on it) reports; the lead merges, runs seams and the
+  final docs pass; the quiet run on the final code; push, the owner's folder, the PR into `main`.
 - **Questions for the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md).
 - **Pushed:** `claude/v0110` up to the docs commit after `2cb95232` (pushed from the lead's worktree), and the tag
   `archive/scripts-2026-11`.
@@ -60,6 +64,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 ## Done
 | Step | What (player-facing) | Commit |
 |---|---|---|
+| 62 | A travelling ring keeps its effects: its held pack effects (the storm rim and its edge sparks, the fire, frost, venom and bleed rims) are keyed by the ring's own seed and move with it, where they were keyed by its position and so released and spawned again as it flew. Gun + Ring at 20 enemies 12.80 → 9.41 ms a frame (Gun alone 8.1); at 60 enemies 24.5 → 22.7 ms; pack spawns in an 18 s fight about 20,000 → 1,100 (busy machine: an agent's tests ran beside it). The ring's own light off, and every light off: no change beyond the spread. The other forms (Seekers, Wisps, Void, Laser, Rune Explosion, Glaive) showed no such churn. The look: rims and glow match in the before/after shot; a travelling void ring's tendrils now stay in place along the ring (they jumped each frame): the owner judges. The frame probe plays a chosen build (`--cards=`, `scripts/checks/probe_build.gd`), counts lights (`light_census.gd`) and has `--ab=no_ring`, `no_ring_light`, `no_ring_sparks`. The ring drawing moved to `form_ring.gd` (the canvas was at its cap) | `80ca8a7e`, merge `1093afd4` |
+| 61 | The hub station stand-in panel is gone (owner Q6: "Sure"): the panel, its two strings and its test lines deleted; `hub_session.gd` no longer builds it | `ca73cc6a`, merge `fbafb862` |
 | 0 | Audit, plan and docs | `17be5d16`, `927aba13` |
 | 1 | The seams run records each test file's time; the baseline is measured ([`evidence/SEAMS_TIMING.md`](evidence/SEAMS_TIMING.md)) | `ee42eafa` |
 | 10 | Only the live shot and check tools remain in `scripts/` (163 shot scripts and 3 checks removed; tag `archive/scripts-2026-11`) | `95189001` |
@@ -295,3 +301,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 - 2026-11-11 (owner): answered the eight questions (OWNER_QUESTIONS "Answers"; PLAN L20). The frame target is now
   "never below 60 fps" with 144 as the ceiling. Step 54b (the native core the only one) and step 61 (the station
   stand-in panel) go ahead; the thread trial is dropped; the PR into `main` opens when the flip and seams are in.
+- 2026-11-11 (lead): the Ring agent reported (`80ca8a7e`): the Ring was costly, as the owner said; the cause was
+  not its lights; see the Done row for step 62. The lead had told the owner the heavy probe scene has no Ring; the
+  probe's build list did include it, and the lead said so. Merged with step 61 on `lead-merge` (`1093afd4`); not yet
+  under a seams run (it goes with step 54b's merge).

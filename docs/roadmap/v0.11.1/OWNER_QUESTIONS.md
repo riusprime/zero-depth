@@ -27,3 +27,9 @@ the morning"). Each row says what it blocks and what was done meanwhile. Answer 
 | Q6 | "Sure" | The hub station stand-in panel is deleted (step 61) |
 | Q7 | "C++ becomes the only one if performance is better" | It is (tick at 120 enemies 3.3 → 0.56 ms, PERF_NATIVE): step 54b goes ahead: the script versions of the ported loops are deleted and the goldens re-recorded |
 | Q8 | "Core on top yeah" | Lightning bolts stay as step 57 left them |
+
+## Open (2026-11-11)
+
+| # | Question | What it blocks | Done meanwhile |
+|---|---|---|---|
+| Q9 | **A travelling void ring's tendrils: steady or flickering?** The Ring fix (step 62) keeps a ring's effects as it travels. A void ring's small tendrils used to jump to new spots along the ring every frame (a side effect of the bug); now they stay in place and travel with it | Nothing | Steady (the fix as built). Say if you prefer the old flicker |
