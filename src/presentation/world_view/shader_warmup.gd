@@ -32,6 +32,9 @@ const MAX_WAIT := 600
 const MAX_PROXIES := 400
 ## A node with this meta has every mesh under it drawn here, whatever its material (see the list above).
 const WARM_META := &"shader_warm"
+## A node with this meta is left out, with everything under it: another node of the view draws the same material
+## and vertex format (ShardViews' drop shapes, one batch pair a shape).
+const SKIP_META := &"shader_warm_skip"
 const HORDE_KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_SPLITTER,
@@ -98,7 +101,7 @@ func _process(_delta: float) -> void:
 ## The view's pieces not drawn now (`hidden`: under a hidden node; a MultiMesh showing no instance), and every piece
 ## under a WARM_META node (`warm`).
 func _from_view(n: Node, hidden: bool, warm: bool) -> void:
-	if hidden_proxies >= MAX_PROXIES or n == self:
+	if hidden_proxies >= MAX_PROXIES or n == self or n.has_meta(SKIP_META):
 		return
 	var off := hidden or (n is Node3D and not (n as Node3D).visible)
 	var all := warm or n.has_meta(WARM_META)
