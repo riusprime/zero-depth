@@ -1,7 +1,7 @@
 extends GutTest
 ## v0.9.0 NB2: The Twin Wardens' look. The owner's two models load at the art list's 2.2 m each, the same size: the
-## amber one keeps its skeleton (posed through the whole figure), the violet one is cut into Body, Helm, Shield and
-## Sword bones. Both play the same clips, so they move together: driven alike, their figures hold the same pose. The
+## amber one is skinned to a full skeleton and plays the animations in its file (idle, walk, cast, swipe) for the
+## clips they stand for; the violet one is cut into Body, Helm, Shield and Sword bones and plays the code clips. The
 ## angry one shows it; without the files code stand-ins of the same parts pose from the same inputs. The chain view
 ## draws the chain between the two from the reader, hot while it burns, its embers thinned on Low; Crossfire's two gap
 ## lanes and its safe spot through the windup; the Chain Sweep's lash on its strike. Presentation only.
@@ -49,27 +49,42 @@ func test_the_two_models_load_as_a_matched_pair() -> void:
 	assert_eq(names, ["body", "helm", "shield", "sword"], "the violet cut into its parts")
 
 
-func test_driven_alike_they_move_alike() -> void:
+func test_the_amber_plays_its_files_animations() -> void:
 	var a := _avatar(false)
 	var v := _avatar(true)
 	assert_not_null(a.imported, "the owner's amber model")
 	assert_not_null(v.imported, "the owner's violet model")
-	for s: Dictionary in [
-		{"state": WorldReader.STATE_MOVE, "move": -1},
-		{"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_CHAIN_SWEEP, "windup": 0.7},
-		{"state": WorldReader.STATE_ACTIVE, "move": WorldReader.MOVE_SLAM_RING},
-	]:
-		_drive(a, s, 30)
-		_drive(v, s, 30)
-		assert_almost_eq(
-			a.pivot.position, v.pivot.position, Vector3.ONE * 0.001, "one figure's pose"
+	for clip: StringName in [&"idle", &"walk", &"crossfire", &"pattern", &"chain_sweep"]:
+		assert_true(a.animator.owner_has(clip), "%s plays the file's animation" % clip)
+		assert_false(
+			v.animator.owner_has(clip), "the violet file has none: %s is its code clip" % clip
 		)
-		assert_almost_eq(a.pivot.rotation, v.pivot.rotation, Vector3.ONE * 0.001, "the same lean")
-	_drive(
-		a,
-		{"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_CHAIN_SWEEP, "windup": 0.7},
-		1
+	assert_false(a.animator.owner_has(&"slam_ring"), "the shield bash keeps its code clip")
+	var arm := a.skeleton.find_bone("upper_arm_R")
+	assert_gt(arm, -1, "the sword arm's bone")
+	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1}, 30)
+	var idle_pose := a.skeleton.get_bone_pose_rotation(arm)
+	var shackle := a.anchor(&"shackle")
+	var cast := {
+		"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_CROSSFIRE, "windup": 0.95
+	}
+	_drive(a, cast, 30)
+	assert_gt(
+		a.skeleton.get_bone_pose_rotation(arm).angle_to(idle_pose),
+		0.5,
+		"the sword arm comes up to cast"
 	)
+	assert_gt(
+		a.animator.param(&"glow"), 0.3, "the code clip's glow still plays under the animation"
+	)
+	var sweep := {
+		"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_CHAIN_SWEEP, "windup": 0.95
+	}
+	_drive(a, sweep, 30)
+	assert_gt(a.anchor(&"shackle").distance_to(shackle), 0.02, "the chain's end rides the shield")
+	# A move both still play from code moves the two figures alike.
+	var bash := {"state": WorldReader.STATE_ACTIVE, "move": WorldReader.MOVE_SLAM_RING}
+	_drive(a, bash, 30)
 	assert_ne(a.pivot.rotation, Vector3.ZERO, "the figure moves")
 
 

@@ -11,6 +11,10 @@ extends RefCounted
 ## the same name as one of these clips ("idle", "walk", "marks", "death" …), that animation is played instead of
 ## the code clip, at the same time and weight. An attack animation may carry the markers "strike" (the pose on the
 ## active tick) and "recover" (the end of the active part); without them its length stands for 0..1 of the clip.
+## A body may also say which of its file's animations each clip plays (bind_owner's `plays`): one "cast" can serve
+## several moves, each with its own strike and recover times, so a new move needs a table row, not a new animation.
+## A clip the owner's animation replaces keeps its code clip's PARAM tracks (the glow, the tremble, the chain's pull):
+## the animation moves the bones, the parameters still drive the lights and the effects.
 ## Presentation only (EI-07): it writes the avatar's own skeleton and pivot; per frame it allocates nothing.
 
 ## Layer slots, applied in this order.
@@ -85,7 +89,8 @@ var body_turn := Quaternion.IDENTITY
 var body_shift := Vector3.ZERO
 var body_squash := 0.0
 var _serial := -1
-## The owner's animations by clip name: [Animation, track indices, bone indices, track types].
+## The owner's animations by clip name: [Animation, track indices, bone indices, track types, strike, recover]
+## (the two times in seconds, or -1 to read the animation's own markers).
 var _owner := {}
 
 
@@ -180,10 +185,13 @@ func apply(poser: BonePoser, pivot: Node3D, reduced: bool) -> void:
 	for s in SLOTS:
 		var c := slot_clip[s]
 		var w := slot_w[s]
-		if c == null or w <= 0.0001 or _owner.has(c.name):
+		if c == null or w <= 0.0001:
 			continue
+		var owned := _owner.has(c.name)  # Its bones come from the owner's animation; its parameters still play
 		var t := slot_t[s]
 		for k in c.targets.size():
+			if owned and c.channels[k] != BossClip.PARAM:
+				continue
 			var v := c.value(k, t, reduced) * w
 			if v == 0.0:
 				continue
@@ -219,8 +227,9 @@ func apply(poser: BonePoser, pivot: Node3D, reduced: bool) -> void:
 
 ## Binds the owner's animations: every animation of `player` with bone tracks on `skeleton` (rotation, position,
 ## scale; matched by bone name) replaces the code clip of the same name. Stops the player (we sample it ourselves).
-## Returns how many were bound.
-func bind_owner(player: AnimationPlayer, skeleton: Skeleton3D) -> int:
+## `plays` adds clips that play an animation of another name: {clip: {"anim": its name, "strike": seconds,
+## "recover": seconds}} (the two times optional). Returns how many clips were bound.
+func bind_owner(player: AnimationPlayer, skeleton: Skeleton3D, plays: Dictionary = {}) -> int:
 	player.active = false
 	clips = clips.duplicate()
 	var n := 0
@@ -246,24 +255,43 @@ func bind_owner(player: AnimationPlayer, skeleton: Skeleton3D) -> int:
 		if tracks.is_empty():
 			continue
 		var key := StringName(String(full).get_slice("/", String(full).get_slice_count("/") - 1))
-		_owner[key] = [anim, tracks, bones, types]
+		_owner[key] = [anim, tracks, bones, types, -1.0, -1.0]
 		if not clips.has(key):
 			clips[key] = BossClip.new(key, key == &"idle" or key == &"walk")
+		n += 1
+	for clip_name: StringName in plays:
+		var spec: Dictionary = plays[clip_name]
+		var from: Array = _owner.get(spec.get("anim", &""), [])
+		if from.is_empty():
+			continue
+		var entry := from.duplicate()
+		entry[4] = float(spec.get("strike", -1.0))
+		entry[5] = float(spec.get("recover", -1.0))
+		_owner[clip_name] = entry
+		if not clips.has(clip_name):
+			clips[clip_name] = BossClip.new(clip_name)
 		n += 1
 	return n
 
 
 ## The owner's animation time for a code clip's time t: a loop wraps over its length; an attack maps its windup to
-## 0..the "strike" marker, its active part to "strike".."recover" and its recovery to the end.
-static func owner_time(anim: Animation, c: BossClip, t: float) -> float:
+## 0..the "strike" marker, its active part to "strike".."recover" and its recovery to the end. `strike` and
+## `recover` (seconds) stand in for the markers when given.
+static func owner_time(
+	anim: Animation, c: BossClip, t: float, strike: float = -1.0, recover: float = -1.0
+) -> float:
 	var length := anim.length
 	if c.loop:
 		return fposmod(t, 1.0) * length
 	t = clampf(t, 0.0, 1.0)
-	if not anim.has_marker(&"strike"):
+	if strike < 0.0 and not anim.has_marker(&"strike"):
 		return t * length
-	var ts := anim.get_marker_time(&"strike")
-	var th := anim.get_marker_time(&"recover") if anim.has_marker(&"recover") else ts
+	var ts := strike if strike >= 0.0 else anim.get_marker_time(&"strike")
+	var th := ts
+	if recover >= 0.0:
+		th = recover
+	elif strike < 0.0 and anim.has_marker(&"recover"):
+		th = anim.get_marker_time(&"recover")
 	if t < c.strike:
 		return t / c.strike * ts
 	if t < c.hold:
@@ -286,7 +314,7 @@ func apply_owner(skeleton: Skeleton3D) -> void:
 		var tracks: PackedInt32Array = entry[1]
 		var bones: PackedInt32Array = entry[2]
 		var types: PackedInt32Array = entry[3]
-		var time := owner_time(anim, c, slot_t[s])
+		var time := owner_time(anim, c, slot_t[s], entry[4], entry[5])
 		for j in tracks.size():
 			var b := bones[j]
 			match types[j]:

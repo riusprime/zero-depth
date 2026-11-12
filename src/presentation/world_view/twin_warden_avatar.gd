@@ -1,9 +1,11 @@
 class_name TwinWardenAvatar
 extends BossAvatar
 ## BOSSES_4_5.md N2; art list §2: the Twin Wardens, floor 4's two stone knights joined by a burning chain.
-## This is the amber one (the boss); TwinWardenVioletAvatar its violet twin. Both play TwinWardenClips, so they move
-## as a pair: the whole figure moves through the clips' BODY channel on both models (the owner's amber file keeps
-## its Mixamo skeleton but weights nearly every vertex to the hips, so only the whole figure can move); the violet
+## This is the amber one (the boss); TwinWardenVioletAvatar its violet twin. Both play TwinWardenClips. The amber
+## file is skinned to a full skeleton (spine, arms, legs, the sword, the shield, the shoulder plates, the cloak and
+## the tabard) and carries its own animations: "idle" and "walk" replace the code clips of those names, and
+## OWNER_PLAYS says which moves play its "cast" (the sword levelled at the target) and its "swipe" (the diagonal
+## cut); the other moves keep their code clips, which move the whole figure. The violet
 ## file is cut into parts (Body, Helm, Shield, Sword; BossModels `parts`), which add small accents. On top of the clips
 ## (_pose_rig) the anger the sim reads out (WorldReader.boss_twin) drives it: an angry Warden leans forward, its cracks
 ## and visor blaze and its light flares, so the player sees which one is fast. With the file missing it is a code
@@ -14,7 +16,15 @@ extends BossAvatar
 
 const HEIGHT := 2.2
 const WALK_SPEED := 1.6
-const STRIDE := 1.1
+## The metres one loop of the amber file's walk covers at the size the game draws it, so its feet don't slide.
+const STRIDE := 1.17
+## The amber file's animations by the move that plays them, with the seconds of each one's strike pose and of the
+## end of its active part. A new move that should cast or cut needs only a row here.
+const OWNER_PLAYS := {
+	&"crossfire": {"anim": &"cast", "strike": 0.7, "recover": 1.8},
+	&"pattern": {"anim": &"cast", "strike": 0.7, "recover": 1.8},
+	&"chain_sweep": {"anim": &"swipe", "strike": 0.55, "recover": 0.73},
+}
 
 const STONE := Color("#8A8378")
 const STONE_DARK := Color("#5A544C")
@@ -97,10 +107,26 @@ func _anchor(point: StringName) -> Vector3:
 		return code.get(point, weak_core.position)
 	match point:
 		&"visor":
-			return pivot.transform * MODEL_VISOR
+			return _riding(&"head", MODEL_VISOR)
 		&"shackle":
-			return pivot.transform * (MODEL_SHACKLE * Vector3(1, 1, side))
+			return _riding(&"shield", MODEL_SHACKLE * Vector3(1, 1, side))
 	return weak_core.position
+
+
+## A point of the model at rest, carried by `bone` when the model has it (the amber's skeleton), else by the whole
+## figure.
+func _riding(bone: StringName, rest: Vector3) -> Vector3:
+	if poser != null and poser.has_bone(bone):
+		return _on_bone(bone, rest)
+	return pivot.transform * rest
+
+
+func _weak_bone() -> StringName:
+	return &"chest"
+
+
+func _owner_plays() -> Dictionary:
+	return OWNER_PLAYS
 
 
 ## 0..1: how angry it shows now (tests).

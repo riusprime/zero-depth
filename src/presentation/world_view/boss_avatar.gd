@@ -531,7 +531,8 @@ func _build_body() -> void:
 	animator = BossAnimator.new(_clip_library())
 	var players := pivot.find_children("*", "AnimationPlayer", true, false)
 	if not players.is_empty():
-		animator.bind_owner(players[0] as AnimationPlayer, skeleton)  # The owner's clips replace ours
+		# The owner's clips replace ours
+		animator.bind_owner(players[0] as AnimationPlayer, skeleton, _owner_plays())
 	for n in _code_nodes():
 		if n.get_parent() == null:
 			n.free()
@@ -761,6 +762,13 @@ func _burrow_time(c: BossClip) -> float:
 
 ## Each body's clip library (BossClip by name; its <Boss>Clips).
 func _clip_library() -> Dictionary:
+	return {}
+
+
+## Which of the model file's own animations each clip plays, when their names differ (BossAnimator.bind_owner):
+## {clip: {"anim": name, "strike": seconds, "recover": seconds}}. A file's "idle", "walk" and any animation named
+## like a clip are bound without a row here.
+func _owner_plays() -> Dictionary:
 	return {}
 
 
