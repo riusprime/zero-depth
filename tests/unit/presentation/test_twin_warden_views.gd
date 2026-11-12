@@ -1,7 +1,7 @@
 extends GutTest
 ## v0.9.0 NB2: The Twin Wardens' look. The owner's two models load at the art list's 2.2 m each, the same size: the
-## amber one is skinned to a full skeleton and plays the animations in its file (idle, walk, cast, swipe) for the
-## clips they stand for; the violet one is cut into Body, Helm, Shield and Sword bones and plays the code clips. The
+## two are skinned to the same skeleton and play the animations in their files (idle, walk, cast, swipe; the
+## violet's are the amber's mirrored) for the clips they stand for, so driven alike they move as a pair. The
 ## angry one shows it; without the files code stand-ins of the same parts pose from the same inputs. The chain view
 ## draws the chain between the two from the reader, hot while it burns, its embers thinned on Low; Crossfire's two gap
 ## lanes and its safe spot through the windup; the Chain Sweep's lash on its strike. Presentation only.
@@ -41,24 +41,17 @@ func test_the_two_models_load_as_a_matched_pair() -> void:
 	assert_true(bool(amber.get("skinned", false)), "the amber keeps its skeleton")
 	assert_almost_eq((amber["aabb"] as AABB).size.y, 2.2, 0.02, "2.2 m")
 	assert_almost_eq((violet["aabb"] as AABB).size.y, 2.2, 0.02, "the same height")
-	var rig: BossRig = violet["rig"]
-	var names := []
-	for b: Array in rig.bones:
-		names.append(String(b[0]))
-	names.sort()
-	assert_eq(names, ["body", "helm", "shield", "sword"], "the violet cut into its parts")
+	assert_true(bool(violet.get("skinned", false)), "the violet keeps its skeleton")
 
 
-func test_the_amber_plays_its_files_animations() -> void:
+func test_the_two_play_their_files_animations() -> void:
 	var a := _avatar(false)
 	var v := _avatar(true)
 	assert_not_null(a.imported, "the owner's amber model")
 	assert_not_null(v.imported, "the owner's violet model")
 	for clip: StringName in [&"idle", &"walk", &"crossfire", &"pattern", &"chain_sweep"]:
-		assert_true(a.animator.owner_has(clip), "%s plays the file's animation" % clip)
-		assert_false(
-			v.animator.owner_has(clip), "the violet file has none: %s is its code clip" % clip
-		)
+		assert_true(a.animator.owner_has(clip), "%s plays the amber file's animation" % clip)
+		assert_true(v.animator.owner_has(clip), "%s plays the violet file's animation" % clip)
 	assert_false(a.animator.owner_has(&"slam_ring"), "the shield bash keeps its code clip")
 	var arm := a.skeleton.find_bone("upper_arm_R")
 	assert_gt(arm, -1, "the sword arm's bone")
@@ -82,10 +75,26 @@ func test_the_amber_plays_its_files_animations() -> void:
 	}
 	_drive(a, sweep, 30)
 	assert_gt(a.anchor(&"shackle").distance_to(shackle), 0.02, "the chain's end rides the shield")
+	# The violet's sword is in its other hand: the same cast raises its left arm, the amber's mirror image.
+	var v_arm := v.skeleton.find_bone("upper_arm_L")
+	assert_gt(v_arm, -1, "the violet's sword arm")
+	_drive(v, {"state": WorldReader.STATE_MOVE, "move": -1}, 30)
+	var v_idle := v.skeleton.get_bone_pose_rotation(v_arm)
+	_drive(v, cast, 30)
+	assert_gt(
+		v.skeleton.get_bone_pose_rotation(v_arm).angle_to(v_idle), 0.5, "its sword arm casts too"
+	)
 	# A move both still play from code moves the two figures alike.
 	var bash := {"state": WorldReader.STATE_ACTIVE, "move": WorldReader.MOVE_SLAM_RING}
 	_drive(a, bash, 30)
+	_drive(v, bash, 30)
 	assert_ne(a.pivot.rotation, Vector3.ZERO, "the figure moves")
+	assert_almost_eq(
+		a.animator.body_shift, v.animator.body_shift, Vector3.ONE * 0.001, "one figure's pose"
+	)
+	assert_almost_eq(
+		a.animator.body_turn.angle_to(v.animator.body_turn), 0.0, 0.001, "the same lean"
+	)
 
 
 func test_the_angry_one_shows_it() -> void:

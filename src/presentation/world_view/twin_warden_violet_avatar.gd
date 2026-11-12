@@ -1,8 +1,8 @@
 class_name TwinWardenVioletAvatar
 extends TwinWardenAvatar
 ## The Twin Wardens' violet body, the boss's twin: the same figure mirrored (its shield on its right arm),
-## violet cracks and visor, the owner's violet file (cut into Body, Helm, Shield, Sword; BossModels `parts`). It plays
-## the same clips as the amber one (TwinWardenClips), so the two keep time.
+## violet cracks and visor, the owner's violet file, skinned like the amber one and carrying the same animations
+## mirrored. It plays the same clips and the same OWNER_PLAYS, so the two keep time.
 
 
 func glow_color() -> Color:

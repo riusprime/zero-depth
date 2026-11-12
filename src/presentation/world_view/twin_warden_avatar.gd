@@ -1,12 +1,12 @@
 class_name TwinWardenAvatar
 extends BossAvatar
 ## BOSSES_4_5.md N2; art list §2: the Twin Wardens, floor 4's two stone knights joined by a burning chain.
-## This is the amber one (the boss); TwinWardenVioletAvatar its violet twin. Both play TwinWardenClips. The amber
+## This is the amber one (the boss); TwinWardenVioletAvatar its violet twin. Both play TwinWardenClips. Each
 ## file is skinned to a full skeleton (spine, arms, legs, the sword, the shield, the shoulder plates, the cloak and
 ## the tabard) and carries its own animations: "idle" and "walk" replace the code clips of those names, and
 ## OWNER_PLAYS says which moves play its "cast" (the sword levelled at the target) and its "swipe" (the diagonal
-## cut); the other moves keep their code clips, which move the whole figure. The violet
-## file is cut into parts (Body, Helm, Shield, Sword; BossModels `parts`), which add small accents. On top of the clips
+## cut); the other moves keep their code clips, which move the whole figure. The violet file's animations are the
+## amber's mirrored (its sword in the other hand), so driven alike the two move as a pair. On top of the clips
 ## (_pose_rig) the anger the sim reads out (WorldReader.boss_twin) drives it: an angry Warden leans forward, its cracks
 ## and visor blaze and its light flares, so the player sees which one is fast. With the file missing it is a code
 ## stand-in of the same parts (a faceted body and cape, a slit helm with stone fins, a tower shield with its shackle,
@@ -18,7 +18,7 @@ const HEIGHT := 2.2
 const WALK_SPEED := 1.6
 ## The metres one loop of the amber file's walk covers at the size the game draws it, so its feet don't slide.
 const STRIDE := 1.17
-## The amber file's animations by the move that plays them, with the seconds of each one's strike pose and of the
+## The two files' animations by the move that plays them, with the seconds of each one's strike pose and of the
 ## end of its active part. A new move that should cast or cut needs only a row here.
 const OWNER_PLAYS := {
 	&"crossfire": {"anim": &"cast", "strike": 0.7, "recover": 1.8},
@@ -113,8 +113,7 @@ func _anchor(point: StringName) -> Vector3:
 	return weak_core.position
 
 
-## A point of the model at rest, carried by `bone` when the model has it (the amber's skeleton), else by the whole
-## figure.
+## A point of the model at rest, carried by `bone` when the model has it, else by the whole figure.
 func _riding(bone: StringName, rest: Vector3) -> Vector3:
 	if poser != null and poser.has_bone(bone):
 		return _on_bone(bone, rest)

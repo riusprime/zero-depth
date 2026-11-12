@@ -34,11 +34,11 @@ const SPECS := {
 	# list's), cut into parts in the file: each part is one bone (its node's origin the pivot), the bell hanging from
 	# the staff.
 	&"boss_tidecaller":
-	# The Twin Wardens, front +Z as prepared, 2.2 m each (the art list's): the amber one is skinned to a full
+	# The Twin Wardens, front +Z as prepared, 2.2 m each (the art list's): each is skinned to a full skeleton and
 	{"yaw": PI * 0.5, "height": 3.2, "parts": true, "parents": {&"bell": &"staff"}},
-	# skeleton and carries its animations (scripts/assets/boss_anim), the violet one is cut into parts.
+	# carries its animations (scripts/assets/boss_anim); the violet one's are the amber's mirrored.
 	&"boss_twin_warden_amber": {"yaw": PI * 0.5, "height": 2.2, "skinned": true},
-	&"boss_twin_warden_violet": {"yaw": PI * 0.5, "height": 2.2, "parts": true},
+	&"boss_twin_warden_violet": {"yaw": PI * 0.5, "height": 2.2, "skinned": true},
 	# PLAN NB: "can you ignore the skeleton?": the Clockwork Judge, front +Z as prepared, 3.6 m (the art
 	# list's), cut into parts in the file (its skin unusable): body, both pendulum arms, the gears, the two hands.
 	&"boss_clockwork_judge": {"yaw": PI * 0.5, "height": 3.6, "parts": true},
