@@ -43,16 +43,9 @@ const SPECS := {
 	# list's), cut into parts in the file (its skin unusable): body, both pendulum arms, the gears, the two hands.
 	&"boss_clockwork_judge": {"yaw": PI * 0.5, "height": 3.6, "parts": true},
 	# PLAN NB: "Keep the empty hood": the Lantern Shade, front +Z as prepared, 3.4 m (the art list's),
-	# cut into parts in the file: body (the cloak and empty hood), both arms, the held lantern hanging from the right
-	# arm; it floats (lift: its ragged hem off the ground).
-	&"boss_lantern_shade":
-	{
-		"yaw": PI * 0.5,
-		"height": 3.4,
-		"lift": 0.3,
-		"parts": true,
-		"parents": {&"hand_lantern": &"arm_r"},
-	},
+	# one mesh skinned to a full skeleton that carries its animations (scripts/assets/boss_anim); it floats (lift:
+	# its ragged hem off the ground).
+	&"boss_lantern_shade": {"yaw": PI * 0.5, "height": 3.4, "lift": 0.3, "skinned": true},
 }
 
 ## Every boss

@@ -3,19 +3,49 @@ extends BossAvatar
 ## BOSSES_4_5.md N4; art list §2; PLAN NB: "Keep the empty hood": The Lantern Shade, floor 5's second
 ## boss: a tall gaunt wraith in a long torn violet-black cloak that frays into smoke (it floats), an empty hood, long
 ## arms of dark wood and iron, a lantern on a short chain in its right hand; violet-black and pale gold. The owner's
-## model (assets/models/bosses/boss_lantern_shade.glb) comes cut into parts (scripts/assets/nb_prep.py: Body, ArmL,
-## ArmR, HandLantern); BossModels rigs each part as a bone (the lantern hanging from the right arm) and it plays
-## LanternShadeClips, and on top of them (_pose_rig) it floats (a slow bob), its cloak sways, and the held lantern
-## swings on its chain with its glide and its moves; the lantern's light (a hot core and a soft halo drawn over the
-## room's dark, and a pale gold light) flares as Lights Out drains the room into it and as the Snuff reaches, and burns
-## low once the room is dark, so the Shade can always be found by its lantern while its body stays in the dark. With
-## the file missing it is a code stand-in of the same parts (a tall frayed cloak cone, a deep hood, two long arms, a
-## caged lantern on a chain) posed from the same inputs (_pose). Presentation only (EI-07): it reads the sim and moves
-## its own children.
+## model (assets/models/bosses/boss_lantern_shade.glb) is one mesh skinned to a full skeleton (the spine and the hood,
+## the arms and hands, the lantern on its chain, chains of cloth bones round the robe; scripts/assets/boss_anim) and
+## carries its own animations: "idle" (it hovers, bobbing, the lantern a pendulum) and "walk" (a glide, no steps)
+## replace the code clips of those names, and OWNER_PLAYS says which move plays each of its four attacks. The file
+## already floats the body, sways the robe and swings the lantern, so the avatar adds none of that. What it adds is
+## game state: the lantern's light (a hot core and a soft halo drawn over the room's dark, and a pale gold light)
+## rides the lantern's bone, flares as Lights Out drains the room into it and as the Snuff reaches, and burns low
+## once the room is dark, so the Shade can always be found by its lantern while its body stays in the dark. The
+## moves the file has no animation for (LanternShadeClips: the shielded hold, the flinch, the stagger, the roar, the
+## rise, the death) turn its bones over the file's idle (BoneOverPoser), kick the lantern on its chain and billow the
+## robe's hem. With the file missing it is a code stand-in (a tall frayed cloak cone, a deep hood, two long arms, a
+## caged lantern on a chain) that floats, sways and swings its lantern in code (_pose). Presentation only (EI-07): it
+## reads the sim and moves its own children.
 
 const HEIGHT := 3.4
 const WALK_SPEED := 1.4
-const STRIDE := 1.6
+## It has no feet to slide, so the stride only sets the glide loop's pace: one loop of the file's "walk" (made 3 s
+## long) takes STRIDE / WALK_SPEED seconds at its move speed.
+const STRIDE := 4.2
+## The file's animations by the move that plays them, with the seconds of each one's strike pose and of the end of
+## its active part: Lights Out raises the lantern, the Wisp Bloom thrusts it out, the Snuff pinches the flame, the
+## Lantern Sweep swings it round.
+const OWNER_PLAYS := {
+	&"pattern_shielded": {"anim": &"raise_lantern", "strike": 1.0, "recover": 2.9},
+	&"pattern": {"anim": &"bloom", "strike": 0.8, "recover": 1.2},
+	&"marks": {"anim": &"snuff", "strike": 1.6, "recover": 1.9},
+	&"slam_ring": {"anim": &"sweep", "strike": 0.8, "recover": 1.35},
+}
+## The top link of each of the robe's eight chains of cloth bones, with the way it hangs out from the body (degrees
+## round the figure from its left side, through its back): the roar's billow swings each one outwards.
+const HEM := {
+	&"strip_side1_L": 0.0,
+	&"strip_back1_L": 45.0,
+	&"strip_back1": 90.0,
+	&"strip_back1_R": 135.0,
+	&"strip_side1_R": 180.0,
+	&"strip_front1_R": 225.0,
+	&"strip_front1": 270.0,
+	&"strip_front1_L": 315.0,
+}
+## Radians a hem chain swings out per unit of the clips' drift; radians the lantern's chain swings per unit of swing.
+const BILLOW := 0.12
+const KICK := 0.35
 
 const CLOAK := Color("#1E1428")
 const CLOAK_DARK := Color("#0F0A16")
@@ -23,13 +53,13 @@ const WOOD := Color("#2A2018")
 const IRON := Color("#1A181E")
 const GOLD := Color("#FFD98A")
 const EMBER := Color("#C890FF")
-## Points on the owner's model at rest (metres, model frame: nb_prep.py's pivots turned to +X front): the held
-## lantern's glass, the hood's opening, the chest (the weak point).
-const MODEL_LANTERN := Vector3(0.07, 1.2, 1.22)
+## Points on the owner's model at rest (metres, model frame, +X the front): the held lantern's glass (it rides the
+## "lantern" bone), the hood's opening (the "head" bone), the chest (the weak point, the "chest" bone).
+const MODEL_LANTERN := Vector3(0.37, 1.17, 1.12)
 const MODEL_HOOD := Vector3(0.2, 2.95, 0.0)
 const MODEL_CHEST := Vector3(0.3, 2.1, 0.0)
 const LIGHT_ENERGY := 1.6
-## The bob's height (metres) and rate (radians a second); the cloak's sway (radians).
+## The stand-in's bob: its height (metres) and rate (radians a second); its cloak's sway (radians).
 const BOB_M := 0.12
 const BOB_RATE := 1.4
 const SWAY := 0.05
@@ -52,6 +82,8 @@ var _swing := 0.0
 var _swing_v := 0.0
 var _flare := 0.0
 var _bob := 0.0
+## The axis (model frame) a turn about which swings each HEM chain outwards.
+var _hem_axes := {}
 
 
 func sync(reader: WorldReader, i: int) -> void:
@@ -82,7 +114,11 @@ func _weak_point_at() -> Vector3:
 
 
 func _weak_bone() -> StringName:
-	return &"body"
+	return &"chest"
+
+
+func _owner_plays() -> Dictionary:
+	return OWNER_PLAYS
 
 
 func anchor_names() -> Array[StringName]:
@@ -96,7 +132,7 @@ func _anchor(point: StringName) -> Vector3:
 			&"hood": body.position + Vector3(0.2, 2.95, 0),
 		}
 		return code.get(point, weak_core.position)
-	var rest := {&"lantern": [&"hand_lantern", MODEL_LANTERN], &"hood": [&"body", MODEL_HOOD]}
+	var rest := {&"lantern": [&"lantern", MODEL_LANTERN], &"hood": [&"head", MODEL_HOOD]}
 	if not rest.has(point):
 		return weak_core.position
 	return _on_bone(rest[point][0], rest[point][1])
@@ -107,12 +143,13 @@ func lantern_glow() -> float:
 	return _glow_now()
 
 
-## The lantern's swing on its chain now (radians; tests).
+## The swing the avatar gives the lantern's chain now (radians; tests): a reaction's kick on the owner's model (its
+## file's animations swing the lantern themselves), the whole swing on the stand-in.
 func lantern_swing() -> float:
 	return _swing
 
 
-## The float's height now (metres; tests).
+## The stand-in's float height now (metres; tests). The owner's model floats in its file's animations.
 func bob_height() -> float:
 	return _bob
 
@@ -126,6 +163,13 @@ func _glow_now() -> float:
 ## and a pale gold light.
 func _build_body() -> void:
 	super()
+	if imported != null:
+		# The file's idle keys every bone: the code clips' turns go on after it, not under it.
+		var m := BossModels.get_model(model_id())
+		poser = BoneOverPoser.new(skeleton, m["frame"], m["scale"])
+		for bone: StringName in HEM:
+			var a := deg_to_rad(HEM[bone])
+			_hem_axes[bone] = Vector3(cos(a), 0.0, -sin(a))
 	_core_mat = _glow_mat(GOLD, 2.4, 0.9)
 	_halo_mat = _glow_mat(EMBER.lerp(GOLD, 0.45), 1.0, 0.35)
 	_core = _sprite(0.34, _core_mat)
@@ -258,14 +302,24 @@ func _pose(dt: float) -> void:
 	_light_lantern(arm_r.position + arm_r.basis * Vector3(0, -1.64, 0))
 
 
-## The float (a slow bob), the lantern's swing on its chain (a damped pendulum kicked by the glide and the clips) and
-## the flare, smoothed in frame time.
+## The stand-in's float (a slow bob) and its lantern's swing on its chain (kicked by the glide and its moves), with
+## the light.
 func _advance_float(dt: float, flare: float, kick: float, drift: float) -> void:
 	var calm := 0.3 if ViewPrefs.reduced_motion else 1.0
-	_dark = move_toward(_dark, _dark_target, dt * 0.6)
+	_advance_light(dt, flare)
 	_bob = (sin(_t * BOB_RATE) * 0.5 + 0.5) * BOB_M * calm + 0.04 * drift * calm
+	_advance_swing(dt, kick * KICK + sin(_t * 1.1) * 0.06 * calm)
+
+
+## The room's dark and the lantern's flare, smoothed in frame time.
+func _advance_light(dt: float, flare: float) -> void:
+	_dark = move_toward(_dark, _dark_target, dt * 0.6)
 	_flare = lerpf(_flare, flare, _rate(6.0, dt))
-	var target := kick * 0.35 + sin(_t * 1.1) * 0.06 * calm
+
+
+## The swing the avatar gives the lantern's chain: a damped pendulum drawn to `target` radians.
+func _advance_swing(dt: float, target: float) -> void:
+	var calm := 0.3 if ViewPrefs.reduced_motion else 1.0
 	_swing_v += ((target - _swing) * 9.0 - _swing_v * 2.2) * dt
 	_swing += _swing_v * dt * calm
 
@@ -305,21 +359,29 @@ func _stride() -> float:
 	return STRIDE
 
 
+## The length the file's idle was made at, so it plays as made.
 func _idle_seconds() -> float:
-	return 3.2
+	return 4.0
 
 
-## After the clips: it floats, its cloak sways, the lantern swings on its chain (the glide and the clips' swing kick
-## it), and its light follows the clips' flare and burns low in the dark.
+## After the clips: the light follows the clips' flare and burns low in the dark; a reaction's swing kicks the
+## lantern on its chain and its drift billows the robe's hem. The file's animations do the floating, the sway and
+## the lantern's own swing.
 func _pose_rig(dt: float) -> void:
 	var an := animator
-	_advance_float(
-		dt, an.param(&"flare"), an.param(&"swing") + _vel.length() * 0.25, an.param(&"drift")
-	)
-	poser.shift(&"body", Vector3(0, _bob, 0))
-	var sway := sin(_t * 0.9) * SWAY * (1.0 + an.param(&"drift"))
-	poser.turn(&"body", Vector3.RIGHT, sway)
-	poser.turn(&"body", Vector3.BACK, sin(_t * 0.7 + 1.0) * SWAY * 0.6)
-	poser.turn(&"hand_lantern", Vector3.BACK, _swing)
-	poser.turn(&"hand_lantern", Vector3.RIGHT, _swing * 0.3)
-	_light_lantern(_on_bone(&"hand_lantern", MODEL_LANTERN))
+	_advance_light(dt, an.param(&"flare"))
+	_advance_swing(dt, an.param(&"swing") * KICK)
+	poser.turn(&"chain1", Vector3.BACK, _swing)
+	poser.turn(&"chain1", Vector3.RIGHT, _swing * 0.3)
+	var billow := an.param(&"drift") * BILLOW
+	if billow != 0.0:
+		for bone: StringName in _hem_axes:
+			poser.turn(bone, _hem_axes[bone], billow)
+
+
+## The code clips' turns are laid over the file's animations once those are written, and the light is put on the
+## lantern where this frame's pose holds it.
+func _pose_imported(dt: float) -> void:
+	super(dt)
+	(poser as BoneOverPoser).lay_over()
+	_light_lantern(_on_bone(&"lantern", MODEL_LANTERN))

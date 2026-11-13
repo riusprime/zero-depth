@@ -56,10 +56,11 @@ const ELITE_PARTS := {
 ## v0.9.0 NB1: the new bosses' parts (static) and skin joints (rigged; test_the_v090_bosses_are_listed_cut_or_rigged).
 const NB_PARTS := {
 	&"boss_tidecaller": ["ArmL", "Bell", "Body", "Shell", "Staff"],
-	&"boss_lantern_shade": ["ArmL", "ArmR", "Body", "HandLantern"],
 	&"boss_clockwork_judge": ["ArmL", "ArmR", "Body", "Gears", "HandHour", "HandMinute"],
 }
-const NB_RIGGED := {&"boss_twin_warden_amber": 37, &"boss_twin_warden_violet": 37}
+const NB_RIGGED := {
+	&"boss_twin_warden_amber": 37, &"boss_twin_warden_violet": 37, &"boss_lantern_shade": 57
+}
 
 
 func _manifest() -> Array:
@@ -186,8 +187,8 @@ func test_the_elites_are_cut_into_named_parts() -> void:
 
 ## v0.9.0 NB1 (owner 2026-10-23: "you will have to animate the bosses like with the other ones"): the four new bosses'
 ## five files (scripts/assets/nb_prep.py) are listed, each a boss's triangles (the art list's 15-20k, nothing
-## simplified) with its three maps at 1024 px; the static ones are cut into the parts the art list names (the Lantern
-## Shade's file has no lantern cage, so only its arms and held lantern), the amber Warden keeps its Mixamo skeleton (its
+## simplified) with its three maps at 1024 px; the static ones are cut into the parts the art list names; the Lantern
+## Shade is one mesh skinned to a full skeleton, like the Twin Wardens (the amber Warden once kept its Mixamo one, its
 ## joints' rest rebuilt from their binds); the Judge's skin is unusable (its binds are not matrices), so it is cut too.
 func test_the_v090_bosses_are_listed_cut_or_rigged() -> void:
 	var paths := {}
