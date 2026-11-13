@@ -533,8 +533,8 @@ func _build_body() -> void:
 	if not players.is_empty():
 		# The owner's clips replace ours
 		animator.bind_owner(players[0] as AnimationPlayer, skeleton, _owner_plays())
-		if _owner_layered():
-			animator.layer_owner(poser)
+		# The code clips that stay and _pose_rig are added on top of the bones the animations key
+		poser.lay_over(animator.owner_bones())
 	for n in _code_nodes():
 		if n.get_parent() == null:
 			n.free()
@@ -621,9 +621,10 @@ func _pose_any(dt: float) -> void:
 		_pose(dt)
 
 
-## The owner's model: its clips in layers (BossAnimator), then what each body adds after them
-## (_pose_rig), the bones written once (BonePoser.commit), the owner's own clips over them (or, for a body that asks
-## with _poses_over_owner, the owner's clips first and the code's pose added to them), and the windup glow.
+## The owner's model: its clips in layers (BossAnimator), then what each body adds after them (_pose_rig); the
+## bones its file's animations key are written from those animations (apply_owner), and the code's turns, shifts and
+## stretches are written once on top of them, or over the rest pose on a bone no animation keys (BonePoser.commit);
+## then what a body places on its posed bones (_after_bones), and the windup glow.
 func _pose_imported(dt: float) -> void:
 	_gait(dt, _walk_speed(), _stride())
 	var reduced := ViewPrefs.reduced_motion
@@ -636,13 +637,9 @@ func _pose_imported(dt: float) -> void:
 		pivot.position += Vector3(sin(_t * 47.0), 0.0, cos(_t * 41.0)) * 0.03 * tremble
 		pivot.rotation += Vector3(sin(_t * 5.3) * 0.08, 0.0, sin(_t * 3.7) * 0.06) * daze
 	_pose_rig(dt)
-	if _poses_over_owner():
-		poser.reset_posed()
-		animator.apply_owner(skeleton)
-		poser.commit_over()
-	else:
-		poser.commit()
-		animator.apply_owner(skeleton, poser if _code_over_file() else null)
+	animator.apply_owner(skeleton)
+	poser.commit()
+	_after_bones()
 	var pulse := 0.5 + 0.5 * sin(_t * 6.0)
 	var extra := _extra_glow()  # A final boss's body cracking as it shatters
 	glow_overlay.albedo_color.a = clampf(
@@ -780,26 +777,6 @@ func _owner_plays() -> Dictionary:
 	return {}
 
 
-## True when the code clips and _pose_rig move bones the file's animations also move, and must still show: their
-## turns are then added on top of the animations (BossAnimator.layer_owner) instead of being replaced by them.
-func _owner_layered() -> bool:
-	return false
-
-
-## True when the code's bone turns (the code clips' and _pose_rig's) are added on top of the file's animations.
-## Otherwise they are written first, and an animation playing at full weight replaces them on every bone it moves:
-## right for a body whose code clips only move the whole figure.
-func _poses_over_owner() -> bool:
-	return false
-
-
-## True for a body whose code clips and own layers (_pose_rig) turn bones its file's animations also key, and must
-## show over them (BossAnimator.apply_owner's `over`): a flinch during the file's idle, a code-made attack. False
-## leaves an animation at full weight to override the code pose of the bones it keys.
-func _code_over_file() -> bool:
-	return false
-
-
 ## Seconds of one idle loop; the walk speed (m/s) and stride (m) its walk clip is timed to.
 func _idle_seconds() -> float:
 	return 3.0
@@ -815,6 +792,11 @@ func _stride() -> float:
 
 ## Subclasses move the owner's model's bones (BossRig) from the same inputs as the code-built body.
 func _pose_rig(_dt: float) -> void:
+	pass
+
+
+## Subclasses place what rides a bone (a light, a glow) once this frame's bones are written.
+func _after_bones() -> void:
 	pass
 
 

@@ -14,7 +14,7 @@ extends BossAvatar
 ## (scripts/assets/boss_anim/warlord): its "idle" and "walk" replace the code clips of those names and OWNER_PLAYS
 ## says which moves play its thrust, throw, bash, kneel and lunge. The other clips stay code (WarlordClips: the
 ## Javelin Rain's throw, the recall, the shielded hold, the flinch, the stagger, the roar, the rise, the death) and
-## are laid over the file's animation (_code_over_file), as is the one layer this adds after them (_pose_rig): the
+## are laid over the file's animation (BossAvatar), as is the one layer this adds after them (_pose_rig): the
 ## shield lifted up and aside while the weak point is open. The spear's tip and the shield's face ride the spear's
 ## and the shield's own bones, which turn in the hand and on the fist.
 
@@ -320,10 +320,6 @@ func _stride() -> float:
 
 func _owner_plays() -> Dictionary:
 	return OWNER_PLAYS
-
-
-func _code_over_file() -> bool:
-	return true
 
 
 func _pose_rig(dt: float) -> void:

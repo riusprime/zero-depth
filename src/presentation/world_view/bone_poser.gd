@@ -5,6 +5,9 @@ extends RefCounted
 ## Tripo bones whose rest rotations are not the identity). Each frame the avatar's pose functions add turns, shifts
 ## and scales, then commit() writes every bone once: a bone left alone this frame goes back to its rest pose.
 ## A turn is applied about the bone's own pivot, in the model frame, as if the parent were at rest; children follow.
+## A bone the model file's animations pose (lay_over) is the exception: the animations write it afresh every frame
+## before commit(), and commit() adds the frame's turn, shift and stretch to the pose it finds there, so a flinch or
+## a roar shows over the file's idle and nothing of it stays once the code stops posing the bone.
 ## Presentation only (EI-07): it writes the avatar's own skeleton and never reads or writes the sim.
 
 var skeleton: Skeleton3D
@@ -17,8 +20,8 @@ var _turns := {}
 var _shifts := {}
 var _scales := {}
 var _posed := {}
-## Bones commit() writes every frame, turned or not (hold).
-var _held := {}
+# The bones something else writes every frame before commit() (lay_over).
+var _over := {}
 
 
 func _init(skel: Skeleton3D, frame: Quaternion = Quaternion.IDENTITY, scale: float = 1.0) -> void:
@@ -59,11 +62,6 @@ func pending_turn(bone: StringName) -> Quaternion:
 	return _turns.get(index_of(bone), Quaternion.IDENTITY)
 
 
-## True when the bone at index `k` was turned, shifted or scaled in the frame last committed.
-func is_posed(k: int) -> bool:
-	return _posed.has(k)
-
-
 ## Moves `bone`'s pivot by `offset` metres (model frame).
 func shift(bone: StringName, offset: Vector3) -> void:
 	var k := index_of(bone)
@@ -78,15 +76,19 @@ func stretch(bone: StringName, factor: float) -> void:
 		_scales[k] = _scales.get(k, 1.0) * factor
 
 
-## Makes commit() write the bone of index `k` every frame, at rest when nothing turned it: for a bone something
-## else poses after the commit (an animation of the model's file), which must find this frame's code pose there
-## and not what it wrote itself the frame before.
-func hold(k: int) -> void:
-	if k >= 0 and k < skeleton.get_bone_count():
-		_held[k] = true
+## Says which bones (by index) something else poses afresh every frame before commit(): the model file's animations
+## (BossAnimator.apply_owner). On those commit() adds to the pose it finds; on every other bone it writes over the
+## rest pose.
+func lay_over(bones: PackedInt32Array) -> void:
+	for k in bones:
+		if k >= 0 and k < skeleton.get_bone_count():
+			_over[k] = true
 
 
-## Writes this frame's pose: every turned, shifted or scaled bone, and every bone posed last frame back to rest.
+## Writes this frame's pose: every turned, shifted or scaled bone, and every bone posed last frame back to rest. A
+## bone of lay_over() already holds this frame's animated pose: the turn is added to it about the same model-frame
+## axis as over the rest pose (in its parent's frame, whichever way the animation has turned the bone itself), the
+## shift to its position, the stretch to its scale; left alone this frame, it keeps the animated pose it was given.
 func commit() -> void:
 	var now := {}
 	for d: Dictionary in [_turns, _shifts, _scales]:
@@ -94,22 +96,30 @@ func commit() -> void:
 			now[k] = true
 	for k in _posed:
 		now[k] = true
-	for k in _held:
-		now[k] = true
 	var inv := _frame.inverse()
 	for k: int in now:
-		var rest := skeleton.get_bone_rest(k)
 		var g: Quaternion = _global[k]
 		var q: Quaternion = inv * (_turns.get(k, Quaternion.IDENTITY) as Quaternion) * _frame
+		var parent := skeleton.get_bone_parent(k)
+		var pg: Quaternion = _global[parent] if parent >= 0 else Quaternion.IDENTITY
+		var moved := Vector3.ZERO
+		if _shifts.has(k):
+			moved = pg.inverse() * (inv * (_shifts[k] as Vector3)) / _scale
+		if _over.has(k):
+			if _turns.has(k):
+				skeleton.set_bone_pose_rotation(
+					k, ((pg.inverse() * q * pg) * skeleton.get_bone_pose_rotation(k)).normalized()
+				)
+			if _shifts.has(k):
+				skeleton.set_bone_pose_position(k, skeleton.get_bone_pose_position(k) + moved)
+			if _scales.has(k):
+				skeleton.set_bone_pose_scale(k, skeleton.get_bone_pose_scale(k) * float(_scales[k]))
+			continue
+		var rest := skeleton.get_bone_rest(k)
 		skeleton.set_bone_pose_rotation(
 			k, (rest.basis.get_rotation_quaternion() * (g.inverse() * q * g)).normalized()
 		)
-		var pos := rest.origin
-		if _shifts.has(k):
-			var parent := skeleton.get_bone_parent(k)
-			var pg: Quaternion = _global[parent] if parent >= 0 else Quaternion.IDENTITY
-			pos += pg.inverse() * (inv * (_shifts[k] as Vector3)) / _scale
-		skeleton.set_bone_pose_position(k, pos)
+		skeleton.set_bone_pose_position(k, rest.origin + moved)
 		skeleton.set_bone_pose_scale(k, Vector3.ONE * float(_scales.get(k, 1.0)))
 	_posed.clear()
 	for d: Dictionary in [_turns, _shifts, _scales]:
@@ -122,40 +132,3 @@ func commit() -> void:
 func bone_origin(bone: StringName) -> Vector3:
 	var k := index_of(bone)
 	return skeleton.get_bone_global_pose(k).origin if k >= 0 else Vector3.ZERO
-
-
-## Puts every bone posed last frame back to its rest pose, before an animation writes the skeleton and commit_over()
-## adds this frame's pose to it: what was added last frame never piles up.
-func reset_posed() -> void:
-	for k: int in _posed:
-		skeleton.reset_bone_pose(k)
-	_posed.clear()
-
-
-## Adds this frame's pose to what an animation has just written to the skeleton, where commit() writes it over the
-## rest pose: each turn after the bone's rotation now (its axes carried along by the animation), each shift added to
-## its position, each stretch times its scale.
-func commit_over() -> void:
-	var inv := _frame.inverse()
-	for k: int in _turns:
-		var g: Quaternion = _global[k]
-		var q: Quaternion = inv * (_turns[k] as Quaternion) * _frame
-		skeleton.set_bone_pose_rotation(
-			k, (skeleton.get_bone_pose_rotation(k) * (g.inverse() * q * g)).normalized()
-		)
-	for k: int in _shifts:
-		var parent := skeleton.get_bone_parent(k)
-		var pg: Quaternion = _global[parent] if parent >= 0 else Quaternion.IDENTITY
-		skeleton.set_bone_pose_position(
-			k,
-			(
-				skeleton.get_bone_pose_position(k)
-				+ pg.inverse() * (inv * (_shifts[k] as Vector3)) / _scale
-			)
-		)
-	for k: int in _scales:
-		skeleton.set_bone_pose_scale(k, skeleton.get_bone_pose_scale(k) * float(_scales[k]))
-	for d: Dictionary in [_turns, _shifts, _scales]:
-		for k in d:
-			_posed[k] = true
-		d.clear()

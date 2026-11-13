@@ -5,7 +5,8 @@ extends BossAvatar
 ## file is skinned to a full skeleton (spine, arms, legs, the sword, the shield, the shoulder plates, the cloak and
 ## the tabard) and carries its own animations: "idle" and "walk" replace the code clips of those names, and
 ## OWNER_PLAYS says which moves play its "cast" (the sword levelled at the target) and its "swipe" (the diagonal
-## cut); the other moves keep their code clips, which move the whole figure. The violet file's animations are the
+## cut); the other moves keep their code clips, which move the whole figure and turn the head, the shield and the
+## sword a little over the file's idle (the violet's the other way round). The violet file's animations are the
 ## amber's mirrored (its sword in the other hand), so driven alike the two move as a pair. On top of the clips
 ## (_pose_rig) the anger the sim reads out (WorldReader.boss_twin) drives it: an angry Warden leans forward, its cracks
 ## and visor blaze and its light flares, so the player sees which one is fast. With the file missing it is a code
@@ -253,7 +254,7 @@ func _advance_anger(dt: float) -> void:
 
 
 func _clip_library() -> Dictionary:
-	return TwinWardenClips.library()
+	return TwinWardenClips.library(shield_side() < 0.0)
 
 
 func _walk_speed() -> float:

@@ -6,7 +6,7 @@ extends BossAvatar
 ## carries its own animations: "idle" and "walk" replace the code clips of those names, and OWNER_PLAYS says which
 ## animation each move plays (TidecallerClips keeps those moves' glow and tremble). The clips the file has no
 ## animation for (the shielded hunch, the jolt, the daze, the roar, the rise, the collapse) and what the tide the
-## sim reads out (WorldReader.boss_tide) drives are added on top of the animations (_poses_over_owner, _pose_rig):
+## sim reads out (WorldReader.boss_tide) drives are added on top of the animations (BossAvatar, _pose_rig):
 ## the bell swings hard while the room pulls, the shell pulses with every push of the water; a sea-green light at its
 ## mask follows the clips' glow and the tide. With the file missing it is a code stand-in of the same parts (a
 ## robe cone, a spiral shell, a staff and bell, a reaching arm, a mask with three glowing slits) posed from the same
@@ -293,12 +293,6 @@ func _clip_library() -> Dictionary:
 
 func _owner_plays() -> Dictionary:
 	return OWNER_PLAYS
-
-
-## The code clips' turns and the tide's swing and pulse go on top of the file's animations: every bone has a track
-## in each of them, so written underneath they would not show.
-func _poses_over_owner() -> bool:
-	return true
 
 
 func _walk_speed() -> float:

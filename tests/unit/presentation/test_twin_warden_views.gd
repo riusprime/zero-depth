@@ -97,6 +97,92 @@ func test_the_two_play_their_files_animations() -> void:
 	)
 
 
+func test_every_bone_a_warden_clip_names_is_in_both_skeletons() -> void:
+	for violet in [false, true]:
+		var a := _avatar(violet)
+		var lib := TwinWardenClips.library(violet)
+		for c: BossClip in lib.values():
+			for k in c.targets.size():
+				if c.targets[k] == BossClip.BODY or c.channels[k] == BossClip.PARAM:
+					continue
+				assert_true(
+					a.poser.has_bone(c.targets[k]),
+					"%s's %s is a bone (violet: %s)" % [c.name, c.targets[k], violet]
+				)
+
+
+## The clips still played from code turn the shield, the sword and the head over the file's idle, and leave nothing
+## on them afterwards: each twin is compared with a second one that only idles, frame for frame.
+func test_a_code_clips_accent_shows_over_the_idle_and_is_gone_after() -> void:
+	var idle := {"state": WorldReader.STATE_MOVE, "move": -1}
+	var bash := {"state": WorldReader.STATE_ACTIVE, "move": WorldReader.MOVE_SLAM_RING}
+	var roar := {"state": WorldReader.STATE_GATE, "move": -1, "gate": 0.5}
+	for violet in [false, true]:
+		var a := _avatar(violet)
+		var still := _avatar(violet)
+		var shield := a.skeleton.find_bone("shield")
+		var sword := a.skeleton.find_bone("sword")
+		assert_gt(shield, -1, "the shield's bone")
+		assert_gt(sword, -1, "the sword's bone")
+		_drive(a, idle, 30)
+		_drive(still, idle, 30)
+		assert_almost_eq(
+			a.skeleton.get_bone_pose_position(shield),
+			still.skeleton.get_bone_pose_position(shield),
+			Vector3.ONE * 0.0001,
+			"the two idle alike"
+		)
+		_drive(a, bash, 30)
+		_drive(still, idle, 30)
+		assert_gt(
+			a.skeleton.get_bone_pose_position(shield).distance_to(
+				still.skeleton.get_bone_pose_position(shield)
+			),
+			0.02,
+			"the bash pushes the shield out, over the idle (violet: %s)" % violet
+		)
+		_drive(a, idle, 90)
+		_drive(still, idle, 90)
+		assert_almost_eq(
+			a.skeleton.get_bone_pose_position(shield),
+			still.skeleton.get_bone_pose_position(shield),
+			Vector3.ONE * 0.0001,
+			"the push is gone once the bash is over"
+		)
+		_drive(a, roar, 40)
+		_drive(still, idle, 40)
+		for b: int in [shield, sword]:
+			var turned := a.skeleton.get_bone_pose_rotation(b)
+			assert_gt(
+				turned.angle_to(still.skeleton.get_bone_pose_rotation(b)),
+				0.15,
+				"the roar spreads %s (violet: %s)" % [a.skeleton.get_bone_name(b), violet]
+			)
+		_drive(a, idle, 120)
+		_drive(still, idle, 120)
+		for b: int in [shield, sword]:
+			assert_almost_eq(
+				a.skeleton.get_bone_pose_rotation(b).angle_to(
+					still.skeleton.get_bone_pose_rotation(b)
+				),
+				0.0,
+				0.001,
+				"nothing of the roar stays on %s" % a.skeleton.get_bone_name(b)
+			)
+
+
+## The violet twin's accents are the amber's in a mirror: its roar swings its shield out to its own side.
+func test_the_violets_accents_are_the_ambers_mirrored() -> void:
+	var amber := TwinWardenClips.library(false)[&"roar"] as BossClip
+	var violet := TwinWardenClips.library(true)[&"roar"] as BossClip
+	for k in amber.targets.size():
+		if amber.targets[k] == BossClip.BODY or amber.channels[k] != BossClip.TURN:
+			assert_eq(violet.axes[k], amber.axes[k], "the whole figure moves the same")
+		else:
+			var ax := amber.axes[k]
+			assert_eq(violet.axes[k], Vector3(-ax.x, -ax.y, ax.z), "%s mirrored" % amber.targets[k])
+
+
 func test_the_angry_one_shows_it() -> void:
 	var a := _avatar(true)
 	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1}, 20)

@@ -6,7 +6,7 @@ extends BossAvatar
 ## an upper arm, a forearm and a gavel, legs whose shins slide, the coat's fins and tails, the pendulum, the gear,
 ## the clock's two hands) and carries its own animations: "idle" and "walk" replace the code clips of those names
 ## and OWNER_PLAYS says which animation each move plays. The reactions (the flinch, the stall, the roar, the rise,
-## the death) are ClockworkJudgeClips, added on top of the file's animations (_owner_layered). On top of them
+## the death) are ClockworkJudgeClips, added on top of the file's animations (BossAvatar). On top of them
 ## (_pose_rig) the sim's echo (WorldReader.boss_echo) drives the clock hands: they sweep, faster and faster as the
 ## echo records the player's path and racing while it replays. The waist gear and the arms' swing are the file's
 ## animations' alone. A gold light at the clock face follows the clips' glow and the echo. With the file missing it
@@ -293,10 +293,6 @@ func _idle_seconds() -> float:
 
 func _owner_plays() -> Dictionary:
 	return OWNER_PLAYS
-
-
-func _owner_layered() -> bool:
-	return true
 
 
 ## After the clips: the hands sweep (plus the clips' tick); the light follows the glow and the echo. The file's

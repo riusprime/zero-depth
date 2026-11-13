@@ -12,7 +12,7 @@ extends BossAvatar
 ## rides the lantern's bone, flares as Lights Out drains the room into it and as the Snuff reaches, and burns low
 ## once the room is dark, so the Shade can always be found by its lantern while its body stays in the dark. The
 ## moves the file has no animation for (LanternShadeClips: the shielded hold, the flinch, the stagger, the roar, the
-## rise, the death) turn its bones over the file's idle (BoneOverPoser), kick the lantern on its chain and billow the
+## rise, the death) turn its bones over the file's idle (BossAvatar), kick the lantern on its chain and billow the
 ## robe's hem. With the file missing it is a code stand-in (a tall frayed cloak cone, a deep hood, two long arms, a
 ## caged lantern on a chain) that floats, sways and swings its lantern in code (_pose). Presentation only (EI-07): it
 ## reads the sim and moves its own children.
@@ -164,9 +164,6 @@ func _glow_now() -> float:
 func _build_body() -> void:
 	super()
 	if imported != null:
-		# The file's idle keys every bone: the code clips' turns go on after it, not under it.
-		var m := BossModels.get_model(model_id())
-		poser = BoneOverPoser.new(skeleton, m["frame"], m["scale"])
 		for bone: StringName in HEM:
 			var a := deg_to_rad(HEM[bone])
 			_hem_axes[bone] = Vector3(cos(a), 0.0, -sin(a))
@@ -379,9 +376,6 @@ func _pose_rig(dt: float) -> void:
 			poser.turn(bone, _hem_axes[bone], billow)
 
 
-## The code clips' turns are laid over the file's animations once those are written, and the light is put on the
-## lantern where this frame's pose holds it.
-func _pose_imported(dt: float) -> void:
-	super(dt)
-	(poser as BoneOverPoser).lay_over()
+## The light is put on the lantern where this frame's pose holds it.
+func _after_bones() -> void:
 	_light_lantern(_on_bone(&"lantern", MODEL_LANTERN))

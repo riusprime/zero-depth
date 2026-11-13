@@ -1,12 +1,13 @@
 class_name TwinWardenClips
 extends RefCounted
 ## The Twin Wardens' clips, one library for both bodies so they move as a pair. Model frame: +X the front,
-## +Z the right. The whole figure moves through BODY (the model's pivot), the same on both models: the owner's amber
-## Warden keeps its Mixamo skeleton, but its file weights almost every vertex to the hips (evidence/BOSSES_NB.md), so
-## only the whole figure can move; the violet one is cut into parts (Body, Helm, Shield, Sword), which add small
-## accents on top (the helm turning, the shield set, the sword raised) that the amber's skeleton ignores (it has no
-## such bones). Parameters the avatar maps: glow (the cracks' and visor's light) and chain (how hard the shackle hand
-## pulls on the chain, for the chain's view).
+## +Z the right. Each file's own animations play the idle, the walk, the cast and the swipe; the clips here that stay
+## in use (the Shield Bash, the Charge, the Ground Slam, the Blink, the shielded hold and the reactions) move the
+## whole figure through BODY (the model's pivot), the same on both models, and add small accents on three bones of
+## the files' skeleton, laid over the file's idle: the head, the shield and the sword. The violet twin carries its
+## shield on the other arm, so its library is the amber's with those accents mirrored (library(true)). Parameters
+## the avatar maps: glow (the cracks' and visor's light) and chain (how hard the shackle hand pulls on the chain,
+## for the chain's view).
 ## Looser: an idle weight shift and sway, a rolling
 ## stride, a counter-move before each wind-up, a recoil after each strike, and a real hit reaction.
 ## Stone sentinels: they stand planted and breathe slowly; they march in step, heavy and stiff; for Crossfire they set
@@ -29,10 +30,14 @@ const LIN := BossClip.LINEAR
 const S := BossClip.SETTLE
 
 static var _lib := {}
+static var _mirror := {}
 
 
-static func library() -> Dictionary:
-	if _lib.is_empty():
+## The clips by name. `mirrored`: the violet twin's, its bones' accents the amber's seen in a mirror (a turn about
+## the front or the up axis reversed, a shift to the side reversed); the whole figure's moves are the same.
+static func library(mirrored: bool = false) -> Dictionary:
+	var lib := _mirror if mirrored else _lib
+	if lib.is_empty():
 		for c: BossClip in [
 			_idle(),
 			_walk(),
@@ -50,19 +55,32 @@ static func library() -> Dictionary:
 			_rise(),
 			_death(),
 		]:
-			_lib[c.name] = c
-	return _lib
+			if mirrored:
+				_flip(c)
+			lib[c.name] = c
+	return lib
+
+
+static func _flip(c: BossClip) -> void:
+	for k in c.targets.size():
+		if c.targets[k] == B:
+			continue
+		var a := c.axes[k]
+		if c.channels[k] == BossClip.TURN:
+			c.axes[k] = Vector3(-a.x, -a.y, a.z)
+		elif c.channels[k] == BossClip.SHIFT:
+			c.axes[k] = Vector3(a.x, a.y, -a.z)
 
 
 ## Planted, breathing slowly, its weight rolling from foot to foot (v0.11.0 O16a, owner Q11/Q30: "too stiff": a real
-## sway, the helm looking about, the shield arm settling).
+## sway, the head looking about, the shield arm settling).
 static func _idle() -> BossClip:
 	var c := BossClip.new(&"idle", true)
 	c.stretch(B, [[0, 0], [0.5, 0.03], [1, 0]])
 	c.turn(B, Z, [[0, 0], [0.5, -0.04], [1, 0]])
 	c.turn(B, X, [[0, 0.035], [0.5, -0.035], [1, 0.035]])
 	c.shift(B, UP, [[0, 0], [0.25, 0.015], [0.5, 0], [0.75, 0.015], [1, 0]])
-	c.turn(&"helm", Y, [[0, 0.14], [0.5, -0.14], [1, 0.14]])
+	c.turn(&"head", Y, [[0, 0.14], [0.5, -0.14], [1, 0.14]])
 	c.turn(&"shield", Z, [[0, 0.03], [0.5, -0.04], [1, 0.03]])
 	c.turn(&"sword", Z, [[0, -0.05], [0.5, 0.06], [1, -0.05]])
 	c.param(&"glow", [[0, 0], [0.5, 0.3], [1, 0]])
@@ -79,7 +97,7 @@ static func _walk() -> BossClip:
 	c.turn(B, Y, [[0, 0.05], [0.5, -0.05], [1, 0.05]])
 	c.turn(&"shield", Z, [[0, 0.1], [0.5, -0.1], [1, 0.1]])
 	c.turn(&"sword", Z, [[0, -0.18], [0.5, 0.18], [1, -0.18]])
-	c.turn(&"helm", Y, [[0, -0.05], [0.5, 0.05], [1, -0.05]])
+	c.turn(&"head", Y, [[0, -0.05], [0.5, 0.05], [1, -0.05]])
 	return c
 
 
@@ -243,7 +261,7 @@ static func _shielded() -> BossClip:
 static func _flinch() -> BossClip:
 	var c := BossClip.new(&"flinch")
 	c.turn(B, Z, [[0, 0], [0.15, 0.1, OUT3], [0.5, -0.03, IO, S], [1, 0]])
-	c.turn(&"helm", Z, [[0, 0], [0.15, 0.2, OUT3], [1, 0]])
+	c.turn(&"head", Z, [[0, 0], [0.15, 0.2, OUT3], [1, 0]])
 	return c
 
 
@@ -262,8 +280,8 @@ static func _roar() -> BossClip:
 	var c := BossClip.new(&"roar")
 	c.turn(B, Z, [[0, 0], [0.3, 0.25, BACK], [0.8, 0.2], [1, 0]])
 	c.stretch(B, [[0, 0], [0.3, 0.05], [0.8, 0.04], [1, 0]])
-	c.turn(&"shield", X, [[0, 0], [0.3, 0.5, BACK], [0.8, 0.45], [1, 0]])
-	c.turn(&"sword", X, [[0, 0], [0.3, -0.5, BACK], [0.8, -0.45], [1, 0]])
+	c.turn(&"shield", X, [[0, 0], [0.3, 0.32, BACK], [0.8, 0.28], [1, 0]])
+	c.turn(&"sword", X, [[0, 0], [0.3, -0.32, BACK], [0.8, -0.28], [1, 0]])
 	c.param(&"glow", [[0, 0], [0.3, 1.8], [0.8, 1.5], [1, 0]])
 	c.param(&"tremble", [[0, 0], [0.3, 0.8], [0.8, 0.8], [1, 0]])
 	return c
