@@ -28,7 +28,7 @@ const SPECS := {
 	# FINAL_BOSS.md "The models"; evidence/FINAL_BOSS_1.md: the final boss's three bodies, split from the
 	# owner's one file, all facing +X as split (raw renders). The Colossus 3.2 m to its halo; the Prism 3.0 m to its
 	# crown, floating (lift) above its hanging shards; the Nemesis, the hero's small shadow, 1.5 m.
-	&"final_boss_colossus": {"yaw": 0.0, "height": 3.2, "final": true},
+	&"final_boss_colossus": {"yaw": 0.0, "height": 3.2, "final": true, "skinned": true},
 	&"final_boss_prism": {"yaw": 0.0, "height": 3.0, "lift": 0.35, "final": true},
 	&"final_boss_nemesis": {"yaw": 0.0, "height": 1.5, "final": true},
 	# The Tidecaller, front +Z as prepared (turned to +X here), 3.2 m (the art list's): skinned to a full skeleton

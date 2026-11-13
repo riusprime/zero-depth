@@ -691,7 +691,9 @@ func _animate(dt: float) -> void:
 			or _state == WorldReader.STATE_RECOVER
 		)
 	)
-	var clip_name := BossAnimator.clip_name_for(_clip_move, _attack_shielded, an.clips)
+	var clip_name := _action_clip(
+		BossAnimator.clip_name_for(_clip_move, _attack_shielded, an.clips)
+	)
 	var c := an.clips.get(clip_name) as BossClip
 	var t := clip_time(c) if c != null else 0.0
 	if _recall >= 0.0 and an.has_clip(RECALL_CLIP):  # The pull, timed by the recall
@@ -763,6 +765,12 @@ func _burrow_time(c: BossClip) -> float:
 		return lerpf(c.strike, mid, clampf(float(_state_ticks) / 12.0, 0.0, 1.0))
 	var since := float(_last_tick - _unhide_tick) + clampf(_since_sync * 60.0, 0.0, 0.999)
 	return lerpf(mid, c.hold, clampf(since / 18.0, 0.0, 1.0))
+
+
+## The clip the attack in progress plays, given the one its move names. A body whose move plays a different clip
+## from one strike to the next picks it here.
+func _action_clip(by_move: StringName) -> StringName:
+	return by_move
 
 
 ## Each body's clip library (BossClip by name; its <Boss>Clips).
