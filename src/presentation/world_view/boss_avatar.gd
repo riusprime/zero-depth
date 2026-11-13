@@ -642,7 +642,7 @@ func _pose_imported(dt: float) -> void:
 		poser.commit_over()
 	else:
 		poser.commit()
-		animator.apply_owner(skeleton)
+		animator.apply_owner(skeleton, poser if _code_over_file() else null)
 	var pulse := 0.5 + 0.5 * sin(_t * 6.0)
 	var extra := _extra_glow()  # A final boss's body cracking as it shatters
 	glow_overlay.albedo_color.a = clampf(
@@ -790,6 +790,13 @@ func _owner_layered() -> bool:
 ## Otherwise they are written first, and an animation playing at full weight replaces them on every bone it moves:
 ## right for a body whose code clips only move the whole figure.
 func _poses_over_owner() -> bool:
+	return false
+
+
+## True for a body whose code clips and own layers (_pose_rig) turn bones its file's animations also key, and must
+## show over them (BossAnimator.apply_owner's `over`): a flinch during the file's idle, a code-made attack. False
+## leaves an animation at full weight to override the code pose of the bones it keys.
+func _code_over_file() -> bool:
 	return false
 
 

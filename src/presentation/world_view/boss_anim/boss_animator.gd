@@ -19,6 +19,8 @@ extends RefCounted
 ## plays. A body whose code clips and own pose must still move such bones (a flinch over the file's idle, a clock hand
 ## turned from game time) asks for layer_owner: the code's turns, shifts and stretches are then added on top of the
 ## animations' pose.
+## A body whose remaining code clips turn bones its animations also key asks for them to be laid over the
+## animation (apply_owner's `over`): a flinch then shows during the file's idle, where it would otherwise be lost.
 ## Presentation only (EI-07): it writes the avatar's own skeleton and pivot; per frame it allocates nothing.
 
 ## Layer slots, applied in this order.
@@ -102,9 +104,18 @@ var _owner := {}
 var _layered := false
 var _owned := PackedInt32Array()
 var _rest_turn: Array[Quaternion] = []
+var _layer_turn: Array[Quaternion] = []
+var _layer_shift := PackedVector3Array()
+var _layer_scale := PackedVector3Array()
+## For a body whose code pose is laid over its file's animations (apply_owner's `over`): the frame's number, per
+## bone the frame it was last keyed in (with the channels keyed so far in its low three bits), the bones whose code
+## pose was put by this frame, and that pose as a turn, a shift and a scale from the bone's rest.
+var _frame := 0
+var _stamp := PackedInt32Array()
+var _laid := PackedInt32Array()
 var _code_turn: Array[Quaternion] = []
 var _code_shift := PackedVector3Array()
-var _code_scale := PackedVector3Array()
+var _code_scale := PackedFloat32Array()
 
 
 func _init(library: Dictionary) -> void:
@@ -297,13 +308,13 @@ func layer_owner(poser: BonePoser) -> void:
 			seen[b] = true
 	_owned = PackedInt32Array(seen.keys())
 	_rest_turn.clear()
-	_code_turn.clear()
+	_layer_turn.clear()
 	for b in _owned:
 		poser.hold(b)
 		_rest_turn.append(poser.skeleton.get_bone_rest(b).basis.get_rotation_quaternion())
-		_code_turn.append(Quaternion.IDENTITY)
-	_code_shift.resize(_owned.size())
-	_code_scale.resize(_owned.size())
+		_layer_turn.append(Quaternion.IDENTITY)
+	_layer_shift.resize(_owned.size())
+	_layer_scale.resize(_owned.size())
 	_layered = not _owned.is_empty()
 
 
@@ -335,33 +346,40 @@ static func owner_time(
 ## After the code pose is written: each bound owner animation in a live layer sets its bones' poses, blended in by
 ## the layer's weight. Layered (layer_owner), the code's pose of those bones is taken off first and put back on top
 ## of the blended animations: its turn in the parent's frame, its shift, its stretch.
-func apply_owner(skeleton: Skeleton3D) -> void:
+func apply_owner(skeleton: Skeleton3D, over: BonePoser = null) -> void:
 	if _owner.is_empty() or skeleton == null:
 		return
 	if not _layered:
-		_blend_owner(skeleton)
+		_blend_owner(skeleton, over)
 		return
 	for j in _owned.size():
 		var b := _owned[j]
 		var rest_at := skeleton.get_bone_rest(b).origin
-		_code_turn[j] = skeleton.get_bone_pose_rotation(b) * _rest_turn[j].inverse()
-		_code_shift[j] = skeleton.get_bone_pose_position(b) - rest_at
-		_code_scale[j] = skeleton.get_bone_pose_scale(b)
+		_layer_turn[j] = skeleton.get_bone_pose_rotation(b) * _rest_turn[j].inverse()
+		_layer_shift[j] = skeleton.get_bone_pose_position(b) - rest_at
+		_layer_scale[j] = skeleton.get_bone_pose_scale(b)
 		skeleton.set_bone_pose_rotation(b, _rest_turn[j])
 		skeleton.set_bone_pose_position(b, rest_at)
 		skeleton.set_bone_pose_scale(b, Vector3.ONE)
-	_blend_owner(skeleton)
+	_blend_owner(skeleton, null)
 	for j in _owned.size():
 		var b := _owned[j]
 		skeleton.set_bone_pose_rotation(
-			b, (_code_turn[j] * skeleton.get_bone_pose_rotation(b)).normalized()
+			b, (_layer_turn[j] * skeleton.get_bone_pose_rotation(b)).normalized()
 		)
-		skeleton.set_bone_pose_position(b, skeleton.get_bone_pose_position(b) + _code_shift[j])
-		skeleton.set_bone_pose_scale(b, skeleton.get_bone_pose_scale(b) * _code_scale[j])
+		skeleton.set_bone_pose_position(b, skeleton.get_bone_pose_position(b) + _layer_shift[j])
+		skeleton.set_bone_pose_scale(b, skeleton.get_bone_pose_scale(b) * _layer_scale[j])
 
 
 ## Every live owner animation blended onto its bones, in layer order.
-func _blend_owner(skeleton: Skeleton3D) -> void:
+func _blend_owner(skeleton: Skeleton3D, over: BonePoser) -> void:
+	_frame += 1
+	_laid.resize(0)
+	if over != null and _stamp.size() != skeleton.get_bone_count():
+		_stamp.resize(skeleton.get_bone_count())
+		_code_turn.resize(_stamp.size())
+		_code_shift.resize(_stamp.size())
+		_code_scale.resize(_stamp.size())
 	for s in SLOTS:
 		var c := slot_clip[s]
 		var w := slot_w[s]
@@ -375,19 +393,49 @@ func _blend_owner(skeleton: Skeleton3D) -> void:
 		var time := owner_time(anim, c, slot_t[s], entry[4], entry[5])
 		for j in tracks.size():
 			var b := bones[j]
+			var k := minf(w, 1.0)
+			if over != null and over.is_posed(b) and _first_key(skeleton, b, types[j]):
+				k = 1.0
 			match types[j]:
 				Animation.TYPE_ROTATION_3D:
 					var q := anim.rotation_track_interpolate(tracks[j], time)
 					skeleton.set_bone_pose_rotation(
-						b, skeleton.get_bone_pose_rotation(b).slerp(q, minf(w, 1.0))
+						b, skeleton.get_bone_pose_rotation(b).slerp(q, k)
 					)
 				Animation.TYPE_POSITION_3D:
 					var p := anim.position_track_interpolate(tracks[j], time)
 					skeleton.set_bone_pose_position(
-						b, skeleton.get_bone_pose_position(b).lerp(p, minf(w, 1.0))
+						b, skeleton.get_bone_pose_position(b).lerp(p, k)
 					)
 				Animation.TYPE_SCALE_3D:
 					var sc := anim.scale_track_interpolate(tracks[j], time)
-					skeleton.set_bone_pose_scale(
-						b, skeleton.get_bone_pose_scale(b).lerp(sc, minf(w, 1.0))
-					)
+					skeleton.set_bone_pose_scale(b, skeleton.get_bone_pose_scale(b).lerp(sc, k))
+	for b in _laid:
+		var keyed := _stamp[b] & 7
+		if (keyed & (1 << (Animation.TYPE_ROTATION_3D - 1))) != 0:
+			skeleton.set_bone_pose_rotation(
+				b, (_code_turn[b] * skeleton.get_bone_pose_rotation(b)).normalized()
+			)
+		if (keyed & (1 << (Animation.TYPE_POSITION_3D - 1))) != 0:
+			skeleton.set_bone_pose_position(b, skeleton.get_bone_pose_position(b) + _code_shift[b])
+		if (keyed & (1 << (Animation.TYPE_SCALE_3D - 1))) != 0:
+			skeleton.set_bone_pose_scale(b, skeleton.get_bone_pose_scale(b) * _code_scale[b])
+
+
+## True the first time this frame an animation keys this channel (`type`) of a bone the code posed. On the bone's
+## first key its code pose is put by, as a turn, a shift and a scale from its rest, to be laid back over the result.
+func _first_key(skeleton: Skeleton3D, b: int, type: int) -> bool:
+	var stamp := _stamp[b]
+	if stamp >> 3 != _frame:
+		stamp = _frame << 3
+		var rest := skeleton.get_bone_rest(b)
+		_code_turn[b] = (
+			skeleton.get_bone_pose_rotation(b) * rest.basis.get_rotation_quaternion().inverse()
+		)
+		_code_shift[b] = skeleton.get_bone_pose_position(b) - rest.origin
+		_code_scale[b] = skeleton.get_bone_pose_scale(b).x
+		_laid.append(b)
+	var bit := 1 << (type - 1)
+	var first := (stamp & bit) == 0
+	_stamp[b] = stamp | bit
+	return first

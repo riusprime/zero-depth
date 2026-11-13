@@ -5,7 +5,8 @@ extends RefCounted
 ## frame (+X the front, Y up, metres, feet on the ground) at the boss's in-game height: the mesh and its material are
 ## cached, so a spawn only instances them. A missing file gives {} and the boss keeps its code-built body.
 ## Orientation and size were read from renders of the raw models next to the sheet (evidence/BOSSES.md).
-## The Warlord and the Hive Lens come rigged (a skin and a Tripo skeleton, no animations; owner N14): they
+## The Warlord and the Hive Lens come rigged (a skin and a Tripo skeleton; owner N14; the Warlord's file also
+## carries its animations and extra bones for its spear, shield and cloth, scripts/assets/boss_anim/warlord): they
 ## are kept as delivered ("skinned" in SPECS) and an avatar instances the scene under a node that does the turn, the
 ## scale and the lift, so the bones animate the owner's own skin; the Foundry is one static mesh, rigged in code like
 ## the first three (BossRig). Orientation and size from renders of the raw models (v0.7.5 evidence/BOSS_MODELS.md).
