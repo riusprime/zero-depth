@@ -51,3 +51,14 @@ Each has its own folder here: `clockwork_judge/`, `tidecaller/`, `warlord/`, `la
 What they add to the method: hard-surface pieces picked by flooding the welded mesh inside boxes and cut free with their own seam vertices (the Judge); a model skinned as one fused surface with rigid pieces picked by position and texture colour (the Tidecaller); a delivered skeleton kept, its names and rests unchanged, with bones added (the Warlord); everything that hangs simulated as springs and pendulums over the frames and baked to keys (the Lantern Shade, the Tidecaller's bell).
 
 In the game a file's animation writes the bones it keys and the code clips that still play (flinch, stagger, roar, a shield lift) are added on top (`BonePoser.lay_over`), so an animation needs no track for what the code should own.
+
+## The final boss
+
+`final_colossus/`, `final_prism/` and `final_nemesis/` hold the three bodies' scripts, kept as they were run, like the
+other bosses' folders. Each works at ten times the delivered size facing -Y and its `export.py` turns and scales the
+result back to the delivered frame. The bodies hand over in the game through two matched pairs: the Colossus's `break`
+and the Prism's `form`, the Prism's `break` and the Nemesis's `form`; a pair is authored against the other's described
+pose, so when one end changes, re-measure both in the game (`FinalBodyAvatar` plays a `break` through the shatter and a
+rise in place). A crystal's bone has its Y along the crystal's long axis, so a turn about Y leaves its tip still: the
+Prism's turn is baked (one turn per 10 s loop, every clip starting and ending on the idle's first angles), the
+Colossus's is added by its avatar in frame time.
