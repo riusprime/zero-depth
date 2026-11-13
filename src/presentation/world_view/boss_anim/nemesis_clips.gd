@@ -1,20 +1,28 @@
 class_name NemesisClips
 extends RefCounted
-## The
-## Nemesis's placeholder clips, in the hero's motion vocabulary (run, dash, slash, shoot, hit, death), on its whole body
-## (the owner's model is one mesh, BossClip.BODY) plus named parameters NemesisAvatar reads for its weapon (a dark copy
-## of the run's Blade or Gun in its hand) and its cast:
-## - idle: light on its feet, a fighter's sway; walk: the hero's run, leaning in, quick steps;
+## The Nemesis's clips, in the hero's motion vocabulary (the owner's small dark hooded figure, one skinned mesh on a
+## full skeleton: hips, spine, chest, neck and the hood, sleeves, legs, chains of cloak bones). Its file carries its
+## own idle, run, slash, shot, cast, dash, flinch, rise and death; NemesisAvatar plays those in place of the clips of
+## the same moves here (idle, walk, mimic_combo, mimic_shots, card_cast, dash, flinch, rise, death), which keep only
+## their parameters and their timing (where the strike lands, where the active part ends). The other clips (the
+## shielded hold, the stagger, the roar) are played from here, over the file's idle: they turn the spine, the chest,
+## the hood and the two sleeves.
 ## Each attack clip is named by its move (BossAnimator.MOVE_CLIPS: the data's `move` plays the clip of that name):
-## - `mimic_combo`, the slash: the hero's swing: a coil back, the cut across ("swing" -1 → 1, the blade sweeping), the
-##   follow-through; a combo's later swings cycle it once per swing (BossAvatar.clip_time);
-## - `mimic_shots`, the shot: the hero's aim and shot: arm raised ("aim" 1), a kick on each volley ("recoil");
+## - `mimic_combo`, the slash: the hero's swing: a coil back, the cut across, the follow-through; a combo's later
+##   swings cycle its active part once per swing (BossAvatar.clip_time);
+## - `mimic_shots`, the shot: the hero's aim and shot, a kick on each volley;
 ## - `card_cast`, the cast: a card raised overhead ("sigil" glowing up through the windup), thrown down on the strike;
-## - dash: the hero's dash: a low lean forward, stretched, the cloak trailing (NemesisAvatar plays it while the sim says
-##   it dashes);
-## - shielded, flinch (the hit), stagger, roar, rise (from the Prism's shards), death.
-## Presentation only.
+## - dash: the hero's dash: a low lean forward, the cloak trailing ("trail"; NemesisAvatar plays it while the sim
+##   says it dashes).
+## Model frame: +X the front, +Z its right. A turn about Z pitches a bone's top back (+) or forward (-); a turn about
+## X spreads a sleeve out (the left +, the right -). Presentation only.
 
+const SPINE := &"spine"
+const CHEST := &"chest"
+const HEAD := &"head"
+const ARM_L := &"upper_arm_L"
+const ARM_R := &"upper_arm_R"
+const X := Vector3(1, 0, 0)
 const UP := Vector3(0, 1, 0)
 const Z := Vector3(0, 0, 1)
 const FWD := Vector3(1, 0, 0)
@@ -51,12 +59,10 @@ static func library() -> Dictionary:
 		var idle := BossClip.new(&"idle", true)
 		idle.turn(B, Z, [[0, 0.05], [0.5, -0.03, IO], [1, 0.05, IO]])
 		idle.shift(B, UP, [[0, 0], [0.25, 0.04, IO], [0.5, 0, IO], [0.75, 0.04, IO], [1, 0, IO]])
-		idle.param(&"swing", [[0, -0.2], [0.5, -0.15], [1, -0.2]])
 		var walk := BossClip.new(&"walk", true)
 		walk.shift(B, UP, [[0, 0], [0.25, 0.08, OUT], [0.5, 0, IN], [0.75, 0.08, OUT], [1, 0, IN]])
 		walk.turn(B, Z, [[0, -0.22], [1, -0.22]])
 		walk.turn(B, UP, [[0, 0.08], [0.5, -0.08, IO], [1, 0.08, IO]])
-		walk.param(&"swing", [[0, -0.4], [1, -0.4]])
 		_lib[&"mimic_combo"] = _slash()
 		_lib[&"mimic_shots"] = _shoot()
 		_lib[&"card_cast"] = _cast()
@@ -72,7 +78,6 @@ static func _slash() -> BossClip:
 	c.turn(B, UP, [[0, 0], [0.42, 0.75, BACK], [0.5, -0.85, IN3], [0.62, -0.7, OUT, S], [1, 0]])
 	c.shift(B, FWD, [[0, 0], [0.42, -0.12], [0.5, 0.35, IN3], [0.62, 0.3], [1, 0]])
 	c.turn(B, Z, [[0, 0], [0.42, 0.1], [0.5, -0.2, IN3], [0.62, -0.15], [1, 0]])
-	c.param(&"swing", [[0, 0], [0.42, -1.0, BACK], [0.5, 1.0, IN3], [0.62, 0.9], [1, 0]])
 	return c
 
 
@@ -80,8 +85,6 @@ static func _shoot() -> BossClip:
 	var c := BossClip.new(&"mimic_shots")  # the shot
 	c.turn(B, Z, [[0, 0], [0.42, -0.08, IO], [0.5, 0.12, OUT3], [0.58, -0.04, OUT, S], [1, 0]])
 	c.shift(B, FWD, [[0, 0], [0.5, -0.12, OUT3], [0.62, 0.0, IO], [1, 0]])
-	c.param(&"aim", [[0, 0], [0.3, 1.0, OUT], [0.62, 1.0], [1, 0, IO]])
-	c.param(&"recoil", [[0, 0], [0.49, 0], [0.5, 1.0, LIN], [0.58, 0.0, OUT], [1, 0]])
 	return c
 
 
@@ -99,24 +102,29 @@ static func _dash() -> BossClip:
 	c.turn(B, Z, [[0, 0], [0.15, -0.55, OUT3], [0.8, -0.5], [1, 0, IO]])
 	c.shift(B, UP, [[0, 0], [0.15, -0.15, OUT3], [0.8, -0.12], [1, 0, IO]])
 	c.stretch(B, [[0, 0], [0.15, -0.12, OUT3], [0.8, -0.1], [1, 0, IO]])
-	c.param(&"trail", [[0, 0], [0.1, 1.0, OUT], [0.8, 1.0], [1, 0]])
+	c.param(&"trail", [[0, 0], [0.2, 1.0, OUT], [0.72, 1.0], [1, 0]])
 	return c
 
 
 ## The shared reactions: shielded, flinch (the hit), stagger, roar, rise, death.
 static func _reactions() -> Array[BossClip]:
+	# Braced: bowed over its guard, the hood kept up.
 	var shielded := BossClip.new(&"shielded")
-	shielded.stretch(B, [[0, 0], [0.7, -0.08, BACK], [1, -0.06]])
+	shielded.turn(SPINE, Z, [[0, 0], [0.7, -0.2, BACK], [1, -0.16]])
+	shielded.turn(HEAD, Z, [[0, 0], [0.7, 0.14, BACK], [1, 0.12]])
 	var flinch := BossClip.new(&"flinch")
 	flinch.turn(B, Z, [[0, 0], [0.15, 0.18, OUT3], [0.5, -0.03, IO, S], [1, 0]])
 	flinch.shift(B, FWD, [[0, 0], [0.15, -0.16, OUT3], [1, 0]])
+	# Knocked back and left reeling, the hood hanging a little (the roar plays over it and throws the hood up).
 	var stagger := BossClip.new(&"stagger")
-	stagger.turn(B, Z, [[0, 0], [0.1, 0.25, OUT3], [0.4, 0.12], [1, 0.12]])
-	stagger.shift(B, UP, [[0, 0], [0.4, -0.2], [1, -0.18]])
+	stagger.turn(CHEST, Z, [[0, 0], [0.1, 0.25, OUT3], [0.4, 0.12], [1, 0.12]])
+	stagger.turn(HEAD, Z, [[0, 0], [0.1, 0.15, OUT3], [0.4, -0.1], [1, -0.1]])
 	stagger.param(&"daze", [[0, 0], [0.3, 0.3], [0.6, 1], [1, 1]])
+	# Reared back, the hood thrown up, the sleeves flung wide.
 	var roar := BossClip.new(&"roar")
-	roar.turn(B, Z, [[0, 0], [0.36, 0.3, BACK], [0.85, 0.26], [1, 0]])
-	roar.stretch(B, [[0, 0], [0.36, 0.12, BACK], [0.85, 0.1], [1, 0]])
+	roar.turn(CHEST, Z, [[0, 0], [0.36, 0.32, BACK], [0.85, 0.28], [1, 0]])
+	roar.turn(HEAD, Z, [[0, 0], [0.36, 0.34, BACK], [0.85, 0.3], [1, 0]])
+	roar.turn_pair(ARM_L, ARM_R, X, [[0, 0], [0.36, 0.45, BACK], [0.85, 0.4], [1, 0]], true)
 	roar.param(&"tremble", [[0, 0], [0.34, 0], [0.38, 1, LIN], [0.8, 0.8], [0.9, 0], [1, 0]])
 	var rise := BossClip.new(&"rise")
 	rise.shift(B, UP, [[0, -0.5], [0.5, -0.4], [0.7, 0.1, OUT], [0.8, -0.02, OUT, S], [1, 0]])

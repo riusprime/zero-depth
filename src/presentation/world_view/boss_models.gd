@@ -30,7 +30,7 @@ const SPECS := {
 	# crown, floating (lift) above its hanging shards; the Nemesis, the hero's small shadow, 1.5 m.
 	&"final_boss_colossus": {"yaw": 0.0, "height": 3.2, "final": true},
 	&"final_boss_prism": {"yaw": 0.0, "height": 3.0, "lift": 0.35, "final": true},
-	&"final_boss_nemesis": {"yaw": 0.0, "height": 1.5, "final": true},
+	&"final_boss_nemesis": {"yaw": 0.0, "height": 1.5, "final": true, "skinned": true},
 	# The Tidecaller, front +Z as prepared (turned to +X here), 3.2 m (the art list's): skinned to a full skeleton
 	# (the staff in its right hand, the bell and its clapper hanging from it, the shell on its back) and carrying its
 	# animations (scripts/assets/boss_anim/tidecaller).
