@@ -224,6 +224,7 @@ const MOVE_MIMIC_COMBO := BossAttackTable.Move.MIMIC_COMBO  # v0.8.0 FB3 (the Ne
 const MOVE_MIMIC_SHOTS := BossAttackTable.Move.MIMIC_SHOTS
 const MOVE_CARD_CAST := BossAttackTable.Move.CARD_CAST
 const MOVE_TIDE := BossAttackTable.Move.TIDE  # v0.9.0 NB1 (the Tidecaller's Pull)
+const MOVE_WAVE := BossAttackTable.Move.WAVE  # The Tidecaller's crossing wave
 const MOVE_CROSSFIRE := BossAttackTable.Move.CROSSFIRE  # v0.9.0 NB2 (the Twin Wardens)
 const MOVE_CHAIN_SWEEP := BossAttackTable.Move.CHAIN_SWEEP
 const MOVE_ECHO := BossAttackTable.Move.ECHO  # v0.9.0 NB3 (the Clockwork Judge)

@@ -105,3 +105,40 @@ func commit() -> void:
 func bone_origin(bone: StringName) -> Vector3:
 	var k := index_of(bone)
 	return skeleton.get_bone_global_pose(k).origin if k >= 0 else Vector3.ZERO
+
+
+## Puts every bone posed last frame back to its rest pose, before an animation writes the skeleton and commit_over()
+## adds this frame's pose to it: what was added last frame never piles up.
+func reset_posed() -> void:
+	for k: int in _posed:
+		skeleton.reset_bone_pose(k)
+	_posed.clear()
+
+
+## Adds this frame's pose to what an animation has just written to the skeleton, where commit() writes it over the
+## rest pose: each turn after the bone's rotation now (its axes carried along by the animation), each shift added to
+## its position, each stretch times its scale.
+func commit_over() -> void:
+	var inv := _frame.inverse()
+	for k: int in _turns:
+		var g: Quaternion = _global[k]
+		var q: Quaternion = inv * (_turns[k] as Quaternion) * _frame
+		skeleton.set_bone_pose_rotation(
+			k, (skeleton.get_bone_pose_rotation(k) * (g.inverse() * q * g)).normalized()
+		)
+	for k: int in _shifts:
+		var parent := skeleton.get_bone_parent(k)
+		var pg: Quaternion = _global[parent] if parent >= 0 else Quaternion.IDENTITY
+		skeleton.set_bone_pose_position(
+			k,
+			(
+				skeleton.get_bone_pose_position(k)
+				+ pg.inverse() * (inv * (_shifts[k] as Vector3)) / _scale
+			)
+		)
+	for k: int in _scales:
+		skeleton.set_bone_pose_scale(k, skeleton.get_bone_pose_scale(k) * float(_scales[k]))
+	for d: Dictionary in [_turns, _shifts, _scales]:
+		for k in d:
+			_posed[k] = true
+		d.clear()

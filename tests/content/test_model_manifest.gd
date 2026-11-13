@@ -55,11 +55,13 @@ const ELITE_PARTS := {
 }
 ## v0.9.0 NB1: the new bosses' parts (static) and skin joints (rigged; test_the_v090_bosses_are_listed_cut_or_rigged).
 const NB_PARTS := {
-	&"boss_tidecaller": ["ArmL", "Bell", "Body", "Shell", "Staff"],
 	&"boss_lantern_shade": ["ArmL", "ArmR", "Body", "HandLantern"],
 }
 const NB_RIGGED := {
-	&"boss_twin_warden_amber": 37, &"boss_twin_warden_violet": 37, &"boss_clockwork_judge": 29
+	&"boss_tidecaller": 46,
+	&"boss_twin_warden_amber": 37,
+	&"boss_twin_warden_violet": 37,
+	&"boss_clockwork_judge": 29,
 }
 ## A rigged boss's main bone (the one its figure hangs from) when it is not "hips".
 const NB_MAIN_BONE := {&"boss_clockwork_judge": "body"}
