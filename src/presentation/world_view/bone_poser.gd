@@ -17,6 +17,8 @@ var _turns := {}
 var _shifts := {}
 var _scales := {}
 var _posed := {}
+## Bones commit() writes every frame, turned or not (hold).
+var _held := {}
 
 
 func _init(skel: Skeleton3D, frame: Quaternion = Quaternion.IDENTITY, scale: float = 1.0) -> void:
@@ -59,6 +61,14 @@ func stretch(bone: StringName, factor: float) -> void:
 		_scales[k] = _scales.get(k, 1.0) * factor
 
 
+## Makes commit() write the bone of index `k` every frame, at rest when nothing turned it: for a bone something
+## else poses after the commit (an animation of the model's file), which must find this frame's code pose there
+## and not what it wrote itself the frame before.
+func hold(k: int) -> void:
+	if k >= 0 and k < skeleton.get_bone_count():
+		_held[k] = true
+
+
 ## Writes this frame's pose: every turned, shifted or scaled bone, and every bone posed last frame back to rest.
 func commit() -> void:
 	var now := {}
@@ -66,6 +76,8 @@ func commit() -> void:
 		for k in d:
 			now[k] = true
 	for k in _posed:
+		now[k] = true
+	for k in _held:
 		now[k] = true
 	var inv := _frame.inverse()
 	for k: int in now:

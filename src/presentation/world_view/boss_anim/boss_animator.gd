@@ -15,6 +15,10 @@ extends RefCounted
 ## several moves, each with its own strike and recover times, so a new move needs a table row, not a new animation.
 ## A clip the owner's animation replaces keeps its code clip's PARAM tracks (the glow, the tremble, the chain's pull):
 ## the animation moves the bones, the parameters still drive the lights and the effects.
+## An owner's animation sets its bones outright, so a code clip's turn of one of them is lost while the owner's idle
+## plays. A body whose code clips and own pose must still move such bones (a flinch over the file's idle, a clock hand
+## turned from game time) asks for layer_owner: the code's turns, shifts and stretches are then added on top of the
+## animations' pose.
 ## Presentation only (EI-07): it writes the avatar's own skeleton and pivot; per frame it allocates nothing.
 
 ## Layer slots, applied in this order.
@@ -92,6 +96,14 @@ var _serial := -1
 ## The owner's animations by clip name: [Animation, track indices, bone indices, track types, strike, recover]
 ## (the two times in seconds, or -1 to read the animation's own markers).
 var _owner := {}
+## Set by layer_owner: the code's turns ride on the owner's animations. The bones any owner animation moves, each
+## one's rest rotation, and this frame's code pose of each: its turn in its parent's frame, its shift, its stretch.
+var _layered := false
+var _owned := PackedInt32Array()
+var _rest_turn: Array[Quaternion] = []
+var _code_turn: Array[Quaternion] = []
+var _code_shift := PackedVector3Array()
+var _code_scale := PackedVector3Array()
 
 
 func _init(library: Dictionary) -> void:
@@ -274,6 +286,26 @@ func bind_owner(player: AnimationPlayer, skeleton: Skeleton3D, plays: Dictionary
 	return n
 
 
+## From now on the code's pose rides on the owner's animations instead of being replaced by them (call after
+## bind_owner). `poser` then writes every bone an animation moves each frame, so apply_owner reads this frame's
+## code pose from the skeleton.
+func layer_owner(poser: BonePoser) -> void:
+	var seen := {}
+	for entry: Array in _owner.values():
+		for b: int in entry[2]:
+			seen[b] = true
+	_owned = PackedInt32Array(seen.keys())
+	_rest_turn.clear()
+	_code_turn.clear()
+	for b in _owned:
+		poser.hold(b)
+		_rest_turn.append(poser.skeleton.get_bone_rest(b).basis.get_rotation_quaternion())
+		_code_turn.append(Quaternion.IDENTITY)
+	_code_shift.resize(_owned.size())
+	_code_scale.resize(_owned.size())
+	_layered = not _owned.is_empty()
+
+
 ## The owner's animation time for a code clip's time t: a loop wraps over its length; an attack maps its windup to
 ## 0..the "strike" marker, its active part to "strike".."recover" and its recovery to the end. `strike` and
 ## `recover` (seconds) stand in for the markers when given.
@@ -300,10 +332,35 @@ static func owner_time(
 
 
 ## After the code pose is written: each bound owner animation in a live layer sets its bones' poses, blended in by
-## the layer's weight.
+## the layer's weight. Layered (layer_owner), the code's pose of those bones is taken off first and put back on top
+## of the blended animations: its turn in the parent's frame, its shift, its stretch.
 func apply_owner(skeleton: Skeleton3D) -> void:
 	if _owner.is_empty() or skeleton == null:
 		return
+	if not _layered:
+		_blend_owner(skeleton)
+		return
+	for j in _owned.size():
+		var b := _owned[j]
+		var rest_at := skeleton.get_bone_rest(b).origin
+		_code_turn[j] = skeleton.get_bone_pose_rotation(b) * _rest_turn[j].inverse()
+		_code_shift[j] = skeleton.get_bone_pose_position(b) - rest_at
+		_code_scale[j] = skeleton.get_bone_pose_scale(b)
+		skeleton.set_bone_pose_rotation(b, _rest_turn[j])
+		skeleton.set_bone_pose_position(b, rest_at)
+		skeleton.set_bone_pose_scale(b, Vector3.ONE)
+	_blend_owner(skeleton)
+	for j in _owned.size():
+		var b := _owned[j]
+		skeleton.set_bone_pose_rotation(
+			b, (_code_turn[j] * skeleton.get_bone_pose_rotation(b)).normalized()
+		)
+		skeleton.set_bone_pose_position(b, skeleton.get_bone_pose_position(b) + _code_shift[j])
+		skeleton.set_bone_pose_scale(b, skeleton.get_bone_pose_scale(b) * _code_scale[j])
+
+
+## Every live owner animation blended onto its bones, in layer order.
+func _blend_owner(skeleton: Skeleton3D) -> void:
 	for s in SLOTS:
 		var c := slot_clip[s]
 		var w := slot_w[s]
