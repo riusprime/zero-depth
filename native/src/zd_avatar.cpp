@@ -480,15 +480,27 @@ void put_xf(double *s, int at, const Transform3D &xf) {
 	o[11] = xf.origin.z;
 }
 
-// The engine's float sin/cos (Math::sin(float) on its own C library): the double function rounded to float, which
-// gives the engine's float bits where the MSVC library's own sinf/cosf differ in the last bit (the equality test,
-// tests/unit/native/test_native_crowd.gd, catches either).
+// The engine's float sin/cos (Math::sin(float): its own C library's sinf/cosf), which its Basis builders call. Which
+// function gives the engine's bits depends on the platform (the equality test, tests/unit/native/test_native_crowd.gd,
+// catches a wrong choice on either):
+// - Windows: the engine's C library and this library's (MSVC) differ in the last bit of some sinf/cosf values, and
+//   the engine's float result equals its double function rounded to float;
+// - elsewhere: the engine and this library share the system's C library, whose sinf/cosf are not always the double
+//   function rounded, so its sinf/cosf are called themselves.
 float fsin(float x) {
+#ifdef _WIN32
 	return float(dsin(double(x)));
+#else
+	return ::sinf(x);
+#endif
 }
 
 float fcos(float x) {
+#ifdef _WIN32
 	return float(dcos(double(x)));
+#else
+	return ::cosf(x);
+#endif
 }
 
 Basis axis_angle(const Vector3 &axis, float angle) {

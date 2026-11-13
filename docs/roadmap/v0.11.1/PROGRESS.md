@@ -323,3 +323,14 @@ path (owner L16: the C++ need not match the GDScript bit for bit), six never-wri
   PERF_W8's build again back to back (8.9 ms today against 8.7 for the final code): the machine, not the code. 120
   swarmers 18.3 → 15.7 ms back to back. The owner's folder fast-forwarded to the pushed head, its library rebuilt,
   imported twice, a 600-frame headless boot exit 0; `project.godot` untouched.
+- 2026-11-13 (lead): the PR's first CI run (`43029669833`, on `e53b3e15`): prepare (the library built on Linux),
+  checks (**the native sim fixtures give the Windows values on Linux gcc**), e2e 263, presentation 1,570, sim_a
+  1,160, sim_b 1,174 and sim_c 21 green; **`rest` red, 532 of 533:** `test_native_crowd.gd`,
+  `test_the_native_avatars_draw_the_script_avatars_bodies`, frame 0: one float of a body's rotation, -0.16491319
+  against -0.1649132 (its last bit). Cause: `zd_avatar.cpp` took the engine's float sine and cosine as its double
+  function rounded to float, which holds on Windows and not on Linux (glibc's `sinf`/`cosf` are not always the double
+  rounded). Fix: on Linux the library calls `sinf`/`cosf` themselves (the C library it shares with the engine);
+  Windows unchanged (native tests 32/32, exit 0, here). Presentation only: the sim never used these. The owner asked
+  for the fix and the merge ("fix the errors on the PR and merge when ready"). `tests/MIN_TEST_COUNT` 3,292 → 4,720,
+  the passing total of that run. Built in a new worktree (`wt-ci`): `lead-merge` in `wt-seams` holds another
+  session's unpushed steps 63 and 64 (the Twin Wardens' animations), which are not in the PR.
