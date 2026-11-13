@@ -43,3 +43,11 @@ export ZD_ANIM_DIR=build/anim/twin_warden            # the work folder: src.blen
 A new move that should reuse an animation needs only a row in the avatar's `OWNER_PLAYS` (the clip's name, the
 animation, the seconds of its strike pose and of the end of its active part). A new animation is a new pose function
 in `warden_anim.py`, keyed like the others; the bones are already there for it.
+
+## The other bosses
+
+Each has its own folder here: `clockwork_judge/`, `tidecaller/`, `warlord/`, `lantern_shade/`. A folder is the set of scripts its model was built with, kept as it was run: its own copies of `zdlib.py`, `poser.py`, `preview.py`, `closeup.py` and `export.py` (they differ from the ones above: other camera sizes, extra pose operations) beside its `<boss>_rig.py` and `<boss>_anim.py`. They take the folder above `scripts/` as the work folder, so to rebuild a model copy its folder to `build/anim/<boss>/scripts/`, put the delivered model's `src.blend` beside it (see `import_src.py`) and run the rig, then the animation, then the export, as for the Wardens.
+
+What they add to the method: hard-surface pieces picked by flooding the welded mesh inside boxes and cut free with their own seam vertices (the Judge); a model skinned as one fused surface with rigid pieces picked by position and texture colour (the Tidecaller); a delivered skeleton kept, its names and rests unchanged, with bones added (the Warlord); everything that hangs simulated as springs and pendulums over the frames and baked to keys (the Lantern Shade, the Tidecaller's bell).
+
+In the game a file's animation writes the bones it keys and the code clips that still play (flinch, stagger, roar, a shield lift) are added on top (`BonePoser.lay_over`), so an animation needs no track for what the code should own.
