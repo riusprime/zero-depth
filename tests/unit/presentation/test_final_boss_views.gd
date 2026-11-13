@@ -1,10 +1,11 @@
 extends GutTest
 ## The final boss read in 3D, from the sim (EI-07). The Colossus plays its file's animations: one per strike of its
 ## combo (the right hook, the left, then the slam), its break through the shatter (held folded until it is removed)
-## and its rise over the intro, on the floor; its crystals turn about their own lengths; every body has the clips its moves need; a body shatters in place and bursts into shards the next one rises
-## from; the boss bar is one bar in three named segments; the arena is drawn round (its wall ring, seating, pillars,
-## braziers, sealed gate) from the sim's ring; the Colossus's spikes erupt as stone spikes, its boulders fly as 3D
-## boulders, its swings throw dust arcs.
+## and its rise over the intro, on the floor; its crystals turn about their own lengths; every body has the clips its
+## moves need; a body shatters in place and bursts into shards the next one rises from; the boss bar is one bar in
+## three named segments; the arena is drawn round (its wall ring, seating, pillars, braziers, sealed gate) from the
+## sim's ring; the Colossus's spikes erupt as stone spikes, its boulders fly as 3D boulders, its swings throw dust
+## arcs.
 
 const LONG := 1 << 24
 const DT := 1.0 / 60.0
