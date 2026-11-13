@@ -25,13 +25,13 @@ const SPECS := {
 	&"warlord": {"yaw": 0.0, "height": 2.7, "skinned": true},
 	&"hive_lens": {"yaw": 0.0, "height": 2.08, "lift": 0.62, "skinned": true},
 	&"foundry": {"yaw": 0.0, "height": 2.6},
-	# FINAL_BOSS.md "The models"; evidence/FINAL_BOSS_1.md: the final boss's three bodies, split from the
-	# owner's one file, all facing +X as split (raw renders). The Colossus 3.2 m to its halo; the Prism 3.0 m to its
-	# crown, floating (lift) above its hanging shards; the Nemesis, the hero's small shadow, 1.5 m.
+	# The final boss's three bodies (FINAL_BOSS.md "The models"), all facing +X: each is one mesh skinned to a full
+	# skeleton that carries its animations (scripts/assets/boss_anim/final_colossus, final_prism, final_nemesis). The
+	# Colossus 3.2 m to its halo; the Prism 3.0 m to its crown, floating (lift) above its hanging shards; the
+	# Nemesis, the hero's small shadow, 1.5 m.
 	&"final_boss_colossus": {"yaw": 0.0, "height": 3.2, "final": true, "skinned": true},
-	# The Prism is one mesh skinned to a full skeleton that carries its animations (scripts/assets/boss_anim/
-	# final_prism). Its box is centred on its floating crystals, which hang wider on its left: it stands by the bone
-	# its figure is built on (axis), so the figure, not the crystals' box, is over the boss's place.
+	# The Prism's box is centred on its floating crystals, which hang wider on its left: it stands by the bone its
+	# figure is built on (axis), so the figure, not the crystals' box, is over the boss's place.
 	&"final_boss_prism":
 	{"yaw": 0.0, "height": 3.0, "lift": 0.35, "final": true, "skinned": true, "axis": &"body"},
 	&"final_boss_nemesis": {"yaw": 0.0, "height": 1.5, "final": true, "skinned": true},
@@ -137,7 +137,7 @@ static func _convert(scene: PackedScene, spec: Dictionary, id: StringName) -> Di
 			ts[k + 2] = t.z
 		arrays[Mesh.ARRAY_TANGENT] = ts
 	# The rig: bones and weights from the mesh's geometry, written into the mesh (4 per vertex).
-	var rig := BossRig.build(id, verts, _indices(arrays))
+	var rig := BossRig.build(id, verts)
 	arrays[Mesh.ARRAY_BONES] = rig.bone_ids
 	arrays[Mesh.ARRAY_WEIGHTS] = rig.weights
 	var out := ArrayMesh.new()

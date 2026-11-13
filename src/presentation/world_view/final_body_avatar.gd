@@ -19,10 +19,14 @@ const SHATTER_GLOW := 0.5
 const SHATTER_SHAKE := 0.09
 const SHATTER_SINK := 0.25
 ## The clip a file's break animation replaces, played 0..1 over the shatter; the share of the shatter it blends in
-## over (an attack cut short by the last hit eases into it); the tremble left under it (a share of SHATTER_SHAKE).
+## over (an attack cut short by the last hit, or an idle anywhere in its loop, eases into it); the tremble left under
+## it (a share of SHATTER_SHAKE), and how much of that is left at the shatter's end: it eases off over the last
+## third (from BREAK_HELD_FROM), so the pose the animation ends in and holds is nearly still.
 const SHATTER_CLIP := &"shatter"
-const SHATTER_BLEND := 0.07
+const SHATTER_BLEND := 0.1
 const BREAK_SHAKE := 0.35
+const BREAK_HELD_SHAKE := 0.15
+const BREAK_HELD_FROM := 2.0 / 3.0
 ## The share of a file's rise animation that plays over the intro; the rest plays over the rise's flourish.
 const RISE_INTRO_SHARE := 0.55
 
@@ -118,7 +122,10 @@ func _pose_rig(dt: float) -> void:
 	if not acted:
 		pivot.position.y -= SHATTER_SINK * k
 	if not ViewPrefs.reduced_motion:
-		var shake := SHATTER_SHAKE * (BREAK_SHAKE if acted else 1.0)
+		var shake := SHATTER_SHAKE
+		if acted:
+			var held := smoothstep(BREAK_HELD_FROM, 1.0, _shatter)
+			shake *= BREAK_SHAKE * lerpf(1.0, BREAK_HELD_SHAKE, held)
 		pivot.position += Vector3(sin(_t * 53.0), 0.0, cos(_t * 47.0)) * shake * k
 
 

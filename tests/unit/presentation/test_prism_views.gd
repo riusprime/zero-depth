@@ -282,7 +282,7 @@ func test_the_firing_flash_is_drawn_on_a_crystal_and_the_aim_line_stays_on_the_s
 
 func test_she_stays_over_the_boss_through_the_fight_her_forming_and_her_breaking() -> void:
 	var a := _avatar()
-	# She forms: the sim's 1 s intro, then the flourish. "form" plays; she is on the floor, not under it.
+	# She forms over the sim's 1 s intro: "form" plays; she is on the floor, not under it.
 	var worst := 0.0
 	var low := 0.0
 	var spawn := {"pos": Vector2.ZERO, "state": WorldReader.STATE_SPAWN}
@@ -299,7 +299,7 @@ func test_she_stays_over_the_boss_through_the_fight_her_forming_and_her_breaking
 			var rest_k := a.skeleton.find_bone("head")
 			var rest_y := (a._skel_to_model() * a.skeleton.get_bone_global_rest(rest_k).origin).y
 			assert_lt(_height_of(a, "head"), rest_y * 0.9, "she starts folded low")
-	assert_almost_eq(a.animator.slot_t[BossAnimator.RISE], 0.55, 0.01, "55 % of it over the intro")
+	assert_almost_eq(a.animator.slot_t[BossAnimator.RISE], 1.0, 0.01, "all of it over the intro")
 	for t in 70:
 		a.apply_state({"tick": 61 + t, "pos": Vector2.ZERO, "state": WorldReader.STATE_MOVE})
 		a.advance(DT)

@@ -51,10 +51,6 @@ const OWNER_PLAYS := {
 const FLARE_SWELL := 0.7
 const STAND_IN_RING := 1.4
 const STAND_IN_TURN_SECONDS := 10.0
-## Seconds the shatter's animation takes to blend in over whatever she was doing (it starts on the idle's first
-## frame, and the idle may be anywhere in its loop), of the seconds the sim holds her shattering.
-const SHATTER_BLEND := 0.15
-const SHATTER_SECONDS := 1.5
 
 var stand_in := Node3D.new()
 var _stand_shards: Array[Node3D] = []
@@ -102,6 +98,12 @@ func _stride() -> float:
 ## The length the file's idle was made at, so it plays as made.
 func _idle_seconds() -> float:
 	return 10.0
+
+
+## All of "form" plays over the intro: her crystals leave the floor in its second half, so she floats whole as the
+## last body's shards finish sinking into her and before her first crystal can fire.
+func _rise_intro_share() -> float:
+	return 1.0
 
 
 func _weak_point_at() -> Vector3:
@@ -263,32 +265,15 @@ func _pose(dt: float) -> void:
 		n.scale = Vector3.ONE * (1.0 + FLARE_SWELL * _flares[k])
 
 
-## She forms where the last body broke, in sight: the file's "form" starts her folded and low on the floor, so she is
-## not also lifted out of the ground (the base's rise is held done), and "form" follows the sim's intro tick by tick.
-func _advance_clips(dt: float, spawning: bool) -> void:
-	super(dt, spawning)
-	if imported == null or (spawning and _intro < 0.0):
-		return
-	if spawning:
-		_rise_t = 0.55 * clampf(_intro, 0.0, 1.0)
-	_rise = 1.0
-
-
-## The idle loop starts as the rise ends, so "form" runs into it without a jump. While the sim holds her shattering,
-## the file's "break" plays over everything else, by the shatter's own progress, and holds its end.
+## The idle loop starts as the rise ends, so "form" runs into it without a jump.
 func _animate(dt: float) -> void:
 	super(dt)
-	var an := animator
 	if _rise_t < 1.0:
 		_idle_from = _t
-	an.set_layer(BossAnimator.IDLE, &"idle", (_t - _idle_from) / _idle_seconds(), 1.0 - _walk)
-	if _shatter > 0.0:
-		var w := minf(1.0, _shatter * SHATTER_SECONDS / SHATTER_BLEND)
-		an.set_layer(BossAnimator.DEATH, &"shatter", _shatter, w)
+	animator.set_layer(BossAnimator.IDLE, &"idle", (_t - _idle_from) / _idle_seconds(), 1.0 - _walk)
 
 
-## After the clips: the firing crystal swells and the body pulses. The file's "break" already sinks her into a heap,
-## so FinalBodyAvatar's own sink is taken back out.
+## After the clips: the firing crystal swells and the body pulses.
 func _pose_final(dt: float) -> void:
 	_advance_flares(dt)
 	var p := poser
@@ -298,8 +283,6 @@ func _pose_final(dt: float) -> void:
 		if _flares[k] > 0.001:
 			p.stretch(_crystal_names[k], 1.0 + FLARE_SWELL * _flares[k])
 	_pose_pulse()
-	if _shatter > 0.0 and pivot != null:
-		pivot.position.y += SHATTER_SINK * _shatter * _shatter
 
 
 ## The pulse clip on the body as a crystal fires.

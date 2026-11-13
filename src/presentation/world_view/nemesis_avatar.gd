@@ -41,8 +41,6 @@ const DASH_IN_RATE := 2.0
 const DASH_CUT_RATE := 6.0
 ## The bone its weapon is held on (the right hand: it carries no skin, it is the mount).
 const GRIP := &"hand_R"
-## The metres BossAvatar sinks a rising body under the floor: undone here, its rise is acted on the floor.
-const RISE_DEPTH := 3.2
 const MODEL_CHEST := Vector3(0.25, 0.9, 0.0)
 const CLOAK := Color("#2B2530")
 const EYE := Color("#FF3A3A")
@@ -214,16 +212,6 @@ func _animate(dt: float) -> void:
 func _after_bones() -> void:
 	if _grip >= 0:
 		weapon.transform = _skel_in_pivot * skeleton.get_bone_global_pose(_grip) * _grip_fix
-
-
-## The owner's model acts its rise on the floor (the file's "form" starts on one knee), so the base's rise out of
-## the ground is taken back off.
-func advance(delta: float) -> void:
-	super(delta)
-	if delta <= 0.0 or parts == null or imported == null or _rise >= 1.0:
-		return
-	var under := 1.0 - _rise
-	model.position.y += RISE_DEPTH * under * under * (3.0 - 2.0 * under)
 
 
 func _extra_glow() -> float:
