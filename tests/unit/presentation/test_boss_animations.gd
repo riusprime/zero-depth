@@ -469,8 +469,8 @@ func test_sync_reads_the_attack_timing_and_writes_nothing_back() -> void:
 # --- v0.11.0 O16 (owner Q11: "right now the animation feels too stiff"; Q30: "all bosses") ------------------------
 
 
-## Every boss library O16 loosened (the Twin Wardens were loosened by hand in O16a; the Tidecaller's stance and moves
-## are its file's animations, which gather and recoil in their own keys).
+## Every boss library O16 loosened (the Twin Wardens were loosened by hand in O16a; the Tidecaller's and the Colossus's
+## stances and moves are their files' animations, which gather and recoil in their own keys).
 func _loose_libraries() -> Dictionary:
 	return {
 		&"gatekeeper": GatekeeperClips.library(),
@@ -481,7 +481,6 @@ func _loose_libraries() -> Dictionary:
 		&"foundry": FoundryClips.library(),
 		&"lantern_shade": LanternShadeClips.library(),
 		&"clockwork_judge": ClockworkJudgeClips.library(),
-		&"colossus": ColossusClips.library(),
 		&"prism": PrismClips.library(),
 		&"nemesis": NemesisClips.library(),
 	}

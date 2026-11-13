@@ -1,7 +1,7 @@
 extends GutTest
-## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F2-F4): the final boss read in 3D, from the sim (EI-07). The Colossus's
-## fists are cut from its mesh as the separate pieces they are and swing on their own (right, left, then both in the
-## slam); every body has the clips its moves need; a body shatters in place and bursts into shards the next one rises
+## The final boss read in 3D, from the sim (EI-07). The Colossus plays its file's animations: one per strike of its
+## combo (the right hook, the left, then the slam), its break through the shatter (held folded until it is removed)
+## and its rise over the intro, on the floor; its crystals turn about their own lengths; every body has the clips its moves need; a body shatters in place and bursts into shards the next one rises
 ## from; the boss bar is one bar in three named segments; the arena is drawn round (its wall ring, seating, pillars,
 ## braziers, sealed gate) from the sim's ring; the Colossus's spikes erupt as stone spikes, its boulders fly as 3D
 ## boulders, its swings throw dust arcs.
@@ -35,28 +35,68 @@ func _avatar(cls: Variant) -> BossAvatar:
 	return a
 
 
-func test_the_colossus_fists_are_their_own_pieces() -> void:
+func test_the_colossus_plays_its_files_animations() -> void:
 	var m := BossModels.get_model(&"final_boss_colossus")
 	assert_false(m.is_empty(), "the owner's Colossus is installed")
-	var rig: BossRig = m["rig"]
-	for bone: StringName in [&"body", &"chest", &"halo", &"fist_l", &"fist_r"]:
-		assert_gte(rig.index_of(bone), 0, "its rig has %s" % bone)
-	var verts: PackedVector3Array = (m["arrays"] as Array)[Mesh.ARRAY_VERTEX]
-	var counts := {}
-	var side := {}
-	for k in verts.size():
-		var b := rig.bone_ids[k * 4]
-		if rig.weights[k * 4] < 0.999:
-			continue
-		counts[b] = int(counts.get(b, 0)) + 1
-		side[b] = float(side.get(b, 0.0)) + verts[k].z
-	var l := rig.index_of(&"fist_l")
-	var r := rig.index_of(&"fist_r")
-	assert_gt(int(counts.get(l, 0)), 1000, "the left fist's piece moves with its bone alone")
-	assert_gt(int(counts.get(r, 0)), 1000, "and the right's")
-	assert_lt(float(side[l]) / counts[l], -0.5, "the left fist is on the left (-Z)")
-	assert_gt(float(side[r]) / counts[r], 0.5, "the right on the right")
-	assert_gt(int(counts.get(rig.index_of(&"halo"), 0)), 200, "the halo is its own piece")
+	assert_true(bool(m.get("skinned", false)), "kept as delivered: its own skeleton and skin")
+	var a := _avatar(ColossusAvatar) as ColossusAvatar
+	assert_eq(a.skeleton.get_bone_count(), 57, "its full skeleton")
+	for clip: StringName in [
+		&"idle",
+		&"walk",
+		&"flinch",
+		&"stagger",
+		&"roar",
+		&"rise",
+		&"combo",
+		&"combo_l",
+		&"combo_slam",
+		&"leap",
+		&"marks",
+		&"spike_chase",
+		&"spike_burst",
+		FinalBodyAvatar.SHATTER_CLIP,
+	]:
+		assert_true(a.animator.owner_has(clip), "%s plays an animation of its file" % clip)
+	for clip: StringName in [&"death", &"shielded"]:
+		assert_false(a.animator.owner_has(clip), "%s stays a code clip" % clip)
+	# Every bone the code names is in the file (a turn on a missing bone does nothing, silently).
+	var named: Array[StringName] = [&"halo", &"chest", ColossusClips.FIST_L, ColossusClips.FIST_R]
+	for row: Array in ColossusAvatar.SPIKES:
+		named.append(row[0])
+	named.append(a._weak_bone())
+	for bone in named:
+		assert_true(a.poser.has_bone(bone), "the skeleton has %s" % bone)
+	# The anchors ride their bones: a fist's anchor is at its palm, the left on the left (-Z).
+	_settle(a, {"state": WorldReader.STATE_MOVE})
+	assert_lt(a.anchor(&"fist_l").z, -1.0, "the left fist's anchor on the left")
+	assert_gt(a.anchor(&"fist_r").z, 1.0, "the right's on the right")
+	assert_gt(a.anchor(&"halo").y, 3.5, "the halo's over the hood")
+	# A combo clip's time is its animation's time over its length, so the strike pose is the animation's.
+	for clip: StringName in [&"combo", &"combo_l", &"combo_slam"]:
+		var c: BossClip = a.animator.clips[clip]
+		var spec: Dictionary = ColossusAvatar.OWNER_PLAYS[clip]
+		var anim: Animation = a.animator._owner[clip][0]
+		for t: float in [0.2, c.strike, 0.5, c.hold, 0.9]:
+			assert_almost_eq(
+				BossAnimator.owner_time(anim, c, t, spec["strike"], spec["recover"]),
+				t * anim.length,
+				0.001,
+				"%s runs evenly at %.2f" % [clip, t]
+			)
+	# It floats: one loop of its glide takes 3 s at its walk speed, and its idle is the file's 4 s.
+	assert_almost_eq(a._stride() / a._walk_speed(), 3.0, 0.001)
+	assert_almost_eq(a._idle_seconds(), 4.0, 0.001)
+
+
+## Holds a plain state for `frames` frames (the layers fade in), from tick `from`.
+func _settle(a: BossAvatar, s: Dictionary, frames: int = 30, from: int = 1) -> void:
+	for t in frames:
+		var d := s.duplicate()
+		d["tick"] = from + t
+		d["pos"] = Vector2.ZERO
+		a.apply_state(d)
+		a.advance(DT)
 
 
 func test_the_final_models_load_only_where_the_fight_is() -> void:
@@ -92,22 +132,17 @@ func test_every_body_has_the_clips_its_moves_need() -> void:
 				assert_almost_eq(c.value(k, 1.0), 0.0, 0.001, "%s %s ends at rest" % [id, c.name])
 
 
-## How far a bone is turned from its rest (radians).
-func _turn(a: BossAvatar, bone: StringName) -> float:
-	var k := a.skeleton.find_bone(String(bone))
-	var rest := a.skeleton.get_bone_rest(k).basis.get_rotation_quaternion()
-	return a.skeleton.get_bone_pose_rotation(k).angle_to(rest)
-
-
-func test_the_combo_swings_right_then_left_then_slams_with_both() -> void:
-	var w := _arena(202)
+## Runs a combo in the sim and returns, per strike, what the avatar showed on the tick it landed:
+## [the attack layer's clip, its time over its strike's, the left fist's anchor, the right's]; and under &"after",
+## ten ticks on: [the clip, the sim state, the clip's time].
+func _combo_strikes(attack: StringName, seed_value: int) -> Dictionary:
+	var w := _arena(seed_value)
 	FinalLab.past_rise(w)
 	var i := FinalLab.body(w)
 	w.actors.set_pos(i, Vector2.ZERO)
 	w.actors.set_pos(0, Vector2(3, 0))
 	var t := BossAi.table_of(w, i)
-	var k := t.attack_index(&"fist_combo_3")
-	BossAi.start_attack(w, i, k)
+	BossAi.start_attack(w, i, t.attack_index(attack))
 	w.bosses.chained[BossAi.entry_of(w, i)] = 1
 	var reader := WorldReader.new(w)
 	var a := _avatar(ColossusAvatar)
@@ -123,12 +158,195 @@ func test_the_combo_swings_right_then_left_then_slams_with_both() -> void:
 		var tg := reader.telegraph(i)
 		var s := int(tg.get("strike", -1))
 		if tg.get("striking", false) and not at.has(s):
-			at[s] = [_turn(a, &"fist_l"), _turn(a, &"fist_r")]
-	assert_eq(at.size(), 4, "four strikes seen")
-	assert_gt(at[0][1], at[0][0] + 0.3, "the first swing is the right fist's")
-	assert_gt(at[1][0], at[1][1] + 0.3, "the second the left's")
-	assert_gt(at[3][0], 0.5, "the slam: the left fist down")
-	assert_gt(at[3][1], 0.5, "and the right")
+			var c := a.animator.action_clip()
+			at[s] = [
+				c.name,
+				a.animator.action_time() / c.strike,
+				a.anchor(&"fist_l"),
+				a.anchor(&"fist_r")
+			]
+	for n in 10:
+		a.sync(reader, i)
+		a.advance(DT)
+		w.step(InputFrame.new())
+		i = FinalLab.body(w)
+	at[&"after"] = [a.animator.action_clip().name, w.actors.state[i], a.animator.action_time()]
+	return at
+
+
+func test_the_combo_swings_right_then_left_then_slams_with_both() -> void:
+	var cases := {
+		&"fist_combo": [&"combo", &"combo_l", &"combo_slam"],
+		&"fist_combo_3": [&"combo", &"combo_l", &"combo", &"combo_slam"],
+	}
+	var seed_value := 202
+	for attack: StringName in cases:
+		var want: Array = cases[attack]
+		var at := _combo_strikes(attack, seed_value)
+		seed_value += 10
+		assert_eq(at.size() - 1, want.size(), "%s: every strike seen" % attack)
+		for k in want.size():
+			if not at.has(k):
+				continue
+			assert_eq(at[k][0], want[k], "%s strike %d plays %s" % [attack, k, want[k]])
+			assert_almost_eq(float(at[k][1]), 1.0, 0.001, "its strike pose on the tick it lands")
+			var l: Vector3 = at[k][2]
+			var r: Vector3 = at[k][3]
+			match want[k]:
+				&"combo":
+					assert_gt(
+						r.x, l.x + 1.5, "%s strike %d: the right fist is across" % [attack, k]
+					)
+				&"combo_l":
+					assert_gt(l.x, r.x + 1.5, "%s strike %d: the left fist is across" % [attack, k])
+				&"combo_slam":
+					assert_lt(maxf(l.y, r.y), 1.0, "%s: both fists down in the slam" % attack)
+					assert_gt(minf(l.x, r.x), 1.5, "and before it")
+		var after: Array = at[&"after"]
+		assert_eq(after[1], EnemyAi.State.RECOVER, "%s: recovering after the slam" % attack)
+		assert_eq(after[0], &"combo_slam", "the slam's clip plays on through the recovery")
+		var slam: BossClip = ColossusClips.library()[&"combo_slam"]
+		assert_gt(float(after[2]), slam.strike, "past its strike pose")
+
+
+func test_the_colossus_breaks_through_its_shatter_and_holds_the_fold() -> void:
+	ViewPrefs.reduced_motion = true  # No tremble: the poses compare exactly
+	var a := _avatar(ColossusAvatar) as ColossusAvatar
+	_settle(a, {"state": WorldReader.STATE_MOVE})
+	var stood := a.anchor(&"halo").y
+	var fist_stood := a.anchor(&"fist_r").y
+	assert_true(a.plays_break(), "its file acts the break out")
+	_settle(a, {"state": WorldReader.STATE_SHATTER, "shatter": 0.5}, 5, 40)
+	var an := a.animator
+	assert_eq(an.slot_clip[BossAnimator.DEATH].name, FinalBodyAvatar.SHATTER_CLIP)
+	assert_almost_eq(an.slot_t[BossAnimator.DEATH], 0.5, 0.001, "the break follows the shatter")
+	assert_almost_eq(a.pivot.position.y, 0.0, 0.001, "the animation sinks it: no sink added")
+	_settle(a, {"state": WorldReader.STATE_SHATTER, "shatter": 1.0}, 5, 50)
+	var chest := a.skeleton.find_bone("chest")
+	var held := a.skeleton.get_bone_global_pose(chest)
+	var l := a.anchor(&"fist_l")
+	var r := a.anchor(&"fist_r")
+	assert_lt(a.anchor(&"halo").y, stood - 1.0, "it ends folded low")
+	assert_lt(maxf(l.y, r.y), fist_stood - 1.0, "its fists on the floor")
+	assert_almost_eq(l.z, -1.3 * BossModels.SIZE_SCALE, 0.12, "1.3 m to its left")
+	assert_almost_eq(r.z, 1.3 * BossModels.SIZE_SCALE, 0.12, "and to its right")
+	assert_almost_eq(r.x, 0.5 * BossModels.SIZE_SCALE, 0.12, "half a metre forward")
+	assert_gt(a.glow_amount(), 0.3, "glowing from inside")
+	# Held: more frames at the shatter's end leave the fold where it is.
+	_settle(a, {"state": WorldReader.STATE_SHATTER, "shatter": 1.0}, 20, 60)
+	var later := a.skeleton.get_bone_global_pose(chest)
+	assert_almost_eq(later.origin.distance_to(held.origin), 0.0, 0.0005, "the fold holds")
+	assert_almost_eq(later.basis.y.dot(held.basis.y), 1.0, 0.0005)
+	assert_almost_eq(a.anchor(&"fist_r").distance_to(r), 0.0, 0.005, "the fists stay down")
+	assert_false(a.die(), "a shattered body leaves at once")
+	# With motion on, a light tremble is left under the animation.
+	ViewPrefs.reduced_motion = false
+	_settle(a, {"state": WorldReader.STATE_SHATTER, "shatter": 1.0}, 3, 90)
+	var shake := Vector2(a.pivot.position.x, a.pivot.position.z).length()
+	assert_lt(shake, FinalBodyAvatar.SHATTER_SHAKE * 0.75, "a reduced tremble")
+	assert_almost_eq(a.pivot.position.y, 0.0, 0.001)
+
+
+func test_a_body_without_a_break_shatters_as_before() -> void:
+	ViewPrefs.reduced_motion = true
+	var a := _avatar(NemesisAvatar) as FinalBodyAvatar
+	assert_false(a.plays_break(), "the Nemesis's file has no break")
+	_settle(a, {"state": WorldReader.STATE_MOVE})
+	var y := a.pivot.position.y
+	_settle(a, {"state": WorldReader.STATE_SHATTER, "shatter": 1.0}, 3, 40)
+	assert_almost_eq(a.pivot.position.y, y - FinalBodyAvatar.SHATTER_SINK, 0.03, "it sinks")
+	assert_eq(a.animator.slot_w[BossAnimator.DEATH], 0.0, "no clip plays over its shatter")
+
+
+func test_the_colossus_gathers_itself_off_the_floor_over_its_intro() -> void:
+	var a := _avatar(ColossusAvatar) as ColossusAvatar
+	var seen := {}
+	for intro: float in [0.0, 0.5, 1.0]:
+		_settle(a, {"state": WorldReader.STATE_SPAWN, "intro": intro}, 4, int(intro * 60) + 1)
+		assert_almost_eq(a.model.position.y, 0.0, 0.001, "on the floor, never under it")
+		assert_almost_eq(
+			a.animator.slot_t[BossAnimator.RISE], intro, 0.001, "the rise is the intro"
+		)
+		seen[intro] = [a.anchor(&"halo").y, a.anchor(&"fist_r").y]
+	assert_lt(seen[0.0][0], 2.4, "it starts low and hunched")
+	assert_lt(seen[0.0][1], 0.8, "its fists on the floor")
+	assert_gt(seen[0.5][0], 3.5, "the torso is up by the middle")
+	_settle(a, {"state": WorldReader.STATE_MOVE}, 1, 70)
+	var stands := a.anchor(&"halo").y
+	assert_almost_eq(float(seen[1.0][0]), stands, 0.08, "it stands as the intro ends")
+	assert_eq(a.animator.slot_w[BossAnimator.RISE], 0.0, "and the rise is over")
+
+
+## A bone's pose now in the skeleton's space.
+func _global(a: BossAvatar, bone: StringName) -> Transform3D:
+	return a.skeleton.get_bone_global_pose(a.skeleton.find_bone(String(bone)))
+
+
+func test_each_crystal_turns_about_its_own_length_with_its_point_still() -> void:
+	var a := _avatar(ColossusAvatar) as ColossusAvatar
+	_settle(a, {"state": WorldReader.STATE_MOVE})
+	# The same frame posed at two shares of a turn: only the crystals' own turn differs.
+	a._spin = 0.0
+	a._pose_any(0.0)
+	var before := {}
+	for row: Array in ColossusAvatar.SPIKES:
+		before[row[0]] = _global(a, row[0])
+	a._spin = 0.25
+	a._pose_any(0.0)
+	for row: Array in ColossusAvatar.SPIKES:
+		var was: Transform3D = before[row[0]]
+		var now := _global(a, row[0])
+		assert_almost_eq(now.origin.distance_to(was.origin), 0.0, 0.0001, "%s stays put" % row[0])
+		var axis := was.basis.y.normalized()
+		assert_almost_eq(now.basis.y.normalized().dot(axis), 1.0, 0.0001, "%s: its length" % row[0])
+		var x0 := was.basis.x.normalized()
+		var x1 := now.basis.x.normalized()
+		assert_almost_eq(x1.dot(x0), 0.0, 0.001, "%s: a quarter turn" % row[0])
+		assert_almost_eq(
+			x0.cross(x1).dot(axis), float(row[1]), 0.001, "%s: its own way round" % row[0]
+		)
+	# One turn in ten seconds of frame time, whatever plays; still with reduced motion.
+	a._spin = 0.0
+	for n in 150:
+		a.advance(DT)
+	assert_almost_eq(a._spin, 0.25, 0.002, "a quarter turn in 2.5 s")
+	_settle(a, {"state": WorldReader.STATE_SHATTER, "shatter": 0.5}, 60, 200)
+	assert_almost_eq(a._spin, 0.35, 0.002, "a clip never resets it")
+	ViewPrefs.reduced_motion = true
+	for n in 60:
+		a.advance(DT)
+	assert_almost_eq(a._spin, 0.35, 0.002, "still with reduced motion")
+	# The point of each crystal lies on its bone's Y, so the turn leaves it in place.
+	var arrays := a.imported.mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+	var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+	var per := bones.size() / verts.size()
+	var skin := a.imported.skin
+	var of_bind := {}
+	for j in skin.get_bind_count():
+		var bone := skin.get_bind_bone(j)
+		var bone_name := (
+			StringName(a.skeleton.get_bone_name(bone)) if bone >= 0 else skin.get_bind_name(j)
+		)
+		for row: Array in ColossusAvatar.SPIKES:
+			if row[0] == bone_name:
+				of_bind[j] = bone_name
+	assert_eq(of_bind.size(), ColossusAvatar.SPIKES.size(), "every crystal has its own bone's skin")
+	var tips := {}
+	for v in verts.size():
+		for j in per:
+			var b := bones[v * per + j]
+			if weights[v * per + j] > 0.9 and of_bind.has(b):
+				var p := skin.get_bind_pose(b) * verts[v]
+				if not tips.has(of_bind[b]) or absf(p.y) > absf((tips[of_bind[b]] as Vector3).y):
+					tips[of_bind[b]] = p
+	for row: Array in ColossusAvatar.SPIKES:
+		var tip: Vector3 = tips.get(row[0], Vector3.ZERO)
+		assert_gt(absf(tip.y), 0.03, "%s has a point" % row[0])
+		assert_lt(
+			Vector2(tip.x, tip.z).length(), absf(tip.y) * 0.05, "%s: its point on the axis" % row[0]
+		)
 
 
 func test_a_body_shatters_in_place_and_the_next_rises_from_its_shards() -> void:
