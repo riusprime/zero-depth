@@ -8,16 +8,33 @@ extends BossAvatar
 ## flood), couches the spear for the lunge (the charge) and draws it back to throw for the javelin rain (the
 ## barrage). While its weak point is open the shield is lifted up and aside, baring the gold core on its chest (the
 ## sim drops its front armour then); staggered, it reels with both arms low.
-## The owner's model (assets/models/bosses/warlord.glb, rigged by the owner: a 41-joint Tripo skeleton)
-## replaces the code-built body, which stays as the fallback when the file is missing. It is posed from its bones,
-## one function per layer (_pose_rig): breath and sway, a walk cycle from its speed (legs, knees, counter-swinging
-## arms), the shield carried in front and lifted aside while the weak point is open, the spear raised and planted,
-## couched and thrust, drawn back and thrown, a lunge lean, a flinch when hit, the stagger's reel, a fall when it
-## dies, and the "shielded" hook (braced low behind the shield).
+## The owner's model (assets/models/bosses/warlord.glb, rigged by the owner: a 41-joint Tripo skeleton, with 17 bones
+## added for the spear, the shield, the shoulder plates, the cape, the tabard and the plume) replaces the code-built
+## body, which stays as the fallback when the file is missing. The file carries its own animations
+## (scripts/assets/boss_anim/warlord): its "idle" and "walk" replace the code clips of those names and OWNER_PLAYS
+## says which moves play its thrust, throw, bash, kneel and lunge. The other clips stay code (WarlordClips: the
+## Javelin Rain's throw, the recall, the shielded hold, the flinch, the stagger, the roar, the rise, the death) and
+## are laid over the file's animation (_code_over_file), as is the one layer this adds after them (_pose_rig): the
+## shield lifted up and aside while the weak point is open. The spear's tip and the shield's face ride the spear's
+## and the shield's own bones, which turn in the hand and on the fist.
 
 const HEIGHT := 2.7
 const WALK_SPEED := 2.1
-const STRIDE := 1.5
+## The metres one loop of the file's walk covers at the size the game draws it, so its feet don't slide.
+const STRIDE := 1.13
+## The file's animations by the move that plays them, with the seconds of each one's strike pose and of the end of
+## its active part. Its "idle" and "walk" replace the code clips of those names without a row here.
+const OWNER_PLAYS := {
+	&"pattern": {"anim": &"thrust", "strike": 0.67, "recover": 0.93},
+	&"great_javelin": {"anim": &"throw", "strike": 0.78, "recover": 1.0},
+	&"sweep": {"anim": &"bash", "strike": 0.6, "recover": 0.83},
+	&"flood": {"anim": &"kneel", "strike": 1.47, "recover": 2.07},
+	&"charge": {"anim": &"lunge", "strike": 0.93, "recover": 1.53},
+}
+## The shoulder plates by the arm each hangs from, and the share of a code-made turn of that arm a plate does not
+## follow (the file's animations keep the same share).
+const PLATES := {&"L_Upperarm": &"L_Pauldron", &"R_Upperarm": &"R_Pauldron"}
+const PLATE_SLACK := 0.45
 const HIP_Y := 0.85
 const SHOULDER := Vector3(0.0, 0.95, 0.62)
 
@@ -29,7 +46,7 @@ const RED_DARK := Color("#A9322B")
 const VISOR := Color("#FF2A22")
 const EMBLEM := Color("#FF3A26")
 ## Points on the owner's model at rest (metres, model frame; evidence/BOSS_MODELS.md) and the bones they
-## ride on: the chest's core, the spear's tip (right hand) and the shield's face (left forearm).
+## ride on: the chest's core, the spear's tip (the Spear bone) and the shield's face (the Shield bone).
 const MODEL_WEAK := Vector3(0.42, 1.35, 0)
 const MODEL_SPEAR_TIP := Vector3(0.53, 2.7, 0.81)
 const MODEL_SHIELD := Vector3(0.08, 0.75, -0.93)
@@ -77,13 +94,13 @@ func _anchor(point: StringName) -> Vector3:
 	match point:
 		&"spear_tip":
 			return (
-				_on_bone(&"R_Hand", MODEL_SPEAR_TIP)
+				_on_bone(&"Spear", MODEL_SPEAR_TIP)
 				if imported != null
 				else model.to_local(spear.to_global(Vector3(2.4, 0, 0)))
 			)
 		&"shield":
 			return (
-				_on_bone(&"L_ForearmTwist02", MODEL_SHIELD)
+				_on_bone(&"Shield", MODEL_SHIELD)
 				if imported != null
 				else model.to_local(shield.global_position)
 			)
@@ -283,9 +300,10 @@ func _pose(dt: float) -> void:
 
 
 # --- The owner's model, posed from its bones -------------------------------------------------------
-# Its keyframed clips (WarlordClips) do the moves; this adds the shield's lift while the weak point is
-# open (the sim drops its front armour then), a layer the clips don't know about. Turns are in the model frame: +Z
-# swings a hanging limb forward (and tips the torso back), +X swings it out to the left (-Z), +Y turns it to its left.
+# The file's animations and the code clips (WarlordClips) do the moves; this adds the shield's lift while the weak
+# point is open (the sim drops its front armour then), a layer the clips don't know about. Turns are in the model
+# frame: +Z swings a hanging limb forward (and tips the torso back), +X swings it out to the left (-Z), +Y turns it
+# to its left.
 
 
 func _clip_library() -> Dictionary:
@@ -300,13 +318,26 @@ func _stride() -> float:
 	return STRIDE
 
 
+func _owner_plays() -> Dictionary:
+	return OWNER_PLAYS
+
+
+func _code_over_file() -> bool:
+	return true
+
+
 func _pose_rig(dt: float) -> void:
 	_lift = lerpf(_lift, _weak_shown, _rate(8.0, dt))
 	var k := _lift * (1.0 - maxf(_stagger, _death))
-	if k <= 0.001:
-		return
-	# Lifted up and aside, from the carry: out to the left, turned outward, raised, the forearm up.
-	poser.turn(&"L_Upperarm", Vector3.UP, 0.7 * k)
-	poser.turn(&"L_Upperarm", Vector3.RIGHT, 1.55 * k)
-	poser.turn(&"L_Upperarm", Vector3.BACK, 0.25 * k)
-	poser.turn(&"L_Forearm", Vector3.BACK, 0.35 * k)
+	if k > 0.001:
+		# Lifted up and aside, from the carry: out to the left, turned outward, raised, the forearm up.
+		poser.turn(&"L_Upperarm", Vector3.UP, 0.7 * k)
+		poser.turn(&"L_Upperarm", Vector3.RIGHT, 1.55 * k)
+		poser.turn(&"L_Upperarm", Vector3.BACK, 0.25 * k)
+		poser.turn(&"L_Forearm", Vector3.BACK, 0.35 * k)
+	# A shoulder plate hangs from its upper arm: the file's animations let it follow only part of the arm's swing,
+	# so a code clip's turn of the arm (a roar's raised spear, the lifted shield) is partly taken back out of it.
+	for side: StringName in PLATES:
+		var arm := poser.pending_turn(side)
+		if not arm.is_equal_approx(Quaternion.IDENTITY):
+			poser.turn_by(PLATES[side], Quaternion.IDENTITY.slerp(arm.inverse(), PLATE_SLACK))

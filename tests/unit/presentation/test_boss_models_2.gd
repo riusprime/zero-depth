@@ -77,7 +77,11 @@ func test_each_model_loads_at_its_height_facing_plus_x() -> void:
 
 func test_the_rigged_models_keep_their_skeletons_and_face_plus_x() -> void:
 	var w := _avatar(WarlordAvatar)
-	assert_eq(w.skeleton.get_bone_count(), 41, "the owner's 41 joints")
+	assert_eq(
+		w.skeleton.get_bone_count(),
+		58,
+		"the owner's 41 joints and 17 for its spear, shield and cloth"
+	)
 	assert_true(
 		w.skeleton.get_parent() != null and w.rig == null, "its own skeleton, not a code rig"
 	)
@@ -166,12 +170,11 @@ func test_velocity_moves_the_bones() -> void:
 	var w := _avatar(WarlordAvatar)
 	_drive(w, {"state": WorldReader.STATE_MOVE}, 30)
 	var still := _turned(w, &"L_Thigh")
-	assert_lt(still, 0.01, "standing: the thigh at rest")
 	var most := 0.0
 	for t in 60:
 		_drive(w, {"state": WorldReader.STATE_MOVE, "walk": true}, 1, 30 + t)
 		most = maxf(most, _turned(w, &"L_Thigh"))
-	assert_gt(most, 0.2, "walking swings the thigh")
+	assert_gt(most, still + 0.2, "walking swings the thigh past where it stands")
 	assert_gt(_turned(w, &"R_Upperarm"), 0.0, "and the arms counter-swing")
 	var f := _avatar(FoundryAvatar)
 	var lift := 0.0
@@ -208,23 +211,90 @@ func test_the_attack_phase_moves_the_spear() -> void:
 	var a := _avatar(WarlordAvatar)
 	_drive(a, {"state": WorldReader.STATE_MOVE}, 20)
 	var rest := a.anchor(&"spear_tip")
+	var hip := _at(a, &"Hip").y
+	var head := _at(a, &"Head")
 	_drive(
 		a,
-		{"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_FLOOD, "windup": 0.9},
+		{"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_FLOOD, "windup": 0.7},
 		40,
 		20
 	)
-	assert_gt(_turned(a, &"R_Upperarm"), 1.5, "raised overhead for the spear lines")
+	assert_gt(a.anchor(&"spear_tip").y, rest.y + 0.5, "hoisted high for the spear lines")
 	_drive(a, {"state": WorldReader.STATE_ACTIVE, "move": WorldReader.MOVE_FLOOD}, 20, 60)
-	assert_lt(a.anchor(&"spear_tip").y, 0.8, "planted: the tip at the floor")
+	assert_lt(_at(a, &"Hip").y, hip - 0.2, "driven into the floor on one knee")
 	var b := _avatar(WarlordAvatar)
 	_drive(
-		b, {"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_CHARGE, "windup": 0.9}, 40
+		b, {"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_CHARGE, "windup": 0.99}, 40
 	)
 	var tip := b.anchor(&"spear_tip")
-	assert_gt(tip.x, rest.x + 1.0, "couched: the spear points ahead")
+	assert_gt(tip.x, rest.x + 1.0, "the lunge: the spear points ahead")
 	assert_lt(tip.y, rest.y - 0.8, "and low")
-	assert_gt(_turned(b, &"Spine01"), 0.15, "a lunge lean")
+	assert_gt(_at(b, &"Head").x, head.x + 0.3, "a lunge lean: the head goes forward")
+
+
+## The Warlord's file carries its own animations: the idle, the walk and the five moves WarlordAvatar.OWNER_PLAYS
+## names play them; the other clips stay code and show over the file's idle; a replaced clip keeps its parameters.
+func test_the_warlord_plays_its_files_animations() -> void:
+	var a := _avatar(WarlordAvatar) as WarlordAvatar
+	for clip: StringName in [
+		&"idle", &"walk", &"pattern", &"great_javelin", &"sweep", &"flood", &"charge"
+	]:
+		assert_true(a.animator.owner_has(clip), "%s plays the file's animation" % clip)
+	for clip: StringName in [
+		&"barrage", &"recall", &"shielded", &"flinch", &"stagger", &"roar", &"rise", &"death"
+	]:
+		assert_true(a.animator.has_clip(clip), "%s is still there" % clip)
+		assert_false(a.animator.owner_has(clip), "%s keeps its code clip" % clip)
+	_drive(a, {"state": WorldReader.STATE_MOVE}, 30)
+	var idle_tip := a.anchor(&"spear_tip")
+	var idle_arm := _rot(a, &"R_Upperarm")
+	assert_gt(idle_tip.y, 2.7 * 1.2, "idle: the spear stands upright beside it")
+	# The thrust: the spear levels and drives ahead, turning in the hand, and the anchor goes with the spear.
+	var thrust := {
+		"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_PATTERN, "windup": 0.97
+	}
+	_drive(a, thrust, 30, 30)
+	var tip := a.anchor(&"spear_tip")
+	assert_gt(tip.x, idle_tip.x + 1.0, "the thrust drives the spear's tip ahead")
+	var by_hand := a.model.transform * a._on_bone(&"R_Hand", WarlordAvatar.MODEL_SPEAR_TIP)
+	assert_gt(tip.distance_to(by_hand), 0.3, "the tip rides the spear's own bone, not the hand's")
+	# The kneel's strike: the code clip's tremble still plays under the file's animation.
+	var b := _avatar(WarlordAvatar)
+	_drive(
+		b, {"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_FLOOD, "windup": 0.97}, 30
+	)
+	_drive(b, {"state": WorldReader.STATE_ACTIVE, "move": WorldReader.MOVE_FLOOD}, 1, 30)
+	assert_gt(
+		b.animator.param(&"tremble"), 0.3, "the plant's tremble, a parameter of the code clip"
+	)
+	assert_gt(_at(b, &"Hip").y, 0.3, "its hips stay above the floor on one knee")
+	assert_lt(_at(b, &"Hip").y, _at(a, &"Hip").y - 0.2, "the kneel drops it onto a knee")
+	# A clip that stays code (the Javelin Rain's throw) still moves its bones, over the file's idle.
+	var c := _avatar(WarlordAvatar)
+	_drive(
+		c, {"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_BARRAGE, "windup": 0.8}, 30
+	)
+	assert_eq(c.animator.action_clip().name, &"barrage")
+	assert_gt(_rot(c, &"R_Upperarm").angle_to(idle_arm), 1.5, "the spear arm drawn back to throw")
+	# A shoulder plate follows only part of a code-made swing of its arm.
+	var plate := _rot(c, &"R_Pauldron")
+	assert_gt(plate.angle_to(_rest_rot(c, &"R_Pauldron")), 0.3, "the plate gives against the arm")
+	# The walk's steps match the ground it covers: one loop of the file's walk per STRIDE metres.
+	var d := _avatar(WarlordAvatar)
+	var at_one_second := 0.0
+	for t in 120:
+		var pos := Vector2(WarlordAvatar.WALK_SPEED * DT * (t + 1), 0)
+		d.apply_state({"tick": t + 1, "pos": pos, "state": WorldReader.STATE_MOVE})
+		d.advance(DT)
+		if t == 59:
+			at_one_second = d.animator.slot_t[BossAnimator.WALK]
+	assert_almost_eq(
+		d.animator.slot_t[BossAnimator.WALK] - at_one_second,
+		WarlordAvatar.WALK_SPEED / WarlordAvatar.STRIDE,
+		0.05,
+		"loops of the walk in a second at its move speed"
+	)
+	assert_gt(d.animator.slot_w[BossAnimator.WALK], 0.9, "walking, not idling")
 
 
 func test_the_hive_lens_opens_closes_and_looks_at_the_player() -> void:

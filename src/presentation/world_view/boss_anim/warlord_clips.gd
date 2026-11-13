@@ -1,14 +1,14 @@
 class_name WarlordClips
 extends RefCounted
-## The Warlord's clips (the owner's rigged knight, 41 Tripo joints posed through BonePoser in the model
-## frame). A drilled soldier, so its moves are sharp and committed: a guarded breath with the tower shield carried
-## across its front, a marching walk, the spear raised and thrust forward to loose each wave of the Javelin Fan (and
-## for the Shield Wall, braced behind its shield on bent knees: the shielded hold), the shield drawn back and rammed
-## forward with a step for the bash, the spear hoisted overhead and driven into the floor on one knee for the Spear
-## Lines, the spear couched low for the lunge and thrust at full stretch, the spear drawn back over its shoulder and
-## hurled for the Javelin Rain; a flinch, a reel, a roar with spear and shield raised high, rising from one knee,
-## and a fall onto its back. The shield's lift while the weak point is open stays a procedural layer
-## (WarlordAvatar._pose_rig). The carry pose of the shield arm is in both idle and walk, so it is always there.
+## The Warlord's code clips (the owner's rigged knight, its Tripo joints posed through BonePoser in the model
+## frame). Its file plays its own animations for the idle, the walk, the Javelin Fan, the Great Javelin, the shield
+## bash, the Spear Lines and the lunge (WarlordAvatar.OWNER_PLAYS): of those clips here only the parameters still
+## play with the model (the bash's and the plant's tremble), and their bone tracks pose nothing unless the file is
+## without its animations. The clips that stay code are laid over the file's idle: the spear drawn back over its
+## shoulder and hurled for the Javelin Rain, the recall's reach and pull, the shielded hold on bent knees, a flinch,
+## a reel, a roar with spear and shield raised high, rising from one knee, and a fall onto its back. The shield's
+## lift while the weak point is open stays a procedural layer (WarlordAvatar._pose_rig), which also holds the
+## shoulder plates back from following a code-made swing of the arm in full.
 
 const Z := Vector3(0, 0, 1)
 const X := Vector3(1, 0, 0)

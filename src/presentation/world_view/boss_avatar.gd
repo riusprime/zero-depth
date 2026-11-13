@@ -634,7 +634,7 @@ func _pose_imported(dt: float) -> void:
 		pivot.rotation += Vector3(sin(_t * 5.3) * 0.08, 0.0, sin(_t * 3.7) * 0.06) * daze
 	_pose_rig(dt)
 	poser.commit()
-	animator.apply_owner(skeleton)
+	animator.apply_owner(skeleton, poser if _code_over_file() else null)
 	var pulse := 0.5 + 0.5 * sin(_t * 6.0)
 	var extra := _extra_glow()  # A final boss's body cracking as it shatters
 	glow_overlay.albedo_color.a = clampf(
@@ -770,6 +770,13 @@ func _clip_library() -> Dictionary:
 ## like a clip are bound without a row here.
 func _owner_plays() -> Dictionary:
 	return {}
+
+
+## True for a body whose code clips and own layers (_pose_rig) turn bones its file's animations also key, and must
+## show over them (BossAnimator.apply_owner's `over`): a flinch during the file's idle, a code-made attack. False
+## leaves an animation at full weight to override the code pose of the bones it keys.
+func _code_over_file() -> bool:
+	return false
 
 
 ## Seconds of one idle loop; the walk speed (m/s) and stride (m) its walk clip is timed to.

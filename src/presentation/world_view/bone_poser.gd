@@ -45,6 +45,23 @@ func turn(bone: StringName, axis: Vector3, angle: float) -> void:
 	_turns[k] = Quaternion(axis.normalized(), angle) * _turns.get(k, Quaternion.IDENTITY)
 
 
+## Turns `bone` by `by` (model frame), after the turns already given this frame.
+func turn_by(bone: StringName, by: Quaternion) -> void:
+	var k := index_of(bone)
+	if k >= 0:
+		_turns[k] = by * (_turns.get(k, Quaternion.IDENTITY) as Quaternion)
+
+
+## The turn given to `bone` so far this frame (the identity when none).
+func pending_turn(bone: StringName) -> Quaternion:
+	return _turns.get(index_of(bone), Quaternion.IDENTITY)
+
+
+## True when the bone at index `k` was turned, shifted or scaled in the frame last committed.
+func is_posed(k: int) -> bool:
+	return _posed.has(k)
+
+
 ## Moves `bone`'s pivot by `offset` metres (model frame).
 func shift(bone: StringName, offset: Vector3) -> void:
 	var k := index_of(bone)
