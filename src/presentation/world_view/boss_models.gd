@@ -39,9 +39,9 @@ const SPECS := {
 	# carries its animations (scripts/assets/boss_anim); the violet one's are the amber's mirrored.
 	&"boss_twin_warden_amber": {"yaw": PI * 0.5, "height": 2.2, "skinned": true},
 	&"boss_twin_warden_violet": {"yaw": PI * 0.5, "height": 2.2, "skinned": true},
-	# PLAN NB: "can you ignore the skeleton?": the Clockwork Judge, front +Z as prepared, 3.6 m (the art
-	# list's), cut into parts in the file (its skin unusable): body, both pendulum arms, the gears, the two hands.
-	&"boss_clockwork_judge": {"yaw": PI * 0.5, "height": 3.6, "parts": true},
+	# The Clockwork Judge, front +Z as prepared, 3.6 m (the art list's): skinned to a full skeleton, and it carries
+	# its animations (scripts/assets/boss_anim/clockwork_judge); its two clock hands are bones the game turns.
+	&"boss_clockwork_judge": {"yaw": PI * 0.5, "height": 3.6, "skinned": true},
 	# PLAN NB: "Keep the empty hood": the Lantern Shade, front +Z as prepared, 3.4 m (the art list's),
 	# cut into parts in the file: body (the cloak and empty hood), both arms, the held lantern hanging from the right
 	# arm; it floats (lift: its ragged hem off the ground).

@@ -533,6 +533,8 @@ func _build_body() -> void:
 	if not players.is_empty():
 		# The owner's clips replace ours
 		animator.bind_owner(players[0] as AnimationPlayer, skeleton, _owner_plays())
+		if _owner_layered():
+			animator.layer_owner(poser)
 	for n in _code_nodes():
 		if n.get_parent() == null:
 			n.free()
@@ -770,6 +772,12 @@ func _clip_library() -> Dictionary:
 ## like a clip are bound without a row here.
 func _owner_plays() -> Dictionary:
 	return {}
+
+
+## True when the code clips and _pose_rig move bones the file's animations also move, and must still show: their
+## turns are then added on top of the animations (BossAnimator.layer_owner) instead of being replaced by them.
+func _owner_layered() -> bool:
+	return false
 
 
 ## Seconds of one idle loop; the walk speed (m/s) and stride (m) its walk clip is timed to.
