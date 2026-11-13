@@ -3,12 +3,23 @@
 Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c339458a`.
 
 ## Where we are
-(The lead keeps this block current at every push. Updated 2026-11-11.)
+(The lead keeps this block current at every push. Updated 2026-11-13.)
 
 - **Everything the owner asked for in v0.11.1 is merged and pushed** (`claude/v0110`), and the PR into `main` is
-  open (owner Q3: "When done open PR for github main"). Its CI is the first full suite of the version, the first
-  Linux build of the C++ library and the first check that Linux gives the same native fixtures as this PC.
-- **Seams on `493f3946`** (the final code): **730 of 730, 1,427 s of tests, 1,696 s wall, exit 0.**
+  open (owner Q3: "When done open PR for github main"). Its CI was green on `583e2833` (step 55c) before this push.
+- **The bosses' animations joined the PR on 2026-11-13** (owner: "Push to the PR"; "ill wait for the full merge into
+  main"): steps 63–73. The Twin Wardens, the Clockwork Judge, the Tidecaller, the Warlord, the Lantern Shade and the
+  final boss's three bodies are skinned to full skeletons and play animations made in Blender by script
+  (`scripts/assets/boss_anim/`, its README); the final boss's bodies act their hand-overs out through the sim's
+  shatter and rise. Presentation only: no sim file and no golden changed. Nobody has watched them move in the game:
+  stills, measurements and tests only; the feel is the owner's.
+- **Seams on `ed40b5f2`** (steps 63–73 merged with step 55c, the library rebuilt): **730 of 730, 1,499 s of tests,
+  exit 0** (owner's PC, 2026-11-13).
+- **Waiting on the owner, from the animation work** (each is in its step's row under Done): the Prism's bolts can
+  start up to 3 m from any crystal unless the sim's shard ring is stopped; the Colossus's boulder flies from its centre,
+  not its fist; the Tidecaller's bell toll and claw sweep never play in a fight (those attacks are streams); the hole
+  in the Judge's clock face and its gear no longer speeding up through the Echo; three Blender fixes identified, not
+  made (the Prism's `form` start pose, the Nemesis's blade through the floor as it kneels, the Warlord's hurried walk).
 - **The sim's hot loops run only in C++** (step 54b, owner Q7): the GDScript versions and the switch are gone; the
   game and the tests stop with one error when the library is missing. Read
   [`docs/architecture/NATIVE_CORE.md`](../../architecture/NATIVE_CORE.md) before touching `native/`. The goldens
