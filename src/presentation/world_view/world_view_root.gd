@@ -529,6 +529,7 @@ func _setup_effects() -> void:
 
 	add_child(strikes)  # v0.8.0 AV part 2
 	add_child(final_views)  # v0.8.0 FB1
+	prism_views.actors = actors  # her avatar's crystals: where a firing shard's flash is drawn
 	add_child(prism_views)  # v0.8.0 FB2
 	add_child(nemesis_views)  # v0.8.0 FB3
 	add_child(remnants)  # v0.8.0 RM

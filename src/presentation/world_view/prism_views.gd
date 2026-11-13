@@ -10,7 +10,10 @@ extends Node3D
 ## - the window (beams out, shield down): a gold ring pulsing round her feet (strike now);
 ## - a bolt's aim line: a thin red line in the air from its shard down its locked way, brightening and tightening over
 ##   its 0.4 s, then gone as the bolt flies (FireballViews draws the bolt);
-## - a shard firing (an orb volley, a bolt's aim): a flash and a small light at the sim shard.
+## - a shard firing (an orb volley, a bolt's aim): a flash and a small light on the crystal she is drawn with that
+##   is nearest the sim shard (PrismAvatar.nearest_crystal; her crystals float in place while the sim's ring turns),
+##   so the shot looks as if it leaves a crystal. Only this flash moves: every line that shows where the player will
+##   be hit (the arms, the bolt's aim line, the lances, the kneel's reach) stays where the sim has it.
 ## Ticks are the sim's (the views pause with it); reduced motion: no flicker or pulse.
 ## Her last phase's Facet Lances and Shattered Kneel are drawn by its child
 ## PrismLastViews (`last`), in this view's frame.
@@ -30,6 +33,8 @@ const MAX_ARMS := 8
 const PACK_BEAMS := true
 
 var last := PrismLastViews.new()
+## The actors' view (WorldViewRoot sets it): where her avatar is found. Null (tests): the flash is at the sim shard.
+var actors: ActorViews
 ## True once a sync outside her fight drew the empty state: later syncs do nothing until the fight is back.
 var quiet := false
 var _cross := {}
@@ -46,6 +51,7 @@ var _ring := MeshInstance3D.new()
 var _ring_mat := StandardMaterial3D.new()
 var _ends: Array = []
 var _hold: BossPackHold = null
+var _avatar: PrismAvatar = null
 
 
 func _init() -> void:
@@ -181,8 +187,11 @@ func sync(reader: WorldReader) -> void:
 		_shards = reader.boss_shards(i)
 		_at = reader.actor_pos(i)
 		_radius = reader.actor_radius(i)
+		var node := actors.actor_node(reader.actor_id(i)) if actors != null else null
+		_avatar = node.get_meta(&"enemy_avatar", null) as PrismAvatar if node != null else null
 		last.set_state(reader.boss_lances(i), reader.boss_kneel(i), _at, _radius, _tick)
 	else:
+		_avatar = null
 		last.set_state({}, {}, _at, _radius, _tick)
 	_draw(float(_tick))
 
@@ -216,6 +225,15 @@ func arm_ends() -> Array:
 ## The bolt's aim line is drawn (tests).
 func bolt_line_drawn() -> bool:
 	return _bolt_line.visible
+
+
+## Where the firing shard's flash is drawn now (tests); only meaningful while it shows.
+func shard_flash_at() -> Vector3:
+	return _shard_flash.position
+
+
+func shard_flash_drawn() -> bool:
+	return _shard_flash.visible
 
 
 ## The window's ring shows (tests).
@@ -333,6 +351,8 @@ func _draw_shard(c: Dictionary, flicker: float) -> void:
 	if k < 0 or k >= _shards.size():
 		return
 	var at := SimPlane.to_3d(_shards[k], SHARD_Y)
+	if is_instance_valid(_avatar):  # the drawn crystal nearest the sim shard, at its own height
+		at = to_local(_avatar.nearest_crystal(to_global(at))) if is_inside_tree() else at
 	_shard_flash.visible = true
 	_shard_flash.position = at
 	_shard_flash.scale = Vector3.ONE * 0.6

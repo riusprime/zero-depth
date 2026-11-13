@@ -29,7 +29,11 @@ const SPECS := {
 	# owner's one file, all facing +X as split (raw renders). The Colossus 3.2 m to its halo; the Prism 3.0 m to its
 	# crown, floating (lift) above its hanging shards; the Nemesis, the hero's small shadow, 1.5 m.
 	&"final_boss_colossus": {"yaw": 0.0, "height": 3.2, "final": true},
-	&"final_boss_prism": {"yaw": 0.0, "height": 3.0, "lift": 0.35, "final": true},
+	# The Prism is one mesh skinned to a full skeleton that carries its animations (scripts/assets/boss_anim/
+	# final_prism). Its box is centred on its floating crystals, which hang wider on its left: it stands by the bone
+	# its figure is built on (axis), so the figure, not the crystals' box, is over the boss's place.
+	&"final_boss_prism":
+	{"yaw": 0.0, "height": 3.0, "lift": 0.35, "final": true, "skinned": true, "axis": &"body"},
 	&"final_boss_nemesis": {"yaw": 0.0, "height": 1.5, "final": true},
 	# The Tidecaller, front +Z as prepared (turned to +X here), 3.2 m (the art list's): skinned to a full skeleton
 	# (the staff in its right hand, the bell and its clapper hanging from it, the shell on its back) and carrying its
@@ -253,7 +257,8 @@ static func _convert_parts(scene: PackedScene, spec: Dictionary) -> Dictionary:
 
 
 ## A rigged model kept as delivered: the transform that puts its skinned mesh (as its rest pose draws it) in our
-## frame at its height, centred in x and z, its lowest point `lift` metres up.
+## frame at its height, centred in x and z, its lowest point `lift` metres up. A spec's "axis" names a bone: the
+## model is then centred on that bone's rest place instead of on its box (a figure whose box is not centred on it).
 static func _convert_skinned(scene: PackedScene, spec: Dictionary) -> Dictionary:
 	if scene == null:
 		return {}
@@ -283,6 +288,9 @@ static func _convert_skinned(scene: PackedScene, spec: Dictionary) -> Dictionary
 	var s: float = spec["height"] / maxf(box.size.y, 0.0001)
 	var turn := Basis(Vector3.UP, spec["yaw"])
 	var centre := box.get_center()
+	var axis := skel.find_bone(String(spec.get("axis", &"")))
+	if axis >= 0:
+		centre = (relative_transform(root, skel) * skel.get_bone_global_rest(axis)).origin
 	var xf := Transform3D(turn.scaled(Vector3.ONE * s), Vector3.ZERO)
 	xf.origin = (
 		turn * (-Vector3(centre.x, 0.0, centre.z) * s)

@@ -1,8 +1,10 @@
 extends GutTest
-## v0.8.0 FB2 (owner O17; FINAL_BOSS.md F5): the Prism read in 3D, from the sim (EI-07). Her shards are cut from her
-## mesh as the separate pieces they are and orbit with the sim's shard ring, the one that fires flaring; the Cross is
-## drawn where the sim's beams are (aim lines through the spin-up, beams through the spin, nothing but the window's ring
-## after); a bolt's aim line shows through its 0.4 s and goes as it fires; her clips and her fireball looks.
+## The Prism read in 3D, from the sim (EI-07). The owner's model is one mesh skinned to a full skeleton and plays the
+## animations in its file; her nine crystals float in place (their parent bone is never turned, though the sim's shard
+## ring turns), and the one nearest the sim shard that fires flares, where the views put the flash; she stands over
+## the boss's place through the fight, her forming and her breaking. The Cross is drawn where the sim's beams are
+## (aim lines through the spin-up, beams through the spin, nothing but the window's ring after); a bolt's aim line
+## shows through its 0.4 s, from the sim's shard, and goes as it fires; her clips and her fireball looks.
 
 const LONG := 1 << 24
 const DT := 1.0 / 60.0
@@ -10,6 +12,9 @@ const DT := 1.0 / 60.0
 
 func after_each() -> void:
 	ViewPrefs.reduced_motion = false
+	if BossModels.dir != BossModels.DIR:
+		BossModels.dir = BossModels.DIR
+		BossModels.clear_cache()
 
 
 func _prism(seed_value: int = 301) -> World:
@@ -44,65 +49,324 @@ func _start(w: World, id: StringName = &"cross_ring") -> BossAttackTable:
 	return BossAi.attack_of(w, i)
 
 
-func test_her_shards_are_their_own_pieces() -> void:
+func _drive(a: PrismAvatar, s: Dictionary, frames: int, from_tick: int = 0) -> void:
+	for t in frames:
+		var d := s.duplicate()
+		d["tick"] = from_tick + t + 1
+		if not d.has("pos"):
+			d["pos"] = Vector2.ZERO
+		a.apply_state(d)
+		a.advance(DT)
+
+
+## The body bone's place across the floor in the avatar's space (m): the boss's place is the origin.
+func _axis(a: PrismAvatar) -> Vector2:
+	var k := a.skeleton.find_bone("body")
+	var p := a.model.transform * (a._skel_to_model() * a.skeleton.get_bone_global_pose(k).origin)
+	return Vector2(p.x, p.z)
+
+
+func _height_of(a: PrismAvatar, bone: String) -> float:
+	var k := a.skeleton.find_bone(bone)
+	return (a._skel_to_model() * a.skeleton.get_bone_global_pose(k).origin).y
+
+
+func test_the_model_loads_skinned_at_its_height_over_her_own_axis() -> void:
 	var m := BossModels.get_model(&"final_boss_prism")
 	assert_false(m.is_empty(), "the owner's Prism is installed")
-	var rig: BossRig = m["rig"]
-	assert_gte(rig.index_of(&"body"), 0)
-	assert_gte(rig.index_of(&"core"), 0, "the orbit's axis")
-	var shards := []
-	for b: Array in rig.bones:
-		if String(b[0]).begins_with("shard_"):
-			shards.append(rig.index_of(b[0]))
-	assert_gte(shards.size(), 10, "her floating crystals, each its own bone (%d)" % shards.size())
-	var verts: PackedVector3Array = (m["arrays"] as Array)[Mesh.ARRAY_VERTEX]
-	var counts := {}
-	for k in verts.size():
-		if rig.weights[k * 4] >= 0.999:
-			counts[rig.bone_ids[k * 4]] = int(counts.get(rig.bone_ids[k * 4], 0)) + 1
-	for s: int in shards:
-		assert_gt(int(counts.get(s, 0)), 30, "%s moves with its bone alone" % rig.bones[s][0])
-	assert_gt(int(counts.get(rig.index_of(&"body"), 0)), 10000, "the torn body is one piece")
+	assert_true(bool(m.get("skinned", false)), "it keeps its skeleton")
+	var box: AABB = m["aabb"]
+	assert_almost_eq(box.size.y, 3.0, 0.01, "3.0 m to her crown")
+	assert_almost_eq(box.position.y, 0.35, 0.01, "she floats")
+	var a := _avatar()
+	assert_eq(a.skeleton.get_bone_count(), 50, "her bones")
+	assert_eq(a.shard_count(), 9, "nine floating crystals, each its own bone")
+	for bone: StringName in [
+		&"root", &"body", &"chest", &"head", &"core", &"shards_lift", &"shards"
+	]:
+		assert_true(a.poser.has_bone(bone), "the %s bone" % bone)
+	# Her box is centred on her crystals, which hang wider on her left: the model stands by her body bone.
+	var to_model := BossModels.relative_transform(a.pivot, a.skeleton)
+	var rest := to_model * a.skeleton.get_bone_global_rest(a.skeleton.find_bone("body")).origin
+	assert_almost_eq(Vector2(rest.x, rest.z).length(), 0.0, 0.001, "her axis is the model's origin")
+	assert_gt(absf(box.get_center().z), 0.3, "which is not the middle of her box")
+	var core := a.model.transform.affine_inverse() * a.anchor(&"core")
+	assert_gt(core.x, 0.1, "the core's anchor on her chest, in front")
+	assert_between(core.y, 1.8, 2.5, "at chest height")
 
 
-func test_her_shards_orbit_with_the_sim_ring() -> void:
+func test_every_bone_the_clips_and_the_avatar_name_is_in_the_model() -> void:
+	var a := _avatar()
+	var named := 0
+	for c: BossClip in PrismClips.library().values():
+		for k in c.targets.size():
+			if c.channels[k] != BossClip.PARAM and c.targets[k] != BossClip.BODY:
+				assert_true(a.poser.has_bone(c.targets[k]), "%s moves %s" % [c.name, c.targets[k]])
+				named += 1
+	assert_gt(named, 10, "the clips that still play turn her bones")
+	for bone: StringName in [PrismAvatar.AXIS_BONE, a._weak_bone(), &"core"]:
+		assert_true(a.poser.has_bone(bone), "the avatar's %s" % bone)
+	for clip: StringName in PrismAvatar.OWNER_PLAYS:
+		assert_true(PrismClips.library().has(clip), "the %s clip a file's animation plays" % clip)
+
+
+func test_she_plays_her_files_animations() -> void:
+	var a := _avatar()
+	for clip: StringName in [&"idle", &"walk"]:
+		assert_true(a.animator.owner_has(clip), "the file's %s" % clip)
+	for clip: StringName in PrismAvatar.OWNER_PLAYS:
+		assert_true(a.animator.owner_has(clip), "%s plays a file's animation" % clip)
+	for clip: StringName in [&"shielded", &"flinch", &"stagger", &"roar", &"death"]:
+		assert_false(a.animator.owner_has(clip), "%s is played from the code" % clip)
+	assert_eq(a._idle_seconds(), 10.0, "the idle plays at the length it was made")
+	assert_almost_eq(
+		a._stride() / a._walk_speed(), 10.0, 0.01, "one float loop takes 10 s at her speed"
+	)
+	var head := a.skeleton.find_bone("head")
+	_drive(a, {"state": WorldReader.STATE_MOVE}, 30)
+	var idle := a.skeleton.get_bone_global_pose(head).origin
+	var moves := {
+		WorldReader.MOVE_CROSS: &"cross",
+		WorldReader.MOVE_PATTERN: &"pattern",
+		WorldReader.MOVE_BOLT_FAN: &"bolt_fan",
+		WorldReader.MOVE_LANCES: &"lances",
+		WorldReader.MOVE_KNEEL: &"kneel",
+	}
+	for move: int in moves:
+		var b := _avatar()
+		var s := {
+			"state": WorldReader.STATE_ACTIVE,
+			"move": move,
+			"attack_ticks": Vector4i(60, 240, 30, 0),
+			"state_ticks": 120
+		}
+		_drive(b, {"state": WorldReader.STATE_WINDUP, "move": move, "windup": 0.5}, 2)
+		_drive(b, s, 30, 2)
+		assert_eq(b.animator.action_clip().name, moves[move], "the %s clip" % moves[move])
+		var at := b.skeleton.get_bone_global_pose(head).origin
+		assert_gt(
+			at.distance_to(idle) * b.poser._scale,
+			0.05,
+			"%s moves her hood off the idle" % moves[move]
+		)
+
+
+func test_her_crystals_float_in_place_and_their_parent_is_never_turned() -> void:
 	var w := _prism(302)
 	var i := FinalLab.body(w)
 	var reader := WorldReader.new(w)
 	var a := _avatar()
-	assert_gte(a.shard_count(), 10)
-	var bone := &"shard_00"
-	a.sync(reader, i)
-	a.advance(DT)
-	var p0 := a.poser.bone_origin(bone)
-	for k in 90:
-		w.step(InputFrame.new())
+	var shards := a.skeleton.find_bone("shards")
+	var rest := a.skeleton.get_bone_rest(shards)
+	var rest_turn := rest.basis.get_rotation_quaternion()
+	var seen := {"frames": 0, "moved": 0}
+	var check := func() -> void:
 		a.sync(reader, i)
 		a.advance(DT)
-	var ring := reader.boss_shards(i)
-	var d := SimPlane.to_3d(ring[0] - reader.actor_pos(i), 0.0)
-	assert_almost_eq(
-		wrapf(a.orbit_angle() - atan2(-d.z, d.x), -PI, PI), 0.0, 0.01, "the sim's ring"
-	)
+		seen["frames"] += 1
+		if not a.skeleton.get_bone_pose_rotation(shards).is_equal_approx(rest_turn):
+			seen["moved"] += 1
+		elif not a.skeleton.get_bone_pose_position(shards).is_equal_approx(rest.origin):
+			seen["moved"] += 1
+	check.call()
+	var ring0 := reader.boss_shards(i)[0]
+	for k in 90:
+		w.step(InputFrame.new())
+		check.call()
 	assert_gt(
-		a.poser.bone_origin(bone).distance_to(p0), 0.3, "1.5 s on, the shard has moved round her"
+		reader.boss_shards(i)[0].distance_to(ring0), 1.5, "1.5 s on, the sim's ring has turned"
 	)
+	for id: StringName in [&"cross_ring", &"crown_ring"]:  # the Cross (its spin, its window), an orb volley
+		var atk := _start(w, id)
+		for k in atk.windup_ticks + atk.active_ticks + 30:
+			w.step(InputFrame.new())
+			check.call()
+	assert_gt(int(seen["frames"]), 600, "through the idle, a Cross and a volley")
+	assert_eq(int(seen["moved"]), 0, "the crystals' parent bone kept its rest pose every frame")
+	# Through a whole idle loop every crystal floats near its own place, and turns about its own axis.
+	var b := _avatar()
+	_drive(b, {"state": WorldReader.STATE_MOVE}, 1)
+	var first := []
+	var turn0 := b.skeleton.get_bone_pose_rotation(b._crystals[0])
+	for k in b.shard_count():
+		first.append(b.crystal_place(k))
+	var far := 0.0
+	var turned := 0.0
+	for t in 600:
+		_drive(b, {"state": WorldReader.STATE_MOVE}, 1, t + 1)
+		for k in b.shard_count():
+			far = maxf(far, b.crystal_place(k).distance_to(first[k]))
+		turned = maxf(turned, b.skeleton.get_bone_pose_rotation(b._crystals[0]).angle_to(turn0))
+	assert_lt(far, 0.4, "no crystal leaves its place (%.2f m at most)" % far)
+	assert_gt(turned, 2.5, "each turns on itself")
 
 
-func test_the_shard_that_fires_flares() -> void:
+func test_the_crystal_nearest_the_sim_shard_that_fires_flares() -> void:
+	var a := _avatar()
+	_drive(a, {"state": WorldReader.STATE_MOVE}, 10)
+	var tick := 10
+	for want: int in [0, 4, 7]:
+		var at := a.crystal_place(want)
+		_drive(a, {"state": WorldReader.STATE_MOVE, "firing": at}, 30, tick)
+		for k in a.shard_count():
+			if k == want:
+				assert_gt(a.shard_flare(k), 0.9, "crystal %d, the nearest, flares" % k)
+				assert_gt(
+					a.skeleton.get_bone_pose_scale(a._crystals[k]).x, 1.5, "and swells on its bone"
+				)
+			else:
+				assert_lt(a.shard_flare(k), 0.3, "crystal %d does not" % k)
+		_drive(a, {"state": WorldReader.STATE_MOVE, "firing": null}, 40, tick + 30)
+		assert_lt(a.shard_flare(want), 0.01, "it fades once nothing fires")
+		tick += 70
+	# From the sim: through a Cross's window, whenever a shard aims a bolt, the crystal that swells is the nearest.
 	var w := _prism(303)
 	var i := FinalLab.body(w)
 	var atk := _start(w)
 	var reader := WorldReader.new(w)
-	var a := _avatar()
+	var b := _avatar()
 	var flared := 0.0
-	for k in atk.windup_ticks + atk.active_ticks:  # v0.8.0 PR: her bolts fire in the window
+	var fired := 0
+	for k in atk.windup_ticks + atk.active_ticks:
 		w.step(InputFrame.new())
-		a.sync(reader, i)
+		b.sync(reader, i)
+		b.advance(DT)
+		if not b.is_firing():
+			continue
+		fired += 1
+		var near := b.nearest_crystal_index(b.firing_place())
+		flared = maxf(flared, b.shard_flare(near))
+	assert_gt(fired, 20, "her shards aimed bolts")
+	assert_gt(flared, 0.9, "the nearest crystal flares as its shard fires")
+
+
+func test_the_firing_flash_is_drawn_on_a_crystal_and_the_aim_line_stays_on_the_sim() -> void:
+	var w := _prism(305)
+	var i := FinalLab.body(w)
+	_start(w)
+	var reader := WorldReader.new(w)
+	var actors := ActorViews.new()
+	add_child_autofree(actors)
+	var v := _views()
+	v.actors = actors
+	var seen := 0
+	var farthest := 0.0
+	for k in 520:
+		w.step(InputFrame.new())
+		actors.sync(reader)
+		var bolt: Dictionary = reader.boss_cross(i).get("bolt", {})
+		if bolt.is_empty():
+			continue
+		var avatar: PrismAvatar = actors.actor_node(reader.actor_id(i)).get_meta(&"enemy_avatar")
+		avatar.advance(DT)
+		v.sync(reader)
+		seen += 1
+		assert_true(v.shard_flash_drawn(), "the flash shows while a shard aims")
+		var sim := SimPlane.to_3d(reader.boss_shards(i)[int(bolt["shard"])], PrismViews.SHARD_Y)
+		var want := avatar.nearest_crystal(sim)
+		assert_almost_eq(v.shard_flash_at().distance_to(want), 0.0, 0.001, "on the nearest crystal")
+		farthest = maxf(farthest, Vector2(want.x - sim.x, want.z - sim.z).length())
+		# The aim line is a forecast: it starts at the sim's shard, wherever the crystal is drawn.
+		var line := v._bolt_line.transform
+		var from := line.origin - line.basis.y * 0.5
+		assert_almost_eq(
+			from.distance_to(SimPlane.to_3d(bolt["from"], PrismViews.SHARD_Y)),
+			0.0,
+			0.001,
+			"the aim line starts where the sim fires from"
+		)
+	assert_gte(seen, 24, "bolts aimed")
+	assert_gt(farthest, 0.05, "the crystals are not on the sim's ring (%.2f m)" % farthest)
+	assert_lt(farthest, 3.2, "but one is always near (%.2f m)" % farthest)
+
+
+func test_she_stays_over_the_boss_through_the_fight_her_forming_and_her_breaking() -> void:
+	var a := _avatar()
+	# She forms: the sim's 1 s intro, then the flourish. "form" plays; she is on the floor, not under it.
+	var worst := 0.0
+	var low := 0.0
+	var spawn := {"pos": Vector2.ZERO, "state": WorldReader.STATE_SPAWN}
+	for t in 60:
+		spawn["tick"] = t + 1
+		spawn["intro"] = (t + 1) / 60.0
+		a.apply_state(spawn)
 		a.advance(DT)
-		for s in a.shard_count():
-			flared = maxf(flared, a.shard_flare(s))
-	assert_gt(flared, 0.9, "a shard flares as it fires")
+		worst = maxf(worst, absf(_axis(a).y))
+		low = minf(low, a.model.position.y)
+		if t == 0:
+			assert_eq(a.animator.slot_clip[BossAnimator.RISE].name, &"rise", "the rise")
+			assert_true(a.animator.owner_has(&"rise"), "is the file's form")
+			var rest_k := a.skeleton.find_bone("head")
+			var rest_y := (a._skel_to_model() * a.skeleton.get_bone_global_rest(rest_k).origin).y
+			assert_lt(_height_of(a, "head"), rest_y * 0.9, "she starts folded low")
+	assert_almost_eq(a.animator.slot_t[BossAnimator.RISE], 0.55, 0.01, "55 % of it over the intro")
+	for t in 70:
+		a.apply_state({"tick": 61 + t, "pos": Vector2.ZERO, "state": WorldReader.STATE_MOVE})
+		a.advance(DT)
+		worst = maxf(worst, absf(_axis(a).y))
+	assert_lt(worst, 0.04, "no slide to her side as she forms (%.3f m)" % worst)
+	assert_almost_eq(low, 0.0, 0.001, "she forms in sight, not out of the floor")
+	assert_almost_eq(a.animator.slot_w[BossAnimator.RISE], 0.0, 0.001, "the rise is over")
+	# The fight: idling, her axis stays over the boss.
+	_drive(a, {"state": WorldReader.STATE_MOVE}, 120, 131)
+	assert_lt(_axis(a).length(), 0.15, "idling over the boss (%.3f m)" % _axis(a).length())
+	# She breaks: the file's break plays by the shatter's progress, sinks to a heap, and holds. Reduced motion takes
+	# FinalBodyAvatar's tremble off, so what is measured is the slide alone.
+	ViewPrefs.reduced_motion = true
+	var up := _height_of(a, "head")
+	worst = 0.0
+	var breaking := {"pos": Vector2.ZERO, "state": WorldReader.STATE_SHATTER}
+	for t in 90:
+		breaking["tick"] = 300 + t
+		breaking["shatter"] = (t + 1) / 90.0
+		a.apply_state(breaking)
+		a.advance(DT)
+		worst = maxf(worst, absf(_axis(a).y))
+	assert_eq(a.animator.slot_clip[BossAnimator.DEATH].name, &"shatter", "the shatter")
+	assert_true(a.animator.owner_has(&"shatter"), "is the file's break")
+	assert_almost_eq(a.animator.slot_w[BossAnimator.DEATH], 1.0, 0.001)
+	assert_lt(worst, 0.04, "no slide to her side as she breaks (%.3f m)" % worst)
+	var heap := _height_of(a, "head")
+	assert_lt(heap, up * 0.65, "a low heap: her hood at %.2f m, from %.2f m" % [heap, up])
+	var hood := a.skeleton.find_bone("head")
+	var held := a.skeleton.get_bone_pose_rotation(hood)
+	for t in 30:
+		breaking["tick"] = 390 + t
+		a.apply_state(breaking)
+		a.advance(DT)
+	assert_true(a.skeleton.get_bone_pose_rotation(hood).is_equal_approx(held), "the heap holds")
+	assert_false(a.die(), "a shattered body leaves at once (the shards burst)")
+
+
+func test_the_code_clips_show_over_the_files_idle() -> void:
+	var a := _avatar()
+	_drive(a, {"state": WorldReader.STATE_MOVE, "hp": 100}, 20)
+	var head := a.skeleton.find_bone("head")
+	var before := a.skeleton.get_bone_pose_rotation(head)
+	_drive(a, {"state": WorldReader.STATE_MOVE, "hp": 90}, 6, 20)
+	assert_gt(a.flinch_amount(), 0.0, "a hit flinches")
+	assert_gt(
+		a.skeleton.get_bone_pose_rotation(head).angle_to(before), 0.05, "her hood is thrown back"
+	)
+	_drive(a, {"state": WorldReader.STATE_MOVE, "hp": 90}, 90, 26)
+	var rest_y := _height_of(a, "shards_lift")
+	_drive(a, {"state": WorldReader.STATE_GATE, "gate": 0.5, "hp": 90}, 30, 116)
+	assert_gt(_height_of(a, "shards_lift"), rest_y + 0.2, "the roar lifts her crystals")
+
+
+func test_the_stand_in_floats_its_crystals_in_place() -> void:
+	BossModels.dir = "res://tests/no_such_dir/"
+	BossModels.clear_cache()
+	var a := _avatar()
+	assert_null(a.imported, "the code stand-in")
+	assert_eq(a.shard_count(), 6)
+	_drive(a, {"state": WorldReader.STATE_MOVE}, 5)
+	var p0 := a.crystal_place(2)
+	_drive(a, {"state": WorldReader.STATE_MOVE, "firing": p0}, 60, 5)
+	assert_almost_eq(
+		a.crystal_place(2).distance_to(p0), 0.0, 0.001, "its crystals do not circle her"
+	)
+	assert_gt(a.shard_flare(2), 0.9, "the nearest one flares")
 
 
 func test_the_cross_is_drawn_where_the_sim_beams_are() -> void:
@@ -267,4 +531,4 @@ func test_her_last_phase_clips() -> void:
 	assert_eq(BossAnimator.clip_name_for(WorldReader.MOVE_LANCES, true, lib), &"lances")
 	assert_eq(BossAnimator.clip_name_for(WorldReader.MOVE_KNEEL, false, lib), &"kneel")
 	var c: BossClip = lib[&"kneel"]
-	assert_lt(c.value(c.track_of(BossClip.BODY, BossClip.SHIFT), 0.5), -0.5, "she is down low")
+	assert_almost_eq(c.value(c.track_of(&"open", BossClip.PARAM), 0.5), 1.0, 0.01, "her core shows")
