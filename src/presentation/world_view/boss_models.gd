@@ -30,12 +30,12 @@ const SPECS := {
 	&"final_boss_colossus": {"yaw": 0.0, "height": 3.2, "final": true},
 	&"final_boss_prism": {"yaw": 0.0, "height": 3.0, "lift": 0.35, "final": true},
 	&"final_boss_nemesis": {"yaw": 0.0, "height": 1.5, "final": true},
-	# scripts/assets/nb_prep.py: the Tidecaller, front +Z as prepared (turned to +X here), 3.2 m (the art
-	# list's), cut into parts in the file: each part is one bone (its node's origin the pivot), the bell hanging from
-	# the staff.
+	# The Tidecaller, front +Z as prepared (turned to +X here), 3.2 m (the art list's): skinned to a full skeleton
+	# (the staff in its right hand, the bell and its clapper hanging from it, the shell on its back) and carrying its
+	# animations (scripts/assets/boss_anim/tidecaller).
 	&"boss_tidecaller":
 	# The Twin Wardens, front +Z as prepared, 2.2 m each (the art list's): each is skinned to a full skeleton and
-	{"yaw": PI * 0.5, "height": 3.2, "parts": true, "parents": {&"bell": &"staff"}},
+	{"yaw": PI * 0.5, "height": 3.2, "skinned": true},
 	# carries its animations (scripts/assets/boss_anim); the violet one's are the amber's mirrored.
 	&"boss_twin_warden_amber": {"yaw": PI * 0.5, "height": 2.2, "skinned": true},
 	&"boss_twin_warden_violet": {"yaw": PI * 0.5, "height": 2.2, "skinned": true},

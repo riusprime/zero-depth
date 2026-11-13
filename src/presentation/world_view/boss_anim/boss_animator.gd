@@ -62,6 +62,7 @@ const MOVE_CLIPS := {
 	WorldReader.MOVE_MIMIC_SHOTS: &"mimic_shots",
 	WorldReader.MOVE_CARD_CAST: &"card_cast",
 	WorldReader.MOVE_TIDE: &"tide",  # The Tidecaller's Pull
+	WorldReader.MOVE_WAVE: &"wave",  # Its crossing wave
 	WorldReader.MOVE_CROSSFIRE: &"crossfire",  # The Twin Wardens
 	WorldReader.MOVE_CHAIN_SWEEP: &"chain_sweep",
 	WorldReader.MOVE_ECHO: &"echo",  # The Clockwork Judge
