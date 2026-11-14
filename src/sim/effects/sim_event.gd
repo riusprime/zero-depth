@@ -68,6 +68,10 @@ enum Kind {
 	METEOR_LAUNCH,  # A meteor called (pos = where it lands, amount = ticks to land)
 	METEOR_LAND,  # A meteor landed (pos, amount = radius in mm)
 	SURGE,  # A horde surge began (Surges: pos = the hero, amount = its size; its sound and HUD line)
+	# A boss's floor pickup (BossPickups): source = its boss, target = the pickup's id, pos = its centre
+	BOSS_PICKUP_SPAWN,  # Placed (amount = its BossPickupTable.Kind)
+	BOSS_PICKUP_TAKEN,  # The hero took it (owner = the hero, amount = its amount, amount_applied = what it gave)
+	BOSS_PICKUP_END,  # It went untaken (amount = why, BossPickups.END_*)
 }
 
 ## ElementLevels: a Contagion jump's STATUS_APPLY (source: the giver, target: the receiver), and the

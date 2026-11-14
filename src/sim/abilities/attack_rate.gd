@@ -8,8 +8,11 @@ extends RefCounted
 ## - up to the knee (SimTuning.attack_speed_knee_permille, +50 %) it counts in full;
 ## - from the knee to knee2 (+150 %) at slope (50 %); above knee2 at slope2 (25 %);
 ## - a negative raw bonus counts in full.
-## The rate is 1000 + the effective bonus (never under 1), then Heavy Hands' cut (Curses.attack_speed). The Gun's
-## period, the Blade's whole swing and the retired drone's period all read it, and so do the cards' forecast
+## The rate is 1000 + the effective bonus (never under 1), then Heavy Hands' cut (Curses.attack_speed), then what a
+## boss took (BossSlow.weapon_rate). A boss's cut comes last and whole for every weapon: a Gun form that counts attack
+## speed at a share (form_rate) is cut after its share (shot_rate), and the auto abilities' periods read auto_rate,
+## which BossSlow.WEAPON_ONLY spares.
+## The Gun's period, the Blade's whole swing and the retired drone's period all read it, and so do the cards' forecast
 ## (CardForecast), the HUD (WorldReader) and the hidden catch-up (CatchUp.power): one function, EI-07. Integer
 ## maths only.
 ## From loop 2 the stat has no cap; its raw bonus past the curve's top (top: +100 %
@@ -74,6 +77,25 @@ static func rate(w: World, wand: int) -> int:
 
 ## rate() with the attack-speed stat at raw value `stat_v` (CardForecast's after-card number).
 static func rate_at(w: World, stat_v: int, wand: int) -> int:
+	return BossSlow.weapon_rate(w, own_rate_at(w, stat_v, wand))  # A boss's cut multiplies the rate last
+
+
+## The rate an auto ability's period reads (Stats.period): the stat alone, and a boss's cut only when it is not
+## the weapon's alone (BossSlow.WEAPON_ONLY).
+static func auto_rate(w: World) -> int:
+	var stat_v := Stats.value(w, Stats.Stat.ATTACK_SPEED)
+	return own_rate_at(w, stat_v, 0) if BossSlow.WEAPON_ONLY else rate_at(w, stat_v, 0)
+
+
+## The rate of a Gun shot of `spec` with raw wand bonus `wand`: the hero's own rate, the form's share of it
+## (form_rate), then a boss's cut, whole.
+static func shot_rate(w: World, spec: AttackSpec, wand: int) -> int:
+	var own := own_rate_at(w, Stats.value(w, Stats.Stat.ATTACK_SPEED), wand)
+	return BossSlow.weapon_rate(w, form_rate(spec, own))
+
+
+## rate_at() before a boss's cut: the hero's own rate (the stat, the wand bonus, the curve, Heavy Hands).
+static func own_rate_at(w: World, stat_v: int, wand: int) -> int:
 	# Fervour's haste adds to the raw bonus (Starbound.haste_bonus); W3-P10a: the rate stops at the
 	# curve's top from loop 2 (rated)
 	var r := maxi(

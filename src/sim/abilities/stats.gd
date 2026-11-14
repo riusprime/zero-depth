@@ -503,7 +503,7 @@ static func _fast(w: World, ticks: int) -> int:
 ## wand bonus (ItemEffects.shot_period_ticks, BladeForms.step); the old recovery-only swing_end folded into the
 ## Blade's one rate.
 static func period(w: World, ticks: int) -> int:
-	var m := AttackRate.rate(w, 0)
+	var m := AttackRate.auto_rate(w)
 	if m == 1000:
 		return ticks
 	return maxi(1, AttackRate.scaled(ticks, m))

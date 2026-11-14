@@ -104,8 +104,10 @@ static func room(w: World, want: int, root: bool) -> int:
 static func reserve(w: World) -> int:
 	var spec := Modifiers.bolt(w)
 	var base := maxi(1, spec.period_ticks)
-	var r := AttackRate.rate(w, spec.rate_bonus_permille + maxi(0, spec.ramp_cap_permille))
-	r = AttackRate.form_rate(spec, r)  # ItemEffects.shot_period_ticks' rule
+	# ItemEffects.shot_period_ticks' rule
+	var r := AttackRate.shot_rate(
+		w, spec, spec.rate_bonus_permille + maxi(0, spec.ramp_cap_permille)
+	)
 	var p := base * 1000
 	if r != 1000:
 		p = maxi(mini(base, AttackRate.MIN_SHOT_TICKS) * 1000, base * 1000000 / maxi(1, r))

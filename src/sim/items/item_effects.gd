@@ -62,8 +62,10 @@ static func shot_period_milli_of(w: World, spec: AttackSpec) -> int:
 	base = RuneMods.period(w, spec, base)  # The Rune Explosion's Big Shot (90) and Rapid Fire (42)
 	base = GlaiveMods.period(w, spec, base)  # The Glaive's Rapid Fire (0.45 s)
 	base = WaveMods.period(w, spec, base)  # The Wave's Rapid Fire (0.55 s)
-	var r := AttackRate.rate(w, spec.rate_bonus_permille + FireRhythm.shot_bonus(w, spec))  # The ramp
-	r = AttackRate.form_rate(spec, r)  # The Laser's ticks at half the bonus
+	# The ramp; the Laser's ticks at half the bonus; then what a boss took, whole
+	var r := AttackRate.shot_rate(
+		w, spec, spec.rate_bonus_permille + FireRhythm.shot_bonus(w, spec)
+	)
 	var milli := base * 1000
 	if r != 1000:
 		milli = maxi(mini(base, AttackRate.MIN_SHOT_TICKS) * 1000, base * 1000000 / maxi(1, r))
