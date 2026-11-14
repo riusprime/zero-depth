@@ -145,16 +145,17 @@ static func _drop_pillars(w: World, boss_id: int = -1) -> void:
 ## tick (the lava and melt too); `flood` false leaves the flood to the caller (a snapshot's restore).
 static func set_nav_extra(w: World, flood: bool = true) -> void:
 	var boxes := pillar_obbs(w)
+	boxes.append_array(BossGears.obbs(w))  # The Clockwork Judge's stopped gears
 	boxes.append_array(BossLava.lava_obbs(w))
 	w.nav.set_extra(boxes, BossLava.melt_shapes(w))
 	if flood and not w.enemy_tables.is_empty():
 		w.flood_nav()  # The world's flood (bounded, stopped past the enemies)
 
 
-## True while any piece the flow field goes round is down (pillars, lava, a meltdown).
+## True while any piece the flow field goes round is down (pillars, gears, lava, a meltdown).
 static func has_extra(w: World) -> bool:
 	var bs := w.bosses
-	return bs.pillar_x.size() + bs.lava_x.size() + bs.melt_boss.size() > 0
+	return bs.pillar_x.size() + bs.gear_x.size() + bs.lava_x.size() + bs.melt_boss.size() > 0
 
 
 # --- S2: the Warlord's javelins -----------------------------------------------------------------------------------
@@ -392,6 +393,7 @@ static func advance(w: World) -> void:
 	BossSlow.advance(w)  # The attack speed a boss took comes back when its fight ends
 	BossPickups.advance(w)  # The hero takes the floor pickups it touches
 	BossShotFields.advance(w)  # The fields that slow the hero's shots run out
+	BossTime.advance(w)  # The Clockwork Judge's gears, Bell and fields
 	BossGreatJavelin.advance(w)  # The Warlord's great javelin flies, quakes and flies back
 
 

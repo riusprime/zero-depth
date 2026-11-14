@@ -76,6 +76,7 @@ const BOSS_MOVES := {
 	&"chain_sweep": BossAttackTable.Move.CHAIN_SWEEP,
 	&"echo": BossAttackTable.Move.ECHO,  # v0.9.0 NB3 (the Clockwork Judge)
 	&"verdict": BossAttackTable.Move.VERDICT,
+	&"time_wave": BossAttackTable.Move.TIME_WAVE,
 	&"wave": BossAttackTable.Move.WAVE,  # v0.9.5 BH4
 	&"interphase": BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6
 	&"lances": BossAttackTable.Move.LANCES,  # v0.10.5 O3 (the Prism's last phase)

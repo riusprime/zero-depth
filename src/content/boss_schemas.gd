@@ -313,6 +313,9 @@ const MOVES := {
 	## The Verdict: a square half_m each way from its centre (not a circle) follows the player, locks, and a
 	## pendulum strike drops on it. A lock is required.
 	&"verdict": {"shape": 2, "params": ["half_m"]},
+	## The Clockwork Judge's Time Wave: its telegraph is the cast; as it ends the hero's weapon slows. Its numbers
+	## (the cut, the orbs, the cadence) are the boss's `time` (TimeRules). It deals no damage.
+	&"time_wave": {"shape": 3, "params": []},
 	## BOSSES_HARD.md T3; BossStream: the Tidecaller's crossing wave, in no attack list. A phase's
 	## wave_attack forms one every wave_every_seconds. lengths_m: the lengths one is drawn from; thickness_m; speed_mps
 	## across the room after the telegraph (a foam line at the wall); shove_m along its travel when it hits; clear_m: it
@@ -394,6 +397,8 @@ const LOCKED_MOVES: Array[StringName] = [
 	&"lances",  # The Facet Lances (each lance's lock)
 	&"great_javelin",  # The throw's line
 ]
+## Moves that are a cast and never hit (BossAttackDefinition.damage is 0 for them, and no cause_key is needed).
+const CAST_MOVES: Array[StringName] = [&"time_wave"]
 ## The most spikes a line or a ray lays (steps).
 const MAX_STEPS := 16
 ## The most seconds the final fight's damage meter holds (FinalFight's ring).

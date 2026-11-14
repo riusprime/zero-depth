@@ -643,7 +643,7 @@ static func resolve(w: World, i: int) -> void:
 			BossDodge.resolve_pattern(w, i, b, atk, st)
 		M.TIDE:  # The Tide Rings, only in the pull
 			BossTide.resolve(w, i, b, atk, st)
-		M.ECHO, M.VERDICT:  # The echo's ghost strikes, the Verdict's pendulum
+		M.ECHO, M.VERDICT, M.TIME_WAVE:  # The Judge's ghost strikes, pendulum and Time Wave
 			BossJudge.resolve(w, i, b, atk, st)
 		M.MARKS, M.ROW_LANES:  # Each marker strikes once, where it locked
 			BossDodge.resolve_marks(w, i, b, atk, st)

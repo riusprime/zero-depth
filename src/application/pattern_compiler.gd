@@ -158,6 +158,7 @@ static func compile_cadence(def: BossDefinition, t: BossTable) -> void:
 	ShadeCompiler.compile_boss(def, t)  # The Lantern Shade's room light
 	QuakeCompiler.compile_boss(def, t)  # The Gatekeeper's quake pillars
 	HazardCompiler.compile_boss(def, t)  # The arena hazards
+	TimeCompiler.compile_boss(def, t)  # The Clockwork Judge's time mechanics
 	for a in def.attacks:  # The Clockwork Judge records for its echo (its first echo's numbers)
 		if a != null and a.move == &"echo":
 			t.echo_gap_ticks = echo_gap(a)

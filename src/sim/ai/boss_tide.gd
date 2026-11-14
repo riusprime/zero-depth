@@ -39,9 +39,10 @@ static func cap_of(atk: BossAttackTable) -> float:
 	return atk.tide_max if atk.tide_max > 0.0 else MAX_MPS / SimTick.TICKS_PER_SECOND
 
 
-## True for an attack the cadence starts (so the weighted pick leaves it out).
+## True for an attack a cadence starts (so the weighted pick leaves it out): the signature's, and the Clockwork
+## Judge's Time Wave on its own clock (BossTime.wave_due).
 static func on_cadence(t: BossTable, atk: BossAttackTable) -> bool:
-	return t.sig_every_ticks > 0 and is_cadence(atk)
+	return (t.sig_every_ticks > 0 and is_cadence(atk)) or atk.move == M.TIME_WAVE
 
 
 ## The moves a cadence starts: the Tidecaller's Pull and the Clockwork Judge's echo (BossJudge).
@@ -68,7 +69,13 @@ static func signature_of(t: BossTable, phase: int) -> int:
 ## Tick phase 3, boss i pursuing: its signature's index when the cadence says it is due now and its cooldown `cd` is
 ## over, else -1. The first call starts the clock (the first one sig_first_ticks on). HOLD when it is
 ## due but the cooldown still runs: the punish and the gap-closer wait for it (a far player can't starve the cadence).
+## With no signature due, the Clockwork Judge's Time Wave by the same rule on its own clock (BossTime.wave_due).
 static func due(w: World, i: int, b: int, t: BossTable, cd: int = 0) -> int:
+	var sig := _signature_due(w, i, b, t, cd)
+	return sig if sig != -1 else BossTime.wave_due(w, i, b, t, cd)
+
+
+static func _signature_due(w: World, i: int, b: int, t: BossTable, cd: int) -> int:
 	if t.sig_every_ticks <= 0 or w.player_dead():
 		return -1
 	var bs := w.bosses

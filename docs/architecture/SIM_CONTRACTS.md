@@ -2136,6 +2136,66 @@ phase 6 from `BossSignatures.advance` (after the arena hazards, before the proje
   snapshot state class, so the fields are saved with it.
 - **Reads.** `WorldReader.boss_attack_slow()`, `boss_pickups()`, `boss_shot_fields()`.
 
+## 10o. The Clockwork Judge fights with time (v0.12.0 step 2; owner brief rows CJ1-CJ5 and SG-CJ, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+The Judge keeps its echo, Verdict, Gear Spiral and Gavel Slam (§10l) and gains the pieces below. Its numbers are
+`BossTable.time` (a `BossTimeTable`, compiled from `BossDefinition.time`; null for every other boss); its state is
+`BossStore.time_*` and `gear_*`. Code: `BossTime`, `BossGears`, `BossRewind`. Only the orbs' spots draw a stream
+(`ai`); everything else follows from the clock and the positions. No native change.
+
+- **The Time Wave** (move `time_wave`, appended to `BossAttackTable.Move`). An attack on its own cadence
+  (`BossTime.wave_due`, asked by `BossTide.due` when no signature is due): the first one `wave_first_ticks` after
+  the Judge may first attack, then every `wave_every_ticks` from one cast's start to the next; never by the weighted
+  pick, and only between two attacks, so it never overlaps the echo. Its windup is the cast (90 ticks); on the tick
+  the cast ends the hero's weapon loses `wave_cut` per mille (`BossSlow.apply`, §10n). No dash, i-frame or distance
+  avoids it and it deals no damage. A cast a phase gate cut short is cast again after the gate (the next due tick is
+  set when the wave lands).
+- **The hour orbs.** With the wave the last wave's orbs go and `orb_count` are placed (`BossPickups`, §10n; each
+  returns `orb.amount`). Each spot is drawn from the `ai` stream inside the boss room (`BossStore.arena`, less the
+  orb's radius and 1 m): the first of 32 draws that is `orb_gap_m` from the hero and from this wave's other orbs,
+  clear of walls and of the Judge's body; with none, the gap is halved, twice at most. Before `orb_late_phase` an orb
+  stays until taken or the next wave; from it on it lasts `orb_late.life_ticks`. `ObjectiveMarkers.JUDGE_ORB` points
+  at each orb lying, kept current in tick phase 6.
+- **The stopped gears** (from `gear_phase`). The wave also raises up to `gear_count` walls (`gear_half`: half
+  length, half width; `gear_ticks`): gear g lies across the line from the hero to orb g (a fourth across the first
+  line again), at the first spot of 50, 40, 60, 30, 70 % of the line (25, 75, 35, 65 % for a line's second gear)
+  where it fits. `BossGears.fits`: both ends inside the room; 0.5 m clear of every living body's edge; never on an
+  orb; and the hero's width plus 0.15 m from every wall and every other gear, so each gear is an island in the free
+  floor: no way is closed and no orb is sealed in (a 400-seed flood test checks it). A gear that fits nowhere is left
+  out. A gear is a barrier (`World.add_barrier`: bodies, both sides' shots, sight), the flow field goes round it
+  (`BossSignatures.set_nav_extra`), and a snapshot counts it among the walls added in play. It goes after its time,
+  with the next wave, with the Judge, and when the hero is dead or outside the room.
+- **The slow fields** (from `field_phase`). Every `field_every_ticks` one `BossShotFields` disc (§10n; `field`) is
+  laid half-way between the hero and the Judge (not during a phase gate). While a hero's projectile is inside a
+  field, moving toward the Judge on a line that would touch it (within its radius + the shot's + 0.3 m), and the
+  Judge is between two attacks (`MOVE`), the Judge steps sideways off that line at `dodge` metres a tick (times its
+  slow), only onto floor clear of walls inside its room. The first such shot in store order decides.
+- **The Rewind** (from `rewind_phase`). `time_px/time_py` keep where the hero stood, a point every `step_ticks`
+  (`time_bx/time_by`: the Judge). The pale copy (`BossRewind.copy_of`) is the point `trail_ticks / step_ticks`
+  before the newest (`late_trail_ticks` from `late_phase`). The Bell is cast beside the Judge's attacks (it is not an
+  attack): the first `bell_first_ticks` into `rewind_phase`, then every `bell_every_ticks` start to start;
+  `bell_cast_ticks` later it tolls and the hero is moved to the copy (tick phase 6). From `late_phase` it tolls
+  `late_tolls` times, `toll_gap_ticks` apart. A dash does not prevent the throw; it deals no damage; it never lands
+  in a wall, a gear, the Judge's body or outside the room: `BossRewind.free_spot` takes the copy's spot, else the
+  first free spot on 12 rings 0.5 m apart (16 spots each), else leaves the hero where it is. While the Rewind is on,
+  the Verdict's square starts on and follows **the copy**, not the hero (`BossRewind.target_of`), until its lock; a
+  hero thrown into a locked square takes that one Verdict hit (30 at the data's damage).
+- **The Judge's own return.** Once, in `return_phase`, between two attacks, with `return_hp_permille` of that
+  phase's bar left: it goes back to where it stood `return_ticks` ago (when that spot is free) and recovers
+  `return_heal_permille` of the bar unless the hero is within `return_near_m` of its edge.
+- **Events** (`STATUS_APPLY`, source the Judge; never read back): `time_wave_cast` (amount = the cast's ticks),
+  `time_wave` (target the hero, amount = the cut), `time_field` (pos = its centre, amount = its id), `judge_bell`
+  (a cast or a later toll's wait begins; amount = ticks to the toll, amount_applied = tolls after it),
+  `judge_rewind` (target the hero, pos = where it landed, amount = mm moved), `judge_return` (amount = HP
+  recovered). The orbs' own events are §10n's.
+- **Hash and save.** Hashed after a `-11` sentinel only while a Judge runs them or a gear stands
+  (`time_boss >= 0 or gear_x not empty`); every world without a Judge hashes as before. `BossStore` is a snapshot
+  state class, so the clocks, trails and gears are saved; the restored gears are walls again.
+- **Reads.** `WorldReader.boss_time()`: `boss`, `cut`, `wave` (the cast, 0..1000 or -1), `wave_in`, `gears`
+  ([{centre, half, angle, age, left}]), `returned`, `rewind`, and with it `copy`, `trail`, `bell` (0..1000 or -1),
+  `bell_left`, `tolls`, `bell_in`. The orbs: `boss_pickups()` (`left` counts a late orb down); the fields:
+  `boss_shot_fields()`; `MOVE_TIME_WAVE`.
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×

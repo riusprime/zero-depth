@@ -22,6 +22,20 @@ const SF_INT_FIELDS: Array[StringName] = [
 	&"sf_id", &"sf_boss", &"sf_speed", &"sf_from", &"sf_until"
 ]
 const SF_FLOAT_FIELDS: Array[StringName] = [&"sf_x", &"sf_y", &"sf_r"]
+## The stopped gears' parallel arrays (BossGears), by type.
+const GEAR_INT_FIELDS: Array[StringName] = [&"gear_a", &"gear_from", &"gear_until", &"gear_boss"]
+const GEAR_FLOAT_FIELDS: Array[StringName] = [&"gear_x", &"gear_y", &"gear_hx", &"gear_hy"]
+## The time mechanics' clocks (BossTime, BossRewind).
+const TIME_FIELDS: Array[StringName] = [
+	&"time_boss",
+	&"time_wave_due",
+	&"time_field_due",
+	&"time_bell_due",
+	&"time_bell_from",
+	&"time_bell_at",
+	&"time_tolls",
+	&"time_back"
+]
 const INT_FIELDS: Array[StringName] = [
 	&"ids",
 	&"table",
@@ -274,6 +288,36 @@ var sf_x := PackedFloat32Array()
 var sf_y := PackedFloat32Array()
 var sf_r := PackedFloat32Array()
 var sf_next := 0
+## The Clockwork Judge's time mechanics (BossTime, BossRewind). time_boss is the Judge that runs them (-1 = none);
+## time_wave_due the tick its next Time Wave may be cast (-1 = not set yet) and time_field_due its next slow field's
+## (-1 = not in its phase yet). The Bell: time_bell_due the tick its next cast begins (-1 = no Rewind yet),
+## time_bell_from the tick the wait for the toll pending began and time_bell_at the tick it tolls (-1 = none
+## pending), time_tolls the tolls that follow it. time_back is 1 once the Judge has returned to its own past.
+## time_px/time_py: where the hero stood, oldest first, one point every BossTimeTable.step_ticks (the pale copy's
+## trail); time_bx/time_by the Judge's own. Hashed only while a Judge runs them or a gear stands.
+var time_boss := -1
+var time_wave_due := -1
+var time_field_due := -1
+var time_bell_due := -1
+var time_bell_from := -1
+var time_bell_at := -1
+var time_tolls := 0
+var time_back := 0
+var time_px := PackedFloat32Array()
+var time_py := PackedFloat32Array()
+var time_bx := PackedFloat32Array()
+var time_by := PackedFloat32Array()
+## The stopped gears, oldest first (BossGears): each a wall while it stands (World.walls, as a barrier): its centre,
+## half length and half width (m), its angle (1/4096 turns, along its length), the tick it rose, the tick it goes
+## and its boss.
+var gear_x := PackedFloat32Array()
+var gear_y := PackedFloat32Array()
+var gear_hx := PackedFloat32Array()
+var gear_hy := PackedFloat32Array()
+var gear_a := PackedInt32Array()
+var gear_from := PackedInt32Array()
+var gear_until := PackedInt32Array()
+var gear_boss := PackedInt32Array()
 
 
 func size() -> int:
@@ -396,6 +440,14 @@ func hash_into(h: StateHasher) -> void:
 			h.add_ints(get(f))
 		for f: StringName in PK_FLOAT_FIELDS + SF_FLOAT_FIELDS:
 			h.add_f32s(get(f))
+	if time_boss >= 0 or not gear_x.is_empty():  # Only while a Judge runs its time mechanics or a gear stands
+		h.add_int(-11)
+		for f: StringName in TIME_FIELDS:
+			h.add_int(get(f))
+		for f: StringName in GEAR_INT_FIELDS:
+			h.add_ints(get(f))
+		for f: StringName in GEAR_FLOAT_FIELDS + [&"time_px", &"time_py", &"time_bx", &"time_by"]:
+			h.add_f32s(get(f))
 
 
 ## Removes arena hazard k (the arrays stay oldest first).
@@ -411,6 +463,21 @@ func remove_pickup(k: int) -> void:
 ## Removes shot field k (the arrays stay oldest first).
 func remove_shot_field(k: int) -> void:
 	_remove_row(SF_INT_FIELDS, SF_FLOAT_FIELDS, k)
+
+
+## Removes stopped gear k (the arrays stay oldest first).
+func remove_gear(k: int) -> void:
+	_remove_row(GEAR_INT_FIELDS, GEAR_FLOAT_FIELDS, k)
+
+
+## Forgets the time mechanics' clocks and trails (their Judge gone); the gears go through BossGears.
+func clear_time() -> void:
+	for f: StringName in TIME_FIELDS:
+		set(f, -1)
+	time_tolls = 0
+	time_back = 0
+	for f: StringName in [&"time_px", &"time_py", &"time_bx", &"time_by"]:
+		set(f, PackedFloat32Array())
 
 
 ## Row k out of the parallel arrays named by `ints` and `floats`.

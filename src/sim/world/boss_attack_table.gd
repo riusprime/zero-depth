@@ -40,6 +40,7 @@ enum Move {
 	LANCES,  # The Prism's Facet Lances, her last phase (BossPrism)
 	KNEEL,  # The Prism's Shattered Kneel, her core open (BossPrism)
 	GREAT_JAVELIN,  # The Warlord's great javelin: thrown, it quakes in the floor, then flies back
+	TIME_WAVE,  # The Clockwork Judge's Time Wave: a cast, then the hero's weapon slows (BossTime)
 }
 
 ## The runs a Nemesis attack answers to (`weapon` below).

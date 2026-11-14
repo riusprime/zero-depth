@@ -793,6 +793,24 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
     beside a bigger one: a leap's quake ring, a burrow's eruption, an egg's burst, the gaze's and the Cross's orbs;
     the recalled javelins); 0 = `damage`. Scaled with `damage` by `RunState.scale_bosses`.
 
+- **v0.12.0 step 2 (owner brief CJ1-CJ5, the Rewind).** `BossDefinition.time: Dictionary` (empty: none), the
+  Clockwork Judge's time mechanics, checked by `TimeRules` (`SPEC`: key → [default, min, max]; an unknown key or a
+  value out of range is an error) and compiled by `TimeCompiler` into `BossTable.time` (`BossTimeTable`). Keys, with
+  the Judge's values: the Time Wave `wave_first_seconds` 8, `wave_every_seconds` 25, `wave_cut_permille` 750; the
+  hour orbs `orb_count` 3, `orb_permille` 250, `orb_radius_m` 1.2, `orb_gap_m` 8, `orb_late_phase` 2,
+  `orb_late_seconds` 10; the stopped gears `gear_phase` 1, `gear_count` 4, `gear_length_m` 5, `gear_width_m` 0.8,
+  `gear_seconds` 12; the slow fields `field_phase` 1, `field_every_seconds` 7, `field_radius_m` 1.75,
+  `field_seconds` 8, `field_speed_permille` 200, `field_max` 3, `dodge_mps` 2.5; the Rewind `rewind_phase` 1,
+  `trail_step_seconds` 0.25, `trail_seconds` 4, `late_phase` 2, `late_trail_seconds` 6, `late_tolls` 2,
+  `toll_gap_seconds` 3, `bell_first_seconds` 15, `bell_every_seconds` 20, `bell_cast_seconds` 2; the Judge's return
+  `return_phase` 2, `return_hp_permille` 150, `return_seconds` 5, `return_heal_permille` 50, `return_near_m` 4.
+  Phases are indices from 0; one past the boss's last phase means never. Also checked: a boss with `time` lists a
+  `time_wave` attack in every phase, and a `time_wave` attack needs `time`; `wave_every_seconds` exceeds the wave's
+  cast, active time and recovery; the late trail is the longer one and no trail is over 64 steps;
+  `bell_every_seconds` exceeds the cast plus the later tolls; the Bell's cast lasts the telegraph minimum.
+  New boss move `time_wave` (shape 3, no params): its telegraph is the cast. It is a cast move
+  (`BossSchemas.CAST_MOVES`): its `damage` must be 0 and it needs no `cause_key` or `hit_class`.
+
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 
 ```gdscript
