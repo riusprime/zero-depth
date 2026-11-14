@@ -188,7 +188,7 @@ ROADMAP §0.4: version 0.11.0, patch notes en/es, What's New, tour en/es, PLAYTE
 - **The boss brief arrived 2026-11-14** (Q13): [`BOSS_BRIEF.md`](BOSS_BRIEF.md) holds the owner's lines, their
   design for the Clockwork Judge, the Twin Wardens (which changes O5: no chain) and the Tidecaller, the lead's
   proposals for the Warlord, Siege Engine, Foundry, Hive Lens and the Hollow Crown's third body, and questions
-  BQ1–BQ11. **Waiting on the owner's answers; nothing is built before them.**
+  BQ1–BQ12 (BQ12: one signature mechanic per boss, §5b). **Waiting on the owner's answers; nothing is built before them.**
 - **The Laser sketch** blocks O1's look (the sim can start after Q4–Q7).
 - **G1 SPELLS, PIERCE, ENEMIES**, the S2b wisp-gap list and **G2 rooms** are written after the first answers. No
   BOSS_AUDIT (Q13: the owner designs the other fights).
