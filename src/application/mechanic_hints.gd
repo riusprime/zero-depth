@@ -17,6 +17,8 @@ const LAST_RUN := &"last_run"
 const MEETINGS := 2
 ## Reasons whose hint shows at every meeting (the Gatekeeper's pillars, an arrow and no text).
 const ALWAYS: Array[StringName] = [WorldReader.OBJECTIVE_GATEKEEPER_PILLAR]
+## The Clockwork Judge's hour orbs (its hint shows the first MEETINGS runs, like every reason not in ALWAYS).
+const JUDGE_ORB := ObjectiveMarkers.JUDGE_ORB
 
 var codex: CodexStore
 

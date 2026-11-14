@@ -37,6 +37,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0120`, cut from `main` at `feedd802`
 ## Goldens changed on purpose
 None (step 1: the golden tests pass unchanged; step 2: `tests/golden` passes unchanged, no golden pins a Judge
 fight; step 2b: `tests/golden` passes unchanged).
+| 3 | You can see the Judge's new fight: its cast (a clock dial under it, a ring closing on it) and the golden ring that crosses the room when the Time Wave lands; each hour orb as the pack's Basic Area 04 with a small clock above it (in phase 3 the clock's hand and the effect run down with the orb's 10 s) and a hint arrow the first two runs; the attack speed lost and the orbs won back on the HUD, over the HP plate ("Attacks slowed 75 %", three pips); each stopped gear as a brass cog standing on its wall's footprint, rising when placed and sinking at its end; each slow field as a cool rippling disc; your pale copy where the Bell would throw you, the Bell's ring closing on it with a line from you to it, and a flash at both ends of the throw and of the Judge's own return. Borrowed sounds for the wave, the Bell, the throw, the return and an orb taken. Presentation only; shots in `build/shots/v0.10.5/judge_time/` (`scripts/shots/judge_time.gd`) | this step's commit |
+
+## Goldens changed on purpose
+None (step 1: the golden tests pass unchanged; step 2: `tests/golden` passes unchanged, no golden pins a Judge
+fight; step 3: presentation only, no golden test was run or moved).
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -80,3 +85,12 @@ fight; step 2b: `tests/golden` passes unchanged).
   during a phase gate too; a boss with `time` must now hold a `verdict` attack; the bot that plays now leaves only
   the Bell's square, not the ordinary Verdict. The bots: the Bell's Verdict hit the bot that ignores on 59 of 67
   throws (5 of 68 in step 2) and the bot that plays on 7 of 26; why those 7 was not traced.
+- 2026-11-14 — Step 3: the Judge's time mechanics drawn (`JudgeTimeViews`, `JudgeRewindViews`, `AttackSlowHud`,
+  the pack rows `data/vfx/pack_fx_cj.tres`), 13 unit tests and the Judge's e2e extended through a Time Wave and an
+  orb. No sim change. Choices for the lead to confirm: the orbs' hint follows the brief's row CJ2 (the first two
+  runs that meet it) and is drawn like the pillars' (an arrow, no text), not at every meeting as the pillars'
+  is; the cast plays the model's `spread` (the echo's arms), no new clip; a gear's wheel is set low (its top 1.6 m)
+  so the hero shows over it, and the copy is drawn through anything in front of it. Stand-ins: the clock over an
+  orb and the gears' cog are built in code (OWNER_TODO §3.5), the five sounds are existing cues re-pitched
+  (OWNER_TODO §4); a gear and a slow field have no sound. Nobody has seen it move: the owner's playtest judges
+  whether it reads. The Bell's Verdict square (the sim's follow-up) is not drawn. Next: the lead's merge.

@@ -25,8 +25,12 @@ const FONT_PX := 18
 const ARROW := &"arrow"
 const PING := &"ping"
 ## Reasons marked on screen by a small bobbing arrow above the target, pointing down (no ring, no text).
-const DOWN_ARROW: Array[StringName] = [WorldReader.OBJECTIVE_GATEKEEPER_PILLAR]
+const DOWN_ARROW: Array[StringName] = [
+	WorldReader.OBJECTIVE_GATEKEEPER_PILLAR, MechanicHints.JUDGE_ORB
+]
 const DOWN_GAP_PX := 54.0
+## A reason whose target carries something above it has its arrow that much higher (an hour orb's clock).
+const DOWN_GAPS := {MechanicHints.JUDGE_ORB: 132.0}
 
 ## reason -> bool: whether that reason's hint shows (unset: none shows).
 var gate: Callable
@@ -133,7 +137,8 @@ func _draw() -> void:
 			var bob_y := (
 				0.0 if HudStyle.reduced_motion else BOB_PX * k * (0.5 + 0.5 * sin(_t * TAU))
 			)
-			var tip_d := at + Vector2(0, -DOWN_GAP_PX * k + bob_y)
+			var gap: float = DOWN_GAPS.get(m["reason"], DOWN_GAP_PX)
+			var tip_d := at + Vector2(0, -gap * k + bob_y)
 			var back_d := tip_d + Vector2.UP * ARROW_PX * k
 			var side_d := Vector2.RIGHT * ARROW_PX * k * 0.6
 			draw_colored_polygon(

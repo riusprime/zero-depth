@@ -1743,3 +1743,4 @@ RELIC_CITY_HEART_DESC,"Once a run, a blow that would kill you leaves you at 1 HP
 HEART_PEDESTAL_PROMPT,Take,Tomar
 HEART_DOOR_PROMPT,Enter,Entrar
 UI_CODEX_SECTION_RELICS,Relics,Reliquias
+HUD_ATTACK_SLOW,Attacks slowed %d %%,Ataques ralentizados un %d %%

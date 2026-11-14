@@ -64,6 +64,8 @@ static var parts: Array[GDScript] = [
 	InterphaseViews,  # v0.9.5 BH6
 	TwinViews,  # v0.9.0 NB2
 	JudgeViews,  # v0.9.0 NB3
+	JudgeTimeViews,
+	JudgeRewindViews,
 	ShadeViews,  # v0.9.0 NB4
 	BossStrikeViews,
 	FinalBossViews,
@@ -223,6 +225,9 @@ var interphase: InterphaseViews = _part(InterphaseViews)
 var twins: TwinViews = _part(TwinViews)
 ## The Clockwork Judge's echo (its recording, path and ghost trail) and its Verdict's pendulum.
 var judges: JudgeViews = _part(JudgeViews)
+## Its Time Wave, hour orbs, stopped gears and slow fields; the Rewind's pale copy, the Bell and the throw.
+var judge_time: JudgeTimeViews = _part(JudgeTimeViews)
+var judge_rewind: JudgeRewindViews = _part(JudgeRewindViews)
 ## The Lantern Shade's dark (a layered darkness pass), the room's lanterns and their pools, your light.
 var shades: ShadeViews = _part(ShadeViews)
 
@@ -524,6 +529,10 @@ func _setup_effects() -> void:
 	add_child(interphase)  # v0.9.5 BH6
 	add_child(twins)  # v0.9.0 NB2
 	add_child(judges)  # v0.9.0 NB3
+	add_child(judge_time)
+	add_child(judge_rewind)
+	judge_time.pack_fx = pack_fx
+	judge_rewind.pack_fx = pack_fx
 	add_child(shades)  # v0.9.0 NB4 (it dims the stage's sun with the dark)
 	shades.stage = stage
 
@@ -789,6 +798,8 @@ func sync() -> void:
 	_sync_view(&"interphase", interphase)  # v0.9.5 BH6
 	_sync_view(&"twins", twins)  # v0.9.0 NB2
 	_sync_view(&"judges", judges)  # v0.9.0 NB3
+	_sync_view(&"judge_time", judge_time)
+	_sync_view(&"judge_rewind", judge_rewind)
 	_sync_view(&"shades", shades)  # v0.9.0 NB4
 
 	_sync_view(&"strikes", strikes)  # v0.8.0 AV part 2

@@ -85,6 +85,8 @@ var boss_door := BossDoorHud.new()
 var interact := InteractPromptHud.new()
 ## The boss hint arrow and ping (MetaHooks sets its gate: MechanicHints).
 var objective_hints := ObjectiveHints.new()
+## The attack speed a boss has taken and what is won back, over the HP plate.
+var attack_slow := AttackSlowHud.new()
 ## The weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
 var build_hud := BuildHud.new()
 ## The picked cards' icons fly over everything to their HUD slots.
@@ -200,6 +202,8 @@ func _init() -> void:
 	_gate.position = Vector2(-450, -150)
 	_build_floor_card()
 	add_child(boss_bar)
+	attack_slow.above = _corner
+	add_child(attack_slow)
 	add_child(heat_meter)
 	add_child(minimap)
 	_build_rewards()
@@ -315,6 +319,7 @@ func sync(reader: WorldReader) -> void:
 	t = PerfMarks.start()
 	_sync_floor_lines(reader)
 	boss_bar.sync(reader)
+	attack_slow.sync(reader)
 	heat_meter.sync(reader)
 	PerfMarks.add(&"hud.top", t)
 	t = PerfMarks.start()

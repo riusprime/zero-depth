@@ -26,6 +26,8 @@ const OWNER_PLAYS := {
 	&"slam_ring": {"anim": &"double_slam", "strike": 0.83, "recover": 1.33},
 	&"echo": {"anim": &"spread", "strike": 0.8, "recover": 1.8},
 	&"pattern": {"anim": &"brace", "strike": 0.77, "recover": 1.67},
+	# The Time Wave's cast has no animation of its own in the file: it plays the echo's spread arms.
+	&"time_wave": {"anim": &"spread", "strike": 0.8, "recover": 1.8},
 }
 ## Seconds of the file's idle loop, played at the speed it was made at.
 const IDLE_SECONDS := 3.2
