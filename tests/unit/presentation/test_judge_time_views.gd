@@ -413,3 +413,101 @@ func test_the_pack_rows_name_the_owners_effect() -> void:
 		JudgeTimeViews.FIELD_ID, JudgeTimeViews.CAST_ID, JudgeTimeViews.PULSE_ID
 	]:
 		assert_gte(def.row(id), 0, "%s is in the table" % id)
+
+
+## The middle and the width of a square's drawn edge (world x and z).
+func _square_box(n: Node3D) -> Rect2:
+	var bb: AABB = ((n.get_node("Edge") as MeshInstance3D).mesh as ImmediateMesh).get_aabb()
+	return Rect2(bb.position.x, bb.position.z, bb.size.x, bb.size.z)
+
+
+## A world with the Rewind on and the Bell cast (its unlocked square on the copy). Returns [world, id, reader, view].
+func _bell_cast() -> Array:
+	var s := _fight(0, Vector2(-10, -8), Vector2(6, 6))
+	var w: World = s[0]
+	var view := _rewind_view()
+	JudgeLab.set_phase(w, s[1], 1)
+	w.bosses.time_field_due = 1 << 29
+	_walk_line(w, 100)
+	w.bosses.time_bell_due = w.tick
+	_walk_line(w, 2)
+	assert_gte(int(s[2].boss_time()["bell"]), 0, "the Bell is cast")
+	return [w, s[1], s[2], view]
+
+
+func test_a_bell_square_is_drawn_where_the_sim_puts_it_and_follows_the_copy() -> void:
+	var c := _bell_cast()
+	var w: World = c[0]
+	var r: WorldReader = c[2]
+	var view: JudgeRewindViews = c[3]
+	view.sync(r)
+	var squares: Array = r.boss_time()["bell_squares"]
+	assert_eq(squares.size(), 1, "one toll pending: one square")
+	assert_false(squares[0]["locked"], "it follows the copy")
+	var nodes := view._squares.extra_nodes()
+	assert_eq(nodes.size(), 1, "one view")
+	var box := _square_box(nodes[0])
+	var at := SimPlane.to_3d(squares[0]["center"])
+	var half := float(squares[0]["half"])
+	assert_almost_eq(box.get_center().x, at.x, 0.2, "at its centre")
+	assert_almost_eq(box.get_center().y, at.z, 0.2)
+	assert_almost_eq(box.size.x, half * 2.0, 0.3, "its size")
+	for k in w.bosses.time_px.size():  # the hero's past moves, and the copy with it
+		w.bosses.time_px[k] += 3.0
+	view.sync(r)
+	var moved: Vector2 = r.boss_time()["bell_squares"][0]["center"]
+	assert_gt(moved.distance_to(squares[0]["center"]), 1.0, "the copy moved")
+	box = _square_box(view._squares.extra_nodes()[0])
+	assert_almost_eq(box.get_center().x, SimPlane.to_3d(moved).x, 0.2, "the view followed")
+	assert_almost_eq(box.get_center().y, SimPlane.to_3d(moved).z, 0.2)
+
+
+func test_a_locked_bell_square_stays_and_two_squares_are_two_views() -> void:
+	var c := _bell_cast()
+	var w: World = c[0]
+	var r: WorldReader = c[2]
+	var view: JudgeRewindViews = c[3]
+	var held := Vector2(2.0, -3.0)
+	w.bosses.time_bv_at = w.tick + 200
+	w.bosses.time_bv_x = held.x
+	w.bosses.time_bv_y = held.y
+	view.sync(r)
+	var squares: Array = r.boss_time()["bell_squares"]
+	assert_eq(squares.size(), 2, "the locked one and the next toll's")
+	assert_true(squares[0]["locked"], "the locked one first")
+	assert_eq(view._squares.extra_nodes().size(), 2, "two views")
+	_walk_line(w, 30)
+	view.sync(r)
+	var box := _square_box(view._squares.extra_nodes()[0])
+	assert_almost_eq(box.get_center().x, SimPlane.to_3d(held).x, 0.2, "the locked square stays")
+	assert_almost_eq(box.get_center().y, SimPlane.to_3d(held).z, 0.2)
+
+
+func test_a_bell_square_goes_when_the_reader_has_none_and_its_drop_strikes() -> void:
+	var c := _bell_cast()
+	var w: World = c[0]
+	var r: WorldReader = c[2]
+	var view: JudgeRewindViews = c[3]
+	var strikes := BossStrikeViews.new()
+	add_child_autofree(strikes)
+	strikes.set_process(false)
+	view.sync(r)
+	strikes.sync(r)
+	assert_eq(view._squares.extra_nodes().size(), 1)
+	assert_eq(strikes.strike_count(), 0, "nothing strikes yet")
+	var dropped: SimEvent = null
+	for k in 400:
+		_walk_line(w, 1)
+		view.sync(r)
+		strikes.sync(r)
+		dropped = JudgeLab.effects(w, &"judge_bell_verdict").pop_back()
+		if dropped != null:
+			break
+	assert_not_null(dropped, "the Bell's Verdict drops")
+	assert_eq(strikes.strike_count(), 1, "it strikes its square as the Judge's Verdict does")
+	assert_eq(strikes.strikes()[0][0], &"cj_verdict")
+	assert_eq(strikes.strikes()[0][1], &"beam")
+	w.bosses.time_bell_at = -1
+	w.bosses.time_bv_at = -1
+	view.sync(r)
+	assert_eq(view._squares.extra_nodes().size(), 0, "no square, no view")

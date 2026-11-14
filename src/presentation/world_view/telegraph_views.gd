@@ -125,6 +125,7 @@ var threats := 0
 ## The syncs that walked the telegraphs; a sync with none showing and none possible returns before (tests read it).
 var worked := 0
 var _nodes := {}
+var _extra: Array[Node3D] = []
 var _pool := {}  # "shape|style" -> the idle telegraphs (hidden)
 var _fill_mat := StandardMaterial3D.new()
 var _edge_mat := StandardMaterial3D.new()
@@ -284,6 +285,30 @@ func _show(reader: WorldReader, id: int, i: int, tg: Dictionary) -> void:
 		(_look_pair(_look)[0] as ShaderMaterial).set_shader_parameter("heat", heat)
 	if style != &"":
 		_update_style(n, tg)
+
+
+## Draws `tgs` (telegraphs, as BossAi.telegraph builds them) in the ground look `look`, apart from the actors' own:
+## a view that owns an instance of this one calls it in place of sync. The nodes are kept in `_extra`, reused frame
+## to frame and returned to the pool when `tgs` shrinks.
+func draw_extra(tgs: Array, look: StringName) -> void:
+	_looks_live = {} if tgs.is_empty() else {look: true}
+	_look = look
+	while _extra.size() > tgs.size():
+		_put_back(_extra.pop_back())
+	for k in tgs.size():
+		var tg: Dictionary = tgs[k]
+		if k < _extra.size() and _extra[k].get_meta(&"shape") != tg["shape"]:
+			_put_back(_extra[k])
+			_extra.remove_at(k)
+		if k >= _extra.size():
+			_extra.insert(k, _take(tg["shape"], &""))
+		_update(_extra[k], tg)
+	_look = &""
+
+
+## The nodes `draw_extra` shows (tests).
+func extra_nodes() -> Array[Node3D]:
+	return _extra
 
 
 ## How many telegraphs are showing (tests and the tour).

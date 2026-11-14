@@ -6,6 +6,7 @@ extends RefCounted
 ## - the Bell (a cast or a later toll's wait beginning): the Tidecaller's bell, higher;
 ## - the hero thrown back to the copy: the blink's arrival, lower;
 ## - the Judge's own return: the blink's departure, lower;
+## - a Bell's Verdict dropping: the ordinary Verdict's slam;
 ## - an hour orb taken (its own event kind): the item pickup, higher.
 ## The cast is the Judge's telegraph cue already (its windup); a slow field and a gear have no sound.
 
@@ -17,6 +18,7 @@ const CUES := {
 	&"judge_bell": [&"boss_telegraph_tidecaller", 1.25, false],
 	&"judge_rewind": [&"blink_in", 0.8, true],
 	&"judge_return": [&"blink_out", 0.7, true],
+	&"judge_bell_verdict": [&"boss_slam", 1.0, true],
 }
 
 

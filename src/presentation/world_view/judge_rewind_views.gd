@@ -17,6 +17,7 @@ const GOLD := JudgeViews.GOLD
 const PALE := Color(0.82, 0.9, 1.0)
 const EFFECT_REWIND := &"judge_rewind"
 const EFFECT_RETURN := &"judge_return"
+const EFFECT_BELL_VERDICT := &"judge_bell_verdict"
 ## The bell's ring: its radius at the cast's start and at the toll (m).
 const BELL_FROM_M := 4.5
 const BELL_TO_M := 0.7
@@ -54,10 +55,14 @@ var _flashes: Array[MeshInstance3D] = []
 var _flash_mats: Array[StandardMaterial3D] = []
 var _flash_t: Array[float] = []
 var _flash_next := 0
+## The Bell's Verdict squares, drawn as the Judge's own Verdict square is (TelegraphViews, in the same ground look).
+var _squares := TelegraphViews.new()
 
 
 func _init() -> void:
 	name = "JudgeRewindViews"
+	_squares.name = "BellSquares"
+	add_child(_squares)
 	copy_parts.visible = false
 	copy_parts.set_meta(ShaderWarmup.WARM_META, true)  # drawn once before the fight
 	add_child(copy_parts)
@@ -147,6 +152,7 @@ func sync(reader: WorldReader) -> void:
 	_hero_at = SimPlane.to_3d(reader.actor_pos(0))
 	if not _time.is_empty():
 		_boss_at = SimPlane.to_3d(reader.actor_pos(int(_time["boss"])))
+	_draw_squares()
 	if not _primed:
 		_primed = true
 		for e in reader.events_since(0):
@@ -159,6 +165,29 @@ func sync(reader: WorldReader) -> void:
 			_snap(hero_was, SimPlane.to_3d(e.pos), PALE, 1.2)
 		elif e.effect_id == EFFECT_RETURN:
 			_snap(boss_was, SimPlane.to_3d(e.pos), GOLD, 2.2)
+
+
+## One square telegraph per Bell's Verdict the reader holds: a dull outline while it follows the copy, the lock's
+## flash once it is locked (the sim says which, and where). The square has no fill to grow: the lock is its cue.
+func _draw_squares() -> void:
+	var tgs := []
+	for sq: Dictionary in _time.get("bell_squares", []):
+		var half := float(sq["half"])
+		var box := Obb.make(sq["center"], Vector2(half, half), 0)
+		(
+			tgs
+			. append(
+				{
+					"shape": &"lanes",
+					"obbs": [box],
+					"progress": 1000,
+					"move": WorldReader.MOVE_VERDICT,
+					"tracked": true,
+					"locked": bool(sq["locked"]),
+				}
+			)
+		)
+	_squares.draw_extra(tgs, &"cj_verdict")
 
 
 ## A throw from `from` to `to`: a ring at both ends, the streak between them, the pack's pulse on each.
