@@ -226,6 +226,8 @@ var quake: QuakeTable = null
 var hazard: HazardTable = null
 ## The Clockwork Judge's time mechanics (null: none).
 var time: BossTimeTable = null
+## The Tidecaller's dance (null: none).
+var dance: BossDanceTable = null
 
 
 ## The attack index with this id, or -1.

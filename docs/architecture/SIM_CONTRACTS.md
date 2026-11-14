@@ -2207,6 +2207,72 @@ The Judge keeps its echo, Verdict, Gear Spiral and Gavel Slam (§10l) and gains 
   [{center, half, locked, left (ticks until it drops)}]; at most one locked and one following the copy). The orbs: `boss_pickups()` (`left` counts a late orb down); the fields:
   `boss_shot_fields()`; `MOVE_TIME_WAVE`.
 
+## 10p. The Tidecaller's dance (v0.12.0 step 4; owner brief rows TC1-TC6 and SG-TC, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+The Tidecaller keeps its Pull, Undertow, ring stream and crossing waves (§10j) and gains the pieces below. Its
+numbers are `BossTable.dance` (a `BossDanceTable`, compiled from `BossDefinition.dance`; null for every other boss);
+its state is `BossStore.dance_*`. Code: `BossDance` (Riptide, High Tide), `BossMaelstrom`, `SafeArea`, and
+`BossTide.rate_of` / `run_speed`. The `ai` stream is drawn for a row's mirror, the dry circle's spot and the way the
+Maelstrom turns; everything else follows from the clock and the positions. No native change.
+
+- **A pull you feel.** For a boss with a dance the Pull moves the hero `pull` per mille (`pull_late` from
+  `pull_late_phase`) of **the hero's own run speed now** a tick (`BossTide.run_speed`: `ItemProcs.move_speed` times
+  the heat, curse, beam and hazard factors and the guard's, as `World`'s walk computes a full push of the stick), not
+  held to `TIDE_MAX_MPS`; the body gap and the wall rule (`shift`) stay, and a dashing hero is still not moved. The
+  push is a throw: `push_m` over the attack's `tide_push_ticks`. A boss without a dance keeps `tide_pull` /
+  `tide_push` under its cap, and the Undertow and the waves' shove are unchanged.
+- **`SafeArea`: inside this area or hurt.** Boss-agnostic. `strips(room, n)` cuts a room into n strips along its
+  longer side (x for a square); `inside(p, rects, discs)` tests the hero's **centre**; `check` / `hurt` take a share
+  of the hero's max HP (never scaled by the boss's power): `ONCE` through `Damage.hit` (`TAG_AREA`; armour and the
+  dash's invulnerability apply, as for any boss strike on the ground), `STEP` through `Damage.tick_dot`, which
+  neither waits for the hurt invulnerability nor gives any.
+- **Riptide** (from `rip_phase`; not an attack: the boss goes on fighting). The first row `rip_first_ticks` into
+  that phase, then one every `rip_every_ticks`, start to start. A row is `rip_casts` casts. Each warns three of the
+  four strips for `rip_warn_ticks` (the last cast `rip_last_warn_ticks`), then a wave runs down them from the
+  room's low end to its high end in `rip_wave_ticks`: on wave step s (1..`rip_wave_ticks`) a hero whose centre is in
+  a warned strip and within its radius of the stretch the front crossed this tick takes `rip_hit` per mille, once a
+  cast (a hero entering a strip behind the front is not hit). The next warning begins on the wave's last step. The
+  safe strips are `BossDanceTable.SAFE_ORDER` (1, 2, 0, 3) or its mirror (2, 1, 3, 0), one `ai` draw a row. Before
+  the Maelstrom a row does not begin while the Pull runs and the Pull is not cast while a row or a High Tide runs
+  (`BossDance.holds_pull`, asked by `BossTide`).
+- **High Tide** (from `ht_phase`). The first `ht_first_ticks` into that phase, then every `ht_every_ticks`; never
+  while a row runs, and no row begins while it runs (the later one waits). The cast (`ht_cast_ticks`) shows one dry
+  circle of `ht_radius_m` and points `ObjectiveMarkers.TIDE_DRY` at it; then for `ht_flood_ticks` a hero whose
+  centre is outside it takes `ht_hit` per mille every `ht_step_ticks`. `dry_spot`: the first of 32 `ai` draws inside
+  the room (less the radius and 1 m) that is `ht_gap_m` from the hero, clear of walls, and whose centre is the eye
+  plus half the circle's radius from the boss; with none, the farthest such spot on a 1 m grid; with none, the gap
+  is halved, twice at most; with none, no High Tide this time. The circle does not move afterwards; the boss may.
+- **The Maelstrom** (from `mael_phase` to the end of the fight). No Pull is cast. The way it turns is one `ai` draw
+  as it begins. Each tick (phase 6; not while the boss kneels at a phase gate) a hero neither dashing nor dead is
+  moved by `BossTide.shift` (the wall rule) `mael_spin` per mille of its run speed along the perpendicular
+  `(-y, x)` of its unit line to the boss times the turn, plus `mael_in` per mille toward it (stopping `BODY_GAP_M`
+  short of the body). **The eye:** a hero whose centre is within `mael_eye_m` of the boss's edge takes `mael_hit`
+  per mille once (`ONCE`) and, if that hit landed, is thrown `mael_throw_m` straight out over `mael_throw_ticks`
+  (the wall rule; not carried meanwhile); the eye hits again no sooner than `mael_grace_ticks` after.
+- **Tide pools.** A crossing wave whose boss's hazard table lists its wave attack (`BossHazard.lays_on`) leaves one
+  hazard where it ends: one radius back from the far wall and held inside the room (`BossStream._leave_pool`,
+  `BossHazard.place`: its cap, never in the doorway). The Tidecaller's is a `slow` disc.
+- **Never a kill from full.** `DanceRules.MAX_HIT` (400 per mille) bounds every single hit in content.
+- **The death recap.** Riptide names the boss's first `wave` attack (`rip_cause`); High Tide and the eye its first
+  `tide` attack (`tide_cause`). Damage effect ids: `boss_riptide`, `boss_high_tide`, `boss_maelstrom`.
+- **Fight end.** With the hero dead or outside the room the casts running end and a throw stops
+  (`BossDance.cancel`); with the boss gone the clocks and the marker go (`on_boss_gone`).
+- **Events** (`STATUS_APPLY`, source the boss; never read back): `riptide_cast` (a cast's warning begins; amount =
+  its ticks, amount_applied = the safe strip, pos = that strip's centre), `riptide_wave` (amount = the wave's ticks,
+  amount_applied = the safe strip), `riptide_hit` (target the hero, amount = the HP it cost), `high_tide_cast` (pos
+  = the dry circle's centre, amount = the cast's ticks), `high_tide` (the water is up; amount = its ticks),
+  `high_tide_end`, `maelstrom` (it begins; amount = the turn, 1 or -1), `maelstrom_throw` (target the hero, pos =
+  where it stood, amount = the HP it cost).
+- **Hash and save.** Hashed after a `-14` sentinel only while a boss runs a dance (`dance_boss >= 0`); every
+  world without one hashes as before. `BossStore` is a snapshot state class, so the clocks and the dry circle are
+  saved. The tide pools are the arena hazards (hashed once a fight has used one).
+- **Reads.** `WorldReader.boss_dance()`: `boss`, `room`, `along_x`, `strips` (4 × Rect2), `riptide` ({} or `cast`,
+  `casts`, `safe`, `struck`, `warn` 0..1000 or -1, `warn_left`, `wave` 0..1000 or -1, `front` m, `hit`),
+  `riptide_in`, `high_tide` ({} or `centre`, `radius`, `cast` 0..1000 or -1, `flood` 0..1000 or -1, `left`,
+  `inside`), `high_tide_in`, `maelstrom` ({} or `centre`, `spin`, `around`, `inward` m/s, `eye` m from the boss's
+  centre, `grace`, `thrown`). A read after a step describes the tick about to run. The pools: `boss_hazards()`;
+  the circle's marker: `objectives()` (`tide_dry`).
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×

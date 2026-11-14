@@ -2468,6 +2468,17 @@ func boss_time() -> Dictionary:
 	return BossTime.state(_w)
 
 
+## The Tidecaller's dance: {} with no boss running one; else "boss", "room", "along_x", "strips" (the four strips
+## Riptide cuts the room into, Rect2), "riptide" ({} or the cast running: "cast", "casts", "safe", "struck", "warn"
+## (0..1000, -1 once the wave runs), "warn_left", "wave" (0..1000, -1 before), "front" (metres from the room's low
+## end), "hit"), "riptide_in", "high_tide" ({} or "centre", "radius", "cast" (0..1000, -1 once the water is up),
+## "flood" (0..1000, -1 before), "left", "inside"), "high_tide_in", "maelstrom" ({} or "centre", "spin", "around",
+## "inward" (m/s), "eye" (m from the boss's centre), "grace", "thrown"). Its tide pools: boss_hazards.
+## (BossDance.state)
+func boss_dance() -> Dictionary:
+	return BossDance.state(_w)
+
+
 ## The meltdowns, each {"centre", "radius" (molten beyond it; INF while it only glows: the melt
 ## attack's windup), "next" (the radius it melts to next), "warn" (0..1000 while the next step glows, else -1),
 ## "bound" (the room, Rect2), "bridge" (bool), "exit" (the bridge's far end), "half" (its half width)}.

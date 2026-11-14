@@ -37,6 +37,20 @@ const TIME_FIELDS: Array[StringName] = [
 	&"time_back",
 	&"time_bv_at"
 ]
+## The dance's clocks (BossDance, BossMaelstrom).
+const DANCE_FIELDS: Array[StringName] = [
+	&"dance_boss",
+	&"dance_rip_due",
+	&"dance_rip_from",
+	&"dance_rip_n",
+	&"dance_rip_mirror",
+	&"dance_rip_hit",
+	&"dance_ht_due",
+	&"dance_ht_from",
+	&"dance_spin",
+	&"dance_grace",
+	&"dance_throw"
+]
 const INT_FIELDS: Array[StringName] = [
 	&"ids",
 	&"table",
@@ -323,6 +337,27 @@ var gear_a := PackedInt32Array()
 var gear_from := PackedInt32Array()
 var gear_until := PackedInt32Array()
 var gear_boss := PackedInt32Array()
+## The Tidecaller's dance (BossDance, BossMaelstrom). dance_boss is the boss that runs it (-1 = none). Riptide:
+## dance_rip_due the tick its next row may begin (-1 = not in its phase yet), dance_rip_from the tick the cast
+## running now began its warning (-1 = no row runs), dance_rip_n that cast's place in the row, dance_rip_mirror 1 when
+## the row's safe strips are the mirrored order, dance_rip_hit 1 once this cast's wave has hit. High Tide:
+## dance_ht_due the tick the next may begin (-1 = not in its phase yet), dance_ht_from the tick the one running began
+## its cast (-1 = none) and dance_ht_x/dance_ht_y its dry circle's centre. The Maelstrom: dance_spin the way it turns
+## (1 or -1; 0 = not begun), dance_grace the tick its eye may hurt again and dance_throw the ticks left of a throw out
+## of the eye. Hashed only while a boss runs it.
+var dance_boss := -1
+var dance_rip_due := -1
+var dance_rip_from := -1
+var dance_rip_n := 0
+var dance_rip_mirror := 0
+var dance_rip_hit := 0
+var dance_ht_due := -1
+var dance_ht_from := -1
+var dance_spin := 0
+var dance_grace := 0
+var dance_throw := 0
+var dance_ht_x := 0.0
+var dance_ht_y := 0.0
 
 
 func size() -> int:
@@ -454,6 +489,11 @@ func hash_into(h: StateHasher) -> void:
 		for f: StringName in GEAR_FLOAT_FIELDS + [&"time_px", &"time_py", &"time_bx", &"time_by"]:
 			h.add_f32s(get(f))
 		h.add_f32s(PackedFloat32Array([time_bv_x, time_bv_y]))
+	if dance_boss >= 0:  # Only while a boss runs its dance
+		h.add_int(-14)
+		for f: StringName in DANCE_FIELDS:
+			h.add_int(get(f))
+		h.add_f32s(PackedFloat32Array([dance_ht_x, dance_ht_y]))
 
 
 ## Removes arena hazard k (the arrays stay oldest first).
@@ -486,6 +526,18 @@ func clear_time() -> void:
 	time_bv_y = 0.0
 	for f: StringName in [&"time_px", &"time_py", &"time_bx", &"time_by"]:
 		set(f, PackedFloat32Array())
+
+
+## Forgets the dance's clocks (its boss gone).
+func clear_dance() -> void:
+	for f: StringName in DANCE_FIELDS:
+		set(f, 0)
+	for f: StringName in [
+		&"dance_boss", &"dance_rip_due", &"dance_rip_from", &"dance_ht_due", &"dance_ht_from"
+	]:
+		set(f, -1)
+	dance_ht_x = 0.0
+	dance_ht_y = 0.0
 
 
 ## Row k out of the parallel arrays named by `ints` and `floats`.

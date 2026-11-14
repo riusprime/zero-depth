@@ -813,6 +813,25 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   `verdict` attack (the Bell's Verdict takes its square and damage from it).
   New boss move `time_wave` (shape 3, no params): its telegraph is the cast. It is a cast move
   (`BossSchemas.CAST_MOVES`): its `damage` must be 0 and it needs no `cause_key` or `hit_class`.
+- **v0.12.0 step 4 (owner brief TC1-TC6, SG-TC).** `BossDefinition.dance: Dictionary` (empty: none), the
+  Tidecaller's dance, checked by `DanceRules` (`SPEC`: key → [default, min, max]; an unknown key or a value out of
+  range is an error) and compiled by `DanceCompiler` into `BossTable.dance` (`BossDanceTable`). Keys, with the
+  Tidecaller's values: the Pull `pull_permille` 750 (of the hero's run speed; 0 = the attack's own `pull_mps`),
+  `pull_late_permille` 850 from `pull_late_phase` 2, `push_m` 6 (thrown over the attack's `push_seconds`, now 0.5;
+  0 = the attack's own `push_mps`); Riptide `riptide_phase` 1, `riptide_first_seconds` 10,
+  `riptide_every_seconds` 20, `riptide_casts` 4 (1..4), `riptide_warn_seconds` 2, `riptide_last_warn_seconds` 2.5,
+  `riptide_wave_seconds` 0.6, `riptide_permille` 350 (of the hero's max HP, at most 400); High Tide
+  `high_tide_phase` 2, `high_tide_first_seconds` 8, `high_tide_every_seconds` 25, `high_tide_cast_seconds` 2.5,
+  `high_tide_seconds` 6, `high_tide_tick_seconds` 0.5, `high_tide_permille_per_second` 60, `high_tide_radius_m` 4,
+  `high_tide_gap_m` 12; the Maelstrom `maelstrom_phase` 2, `maelstrom_spin_permille` 450, `maelstrom_in_permille`
+  250, `maelstrom_eye_m` 1.5, `maelstrom_permille` 400 (at most 400), `maelstrom_throw_m` 10,
+  `maelstrom_throw_seconds` 0.5, `maelstrom_grace_seconds` 3. Phases are indices from 0; one past the boss's last
+  phase means never. Also checked: each warning and the High Tide's cast last the telegraph minimum;
+  `riptide_every_seconds` exceeds a whole row and `high_tide_every_seconds` its cast plus its flood; a High Tide
+  step takes 1..400 per mille; a boss with a dance holds a `tide` and a `wave` attack (the death recap names them).
+  The Tidecaller also gains `hazard` (its tide pools: `kind` slow, `attack_ids` its `crossing_wave`, `radius_m` 2,
+  `life_seconds` 10, `max_count` 5, `slow_permille` 600, `warn_seconds` 0.8, `look` "venom" until a view gives it
+  its own), and its last phase has no `entry_attack` (no Pull is cast in the Maelstrom).
 
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 

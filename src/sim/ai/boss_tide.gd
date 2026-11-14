@@ -15,6 +15,10 @@ extends RefCounted
 ##   list (one entry per such boss, created the first time it may attack).
 ## - The Undertow: a `marks` attack with drag_m drags a player within drag_reach_m of each struck circle drag_m
 ##   toward its centre (never past it, by the same wall rule).
+## - A boss with a dance (BossTable.dance) pulls by a share of the hero's own run speed now (run_speed), so walking
+##   straight out barely gains ground whatever the build, and its push is a throw: push_m over the push's ticks.
+##   Neither is held to MAX_MPS; the wall rule and the body gap stay. It casts no Pull while its dance holds it
+##   (BossDance.holds_pull).
 ## Pure: no stream is drawn here; everything follows from the attack's clock and positions.
 
 ## The fastest the room may ever move the player (BOSSES_4_5.md: 1.5 m/s; 2.2). Each tide attack sets its
@@ -76,7 +80,7 @@ static func due(w: World, i: int, b: int, t: BossTable, cd: int = 0) -> int:
 
 
 static func _signature_due(w: World, i: int, b: int, t: BossTable, cd: int) -> int:
-	if t.sig_every_ticks <= 0 or w.player_dead():
+	if t.sig_every_ticks <= 0 or w.player_dead() or BossDance.holds_pull(w, i, b):
 		return -1
 	var bs := w.bosses
 	var id := w.actors.ids[i]
@@ -134,11 +138,31 @@ static func drift_of(w: World, i: int) -> Vector2:
 	var d := Kin.length(to)
 	if d <= 0.0001:
 		return Vector2.ZERO
-	var most := cap_of(atk)
 	if ph == PULL:
 		var gap := d - w.actors.radius[i] - w.player.radius_m - BODY_GAP_M
-		return to * (clampf(minf(atk.tide_pull, most), 0.0, maxf(gap, 0.0)) / d)
-	return -to * (minf(atk.tide_push, most) / d)
+		return to * (clampf(rate_of(w, i, atk, ph), 0.0, maxf(gap, 0.0)) / d)
+	return -to * (rate_of(w, i, atk, ph) / d)
+
+
+## The hero's own run speed now (metres a tick): what World's walk gives a full push of the stick (the build's
+## speed, the overheat stall, a curse, the beam, a hazard's drag, the guard).
+static func run_speed(w: World) -> float:
+	var speed := ItemProcs.move_speed(w) * Heat.move_factor(w) * Curses.move_factor(w)
+	speed *= Laser.move_factor(w) * BossHazard.move_factor(w)
+	return speed * w.player.guard_move_permille / 1000.0 if w.guarding() else speed
+
+
+## How fast boss i's tide attack moves the hero in part `ph` (metres a tick, before the body gap and the wall rule):
+## the attack's own speed under its cap; for a boss with a dance, its share of the hero's run speed (the pull) and
+## its throw (the push).
+static func rate_of(w: World, i: int, atk: BossAttackTable, ph: int) -> float:
+	var dance := BossAi.table_of(w, i).dance
+	if ph == PULL:
+		var share := dance.pull_share(w.bosses.phase[BossAi.entry_of(w, i)]) if dance != null else 0
+		return run_speed(w) * share / 1000.0 if share > 0 else minf(atk.tide_pull, cap_of(atk))
+	if dance != null and dance.push_m > 0.0:
+		return dance.push_m / maxi(1, atk.tide_push_ticks)
+	return minf(atk.tide_push, cap_of(atk))
 
 
 ## Tick phase 5, boss i's `tide` attack active: the room moves the player (the wall rule: shift()), and in the pull the
@@ -246,7 +270,7 @@ static func state(w: World, i: int) -> Dictionary:
 	var st := a.state_t[i]
 	var from := 0 if ph == PULL else atk.tide_pull_ticks
 	var span := atk.tide_pull_ticks if ph == PULL else atk.tide_push_ticks
-	var speed := minf(atk.tide_pull if ph == PULL else atk.tide_push, cap_of(atk))
+	var speed := rate_of(w, i, atk, ph)
 	return {
 		"phase": ph,
 		"windup": false,
