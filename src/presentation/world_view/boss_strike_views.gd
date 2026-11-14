@@ -255,7 +255,11 @@ func _detect(
 		if tg.get("shape", &"") == &"marks":
 			_detect_marks(aid, look, tg)
 		return
-	if move == WorldReader.MOVE_COMBO or NEMESIS_MOVES.has(move):
+	if (
+		move == WorldReader.MOVE_COMBO
+		or move == WorldReader.MOVE_SWORD_COMBO
+		or NEMESIS_MOVES.has(move)
+	):
 		_detect_strikes(aid, move, tg)
 		return
 	if move == WorldReader.MOVE_SPIKE_CHASE or move == WorldReader.MOVE_SPIKE_BURST:
@@ -358,6 +362,13 @@ func _detect_combo(aid: int, tg: Dictionary) -> void:
 func _detect_strikes(aid: int, move: int, tg: Dictionary) -> void:
 	if move == WorldReader.MOVE_COMBO:
 		_detect_combo(aid, tg)
+	elif move == WorldReader.MOVE_SWORD_COMBO:  # Each of the amber Warden's cuts, on the tick it lands
+		if bool(tg.get("striking", false)) and tg.get("shape", &"") == &"arc":
+			var a := TAU * float(tg["angle"]) / 4096.0
+			var h := TAU * float(tg["half_arc"]) / 4096.0
+			var r0 := float(tg["own_r"])
+			var arc := [tg["center"], r0, r0 + float(tg["reach"]), a - h, a + h]
+			_spawn(&"tw_sword", aid, {"arc": arc})
 	else:
 		_detect_nemesis(aid, tg)
 

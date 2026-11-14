@@ -208,7 +208,7 @@ func test_the_stand_ins_pose_without_the_files() -> void:
 		assert_eq(signf(a.shield.position.z), -a.shield_side(), "its shield arm")
 
 
-func test_the_chain_view_follows_the_reader() -> void:
+func test_no_chain_is_drawn_and_the_crossfire_and_sword_lane_views_follow_the_reader() -> void:
 	var w := BossLab.world()
 	w.actors.set_pos(0, Vector2(0, -5))
 	var i := BossLab.ready_boss(w, &"twin_wardens")
@@ -230,15 +230,8 @@ func test_the_chain_view_follows_the_reader() -> void:
 			view.sync(r)
 			view.advance(DT)
 	step.call(30)
-	assert_gt(view.links_drawn(), 15, "the chain's links between them")
-	assert_gt(view.heat(), 0.9, "hot: it burns")
-	assert_eq(view.embers_drawn(), TwinViews.EMBERS, "every ember on High")
-	ViewPrefs.effects_density = "low"
-	view.advance(DT)
-	assert_eq(view.embers_drawn(), TwinViews.EMBERS / 2, "half on Low")
-	ViewPrefs.effects_density = "high"
-	assert_almost_eq(view.chain_point(0.0).x, -3.0, 0.01, "from the amber Warden")
-	assert_lt(view.chain_point(0.5).y, view.chain_point(0.0).y, "it sags")
+	assert_eq(view.links_drawn(), 0, "nothing joins the two Wardens: no chain is drawn")
+	assert_eq(r.boss_twin(i).get("chain", []), [], "the reader has none")
 	# Crossfire (v0.11.0 O5: the violet's alone): its lane and the spot through the windup.
 	var vid := w.actors.ids[BossTwin.partner_of(w, i)]
 	BossLab.start(w, BossTwin.partner_of(w, i), &"crossfire")
@@ -252,25 +245,23 @@ func test_the_chain_view_follows_the_reader() -> void:
 		step.call(1)
 	step.call(10)
 	assert_eq(view.lanes_shown(), 0, "gone after it")
-	# The Chain Sweep: cooled while it holds the chain, the lash on its strike.
+	# The Sword Lane: the lash on its strike.
 	BossLab.start(w, w.actors.index_of(w.actors.ids[i]), &"chain_sweep")
 	step.call(40)
-	assert_lt(view.heat(), 0.6, "the sweep holds it: cooled")
 	var lashed := false
 	for k in 120:
 		step.call(1)
 		lashed = lashed or view.lashing()
 	assert_true(lashed, "the lash ran on the strike")
-	# A burn flashes where it touched the hero.
+	# Standing between them burns nothing and flashes nothing.
 	CombatLab.idle(w, 120)
-	w.actors.set_pos(0, Vector2(0, 0.2))
-	w.actors.invuln[0] = 0
 	var flashed := false
 	for k in 40:
 		w.actors.set_pos(0, Vector2(0, 0.2))
 		step.call(1)
 		flashed = flashed or view.burn_flashing()
-	assert_true(flashed, "the burn's flash")
+	assert_false(flashed, "no burn")
+	assert_eq(view.links_drawn(), 0)
 
 
 ## v0.11.0 O5 (owner L7, Q11 a, Q29): the roles read out. The bar names whose bar it is (amber, violet, both) and in

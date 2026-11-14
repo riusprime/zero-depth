@@ -33,6 +33,8 @@ static func key(w: World) -> StringName:  # gdlint: ignore=max-returns
 		return t.quake.cause_key  # A quake pillar's pulse
 	if w.killer_attack == BossHazard.ATTACK and t.hazard != null:
 		return t.hazard.cause_key  # A lava or venom pool, a falling rock
+	if w.killer_attack == BossWard.MIRROR_CAUSE and t.wardens != null:
+		return t.wardens.mirror_cause_key  # The hero's own shot, sent back by the Mirror Ward
 	if w.killer_attack >= BossSignatures.LATE_CAUSE:  # A javelin coming back, an egg's burst
 		return BossSignatures.late_cause_key(t, w.killer_attack)
 	if w.killer_attack >= 0 and w.killer_attack < t.attacks.size():

@@ -20,6 +20,7 @@ const UNCLASSED := [
 	&"fallen_return",
 	&"prism_kneel",
 	&"time_wave",
+	&"mirror_ward",
 ]
 ## Per boss, the slow readable attacks BP left as they were: [id, telegraph seconds].
 const KEPT_SLOW := {
@@ -89,7 +90,7 @@ func test_every_boss_hit_kills_the_base_hero_in_its_class_hits() -> void:
 	assert_eq(
 		seen,
 		# NB1: Tidecaller 7; NB2: Twin Wardens 5; NB3: Judge 6; NB4: Shade 8; BH2: +1; O3: facet_lances; v0.11.0 O5: +6
-		118,  # v0.11.0 F9: +1 (the Warlord's great_javelin)
+		121,  # v0.11.0 F9: +1 (the Warlord's great_javelin); the Twin Wardens fighting apart: +3
 		(
 			"every classed attack of the six bosses and the final boss's three bodies (N2: 4 new, The Fallen's 9;"
 			+ " PR: the Prism's 3 orb spells in, cross_weave and prism_bolt_fan out)"

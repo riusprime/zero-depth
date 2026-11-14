@@ -142,8 +142,8 @@ func sync(reader: WorldReader) -> void:
 			_fallen.text = ""
 
 
-## The Twin Wardens' bar names whose bar it is (the amber Warden's, the violet's, both),
-## and in their last phase which one is exposed now.
+## The Twin Wardens' bar names whose bar it is (the amber Warden's, the violet's, both), and in their last phase
+## which one to hit now: the amber one, or the violet one while her broken ward leaves her stunned.
 func _twin_lines(reader: WorldReader, i: int) -> void:
 	var twin := reader.boss_twin(i)
 	if twin.is_empty():
@@ -151,8 +151,9 @@ func _twin_lines(reader: WorldReader, i: int) -> void:
 	var ph := int(twin.get("phase", 0))
 	_sub.text += "  ·  " + tr(TWIN_LEADS[clampi(ph, 0, TWIN_LEADS.size() - 1)])
 	if ph >= 2 and _stagger_label.text == "":
+		var other := reader.boss_twin(int(twin.get("partner", -1)))
 		_stagger_label.text = tr(
-			"HUD_TWIN_EXPOSED_AMBER" if twin.get("exposed", false) else "HUD_TWIN_EXPOSED_VIOLET"
+			"HUD_TWIN_EXPOSED_VIOLET" if other.get("exposed", false) else "HUD_TWIN_EXPOSED_AMBER"
 		)
 
 

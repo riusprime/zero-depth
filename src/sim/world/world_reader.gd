@@ -9,6 +9,7 @@ const KIND_PLAYER := ActorStore.Kind.PLAYER
 const OBJECTIVE_GATEKEEPER_PILLAR := ObjectiveMarkers.GATEKEEPER_PILLAR
 const OBJECTIVE_SHADE_LANTERN := ObjectiveMarkers.SHADE_LANTERN
 const OBJECTIVE_TWINS_ACTIVE := ObjectiveMarkers.TWINS_ACTIVE
+const OBJECTIVE_TWINS_WARD := ObjectiveMarkers.TWINS_WARD
 ## The final approach's states (approach_state).
 const APPROACH_WALK := FinalApproach.State.WALK
 const APPROACH_BUILDUP := FinalApproach.State.BUILDUP
@@ -116,7 +117,6 @@ const ECHO_SHOW := BossJudge.SHOW
 const ECHO_REPLAY := BossJudge.REPLAY
 ## A Warden turning angry (STATUS_APPLY's effect) and the chain's burn (its DAMAGE's effect).
 const EFFECT_TWIN_ANGER := BossTwin.EFFECT_ANGER
-const EFFECT_TWIN_CHAIN := BossTwin.EFFECT_BURN
 ## The Fallen's mimic window states (final_pace "window", fallen_window), for the presentation.
 const FALLEN_OFF := FinalPace.Mimic.OFF
 const FALLEN_WARN := FinalPace.Mimic.WARN
@@ -230,6 +230,9 @@ const MOVE_CHAIN_SWEEP := BossAttackTable.Move.CHAIN_SWEEP
 const MOVE_ECHO := BossAttackTable.Move.ECHO  # v0.9.0 NB3 (the Clockwork Judge)
 const MOVE_VERDICT := BossAttackTable.Move.VERDICT
 const MOVE_TIME_WAVE := BossAttackTable.Move.TIME_WAVE
+const MOVE_SWORD_COMBO := BossAttackTable.Move.SWORD_COMBO
+const MOVE_MIRROR_WARD := BossAttackTable.Move.MIRROR_WARD
+const MOVE_SHADOW_SWORDS := BossAttackTable.Move.SHADOW_SWORDS
 ## boss_tide's "phase".
 const TIDE_NONE := BossTide.NONE
 const TIDE_PULL := BossTide.PULL
@@ -2329,10 +2332,10 @@ func boss_waves() -> Array[Dictionary]:
 
 
 ## BOSSES_4_5.md N2: Warden body i's pair: {} for any other actor; else "lead" (the boss's body),
-## "partner" (the other's index), "angry", "anger" (0..1000 left), "chain" ([] or [from, to]), "hot" (it burns),
-## "lifted" (the Chain Sweep has it), "burned" (ticks since it last burned the player, -1 none); in a Crossfire "safe",
-## "gap" ([from, to]), "progress", "firing"; the boss's Chain Sweep "sweep" {from, to, half_width, locked, progress,
-## struck} (BossTwin.state).
+## "partner" (the other's index), "angry", "anger" (0..1000 left), "phase", "resting", "focus", "exposed" (the violet
+## Warden stunned by her broken ward), "warded" (under her whole ward); in a Crossfire "safe", "gap" ([from, to]),
+## "progress", "firing"; the boss's Sword Lane "sweep" {from, to, half_width, locked, progress, struck}
+## (BossTwin.state). Nothing joins the two bodies.
 func boss_twin(i: int) -> Dictionary:
 	if i <= 0 or i >= _w.actors.size():
 		return {}
@@ -4667,3 +4670,21 @@ func gravity_reach(i: int) -> float:
 		return 0.0
 	var t := _w.enemy_table(_w.actors.kinds[i])
 	return t.pull_radius_m if t != null else 0.0
+
+
+## The Twin Wardens' own mechanics: {} with no pair running them; else "lead" and "violet" (actor indices), "ward"
+## {who, kind (&"" none, &"mirror", &"full"), centre and half_arc (1/4096 turns), left (the Mirror Ward's ticks, -1
+## otherwise), broken, stun_left, return_in}, "swords" ([{from, to, half_width, cut, cut_in}] while Shadow Swords
+## runs), "rift" ({} or {stage, rifts [{centre, radius, entry, exit (true only once the exit is marked)}], inside,
+## exit_in, and once marked lane [from, to] and burst_radius}), "dash" (ticks left of the amber Warden's side dash)
+## and, while he winds a charge up, "charge" {lane (Obb), end, radius, locked, progress, breaks}. The swords' rifts on
+## the floor: boss_hazards. (BossWardens.state)
+func boss_wardens() -> Dictionary:
+	return BossWardens.state(_w)
+
+
+## The bursts armed where a boss's charge ended, oldest first, each {"boss" (its actor index), "centre", "radius",
+## "left" (ticks until it bursts), "progress" (0..1000)}. During the charge's wind-up the circle is its telegraph's
+## "burst" {center, radius}. (BossChargeBurst.rows)
+func boss_charge_bursts() -> Array:
+	return BossChargeBurst.rows(_w)

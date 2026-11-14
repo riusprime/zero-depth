@@ -112,6 +112,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"BossPickupTable",  # Its hour orbs (BossTimeTable.orb, content)
 	&"ShotFieldTable",  # Its slow fields (BossTimeTable.field, content)
 	&"BossDanceTable",  # The Tidecaller's dance (BossTable.dance, content)
+	&"BossWardensTable",  # The Twin Wardens' own mechanics (BossTable.wardens, content)
 	&"SwingStep",
 	&"SkillTable",
 	&"OverrunTable",  # v0.4.0 AB

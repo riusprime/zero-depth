@@ -51,6 +51,28 @@ const DANCE_FIELDS: Array[StringName] = [
 	&"dance_grace",
 	&"dance_throw"
 ]
+## The charge bursts pending (BossChargeBurst), by type.
+const CB_INT_FIELDS: Array[StringName] = [&"cb_boss", &"cb_attack", &"cb_at"]
+const CB_FLOAT_FIELDS: Array[StringName] = [&"cb_x", &"cb_y"]
+## The Twin Wardens' clocks (BossWardens, BossWard, BossWardenAmber, BossRift).
+const WD_FIELDS: Array[StringName] = [
+	&"wd_boss",
+	&"wd_mirror_until",
+	&"wd_break_at",
+	&"wd_push_tick",
+	&"wd_mirror_a",
+	&"wd_mirror_on",
+	&"wd_full",
+	&"wd_dash_cd",
+	&"wd_dash_t",
+	&"wd_dash_side",
+	&"wd_rift_stage",
+	&"wd_rift_at",
+	&"wd_rift_in",
+	&"wd_rift_out",
+	&"wd_rift_done"
+]
+const WD_FLOAT_FIELDS: Array[StringName] = [&"wd_dash_vx", &"wd_dash_vy", &"wd_aim_x", &"wd_aim_y"]
 const INT_FIELDS: Array[StringName] = [
 	&"ids",
 	&"table",
@@ -79,7 +101,6 @@ const TWIN_FIELDS: Array[StringName] = [
 	&"twin_body",
 	&"twin_angry",
 	&"twin_anger_t",
-	&"twin_burn_cd",
 	&"twin_phase",  # The roles' phase, its clock, whose turn, the body that can be hit (the hint)
 	&"twin_clock",
 	&"twin_turn",
@@ -190,17 +211,17 @@ var burn_cd := 0
 var sig_boss := PackedInt32Array()
 var sig_due := PackedInt32Array()
 ## BossTwin: the twin bosses, one entry per pair alive (the Twin Wardens): the boss's actor id (its
-## bar, its defeat) and its twin's, the body angry now (its actor id, 0 = neither) and the ticks its anger has left,
-## and the ticks until the chain may burn the player again. Empty for every other boss, and hashed only while a pair
+## bar, its defeat) and its twin's, the body angry now (its actor id, 0 = neither) and the ticks its anger has left.
+## Empty for every other boss, and hashed only while a pair
 ## lives.
 var twin_lead := PackedInt32Array()
 var twin_body := PackedInt32Array()
 var twin_angry := PackedInt32Array()
 var twin_anger_t := PackedInt32Array()
-var twin_burn_cd := PackedInt32Array()
 ## The phase the pair's roles are in (its boss's), the ticks since it began
-## (the standing-back bolt's and the last phase's swap clock), the body whose turn it is to attack next in the last
-## phase (an actor id) and the body to hit now (the leader; in the last phase the exposed one; the hint follows it).
+## (the standing-back bolt's clock), the body whose turn it is to attack next in the last phase (an actor
+## id) and the body to hit now (the leader; in the last phase the amber Warden, or the violet one while its broken
+## ward leaves it stunned; the hint follows it).
 var twin_phase := PackedInt32Array()
 var twin_clock := PackedInt32Array()
 var twin_turn := PackedInt32Array()
@@ -358,6 +379,43 @@ var dance_grace := 0
 var dance_throw := 0
 var dance_ht_x := 0.0
 var dance_ht_y := 0.0
+## The bursts a charge leaves where it ends (BossChargeBurst), oldest first: [the boss that charged, its attack (the
+## burst's size, damage and recap line), the tick it bursts, its centre]. Hashed only while one is pending.
+var cb_boss := PackedInt32Array()
+var cb_attack := PackedInt32Array()
+var cb_at := PackedInt32Array()
+var cb_x := PackedFloat32Array()
+var cb_y := PackedFloat32Array()
+## The Twin Wardens' own clocks. wd_boss is the amber Warden that runs them (-1 = none). The Mirror Ward:
+## wd_mirror_until the tick it ends (-1 = none), wd_mirror_a the way it faces, wd_mirror_on 1 while it stands (its
+## end is told once), wd_push_tick the tick it last pushed the hero back. The last phase's ward: wd_full 1 while it
+## stands, wd_break_at the tick a charge broke it (-1 = never). The amber Warden's side dash: wd_dash_cd the ticks
+## until the next, wd_dash_t the ticks left of the one running, wd_dash_side the side the next one tries first,
+## wd_dash_vx/wd_dash_vy its step a tick. Through the Rift: wd_rift_stage (BossRift's stages, 0 = none), wd_rift_at
+## the tick the stage began, wd_rift_in and wd_rift_out the rifts it enters and leaves by (-1 = not chosen),
+## wd_rift_done 1 once it has been cast, wd_rift_x/wd_rift_y the rifts' centres, wd_aim_x/wd_aim_y where the hero
+## stood when the exit was marked. Hashed only while a pair of Wardens runs them.
+var wd_boss := -1
+var wd_mirror_until := -1
+var wd_break_at := -1
+var wd_push_tick := -1
+var wd_mirror_a := 0
+var wd_mirror_on := 0
+var wd_full := 0
+var wd_dash_cd := 0
+var wd_dash_t := 0
+var wd_dash_side := 0
+var wd_rift_stage := 0
+var wd_rift_at := 0
+var wd_rift_in := -1
+var wd_rift_out := -1
+var wd_rift_done := 0
+var wd_dash_vx := 0.0
+var wd_dash_vy := 0.0
+var wd_aim_x := 0.0
+var wd_aim_y := 0.0
+var wd_rift_x := PackedFloat32Array()
+var wd_rift_y := PackedFloat32Array()
 
 
 func size() -> int:
@@ -494,6 +552,16 @@ func hash_into(h: StateHasher) -> void:
 		for f: StringName in DANCE_FIELDS:
 			h.add_int(get(f))
 		h.add_f32s(PackedFloat32Array([dance_ht_x, dance_ht_y]))
+	if wd_boss >= 0 or not cb_boss.is_empty():  # Only while the Wardens fight or a charge's burst is pending
+		h.add_int(-15)
+		for f: StringName in WD_FIELDS:
+			h.add_int(get(f))
+		for f: StringName in WD_FLOAT_FIELDS:
+			h.add_f32(get(f))
+		for f: StringName in CB_INT_FIELDS:
+			h.add_ints(get(f))
+		for f: StringName in CB_FLOAT_FIELDS + [&"wd_rift_x", &"wd_rift_y"]:
+			h.add_f32s(get(f))
 
 
 ## Removes arena hazard k (the arrays stay oldest first).
@@ -526,6 +594,30 @@ func clear_time() -> void:
 	time_bv_y = 0.0
 	for f: StringName in [&"time_px", &"time_py", &"time_bx", &"time_by"]:
 		set(f, PackedFloat32Array())
+
+
+## Removes pending charge burst k (the arrays stay oldest first).
+func remove_burst(k: int) -> void:
+	_remove_row(CB_INT_FIELDS, CB_FLOAT_FIELDS, k)
+
+
+## Forgets the Twin Wardens' clocks (the pair gone).
+func clear_wardens() -> void:
+	for f: StringName in WD_FIELDS:
+		set(f, 0)
+	for f: StringName in WD_FLOAT_FIELDS:
+		set(f, 0.0)
+	for f: StringName in [
+		&"wd_boss",
+		&"wd_mirror_until",
+		&"wd_break_at",
+		&"wd_push_tick",
+		&"wd_rift_in",
+		&"wd_rift_out"
+	]:
+		set(f, -1)
+	wd_rift_x = PackedFloat32Array()
+	wd_rift_y = PackedFloat32Array()
 
 
 ## Forgets the dance's clocks (its boss gone).
@@ -687,7 +779,7 @@ func twin_of(id: int) -> int:
 	return k if k >= 0 else twin_body.find(id)
 
 
-## A new twin pair (boss `lead`, twin `body`), calm, its chain ready.
+## A new twin pair (boss `lead`, twin `body`), calm.
 func add_twin(lead: int, body: int) -> void:
 	for f: StringName in TWIN_FIELDS:
 		var ai: PackedInt32Array = get(f)

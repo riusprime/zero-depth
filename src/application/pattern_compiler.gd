@@ -56,6 +56,7 @@ static func compile_boss_attack(
 	if t.pillar_ticks > 0:  # The last cross's pillars rise the tick after it strikes
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 2)
 	HardCompiler.compile_attack(def, t)  # The five harder spells (a second cross lengthens the active time)
+	WardensCompiler.compile_attack(def, t)  # A charge's burst, a sword combo's hits
 	if sp.has("pattern_id"):
 		var pd: BulletPatternDefinition = repo.get_def(
 			&"bullet_patterns", StringName(sp["pattern_id"])
@@ -160,6 +161,7 @@ static func compile_cadence(def: BossDefinition, t: BossTable) -> void:
 	HazardCompiler.compile_boss(def, t)  # The arena hazards
 	TimeCompiler.compile_boss(def, t)  # The Clockwork Judge's time mechanics
 	DanceCompiler.compile_boss(def, t)  # The Tidecaller's dance
+	WardensCompiler.compile_boss(def, t)  # The Twin Wardens' own mechanics
 	for a in def.attacks:  # The Clockwork Judge records for its echo (its first echo's numbers)
 		if a != null and a.move == &"echo":
 			t.echo_gap_ticks = echo_gap(a)
@@ -190,28 +192,20 @@ static func _compile_judge(def: BossAttackDefinition, t: BossAttackTable) -> voi
 	t.active_ticks = maxi(t.active_ticks, (t.echo_points - 1) * t.echo_gap_ticks + 1)
 
 
-## BOSSES_4_5.md N2; BossTwin: a twin boss's second body (its kind), its chain and its anger.
+## BOSSES_4_5.md N2; BossTwin: a twin boss's second body (its kind), its flank and its anger.
 static func _compile_twin(def: BossDefinition, t: BossTable) -> void:
 	t.twin_kind = TWIN_KINDS.get(def.twin_kind_id, -1)
 	if t.twin_kind < 0:
 		return
 	t.twin_m = def.twin_distance_m
-	t.chain_min_m = def.chain_min_m
-	t.chain_max_m = def.chain_max_m
-	t.chain_burn = def.chain_burn
-	t.chain_burn_ticks = maxi(1, SimTick.seconds_to_ticks(def.chain_burn_seconds))
-	t.chain_half_m = def.chain_width_m * 0.5
 	t.flank_m = def.flank_m
 	t.anger_permille = def.anger_speed_permille
 	t.anger_ticks = SimTick.seconds_to_ticks(def.anger_seconds)
-	# The two movesets, the standing-back bolt, the last phase's swap
+	# The two movesets, the standing-back bolt
 	for a in t.attacks:
 		a.twin_body = def.twin_attack_ids.has(String(a.id))
 	t.twin_bolt = t.attack_index(def.twin_bolt_attack) if def.twin_bolt_attack != &"" else -1
 	t.twin_bolt_ticks = maxi(1, SimTick.seconds_to_ticks(def.twin_bolt_seconds))
-	t.twin_expose_ticks = maxi(1, SimTick.seconds_to_ticks(def.twin_expose_seconds))
-	t.twin_expose_permille = def.twin_expose_permille
-	t.twin_guard_permille = def.twin_guard_permille
 
 
 ## An enemy's patterns, one per attack in order (null where an attack names none): the Arc

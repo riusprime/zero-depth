@@ -1,10 +1,11 @@
 class_name ProjectileContacts
 extends RefCounted
 ## What projectile `i` does with its sweep's result this tick (World._projectile_hits, tick phase 6): a body it met
-## takes the hit (a bomb bursts instead), with the bolt's procs and the card hooks, and a piercing or returning one
-## goes on through; a wall it met bounces it (Ricochet Core, the Siege Engine's shells) or ends it; with no contact it
-## flies on and ends at the end of its range. The GDScript sweep and the native one (NativeShots) both hand their
-## contacts here, so the rules of a hit live in one place.
+## takes the hit (a bomb bursts instead; the violet Warden's Mirror Ward sends a hero's shot back instead, BossWard),
+## with the bolt's procs and the card hooks, and a piercing or returning one goes on through; a wall it met bounces
+## it (Ricochet Core, the Siege Engine's shells) or ends it; with no contact it flies on and ends at the end of its
+## range. The GDScript sweep and the native one (NativeShots) both hand their contacts here, so the rules of a hit
+## live in one place.
 
 
 ## Projectile `i` swept from `a` by `v`: the earliest contact at `best_t` (above 1: none) with body `best_actor` or
@@ -16,7 +17,12 @@ static func apply(
 	var actors := w.actors
 	var pp := w.phase_probe
 	if best_t <= 1.0:
-		if best_actor >= 0 and not Bomb.touches(w, i):  # A bomb's touch bursts it, no hit
+		var mirrored := (
+			best_actor > 0
+			and w.bosses.wd_mirror_on == 1
+			and BossWard.reflect(w, i, best_actor, a, v, best_t)
+		)  # The Mirror Ward sent it back: it ends here without a hit
+		if best_actor >= 0 and not mirrored and not Bomb.touches(w, i):  # A bomb's touch bursts it, no hit
 			if pp != null:
 				pp.begin(&"proj.damage")
 			w.hit_spec = Attacks.projectile_spec(w, i)  # The bolt's own spec feeds

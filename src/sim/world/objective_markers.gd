@@ -23,6 +23,8 @@ const TWINS_ACTIVE := &"twins_active"
 const JUDGE_ORB := &"judge_orb"
 ## The Tidecaller's High Tide (BossDance): its dry circle.
 const TIDE_DRY := &"tide_dry"
+## The violet Warden while the amber one winds up the charge that can break its ward (BossWard).
+const TWINS_WARD := &"twins_ward"
 const CAP := 8
 ## A fixed point's entity id.
 const NO_ENTITY := -1

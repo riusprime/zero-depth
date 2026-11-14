@@ -32,7 +32,7 @@ enum Move {
 	CARD_CAST,
 	TIDE,  # BOSSES_4_5.md N1: the Tidecaller's Pull (BossTide)
 	CROSSFIRE,  # BOSSES_4_5.md N2: the Twin Wardens' fans whose gaps meet between them (BossTwin)
-	CHAIN_SWEEP,  # Their chain's line tracks the player, locks and lashes (BossTwin)
+	CHAIN_SWEEP,  # The amber Warden's Sword Lane: its line tracks the player, locks and cuts (BossTwin)
 	ECHO,  # BOSSES_4_5.md N3: the Clockwork Judge's echo of the player's path (BossJudge)
 	VERDICT,  # Its tracked square, locked, a pendulum strike dropping on it (BossJudge)
 	WAVE,  # BOSSES_HARD.md T3: the Tidecaller's crossing wave (BossStream; never a boss's own attack)
@@ -41,6 +41,9 @@ enum Move {
 	KNEEL,  # The Prism's Shattered Kneel, her core open (BossPrism)
 	GREAT_JAVELIN,  # The Warlord's great javelin: thrown, it quakes in the floor, then flies back
 	TIME_WAVE,  # The Clockwork Judge's Time Wave: a cast, then the hero's weapon slows (BossTime)
+	SWORD_COMBO,  # The amber Warden's sword hits, a step toward the hero before each (BossWardenAmber)
+	MIRROR_WARD,  # The violet Warden's cast: a ward that sends the hero's shots back (BossWard)
+	SHADOW_SWORDS,  # Blades round the hero that cut their lanes one after another (BossShadowSwords)
 }
 
 ## The runs a Nemesis attack answers to (`weapon` below).
@@ -224,14 +227,18 @@ var tide_push_ticks := 0
 var tide_bend := 0
 var drag_m := 0.0
 var drag_reach_m := 0.0
-## BOSSES_4_5.md N2; BossTwin: a `crossfire` attack's safe spot stands distance_m off the middle of the
-## chain, on the player's side, and each body's fan (its pattern, aimed at the spot) leaves out the shots within gap_m
-## of it there (gap_m, distance_m above). A `chain_sweep` lashes a lane half_width_m each side of its line, which runs
-## from the body through the player and reach_m past them. The twin's Crossfire shots take twin_look ("" = the
-## pattern's own).
+## BOSSES_4_5.md N2; BossTwin: a `crossfire` attack's safe spot stands on the far side of its caster from the
+## other Warden, at least distance_m out, and the fan (its pattern, aimed at the player) leaves out the shots within
+## gap_m of the spot there (gap_m, distance_m above). A `chain_sweep` cuts a lane half_width_m each side of its line,
+## which runs from the body through the player and reach_m past them. The twin's Crossfire shots take twin_look
+## ("" = the pattern's own).
 var twin_look := &""
 ## The twin body's attack (its moveset: the violet Warden's magic); false = the boss body's.
 var twin_body := false
+## BossChargeBurst: a `charge` with burst_radius_m > 0 bursts where its run ends, burst_ticks after it stops, for
+## the attack's damage in that radius.
+var burst_radius_m := 0.0
+var burst_ticks := 1
 ## BOSSES_4_5.md N3; BossJudge: an `echo` replays the path its boss recorded (echo_points points,
 ## echo_gap_ticks apart): point k strikes a disc radius_m wide on active tick k × echo_gap_ticks; a point within
 ## radius_m + the player's radius + echo_safe_m of where the player stood as it started is left out. A `verdict`'s

@@ -94,6 +94,10 @@ const LOOKS := {
 	&"tw_slam": {"pattern": Pattern.STONE, "strike": &"crater"},
 	&"tw_runes": {"pattern": Pattern.VOID, "strike": &"light_ring"},  # The violet's Rune Ring, Blink
 	&"tw_blink": {"pattern": Pattern.VOID, "strike": &"light_burst"},
+	# The amber Warden's sword (its combo's first cut, its overhead) and the violet one's Shadow Swords: stand-ins
+	# from the Warlord's bash and a beam until the Wardens' own strikes are drawn.
+	&"tw_sword": {"pattern": Pattern.BLADE, "strike": &"steel_arc"},
+	&"tw_swords": {"pattern": Pattern.VOID, "strike": &"beam"},
 	# The Clockwork Judge. The Verdict's square takes a column of gold light where the pendulum drops (the
 	# pendulum itself is JudgeViews'); the Gavel Slam rings a light shockwave out over the floor.
 	&"cj_verdict": {"pattern": Pattern.LIGHT, "strike": &"beam"},
@@ -173,6 +177,9 @@ const BY_KIND := {
 		WorldReader.MOVE_CHARGE: &"tw_charge",  # Each Warden's own moveset
 		WorldReader.MOVE_MARKS: &"tw_slam",
 		WorldReader.MOVE_LEAP: &"tw_blink",
+		WorldReader.MOVE_SWEEP: &"tw_sword",
+		WorldReader.MOVE_SWORD_COMBO: &"tw_sword",
+		WorldReader.MOVE_SHADOW_SWORDS: &"tw_swords",
 	},
 	WorldReader.KIND_TWIN_WARDEN_VIOLET:
 	{
@@ -181,6 +188,9 @@ const BY_KIND := {
 		WorldReader.MOVE_CHARGE: &"tw_charge",
 		WorldReader.MOVE_MARKS: &"tw_slam",
 		WorldReader.MOVE_LEAP: &"tw_blink",
+		WorldReader.MOVE_SWEEP: &"tw_sword",
+		WorldReader.MOVE_SWORD_COMBO: &"tw_sword",
+		WorldReader.MOVE_SHADOW_SWORDS: &"tw_swords",
 	},
 	WorldReader.KIND_CLOCKWORK_JUDGE:  # v0.9.0 NB3
 	{

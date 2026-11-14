@@ -616,12 +616,7 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 @export var signature_first_seconds: float         # the first one this long after the boss starts fighting
 # v0.9.0 NB2 (BOSSES_4_5.md N2): a boss in two bodies (BossTwin; "" = one body).
 @export var twin_kind_id: StringName                # BossSchemas.TWIN_KINDS ("twin_warden_violet")
-@export var twin_distance_m: float                 # the twin rises this far to the side (within the chain's lengths)
-@export var chain_min_m: float                     # the chain's length, held within these (3 <= min < max <= 9)
-@export var chain_max_m: float
-@export var chain_burn: int                        # it burns a touching player this much (> 0)...
-@export var chain_burn_seconds: float              # ...every this long (>= a tick)
-@export var chain_width_m: float                   # the strip it burns (> 0)
+@export var twin_distance_m: float                 # the twin rises this far to the side (> 0); nothing joins the two
 @export var flank_m: float                         # the twin keeps this far from the player beside it
 @export var anger_speed_permille: int              # a hit on one body speeds the other to this (1000..2000)...
 @export var anger_seconds: float                   # ...for this long
@@ -631,10 +626,11 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   `pull_seconds` and `push_seconds` (each >= the telegraph minimum), `bend_dps` (>= 0): the Tidecaller's Pull (1.2 /
   1.0 m/s for 3 s / 2 s, rings bending 25 °/s; phase 3's 1.5 / 1.2, 30 °/s). `marks` + `drag_m` (0..2) and
   `drag_reach_m` (>= `radius_m`): the Undertow (1.0 m from within 3.0 m).
-- v0.9.0 NB2: `crossfire` (PROJECTILE, shielded; needs a twin): `pattern_id` (a fan), `gap_m` (> 0: the gap's half
-  width at the safe spot), `distance_m` (> 0: the safe spot off the chain's middle), optional `twin_look` (the twin's
-  shots' look). `chain_sweep` (LINE, needs `lock_seconds` and a twin; the boss's def needs one with a
-  `late_cause_key`, the chain's burn): `width_m` (> 0), `reach_m` (>= 0: how far past the player the line runs).
+- v0.9.0 NB2: `crossfire` (PROJECTILE; needs a twin): `pattern_id` (a fan), `gap_m` (> 0: the gap's half
+  width at the safe spot), `distance_m` (> 0: the least the safe spot stands from its caster, on the far side from
+  the other Warden), optional `twin_look` (the twin's shots' look). `chain_sweep` (LINE, needs `lock_seconds` and a
+  twin; the Sword Lane since v0.12.0 step 6, the id kept): `width_m` (> 0), `reach_m` (>= 0: how far past the player
+  the line runs; its longest run is the boss's `wardens.sword_lane_max_m`).
 - v0.9.0 NB3: `echo` (PROJECTILE, shielded; a cadence move like `tide`: `signature_every_seconds` must exceed its
   telegraph + `record_seconds`): `radius_m` (> 0: each ghost strike), `record_seconds` and `step_seconds` (a step of
   at least a tick, at most `BossSchemas.ECHO_MAX_POINTS` = 24 points), `safe_m` (>= 0: the margin round where the
@@ -832,6 +828,30 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   The Tidecaller also gains `hazard` (its tide pools: `kind` slow, `attack_ids` its `crossing_wave`, `radius_m` 2,
   `life_seconds` 10, `max_count` 5, `slow_permille` 600, `warn_seconds` 0.8, `look` "venom" until a view gives it
   its own), and its last phase has no `entry_attack` (no Pull is cast in the Maelstrom).
+- **v0.12.0 step 6 (owner brief TW1-TW8, SG-TW).** The chain is gone from `BossDefinition` (`chain_min_m`,
+  `chain_max_m`, `chain_burn`, `chain_burn_seconds`, `chain_width_m`) and so is phase 3's swap (`twin_expose_seconds`,
+  `twin_expose_permille`, `twin_guard_permille`); a `chain_sweep` needs no `late_cause_key`. New:
+  `BossDefinition.wardens: Dictionary` (empty: none), the Twin Wardens' own mechanics, checked by `WardensRules`
+  (`SPEC`: key → [default, min, max]; an unknown key or a value out of range is an error; only a twin boss may have
+  it) and compiled by `WardensCompiler` into `BossTable.wardens` (`BossWardensTable`). Keys, with the Wardens'
+  values: the amber Warden `dash_m` 4, `dash_seconds` 0.25, `dash_every_seconds` 3, `combo_light_permille` 750 (a
+  combo's hits before its last, of the attack's damage), `sword_lane_max_m` 9; the Mirror Ward `mirror_seconds` 4,
+  `mirror_arc_degrees` 160, `mirror_damage_permille` 500 (BQ8 a), `mirror_cap_permille` 200 (of the hero's max HP,
+  the most one returned shot takes; the lead's addition), `mirror_range_m` 16, `mirror_push_m` 2, and the text keys
+  `mirror_cause_key` (required) and `mirror_look` (a fireball look); Shadow Swords `sword_count` 5 (at most 6),
+  `sword_ring_m` 5, `sword_fan_degrees` 200, `sword_length_m` 8, `sword_width_m` 0.9, `sword_gap_seconds` 0.2; the
+  whole ward `ward_phase` 2, `ward_stun_seconds` 5, `ward_stun_permille` 1500, `ward_stagger_seconds` 2,
+  `ward_return_seconds` 12 (counted from the break; longer than the stun); Through the Rift `rift_hp_permille` 500 (of the last bar; 0 =
+  never), `rift_gap_m` 8, `rift_radius_m` 1.2, `rift_open_seconds` 1, `rift_inside_seconds` 1.5,
+  `rift_mark_seconds` 0.5 (at most the time inside) and the text key `rift_attack` (a `charge` of this boss in no
+  phase's list, at most 40 damage: 40 % of the base hero's HP). New moves: `sword_combo` (ARC: `arc_degrees`,
+  `reach_m`, `count`, `gap_seconds`, `step_m`), `mirror_ward` (a cast: `BossSchemas.CAST_MOVES`, damage 0, no class,
+  no cause key) and `shadow_swords` (LINE, no params); each needs `wardens`. A `charge` may take `burst_radius_m` and
+  `burst_seconds` (any boss: it bursts where its run ends for its own damage). The Wardens also gain `hazard` (a
+  sword's rift: `kind` damage, `attack_ids` its `shadow_swords`, `radius_m` 1.5, `life_seconds` 8, `max_count` 5,
+  `damage` 8 every 0.5 s, `warn_seconds` 0.5, `look` "venom" until a view gives it its own) and `hazard_cause_key`.
+  The brief's 0.3 s lock for the charge is under the telegraph minimum every lock keeps (24 ticks, 0.4 s): the
+  charge ships with `lock_seconds` 0.4 until the owner decides (PROGRESS, step 6).
 
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 
