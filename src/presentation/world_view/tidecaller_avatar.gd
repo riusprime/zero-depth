@@ -58,6 +58,8 @@ var _tide_windup := false
 var _pull := 0.0
 var _push := 0.0
 var _swing := 0.0
+## The dance's cast running (WorldReader.boss_dance): [the clip it plays, progress 0..1], or [] for none.
+var _cast := []
 
 
 func sync(reader: WorldReader, i: int) -> void:
@@ -65,7 +67,30 @@ func sync(reader: WorldReader, i: int) -> void:
 	_tide_phase = int(tide.get("phase", WorldReader.TIDE_NONE))
 	_tide_progress = float(tide.get("progress", 0)) / 1000.0
 	_tide_windup = bool(tide.get("windup", false))
+	_cast = cast_clip(reader.boss_dance())
 	super(reader, i)
+
+
+## The clip the Tidecaller casts its dance with, played while no attack runs: a Riptide warning tolls the bell as the
+## ring stream does (its "pattern" clip, the file's bell_toll), a High Tide's cast raises it as the Pull does ("tide",
+## bell_raise); each reaches its strike pose as the cast ends. [] while neither runs.
+static func cast_clip(dance: Dictionary) -> Array:
+	var rip: Dictionary = dance.get("riptide", {})
+	if not rip.is_empty() and int(rip["warn"]) >= 0:
+		return [BossAnimator.MOVE_CLIPS[WorldReader.MOVE_PATTERN], float(rip["warn"]) / 1000.0]
+	var ht: Dictionary = dance.get("high_tide", {})
+	if not ht.is_empty() and int(ht["cast"]) >= 0:
+		return [BossAnimator.MOVE_CLIPS[WorldReader.MOVE_TIDE], float(ht["cast"]) / 1000.0]
+	return []
+
+
+func _side_clip() -> Array:
+	return _cast
+
+
+## The cast running now (tests): what cast_clip gave the last sync.
+func cast_now() -> Array:
+	return _cast
 
 
 ## Render scripts and tests set the tide directly: "tide_phase" (TIDE_*), "tide_progress" (0..1).
@@ -275,7 +300,8 @@ func _advance_tide(dt: float, windup_rings: bool) -> void:
 	var pushing := 1.0 if _tide_phase == WorldReader.TIDE_PUSH else 0.0
 	_pull = move_toward(_pull, pulling, dt * 3.0)
 	_push = move_toward(_push, pushing, dt * 3.0)
-	var ringing := maxf(_pull, 1.0 if _tide_windup and windup_rings else 0.0)
+	var tolling := (_tide_windup and windup_rings) or (windup_rings and not _cast.is_empty())
+	var ringing := maxf(_pull, 1.0 if tolling else 0.0)
 	var target := sin(_t * 9.0) * 0.55 * ringing + sin(_t * 2.2) * 0.25 * _push
 	if ViewPrefs.reduced_motion:
 		target *= 0.4

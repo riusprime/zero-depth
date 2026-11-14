@@ -699,6 +699,11 @@ func _animate(dt: float) -> void:
 	if _recall >= 0.0 and an.has_clip(RECALL_CLIP):  # The pull, timed by the recall
 		clip_name = RECALL_CLIP
 		t = _recall
+	var side := _side_clip() if not attacking and not _dying else []
+	if not side.is_empty() and an.has_clip(side[0]):
+		clip_name = side[0]
+		t = clampf(float(side[1]), 0.0, 1.0) * (an.clips[clip_name] as BossClip).strike
+		attacking = true
 	an.drive_action(clip_name, _attack_serial, t, attacking, dt)
 	var variant := String(clip_name).ends_with(BossAnimator.SHIELDED_SUFFIX)
 	an.set_layer(
@@ -771,6 +776,12 @@ func _burrow_time(c: BossClip) -> float:
 ## from one strike to the next picks it here.
 func _action_clip(by_move: StringName) -> StringName:
 	return by_move
+
+
+## A clip some bodies play while no attack runs, for a cast the sim runs beside the attacks: [clip name, progress
+## 0..1 toward its strike pose], or [] for none.
+func _side_clip() -> Array:
+	return []
 
 
 ## Each body's clip library (BossClip by name; its <Boss>Clips).

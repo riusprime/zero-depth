@@ -26,7 +26,7 @@ const ARROW := &"arrow"
 const PING := &"ping"
 ## Reasons marked on screen by a small bobbing arrow above the target, pointing down (no ring, no text).
 const DOWN_ARROW: Array[StringName] = [
-	WorldReader.OBJECTIVE_GATEKEEPER_PILLAR, MechanicHints.JUDGE_ORB
+	WorldReader.OBJECTIVE_GATEKEEPER_PILLAR, MechanicHints.JUDGE_ORB, MechanicHints.TIDE_DRY
 ]
 const DOWN_GAP_PX := 54.0
 ## A reason whose target carries something above it has its arrow that much higher (an hour orb's clock).

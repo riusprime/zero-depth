@@ -4,7 +4,8 @@ extends GutTest
 ## (Enter); God from the dev panel (clicked); the stick walks to the boss door, E opens it, the stick walks in and the
 ## door seals; the Tidecaller rises (its model, its name on the boss bar) and fights: its Pull comes, the water drawn
 ## round it (TideViews) and the hero, standing still, drawn toward it; then, the shield down, the hero closes in and
-## the mouse's attack lands hits on it.
+## the mouse's attack lands hits on it. Brought to its second phase, its Riptide row comes and its four strips are drawn
+## on the real room's, three struck and the sim's safe one dry (TideDanceViews).
 
 const FLOOR := 4
 const LEG_FRAMES := 900
@@ -147,3 +148,28 @@ func test_continue_floor_4_and_fight_the_tidecaller_through_its_pull() -> void:
 		await e.frames(10)
 	var j := w.actors.index_of(bid)
 	assert_true(j < 0 or w.actors.hp[j] < hp0, "the hero's hits landed on it")
+	if j < 0:
+		return
+	# Its Riptide (phase 2) in the real boss room. TEST HELPER: its HP is set just under the second phase's threshold
+	# (a real fight to it is minutes long); everything after is the game: the phase gate, the Pull it opens with, the
+	# 10 s to the first row, real frames.
+	w.actors.hp[j] = w.actors.max_hp[j] * 650 / 1000
+	var td: TideDanceViews = main.view.tide_dance
+	var rip := {}
+	for k in 60 * 30:
+		await e.frames(1)
+		rip = reader.boss_dance().get("riptide", {})
+		if not rip.is_empty() and td.strips_shown() > 0:
+			break
+	assert_false(rip.is_empty(), "a Riptide row began")
+	if rip.is_empty():
+		return
+	assert_eq(td.strips_shown(), 4, "its four strips are drawn")
+	var strips: Array = reader.boss_dance()["strips"]
+	var struck := 0
+	for k in 4:
+		assert_true(td.strip_rect(k).is_equal_approx(strips[k]), "on the room's strip %d" % k)
+		if td.strip_struck(k):
+			struck += 1
+	assert_eq(struck, 3, "three struck, one dry")
+	assert_false(td.strip_struck(int(rip["safe"])), "the dry one is the sim's safe strip")

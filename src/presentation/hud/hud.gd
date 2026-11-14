@@ -87,6 +87,8 @@ var interact := InteractPromptHud.new()
 var objective_hints := ObjectiveHints.new()
 ## The attack speed a boss has taken and what is won back, over the HP plate.
 var attack_slow := AttackSlowHud.new()
+## The low-HP edge glow's look while the High Tide's water hurts the hero outside the dry circle.
+var tide_flood := LowHpVignette.new()
 ## The weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
 var build_hud := BuildHud.new()
 ## The picked cards' icons fly over everything to their HUD slots.
@@ -162,6 +164,8 @@ func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_wash)
 	add_child(_vignette)
+	tide_flood.name = "TideFlood"
+	add_child(tide_flood)
 	add_child(objective_hints)  # Under every panel and plate
 	_build_corner()
 	_build_top()
@@ -320,6 +324,7 @@ func sync(reader: WorldReader) -> void:
 	_sync_floor_lines(reader)
 	boss_bar.sync(reader)
 	attack_slow.sync(reader)
+	tide_flood.active = TideDanceViews.flooding(reader)
 	heat_meter.sync(reader)
 	PerfMarks.add(&"hud.top", t)
 	t = PerfMarks.start()

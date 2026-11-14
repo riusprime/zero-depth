@@ -279,3 +279,4 @@ AnimationPlayer inside the `.glb`; yours replace the code ones.
 | ☐ | `fx_rail_streak` (P2) | The Siege Engine's rail shot (the only texture missing from the zips) | in [`art/requests/v0.8.0_textures.md`](art/requests/v0.8.0_textures.md) |
 | ☐ | final-boss music (P3) | A track for the final arena; today it uses the boss sounds | — |
 | ☐ | the Clockwork Judge's time sounds (P3) | The Time Wave landing, the Bell's toll, the throw back to your copy, the Judge's return, an hour orb taken: each borrows an existing sound re-pitched (`JudgeTimeCues`). A stopped gear rising and a slow field have none | — |
+| ☐ | the Tidecaller's dance sounds | A Riptide warning and its wave, a High Tide's cast and its water rising, the Maelstrom beginning, the eye's throw: each borrows the Tidecaller's bell, its Pull's surge or the boss slam, re-pitched (`TideDanceCues`). The water draining has none | — |
