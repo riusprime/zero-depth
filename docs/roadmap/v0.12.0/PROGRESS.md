@@ -3,19 +3,25 @@
 Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0120`, cut from `main` at `feedd802`.
 
 ## Where we are
-(The lead keeps this block current at every push. Updated 2026-11-14.)
+(The lead keeps this block current at every push. Updated 2026-11-14, evening.)
 
-- **Planned, nothing built.** The owner's boss brief is written up in [`BOSS_BRIEF.md`](BOSS_BRIEF.md) and this
-  version's PLAN follows it: one boss at a time, the Clockwork Judge first.
-- **Decided by the owner (2026-11-14):** the version (v0.12.0), 25 % per hour orb, the Twins on one HP pool with
-  three bars, The Fallen "remembers your run", the signatures approved in kind.
-- **Next:** step 1 (the Judge's building blocks: the attack-speed debuff, floor pickups, slow fields for shots),
-  then step 2 (the Judge's fight).
+- **The Clockwork Judge's new fight is built and waits for the owner to play it** (steps 1–3d, head `f4a4d2ab`,
+  not pushed): the Time Wave and three hour orbs, the stopped gears and slow fields from phase 2, the Rewind with
+  the Bell's own Verdict, the Judge's one return. Nobody has watched it move: stills, bots and tests only.
+- **Seams on `92c51874`** (clean worktree, owner's PC, 2026-11-14): **729 of 730, 1,180 s of tests, exit 1.** The
+  one failure, `test_readable_cause.gd` `test_every_cause_line_exists_in_both_languages`, was the Time Wave having
+  no cause-of-death line; a cast that never hits needs none (CONTENT_SCHEMA), and the test now says so (`f4a4d2ab`).
+  Re-run of that file with `test_attack_visuals_2.gd`: 15 of 15, exit 0. The whole seams set was not run again.
+- **For the owner to judge on the Judge** (`OWNER ONLY`): whether it is "difficult but learnable"; 0.45 s to leave
+  the Bell's Verdict (the bot that plays is still hit on 7 of 26 throws, not traced); the gears' height (1.64 m, so
+  the hero shows over them); the hint arrows (first two runs only); the faint rings on the Ruins floor; the stand-in
+  clock and cogs; the borrowed sounds. Bot numbers: [`evidence/JUDGE_BOTS.md`](evidence/JUDGE_BOTS.md).
+- **Not measured:** the Judge at floor-5 scaling (the bots fight it unscaled).
+- **Next:** the owner plays the Judge; then steps 4–5 (the Tidecaller).
 - **Not approved yet:** the lead's rows for the Warlord, Siege Engine, Foundry and Hive Lens (asked when each
   boss's step starts), and the lead's default answers listed in the PLAN.
-- **The owner's folder** is on `claude/v0120`. After this checkout the native library must be rebuilt before the
-  game or a test runs (`bash scripts/native/build.sh all`): `main` brought a change in `native/`.
-  `project.godot` has an uncommitted change that is not the lead's (the editor re-saved it); left alone.
+- **The owner's folder** is on `claude/v0120`. `project.godot` has an uncommitted change that is not the lead's
+  (the editor re-saved it); left alone.
 
 ## Owner decisions (2026-11-14)
 - "v0.12.0 (Recommended)": the boss rework is its own version on a new branch from `main`.
