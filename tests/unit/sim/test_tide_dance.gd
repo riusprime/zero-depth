@@ -635,6 +635,168 @@ func test_no_pull_is_cast_in_the_maelstrom_and_its_casts_never_overlap() -> void
 	assert_gte(_fx(w, BossDance.HT_CAST).size(), 1, "and High Tide")
 
 
+# --- the anchor: the Tidecaller holds the room's centre through the Maelstrom -------------------------------------
+
+
+## A Tidecaller in a corner that walks but casts nothing (its dance off), in the Maelstrom's phase.
+func _walker(hero_at: Vector2, boss_at: Vector2, seed_value: int = 11) -> Array:
+	var s := TideLab.fight(hero_at, boss_at, seed_value)
+	var w: World = s[0]
+	TideLab.hush(w, s[1], false)
+	var d := TideLab.dance(w, s[1])
+	d.rip_phase = NEVER
+	d.ht_phase = NEVER
+	TideLab.set_phase(w, s[1], 2)
+	return s
+
+
+func test_in_the_maelstrom_it_walks_straight_to_the_rooms_centre_tick_exact() -> void:
+	var boss := Vector2(-9, 9)
+	var s := _walker(Vector2(8, 6), boss)
+	var w: World = s[0]
+	var i := _i(w, s[1])
+	var t := TideLab.table(w, s[1])
+	var centre := w.bosses.arena.get_center()
+	assert_eq(centre, Vector2.ZERO, "the lab's room is centred on the origin")
+	var step := t.speed * t.phase_speed_permille[2] / 1000.0
+	assert_almost_eq(step * 60.0, 1.4 * 0.99, 0.0001, "its phase's own walking speed")
+	var start := boss.distance_to(centre)
+	var walked := 0
+	while w.actors.pos(i) != centre and walked < 2000:
+		var at := w.actors.pos(i)
+		w.actors.set_pos(0, Vector2(8, 6))  # Held off the eye's path: no hit, no hit-stop
+		w.step(InputFrame.new())
+		TideLab.take_lost(w)
+		walked += 1
+		i = _i(w, s[1])
+		var now := w.actors.pos(i)
+		if now == centre:
+			break
+		assert_almost_eq(at.distance_to(now), step, 0.0002, "one step a tick")
+		assert_almost_eq(
+			now.distance_to(centre), at.distance_to(centre) - step, 0.0002, "straight at it"
+		)
+	assert_eq(w.actors.pos(i), centre, "it lands on the centre exactly")
+	assert_eq(walked, ceili(start / step), "in its distance over its speed, rounded up")
+	assert_true(_state(w)["maelstrom"]["anchored"])
+
+
+func test_it_stands_on_the_centre_for_the_rest_of_the_fight_whatever_it_does() -> void:
+	var s := TideLab.fight(Vector2(8, 6), Vector2(-9, 9))
+	var w: World = s[0]
+	var aid: int = s[1]
+	TideLab.set_phase(w, aid, 2)
+	var centre := w.bosses.arena.get_center()
+	var t := TideLab.table(w, aid)
+	var walk := ceili(Vector2(-9, 9).length() / (t.speed * t.phase_speed_permille[2] / 1000.0))
+	var t0 := w.tick
+	var arrived := -1
+	var moves := {}
+	for k in 60 * 80:  # The hero stands and shoots: the whirlpool brings it in, the eye throws it out
+		w.step(InputFrame.make(Vector2i.ZERO, 0, 300, InputFrame.SHOOT, 0))
+		TideLab.take_lost(w)
+		var i := _i(w, aid)
+		w.actors.hp[i] = maxi(w.actors.hp[i], 400)
+		var atk := BossAi.attack_of(w, i)
+		if atk != null:
+			moves[atk.move] = true
+		if arrived < 0 and w.actors.pos(i) == centre:
+			arrived = w.tick
+		elif arrived >= 0 and w.actors.pos(i) != centre:
+			fail_test("tick %d: it left the centre for %s" % [w.tick, w.actors.pos(i)])
+			return
+		var st: Dictionary = _state(w)["maelstrom"]
+		if arrived >= 0 and not st.is_empty():
+			assert_eq(st["centre"], centre, "the eye's centre is the room's centre")
+	assert_gte(arrived, 0, "it reached the centre")
+	# It walks on through its attacks: its walk's ticks, plus the few the hits' hit-stop freezes
+	assert_between(arrived - t0, walk, walk + 60, "its walk takes %d ticks" % walk)
+	assert_true(moves.has(BossAttackTable.Move.MARKS), "Undertow still comes")
+	assert_true(moves.has(BossAttackTable.Move.SLAM_RING), "and Shell Slam")
+	assert_gt(_fx(w, BossMaelstrom.BEGIN).size(), 0, "the whirlpool runs")
+
+
+func test_before_the_maelstrom_it_still_walks_at_the_hero() -> void:
+	var s := _walker(Vector2(8, 6), Vector2(-9, 9))
+	var w: World = s[0]
+	TideLab.set_phase(w, s[1], 1)
+	var hero := w.player_pos()
+	var from := w.actors.pos(_i(w, s[1])).distance_to(hero)
+	_idle(w, 60)
+	assert_lt(w.actors.pos(_i(w, s[1])).distance_to(hero), from - 1.0, "it chases")
+
+
+func test_the_dry_circle_keeps_clear_of_the_eye_on_its_walk_over_seeds() -> void:
+	var rng := RandomNumberGenerator.new()
+	var placed := 0
+	for sv in Seeds.count(1000):
+		rng.seed = sv + 1
+		var hero := Vector2(rng.randf_range(-11.0, 11.0), rng.randf_range(-11.0, 11.0))
+		var boss := Vector2(rng.randf_range(-10.0, 10.0), rng.randf_range(-10.0, 10.0))
+		var s := TideLab.fight(hero, boss, sv + 1)
+		var w: World = s[0]
+		var i := _i(w, s[1])
+		var d := TideLab.dance(w, s[1])
+		TideLab.set_phase(w, s[1], 2)
+		var c := BossDance.dry_spot(w, i, d)
+		if not c.is_finite():
+			continue
+		placed += 1
+		# The eye plus the hero's width and a metre never reaches the circle, wherever on its walk the boss is.
+		var keep := (
+			w.actors.radius[i] + d.mael_eye_m + w.player.radius_m * 2.0 + 1.0 + d.ht_radius_m
+		)
+		var centre := w.bosses.arena.get_center()
+		for k in 21:
+			var eye := boss.lerp(centre, k / 20.0)
+			if c.distance_to(eye) < keep - 0.0001:
+				fail_test(
+					"seed %d: hero %s boss %s circle %s eye at %s" % [sv + 1, hero, boss, c, eye]
+				)
+				return
+	assert_gt(placed, Seeds.count(1000) * 9 / 10, "nearly every High Tide finds its floor")
+	pass_test("%d circles, none within the eye's reach" % placed)
+
+
+func test_a_live_high_tide_never_floods_the_eye_over_seeds() -> void:
+	for sv in 4:
+		var s := TideLab.fight(Vector2(8, -6), Vector2(-9, 9), sv + 1)
+		var w: World = s[0]
+		var aid: int = s[1]
+		TideLab.set_phase(w, aid, 2)
+		var d := TideLab.dance(w, aid)
+		var floods := 0
+		for k in 60 * 40:
+			w.step(InputFrame.new())
+			TideLab.take_lost(w)
+			var i := _i(w, aid)
+			w.actors.hp[i] = maxi(w.actors.hp[i], 400)
+			if w.bosses.dance_ht_from < 0:
+				continue
+			floods += 1
+			var gap := BossDance.dry_centre(w).distance_to(w.actors.pos(i))
+			if gap < BossDance.eye_keep_m(w, i, d) - 0.0001:
+				fail_test(
+					(
+						"seed %d tick %d: the eye is %.2f m from the dry circle's centre"
+						% [sv + 1, w.tick, gap]
+					)
+				)
+				return
+		assert_gt(floods, 0, "seed %d: a High Tide ran" % (sv + 1))
+
+
+func test_the_walk_is_deterministic() -> void:
+	var runs: Array[String] = []
+	for r in 2:
+		var s := TideLab.fight(Vector2(8, 6), Vector2(-9, 9), 5)
+		var w: World = s[0]
+		TideLab.set_phase(w, s[1], 2)
+		_idle(w, 60 * 15)
+		runs.append(w.state_hash())
+	assert_eq(runs[0], runs[1])
+
+
 # --- the tide pools ---------------------------------------------------------------------------------------------
 
 

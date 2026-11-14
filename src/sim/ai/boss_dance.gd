@@ -10,9 +10,9 @@ extends RefCounted
 ##   ends. The first row begins rip_first_ticks into rip_phase, then one every rip_every_ticks (start to start).
 ##   Before the Maelstrom a row waits for the Pull to end, and the Pull waits for a row (holds_pull).
 ## - High Tide, from ht_phase: its cast shows one dry circle (dry_spot: at least ht_gap_m from the hero, inside the
-##   room, clear of walls, its centre out of the Maelstrom's eye), which the objective markers point at
-##   (ObjectiveMarkers.TIDE_DRY); then for ht_flood_ticks a hero outside it loses ht_hit per mille of max HP every
-##   ht_step_ticks. A row of Riptide and a High Tide never run together: the later one waits.
+##   room, clear of walls, the whole circle clear of the Maelstrom's eye by the hero's width and a metre), which the
+##   objective markers point at (ObjectiveMarkers.TIDE_DRY); then for ht_flood_ticks a hero outside it loses ht_hit
+##   per mille of max HP every ht_step_ticks. A row of Riptide and a High Tide never run together: the later one waits.
 ## - Neither begins while the boss rises or kneels at a phase change; one running goes on. Both end with the boss
 ##   (on_boss_gone) and when the hero is dead or has left the room (cancel).
 ## Pure: the ai stream only (a row's mirror, the dry circle's spot, the Maelstrom's way).
@@ -37,6 +37,8 @@ const HT_EFFECT := &"boss_high_tide"
 const TRIES := 32
 ## The dry circle's edge keeps this far from the room's walls.
 const EDGE_M := 1.0
+## The gap between the dry circle's edge and the Maelstrom's eye, beyond the hero's width.
+const EYE_MARGIN_M := 1.0
 ## The scan's step when no draw fits.
 const SCAN_M := 1.0
 ## Round the boss when the fight has no room (a test world): this far each way.
@@ -259,13 +261,26 @@ static func dry_spot(w: World, i: int, d: BossDanceTable) -> Vector2:
 	return Vector2.INF
 
 
-## True when a dry circle at p is `gap` from the hero, clear of walls, and its centre is half its radius outside the
-## Maelstrom's eye round boss i (so the hero can stand in it without being eaten).
+## True when a dry circle at p is `gap` from the hero, clear of walls, and its centre is eye_keep_m(w, i, d) from
+## the Maelstrom's eye's centre wherever that eye will be: round boss i now and, in a fight with a Maelstrom,
+## anywhere on its walk to its anchor (BossMaelstrom.holds), so a hero standing anywhere in the circle is never in
+## the eye.
 static func fits(w: World, i: int, d: BossDanceTable, p: Vector2, gap: float) -> bool:
 	if Kin.length(p - w.player_pos()) < gap:
 		return false
-	var eye := w.actors.radius[i] + d.mael_eye_m + d.ht_radius_m * 0.5
-	return Kin.length(p - w.actors.pos(i)) >= eye and EnemyAi.clear_of_walls(w, p, d.ht_radius_m)
+	var at := w.actors.pos(i)
+	var to := BossMaelstrom.anchor(w, i) if BossMaelstrom.in_fight(BossAi.table_of(w, i)) else at
+	if BossGears.seg_dist(p, at, to) < eye_keep_m(w, i, d):
+		return false
+	return EnemyAi.clear_of_walls(w, p, d.ht_radius_m)
+
+
+## How far a dry circle's centre keeps from the eye's centre: the eye (the boss's radius and mael_eye_m), the
+## circle's radius, and a margin of the hero's width and EYE_MARGIN_M between the circle's edge and the eye's.
+static func eye_keep_m(w: World, i: int, d: BossDanceTable) -> float:
+	return (
+		w.actors.radius[i] + d.mael_eye_m + d.ht_radius_m + w.player.radius_m * 2.0 + EYE_MARGIN_M
+	)
 
 
 # --- the end of a fight -----------------------------------------------------------------------------------------
