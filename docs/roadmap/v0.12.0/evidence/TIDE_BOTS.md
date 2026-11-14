@@ -1,6 +1,7 @@
 # TIDE_BOTS: does ignoring the Tidecaller's dance cost clearly more than playing it?
 
-- **Status:** RUN. **The expectation is NOT MET** (see "Result"): the numbers are below, nothing was retuned.
+- **Status:** RUN. **The expectation is NOT MET** (see "Result"; still not met after step 4b, its section at the
+  end): the numbers are below, nothing was retuned.
 - **Build:** the tree of the commit that adds this file (`v0.12.0 Step 4`; its parent is `c7ae896b`) on `v0120-t4`,
   run before the commit was made; Godot `4.7.2.stable.official.ed1daf0bf`; Windows 11 Pro 10.0.26200 (the owner's
   PC, i7-10700K), debug native library built from this tree
@@ -85,3 +86,64 @@ TIDEBOT| weapon=blade over 3 seeds: plays { "ticks": 18210, "hp_lost": 2557, "ri
 - An earlier run of the same harness, before the plays bot stepped out of the eye first, is not kept as evidence
   beyond the sentence above.
 - Feel, difficulty, "do you notice the pull": `OWNER ONLY`.
+
+## After step 4b (2026-11-14)
+
+- **Status:** RUN. **The expectation is still NOT MET** (Gun 28 % more, not 30 %; the Blade that ignores still
+  loses less). Nothing was retuned; the test's `pending` is unchanged.
+- **What changed:** from the Maelstrom's phase on the Tidecaller walks straight to the room's centre at its own speed
+  (attacking as it goes) and then never moves; the dry circle keeps the eye, the hero's width and 1 m clear of
+  itself anywhere on that walk (SIM_CONTRACTS §10p). No number, eye radius, pull or bot changed.
+- **Build:** the tree of the commit that adds this section (`v0.12.0 Step 4b`; its parent is `847115c6`) on
+  `v0120-t4b`, run before the commit was made; Godot `4.7.2.stable.official.ed1daf0bf`; Windows 11 Pro 10.0.26200
+  (the owner's PC), debug native library built from this tree. Two other agents ran Godot at the same time (no
+  timing is read from it).
+- **Who ran it:** agent
+
+### Command
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/content,res://tests/arch,res://tests/golden -gtest=res://tests/unit/sim/test_tide_dance.gd,res://tests/unit/sim/test_tide_bots.gd,res://tests/unit/sim/test_tidecaller.gd,res://tests/unit/sim/test_world_snapshot.gd -gexit
+```
+(`godot` = `Godot_v4.7.2-stable_win64_console.exe`; `APPDATA` pointed at `build/appdata`. Exit 0: 264 tests, 263
+passing, 1 pending, the bots' target below.)
+
+### Raw output
+```
+TIDEBOT| weapon=gun bot=plays seed=5 dead=true ticks=6523 seconds=108.7 max_hp=100 hp_lost=1146 biggest=50 rip=35 tide=6 eye=0 other=1105 rows=3 strip_hits=1 strip_cost=35 tides=1 seconds_outside=1.4 tide_cost=6 throws=0 eye_cost=0
+TIDEBOT| weapon=gun bot=ignores seed=5 dead=true ticks=6282 seconds=104.7 max_hp=100 hp_lost=1344 biggest=50 rip=210 tide=33 eye=0 other=1101 rows=3 strip_hits=6 strip_cost=35 tides=1 seconds_outside=6.0 tide_cost=33 throws=0 eye_cost=0
+TIDEBOT| weapon=gun bot=plays seed=6 dead=true ticks=6630 seconds=110.5 max_hp=100 hp_lost=1002 biggest=50 rip=70 tide=0 eye=0 other=932 rows=3 strip_hits=2 strip_cost=35 tides=1 seconds_outside=0.4 tide_cost=0 throws=0 eye_cost=0
+TIDEBOT| weapon=gun bot=ignores seed=6 dead=true ticks=6398 seconds=106.6 max_hp=100 hp_lost=1437 biggest=50 rip=210 tide=36 eye=0 other=1191 rows=3 strip_hits=6 strip_cost=35 tides=1 seconds_outside=6.0 tide_cost=36 throws=0 eye_cost=0
+TIDEBOT| weapon=gun bot=plays seed=7 dead=true ticks=6506 seconds=108.4 max_hp=100 hp_lost=1105 biggest=50 rip=70 tide=6 eye=0 other=1029 rows=3 strip_hits=2 strip_cost=35 tides=1 seconds_outside=1.3 tide_cost=6 throws=0 eye_cost=0
+TIDEBOT| weapon=gun bot=ignores seed=7 dead=true ticks=6474 seconds=107.9 max_hp=100 hp_lost=1397 biggest=50 rip=245 tide=36 eye=0 other=1116 rows=3 strip_hits=7 strip_cost=35 tides=1 seconds_outside=6.0 tide_cost=36 throws=0 eye_cost=0
+TIDEBOT| weapon=gun over 3 seeds: plays { "ticks": 19659, "hp_lost": 3253, "rip": 175, "tide": 12, "eye": 0, "other": 3066, "strip_hits": 5, "throws": 0 }, ignores { "ticks": 19154, "hp_lost": 4178, "rip": 665, "tide": 105, "eye": 0, "other": 3408, "strip_hits": 19, "throws": 0 }
+TIDEBOT| weapon=blade bot=plays seed=5 dead=true ticks=6408 seconds=106.8 max_hp=100 hp_lost=1070 biggest=38 rip=26 tide=33 eye=300 other=711 rows=4 strip_hits=1 strip_cost=26 tides=2 seconds_outside=7.3 tide_cost=27 throws=10 eye_cost=30
+TIDEBOT| weapon=blade bot=ignores seed=5 dead=true ticks=3828 seconds=63.8 max_hp=100 hp_lost=523 biggest=38 rip=52 tide=33 eye=210 other=228 rows=2 strip_hits=2 strip_cost=26 tides=1 seconds_outside=5.3 tide_cost=33 throws=7 eye_cost=30
+TIDEBOT| weapon=blade bot=plays seed=6 dead=true ticks=5986 seconds=99.8 max_hp=100 hp_lost=939 biggest=38 rip=52 tide=30 eye=210 other=647 rows=4 strip_hits=2 strip_cost=26 tides=2 seconds_outside=6.0 tide_cost=30 throws=7 eye_cost=30
+TIDEBOT| weapon=blade bot=ignores seed=6 dead=true ticks=3844 seconds=64.1 max_hp=100 hp_lost=532 biggest=38 rip=78 tide=27 eye=210 other=217 rows=2 strip_hits=3 strip_cost=26 tides=1 seconds_outside=5.6 tide_cost=27 throws=7 eye_cost=30
+TIDEBOT| weapon=blade bot=plays seed=7 dead=true ticks=6052 seconds=100.9 max_hp=100 hp_lost=902 biggest=38 rip=52 tide=6 eye=180 other=664 rows=4 strip_hits=2 strip_cost=26 tides=2 seconds_outside=1.4 tide_cost=6 throws=6 eye_cost=30
+TIDEBOT| weapon=blade bot=ignores seed=7 dead=true ticks=4162 seconds=69.4 max_hp=100 hp_lost=741 biggest=38 rip=104 tide=21 eye=240 other=376 rows=2 strip_hits=4 strip_cost=26 tides=1 seconds_outside=6.1 tide_cost=21 throws=8 eye_cost=30
+TIDEBOT| weapon=blade over 3 seeds: plays { "ticks": 18446, "hp_lost": 2911, "rip": 130, "tide": 69, "eye": 690, "other": 2022, "strip_hits": 5, "throws": 23 }, ignores { "ticks": 11834, "hp_lost": 1796, "rip": 234, "tide": 81, "eye": 660, "other": 821, "strip_hits": 9, "throws": 22 }
+    [Pending]:  NOT MET, ignoring the dance costs at least 30 % more HP: gun: ignoring cost 4178 HP in 19154 ticks, playing 3253 HP in 19659 ticks; blade: ignoring cost 1796 HP in 11834 ticks, playing 2911 HP in 18446 ticks
+```
+
+### Result
+
+| | Gun plays | Gun ignores | Blade plays | Blade ignores |
+|---|---|---|---|---|
+| Fight length, 3 seeds (s) | 327.7 | 319.2 | 307.4 | 197.2 |
+| HP lost, all | 3,253 | 4,178 | 2,911 | 1,796 |
+| HP lost to the dance (rip + tide + eye) | 187 | 770 | 889 | 975 |
+| Strip hits | 5 | 19 | 5 | 9 |
+| Seconds outside the dry circle | 3.1 | 18.0 | 14.7 | 17.0 |
+| Eye throws | 0 | 0 | 23 | 22 |
+
+- **The moving eye is fixed for the Gun:** the bot that plays is now outside the dry circle 0.4 to 1.4 s a High Tide
+  (it was the whole 6 s), and its High Tide costs 12 HP over 3 fights (it was 105). The dance costs the Gun that
+  ignores it 770 against 187.
+- **NOT MET, Gun:** 4,178 against 3,253 is 28 % more (the test asks 30 %; it was 14 %). Most of both totals is
+  `other` (3,066 and 3,408), attacks neither bot dodges.
+- **NOT MET, Blade:** the bot that ignores still loses less (1,796 against 2,911) and wins in about 66 s instead of
+  about 102 s. Read from the numbers, not traced: the Blade that plays is still thrown by the eye 6 to 10 times a
+  fight (690 HP), about as often as the one that stands in it; and its High Tides cost it 33 and 30 in seeds 5 and
+  6 (6 to 7 s outside), so it did not reach the circle in time (its centre is now at least 8.8 m from the boss's
+  centre, farther from a Blade's hitting distance). This step did not touch the eye's radius or the Blade's band (step 4's reading 3).

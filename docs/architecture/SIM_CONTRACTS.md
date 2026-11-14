@@ -2239,9 +2239,12 @@ Maelstrom turns; everything else follows from the clock and the positions. No na
   while a row runs, and no row begins while it runs (the later one waits). The cast (`ht_cast_ticks`) shows one dry
   circle of `ht_radius_m` and points `ObjectiveMarkers.TIDE_DRY` at it; then for `ht_flood_ticks` a hero whose
   centre is outside it takes `ht_hit` per mille every `ht_step_ticks`. `dry_spot`: the first of 32 `ai` draws inside
-  the room (less the radius and 1 m) that is `ht_gap_m` from the hero, clear of walls, and whose centre is the eye
-  plus half the circle's radius from the boss; with none, the farthest such spot on a 1 m grid; with none, the gap
-  is halved, twice at most; with none, no High Tide this time. The circle does not move afterwards; the boss may.
+  the room (less the radius and 1 m) that is `ht_gap_m` from the hero, clear of walls, and whose centre keeps
+  `BossDance.eye_keep_m` (the boss's radius + `mael_eye_m` + `ht_radius_m` + the hero's width + `EYE_MARGIN_M`
+  1 m) from the segment between the boss and its anchor (just the boss in a fight with no Maelstrom phase), so the
+  whole circle stays the hero's width and a metre clear of the eye wherever the boss is on its walk; with none, the
+  farthest such spot on a 1 m grid; with none, the gap is halved, twice at most; with none, no High Tide this time.
+  The circle does not move afterwards.
 - **The Maelstrom** (from `mael_phase` to the end of the fight). No Pull is cast. The way it turns is one `ai` draw
   as it begins. Each tick (phase 6; not while the boss kneels at a phase gate) a hero neither dashing nor dead is
   moved by `BossTide.shift` (the wall rule) `mael_spin` per mille of its run speed along the perpendicular
@@ -2249,6 +2252,13 @@ Maelstrom turns; everything else follows from the clock and the positions. No na
   short of the body). **The eye:** a hero whose centre is within `mael_eye_m` of the boss's edge takes `mael_hit`
   per mille once (`ONCE`) and, if that hit landed, is thrown `mael_throw_m` straight out over `mael_throw_ticks`
   (the wall rule; not carried meanwhile); the eye hits again no sooner than `mael_grace_ticks` after.
+  **The anchor** (owner, 2026-11-14: "Yes, stand still"; a boss walking at the hero carried the eye onto the dry
+  circle): from `mael_phase` on, `BossMaelstrom.holds` takes the boss's whole movement (tick phase 5, in `BossAi.move`
+  before its walk). Each tick but while it kneels at a phase gate, whatever it does (it attacks too often to walk
+  only between attacks), it steps its phase's speed (times the slow factor) straight toward the anchor, the room's
+  centre (`BossDance.room_of`; without a room, where it stands), lands on it exactly and never passes it; once
+  there it does not move. Its attacks stay (none needs a step of its own; a Shell Slam cast on the walk strikes the
+  ring it locked, a step or so behind the body); it is heavy, so the collision pass never pushes it. No new state: the anchor follows from the room.
 - **Tide pools.** A crossing wave whose boss's hazard table lists its wave attack (`BossHazard.lays_on`) leaves one
   hazard where it ends: one radius back from the far wall and held inside the room (`BossStream._leave_pool`,
   `BossHazard.place`: its cap, never in the doorway). The Tidecaller's is a `slow` disc.
@@ -2270,7 +2280,7 @@ Maelstrom turns; everything else follows from the clock and the positions. No na
   `casts`, `safe`, `struck`, `warn` 0..1000 or -1, `warn_left`, `wave` 0..1000 or -1, `front` m, `hit`),
   `riptide_in`, `high_tide` ({} or `centre`, `radius`, `cast` 0..1000 or -1, `flood` 0..1000 or -1, `left`,
   `inside`), `high_tide_in`, `maelstrom` ({} or `centre`, `spin`, `around`, `inward` m/s, `eye` m from the boss's
-  centre, `grace`, `thrown`). A read after a step describes the tick about to run. The pools: `boss_hazards()`;
+  centre, `grace`, `thrown`, `anchor` (the room's centre), `anchored` (the boss stands on it)). A read after a step describes the tick about to run. The pools: `boss_hazards()`;
   the circle's marker: `objectives()` (`tide_dry`).
 
 ## 11. Scaling and threat

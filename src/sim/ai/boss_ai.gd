@@ -476,7 +476,7 @@ static func move(w: World, i: int) -> void:
 	if BossPrism.floats(w, i):  # The Prism floats home, whatever she does
 		BossPrism.drift(w, i, slow)
 		return
-	if BossNemesis.moves(w, i, slow):  # Its dash, its stance, its combo's steps in
+	if BossNemesis.moves(w, i, slow) or BossMaelstrom.holds(w, i, slow):  # Their own steps, or none
 		return
 	if BossTwin.moves(w, i, slow):  # The pair's own steps (anger, the flank, the chain's length)
 		return

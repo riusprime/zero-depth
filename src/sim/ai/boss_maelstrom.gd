@@ -11,6 +11,10 @@ extends RefCounted
 ##   (SafeArea.hurt: armour and the dash's invulnerability apply) and is thrown mael_throw_m straight out over
 ##   mael_throw_ticks (the wall rule again; the whirlpool does not carry it meanwhile); the eye then leaves it alone
 ##   until mael_grace_ticks after the hit.
+## - The anchor: from mael_phase on the boss walks (at its own speed, attacking as it goes: it attacks too often to
+##   walk only between attacks) straight to the room's centre and from there never moves (holds), so the eye stays
+##   where the High Tide's dry circle was placed away from: a whirlpool round a boss walking at the hero carried its
+##   eye onto the dry circle.
 ## Pure: one draw from the ai stream (the way it turns).
 
 ## STATUS_APPLY effects (source the boss). BEGIN: the whirlpool starts (amount = the way it turns, 1 or -1). THROW:
@@ -60,6 +64,39 @@ static func advance(w: World, i: int, d: BossDanceTable, phase: int) -> void:
 	BossTide.shift(w, drift_of(w, i, d))
 
 
+## True when the table's dance holds a Maelstrom its fight reaches (mael_phase is one of its phases).
+static func in_fight(t: BossTable) -> bool:
+	return t.dance != null and t.dance.mael_phase < t.phase_speed_permille.size()
+
+
+## Where boss i stands through its Maelstrom: the room's centre (BossDance.room_of; without a room, where it is).
+static func anchor(w: World, i: int) -> Vector2:
+	return BossDance.room_of(w, i).get_center()
+
+
+## Tick phase 5 (BossAi.move, before anything else moves it): true from mael_phase on, when boss i moves itself.
+## Each tick, whatever it does but kneel at a phase gate, it steps its phase's speed straight toward the anchor,
+## landing on it exactly, never past it; once there nothing it does moves it.
+static func holds(w: World, i: int, slow: float) -> bool:
+	var t := BossAi.table_of(w, i)
+	if t.dance == null:
+		return false
+	var phase := w.bosses.phase[BossAi.entry_of(w, i)]
+	if phase < t.dance.mael_phase:
+		return false
+	var a := w.actors
+	if a.state[i] == BossAi.GATE or a.dead[i] == 1:
+		return true
+	var at := a.pos(i)
+	var home := anchor(w, i)
+	var dist := Kin.length(home - at)
+	var speed := t.speed * t.phase_speed_permille[phase] / 1000.0 * slow
+	if dist <= 0.0 or speed <= 0.0:
+		return true
+	a.set_pos(i, home if dist <= speed else at + (home - at) * (speed / dist))
+	return true
+
+
 ## The whirlpool's drift on the hero this tick (metres), before the wall rule.
 static func drift_of(w: World, i: int, d: BossDanceTable) -> Vector2:
 	var a := w.actors
@@ -77,7 +114,8 @@ static func drift_of(w: World, i: int, d: BossDanceTable) -> Vector2:
 ## The view's read (BossDance.state's "maelstrom"): {} before it begins; else "centre" (the boss), "spin" (1 or -1:
 ## the hero is carried along the perpendicular (-y, x) of its line to the boss times this), "around" and "inward"
 ## (m/s on the hero now), "eye" (its radius from the boss's centre, m), "grace" (ticks until the eye may hurt again)
-## and "thrown" (ticks left of a throw).
+## and "thrown" (ticks left of a throw), "anchor" (the room's centre, where the boss walks to and then stands) and
+## "anchored" (it stands there: "centre" equals "anchor").
 static func state(w: World, i: int, d: BossDanceTable) -> Dictionary:
 	var bs := w.bosses
 	if bs.dance_spin == 0:
@@ -91,4 +129,6 @@ static func state(w: World, i: int, d: BossDanceTable) -> Dictionary:
 		"eye": w.actors.radius[i] + d.mael_eye_m,
 		"grace": maxi(0, bs.dance_grace - w.tick),
 		"thrown": bs.dance_throw,
+		"anchor": anchor(w, i),
+		"anchored": w.actors.pos(i) == anchor(w, i),
 	}
