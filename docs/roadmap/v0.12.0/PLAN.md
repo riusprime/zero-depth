@@ -32,6 +32,7 @@ The design, row by row: [`BOSS_BRIEF.md`](BOSS_BRIEF.md). The owner's words:
 | TW1–TW8 | The Twin Wardens (no chain, fast Amber, Mirror Ward, the charge into the ward) | As the brief's rows. Owner, BQ7: "One pool, 3 bars" | 6 |
 | S1 | "missing some signature mechanics that make it difficult and rememberable" | BOSS_BRIEF §5b, one per boss; owner: "Yes, go on" | with each boss |
 | V1 | Which version: "v0.12.0" | This plan, branch `claude/v0120`. v0.11.0's O6–O8 are closed as moved here | 0 |
+| V2 | "push it locally, i'll test all the bosses at the same time, then after playtest we decide if they are ready for main at github" (2026-11-14, after the Judge was built) | Nothing goes to GitHub until the owner has played. Every boss is built before the playtest, not one at a time: the lead's rows WL, SE, FO, HL and every SG row are built as written in BOSS_BRIEF (the lead's reading: the owner judges them by playing, and can throw any out then). "Locally" is read as: commits stay on `claude/v0120` on this PC | all |
 
 Still the lead's defaults, not the owner's words (the owner can change any; each is marked in BOSS_BRIEF
 "Decisions"): BQ1 (Lantern Shade unchanged), BQ2, BQ5 (the Time Wave slows the weapon, not the auto-spells), BQ6 (a

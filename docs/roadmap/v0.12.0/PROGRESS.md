@@ -17,7 +17,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0120`, cut from `main` at `feedd802`
   the hero shows over them); the hint arrows (first two runs only); the faint rings on the Ruins floor; the stand-in
   clock and cogs; the borrowed sounds. Bot numbers: [`evidence/JUDGE_BOTS.md`](evidence/JUDGE_BOTS.md).
 - **Not measured:** the Judge at floor-5 scaling (the bots fight it unscaled).
-- **Next:** the owner plays the Judge; then steps 4–5 (the Tidecaller).
+- **Next (owner, V2):** every other boss is built before the playtest: Tidecaller, Twin Wardens, Siege Engine and
+  Foundry first, then the Warlord and Hive Lens, The Fallen last. Nothing is pushed to GitHub until the owner has
+  played them all.
 - **Not approved yet:** the lead's rows for the Warlord, Siege Engine, Foundry and Hive Lens (asked when each
   boss's step starts), and the lead's default answers listed in the PLAN.
 - **The owner's folder** is on `claude/v0120`. `project.godot` has an uncommitted change that is not the lead's
@@ -29,6 +31,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0120`, cut from `main` at `feedd802`
 - "One pool, 3 bars (Recommended)": the Twin Wardens keep one HP pool; no chain.
 - "Remembers your run (Recommended)": The Fallen casts mechanics of the bosses killed this run; the 15 s vanishing
   goes.
+- "push it locally, i'll test all the bosses at the same time, then after playtest we decide if they are ready for main
+  at github" (after the Judge was built): no push to GitHub before the playtest; all bosses are built first (PLAN V2).
 - "missing some signature mechanics that make it difficult and rememberable" → BOSS_BRIEF §5b; then, asked whether
   those were the kind meant: "Yes, go on".
 
