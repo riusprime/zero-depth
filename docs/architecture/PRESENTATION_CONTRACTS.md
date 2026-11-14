@@ -98,6 +98,19 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   that tick), a leap at `boss_leap` 1.0, a burrow when `boss_hidden` turns false; the geometry is the telegraph's.
   Sustained strikes (spears, beams, molten and burning lanes, a charge's skid) last while the boss stays active in
   that move. The Gatekeeper's shock lanes stay `StoneSpikeViews`'.
+- **The Clockwork Judge's time mechanics** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10n, §10o). Read
+  from `WorldReader.boss_time`, `boss_pickups`, `boss_shot_fields` and `boss_attack_slow` only. `JudgeTimeViews`: the
+  cast (a dial under the Judge whose hand goes round once, a closing ring, the pack's `cj_cast`), the wave's gold ring
+  from the `time_wave` event, each hour orb (the pack's `cj_orb`, Basic Area 04, over a dial of the exact radius the
+  hero must touch, a small clock above it; a running orb's hand and effect run down with `left`), each stopped gear (a
+  cog over a strip of the wall's exact `centre` / `half` / `angle`, rising with `age` and sinking with `left`), each
+  slow field (a cool disc of its radius under the pack's `cj_field`). `JudgeRewindViews`: the pale copy at `copy`
+  (drawn through anything in front of it), the Bell's ring closing on it and the line from the hero while `bell` runs,
+  a flash at both ends on `judge_rewind` and `judge_return`; what follows the copy hangs under `copy_parts`.
+  `AttackSlowHud`: the share lost and a pip per orb's share won back, over the HP plate, while the cut is above 0.
+  Hint arrows: `ObjectiveMarkers.JUDGE_ORB`, drawn as the pillars' arrow, no text. Every slot is built hidden at the
+  view's start (the shader warm-up draws it); the pack rows are `data/vfx/pack_fx_cj.tres`. A hero shot inside a
+  field needs nothing here: its views draw between its last two tick positions, which the sim already slows.
 
 - **The player's attacks are drawn from their final specs** (v0.6.0 MX1; design
   [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §4): `AttackView` reads `WorldReader.attack_spec`

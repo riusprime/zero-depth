@@ -71,6 +71,7 @@ const MOVE_CLIPS := {
 	WorldReader.MOVE_CHAIN_SWEEP: &"chain_sweep",
 	WorldReader.MOVE_ECHO: &"echo",  # The Clockwork Judge
 	WorldReader.MOVE_VERDICT: &"verdict",
+	WorldReader.MOVE_TIME_WAVE: &"time_wave",
 	WorldReader.MOVE_LANCES: &"lances",  # The Prism's last phase
 	WorldReader.MOVE_KNEEL: &"kneel",
 	WorldReader.MOVE_GREAT_JAVELIN: &"great_javelin",  # The Warlord's great throw

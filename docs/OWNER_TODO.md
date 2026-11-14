@@ -233,6 +233,8 @@ The biome variants (Rubble Warden, Dim Needle, Ember Charger, Frost Charger, Spl
 |---|---|---|---|
 | ☐ | `javelin` | 2.0 long | the Warlord's leaf-headed crystal javelin, a red faceted crystal tip, a grey worn steel shaft |
 | ☐ | `brood_egg` | 0.6 tall | the Brood Mother's leathery green-grey egg with glowing veins, slightly cracked at the top |
+| ☐ | `hour_clock` | 0.7 across | the small clock that floats over each of the Clockwork Judge's hour orbs: a round brass pocket-clock face, cream dial, two dark hands (the minute hand a separate piece, so the game can turn it). Today a clock built in code stands in |
+| ☐ | `stopped_gear` | 5.4 across, 0.8 thick | one large brass cog with square teeth for the Judge's gear walls, standing on its edge (the game sinks it so 1.6 m shows). Today a cog built in code stands in |
 
 ### 3.6 Room pieces (P2–P3)
 Still to come (the rest of the list arrived 2026-10-18, §3.0). All after the kit prefix.
@@ -276,3 +278,4 @@ AnimationPlayer inside the `.glb`; yours replace the code ones.
 |---|---|---|---|
 | ☐ | `fx_rail_streak` (P2) | The Siege Engine's rail shot (the only texture missing from the zips) | in [`art/requests/v0.8.0_textures.md`](art/requests/v0.8.0_textures.md) |
 | ☐ | final-boss music (P3) | A track for the final arena; today it uses the boss sounds | — |
+| ☐ | the Clockwork Judge's time sounds (P3) | The Time Wave landing, the Bell's toll, the throw back to your copy, the Judge's return, an hour orb taken: each borrows an existing sound re-pitched (`JudgeTimeCues`). A stopped gear rising and a slow field have none | — |
