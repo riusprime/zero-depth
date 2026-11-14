@@ -128,6 +128,31 @@ owner has not yet said what is wrong with it (BQ9). Three directions; the lead r
 | HC-B | **Take the crown back** | The crown breaks into 3 shards on the floor. While a shard lies there the Fallen is stronger (one of your cards, copied, per shard). Standing in a shard's circle for 4 s takes it back: you gain a short burst (+30 % damage, 10 s) and the Fallen loses that card. It defends the circles. No vanishing |
 | HC-C | **Smallest change** | The fight as it is; the breaks 15 s → 8 s, and its copies can be hit during them (the lead's old Q13 row, deferred by the owner then) |
 
+## 5b. One signature mechanic per boss (owner, 2026-11-14, on reading this draft)
+
+Owner: **"missing some signature mechanics that make it difficult and rememberable"**. The lead's reading: §3 and §4
+add rules to each fight but no single moment a player would describe the boss by ("the one that drags you back in
+time"). So each boss gets **one set piece**, cast a few times a fight, announced by a cast bar and its own sound,
+that asks for something no other boss asks. Missing it costs about 40 % of your max HP (it never kills from full:
+B3); doing it right gives a damage window. All are the lead's proposals except TW7, which is the owner's.
+
+| ID | Boss | The signature | What you do | If you fail |
+|---|---|---|---|---|
+| SG-CJ | Clockwork Judge | **Rewind.** From phase 2 a pale copy of you follows your steps 4 s late. When the Judge's bell tolls (a 2 s cast), **you are thrown back to where the copy stands**. The Verdict square and the gear walls are aimed at the copy, not at you | Fight while keeping your own past out of danger: where you stood 4 s ago must be a safe place at the toll | You land inside the Verdict (40 %) or behind a gear wall, cut off from the orbs. In phase 3 the copy trails 6 s and the bell tolls twice |
+| SG-TW | Twin Wardens | **The charge into the ward** (TW7, the owner's) and, once in phase 3 at half the bar, **Through the Rift**: Violet opens three rifts; Amber charges into one and comes out of another. The exit glows only for the last 0.5 s | Read the exit and be off its lane; if Violet stands on the exit lane the charge breaks its ward as in TW7 | The charge and its end burst (40 %) |
+| SG-TC | Tidecaller | **The Maelstrom.** The last third of the fight has no separate Pull: the whole room turns into a whirlpool that carries you **around** the Tidecaller and slowly inward, and the Riptide strips and the High Tide circle are cast on top of it | Do the strip dance and reach the dry circle while the floor moves you; standing still is not an option for the rest of the fight | The centre: 40 % and you are thrown to the wall |
+| SG-WL | Warlord | **The Duel** (WL3, sharpened). The javelin cage closes from 9 m to 5 m over its 12 s, and inside it the Warlord's shield is down: it is the one time its front can be hurt | Stay in and hit it while there is less and less room to dodge, and be out of the centre when the javelins are recalled | The fence (10 % a touch) or the recall through the centre (40 %) |
+| SG-SE | Siege Engine | **The Doom Shell.** An ammo cart rolls across the room toward the Engine (a 10 s cast bar). If it arrives, the Engine fires: 40 % to anyone not behind a boulder. If you destroy the cart it explodes where it is (6 m): **next to the Engine**, that strips its armour for 8 s (150 %) | Kill it early and be safe, or let it roll almost home and blow it up against the Engine | The shell; or the cart's blast if you stand next to it |
+| SG-FO | Foundry | **You overheat.** In phase 3 you carry a heat gauge (on the HUD, beside your health). Lava, its shots and the open floor during the meltdown fill it; at full you burn for 5 % a second. Only a cooled slab (FO2) drains it | Plan the fight as trips between slabs, and the Foundry breaks the slab you stand on with Vent Blast | A burn that does not stop until you reach a slab |
+| SG-HL | Hive Lens | **The Lattice.** Once per phase from phase 2 the Lens's beam bounces from drone to drone and draws a web of light across the room that slowly turns for 10 s | Kill a drone to cut its two strands and open a gap, then keep inside that gap as the web turns. The gap you open is the one you live in | A strand: 20 % a touch, at most twice a second |
+| SG-HC | The Fallen | **It takes your cards.** At 66 % and 33 % it rips your strongest card out of your wand: the card's slot goes dark on your HUD and the Fallen casts it at you. A glowing mark appears on its back; 8 hits on the mark return the card. With HC-A it then also casts a mechanic of a boss you killed | Get behind a boss that copies your dash, to win your own build back | You fight the last third of the game without your best card, against it |
+| — | Gatekeeper, Brood Mother, Lantern Shade | Already have theirs (the quake pillars; the eggs and the burrow; the dark and the lanterns) | — | — |
+
+Risks the lead sees: SG-CJ, SG-TC and SG-HC change how the player is moved or what the player holds, so they need
+the most testing; SG-FO adds a HUD gauge (a G2 mockup) and the game already has a Heat system whose fit with this
+gauge was not checked; SG-HC writes to the player's wand mid-fight and must give the card back on every exit
+(death, win, save).
+
 ## 6. Questions
 
 **BQ1. The Lantern Shade.** Not mentioned in the brief.
@@ -184,6 +209,12 @@ windows, nothing to learn …). Then HC-A, HC-B or HC-C, or your own.
 - (a) Clockwork Judge → Tidecaller → Twin Wardens → the Fallen → Warlord → Siege Engine → Foundry → Hive Lens.
   ← recommended (your three first; the Twins third because they need the new animations and the most new sim)
 - (b) Your order.
+
+**BQ12. The signatures (§5b).** Approve or change each row (SG-CJ … SG-HC), and:
+- What a miss costs: (a) about 40 % of max HP, never a kill from full ← recommended (b) harder: 60 % (c) a miss
+  kills.
+- Do your own three bosses (Judge, Twins, Tidecaller) get the lead's signature on top of your design?
+  (a) Yes, as written ← recommended (b) No: your design is their signature.
 
 ## 7. How it would be built (after the answers)
 
