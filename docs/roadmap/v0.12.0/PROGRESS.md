@@ -67,6 +67,7 @@ Tidecaller fight. Step 4b: `tests/golden` passes unchanged.
 
 ## Open
 - **Step 4's bot target was MISSED and nothing was retuned** ([`evidence/TIDE_BOTS.md`](evidence/TIDE_BOTS.md)): over 3 seeds the Gun bot that ignores the dance loses 14 % more HP than the one that plays it (3,956 against 3,461), and the Blade bot that ignores it loses less (1,671 against 2,557) and wins sooner (11,637 ticks against 18,210). Read from the numbers, not traced: the Tidecaller walks at the hero in the Maelstrom, so its eye moves onto the dry circle; the Blade has 0.7 m between the eye (1.5 m) and its reach; most HP lost comes from attacks neither bot dodges. Waits on the owner (the Tidecaller stands still in the Maelstrom? the eye and the Blade?).
+- **After step 4b (the Tidecaller holds the centre) the target is still MISSED, nothing retuned:** Gun, ignoring costs 28 % more HP (4,178 against 3,253; the test asks 30 %, it was 14 %); Blade, ignoring still costs less (1,796 against 2,911) and wins sooner (11,834 ticks against 18,446). The Blade's case waits on the owner.
 - See PLAN "Open items".
 
 ## Blockers
