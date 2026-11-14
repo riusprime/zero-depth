@@ -136,6 +136,13 @@ static func hit(
 	if owner_id != 0 and target != 0 and _blocked(w, target):  # It sparks off the shield
 		h.tags |= SimEvent.TAG_BLOCKED
 		return 0
+	if (
+		target != 0
+		and w.bosses.wd_mirror_on == 1
+		and BossWard.turns(w, target, from, tags, owner_id)
+	):
+		h.tags |= SimEvent.TAG_BLOCKED  # The violet Warden's Mirror Ward turns it
+		return 0
 	if target != 0 and CanyonShore.shell_takes(w, target, from, amount):  # The turtle's shell
 		h.tags |= SimEvent.TAG_BLOCKED
 		return 0
@@ -151,7 +158,7 @@ static func hit(
 		m = [m[0] * c[0] / 1000, m[1] | c[1]]
 		c = BossShade.hit_mult(w, target)  # The Lantern Shade's 40 % in the dark, 150 % in a lit pool
 		m = [m[0] * c[0] / 1000, m[1] | c[1]]
-		var tw := BossTwin.taken_permille(w, target)  # Phase 3's exposed Warden, its guarded twin
+		var tw := BossTwin.taken_permille(w, target)  # The violet Warden stunned by her broken ward
 		if tw != 1000:
 			m = [
 				m[0] * tw / 1000,
@@ -240,7 +247,7 @@ static func tick_dot(
 		if sh[1] != 0:
 			amount = maxi(1, amount * sh[0] / 1000)
 			tags |= sh[1]
-		amount = amount * BossTwin.taken_permille(w, target) / 1000  # The Wardens' swap
+		amount = amount * BossTwin.taken_permille(w, target) / 1000  # The stunned violet Warden
 	var root := w.take_root()
 	return _apply(
 		w, target, amount, source_id, owner_id, root, tags, a.pos(target), -1, 0, effect_id
@@ -326,7 +333,9 @@ static func _apply(
 
 
 ## A boss's signature shield holds. (the dark round a Lantern Shade no longer blocks; it
-## scales the hit instead, BossShade.hit_mult.) v0.11.0 O5: a Twin Warden standing back blocks (BossTwin.resting:
-## "not now", the other leads).
+## scales the hit instead, BossShade.hit_mult.) A Twin Warden standing back blocks (BossTwin.resting: "not now", the
+## other leads), and so does the violet one under her whole ward (BossWard.full).
 static func _blocked(w: World, target: int) -> bool:
-	return BossDodge.shielded(w, target) or BossTwin.resting(w, target)
+	if BossDodge.shielded(w, target) or BossTwin.resting(w, target):
+		return true
+	return w.bosses.wd_full == 1 and BossWard.full(w, target)

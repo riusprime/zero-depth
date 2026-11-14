@@ -77,6 +77,9 @@ const BOSS_MOVES := {
 	&"echo": BossAttackTable.Move.ECHO,  # v0.9.0 NB3 (the Clockwork Judge)
 	&"verdict": BossAttackTable.Move.VERDICT,
 	&"time_wave": BossAttackTable.Move.TIME_WAVE,
+	&"sword_combo": BossAttackTable.Move.SWORD_COMBO,  # The Twin Wardens' new moves
+	&"mirror_ward": BossAttackTable.Move.MIRROR_WARD,
+	&"shadow_swords": BossAttackTable.Move.SHADOW_SWORDS,
 	&"wave": BossAttackTable.Move.WAVE,  # v0.9.5 BH4
 	&"interphase": BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6
 	&"lances": BossAttackTable.Move.LANCES,  # v0.10.5 O3 (the Prism's last phase)

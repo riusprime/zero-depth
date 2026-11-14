@@ -464,8 +464,6 @@ func _events(reader: WorldReader, out: Array) -> void:
 		match e.kind:
 			SimEvent.Kind.DAMAGE:
 				if e.tags & SimEvent.TAG_DOT:
-					if e.effect_id == WorldReader.EFFECT_TWIN_CHAIN:  # The chain's burn sizzles
-						out.append([&"boss_twin_chain", e.pos, 1.2])
 					continue  # ticks are silent (SFX_NEEDS)
 				if ELEMENT_CUES.has(e.effect_id):  # The element's own sound
 					out.append([ELEMENT_CUES[e.effect_id], e.pos, 1.0])
@@ -527,7 +525,7 @@ func _events(reader: WorldReader, out: Array) -> void:
 					out.append([&"arc_field", e.pos, 1.0])
 				elif e.effect_id == SimEvent.EFFECT_FROST_SHATTER:  # Shatter (the frost nova's)
 					out.append([&"frost_nova", e.pos, 1.0])
-				elif e.effect_id == WorldReader.EFFECT_TWIN_ANGER:  # A Warden's chain jerks taut
+				elif e.effect_id == WorldReader.EFFECT_TWIN_ANGER:  # A Warden turns angry
 					out.append([&"boss_twin_chain", e.pos, 0.75])
 				elif not JudgeTimeCues.add(e, out) and not TideDanceCues.add(e, out):
 					_fallen_cue(e, out)

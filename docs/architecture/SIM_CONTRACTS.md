@@ -1967,9 +1967,9 @@ below) and FB3's cap of a fifth of max HP (D36).
   both boss kinds (`BossTwin.is_twin_kind`). Floor 4's pool holds the Tidecaller and the Wardens (`twin_wardens`,
   `save_order` 2: compiled after the Tidecaller, every saved boss index unchanged).
 - **Two linked actors (`BossTwin`).** `World.spawn_boss` makes the boss; `BossTwin.on_spawn` adds its twin
-  (`BossTable.twin_kind`) `twin_m` to the side (the first clear side, at least `chain_min_m` away) with the boss's HP,
+  (`BossTable.twin_kind`) `twin_m` to the side (the first clear side, at least 0.6 of it away) with the boss's HP,
   max HP, `power`, intro invulnerability and freeze immunity, a `BossStore` entry of the same table, and the pair in
-  `BossStore.twin_*` (`twin_lead`, `twin_body`, `twin_angry`, `twin_anger_t`, `twin_burn_cd`; hashed after a `-3`
+  `BossStore.twin_*` (`twin_lead`, `twin_body`, `twin_angry`, `twin_anger_t`; hashed after a `-3`
   sentinel only while non-empty; `WorldSnapshot.ADDED_SINCE_V05`). Each body runs the boss framework (windup, markers,
   shield, its own stagger meter); the boss is the bar (`WorldReader.boss_index`, the first live boss), `World.boss_id`,
   the codex's fight, the only `BOSS_DEFEATED`, reward, kill count and legendary core (`BossTwin.leaves` in
@@ -1981,33 +1981,27 @@ below) and FB3's cap of a fifth of max HP (D36).
 - **One mind.** The twin never picks (`BossTwin.think` returns early for it in MOVE, turning it to the player); when
   the boss starts attack k (`BossAi.start_attack` → `on_start`) the twin starts k the same tick if it is in MOVE.
 - **Steps (`BossTwin.moves`, phase 5).** The boss pursues as any boss; the twin walks to its flank, `flank_m` from the
-  player at a right angle from its boss on its own side; each × `anger_permille` / 1000 while angry; in a Chain Sweep
-  the twin swings to the line's end at `SWING_MULT` (4) × its speed. **Chain length (`_tether`)**, after the steps
-  and again in phase 6 (after walls and bodies push): the twin is put at `clamp(d, chain_min_m, chain_max_m)` along the
-  line from its boss; if a wall stands there the boss gives way along the line instead, else both share the move.
-- **The chain's burn (phase 6, the boss's resolve).** A player whose centre is within `player.radius_m +
-  chain_half_m` of the segment between the two centres takes `chain_burn` (× catch-up power) as damage over time
-  (`Damage.tick_dot`, effect `twin_chain`; hurt iframes apply) when `twin_burn_cd` is 0, which then becomes
-  `chain_burn_ticks` (counted down in the boss's think, so the hit-stop pauses it). Never while dashing, never while
-  `BossTide.press(p) > 0` (against a wall: it can't pin the player), never while either body rises or is in a gate,
-  never while the boss's Chain Sweep runs (`lifted`). The chain is not solid. A kill by it names the first
-  `chain_sweep` attack's late cause (`LATE_CAUSE + k`, its `late_cause_key`).
+  player at a right angle from its boss on its own side; each × `anger_permille` / 1000 while angry. **Nothing joins
+  the two bodies** (v0.12.0 step 6, owner: "I want them to be 2 separate entities"): no chain, no length to hold, no
+  burn, no pull. The rules that used the chain have their own (below; the rest of the pair's fight: §10q).
 - **Anger.** `Damage._apply` → `on_hit` (non-DoT, applied > 0, from the player): the other body is angry for
   `anger_ticks` (`twin_angry` its id, `twin_anger_t`); one at a time; `STATUS_APPLY` (effect `twin_anger`) when it
   turns.
-- **Crossfire (`crossfire`, shielded).** On start the safe spot `S` = the chain's midpoint + `distance_m` along the
-  chain's normal toward the player (0.75, then 0.5 of it if a wall stands there), stored as each body's `pt(b, 0)`;
-  each body's `lock_a` aims at `S`. Each wave of its pattern (a fan centred on `S`) leaves out every shot whose heading
-  is within `angle_of(Vector2(|S − body|, gap_m))` of `lock_a` (`BulletPatterns.fire`'s `gap`), so the two gaps cross
-  only at `S`; the twin's shots take `twin_look`.
-- **Chain Sweep (`chain_sweep`, locked).** Through the windup until its last `lock_ticks` the boss's line tracks:
-  `lock_a` = the angle to the player, `lock_len` = `clamp(dist + reach_m, chain_min_m, chain_max_m)` cut by
-  `EnemyAi.clear_run`; on its first active tick a player touching the lane (`AttackShapes.lane` from the boss's lock
-  point, `half_width_m`) is hit once (`hit_player`). The twin's copy draws and strikes nothing.
-- **Reads.** `WorldReader.boss_twin(i)` (`BossTwin.state`: lead, partner, angry, anger ‰, chain ends, hot, lifted,
-  burned; Crossfire's safe spot, gap lane, progress, firing; the Chain Sweep's from, to, half width, locked, progress,
-  struck), `KIND_TWIN_WARDEN`, `KIND_TWIN_WARDEN_VIOLET`, `MOVE_CROSSFIRE`, `MOVE_CHAIN_SWEEP`, `EFFECT_TWIN_ANGER`,
-  `EFFECT_TWIN_CHAIN`.
+- **Crossfire (`crossfire`; the violet Warden's).** On start the safe spot `S` = the caster's centre + the unit vector
+  from the other Warden to the caster × `max(distance to the player, distance_m)` (the player's own spot for a body
+  alone), stored as its `pt(b, 0)`; its `lock_a` aims at the player. Each wave of its pattern (a fan along `lock_a`)
+  leaves out every shot whose heading is within `angle_of(Vector2(|S − body|, gap_m))` of the angle to `S`
+  (`BulletPatterns.fire`'s `gap`): the gap faces directly away from the other Warden, so the safe place is with the
+  caster between you and him. The twin's shots take `twin_look`.
+- **The Sword Lane (`chain_sweep`, locked; the amber Warden's).** Through the windup until its last `lock_ticks` the
+  boss's line tracks: `lock_a` = the angle to the player, `lock_len` = `min(dist + reach_m, lane_max_m)` (9 m; the
+  boss's `wardens`) cut by `EnemyAi.clear_run`; on its first active tick a player touching the lane
+  (`AttackShapes.lane` from the boss's lock point, `half_width_m`) is hit once (`hit_player`). The move keeps its
+  old id.
+- **Reads.** `WorldReader.boss_twin(i)` (`BossTwin.state`: lead, partner, angry, anger ‰, phase, resting, focus,
+  exposed (the violet Warden stunned by her broken ward), warded; Crossfire's safe spot, gap lane, progress, firing;
+  the Sword Lane's from, to, half width, locked, progress, struck), `KIND_TWIN_WARDEN`, `KIND_TWIN_WARDEN_VIOLET`,
+  `MOVE_CROSSFIRE`, `MOVE_CHAIN_SWEEP`, `EFFECT_TWIN_ANGER`. No chain key is read any more.
 
 ## 10l. The Clockwork Judge: your echo (v0.9.0 NB3; owner Q24, [`BOSSES_4_5.md`](../roadmap/v0.9.0/BOSSES_4_5.md) N3)
 
@@ -2282,6 +2276,96 @@ Maelstrom turns; everything else follows from the clock and the positions. No na
   `inside`), `high_tide_in`, `maelstrom` ({} or `centre`, `spin`, `around`, `inward` m/s, `eye` m from the boss's
   centre, `grace`, `thrown`, `anchor` (the room's centre), `anchored` (the boss stands on it)). A read after a step describes the tick about to run. The pools: `boss_hazards()`;
   the circle's marker: `objectives()` (`tide_dry`).
+
+## 10q. The Twin Wardens fight apart (v0.12.0 step 6; owner brief rows TW1-TW8 and SG-TW, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+Nothing joins the two bodies any more (§10k as amended: no chain, no burn, no pull); one HP pool and three bars stay.
+Their own numbers are `BossTable.wardens` (a `BossWardensTable`, compiled from `BossDefinition.wardens`; null for
+every other boss); their state is `BossStore.wd_*` (the pair that runs it: `wd_boss`, the amber Warden's id) and
+`cb_*`. Code: `BossWardens` (the tick, the end, the read), `BossWardenAmber`, `BossWard`, `BossShadowSwords`,
+`BossRift`, and `BossChargeBurst` (any boss's). Every hook into the boss framework goes through `BossTwin`'s
+(`think`, `on_start`, `moves`, `resolve`, `telegraph`, `may_use`), so `BossAi` gained no line. Only the rift's exit
+draws a stream (`ai`). No native change.
+
+- **A charge that bursts (`BossChargeBurst`; an option of the `charge` move for any boss).** `burst_radius_m > 0`
+  on a `charge` attack. The run is `BossAi`'s as ever (the lane locks `lock_ticks` before the wind-up ends and follows
+  the hero's exact spot before that; walls cut it short; the body's touch hits once). In tick phase 6 of the tick the
+  run stops (`ACTIVE`, `lock_len <= 0`), a burst is armed on the body's spot (`cb_boss`, `cb_attack`, `cb_at`,
+  `cb_x/cb_y`; one a boss at a time); `burst_ticks` later a hero within `burst_radius_m` of it takes the attack's
+  damage once (`Damage.hit`, `TAG_AREA`, under the boss's catch-up; `World.killer_attack` is the charge), whatever the
+  boss does by then. A dash's i-frames avoid it. Pending bursts go with their boss and when the hero is dead. The
+  telegraph of every charge is `BossChargeBurst.telegraph`: the `&"lane"` as before, plus `"burst"` {center, radius}
+  for one that bursts (`end_of`: the lock point + the lane's length; it follows the aim until the lock).
+- **The amber Warden's kit.** `warden_charge` (wind-up 36 ticks, the aim locked the last 24, 26 m/s over 12 m, burst
+  3.5 m after 15 ticks), `warden_charge_long` in phase 3 (wind-up 84, locked the last 30), `overhead` (a `sweep`: 78
+  ticks, 170°, 3.4 m), the Sword Lane (§10k) and:
+  - **the sword combo** (move `sword_combo`, appended to `BossAttackTable.Move`; `BossWardenAmber`): `count` arcs,
+    hit k on active tick k × `gap_ticks`. Before each hit the aim follows the hero, then for the last `STEP_TICKS`
+    (6) it holds and the body steps `step_m / 6` a tick along it (never nearer than touching the hero, never through
+    a wall; phase 5). The arc is cut round where the body stands. Each hit may land (the hurt i-frames apply); a hit
+    before the last deals `combo_light_permille` of the attack's damage (15, 15, 20 as shipped).
+  - **the side dash**: free between two attacks (`MOVE`, its cooldown still running), within 10 m of the hero and
+    with `wd_dash_cd` at 0, it dashes `dash_m` at a right angle to the line to the hero in `dash_ticks` (the side it
+    did not take last time first; only a side with half the dash clear), then waits `dash_every_ticks`. No damage;
+    it picks nothing while it dashes. Only while it leads (phases 1 and 3).
+- **The Mirror Ward** (move `mirror_ward`, a cast: `BossSchemas.CAST_MOVES`; `BossWard`). On the tick the cast ends
+  the ward stands `mirror_ticks` on the arc `mirror_half_arc` each side of the way to the hero then (`wd_mirror_a`;
+  it does not turn afterwards and stays on the Warden wherever she goes). `Damage.hit`: a hero's hit whose `from` is
+  inside the arc does nothing (`TAG_BLOCKED`): a swing, the Laser, an area hit, a Void or Wave shot. A melee hit
+  (`TAG_MELEE`) also moves the hero `mirror_push_m` straight back (`BossTide.shift`: never deeper into a wall), once
+  a tick. `ProjectileContacts.apply`: a hero's projectile whose contact is with the warded Warden and which came from
+  inside the arc is not a hit: it ends there with its end hooks, and a hostile projectile is queued at the contact
+  point with the reversed velocity (the same speed), the same radius, the look `mirror_look`, a life of
+  `mirror_range_m` and `mirror_permille` of the damage the shot carried (its own number, before the hero's damage
+  stats and crit), at least 1 and at most `mirror_cap_permille` of the hero's max HP. It hits as any hostile shot;
+  its cause is `BossWard.MIRROR_CAUSE` (2 × `BossSignatures.LATE_CAUSE`), which `BossCauses.key` answers with
+  `mirror_cause_key`. Hits from outside the arc land as ever; damage over time is not turned. Not cast while a ward
+  of either kind stands.
+- **Shadow Swords** (move `shadow_swords`; `BossShadowSwords`). As it starts, `sword_count` spots are locked on a fan
+  `sword_fan` wide and `sword_ring_m` from where the hero stands, the fan's middle toward the caster (the boss's
+  points 0..n-1, the centre in the last one). Blade k's lane runs from its spot through that centre, `sword_len_m`
+  long, `sword_half_m` each side; all show for the wind-up; blade k cuts on active tick k × `sword_gap_ticks` (a hero
+  touching its lane takes the attack's damage; each cut may land). Each cut lane leaves a rift at its far end (0.75,
+  then 0.5 of the way if a wall or the room's edge is nearer): one of the boss's arena hazards (`BossHazard.place`:
+  its warning, its burn, its cap of 5, the doorway rule).
+- **Phase 3: the ward only his charge breaks.** From `ward_phase` the violet Warden is under a whole ward
+  (`BossWard.full`): every hit and every tick from the hero does nothing (`Damage._blocked`). The amber Warden takes
+  hits as ever (the "exposed twin swaps" rule and its ×1.5 / ×0.5 are gone). While he runs any `charge`, the lane his
+  body has swept (from the lock point to where he is, his radius plus the contact slop each side) is tested against
+  her circle (phase 6): on a touch the ward breaks: `wd_break_at` = the tick, she stands `STAGGERED` for `stun_ticks`
+  and takes `stun_permille` meanwhile, he stands `STAGGERED` for `stagger_ticks`, his charge ends without its burst,
+  and the ward is back `return_ticks` after the break (plain hits between the stun's end and then).
+  `ObjectiveMarkers.TWINS_WARD` follows her while he winds a charge up with the ward standing; `TWINS_ACTIVE` follows
+  him, and her while she is stunned.
+- **Through the Rift** (`BossRift`; once a fight). In the last phase, with `rift_hp_permille` of its bar left and the
+  amber Warden free (between two attacks): (1) three rifts open on a ring round the middle of the boss room, `rift_gap_m` apart, each
+  `rift_radius_m` + his radius clear of walls and inside the room (the ring starts toward the hero and is turned
+  through 8 fixed angles until all three fit; with no fit the set piece is skipped for good); neither starts
+  anything for `rift_open_ticks`. (2) He runs to the nearest at his exit charge's speed. (3) He is inside `rift_inside_ticks`:
+  hidden (`BossAi.hidden`), untouchable, in nobody's way; the exit is one draw from `ai` among the other two as he
+  goes in; `rift_mark_ticks` before the end the exit is marked (the read's `"exit"` is false until then) and the
+  hero's spot is taken as the aim. (4) He stands at the exit and the table's `rift_attack` (a `charge` in no phase;
+  40 damage) runs at once along the line from the exit to that aim, with its burst and its ward break as any charge;
+  when it is over the rifts close. She starts nothing through 1-3 (an attack she is in ends first). It ends early when the hero is dead or the pair is gone.
+- **Events** (`STATUS_APPLY`; never read back): `charge_burst_armed` (pos = its centre, amount = ticks),
+  `charge_burst` (target the hero, amount = the HP it cost, 0 a miss), `warden_dash` (amount = ticks),
+  `warden_ward_up` (amount = ticks, 0 for the whole ward; amount_applied = 1 for the whole ward),
+  `warden_ward_down`, `warden_ward_break` (source he, target she, amount = her stun), `warden_reflect` (pos = where,
+  amount = the damage it carries back), `warden_block` (target the hero, amount = mm pushed), `warden_sword_cut`
+  (pos = its spot, amount = its index, amount_applied = the HP it cost), `warden_rift_open` (amount = ticks until he
+  runs), `warden_rift_enter`, `warden_rift_mark` (pos = the exit, amount = ticks), `warden_rift_exit`,
+  `warden_rift_close`.
+- **Hash and save.** Hashed after a `-15` sentinel only while a pair runs them or a burst is pending
+  (`wd_boss >= 0 or cb_boss not empty`); every other world hashes as before. `twin_burn_cd` left the `-3` block, so
+  a Twin Wardens fight hashes differently from before this step. `BossStore` is a snapshot state class, so all of it
+  is saved; `BossWardensTable` is a content class of the snapshot.
+- **Reads.** `WorldReader.boss_wardens()` (`BossWardens.state`): `lead`, `violet`, `ward` {who, kind (&"", &"mirror",
+  &"full"), centre, half_arc, left, broken, stun_left, return_in}, `swords` [{from, to, half_width, cut, cut_in}],
+  `rift` {stage, rifts [{centre, radius, entry, exit}], inside, exit_in, and once marked lane and burst_radius},
+  `dash`, and while he winds a charge up `charge` {lane, end, radius, locked, progress, breaks}.
+  `boss_charge_bursts()` (the armed bursts: boss, centre, radius, left, progress). The combo's arc, the overhead's
+  arc and the swords' lanes are ordinary telegraphs; the swords' rifts are `boss_hazards()`.
+  `MOVE_SWORD_COMBO`, `MOVE_MIRROR_WARD`, `MOVE_SHADOW_SWORDS`, `OBJECTIVE_TWINS_WARD`.
 
 ## 11. Scaling and threat
 

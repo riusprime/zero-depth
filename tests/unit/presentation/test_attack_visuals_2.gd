@@ -22,6 +22,7 @@ const NOT_GROUND := [
 	BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6: the Fallen's interphase carriers, drawn by InterphaseViews
 	BossAttackTable.Move.GREAT_JAVELIN,  # v0.11.0 F9: the throw, ring and recall, drawn by GreatJavelinViews
 	WorldReader.MOVE_TIME_WAVE,  # the Judge's Time Wave strikes nothing: its cast and ring are drawn by JudgeTimeViews
+	WorldReader.MOVE_MIRROR_WARD,  # the violet Warden's Mirror Ward is a cast: nothing strikes the ground
 ]
 
 
@@ -50,8 +51,6 @@ func _fight(boss: StringName, attack_id: StringName) -> Array:
 	var i := BossLab.ready_boss(w, boss, Vector2.ZERO)
 	var aid := w.actors.ids[i]
 	BossAi.table_of(w, i).twin_bolt = -1  # v0.11.0 O5: the Wardens' standing-back bolt is a projectile, not a strike
-	if not w.bosses.twin_lead.is_empty():
-		w.bosses.twin_burn_cd[0] = 1 << 20  # nor their chain's burn (TwinViews draws the chain)
 	w.actors.set_pos(0, Vector2(5, 2))
 	w.actors.hp[0] = 1 << 20
 	w.actors.max_hp[0] = 1 << 20
@@ -106,6 +105,8 @@ func test_every_boss_ground_attack_in_the_content_has_a_look() -> void:
 		WorldReader.MOVE_ROW_FLOOD: BossStrikeLooks.LANE_STRIKES,
 		WorldReader.MOVE_CHARGE: BossStrikeLooks.CHARGE_STRIKES,
 		WorldReader.MOVE_CHAIN_SWEEP: BossStrikeLooks.CHARGE_STRIKES,  # v0.9.0 NB2: a lane, scorched like a charge
+		WorldReader.MOVE_SWORD_COMBO: BossStrikeLooks.ARC_STRIKES,  # the amber Warden's cuts: arcs
+		WorldReader.MOVE_SHADOW_SWORDS: BossStrikeLooks.LANE_STRIKES,  # the violet Warden's blades: lanes
 		WorldReader.MOVE_VERDICT: BossStrikeLooks.LANE_STRIKES,  # v0.9.0 NB3: a square, a lane's shape
 	}
 	for a: Array in attacks:

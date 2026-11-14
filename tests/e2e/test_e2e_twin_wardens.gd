@@ -3,7 +3,7 @@ extends GutTest
 ## floor-4 save whose floor draws the Wardens from floor 4's pool (built with SaveLab as Main builds floors; the seed
 ## is the first that draws them) continued from the menu (Enter); God from the dev panel (clicked); the stick walks to
 ## the boss door, E opens it, the stick walks in and the door seals; the two Wardens rise (both owner models, one bar
-## with their name) with their chain drawn between them; v0.11.0 O5: phase 1 is the amber Warden's (the hint points
+## with their name) with nothing drawn between them; v0.11.0 O5: phase 1 is the amber Warden's (the hint points
 ## at it, the bar's line names it); the stick walks up to it and the mouse's attack lands: the one shared HP drops (the
 ## bar's, both bodies') and the other Warden turns angry.
 
@@ -111,7 +111,7 @@ func test_continue_floor_4_and_fight_the_twin_wardens() -> void:
 	assert_not_null(amber.imported, "the owner's amber model")
 	assert_not_null(violet.imported, "the owner's violet model")
 	await e.frames(90)  # past the rise
-	assert_gt(main.view.twins.links_drawn(), 8, "their chain drawn between them")
+	assert_eq(main.view.twins.links_drawn(), 0, "no chain between them: they fight apart")
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_true(hud.boss_bar.visible, "one bar")
 	# v0.11.0 O5: phase 1, the amber leads: the hint points at it and the bar names it.
