@@ -12,7 +12,8 @@ extends RefCounted
 ##    through ProjectileContacts (the hit rules: damage, procs, pierce, bounce, the end hooks). A contact whose body
 ##    died earlier in this phase is swept again (sweep_one), so a dead body is never hit.
 ## The bodies are swept where they stood when the phase began, so a body pushed by an earlier hit of the same tick is
-## met at its old place. Deterministic: the native side keeps nothing between calls.
+## met at its old place. A boss's shot fields (BossShotFields) cut a hero's shot's velocity for the sweep only: after
+## the steering, back after the contacts. Deterministic: the native side keeps nothing between calls.
 
 ## The events sweep_shots lists (ShotsScratch::HOLD, CONTACT, END).
 const HOLD := 0
@@ -39,6 +40,7 @@ static func sweep(w: World) -> void:
 		skip.resize(n)
 		for i in n:
 			skip[i] = 1 if GlaiveMods.held(w, i) else 0
+	var crawl := BossShotFields.slow(w, skip)  # A boss's fields slow the hero's shots inside them
 	var through := _walls_only(w)
 	if pp != null:
 		pp.end(&"proj.steer")
@@ -49,6 +51,7 @@ static func sweep(w: World) -> void:
 		pp.end(&"proj.sweep")
 	if count < 0:
 		push_error("NativeShots: the native sweep refused the projectile columns")
+		BossShotFields.restore(w, crawl)
 		return
 	var ev: PackedInt32Array = w.native.shot_events()
 	var et: PackedFloat32Array = w.native.shot_t()
@@ -76,6 +79,7 @@ static func sweep(w: World) -> void:
 			wall = int(again[2])
 		if ProjectileContacts.apply(w, i, at, Vector2(p.vel_x[i], p.vel_y[i]), t, actor, wall):
 			dead.append(i)
+	BossShotFields.restore(w, crawl)  # Before the dead leave: the indices are still the sweep's
 	if pp != null:
 		pp.begin(&"proj.remove")
 	p.remove_sorted(dead)

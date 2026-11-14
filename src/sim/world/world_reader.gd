@@ -2437,6 +2437,23 @@ func boss_hazards() -> Array:
 	return BossHazard.rows(_w)
 
 
+## The attack speed a boss has taken from the hero's weapon, per mille (0 = none; BossSlow).
+func boss_attack_slow() -> int:
+	return BossSlow.cut(_w)
+
+
+## The floor pickups a boss placed, oldest first, each {"id", "kind" (BossPickupTable.Kind), "amount", "centre",
+## "radius", "age" (ticks since placed), "left" (ticks to its end; -1 = it stays)}.
+func boss_pickups() -> Array:
+	return BossPickups.rows(_w)
+
+
+## The discs that slow the hero's shots, oldest first, each {"id", "centre", "radius", "speed" (the share of its
+## speed a shot inside keeps, per mille), "age" (ticks since laid), "left" (ticks to its end; -1 = it stays)}.
+func boss_shot_fields() -> Array:
+	return BossShotFields.rows(_w)
+
+
 ## The meltdowns, each {"centre", "radius" (molten beyond it; INF while it only glows: the melt
 ## attack's windup), "next" (the radius it melts to next), "warn" (0..1000 while the next step glows, else -1),
 ## "bound" (the room, Rect2), "bridge" (bool), "exit" (the bridge's far end), "half" (its half width)}.

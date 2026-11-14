@@ -389,6 +389,9 @@ static func advance(w: World) -> void:
 	BossInterphase.advance(w)  # The Fallen's interphase hazards and its return
 	BossQuake.advance(w)  # The Gatekeeper's quake pillars pulse
 	BossHazard.advance(w)  # The arena hazards arm, burn and go
+	BossSlow.advance(w)  # The attack speed a boss took comes back when its fight ends
+	BossPickups.advance(w)  # The hero takes the floor pickups it touches
+	BossShotFields.advance(w)  # The fields that slow the hero's shots run out
 	BossGreatJavelin.advance(w)  # The Warlord's great javelin flies, quakes and flies back
 
 
@@ -409,6 +412,9 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	BossStream.on_boss_gone(w, boss_id)  # Its streams and waves
 	BossQuake.on_boss_gone(w, boss_id)  # Its break count and the hint
 	BossHazard.on_boss_gone(w, boss_id)  # Its hazards go
+	BossSlow.on_boss_gone(w, boss_id)  # The attack speed it took comes back
+	BossPickups.on_boss_gone(w, boss_id)  # Its floor pickups go
+	BossShotFields.on_boss_gone(w, boss_id)  # Its shot fields go
 	BossGreatJavelin.on_boss_gone(w, boss_id)  # Its great javelin goes with it
 
 

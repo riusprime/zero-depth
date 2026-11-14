@@ -12,6 +12,16 @@ const HZ_INT_FIELDS: Array[StringName] = [
 	&"hz_id", &"hz_boss", &"hz_kind", &"hz_from", &"hz_arm", &"hz_until", &"hz_slow"
 ]
 const HZ_FLOAT_FIELDS: Array[StringName] = [&"hz_x", &"hz_y", &"hz_r"]
+## The floor pickups' parallel arrays (BossPickups), by type.
+const PK_INT_FIELDS: Array[StringName] = [
+	&"pk_id", &"pk_boss", &"pk_kind", &"pk_amount", &"pk_from", &"pk_until"
+]
+const PK_FLOAT_FIELDS: Array[StringName] = [&"pk_x", &"pk_y", &"pk_r"]
+## The shot fields' parallel arrays (BossShotFields), by type.
+const SF_INT_FIELDS: Array[StringName] = [
+	&"sf_id", &"sf_boss", &"sf_speed", &"sf_from", &"sf_until"
+]
+const SF_FLOAT_FIELDS: Array[StringName] = [&"sf_x", &"sf_y", &"sf_r"]
 const INT_FIELDS: Array[StringName] = [
 	&"ids",
 	&"table",
@@ -235,6 +245,35 @@ var hz_next := 0
 var hz_burn_cd := 0
 var hz_storm := 0
 var hz_egg := PackedInt32Array()
+## The attack speed a boss took from the hero (BossSlow): aslow_cut per mille of the weapon's rate (0 = none) and
+## aslow_boss the boss that took it (-1 = none).
+var aslow_cut := 0
+var aslow_boss := -1
+## The floor pickups a boss placed, oldest first (BossPickups): [pk_id, its boss, its kind (BossPickupTable.Kind), its
+## amount, the tick it was placed, the tick it goes (0 = stays until taken), its centre and radius]. pk_next is the
+## next pk_id.
+var pk_id := PackedInt32Array()
+var pk_boss := PackedInt32Array()
+var pk_kind := PackedInt32Array()
+var pk_amount := PackedInt32Array()
+var pk_from := PackedInt32Array()
+var pk_until := PackedInt32Array()
+var pk_x := PackedFloat32Array()
+var pk_y := PackedFloat32Array()
+var pk_r := PackedFloat32Array()
+var pk_next := 0
+## The discs that slow the hero's shots, oldest first (BossShotFields): [sf_id, its boss, the share of its speed a shot
+## inside keeps (per mille), the tick it was laid, the tick it goes (0 = stays), its centre and radius]. sf_next is the
+## next sf_id.
+var sf_id := PackedInt32Array()
+var sf_boss := PackedInt32Array()
+var sf_speed := PackedInt32Array()
+var sf_from := PackedInt32Array()
+var sf_until := PackedInt32Array()
+var sf_x := PackedFloat32Array()
+var sf_y := PackedFloat32Array()
+var sf_r := PackedFloat32Array()
+var sf_next := 0
 
 
 func size() -> int:
@@ -349,15 +388,38 @@ func hash_into(h: StateHasher) -> void:
 			h.add_f32s(get(f))
 		h.add_ints(PackedInt32Array([hz_next, hz_burn_cd, hz_storm]))
 		h.add_ints(hz_egg)
+	# Only once a boss has slowed the hero's attacks, placed a pickup or laid a shot field
+	if aslow_boss >= 0 or pk_next > 0 or sf_next > 0:
+		h.add_int(-10)
+		h.add_ints(PackedInt32Array([aslow_cut, aslow_boss, pk_next, sf_next]))
+		for f: StringName in PK_INT_FIELDS + SF_INT_FIELDS:
+			h.add_ints(get(f))
+		for f: StringName in PK_FLOAT_FIELDS + SF_FLOAT_FIELDS:
+			h.add_f32s(get(f))
 
 
 ## Removes arena hazard k (the arrays stay oldest first).
 func remove_hazard(k: int) -> void:
-	for f: StringName in HZ_INT_FIELDS:
+	_remove_row(HZ_INT_FIELDS, HZ_FLOAT_FIELDS, k)
+
+
+## Removes floor pickup k (the arrays stay oldest first).
+func remove_pickup(k: int) -> void:
+	_remove_row(PK_INT_FIELDS, PK_FLOAT_FIELDS, k)
+
+
+## Removes shot field k (the arrays stay oldest first).
+func remove_shot_field(k: int) -> void:
+	_remove_row(SF_INT_FIELDS, SF_FLOAT_FIELDS, k)
+
+
+## Row k out of the parallel arrays named by `ints` and `floats`.
+func _remove_row(ints: Array[StringName], floats: Array[StringName], k: int) -> void:
+	for f: StringName in ints:
 		var ai: PackedInt32Array = get(f)
 		ai.remove_at(k)
 		set(f, ai)
-	for f: StringName in HZ_FLOAT_FIELDS:
+	for f: StringName in floats:
 		var af: PackedFloat32Array = get(f)
 		af.remove_at(k)
 		set(f, af)

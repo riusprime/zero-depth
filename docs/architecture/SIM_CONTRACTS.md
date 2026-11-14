@@ -303,7 +303,7 @@ Every gameplay consequence is a `SimEvent`:
 |---|---|---|
 | `seq` | int | Global sequence number in this `World`, monotonic |
 | `tick` | int | Tick it happened on |
-| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0; v0.3.0 E: also a card taken from an altar or chest), `COMBO_UNLOCKED` (v0.3.0 G), `BOSS_DEFEATED` (v0.3.0 C: once per boss, after its `KILL`; `amount` = its boss table index) and `SHARDS` (v0.3.0 E: a kill paid `amount` shards at `pos`), …, then (v0.3.5 K) `SKILL_USED` (the build skill started; `amount` = `SkillTable.Kind`, `root_id` = the skill's root, which all its hits share), `VENT` (the Vent button vented `amount` heat) and `VENT_COLD` (the Vent button under Hot: nothing vented). Then (v0.5.0 SH) `SHOP_BUY` (shards spent at the shop: `amount` = the price, `effect_id` = the card's id or `shop_heal` / `shop_reroll`; a bought card also emits `PICKUP` from the terminal, the heal a `HEAL` with `effect_id` `shop_heal`) and `SHOP_SALVAGE` (shards back: `amount` = the refund, `effect_id` = what was sold, `target_id` = its card code). The first nine were declared in v0.0.1, even though early versions emit only some kinds. v0.8.0 RM appends `REMNANT_SPAWN`, `REMNANT_ACTIVATE` and `REMNANT_END` (§8l). New kinds are appended, never inserted, because kinds are hashed |
+| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0; v0.3.0 E: also a card taken from an altar or chest), `COMBO_UNLOCKED` (v0.3.0 G), `BOSS_DEFEATED` (v0.3.0 C: once per boss, after its `KILL`; `amount` = its boss table index) and `SHARDS` (v0.3.0 E: a kill paid `amount` shards at `pos`), …, then (v0.3.5 K) `SKILL_USED` (the build skill started; `amount` = `SkillTable.Kind`, `root_id` = the skill's root, which all its hits share), `VENT` (the Vent button vented `amount` heat) and `VENT_COLD` (the Vent button under Hot: nothing vented). Then (v0.5.0 SH) `SHOP_BUY` (shards spent at the shop: `amount` = the price, `effect_id` = the card's id or `shop_heal` / `shop_reroll`; a bought card also emits `PICKUP` from the terminal, the heal a `HEAL` with `effect_id` `shop_heal`) and `SHOP_SALVAGE` (shards back: `amount` = the refund, `effect_id` = what was sold, `target_id` = its card code). The first nine were declared in v0.0.1, even though early versions emit only some kinds. v0.8.0 RM appends `REMNANT_SPAWN`, `REMNANT_ACTIVATE` and `REMNANT_END` (§8l). v0.12.0 appends `BOSS_PICKUP_SPAWN`, `BOSS_PICKUP_TAKEN` and `BOSS_PICKUP_END` (§10n). New kinds are appended, never inserted, because kinds are hashed |
 | `root_id` | int | The chain this event belongs to. A player action, an enemy attack or a status tick opens a new root |
 | `parent_seq` | int | The event that caused this one (−1 for a root) |
 | `depth` | int | 0 for a root; parent depth + 1 otherwise |
@@ -2101,6 +2101,40 @@ PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and t
   pass draws before every see-through thing), and a Shade wisp within 4 m of the player always shows its outline.
 
 **Starfall and Meteor (v0.10.5 W3-P10e; owner W7: "Starfall ... evolves into a every 5 attack a meteor falls from the sky into the enemies", Q5 "fire lv3 ok"; `Starfall`, `src/sim/items/starfall.gd`).** With the Starfall Constellation held, every 5th crit of the hero (`World.starfall_crits`, counted in `Damage.hit` after the hit landed) drops a star on the nearest other living enemy (squared distance, ties the lowest index) for 100 % of the amount that crit dealt (W3-P10k: before the crit target's own multipliers, as Arc Jump's first jump, so the star's target applies only its own). The star is a hit with `EFFECT_STAR`, already scaled like a splash: it skips `Stats.outgoing`, so it never rolls a crit and never counts toward the five. Holding Fire (`ember_core`) at Lv 3 or more (`ElementLevelsFsf.level`) replaces the star with Meteor: every 5th root attack (`World.meteor_attacks`; a Blade swing's start or a Gun shot's release in `PlayerKit`, never a repeat, child or hook) picks the enemy within 8 m with the most other enemies within 2.5 m (ties the lowest index), and 24 ticks later (`World.meteors`, 4 ints each: land tick, base hit, x mm, y mm; saved) every enemy within 2.5 m of where it stood takes 300 % of the attack's base hit as a normal player hit (its own crit roll, the damage stat; `EFFECT_METEOR`, ascending index) and gains one burn stack. Events for the view: `STAR`, `METEOR_LAUNCH`, `METEOR_LAND` (appended `SimEvent.Kind`s). The counters and the pending list are hashed only once any is non-zero, so a run without Starfall hashes as before.
+
+## 10n. A boss's tools against the hero's weapon (v0.12.0 step 1; owner brief rows CJ1, CJ2, CJ4, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+Three pieces a boss's script calls; no shipped boss calls them yet. All three live in `BossStore`, run in tick
+phase 6 from `BossSignatures.advance` (after the arena hazards, before the projectile sweep) and draw no stream.
+
+- **The attack-speed cut (`BossSlow`).** `aslow_cut` (per mille of the weapon's rate, at most 900) and `aslow_boss`
+  (the boss that took it, -1 none). `apply(w, boss_id, permille)` keeps the larger of the old and the new cut;
+  `give_back(w, permille)` returns part and ends it at 0. The cut multiplies the rate last and whole:
+  `AttackRate.rate_at` = `BossSlow.weapon_rate(own_rate_at)` (the stat, the wand bonus, the curve, Heavy Hands, then
+  the cut: the Blade's swing, the cards' forecast), and `AttackRate.shot_rate` cuts a Gun form's rate after its
+  share of attack speed (`form_rate`), so the Laser and the Lance lose the whole cut too. The Blade's rate still
+  never falls under `BladeTable.rate_min` (250). The auto abilities' periods read `AttackRate.auto_rate`, spared
+  while `BossSlow.WEAPON_ONLY` is true; the spells' cooldowns never read attack speed.
+- **Floor pickups (`BossPickups`, `BossPickupTable`).** `pk_*` rows {id, boss, kind, amount, placed, ends (0 = it
+  stays), centre, radius}, oldest first; `pk_next` the next id. The hero takes one when its circle touches the disc
+  (oldest first); `Kind.RESTORE_ATTACK_SPEED` returns `amount` per mille through `BossSlow.give_back`. At
+  `max_count` a boss's oldest goes first. Events (appended kinds, source = the boss, target = the pickup's id):
+  `BOSS_PICKUP_SPAWN` (amount = kind), `BOSS_PICKUP_TAKEN` (owner = the hero, amount, amount_applied = what it
+  returned), `BOSS_PICKUP_END` (amount = `END_EXPIRED`, `END_CAP` or `END_CLEARED`).
+- **Shot fields (`BossShotFields`, `ShotFieldTable`).** `sf_*` rows {id, boss, speed kept (per mille), laid, ends,
+  centre, radius}; `sf_next`. In `NativeShots.sweep`, after the steering and before the native sweep, a hero's
+  projectile whose centre is inside a field has its velocity multiplied by the slowest field's share for that sweep
+  only; after the contacts its own velocity is restored (one a bounce turned keeps its new heading at its own
+  speed). `SLOWS_LIFE` (true): its life is lent one tick on every tick that spends none (a tick spends life when
+  `tick × share / 1000` crosses a whole number), so it flies its range out afterwards, within one tick. Hostile
+  shots, a holding Mine disc and attacks that are not projectiles (the Laser's beam, the Blade) are untouched. No
+  native change: the sweep reads the velocity and the life it is given.
+- **When they end.** With their boss (`BossSignatures.on_boss_gone`), when the hero is dead, and when the hero
+  stands more than 1 m outside the sealed arena (`BossSlow.fight_over`); a pickup or field also at its own time.
+- **Hash and save.** Hashed after a `-10` sentinel only while a cut is held or once a pickup or a field has been
+  placed (`aslow_boss >= 0 or pk_next > 0 or sf_next > 0`), so every other world hashes as before. `BossStore` is a
+  snapshot state class, so the fields are saved with it.
+- **Reads.** `WorldReader.boss_attack_slow()`, `boss_pickups()`, `boss_shot_fields()`.
 
 ## 11. Scaling and threat
 

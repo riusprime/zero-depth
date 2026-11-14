@@ -29,10 +29,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0120`, cut from `main` at `feedd802`
 ## Done
 | Step | What (player-facing) | Commit |
 |---|---|---|
-| 0 | Plan and docs | this commit |
+| 0 | Plan and docs | `b020a3bd` |
+| 1 | Nothing the player sees yet: a boss can slow the hero's attacks (`BossSlow`), place pickups that return it (`BossPickups`) and lay fields that slow the hero's shots (`BossShotFields`). No boss uses them; contracts in SIM_CONTRACTS §10n | this commit |
 
 ## Goldens changed on purpose
-None.
+None (step 1: the golden tests pass unchanged).
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -52,3 +53,8 @@ None.
 ## History
 - 2026-11-14 — The boss brief arrived (spoken), was written up with two read-only code surveys, gained the
   signatures, and four questions were answered. Branch cut, PLAN and PROGRESS written. Next: step 1.
+- 2026-11-14 — Step 1: the Judge's three building blocks in the sim with their unit tests, no C++ change, no boss
+  using them, goldens unchanged. Found while building: a Gun form counts attack speed at half (the Laser, the
+  Lance), so the cut is applied after that share and every weapon loses all of it; the Blade's rate floor (25 %) is
+  exactly the Time Wave's 75 %, so Heavy Hands on top adds nothing for a Blade. The boss data fields (content →
+  tables) are left for step 2, where the Judge declares them. Next: step 2.
