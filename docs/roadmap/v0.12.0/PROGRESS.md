@@ -32,10 +32,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0120`, cut from `main` at `feedd802`
 | 0 | Plan and docs | `b020a3bd` |
 | 1 | Nothing the player sees yet: a boss can slow the hero's attacks (`BossSlow`), place pickups that return it (`BossPickups`) and lay fields that slow the hero's shots (`BossShotFields`). No boss uses them; contracts in SIM_CONTRACTS §10n | `c7f292e7` |
 | 2 | The Clockwork Judge fights with time, in the sim only (nothing of it is drawn until step 3): a Time Wave every 25 s takes 75 % of your attack speed; three hour orbs give it back, 25 each; from phase 2 stopped gears stand across the ways to the orbs, slow fields are laid between you and the Judge (it side-steps a shot crawling through one), and the Bell throws you back to where you stood 4 s ago, with the Verdict aimed at that spot; in phase 3 the orbs last 10 s, the copy trails 6 s, the Bell tolls twice, and the Judge returns once to its own past. Numbers in `data/bosses/clockwork_judge.tres` (`time`); contracts in SIM_CONTRACTS §10o, CONTENT_SCHEMA §4; the two bots in [`evidence/JUDGE_BOTS.md`](evidence/JUDGE_BOTS.md) | this commit |
+| 2b | Still in the sim only: the Judge's Bell now throws you onto a Verdict you must leave. Each toll locks a Verdict square of its own where your copy stands and drops it 0.45 s after the throw (the Verdict's damage, once; phase 3's two tolls bring two). The Judge's ordinary Verdict follows you again in every phase, so the punish and the gap-closer threaten a hero who keeps away. New `time` key `bell_verdict_delay_seconds`; `WorldReader.boss_time()` gains `bell_squares`; SIM_CONTRACTS §10o, CONTENT_SCHEMA §4; the bots after it in [`evidence/JUDGE_BOTS.md`](evidence/JUDGE_BOTS.md) | this commit |
 
 ## Goldens changed on purpose
 None (step 1: the golden tests pass unchanged; step 2: `tests/golden` passes unchanged, no golden pins a Judge
-fight).
+fight; step 2b: `tests/golden` passes unchanged).
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -70,3 +71,12 @@ fight).
   times with the Blade, and costs about 3.5 times the HP; a throw by itself seldom lands in a Verdict's square (5 of
   68 throws for the bots that ignore). Nothing of the new mechanics is drawn yet: the gears are walls you cannot see
   and the throw has no warning on screen until step 3. Next: step 3.
+- 2026-11-14 — Step 2b: the Rewind's teeth, sim and tests only. Each Bell toll brings a Verdict of its own
+  (`BossRewind`: follows the copy while the toll is awaited, locks at the toll, drops `bell_verdict_delay_seconds`
+  = 0.45 s later, hits once through the Verdict's damage and death cause, whatever the Judge is doing); the ordinary
+  Verdict is back on the hero in every phase. `boss_time()` gained `bell_squares` (no key renamed or removed); a
+  new event `judge_bell_verdict`. No C++ change, goldens unchanged. Choices for the lead to confirm: the square locks
+  on the copy's spot even when the hero landed beside it (the copy's spot was in a gear or the Judge); it drops
+  during a phase gate too; a boss with `time` must now hold a `verdict` attack; the bot that plays now leaves only
+  the Bell's square, not the ordinary Verdict. The bots: the Bell's Verdict hit the bot that ignores on 59 of 67
+  throws (5 of 68 in step 2) and the bot that plays on 7 of 26; why those 7 was not traced.

@@ -2461,7 +2461,9 @@ func boss_shot_fields() -> Array:
 ## stand), "returned" (the Judge went back to its own past), "rewind" (true while the Rewind is on) and then "copy"
 ## (where the pale copy stands: where the Bell throws the hero), "trail" (ticks it follows behind), "bell" (0..1000
 ## toward the toll pending, -1 none), "bell_left" (ticks to it), "tolls" (tolls after it), "bell_in" (ticks until the
-## next cast). The orbs: boss_pickups ("left" counts a late orb down); the fields: boss_shot_fields. (BossTime.state)
+## next cast), "bell_squares" (the Bell's Verdict squares, the locked one first: [{center, half, locked, left (ticks
+## until it drops)}]). The orbs: boss_pickups ("left" counts a late orb down); the fields: boss_shot_fields.
+## (BossTime.state)
 func boss_time() -> Dictionary:
 	return BossTime.state(_w)
 

@@ -802,12 +802,15 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   `gear_seconds` 12; the slow fields `field_phase` 1, `field_every_seconds` 7, `field_radius_m` 1.75,
   `field_seconds` 8, `field_speed_permille` 200, `field_max` 3, `dodge_mps` 2.5; the Rewind `rewind_phase` 1,
   `trail_step_seconds` 0.25, `trail_seconds` 4, `late_phase` 2, `late_trail_seconds` 6, `late_tolls` 2,
-  `toll_gap_seconds` 3, `bell_first_seconds` 15, `bell_every_seconds` 20, `bell_cast_seconds` 2; the Judge's return
+  `toll_gap_seconds` 3, `bell_first_seconds` 15, `bell_every_seconds` 20, `bell_cast_seconds` 2,
+  `bell_verdict_delay_seconds` 0.45 (how long after a toll its own Verdict drops, 0.1..3); the Judge's return
   `return_phase` 2, `return_hp_permille` 150, `return_seconds` 5, `return_heal_permille` 50, `return_near_m` 4.
   Phases are indices from 0; one past the boss's last phase means never. Also checked: a boss with `time` lists a
   `time_wave` attack in every phase, and a `time_wave` attack needs `time`; `wave_every_seconds` exceeds the wave's
   cast, active time and recovery; the late trail is the longer one and no trail is over 64 steps;
-  `bell_every_seconds` exceeds the cast plus the later tolls; the Bell's cast lasts the telegraph minimum.
+  `bell_every_seconds` exceeds the cast plus the later tolls; the Bell's cast lasts the telegraph minimum;
+  `bell_verdict_delay_seconds` is under `bell_cast_seconds` and `toll_gap_seconds`; a boss with `time` holds a
+  `verdict` attack (the Bell's Verdict takes its square and damage from it).
   New boss move `time_wave` (shape 3, no params): its telegraph is the cast. It is a cast move
   (`BossSchemas.CAST_MOVES`): its `damage` must be 0 and it needs no `cause_key` or `hit_class`.
 

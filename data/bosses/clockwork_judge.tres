@@ -213,6 +213,7 @@ time = {
 "bell_cast_seconds": 2.0,
 "bell_every_seconds": 20.0,
 "bell_first_seconds": 15.0,
+"bell_verdict_delay_seconds": 0.45,
 "dodge_mps": 2.5,
 "field_every_seconds": 7.0,
 "field_max": 3,

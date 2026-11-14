@@ -4,8 +4,8 @@ extends GutTest
 ## the Time Wave on its cadence takes 75 % of the weapon's rate, undodgeable and without damage; three hour orbs of 25
 ## each, spread apart, with hint markers; from phase 2 stopped gears across the lines to the orbs that never seal one
 ## in, slow fields between the hero and the Judge, and the Judge's side-step; the Rewind (the pale copy, the Bell's
-## throw, the Verdict on the copy); phase 3's running orbs, double toll and the Judge's own return; the end of the
-## fight; determinism and a save in the middle of it.
+## throw, the Bell's own Verdict on the copy); phase 3's running orbs, double toll and the Judge's own return; the
+## end of the fight; determinism and a save in the middle of it.
 
 const S := EnemyAi.State
 const WAVE_CAST := 90
@@ -59,6 +59,8 @@ func test_the_data_is_the_brief() -> void:
 	assert_almost_eq(tt.field.radius_m, 1.75, 0.0001)
 	assert_eq([tt.rewind_phase, tt.trail_ticks, tt.step_ticks], [1, 240, 15], "the copy 4 s behind")
 	assert_eq([tt.bell_first_ticks, tt.bell_every_ticks, tt.bell_cast_ticks], [900, 1200, 120])
+	assert_eq(tt.bell_verdict_ticks, 27, "the Bell's Verdict drops 0.45 s after the toll")
+	assert_eq(BossRewind.verdict_attack(t), t.attack_index(&"verdict"), "and it is the Verdict's")
 	assert_eq(
 		[tt.late_phase, tt.late_trail_ticks, tt.late_tolls, tt.toll_gap_ticks], [2, 360, 2, 180]
 	)
@@ -96,6 +98,16 @@ func test_bad_time_numbers_are_errors() -> void:
 	assert_has(
 		_codes_with(func(d: BossDefinition) -> void: d.time["bell_every_seconds"] = 5.0),
 		&"duration"
+	)
+	assert_has(
+		_codes_with(func(d: BossDefinition) -> void: d.time["bell_verdict_delay_seconds"] = 2.5),
+		&"duration",
+		"the Bell's Verdict drops before the next toll"
+	)
+	assert_has(
+		_codes_with(func(d: BossDefinition) -> void: d.attack(&"verdict").move = &"slam_ring"),
+		&"attacks",
+		"the Bell's Verdict needs a verdict attack"
 	)
 	var drop := func(d: BossDefinition) -> void: d.phases[1].attack_ids = ["the_echo", "verdict"]
 	assert_has(_codes_with(drop), &"attacks", "a time_wave in every phase")
@@ -444,7 +456,6 @@ func test_the_pale_copy_follows_4_s_behind_then_6() -> void:
 	assert_almost_eq(
 		st["copy"], _line(newest - 240), Vector2(0.001, 0.001), "where you stood 4 s ago"
 	)
-	assert_eq(BossRewind.target_of(w, _i(w, aid)), st["copy"])
 	JudgeLab.set_phase(w, aid, 2)
 	w.bosses.time_bell_due = 1 << 29
 	_walk_line(w, 30)
@@ -551,53 +562,153 @@ func test_the_throw_never_lands_in_a_wall_a_gear_or_the_judge() -> void:
 	assert_gt(moved, seeds * 9 / 10, "nearly every throw finds a free spot")
 
 
-func test_the_verdict_follows_the_copy_and_a_throw_into_it_costs_one_hit() -> void:
-	var s := JudgeLab.fight(Vector2(-10, -8), Vector2(6, 6))
-	var w: World = s[0]
-	var aid: int = s[1]
-	JudgeLab.hush(w, aid)
-	BossAi.table_of(w, _i(w, aid)).speed = 0.0
-	JudgeLab.set_phase(w, aid, 1)
-	w.bosses.time_field_due = 1 << 29
-	_walk_line(w, 400)
-	w.bosses.time_bell_due = 1 << 29
-	var reader := WorldReader.new(w)
-	BossLab.start(w, _i(w, aid), &"verdict")
-	_walk_line(w, 20)
-	var v: Dictionary = reader.boss_echo(_i(w, aid))["verdict"]
-	assert_false(bool(v["locked"]))
-	assert_eq(v["center"], reader.boss_time()["copy"], "the square is on the copy, not on you")
-	assert_gt((v["center"] as Vector2).distance_to(w.player_pos()), 2.0)
-	# The hero stops; the Verdict locks on the copy; the toll throws them into it 6 ticks before it drops.
-	var hp := 100
-	w.actors.hp[0] = hp
-	w.actors.max_hp[0] = hp
-	var strike := w.tick - 20 + 95  # The tick its windup ends
-	w.bosses.time_bell_at = strike - 6
-	w.bosses.time_bell_from = w.tick
-	var here := w.player_pos()
-	while w.tick <= strike + 1:
-		w.step(InputFrame.new())
-	var snaps := JudgeLab.effects(w, BossRewind.SNAP)
-	assert_eq(snaps.size(), 1)
-	assert_gt(snaps[0].pos.distance_to(here), 1.5, "thrown back")
-	assert_eq(
-		w.actors.hp[0], hp - 30, "one Verdict hit: 30 of 100, under the 40 % the brief allows"
-	)
-	assert_false(w.player_dead(), "never a kill from full HP")
-	CombatLab.idle(w, 120)
-	assert_eq(w.actors.hp[0], hp - 30, "and only one")
-
-
-func test_phase_1_keeps_the_verdict_on_the_hero() -> void:
+## A hushed, still Judge in `phase` with the hero 400 ticks along its line and the Bell's cast due on the next tick.
+## Returns [world, the Judge's id, the tick the cast begins].
+func _cast(phase: int) -> Array:
 	var s := JudgeLab.fight(Vector2(-10, -8), Vector2(6, 6))
 	var w: World = s[0]
 	JudgeLab.hush(w, s[1])
-	_walk_line(w, 300)
-	BossLab.start(w, _i(w, s[1]), &"verdict")
-	_walk_line(w, 20)
-	var v: Dictionary = WorldReader.new(w).boss_echo(_i(w, s[1]))["verdict"]
-	assert_almost_eq(v["center"], w.player_pos(), Vector2(0.02, 0.001), "on you, as before")
+	BossAi.table_of(w, _i(w, s[1])).speed = 0.0
+	JudgeLab.set_phase(w, s[1], phase)
+	w.bosses.time_field_due = 1 << 29
+	w.bosses.time_back = 1  # Not these tests'
+	_walk_line(w, 400)
+	w.bosses.time_bell_due = w.tick
+	w.actors.hp[0] = 100
+	w.actors.max_hp[0] = 100
+	return [w, s[1], w.tick]
+
+
+func _squares(w: World) -> Array:
+	return WorldReader.new(w).boss_time()["bell_squares"]
+
+
+func _drops(w: World) -> Array[SimEvent]:
+	return JudgeLab.effects(w, BossRewind.BELL_VERDICT)
+
+
+func test_the_bells_verdict_follows_the_copy_locks_at_the_toll_and_drops_once() -> void:
+	for busy: bool in [false, true]:
+		var s := _cast(1)
+		var w: World = s[0]
+		var cast: int = s[2]
+		var reader := WorldReader.new(w)
+		assert_eq(_squares(w), [], "no square before the cast")
+		_walk_line(w, 1)
+		var sq := _squares(w)
+		assert_eq(sq.size(), 1, "the cast brings its square")
+		var first: Vector2 = sq[0]["center"]
+		assert_eq(first, reader.boss_time()["copy"], "on the copy")
+		assert_eq([sq[0]["locked"], sq[0]["left"]], [false, 119 + 27])
+		assert_almost_eq(float(sq[0]["half"]), 1.5, 0.0001, "the Verdict's size")
+		_walk_line(w, 60)
+		sq = _squares(w)
+		assert_eq(sq[0]["center"], reader.boss_time()["copy"], "it follows the copy")
+		assert_gt((sq[0]["center"] as Vector2).distance_to(first), 0.5)
+		_walk_line(w, 59)
+		assert_eq([w.tick, _squares(w)[0]["left"]], [cast + 120, 27])
+		if busy:  # The Judge is casting its Time Wave when the square drops
+			BossLab.start(w, _i(w, s[1]), &"time_wave")
+		_walk_line(w, 1)
+		var snaps := JudgeLab.effects(w, BossRewind.SNAP)
+		assert_eq(snaps.map(func(e: SimEvent) -> int: return e.tick), [cast + 120], "the toll")
+		sq = _squares(w)
+		assert_eq(sq.size(), 1)
+		assert_eq(
+			sq[0]["center"], snaps[0].pos, "locked where the copy stood: where the hero landed"
+		)
+		assert_eq([sq[0]["locked"], sq[0]["left"]], [true, 26])
+		assert_eq(w.actors.hp[0], 100, "the throw deals no damage")
+		CombatLab.idle(w, 26)
+		assert_eq([w.actors.hp[0], _drops(w).size()], [100, 0], "0.45 s to leave it")
+		assert_eq(_squares(w)[0]["left"], 0)
+		w.step(InputFrame.new())
+		var drops := _drops(w)
+		assert_eq(drops.map(func(e: SimEvent) -> int: return e.tick), [cast + 147])
+		assert_eq([drops[0].amount, drops[0].pos], [30, snaps[0].pos])
+		assert_eq(w.actors.hp[0], 70, "one Verdict hit: 30 of 100, under the 40 % the brief allows")
+		assert_false(w.player_dead(), "never a kill from full HP")
+		assert_eq([_squares(w), w.bosses.time_bv_at], [[], -1], "the square is gone")
+		if busy:
+			assert_eq(w.actors.state[_i(w, s[1])], S.WINDUP, "beside the Judge's own attack")
+		CombatLab.idle(w, 200)
+		assert_eq([w.actors.hp[0], _drops(w).size()], [70, 1], "and only one")
+
+
+func test_leaving_the_bells_square_in_time_costs_nothing() -> void:
+	var s := _cast(1)
+	var w: World = s[0]
+	_walk_line(w, 121)
+	var c: Vector2 = _squares(w)[0]["center"]
+	assert_almost_eq(w.player_pos(), c, Vector2(0.001, 0.001), "thrown onto it")
+	CombatLab.idle(w, 20)
+	w.actors.set_pos(0, c + Vector2(0.0, 1.5 + w.player.radius_m + 0.05))  # Just past its edge
+	CombatLab.idle(w, 10)
+	var drops := _drops(w)
+	assert_eq(drops.size(), 1, "it drops all the same")
+	assert_eq([drops[0].amount, w.actors.hp[0]], [0, 100], "on nobody")
+
+
+func test_a_bells_verdict_that_kills_names_the_verdict() -> void:
+	var s := _cast(1)
+	var w: World = s[0]
+	_walk_line(w, 121)
+	w.actors.hp[0] = 10
+	CombatLab.idle(w, 30)
+	assert_true(w.player_dead())
+	var t := BossAi.table_of(w, _i(w, s[1]))
+	assert_eq(w.killer_attack, t.attack_index(&"verdict"), "the death recap's cause is the Verdict")
+
+
+func test_phase_3_each_toll_brings_its_own_verdict() -> void:
+	var s := _cast(2)
+	var w: World = s[0]
+	var cast: int = s[2]
+	_walk_line(w, 121)
+	var sq := _squares(w)
+	assert_eq(sq.size(), 2, "the first locked, the second already on the copy")
+	assert_eq([sq[0]["locked"], sq[0]["left"]], [true, 26])
+	assert_eq([sq[1]["locked"], sq[1]["left"]], [false, 179 + 27])
+	assert_eq(sq[1]["center"], WorldReader.new(w).boss_time()["copy"])
+	CombatLab.idle(w, 180 + 27 + 5)
+	var drops := _drops(w)
+	assert_eq(drops.map(func(e: SimEvent) -> int: return e.tick), [cast + 147, cast + 327])
+	assert_eq(drops.map(func(e: SimEvent) -> int: return e.amount), [30, 30], "one hit each")
+	assert_ne(drops[0].pos, drops[1].pos, "each where the copy stood at its toll")
+	assert_eq(w.actors.hp[0], 40)
+	assert_eq([_squares(w), w.bosses.time_bell_at, w.bosses.time_bv_at], [[], -1, -1])
+
+
+func test_the_ordinary_verdict_follows_the_hero_in_every_phase() -> void:
+	for phase in 3:
+		var s := JudgeLab.fight(Vector2(-10, -8), Vector2(6, 6))
+		var w: World = s[0]
+		var aid: int = s[1]
+		JudgeLab.hush(w, aid)
+		BossAi.table_of(w, _i(w, aid)).speed = 0.0
+		JudgeLab.set_phase(w, aid, phase)
+		w.bosses.time_field_due = 1 << 29
+		w.bosses.time_back = 1
+		_walk_line(w, 400)
+		w.bosses.time_bell_due = 1 << 29
+		var reader := WorldReader.new(w)
+		BossLab.start(w, _i(w, aid), &"verdict")
+		_walk_line(w, 20)
+		var v: Dictionary = reader.boss_echo(_i(w, aid))["verdict"]
+		assert_false(bool(v["locked"]))
+		assert_almost_eq(
+			v["center"], w.player_pos(), Vector2(0.02, 0.001), "phase %d: on you" % (phase + 1)
+		)
+		if phase > 0:
+			var copy: Vector2 = reader.boss_time()["copy"]
+			assert_gt((v["center"] as Vector2).distance_to(copy), 2.0, "not on the copy")
+		w.actors.hp[0] = 100
+		w.actors.max_hp[0] = 100
+		CombatLab.idle(w, 95 - 20 + 2)  # The hero stops; the windup ends
+		assert_eq(
+			w.actors.hp[0], 70, "phase %d: standing still under it costs its hit" % (phase + 1)
+		)
+		assert_eq(_drops(w).size(), 0, "and no Bell's Verdict fell")
 
 
 func _return_fight(hero_at: Vector2) -> Array:
@@ -651,6 +762,7 @@ func test_everything_goes_when_the_judge_dies() -> void:
 	var aid: int = s[1]
 	BossShotFields.place(w, aid, _time(w, aid).field, Vector2(0, 0))
 	w.bosses.time_bell_at = w.tick + 50
+	w.bosses.time_bv_at = w.tick + 50
 	assert_gt(w.bosses.gear_x.size(), 0)
 	assert_eq(BossSlow.cut(w), 750)
 	var i := _i(w, aid)
@@ -668,6 +780,7 @@ func test_everything_goes_when_the_judge_dies() -> void:
 	assert_eq(
 		[bs.time_boss, bs.time_bell_at, bs.time_px.size()], [-1, -1, 0], "the clocks and the trail"
 	)
+	assert_eq(bs.time_bv_at, -1, "the Bell's Verdict")
 	assert_eq(BossSlow.cut(w), 0, "the cut")
 	assert_eq(_orbs(w).size(), 0, "the orbs")
 	assert_eq(WorldReader.new(w).boss_shot_fields().size(), 0, "the fields")
@@ -676,6 +789,7 @@ func test_everything_goes_when_the_judge_dies() -> void:
 	var here := w.player_pos()
 	CombatLab.idle(w, 60)
 	assert_eq(w.player_pos(), here, "and no toll throws the hero afterwards")
+	assert_eq(_drops(w).size(), 0, "and no Verdict drops")
 
 
 func test_leaving_the_room_or_dying_drops_the_gears_and_the_toll() -> void:
@@ -684,6 +798,7 @@ func test_leaving_the_room_or_dying_drops_the_gears_and_the_toll() -> void:
 		var w: World = s[0]
 		w.bosses.time_bell_at = w.tick + 50
 		w.bosses.time_bell_from = w.tick
+		w.bosses.time_bv_at = w.tick + 50
 		assert_gt(w.bosses.gear_x.size(), 0)
 		if dead:
 			w.actors.hp[0] = 0
@@ -694,10 +809,12 @@ func test_leaving_the_room_or_dying_drops_the_gears_and_the_toll() -> void:
 		assert_eq(w.bosses.gear_x.size(), 0, "no gear stays")
 		assert_eq(w.walls.size(), 4)
 		assert_eq(w.bosses.time_bell_at, -1, "no toll pending")
+		assert_eq(w.bosses.time_bv_at, -1, "no Bell's Verdict hanging")
 		assert_eq(_orbs(w).size(), 0)
 		assert_false(w.objectives.has(ObjectiveMarkers.JUDGE_ORB))
 		CombatLab.idle(w, 80)
 		assert_true(JudgeLab.effects(w, BossRewind.SNAP).is_empty(), "and none throws")
+		assert_eq(_drops(w).size(), 0, "and none drops")
 
 
 func _mid_fight(seed_value: int) -> World:
@@ -728,13 +845,20 @@ func test_deterministic_and_a_save_mid_fight_restores() -> void:
 	bs.time_bell_due += 1
 	assert_ne(a.state_hash(), before, "the clocks too")
 	bs.time_bell_due -= 1
-	# A save with gears standing and a toll pending
+	bs.time_bv_x += 0.5
+	assert_ne(a.state_hash(), before, "and the Bell's Verdict square")
+	bs.time_bv_x -= 0.5
+	assert_gt(_drops(a).size(), 0, "a Bell's Verdict dropped")
+	# A save with gears standing, a toll pending and a Bell's Verdict locked
 	var c := _mid_fight(7)
 	var i := c.actors.index_of(c.bosses.time_boss)
 	var t := BossAi.table_of(c, i)
 	BossTime.resolve_wave(c, i, BossAi.entry_of(c, i), t.attacks[t.attack_index(&"time_wave")])
 	c.bosses.time_bell_at = c.tick + 40
 	c.bosses.time_bell_from = c.tick
+	c.bosses.time_bv_at = c.tick + 20
+	c.bosses.time_bv_x = c.player_pos().x
+	c.bosses.time_bv_y = c.player_pos().y
 	assert_gt(c.bosses.gear_x.size(), 0, "gears stand in the save")
 	var snap := WorldSnapshot.take(c)
 	var base := JudgeLab.world(7)
@@ -743,6 +867,11 @@ func test_deterministic_and_a_save_mid_fight_restores() -> void:
 	if restored == null:
 		return
 	assert_eq(restored.state_hash(), c.state_hash(), "same hash restored")
+	assert_eq(
+		[restored.bosses.time_bv_at, restored.bosses.time_bv_x],
+		[c.bosses.time_bv_at, c.bosses.time_bv_x],
+		"the Bell's Verdict is in the save"
+	)
 	assert_eq(restored.walls.size(), c.walls.size(), "the gears are walls again")
 	for k in 600:
 		var f := InputFrame.make(Vector2i(60, -40), 0, 300, InputFrame.SHOOT, 0)

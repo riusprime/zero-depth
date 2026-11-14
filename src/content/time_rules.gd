@@ -3,7 +3,8 @@ extends RefCounted
 ## The content rules of a boss's time mechanics (BossDefinition.time: the Clockwork Judge's Time Wave, hour orbs,
 ## stopped gears, slow fields, Rewind and its own return; its own file, as the quake pillars' rules). Every key is
 ## known and within its bounds; a boss with them holds a `time_wave` attack in every phase and its clocks fit one
-## inside the other; a `time_wave` attack needs them.
+## inside the other; it holds a `verdict` attack (the Bell's Verdict takes its square and damage from it); a
+## `time_wave` attack needs them.
 
 ## The most points a trail keeps (its longest reach over its step).
 const MAX_POINTS := 64
@@ -41,6 +42,7 @@ const SPEC := {
 	"bell_first_seconds": [15.0, 1.0, 120.0],
 	"bell_every_seconds": [20.0, 5.0, 120.0],
 	"bell_cast_seconds": [2.0, 0.4, 10.0],
+	"bell_verdict_delay_seconds": [0.45, 0.1, 3.0],
 	"return_phase": [2, 0, 9],
 	"return_hp_permille": [150, 0, 900],
 	"return_seconds": [5.0, 1.0, 10.0],
@@ -52,6 +54,10 @@ const SPEC := {
 ## The time dictionary's value for `key` (its default when the dictionary leaves it out).
 static func value(time: Dictionary, key: String) -> float:
 	return float(time.get(key, (SPEC[key] as Array)[0]))
+
+
+static func _is_verdict(a: BossAttackDefinition) -> bool:
+	return a != null and a.move == &"verdict"
 
 
 ## BossDefinition.validate.
@@ -110,6 +116,15 @@ static func validate(def: BossDefinition, issues: Array[ValidationIssue]) -> voi
 		issues.append(
 			ValidationIssue.new(&"duration", p, "time.bell_every_seconds must exceed its tolls")
 		)
+	var delay := value(tm, "bell_verdict_delay_seconds")
+	if delay >= value(tm, "bell_cast_seconds") or delay >= value(tm, "toll_gap_seconds"):
+		issues.append(
+			ValidationIssue.new(
+				&"duration", p, "time.bell_verdict_delay_seconds must end before the next toll"
+			)
+		)
+	if not def.attacks.any(_is_verdict):
+		issues.append(ValidationIssue.new(&"attacks", p, "time needs a verdict attack"))
 	if int(round(value(tm, "bell_cast_seconds") * 60.0)) < BehaviourSchemas.MIN_TELEGRAPH_TICKS:
 		issues.append(
 			ValidationIssue.new(&"telegraph_short", p, "time: the Bell's cast is under the minimum")

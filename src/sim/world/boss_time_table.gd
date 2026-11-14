@@ -32,7 +32,8 @@ var dodge := 0.0
 ## The Rewind, from rewind_phase. Both trails keep a point every step_ticks, `points` of them. The pale copy stands
 ## where the hero stood trail_ticks ago (late_trail_ticks from late_phase). The Bell: the first cast bell_first_ticks
 ## into rewind_phase, then every bell_every_ticks (start to start); bell_cast_ticks later it tolls and the hero is
-## thrown to the copy; from late_phase it tolls late_tolls times, toll_gap_ticks apart.
+## thrown to the copy; from late_phase it tolls late_tolls times, toll_gap_ticks apart. Each toll's own Verdict
+## drops on where the copy stood bell_verdict_ticks after it.
 var rewind_phase := 1
 var step_ticks := 15
 var points := 26
@@ -44,6 +45,7 @@ var toll_gap_ticks := 180
 var bell_first_ticks := 900
 var bell_every_ticks := 1200
 var bell_cast_ticks := 120
+var bell_verdict_ticks := 27
 ## The Judge's own return, once, in return_phase: with return_hp_permille of that phase's bar left it goes back to
 ## where it stood return_ticks ago and recovers return_heal_permille of the bar, unless the hero is within
 ## return_near_m of its edge (0 return_hp_permille = never).

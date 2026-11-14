@@ -18,8 +18,9 @@ extends RefCounted
 ## - The slow fields: from field_phase one is laid every field_every_ticks half-way between the hero and the Judge
 ##   (BossShotFields). While a hero's shot crawls inside one toward the Judge and the Judge is between two attacks,
 ##   it steps sideways out of the shot's line at `dodge` (never into a wall, never out of its room).
-## - Everything ends with the Judge (on_boss_gone); the gears and a pending toll also end when the hero is dead or
-##   has left the sealed arena (the cut, the orbs and the fields end themselves then: BossSlow.fight_over).
+## - Everything ends with the Judge (on_boss_gone); the gears, a pending toll and a Bell's Verdict also end when the
+##   hero is dead or has left the sealed arena (the cut, the orbs and the fields end themselves then:
+##   BossSlow.fight_over).
 ## Pure: the ai stream only (the orbs' spots).
 
 const M := BossAttackTable.Move
