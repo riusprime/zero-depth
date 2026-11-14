@@ -21,6 +21,7 @@ const NOT_GROUND := [
 	BossAttackTable.Move.WAVE,  # v0.9.5 BH4: the crossing waves, drawn by TideWaveViews (never a boss's own strike)
 	BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6: the Fallen's interphase carriers, drawn by InterphaseViews
 	BossAttackTable.Move.GREAT_JAVELIN,  # v0.11.0 F9: the throw, ring and recall, drawn by GreatJavelinViews
+	WorldReader.MOVE_TIME_WAVE,  # the Judge's Time Wave strikes nothing: its cast and ring are drawn by JudgeTimeViews
 ]
 
 
