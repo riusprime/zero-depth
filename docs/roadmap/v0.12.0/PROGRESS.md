@@ -62,6 +62,7 @@ Tidecaller fight.
 | BQ1, BQ2, BQ5, BQ6, BQ8, BQ10, BQ11, BQ12 details | BOSS_BRIEF §6 | the lead's defaults, pending the owner | |
 
 ## Open
+- **Step 4's bot target was MISSED and nothing was retuned** ([`evidence/TIDE_BOTS.md`](evidence/TIDE_BOTS.md)): over 3 seeds the Gun bot that ignores the dance loses 14 % more HP than the one that plays it (3,956 against 3,461), and the Blade bot that ignores it loses less (1,671 against 2,557) and wins sooner (11,637 ticks against 18,210). Read from the numbers, not traced: the Tidecaller walks at the hero in the Maelstrom, so its eye moves onto the dry circle; the Blade has 0.7 m between the eye (1.5 m) and its reach; most HP lost comes from attacks neither bot dodges. Waits on the owner (the Tidecaller stands still in the Maelstrom? the eye and the Blade?).
 - See PLAN "Open items".
 
 ## Blockers
