@@ -1,7 +1,8 @@
 # Boss brief: fights with mechanics you learn (owner, 2026-11-14)
 
-**Status: DRAFT for the owner. Nothing here is built.** This is the boss brief v0.11.0 was waiting for
-([`PLAN.md`](PLAN.md) O6–O8, [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) Q13: "I will design them myself and give you
+**Status: the design list of v0.12.0 ([`PLAN.md`](PLAN.md)). Nothing here is built.** Answers so far are in
+"Decisions" at the bottom. This is the boss brief v0.11.0 was waiting for
+([its PLAN](../v0.11.0/PLAN.md) O6–O8, [its questions](../v0.11.0/OWNER_QUESTIONS.md) Q13: "I will design them myself and give you
 the brief for the new fights"). The owner spoke it as a feedback session; the words are kept in
 [`feedback/ZeroDepth_Boss_Brief_2026-11-14.md`](feedback/ZeroDepth_Boss_Brief_2026-11-14.md).
 
@@ -236,4 +237,10 @@ hour orbs if the pack has none.
 
 | ID | Answer | Date | Built in |
 |---|---|---|---|
-| — | — | — | — |
+| BQ3 | "v0.12.0 (Recommended)" | 2026-11-14 | PLAN step 0 |
+| BQ4 | "25 per orb (Recommended)" | 2026-11-14 | — |
+| BQ7 | "One pool, 3 bars (Recommended)" | 2026-11-14 | — |
+| BQ9 / HC | "Remembers your run (Recommended)" (HC-A). What is wrong with The Fallen today was not asked again | 2026-11-14 | — |
+| §5b SG rows | Asked "Are these signatures the kind of mechanic you meant?": "Yes, go on". Read as: approved in kind, numbers after play | 2026-11-14 | — |
+| BQ1, BQ2, BQ5, BQ6, BQ8, BQ10, BQ11, BQ12 details | **Not answered.** The lead builds on the recommended option of each until the owner says otherwise | — | — |
+| WL, SE, FO, HL rows | **Not answered.** Asked again when each boss's step starts | — | — |

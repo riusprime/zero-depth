@@ -185,7 +185,7 @@ ROADMAP §0.4: version 0.11.0, patch notes en/es, What's New, tour en/es, PLAYTE
 ## Open items (what they block)
 - **Answered 2026-11-07:** Q1–Q30 (Q8 and Q13 in the lead's session) (see OWNER_QUESTIONS "Answers"). Q23: core 4 + 2 signatures + a
   variant per biome. Q26: G2 purpose rooms from authored templates. Q16: measure a 120-enemy surge, cap under 144 fps.
-- **The boss brief arrived 2026-11-14** (Q13): [`BOSS_BRIEF.md`](BOSS_BRIEF.md) holds the owner's lines, their
+- **The boss brief arrived 2026-11-14** (Q13) and the owner made it its own version: O6–O8 are **moved to v0.12.0** ([`../v0.12.0/PLAN.md`](../v0.12.0/PLAN.md)). At the time of writing: [`BOSS_BRIEF.md`](../v0.12.0/BOSS_BRIEF.md) holds the owner's lines, their
   design for the Clockwork Judge, the Twin Wardens (which changes O5: no chain) and the Tidecaller, the lead's
   proposals for the Warlord, Siege Engine, Foundry, Hive Lens and the Hollow Crown's third body, and questions
   BQ1–BQ12 (BQ12: one signature mechanic per boss, §5b). **Waiting on the owner's answers; nothing is built before them.**
