@@ -8,6 +8,9 @@ extends Node3D
 ##   Mother's a venom pool (VfxLayer.field &"venom": zone_venom_a/b); the Siege Engine's fallen rubble (the kit's
 ##   boulders) inside the pack's rim (ring_bleed: rim_area_vfx_01, in dust colours) over the boss strikes' crack mark,
 ##   its landing the pack's short impact (vx1_impact_other: 18 ticks), no Smoke (S3: no smoke over a telegraph).
+## - The Tidecaller's tide pools: its boss data names them `venom` (the slow disc's look), so a pool laid while the
+##   Tidecaller fights is drawn as water instead: its warning the frost ring (blue), armed the pack's water ripple
+##   (tc_pool), or the frost field when PackFx has no room for the ripple.
 ## - Each fades over its last FADE_TICKS: the pack zones shrink through VfxLayer.field's fade, the rubble sinks into the
 ##   floor.
 
@@ -49,10 +52,14 @@ const IMPACT_COLORS := {
 }
 const CRACK_COLOR := Color(0.09, 0.07, 0.06, 0.9)
 const CRACK_KEY := 0x5B000000
+const POOL_ID := &"tc_pool"
+const POOL_PER_M := 0.6
 
 var vfx: VfxCore = null
 var pack_fx: PackFx = null
 var _rows: Array = []
+## The pools on the floor are the Tidecaller's (kept while they last, though the boss may be gone).
+var _tide := false
 var _holds := PackHold.new()
 ## hazard id -> its meshes (the falling rock, or the rubble).
 var _meshes := {}
@@ -66,6 +73,11 @@ func hazard_count() -> int:
 
 func sync(reader: WorldReader) -> void:
 	_rows = reader.boss_hazards()
+	var bi := reader.boss_index()
+	if bi >= 0:
+		_tide = reader.actor_kind(bi) == WorldReader.KIND_TIDECALLER
+	elif _rows.is_empty():
+		_tide = false
 	var alive := {}
 	for r: Dictionary in _rows:
 		alive[r["id"]] = true
@@ -95,11 +107,32 @@ func draw_fx(layer: VfxCore) -> void:
 		var look: StringName = r["look"]
 		if look == &"rock":
 			_draw_rock(r, c, radius, fade)
+		elif _tide and look == &"venom":
+			_draw_pool(vl, r, c, radius, fade, age, sd)
 		elif not r["armed"]:
 			vl.ring(RING_KIND[look], c, radius, 1.0, age, sd)
 		else:
 			vl.field(FIELD_KIND[look], c, radius, fade, age, sd, look == &"lava")
 	_holds.end()
+
+
+## A tide pool: a blue ring while it warns, then the pack's water ripple (the frost field without room for it).
+func _draw_pool(
+	vl: VfxLayer, r: Dictionary, c: Vector3, radius: float, fade: float, age: float, sd: int
+) -> void:
+	if not r["armed"]:
+		vl.ring(&"frost", c, radius, 1.0, age, sd)
+		return
+	var n := _holds.touch(
+		r["id"] * 2 + 1, POOL_ID, &"area", c + Vector3(0, 0.05, 0), radius * POOL_PER_M * fade
+	)
+	if n == null:
+		vl.field(&"frost", c, radius, fade, age, sd)
+
+
+## Whether the pools drawn now are the Tidecaller's water (tests).
+func tide_pools() -> bool:
+	return _tide
 
 
 func _draw_rock(r: Dictionary, c: Vector3, radius: float, fade: float) -> void:

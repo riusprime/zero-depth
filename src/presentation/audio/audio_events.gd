@@ -529,7 +529,7 @@ func _events(reader: WorldReader, out: Array) -> void:
 					out.append([&"frost_nova", e.pos, 1.0])
 				elif e.effect_id == WorldReader.EFFECT_TWIN_ANGER:  # A Warden's chain jerks taut
 					out.append([&"boss_twin_chain", e.pos, 0.75])
-				elif not JudgeTimeCues.add(e, out):
+				elif not JudgeTimeCues.add(e, out) and not TideDanceCues.add(e, out):
 					_fallen_cue(e, out)
 			SimEvent.Kind.BOSS_PICKUP_TAKEN:  # An hour orb taken
 				out.append([JudgeTimeCues.ORB_TAKEN, e.pos, JudgeTimeCues.ORB_PITCH])

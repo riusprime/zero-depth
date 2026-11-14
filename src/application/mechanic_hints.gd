@@ -19,6 +19,8 @@ const MEETINGS := 2
 const ALWAYS: Array[StringName] = [WorldReader.OBJECTIVE_GATEKEEPER_PILLAR]
 ## The Clockwork Judge's hour orbs (its hint shows the first MEETINGS runs, like every reason not in ALWAYS).
 const JUDGE_ORB := ObjectiveMarkers.JUDGE_ORB
+## The Tidecaller's dry circle in a High Tide (likewise).
+const TIDE_DRY := ObjectiveMarkers.TIDE_DRY
 
 var codex: CodexStore
 

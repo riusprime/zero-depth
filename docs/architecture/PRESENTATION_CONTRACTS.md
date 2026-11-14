@@ -111,6 +111,25 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   Hint arrows: `ObjectiveMarkers.JUDGE_ORB`, drawn as the pillars' arrow, no text. Every slot is built hidden at the
   view's start (the shader warm-up draws it); the pack rows are `data/vfx/pack_fx_cj.tres`. A hero shot inside a
   field needs nothing here: its views draw between its last two tick positions, which the sim already slows.
+- **The Tidecaller's dance** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10p). Read from
+  `WorldReader.boss_dance`, `boss_hazards` and `objectives` only. `TideDanceViews`: each Riptide strip a floor quad
+  of the reader's exact `strips` rectangle while a cast runs; the three `struck` fill with water rising with `warn`
+  (the pack's `tc_rip_water` on each), the safe one stays clear inside a bright pulsing border; on the wave a wall of
+  water (the crossing waves' band, `TideWaveViews.wave_mesh`, three times as tall) stands on `front` down each
+  struck strip, the strip behind it flooded; `riptide_hit` bursts `tc_splash` on the hero. High Tide: a room-sized
+  water plane rising through `cast` and full through `flood`, with a hole of the exact `radius` at `centre` (drained
+  on `high_tide_end`); the dry circle a warm disc of that radius with a rim, the pack's `tc_dry`, and a ring that
+  fills through the cast and shrinks with the flood's time left; a hero outside it in the flood is splashed each
+  0.5 s step and the HUD shows the low-HP edge glow's look (`Hud.tide_flood`, `TideDanceViews.flooding`). The
+  pack's `tc_cast` rises under the Tidecaller through a Riptide warning or a High Tide cast, and its avatar plays
+  its ring stream's clip (bell_toll) or its Pull's (bell_raise) while no attack runs (`BossAvatar._side_clip`).
+  `MaelstromViews`: four log-spiral arms on the floor round `centre`, wound at the sim's `inward` / `around` and
+  turning the `spin` way, brighter toward the eye, with dashes pointing inward; the eye a dark core of radius `eye`
+  with a bright rim (dim through `grace`) under the pack's `tc_eye`; `maelstrom_throw` a splash and a spray streak.
+  Reduced motion stills the arms (the dashes and rings stay). The floor layers draw under every telegraph
+  (`render_priority` -2). Hint arrows: `ObjectiveMarkers.TIDE_DRY`, drawn as the pillars' arrow, no text. The tide
+  pools (data look `venom`) draw as water while the Tidecaller fights (`HazardViews`: the frost ring, then the
+  pack's `tc_pool`). Sounds: `TideDanceCues`. The pack rows are `data/vfx/pack_fx_tc.tres`.
 
 - **The player's attacks are drawn from their final specs** (v0.6.0 MX1; design
   [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §4): `AttackView` reads `WorldReader.attack_spec`
