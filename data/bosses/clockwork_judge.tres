@@ -129,10 +129,25 @@ cooldown_seconds = 0.7
 cause_key = &"CAUSE_JUDGE_GAVEL"
 opens_weak_point = true
 
+[sub_resource type="Resource" id="A_time_wave"]
+script = ExtResource("1_atk")
+id = &"time_wave"
+shape = 3
+shape_params = {}
+telegraph_seconds = 1.5
+active_seconds = 0.0167
+recovery_seconds = 0.6
+damage = 0
+move = &"time_wave"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.8
+
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 1000
-attack_ids = PackedStringArray("the_echo", "gear_spiral", "verdict", "gavel_slam")
+attack_ids = PackedStringArray("the_echo", "gear_spiral", "verdict", "gavel_slam", "time_wave")
 entry_attack = &""
 speed_permille = 1000
 cooldown_permille = 1000
@@ -140,7 +155,7 @@ cooldown_permille = 1000
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 660
-attack_ids = PackedStringArray("the_echo", "gear_spiral_2", "verdict", "gavel_slam")
+attack_ids = PackedStringArray("the_echo", "gear_spiral_2", "verdict", "gavel_slam", "time_wave")
 entry_attack = &"gear_spiral_2"
 speed_permille = 900
 cooldown_permille = 650
@@ -148,7 +163,7 @@ cooldown_permille = 650
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 330
-attack_ids = PackedStringArray("the_echo", "gear_spiral_3", "verdict", "gavel_slam")
+attack_ids = PackedStringArray("the_echo", "gear_spiral_3", "verdict", "gavel_slam", "time_wave")
 entry_attack = &"gear_spiral_3"
 speed_permille = 990
 cooldown_permille = 487
@@ -169,7 +184,7 @@ rear_mult_permille = 1000
 stagger_size = 280
 stagger_decay_per_second = 15.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_the_echo"), SubResource("A_gear_spiral"), SubResource("A_gear_spiral_2"), SubResource("A_gear_spiral_3"), SubResource("A_verdict"), SubResource("A_gavel_slam")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_the_echo"), SubResource("A_gear_spiral"), SubResource("A_gear_spiral_2"), SubResource("A_gear_spiral_3"), SubResource("A_verdict"), SubResource("A_gavel_slam"), SubResource("A_time_wave")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
 arena_template = 0
@@ -194,5 +209,43 @@ gap_close_distance_m = 10.0
 gap_close_seconds = 2.0
 signature_every_seconds = 10.0
 signature_first_seconds = 4.0
+time = {
+"bell_cast_seconds": 2.0,
+"bell_every_seconds": 20.0,
+"bell_first_seconds": 15.0,
+"dodge_mps": 2.5,
+"field_every_seconds": 7.0,
+"field_max": 3,
+"field_phase": 1,
+"field_radius_m": 1.75,
+"field_seconds": 8.0,
+"field_speed_permille": 200,
+"gear_count": 4,
+"gear_length_m": 5.0,
+"gear_phase": 1,
+"gear_seconds": 12.0,
+"gear_width_m": 0.8,
+"late_phase": 2,
+"late_tolls": 2,
+"late_trail_seconds": 6.0,
+"orb_count": 3,
+"orb_gap_m": 8.0,
+"orb_late_phase": 2,
+"orb_late_seconds": 10.0,
+"orb_permille": 250,
+"orb_radius_m": 1.2,
+"return_heal_permille": 50,
+"return_hp_permille": 150,
+"return_near_m": 4.0,
+"return_phase": 2,
+"return_seconds": 5.0,
+"rewind_phase": 1,
+"toll_gap_seconds": 3.0,
+"trail_seconds": 4.0,
+"trail_step_seconds": 0.25,
+"wave_cut_permille": 750,
+"wave_every_seconds": 25.0,
+"wave_first_seconds": 8.0
+}
 save_order = 3
 id = &"clockwork_judge"

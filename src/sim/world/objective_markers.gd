@@ -19,6 +19,8 @@ extends RefCounted
 const GATEKEEPER_PILLAR := &"gatekeeper_pillar"
 const SHADE_LANTERN := &"shade_lantern"
 const TWINS_ACTIVE := &"twins_active"
+## The Clockwork Judge's hour orbs (BossTime): each one lying on the floor.
+const JUDGE_ORB := &"judge_orb"
 const CAP := 8
 ## A fixed point's entity id.
 const NO_ENTITY := -1

@@ -12,7 +12,9 @@ extends RefCounted
 ##   echo_gap_ticks (point k on active tick k × echo_gap_ticks), a disc radius_m wide. One echo at a time: it is an
 ##   attack, and the next is a cadence away.
 ## - The Verdict (move `verdict`): a square square_half_m each way follows the player's exact position until the lock,
-##   then holds; a pendulum strike drops on it the tick the windup ends.
+##   then holds; a pendulum strike drops on it the tick the windup ends. While the Judge's Rewind is on the square
+##   follows the pale copy instead (BossRewind.target_of): it lands where the Bell would throw you.
+## - The Time Wave (move `time_wave`), its orbs, gears, fields and the Rewind: BossTime, BossGears, BossRewind.
 ## Pure: no stream is drawn here; everything follows from the clock and positions.
 
 ## What state()'s "phase" says: no echo, the path showing (the windup), the ghosts striking (its active time).
@@ -24,11 +26,12 @@ const M := BossAttackTable.Move
 
 
 static func is_move(move: int) -> bool:
-	return move == M.ECHO or move == M.VERDICT
+	return move == M.ECHO or move == M.VERDICT or move == M.TIME_WAVE
 
 
 ## Tick phase 3, every live boss: a Judge records the player's position (the first Judge to think owns the echo).
 static func record(w: World, i: int, t: BossTable) -> void:
+	BossTime.think(w, i, t)  # Its time mechanics' clocks and trails
 	if t.echo_points <= 0:
 		return
 	var bs := w.bosses
@@ -61,7 +64,10 @@ static func on_start(w: World, i: int, atk: BossAttackTable) -> void:
 		bs.path_y = PackedFloat32Array()
 		bs.path_k = PackedInt32Array()
 	if atk.move == M.VERDICT:
-		bs.set_pt(BossAi.entry_of(w, i), 0, w.player_pos())
+		bs.set_pt(BossAi.entry_of(w, i), 0, BossRewind.target_of(w, i))
+		return
+	if atk.move == M.TIME_WAVE:
+		BossTime.on_cast(w, i, atk)
 		return
 	if atk.move != M.ECHO or bs.echo_boss != w.actors.ids[i]:
 		return
@@ -82,11 +88,11 @@ static func on_start(w: World, i: int, atk: BossAttackTable) -> void:
 	bs.path_k = pk
 
 
-## Tick phase 3, a Verdict winding up: its square follows the player until the lock.
+## Tick phase 3, a Verdict winding up: its square follows the player (the pale copy under the Rewind) until the lock.
 static func track_verdict(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 	if w.player_dead() or w.actors.state_t[i] >= atk.windup_ticks - atk.lock_ticks:
 		return
-	w.bosses.set_pt(b, 0, w.player_pos())
+	w.bosses.set_pt(b, 0, BossRewind.target_of(w, i))
 
 
 ## The Verdict's square round c.
@@ -99,6 +105,10 @@ static func resolve(w: World, i: int, b: int, atk: BossAttackTable, st: int) -> 
 	var bs := w.bosses
 	var p := w.player_pos()
 	var pr := w.player.radius_m
+	if atk.move == M.TIME_WAVE:
+		if st == 0:
+			BossTime.resolve_wave(w, i, b, atk)
+		return
 	if atk.move == M.VERDICT:
 		if st == 0 and Collide.circle_vs_obb(p, pr, verdict_square(w, i, atk)) != Vector2.ZERO:
 			BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, bs.pt(b, 0))
@@ -120,9 +130,10 @@ static func verdict_square(w: World, i: int, atk: BossAttackTable) -> Obb:
 
 
 ## What the view draws on the ground: the Verdict's square while it winds up (dull while it tracks, bright once
-## locked: a &"lanes" telegraph of one square); the echo draws nothing here (WorldReader.boss_echo).
+## locked: a &"lanes" telegraph of one square); the echo draws nothing here (WorldReader.boss_echo), nor the Time
+## Wave's cast (WorldReader.boss_time).
 static func telegraph(w: World, i: int, atk: BossAttackTable, progress: int) -> Dictionary:
-	if atk.move == M.ECHO:
+	if atk.move == M.ECHO or atk.move == M.TIME_WAVE:
 		return {"shape": &"signature", "ground": false, "progress": progress, "move": atk.move}
 	var a := w.actors
 	if a.state[i] != EnemyAi.State.WINDUP:
@@ -138,8 +149,9 @@ static func telegraph(w: World, i: int, atk: BossAttackTable, progress: int) -> 
 	}
 
 
-## World._remove_dead (through BossSignatures.on_boss_gone): its echo goes with it.
+## World._remove_dead (through BossSignatures.on_boss_gone): its echo and its time mechanics go with it.
 static func on_boss_gone(w: World, boss_id: int) -> void:
+	BossTime.on_boss_gone(w, boss_id)
 	if w.bosses.echo_boss == boss_id:
 		w.bosses.clear_echo()
 

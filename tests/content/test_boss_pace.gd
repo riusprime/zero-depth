@@ -9,6 +9,7 @@ extends GutTest
 ## v0.9.5 BH4: the Tidecaller's crossing wave is one too (a hazard the owner set at 15 damage, seven hits: chip damage).
 ## v0.9.5 BH6: so are the Fallen's five interphase carriers (owner-set 15 damage hits: chip damage, no class).
 ## v0.10.5 O3: and the Prism's Shattered Kneel (she is down: it never hits).
+## And the Clockwork Judge's Time Wave (a cast: it slows the weapon and deals no damage).
 const UNCLASSED := [
 	&"meltdown",
 	&"crossing_wave",
@@ -18,6 +19,7 @@ const UNCLASSED := [
 	&"fallen_erupt",
 	&"fallen_return",
 	&"prism_kneel",
+	&"time_wave",
 ]
 ## Per boss, the slow readable attacks BP left as they were: [id, telegraph seconds].
 const KEPT_SLOW := {

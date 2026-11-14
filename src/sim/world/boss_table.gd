@@ -224,6 +224,8 @@ var interphase: InterphaseTable = null
 var quake: QuakeTable = null
 ## The boss's arena hazards, in sim units (null: none).
 var hazard: HazardTable = null
+## The Clockwork Judge's time mechanics (null: none).
+var time: BossTimeTable = null
 
 
 ## The attack index with this id, or -1.

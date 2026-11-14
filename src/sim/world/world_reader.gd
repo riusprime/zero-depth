@@ -229,6 +229,7 @@ const MOVE_CROSSFIRE := BossAttackTable.Move.CROSSFIRE  # v0.9.0 NB2 (the Twin W
 const MOVE_CHAIN_SWEEP := BossAttackTable.Move.CHAIN_SWEEP
 const MOVE_ECHO := BossAttackTable.Move.ECHO  # v0.9.0 NB3 (the Clockwork Judge)
 const MOVE_VERDICT := BossAttackTable.Move.VERDICT
+const MOVE_TIME_WAVE := BossAttackTable.Move.TIME_WAVE
 ## boss_tide's "phase".
 const TIDE_NONE := BossTide.NONE
 const TIDE_PULL := BossTide.PULL
@@ -2452,6 +2453,17 @@ func boss_pickups() -> Array:
 ## speed a shot inside keeps, per mille), "age" (ticks since laid), "left" (ticks to its end; -1 = it stays)}.
 func boss_shot_fields() -> Array:
 	return BossShotFields.rows(_w)
+
+
+## The Clockwork Judge's time mechanics: {} with no Judge running them; else "boss" (its actor index), "cut" (the
+## attack speed taken, per mille), "wave" (0..1000 through the Time Wave's cast, -1 none), "wave_in" (ticks until the
+## next cast may begin, -1 before its clock starts), "gears" ([{centre, half, angle, age, left}], walls while they
+## stand), "returned" (the Judge went back to its own past), "rewind" (true while the Rewind is on) and then "copy"
+## (where the pale copy stands: where the Bell throws the hero), "trail" (ticks it follows behind), "bell" (0..1000
+## toward the toll pending, -1 none), "bell_left" (ticks to it), "tolls" (tolls after it), "bell_in" (ticks until the
+## next cast). The orbs: boss_pickups ("left" counts a late orb down); the fields: boss_shot_fields. (BossTime.state)
+func boss_time() -> Dictionary:
+	return BossTime.state(_w)
 
 
 ## The meltdowns, each {"centre", "radius" (molten beyond it; INF while it only glows: the melt

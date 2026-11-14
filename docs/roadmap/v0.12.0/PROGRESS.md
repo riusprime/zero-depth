@@ -30,10 +30,12 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0120`, cut from `main` at `feedd802`
 | Step | What (player-facing) | Commit |
 |---|---|---|
 | 0 | Plan and docs | `b020a3bd` |
-| 1 | Nothing the player sees yet: a boss can slow the hero's attacks (`BossSlow`), place pickups that return it (`BossPickups`) and lay fields that slow the hero's shots (`BossShotFields`). No boss uses them; contracts in SIM_CONTRACTS §10n | this commit |
+| 1 | Nothing the player sees yet: a boss can slow the hero's attacks (`BossSlow`), place pickups that return it (`BossPickups`) and lay fields that slow the hero's shots (`BossShotFields`). No boss uses them; contracts in SIM_CONTRACTS §10n | `c7f292e7` |
+| 2 | The Clockwork Judge fights with time, in the sim only (nothing of it is drawn until step 3): a Time Wave every 25 s takes 75 % of your attack speed; three hour orbs give it back, 25 each; from phase 2 stopped gears stand across the ways to the orbs, slow fields are laid between you and the Judge (it side-steps a shot crawling through one), and the Bell throws you back to where you stood 4 s ago, with the Verdict aimed at that spot; in phase 3 the orbs last 10 s, the copy trails 6 s, the Bell tolls twice, and the Judge returns once to its own past. Numbers in `data/bosses/clockwork_judge.tres` (`time`); contracts in SIM_CONTRACTS §10o, CONTENT_SCHEMA §4; the two bots in [`evidence/JUDGE_BOTS.md`](evidence/JUDGE_BOTS.md) | this commit |
 
 ## Goldens changed on purpose
-None (step 1: the golden tests pass unchanged).
+None (step 1: the golden tests pass unchanged; step 2: `tests/golden` passes unchanged, no golden pins a Judge
+fight).
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -58,3 +60,13 @@ None (step 1: the golden tests pass unchanged).
   Lance), so the cut is applied after that share and every weapon loses all of it; the Blade's rate floor (25 %) is
   exactly the Time Wave's 75 %, so Heavy Hands on top adds nothing for a Blade. The boss data fields (content →
   tables) are left for step 2, where the Judge declares them. Next: step 2.
+- 2026-11-14 — Step 2: the Judge's fight in the sim (`BossTime`, `BossGears`, `BossRewind`), its data fields
+  (`BossDefinition.time`, `TimeRules`, `TimeCompiler`, the `time_wave` move), 24 unit tests and two bots. No C++
+  change, goldens unchanged. Built as the step's brief, with these choices for the lead to confirm: the Time Wave is
+  an attack on its own cadence (the Judge stands and casts), the Bell is cast beside its attacks (so a toll can fall
+  inside a Verdict's windup); the Verdict aims at the copy in phases 2-3, which also means the punish and the
+  gap-closer (both the Verdict) no longer aim at a hero who keeps moving; the side-step and the Judge's return happen
+  only between two of its attacks. The bots: ignoring the mechanics takes 2.45 times as long with the Gun and 1.84
+  times with the Blade, and costs about 3.5 times the HP; a throw by itself seldom lands in a Verdict's square (5 of
+  68 throws for the bots that ignore). Nothing of the new mechanics is drawn yet: the gears are walls you cannot see
+  and the throw has no warning on screen until step 3. Next: step 3.

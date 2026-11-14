@@ -108,6 +108,9 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"BossAttackTable",
 	&"QuakeTable",  # The Gatekeeper's quake pillars (BossTable.quake, content)
 	&"HazardTable",  # A boss's arena hazards (BossTable.hazard, content)
+	&"BossTimeTable",  # The Clockwork Judge's time mechanics (BossTable.time, content)
+	&"BossPickupTable",  # Its hour orbs (BossTimeTable.orb, content)
+	&"ShotFieldTable",  # Its slow fields (BossTimeTable.field, content)
 	&"SwingStep",
 	&"SkillTable",
 	&"OverrunTable",  # v0.4.0 AB
@@ -255,6 +258,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 	# A sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
 	# so only the wall grid is rebuilt for them.
 	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # Pillars too
+	barriers += base.bosses.gear_x.size()  # The Clockwork Judge's stopped gears
 	barriers += Secrets.slabs_up(base)  # v0.9.0 TD, RA: the secret rooms' slabs while they stand
 	barriers += base.ruins_rocks.rock_count() + base.ruins_rocks.hide_count()  # Rocks, boulders
 	if base.lockdown != null:  # A sealed Lockdown's bars, as an arena's

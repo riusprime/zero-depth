@@ -116,6 +116,9 @@ var arena_template := 0
 ## The hazards this boss leaves on its floor (empty: none).
 @export var hazard := {}
 @export var hazard_cause_key: StringName
+## The time mechanics this boss fights with (TimeRules.SPEC; empty: none): the Clockwork Judge's Time Wave, hour
+## orbs, stopped gears, slow fields, Rewind and its own return.
+@export var time := {}
 
 
 func category() -> StringName:
@@ -150,6 +153,7 @@ func validate() -> Array[ValidationIssue]:
 	HardRules.validate_streams(self, issues)  # The ring stream and the waves
 	QuakeRules.validate(self, issues)  # The quake pillars
 	HazardRules.validate(self, issues)  # The arena hazards
+	TimeRules.validate(self, issues)  # The Clockwork Judge's time mechanics
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1
