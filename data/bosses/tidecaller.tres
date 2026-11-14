@@ -14,7 +14,7 @@ shape_params = {
 "pull_mps": 1.7,
 "pull_seconds": 3.0,
 "push_mps": 1.4,
-"push_seconds": 2.0
+"push_seconds": 0.5
 }
 telegraph_seconds = 1.0
 active_seconds = 0.0167
@@ -40,7 +40,7 @@ shape_params = {
 "pull_mps": 2.0,
 "pull_seconds": 3.0,
 "push_mps": 1.7,
-"push_seconds": 2.0
+"push_seconds": 0.5
 }
 telegraph_seconds = 1.0
 active_seconds = 0.0167
@@ -215,7 +215,7 @@ wave_count = 2
 script = ExtResource("2_ph")
 hp_threshold_permille = 330
 attack_ids = PackedStringArray("the_pull_3", "undertow_2", "shell_slam")
-entry_attack = &"the_pull_3"
+entry_attack = &""
 speed_permille = 990
 cooldown_permille = 487
 stream_attack = &"ring_stream_3"
@@ -265,5 +265,47 @@ gap_close_distance_m = 10.0
 gap_close_seconds = 2.0
 signature_every_seconds = 8.0
 signature_first_seconds = 3.0
+hazard = {
+"attack_ids": ["crossing_wave"],
+"kind": "slow",
+"life_seconds": 10.0,
+"look": "venom",
+"max_count": 5,
+"max_cover_permille": 250,
+"radius_m": 2.0,
+"slow_permille": 600,
+"warn_seconds": 0.8
+}
+dance = {
+"high_tide_cast_seconds": 2.5,
+"high_tide_every_seconds": 25.0,
+"high_tide_first_seconds": 8.0,
+"high_tide_gap_m": 12.0,
+"high_tide_permille_per_second": 60,
+"high_tide_phase": 2,
+"high_tide_radius_m": 4.0,
+"high_tide_seconds": 6.0,
+"high_tide_tick_seconds": 0.5,
+"maelstrom_eye_m": 1.5,
+"maelstrom_grace_seconds": 3.0,
+"maelstrom_in_permille": 250,
+"maelstrom_permille": 400,
+"maelstrom_phase": 2,
+"maelstrom_spin_permille": 450,
+"maelstrom_throw_m": 10.0,
+"maelstrom_throw_seconds": 0.5,
+"pull_late_permille": 850,
+"pull_late_phase": 2,
+"pull_permille": 750,
+"push_m": 6.0,
+"riptide_casts": 4,
+"riptide_every_seconds": 20.0,
+"riptide_first_seconds": 10.0,
+"riptide_last_warn_seconds": 2.5,
+"riptide_permille": 350,
+"riptide_phase": 1,
+"riptide_warn_seconds": 2.0,
+"riptide_wave_seconds": 0.6
+}
 save_order = 1
 id = &"tidecaller"

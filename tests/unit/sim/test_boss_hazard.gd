@@ -109,8 +109,8 @@ func test_the_three_bosses_compile_their_hazards_and_no_other_boss_has_one() -> 
 	for t: BossTable in w.boss_tables:
 		if t.hazard != null:
 			seen.append(t.id)
-	assert_eq(seen.size(), 3, "only the owner's three")
-	for id: StringName in [&"brood_mother", &"foundry", &"siege_engine"]:
+	assert_eq(seen.size(), 4, "the owner's three and the Tidecaller's tide pools")
+	for id: StringName in [&"brood_mother", &"foundry", &"siege_engine", &"tidecaller"]:
 		assert_true(seen.has(id), "%s has one" % id)
 	var f := w.boss_tables[BossLab.table_index(w, &"foundry")].hazard
 	assert_eq([f.look, f.radius_m, f.life_ticks], [&"lava", 2.0, 1200])

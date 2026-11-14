@@ -15,7 +15,8 @@ extends RefCounted
 ##   to the opposite wall: once per wave it hits the player for the attack's damage and shoves them wave_shove_m
 ##   along its travel (BossTide.shift: never into a wall). Its place along the wall is drawn so that it never lies
 ##   within wave_clear_m of the player's projection on that wall as it forms. A dash passes through it. Waves ignore
-##   bodies, props and shots. A boss gone, its waves go.
+##   bodies, props and shots. A boss gone, its waves go. A wave whose boss leaves hazards on its wave attack
+##   (BossHazard.lays_on) leaves one where it ends: a tide pool lying against the far wall.
 ## Pure: integer-valued draws from the `ai` stream (wall, length, place), no trig.
 
 ## The room's half-size round the boss when there is no sealed boss room (a test world).
@@ -230,7 +231,23 @@ static func _waves(w: World) -> void:
 				bs.wv_hit[k] = 1
 				_hit(w, k, atk, box.center)
 		if d >= bs.wv_run[k]:
+			_leave_pool(w, k, d)
 			bs.remove_wave(k)
+
+
+## Wave k, at the far wall after `d` metres: its boss's hazard (a tide pool) is left there, one radius in from the
+## wave's last place so the whole disc lies on the floor (BossHazard.place: its cap, never in the doorway).
+static func _leave_pool(w: World, k: int, d: float) -> void:
+	var bs := w.bosses
+	var i := w.actors.index_of(bs.wv_boss[k])
+	if i < 0 or not BossHazard.lays_on(BossAi.table_of(w, i), bs.wv_atk[k]):
+		return
+	var r := BossAi.table_of(w, i).hazard.radius_m
+	var c := box_of(w, k, d).center - Kin.dir(bs.wv_dir[k]) * r
+	var floor := room_of(w, i).grow(-r)
+	if floor.has_area():  # Held inside the room: a wave near a corner would leave it half in the side wall
+		c = c.clamp(floor.position, floor.end)
+	BossHazard.place(w, i, c)
 
 
 ## Wave k hits the player: the attack's damage (under the boss's catch-up), then the shove along its travel.

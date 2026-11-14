@@ -119,6 +119,9 @@ var arena_template := 0
 ## The time mechanics this boss fights with (TimeRules.SPEC; empty: none): the Clockwork Judge's Time Wave, hour
 ## orbs, stopped gears, slow fields, Rewind and its own return.
 @export var time := {}
+## The dance this boss fights with (DanceRules.SPEC; empty: none): the Tidecaller's stronger Pull, Riptide, High
+## Tide and the Maelstrom.
+@export var dance := {}
 
 
 func category() -> StringName:
@@ -154,6 +157,7 @@ func validate() -> Array[ValidationIssue]:
 	QuakeRules.validate(self, issues)  # The quake pillars
 	HazardRules.validate(self, issues)  # The arena hazards
 	TimeRules.validate(self, issues)  # The Clockwork Judge's time mechanics
+	DanceRules.validate(self, issues)  # The Tidecaller's dance
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1

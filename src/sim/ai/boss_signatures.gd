@@ -395,6 +395,7 @@ static func advance(w: World) -> void:
 	BossShotFields.advance(w)  # The fields that slow the hero's shots run out
 	BossTime.advance(w)  # The Clockwork Judge's gears, Bell and fields
 	BossGreatJavelin.advance(w)  # The Warlord's great javelin flies, quakes and flies back
+	BossDance.advance(w)  # The Tidecaller's Riptide, High Tide and Maelstrom
 
 
 ## World._remove_dead: boss `boss_id` is gone: its pillars sink and its javelins go (its eggs crumble on their own).
@@ -418,6 +419,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	BossPickups.on_boss_gone(w, boss_id)  # Its floor pickups go
 	BossShotFields.on_boss_gone(w, boss_id)  # Its shot fields go
 	BossGreatJavelin.on_boss_gone(w, boss_id)  # Its great javelin goes with it
+	BossDance.on_boss_gone(w, boss_id)  # The Tidecaller's dance
 
 
 ## The recap's death line for a cause past LATE_CAUSE (a late part): its attack's late_cause_key (its own cause_key

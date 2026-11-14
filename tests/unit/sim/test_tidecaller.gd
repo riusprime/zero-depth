@@ -1,9 +1,10 @@
 # gdlint: disable=max-public-methods
 extends GutTest
 ## v0.9.0 NB1 (owner Q24 "ok go for those"; docs/roadmap/v0.9.0/BOSSES_4_5.md row N1): The Tidecaller, floor 4's boss.
-## The Pull (shielded): after the bell's windup the room pulls the player toward it at 1.7 m/s for 3 s, then pushes
-## out at 1.4 m/s for 2 s (phase 3: 2.0 / 1.7), every 8 s (v0.9.5 BH4); never faster than its data's 2.2 m/s, never
-## pressing the player into a wall or a corner; its rings (BH4: a stream all fight, BossStream) bend toward it in the
+## The Pull (shielded): after the bell's windup the room pulls the player toward it for 3 s at 75 % of the hero's
+## own run speed, then throws them 6 m out in 0.5 s, every 8 s (its dance: tests/unit/sim/test_tide_dance.gd; a boss
+## without a dance keeps its attack's own speeds under its data's 2.2 m/s cap); never pressing the player into a wall
+## or a corner; its rings (BH4: a stream all fight, BossStream) bend toward it in the
 ## pull. The Undertow: a tracked circle that drags the player 1 m toward its centre when it strikes. Phases at 66 %
 ## and 33 %, determinism, a mid-pull save, and the death lines.
 
@@ -70,8 +71,8 @@ func test_the_data_is_the_approved_row() -> void:
 	assert_true(pull.shielded, "shielded during the signature")
 	assert_almost_eq(pull.tide_pull * 60.0, 1.7, 0.0001, "pull 1.7 m/s")
 	assert_almost_eq(pull.tide_push * 60.0, 1.4, 0.0001, "push 1.4 m/s")
-	assert_eq([pull.tide_pull_ticks, pull.tide_push_ticks], [180, 120], "3 s, then 2 s")
-	assert_eq(pull.active_ticks, 300)
+	assert_eq([pull.tide_pull_ticks, pull.tide_push_ticks], [180, 30], "3 s, then a 0.5 s throw")
+	assert_eq(pull.active_ticks, 210)
 	assert_null(pull.pattern, "the Pull has no rings of its own (they run all fight)")
 	assert_almost_eq(BossTide.cap_of(pull) * 60.0, 2.2, 0.0001, "the drift cap is data: 2.2 m/s")
 	var late := t.attacks[t.attack_index(&"the_pull_3")]
@@ -80,7 +81,7 @@ func test_the_data_is_the_approved_row() -> void:
 	assert_null(late.pattern)
 	assert_eq(BossTide.signature_of(t, 2), t.attack_index(&"the_pull_3"), "phase 3's signature")
 	assert_eq(t.phase_entry[1], t.attack_index(&"the_pull"), "phase 2 opens with the Pull")
-	assert_eq(t.phase_entry[2], t.attack_index(&"the_pull_3"))
+	assert_eq(t.phase_entry[2], -1, "the last phase is the Maelstrom: it opens with no Pull")
 	var under := t.attacks[t.attack_index(&"undertow")]
 	assert_almost_eq(under.drag_m, 1.0, 0.0001, "the Undertow drags 1 m")
 	assert_gt(under.lock_ticks, 0, "tracked, then locked")
@@ -102,7 +103,7 @@ func test_bad_tide_numbers_are_errors() -> void:
 	assert_has(codes, &"range", "over the 2.2 m/s cap")
 	assert_has(codes, &"missing", "a tide is shielded")
 	def = (repo.get_def(&"bosses", &"tidecaller") as BossDefinition).duplicate(true)
-	def.signature_every_seconds = 5.0
+	def.signature_every_seconds = 4.0
 	codes = def.validate().map(func(v: ValidationIssue) -> StringName: return v.code)
 	assert_has(codes, &"duration", "the cadence outlasts its tide")
 
@@ -115,18 +116,19 @@ func test_the_pull_draws_you_in_then_the_push_drives_you_out() -> void:
 	var d0 := w.player_pos().distance_to(w.actors.pos(i))
 	CombatLab.idle(w, 60)
 	var d1 := w.player_pos().distance_to(w.actors.pos(i))
-	assert_almost_eq(d0 - d1, 1.7, 0.05, "1.7 m in the pull's first second")
+	assert_almost_eq(d0 - d1, 4.5, 0.05, "75 % of the hero's 6 m/s in the pull's first second")
 	assert_eq(BossTide.phase_of(w, i), BossTide.PULL)
 	CombatLab.idle(w, 119)
 	assert_eq(BossTide.phase_of(w, i), BossTide.PULL, "the pull lasts 3 s")
 	CombatLab.idle(w, 1)
 	assert_eq(BossTide.phase_of(w, i), BossTide.PUSH, "then the push")
 	var d2 := w.player_pos().distance_to(w.actors.pos(i))
-	CombatLab.idle(w, 60)
+	CombatLab.idle(w, 29)
+	assert_eq(BossTide.phase_of(w, i), BossTide.PUSH, "the throw lasts 0.5 s")
+	CombatLab.idle(w, 1)
 	var d3 := w.player_pos().distance_to(w.actors.pos(i))
-	assert_almost_eq(d3 - d2, 1.4, 0.05, "1.4 m out in the push's first second")
-	CombatLab.idle(w, 60)
-	assert_eq(BossTide.phase_of(w, i), BossTide.NONE, "over after 2 s")
+	assert_almost_eq(d3 - d2, 6.0, 0.25, "thrown 6 m out")
+	assert_eq(BossTide.phase_of(w, i), BossTide.NONE, "over after 0.5 s")
 	var d4 := w.player_pos().distance_to(w.actors.pos(i))
 	CombatLab.idle(w, 30)
 	assert_almost_eq(w.player_pos().distance_to(w.actors.pos(i)), d4, 0.0001, "no drift after")
@@ -138,6 +140,7 @@ func test_the_drift_is_capped_and_stops_at_the_body_and_for_a_dash() -> void:
 	_start_pull(w, s[1])
 	var i := _i(w, s[1])
 	var atk := BossAi.attack_of(w, i)
+	BossAi.table_of(w, i).dance = null  # The attack's own speeds: what a boss without a dance pulls with
 	atk.tide_pull = 5.0 / 60.0  # a mistuned 5 m/s
 	assert_almost_eq(Kin.length(BossTide.drift_of(w, i)), 2.2 / 60.0, 0.00001, "capped at 2.2 m/s")
 	w.actors.set_pos(
@@ -307,8 +310,10 @@ func test_the_phases_open_with_the_pull_and_phase_3_pulls_harder() -> void:
 	)
 	BossLab.through_gate(w, aid)
 	assert_eq(w.bosses.phase[BossAi.entry_of(w, _i(w, aid))], 2)
-	assert_eq(
-		BossAi.attack_of(w, _i(w, aid)).id, &"the_pull_3", "phase 3 opens with the harder Pull"
+	var opening := BossAi.attack_of(w, _i(w, aid))
+	assert_true(
+		opening == null or opening.move != BossAttackTable.Move.TIDE,
+		"phase 3 is the Maelstrom: it opens with no Pull"
 	)
 
 
