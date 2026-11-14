@@ -31,6 +31,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0120`, cut from `main` at `feedd802`
 - "One pool, 3 bars (Recommended)": the Twin Wardens keep one HP pool; no chain.
 - "Remembers your run (Recommended)": The Fallen casts mechanics of the bosses killed this run; the 15 s vanishing
   goes.
+- "Yes, stand still" (asked: should the Tidecaller stand still at the centre during the Maelstrom?): it does, so the
+  whirlpool's eye no longer travels onto the dry circle (step 4b).
 - "push it locally, i'll test all the bosses at the same time, then after playtest we decide if they are ready for main
   at github" (after the Judge was built): no push to GitHub before the playtest; all bosses are built first (PLAN V2).
 - "missing some signature mechanics that make it difficult and rememberable" → BOSS_BRIEF §5b; then, asked whether
