@@ -36,7 +36,11 @@ rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-ferm
 - [ ] **v0.11.1 "Clean and fast" (2026-11-10), one answer:** aim assist on mouse and gamepad, or gamepad only
   (default being planned: both, on, with an Options switch; [`roadmap/v0.11.1/PLAN.md`](roadmap/v0.11.1/PLAN.md)
   "Open items"). The golden reset is answered (yes, once). Later, yours to feel: aim assist once built, and each batch of enemies moved to the crowd.
-- [ ] **v0.11.0, still yours (2026-11-08):** the **boss brief** (the bosses besides the Gatekeeper, Lantern Shade and
+- [ ] **The boss brief, your answers (2026-11-14):** your spoken brief is written up in
+  [`roadmap/v0.11.0/BOSS_BRIEF.md`](roadmap/v0.11.0/BOSS_BRIEF.md). Yours: approve or change the rows (`CJ`, `TW`,
+  `TC` are your design; `WL`, `SE`, `FO`, `HL`, `HC` are the lead's proposals) and answer BQ1–BQ11. Nothing is
+  built before that.
+- [ ] **v0.11.0, still yours (2026-11-08):** the **boss brief** (received 2026-11-14, see above) (the bosses besides the Gatekeeper, Lantern Shade and
   Twins, and the "remembered" Hollow Crown behind the hidden room), the **Laser sketch**, and the overnight questions
   **N1–N9** in [`roadmap/v0.11.0/OWNER_QUESTIONS.md`](roadmap/v0.11.0/OWNER_QUESTIONS.md) §J (each has a default
   being built). Q1–Q30 and every G1/G2 are answered.
