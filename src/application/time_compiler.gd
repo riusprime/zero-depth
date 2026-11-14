@@ -42,6 +42,7 @@ static func compile_boss(def: BossDefinition, t: BossTable) -> void:
 	tt.bell_first_ticks = _ticks(tm, "bell_first_seconds")
 	tt.bell_every_ticks = _ticks(tm, "bell_every_seconds")
 	tt.bell_cast_ticks = _ticks(tm, "bell_cast_seconds")
+	tt.bell_verdict_ticks = _ticks(tm, "bell_verdict_delay_seconds")
 	tt.return_phase = _int(tm, "return_phase")
 	tt.return_hp_permille = _int(tm, "return_hp_permille")
 	tt.return_ticks = _ticks(tm, "return_seconds")

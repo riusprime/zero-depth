@@ -12,18 +12,25 @@ extends RefCounted
 ## - The throw (snap): a dash does not prevent it and it deals no damage. Never into a wall, a gear or the Judge's
 ##   body: when the copy's spot is taken the hero lands on the nearest free spot of free_spot's rings, and stays
 ##   where it is when there is none.
-## - The Verdict's square follows the copy, not the hero, while the Rewind is on (BossJudge reads target_of).
+## - The Bell's Verdict: each toll brings a Verdict of its own (the size and damage of the Judge's `verdict` attack,
+##   read from it; none when it has no such attack). Its square follows the copy while the toll is awaited, locks
+##   where the copy stands at the toll, and drops bell_verdict_ticks after it: the hero is thrown onto the square and
+##   has that long to leave it. It hits once, as a Verdict does (the same damage, tags and death cause), whatever the
+##   Judge is doing then. The Judge's ordinary Verdict follows the hero, not the copy.
 ## - The Judge's return: once, in return_phase, with return_hp_permille of that phase's bar left and between two of
 ##   its attacks, it goes back to where it stood return_ticks ago (when that spot is free) and recovers
 ##   return_heal_permille of the bar, unless the hero is within return_near_m of its edge.
-## Each tells the event log with a STATUS_APPLY (BELL, SNAP, RETURN): for the views and the tests, never read back.
+## Each tells the event log with a STATUS_APPLY (BELL, SNAP, BELL_VERDICT, RETURN): for the views and the tests,
+## never read back.
 ## Pure: no stream is drawn; everything follows from the clock and the positions.
 
 ## STATUS_APPLY effects. BELL: a cast or a later toll's wait begins (source and target the Judge; amount = the ticks
-## to the toll). SNAP: the hero was thrown (target the hero, pos = where it landed, amount = how far, mm). RETURN:
-## the Judge went back (pos = where it stands now, amount = the HP it recovered).
+## to the toll). SNAP: the hero was thrown (target the hero, pos = where it landed, amount = how far, mm).
+## BELL_VERDICT: a Bell's Verdict dropped (target the hero, pos = its square's centre, amount = the HP it cost, 0 when
+## it missed). RETURN: the Judge went back (pos = where it stands now, amount = the HP it recovered).
 const BELL := &"judge_bell"
 const SNAP := &"judge_rewind"
+const BELL_VERDICT := &"judge_bell_verdict"
 const RETURN := &"judge_return"
 ## A thrown hero keeps this much clear of walls and bodies.
 const FREE_SLACK_M := 0.05
@@ -53,11 +60,13 @@ static func copy_of(w: World, tt: BossTimeTable, phase: int) -> Vector2:
 	)
 
 
-## Where boss i's Verdict aims: the copy while its Rewind is on, else the hero.
-static func target_of(w: World, i: int) -> Vector2:
-	if not active(w, i):
-		return w.player_pos()
-	return copy_of(w, BossAi.table_of(w, i).time, w.bosses.phase[BossAi.entry_of(w, i)])
+## The attack a Bell's Verdict takes its square and damage from: the table's first `verdict` (an index into its
+## attacks), or -1.
+static func verdict_attack(t: BossTable) -> int:
+	for k in t.attacks.size():
+		if t.attacks[k].move == BossAttackTable.Move.VERDICT:
+			return k
+	return -1
 
 
 ## The point `steps` before the newest of a trail (its oldest when it is shorter; `none` when it is empty).
@@ -110,26 +119,83 @@ static func _wait(w: World, i: int, ticks: int) -> void:
 	e.amount_applied = bs.time_tolls
 
 
-## Tick phase 6 (BossTime.advance), boss i alive and the fight on: a toll due throws the hero; the Judge's return.
+## Tick phase 6 (BossTime.advance), boss i alive and the fight on: a Bell's Verdict due drops; a toll due throws the
+## hero and locks its Verdict's square on the copy; the Judge's return.
 static func advance(w: World, i: int, t: BossTable) -> void:
 	var bs := w.bosses
 	var tt := t.time
 	var phase := bs.phase[BossAi.entry_of(w, i)]
+	if bs.time_bv_at >= 0 and w.tick >= bs.time_bv_at:
+		_drop(w, i, t)
 	if bs.time_bell_at >= 0 and w.tick >= bs.time_bell_at:
-		snap(w, i, copy_of(w, tt, phase))
+		var at := copy_of(w, tt, phase)
+		snap(w, i, at)
+		if verdict_attack(t) >= 0:
+			bs.time_bv_x = at.x
+			bs.time_bv_y = at.y
+			bs.time_bv_at = w.tick + tt.bell_verdict_ticks
 		if bs.time_tolls > 0:
 			bs.time_tolls -= 1
 			_wait(w, i, tt.toll_gap_ticks)
 		else:
-			cancel(w)
+			_no_toll(w)
 	_return(w, i, t, phase)
 
 
-## No toll is pending any more (the fight ended; the next cast keeps its own clock).
-static func cancel(w: World) -> void:
+## The locked Bell's Verdict of boss i drops: the hero touching its square takes the `verdict` attack's damage, once.
+static func _drop(w: World, i: int, t: BossTable) -> void:
+	var bs := w.bosses
+	var c := Vector2(bs.time_bv_x, bs.time_bv_y)
+	bs.time_bv_at = -1
+	var k := verdict_attack(t)
+	if k < 0:
+		return
+	var atk := t.attacks[k]
+	var id := w.actors.ids[i]
+	var hp := w.actors.hp[0]
+	var p := w.player_pos()
+	var square := BossJudge.square_of(c, atk.square_half_m)
+	if Collide.circle_vs_obb(p, w.player.radius_m, square) != Vector2.ZERO:
+		var dmg := BossAi.powered(w, i, atk.damage)
+		Damage.hit(w, 0, dmg, id, id, w.take_root(), SimEvent.TAG_AREA, c, p)
+		if w.player_dead() and w.killer_attack < 0:
+			w.killer_attack = k
+	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, id, id, w.actors.ids[0], c)
+	e.effect_id = BELL_VERDICT
+	e.amount = maxi(0, hp - w.actors.hp[0])
+
+
+## No toll is awaited (the next cast keeps its own clock).
+static func _no_toll(w: World) -> void:
 	w.bosses.time_bell_at = -1
 	w.bosses.time_bell_from = -1
 	w.bosses.time_tolls = 0
+
+
+## The fight ended: no toll is awaited and no Bell's Verdict hangs.
+static func cancel(w: World) -> void:
+	_no_toll(w)
+	w.bosses.time_bv_at = -1
+
+
+## The Bell's Verdict squares of boss i, the locked one first: each {"center", "half", "locked" (false while it
+## follows the copy toward the toll), "left" (ticks until it drops)}.
+static func squares(w: World, i: int, tt: BossTimeTable, phase: int) -> Array[Dictionary]:
+	var bs := w.bosses
+	var out: Array[Dictionary] = []
+	var t := BossAi.table_of(w, i)
+	var k := verdict_attack(t)
+	if k < 0:
+		return out
+	var half := t.attacks[k].square_half_m
+	if bs.time_bv_at >= 0:
+		var c := Vector2(bs.time_bv_x, bs.time_bv_y)
+		var left := maxi(0, bs.time_bv_at - w.tick)
+		out.append({"center": c, "half": half, "locked": true, "left": left})
+	if bs.time_bell_at >= 0:
+		var wait := maxi(0, bs.time_bell_at - w.tick) + tt.bell_verdict_ticks
+		out.append({"center": copy_of(w, tt, phase), "half": half, "locked": false, "left": wait})
+	return out
 
 
 ## Throws the hero to `to` (or the nearest free spot to it) for boss i. Returns where it stands afterwards.
@@ -202,7 +268,8 @@ static func _return(w: World, i: int, t: BossTable, phase: int) -> void:
 
 ## The view's read (BossTime.state adds it): "rewind" (true while it is on), and then "copy" (where the pale copy
 ## stands), "trail" (how far behind it follows, ticks), "bell" (0..1000 toward the toll pending, -1 none), "bell_left"
-## (ticks to it, -1 none), "tolls" (the tolls after it) and "bell_in" (ticks until the next cast begins).
+## (ticks to it, -1 none), "tolls" (the tolls after it), "bell_in" (ticks until the next cast begins) and
+## "bell_squares" (the Bell's Verdict squares: `squares`).
 static func state(w: World, i: int) -> Dictionary:
 	var bs := w.bosses
 	if not active(w, i):
@@ -217,6 +284,7 @@ static func state(w: World, i: int) -> Dictionary:
 		"bell_left": -1,
 		"tolls": bs.time_tolls,
 		"bell_in": maxi(0, bs.time_bell_due - w.tick),
+		"bell_squares": squares(w, i, tt, phase),
 	}
 	if bs.time_bell_at >= 0:
 		var span := maxi(1, bs.time_bell_at - bs.time_bell_from)

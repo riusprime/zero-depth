@@ -2177,23 +2177,34 @@ The Judge keeps its echo, Verdict, Gear Spiral and Gavel Slam (§10l) and gains 
   `bell_cast_ticks` later it tolls and the hero is moved to the copy (tick phase 6). From `late_phase` it tolls
   `late_tolls` times, `toll_gap_ticks` apart. A dash does not prevent the throw; it deals no damage; it never lands
   in a wall, a gear, the Judge's body or outside the room: `BossRewind.free_spot` takes the copy's spot, else the
-  first free spot on 12 rings 0.5 m apart (16 spots each), else leaves the hero where it is. While the Rewind is on,
-  the Verdict's square starts on and follows **the copy**, not the hero (`BossRewind.target_of`), until its lock; a
-  hero thrown into a locked square takes that one Verdict hit (30 at the data's damage).
+  first free spot on 12 rings 0.5 m apart (16 spots each), else leaves the hero where it is.
+- **The Bell's Verdict.** Each toll brings a Verdict of its own, owned by `BossRewind` and independent of the
+  Judge's attack (it drops whatever the Judge is doing). Its size and damage are read from the table's first
+  `verdict` attack (`BossRewind.verdict_attack`; none without one). While a toll is awaited its square is on the
+  copy and follows it (derived, not stored); at the toll it locks where the copy stands then (`time_bv_x/time_bv_y`;
+  the copy's spot, also when the hero landed beside it) and `time_bv_at = tick + bell_verdict_ticks`; on that tick
+  (phase 6, before a toll due the same tick) it drops: a hero touching the square takes the Verdict's damage once
+  (`Damage.hit`, `TAG_AREA`, under the boss's catch-up, as `BossAi.hit_player` deals it; `World.killer_attack` is the
+  `verdict` attack, so the death recap names the Verdict). One locked square at a time: content keeps the delay
+  under the cast and the toll gap. From `late_phase` each of the `late_tolls` brings one. The Judge's ordinary
+  Verdict (picked, punish or gap-closer) follows **the hero** in every phase.
 - **The Judge's own return.** Once, in `return_phase`, between two attacks, with `return_hp_permille` of that
   phase's bar left: it goes back to where it stood `return_ticks` ago (when that spot is free) and recovers
   `return_heal_permille` of the bar unless the hero is within `return_near_m` of its edge.
 - **Events** (`STATUS_APPLY`, source the Judge; never read back): `time_wave_cast` (amount = the cast's ticks),
   `time_wave` (target the hero, amount = the cut), `time_field` (pos = its centre, amount = its id), `judge_bell`
   (a cast or a later toll's wait begins; amount = ticks to the toll, amount_applied = tolls after it),
-  `judge_rewind` (target the hero, pos = where it landed, amount = mm moved), `judge_return` (amount = HP
-  recovered). The orbs' own events are §10n's.
+  `judge_rewind` (target the hero, pos = where it landed, amount = mm moved), `judge_bell_verdict` (a Bell's
+  Verdict dropped; target the hero, pos = its square's centre, amount = the HP it cost, 0 when it missed),
+  `judge_return` (amount = HP recovered). The orbs' own events are §10n's.
 - **Hash and save.** Hashed after a `-11` sentinel only while a Judge runs them or a gear stands
   (`time_boss >= 0 or gear_x not empty`); every world without a Judge hashes as before. `BossStore` is a snapshot
-  state class, so the clocks, trails and gears are saved; the restored gears are walls again.
+  state class, so the clocks, trails, gears and the locked Bell's Verdict are saved; the restored gears are walls
+  again. With the hero dead or outside the room a pending toll and a locked Bell's Verdict go (`BossRewind.cancel`).
 - **Reads.** `WorldReader.boss_time()`: `boss`, `cut`, `wave` (the cast, 0..1000 or -1), `wave_in`, `gears`
   ([{centre, half, angle, age, left}]), `returned`, `rewind`, and with it `copy`, `trail`, `bell` (0..1000 or -1),
-  `bell_left`, `tolls`, `bell_in`. The orbs: `boss_pickups()` (`left` counts a late orb down); the fields:
+  `bell_left`, `tolls`, `bell_in`, `bell_squares` (the Bell's Verdict squares, the locked one first:
+  [{center, half, locked, left (ticks until it drops)}]; at most one locked and one following the copy). The orbs: `boss_pickups()` (`left` counts a late orb down); the fields:
   `boss_shot_fields()`; `MOVE_TIME_WAVE`.
 
 ## 11. Scaling and threat

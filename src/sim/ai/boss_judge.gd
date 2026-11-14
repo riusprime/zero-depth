@@ -12,8 +12,8 @@ extends RefCounted
 ##   echo_gap_ticks (point k on active tick k × echo_gap_ticks), a disc radius_m wide. One echo at a time: it is an
 ##   attack, and the next is a cadence away.
 ## - The Verdict (move `verdict`): a square square_half_m each way follows the player's exact position until the lock,
-##   then holds; a pendulum strike drops on it the tick the windup ends. While the Judge's Rewind is on the square
-##   follows the pale copy instead (BossRewind.target_of): it lands where the Bell would throw you.
+##   then holds; a pendulum strike drops on it the tick the windup ends. In every phase it follows the hero itself:
+##   the Verdict on the pale copy is the Bell's own (BossRewind).
 ## - The Time Wave (move `time_wave`), its orbs, gears, fields and the Rewind: BossTime, BossGears, BossRewind.
 ## Pure: no stream is drawn here; everything follows from the clock and positions.
 
@@ -64,7 +64,7 @@ static func on_start(w: World, i: int, atk: BossAttackTable) -> void:
 		bs.path_y = PackedFloat32Array()
 		bs.path_k = PackedInt32Array()
 	if atk.move == M.VERDICT:
-		bs.set_pt(BossAi.entry_of(w, i), 0, BossRewind.target_of(w, i))
+		bs.set_pt(BossAi.entry_of(w, i), 0, w.player_pos())
 		return
 	if atk.move == M.TIME_WAVE:
 		BossTime.on_cast(w, i, atk)
@@ -88,11 +88,11 @@ static func on_start(w: World, i: int, atk: BossAttackTable) -> void:
 	bs.path_k = pk
 
 
-## Tick phase 3, a Verdict winding up: its square follows the player (the pale copy under the Rewind) until the lock.
+## Tick phase 3, a Verdict winding up: its square follows the player until the lock.
 static func track_verdict(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 	if w.player_dead() or w.actors.state_t[i] >= atk.windup_ticks - atk.lock_ticks:
 		return
-	w.bosses.set_pt(b, 0, BossRewind.target_of(w, i))
+	w.bosses.set_pt(b, 0, w.player_pos())
 
 
 ## The Verdict's square round c.

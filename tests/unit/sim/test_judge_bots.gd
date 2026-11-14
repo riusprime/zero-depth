@@ -4,10 +4,10 @@ extends GutTest
 ## (its HP is refilled each tick), so a fight always runs to the Judge's death and the HP it would have lost is
 ## counted.
 ## - "plays": while it has attack speed to win back it walks to the nearest hour orb (round the stopped gears), and
-##   while the Rewind is on it steps out of a Verdict square it stands in (the square is on its copy: it stands in
-##   one when it has barely moved for the copy's 4 s, or when the Bell threw it there). Otherwise it holds its
-##   weapon's distance and attacks.
-## - "ignores": holds its weapon's distance and attacks; it never walks to an orb and never leaves a square.
+##   it steps out of a locked Bell's Verdict square it stands in (the square the Bell threw it onto). Otherwise it
+##   holds its weapon's distance and attacks.
+## - "ignores": holds its weapon's distance and attacks; it never walks to an orb and never leaves a square on
+##   purpose.
 ## Neither dodges anything else (the Gavel Slam, the echo and the spirals hit both), so the difference between them
 ## is the new mechanics. Prints every fight's numbers (raw) for docs/roadmap/v0.12.0/evidence/JUDGE_BOTS.md.
 
@@ -21,8 +21,9 @@ const BASE_HP := 100
 ## Plays the fight. Returns its numbers: "ticks", "dead" (the Judge died), "hp_lost" (the damage the hero took),
 ## "biggest" (the most in one tick) and "biggest_in" (the Judge's attack then), "waves", "orbs" (taken), "snaps" (Bell
 ## throws), "snaps_in_verdict" (throws that landed inside a Verdict's square while it wound up), "verdict_hits",
-## "verdict_hits_after_snap" (those in a Verdict the hero was thrown during) and "verdict_cost" (the most HP the tick
-## of a Verdict's hit cost: what one miss of the signature costs), "hash".
+## "verdict_hits_after_snap" (those in a Verdict the hero was thrown during), "verdict_cost" (the most HP the tick
+## of a Verdict's hit cost), "bell_verdicts" (the Bell's Verdicts that dropped), "bell_hits" (those that hit) and
+## "bell_cost" (the most one cost: what one miss of the signature costs), "hash".
 func _fight(weapon: StringName, plays: bool, seed_value: int) -> Dictionary:
 	var w := JudgeLab.world(seed_value)
 	ContentCompiler.apply_build(w.player, SharedContent.repo().get_def(&"build", weapon))
@@ -33,7 +34,14 @@ func _fight(weapon: StringName, plays: bool, seed_value: int) -> Dictionary:
 	var out := {"ticks": 0, "dead": false, "hp_lost": 0, "biggest": 0, "waves": 0, "orbs": 0}
 	out["biggest_in"] = &""
 	for k: String in [
-		"snaps", "snaps_in_verdict", "verdict_hits", "verdict_hits_after_snap", "verdict_cost"
+		"snaps",
+		"snaps_in_verdict",
+		"verdict_hits",
+		"verdict_hits_after_snap",
+		"verdict_cost",
+		"bell_verdicts",
+		"bell_hits",
+		"bell_cost"
 	]:
 		out[k] = 0
 	var seq := 0
@@ -66,6 +74,10 @@ func _fight(weapon: StringName, plays: bool, seed_value: int) -> Dictionary:
 				continue
 			elif e.effect_id == BossTime.WAVE:
 				out["waves"] += 1
+			elif e.effect_id == BossRewind.BELL_VERDICT:
+				out["bell_verdicts"] += 1
+				out["bell_hits"] += 1 if e.amount > 0 else 0
+				out["bell_cost"] = maxi(out["bell_cost"], e.amount)
 			elif e.effect_id == BossRewind.SNAP:
 				out["snaps"] += 1
 				if in_verdict and w.actors.state[i] == S.WINDUP and _in_square(w, i):
@@ -102,7 +114,7 @@ func _frame(w: World, i: int, weapon: StringName, plays: bool, k: int) -> InputF
 	elif dist < near:
 		goal = hero - dir
 	if plays:
-		goal = _plays_goal(w, i, hero, goal)
+		goal = _plays_goal(w, hero, goal)
 	var step := goal - hero
 	var mv := Vector2i.ZERO
 	if Kin.length(step) > 0.05:
@@ -115,15 +127,21 @@ func _frame(w: World, i: int, weapon: StringName, plays: bool, k: int) -> InputF
 	return InputFrame.make(mv, Kin.angle_of(to), int(dist * 100.0), held, pressed)
 
 
-## Where the bot that plays the mechanics walks: out of a Verdict square it stands in while the Rewind is on; else to
-## the nearest hour orb (round a gear in the way) while it has attack speed to win back; else `band` (its distance).
-func _plays_goal(w: World, i: int, hero: Vector2, band: Vector2) -> Vector2:
-	var atk := BossAi.attack_of(w, i)
-	if atk != null and atk.move == BossAttackTable.Move.VERDICT and BossRewind.active(w, i):
-		if w.actors.state[i] == S.WINDUP and _in_square(w, i):
-			var c := w.bosses.pt(BossAi.entry_of(w, i), 0)
-			var away := hero - c
-			return hero + (away if Kin.length(away) > 0.01 else Vector2.RIGHT)
+## Where the bot that plays the mechanics walks: out of a locked Bell's Verdict square it stands in; else to the
+## nearest hour orb (round a gear in the way) while it has attack speed to win back; else `band` (its distance).
+func _plays_goal(w: World, hero: Vector2, band: Vector2) -> Vector2:
+	for sq: Dictionary in WorldReader.new(w).boss_time().get("bell_squares", []):
+		var c: Vector2 = sq["center"]
+		var square := BossJudge.square_of(c, sq["half"])
+		if (
+			not sq["locked"]
+			or Collide.circle_vs_obb(hero, w.player.radius_m, square) == Vector2.ZERO
+		):
+			continue
+		var away := hero - c
+		if Kin.length(away) > 0.01:
+			return hero + away
+		return hero + (band - hero if Kin.length(band - hero) > 0.01 else Vector2.RIGHT)
 	if BossSlow.cut(w) <= 0:
 		return band
 	var best := band
@@ -169,7 +187,7 @@ func _report(weapon: StringName, plays: bool, seed_value: int, r: Dictionary) ->
 			(
 				"JUDGEBOT| weapon=%s bot=%s seed=%d dead=%s ticks=%d seconds=%.1f hp_lost=%d biggest=%d"
 				+ " biggest_in=%s waves=%d orbs=%d snaps=%d snaps_in_verdict=%d verdict_hits=%d"
-				+ " verdict_hits_after_snap=%d verdict_cost=%d"
+				+ " verdict_hits_after_snap=%d verdict_cost=%d bell_verdicts=%d bell_hits=%d bell_cost=%d"
 			)
 			% [
 				weapon,
@@ -188,6 +206,9 @@ func _report(weapon: StringName, plays: bool, seed_value: int, r: Dictionary) ->
 				r["verdict_hits"],
 				r["verdict_hits_after_snap"],
 				r["verdict_cost"],
+				r["bell_verdicts"],
+				r["bell_hits"],
+				r["bell_cost"],
 			]
 		)
 	)
@@ -206,7 +227,7 @@ func test_ignoring_the_time_mechanics_costs_clearly_more() -> void:
 				assert_true(r["dead"], "%s seed %d: the Judge dies" % [weapon, sv])
 				assert_gt(int(r["waves"]), 0, "a Time Wave landed")
 				assert_lte(
-					int(r["verdict_cost"]),
+					maxi(int(r["verdict_cost"]), int(r["bell_cost"])),
 					BASE_HP * 40 / 100,
 					(
 						(

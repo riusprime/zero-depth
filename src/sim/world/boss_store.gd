@@ -34,7 +34,8 @@ const TIME_FIELDS: Array[StringName] = [
 	&"time_bell_from",
 	&"time_bell_at",
 	&"time_tolls",
-	&"time_back"
+	&"time_back",
+	&"time_bv_at"
 ]
 const INT_FIELDS: Array[StringName] = [
 	&"ids",
@@ -293,6 +294,7 @@ var sf_next := 0
 ## (-1 = not in its phase yet). The Bell: time_bell_due the tick its next cast begins (-1 = no Rewind yet),
 ## time_bell_from the tick the wait for the toll pending began and time_bell_at the tick it tolls (-1 = none
 ## pending), time_tolls the tolls that follow it. time_back is 1 once the Judge has returned to its own past.
+## The Bell's Verdict locked at a toll: time_bv_at the tick it drops (-1 = none), time_bv_x/time_bv_y its centre.
 ## time_px/time_py: where the hero stood, oldest first, one point every BossTimeTable.step_ticks (the pale copy's
 ## trail); time_bx/time_by the Judge's own. Hashed only while a Judge runs them or a gear stands.
 var time_boss := -1
@@ -303,6 +305,9 @@ var time_bell_from := -1
 var time_bell_at := -1
 var time_tolls := 0
 var time_back := 0
+var time_bv_at := -1
+var time_bv_x := 0.0
+var time_bv_y := 0.0
 var time_px := PackedFloat32Array()
 var time_py := PackedFloat32Array()
 var time_bx := PackedFloat32Array()
@@ -448,6 +453,7 @@ func hash_into(h: StateHasher) -> void:
 			h.add_ints(get(f))
 		for f: StringName in GEAR_FLOAT_FIELDS + [&"time_px", &"time_py", &"time_bx", &"time_by"]:
 			h.add_f32s(get(f))
+		h.add_f32s(PackedFloat32Array([time_bv_x, time_bv_y]))
 
 
 ## Removes arena hazard k (the arrays stay oldest first).
@@ -476,6 +482,8 @@ func clear_time() -> void:
 		set(f, -1)
 	time_tolls = 0
 	time_back = 0
+	time_bv_x = 0.0
+	time_bv_y = 0.0
 	for f: StringName in [&"time_px", &"time_py", &"time_bx", &"time_by"]:
 		set(f, PackedFloat32Array())
 
