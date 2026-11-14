@@ -84,6 +84,10 @@ var _incoming: Array = []
 ## The live explosions and splats (BurstBudget.admit's list).
 var _bursts: Array[Dictionary] = []
 var _tick := 0
+## The Bell's Verdict: the events already seen, and the last locked square's half (the event gives only its centre).
+var _bell_seq := 0
+var _bell_primed := false
+var _bell_half := 0.0
 var _pools := {}
 var _swoosh_add := MeshInstance3D.new()
 var _swoosh_mix := MeshInstance3D.new()
@@ -169,6 +173,7 @@ func sync(reader: WorldReader) -> void:
 		_lock0.clear()
 		_last.clear()
 		_bursts.clear()
+		_bell_primed = false
 	_tick = reader.tick()
 	_incoming.clear()
 	var alive := {}
@@ -196,9 +201,38 @@ func sync(reader: WorldReader) -> void:
 	for aid in _last.keys():
 		if not alive.has(aid):
 			_last.erase(aid)
+	_bell_verdicts(reader)
 	_keep_up(reader)
 	_prune()
 	_draw(float(_tick))
+
+
+## A Bell's Verdict dropping (its event, on the tick it hits) strikes its square as the Judge's own Verdict does.
+func _bell_verdicts(reader: WorldReader) -> void:
+	var time := reader.boss_time()
+	var half := 0.0
+	for sq: Dictionary in time.get("bell_squares", []):
+		if bool(sq["locked"]):
+			half = float(sq["half"])
+	if not _bell_primed:
+		_bell_primed = true
+		for e in reader.events_since(0):
+			_bell_seq = e.seq  # joining a fight under way replays nothing that already happened
+	for e in reader.events_since(_bell_seq):
+		_bell_seq = e.seq
+		if (
+			e.kind == SimEvent.Kind.STATUS_APPLY
+			and e.effect_id == JudgeRewindViews.EFFECT_BELL_VERDICT
+			and _bell_half > 0.0
+			and time.has("boss")
+		):
+			var look := BossStrikeLooks.look_for(
+				reader.actor_kind(int(time["boss"])), WorldReader.MOVE_VERDICT
+			)
+			var box := Obb.make(e.pos, Vector2(_bell_half, _bell_half), 0)
+			_spawn(look, reader.actor_id(int(time["boss"])), {"lanes": [box]})
+	if half > 0.0:
+		_bell_half = half
 
 
 func _process(_delta: float) -> void:
