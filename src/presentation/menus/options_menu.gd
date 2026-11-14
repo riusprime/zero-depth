@@ -8,9 +8,9 @@ extends Control
 ## profile on the way out (GameSettings, InputRebind).
 ## Three layouts share the same sections: SIDEBAR (the default: categories on the left, one section at a time),
 ## TABS (categories across the top) and LIST (every section in one scrolling column).
-## v0.8.0 MU (Ember stone, MenuStyle): the blurred, ember-lit game (or the menu's own ember scene) behind, a carved
+## Ember stone: the blurred, ember-lit game (or the menu's own ember scene) behind, a carved
 ## stone slab set to the left, warm type, the focused row and the open category ember-lit slabs.
-## v0.10.5 W3-O18 (owner: "the rest of the UI ... should match the new style"): in Astral (AstralMenu; the round-2
+## In Astral (AstralMenu; the round-2
 ## mock's options): the game (or Astral's own night) under cool ink, the screen an ink veil between two fading
 ## hairlines; the categories a strip of Cinzel tabs (the open one underlined in the accent, the focused one starred);
 ## field labels in small Cinzel capitals that light with their row; volumes hairline tracks with an accent fill and a
@@ -119,7 +119,7 @@ func _build_frame() -> void:
 			var gap := Control.new()
 			gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 			side.add_child(gap)
-			_back.alignment = HORIZONTAL_ALIGNMENT_LEFT  # v0.6.0 UP: under the categories, left-aligned like them
+			_back.alignment = HORIZONTAL_ALIGNMENT_LEFT  # Under the categories, left-aligned like them
 			side.add_child(_back)
 			row.add_child(VSeparator.new())
 			row.add_child(_scroll)
@@ -146,7 +146,7 @@ func _build_frame() -> void:
 			col.add_child(_back)
 
 
-## v0.10.5 W3-O18: the sigil and "OPTIONS" in letter-spaced Cinzel (its label named "Title").
+## The sigil and "OPTIONS" in letter-spaced Cinzel (its label named "Title").
 func _title() -> Control:
 	var head := AstralMenu.Title.new(AstralMenu.PANEL_TITLE_SIZE)
 	head.label.text = "UI_OPTIONS"
@@ -166,7 +166,7 @@ func _tab(id: StringName) -> Button:
 	return b
 
 
-## v0.10.5 W3-O18: Back and the resets are Astral lozenge plates.
+## Back and the resets are Astral lozenge plates.
 func _button(key: String, on_press: Callable) -> Button:
 	var b := AstralButton.new(AstralButton.Kind.PLATE, 296.0)
 	b.text = key
@@ -247,21 +247,27 @@ func _build_section(id: StringName) -> VBoxContainer:
 		&"display":
 			_cycler(box, "UI_WINDOW_MODE", "window_mode", GameSettings.WINDOW_MODES)
 			_cycler(box, "UI_VSYNC", "vsync", ["on", "off"])
+			_cycler(box, "UI_SHOW_FPS", FpsCounter.SETTING, ["on", "off"])
 			_cycler(box, "UI_FRAME_CAP", "frame_cap", GameSettings.FRAME_CAPS)
 			_cycler(box, "UI_RENDER_SCALE", "render_scale", GameSettings.RENDER_SCALES)
 			_cycler(box, "UI_OUTLINE", "outline", ["off", "ink", "sketch", "paper"])
 			_cycler(box, "UI_LIGHTING", "lighting", StageView.LIGHTING_QUALITIES)
 			_cycler(box, "UI_EFFECTS_DENSITY", "effects_density", GameSettings.EFFECTS_DENSITIES)
 		&"controls":
+			var assist := _cycler(box, "UI_AIM_ASSIST", AimAssist.SETTING, ["on", "off"])
 			_controls(box)
+			# Down from the full-width switch lands on the keyboard column, where the list starts.
+			var first: Control = bind_buttons["%s/%s" % [InputRebind.ACTIONS[0], InputRebind.KBM]]
+			assist.focus_neighbor_bottom = assist.get_path_to(first)
 		&"accessibility":
 			_cycler(box, "UI_SHAKE", "shake", ["on", "off"])
 			_cycler(box, "UI_REDUCED_MOTION", "reduced_motion", ["off", "on"])
-			_cycler(box, "UI_HIT_STOP", "hit_stop", ["on", "off"])  # v0.8.0 GF3: the Blade's hit-stop
+			_cycler(box, "UI_HIT_STOP", "hit_stop", ["on", "off"])  # The Blade's hit-stop
 			_cycler(box, "UI_COLOUR_MODE", "colour_mode", GameSettings.COLOUR_MODES)
 			_cycler(box, "UI_CAPTIONS", "captions", ["off", "on"])
 			_cycler(box, "UI_UI_SCALE", "ui_scale", GameSettings.UI_SCALES)  # v0.7.5 SM
-			_cycler(box, "UI_SHOW_HINTS", HintStore.SETTING, ["on", "off"])  # v0.7.5 SM: the first-run hints
+			_cycler(box, "UI_SHOW_HINTS", HintStore.SETTING, ["on", "off"])  # The first-run hints
+			_cycler(box, "UI_BOSS_HINTS", MechanicHints.SETTING, ["on", "off"])  # v0.11.0 O2
 			_hints_reset(box)
 			_note(box, "UI_COLOUR_MODE_NOTE")
 		&"language":
@@ -269,7 +275,7 @@ func _build_section(id: StringName) -> VBoxContainer:
 	return box
 
 
-## v0.7.5 SM: "Reset hints": every first-run hint shows again (HintStore.reset), with a line that says so.
+## "Reset hints": every first-run hint shows again (HintStore.reset), with a line that says so.
 func _hints_reset(box: Control) -> void:
 	var row := _row(box, "UI_RESET_HINTS_LABEL")
 	var b := _button("UI_RESET_HINTS", func() -> void: pass)
@@ -291,7 +297,7 @@ func _hints_reset(box: Control) -> void:
 
 
 func _row(box: Control, label_key: String) -> HBoxContainer:
-	var row := AstralMenu.FieldRow.new()  # v0.10.5 W3-O18: lit with its control
+	var row := AstralMenu.FieldRow.new()  # Lit with its control
 	row.add_theme_constant_override("separation", 16)
 	row.custom_minimum_size = Vector2(0, 48)
 	var l := Label.new()
@@ -305,7 +311,7 @@ func _row(box: Control, label_key: String) -> HBoxContainer:
 	return row
 
 
-## v0.10.5 W3-O18: a row's label lights while its control has the focus (Astral: focus reads by brightness).
+## A row's label lights while its control has the focus (Astral: focus reads by brightness).
 static func _light_label(row: HBoxContainer, c: Control) -> void:
 	var l := row.get_node("Label") as Label
 	var lit := func(on: bool) -> void:
@@ -424,7 +430,7 @@ func _refresh_bindings() -> void:
 			b.text = InputLabels.text(spec) if not spec.is_empty() else tr("UI_REMAP_NONE")
 
 
-## v0.6.0 UP: the binding cells hold translated names ("Left click"), so a language switch words them again.
+## The binding cells hold translated names ("Left click"), so a language switch words them again.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED and not bind_buttons.is_empty() and not capturing():
 		_refresh_bindings()

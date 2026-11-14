@@ -3,29 +3,29 @@ extends Node3D
 ## Enemy attack telegraphs (PRESENTATION §4): the attack's area on the ground for its whole windup, drawn from
 ## WorldReader.telegraph() (the function that resolves the hit). A full-opacity outline, and a fill that grows
 ## from 0 to 100% so the player reads *when* as well as *where*. Unshaded, so no shadow hides it.
-## The bosses' shapes (v0.3.0 C: ring, lanes, arc, discs, sweep, and the harmless ripple of a burrow) are drawn as
+## The bosses' shapes (ring, lanes, arc, discs, sweep, and the harmless ripple of a burrow) are drawn as
 ## flat triangles rebuilt each tick (ImmediateMesh) from the same dictionary the hit is resolved from.
-## v0.3.5 AI: a telegraph with a "style" gets a mark on top of its shape: an Arc Caster's bolt a bright core line down
+## A telegraph with a "style" gets a mark on top of its shape: an Arc Caster's bolt a bright core line down
 ## each lane, its rune an inner ring with turning spokes, a Bomb Drone's bomb a cross-hair and the bomb itself flying
 ## from the drone ("from") to the circle's centre as the circle fills.
-## v0.4.0 EN: a Sniper's line ("snipe") carries the bolt's bright core; a Shield Bearer's bash ("bash") two chevrons
+## A Sniper's line ("snipe") carries the bolt's bright core; a Shield Bearer's bash ("bash") two chevrons
 ## pointing down its lane; a Mine Layer's armed mines ("mine") a spiked star in each filling circle.
-## v0.4.0 BO: a flood's standing lanes carry a style too: the Warlord's spears a row of spear heads down each lane,
+## A flood's standing lanes carry a style too: the Warlord's spears a row of spear heads down each lane,
 ## the Foundry's molten floor a hot core with cross bars (a fixed colour; nothing toggles emission at run time).
-## v0.7.5 BF1 (owner N15, "Track, then lock 0.8 s"): a telegraph with "tracked" is drawn as a dull red outline (no
+## A telegraph with "tracked" is drawn as a dull red outline (no
 ## fill) while it follows the player, and once "locked" as a bright filled flash that pulses until it strikes (steady
 ## with reduced motion). &"marks" draws each of its markers (circles, or a row and a column of lanes) in its own state.
-## v0.7.5 EF (owner N16: "the ones that change don't have the trayectory drawn in the ground anymore"): a telegraph
+## A telegraph
 ## with "ground": false (the Arc Caster's, Lens Drone's and Bomb Drone's fireball windups and lobs) is not drawn here.
-## v0.8.0 TG (owner O4, Q3): nor are the melee kinds' lanes and discs, the Sniper's line ("snipe"), the Shield
+## Nor are the melee kinds' lanes and discs, the Sniper's line ("snipe"), the Shield
 ## Bearer's bash ("bash") or the Needle's lanes; their avatars tell the windup. Among normal enemies only the Arc
 ## Caster's rune and the Mine Layer's mines reach this view; the bosses' markers are unchanged.
-## v0.8.0 AV (owner O7): the Gatekeeper's shock lanes (a `row_lanes` marks telegraph) are drawn as cracked ground
+## The Gatekeeper's shock lanes (a `row_lanes` marks telegraph) are drawn as cracked ground
 ## instead of flat red: while they track the player, thin cracks glowing dimly along each lane (the dark outline kept);
 ## once locked, the ground chars and the cracks widen and glow hot, pulsing until the strike (steady with reduced
 ## motion), under the bright edge (the dodge cue). The strike itself is StoneSpikeViews' spikes.
-## v0.8.0 FB3: a &"marks" item may be an &"arc" too (a Nemesis card's swing beside its volley's lines and its blast).
-## v0.8.0 AV part 2 (owner O7): every other boss ground attack with a look (BossStrikeLooks: per boss kind and move)
+## A &"marks" item may be an &"arc" too (a Nemesis card's swing beside its volley's lines and its blast).
+## v0.8.0 AV part 2: every other boss ground attack with a look (BossStrikeLooks: per boss kind and move)
 ## fills with its own ground pattern instead of flat red: stone cracks, steel scratches, bubbling acid, shimmering
 ## light, hazard stripes, molten seams. While it tracks it keeps the dull outline and no fill; once locked the pattern
 ## burns hot and pulses (steady with reduced motion) under the same bright edge, so the lock flash stays the dodge
@@ -35,7 +35,7 @@ extends Node3D
 const MESH_SHAPES: Array[StringName] = [
 	&"ring", &"lanes", &"arc", &"discs", &"sweep", &"ripple", &"marks"
 ]
-## v0.10.5 (a floor's first windup of each shape built its nodes, meshes and materials mid-fight): the [shape, style]
+## A floor's first windup of each shape built its nodes, meshes and materials mid-fight: the [shape, style]
 ## pairs prepare() pools POOL_N of at the floor's load: the plain shapes, the Arc Caster's rune, the Mine Layer's mines
 ## and the floods' spears and molten lanes. A telegraph that ends goes back to its pool (hidden) instead of freeing.
 const PREPARED: Array = [
@@ -53,16 +53,18 @@ const PREPARED: Array = [
 	[&"lanes", &"spears"],
 	[&"lanes", &"molten"],
 ]
+## The great javelin's recall line's key in _nodes (no actor's id: those start at 0).
+const RECALL_KEY := -11
 ## Pooled telegraphs of each prepared pair (a starting value: two attackers winding up at once).
 const POOL_N := 2
-## v0.7.5 BF1: the lock flash's pulse (per second) and its fill's alpha range.
+## The lock flash's pulse (per second) and its fill's alpha range.
 const FLASH_HZ := 7.0
 const FLASH_ALPHA := Vector2(0.45, 0.8)
 const ARC_STEPS := 40
 
 const Y := 0.035
 const EDGE := 0.06
-## v0.8.0 AV: the cracked-ground marker's heat while tracking, and its pulse range once locked.
+## The cracked-ground marker's heat while tracking, and its pulse range once locked.
 const CRACK_TRACK_HEAT := 0.2
 const CRACK_LOCK_HEAT := Vector2(0.7, 1.0)
 const CRACK_SHADER := """
@@ -117,28 +119,30 @@ void fragment() {
 }
 """
 
-## v0.10.5 O12: the enemies winding up or acting this tick (every telegraph, drawn here or told by an avatar): the
+## The enemies winding up or acting this tick (every telegraph, drawn here or told by an avatar): the
 ## hostile threats that dim the hero's effects (HeroFxBudget).
 var threats := 0
+## The syncs that walked the telegraphs; a sync with none showing and none possible returns before (tests read it).
+var worked := 0
 var _nodes := {}
-var _pool := {}  # v0.10.5: "shape|style" -> the idle telegraphs (hidden)
+var _pool := {}  # "shape|style" -> the idle telegraphs (hidden)
 var _fill_mat := StandardMaterial3D.new()
 var _edge_mat := StandardMaterial3D.new()
 var _core_mat := StandardMaterial3D.new()
 var _bomb_mat := StandardMaterial3D.new()
 var _molten_mat := StandardMaterial3D.new()
-## v0.7.5 BF1: a tracking marker's dull outline, a locked one's bright fill and edge.
+## A tracking marker's dull outline, a locked one's bright fill and edge.
 var _dull_mat := StandardMaterial3D.new()
 var _flash_fill_mat := StandardMaterial3D.new()
 var _flash_edge_mat := StandardMaterial3D.new()
-## v0.8.0 AV: the shock lanes' cracked ground, tracking and locked.
+## The shock lanes' cracked ground, tracking and locked.
 var _crack_track_mat := ShaderMaterial.new()
 var _crack_lock_mat := ShaderMaterial.new()
 ## v0.8.0 AV part 2: per look, [the windup fill, the lock flash] (BossStrikeLooks.mark_material).
 var _look_mats := {}
 ## The look of the telegraph being updated (&"" for none: the flat look).
 var _look := &""
-## v0.10.5 PC: the boss looks the last sync drew (their materials pulse in _process; prepare() makes them all).
+## The boss looks the last sync drew (their materials pulse in _process; prepare() makes them all).
 var _looks_live := {}
 var _t := 0.0
 
@@ -191,14 +195,14 @@ func _process(delta: float) -> void:
 	_flash_fill_mat.albedo_color.a = a
 	_crack_lock_mat.set_shader_parameter("heat", heat)
 	var motion := 0.0 if ViewPrefs.reduced_motion else 1.0
-	for look: StringName in _looks_live:  # v0.10.5 PC: the looks drawn now, not every prepared one
+	for look: StringName in _looks_live:  # The looks drawn now, not every prepared one
 		var pair := _look_pair(look)
 		(pair[1] as ShaderMaterial).set_shader_parameter("heat", heat)
 		for m: ShaderMaterial in pair:
 			m.set_shader_parameter("motion", motion)
 
 
-## v0.7.5 BF1: [fill, edge] materials for a telegraph: a tracking one has no fill and the dull edge, a locked one
+## [fill, edge] materials for a telegraph: a tracking one has no fill and the dull edge, a locked one
 ## the flash; any other the usual pair.
 func _mats(tg: Dictionary) -> Array:
 	if not tg.get("tracked", false):
@@ -227,39 +231,59 @@ static func look_of(reader: WorldReader, i: int, tg: Dictionary) -> StringName:
 
 
 func sync(reader: WorldReader) -> void:
+	# Only the actors that can have a telegraph are asked (most of a horde is walking, not winding up)
+	var asked := reader.telegraph_indices()
+	if asked.is_empty() and _nodes.is_empty() and not reader.any_boss():
+		threats = 0  # Nothing shows and nothing can start: no work this frame
+		if not _looks_live.is_empty():
+			_looks_live = {}
+		return
+	worked += 1
 	var seen := {}
 	_looks_live = {}
 	threats = 0
-	for i in range(reader.actor_count() if reader.any_telegraph() else 0):
+	for i in asked:
 		var tg := reader.telegraph(i)
 		if tg.is_empty():
 			continue
-		threats += 1  # v0.10.5 O12: every windup counts, on the ground or told by its avatar
+		threats += 1  # Every windup counts, on the ground or told by its avatar
 		if not tg.get("ground", true):
-			continue  # v0.7.5 EF: a body or air cue ("cast", "lob") draws nothing on the ground
+			continue  # A body or air cue ("cast", "lob") draws nothing on the ground
 		var id := reader.actor_id(i)
 		seen[id] = true
-		var n: Node3D = _nodes.get(id)
-		var style: StringName = tg.get("style", &"")
-		if n == null or n.get_meta(&"shape") != tg["shape"] or n.get_meta(&"style") != style:
-			if n != null:
-				_put_back(n)
-			n = _take(tg["shape"], style)
-			_nodes[id] = n
-		_look = look_of(reader, i, tg)
-		if _look != &"":
-			_looks_live[_look] = true
-		_update(n, tg)
-		if _look != &"" and not tg.get("tracked", false):  # a windup's fill warms as it fills
-			var heat := lerpf(0.15, 0.85, float(tg["progress"]) / 1000.0)
-			(_look_pair(_look)[0] as ShaderMaterial).set_shader_parameter("heat", heat)
-		if style != &"":
-			_update_style(n, tg)
+		_show(reader, id, i, tg)
 	_look = &""
+	var boss := reader.boss_index()
+	var recall := reader.boss_javelin_recall_line(boss) if boss >= 0 else {}
+	if not recall.is_empty():  # The great javelin's way back (its own telegraph, under a key of its own)
+		threats += 1
+		seen[RECALL_KEY] = true
+		_show(reader, RECALL_KEY, boss, recall)
+		_look = &""
 	for id in _nodes.keys():
 		if not seen.has(id):
 			_put_back(_nodes[id])
 			_nodes.erase(id)
+
+
+## Telegraph `tg` of actor index i under key `id` (its node reused, or taken from the pool when its shape changes).
+func _show(reader: WorldReader, id: int, i: int, tg: Dictionary) -> void:
+	var n: Node3D = _nodes.get(id)
+	var style: StringName = tg.get("style", &"")
+	if n == null or n.get_meta(&"shape") != tg["shape"] or n.get_meta(&"style") != style:
+		if n != null:
+			_put_back(n)
+		n = _take(tg["shape"], style)
+		_nodes[id] = n
+	_look = look_of(reader, i, tg)
+	if _look != &"":
+		_looks_live[_look] = true
+	_update(n, tg)
+	if _look != &"" and not tg.get("tracked", false):  # a windup's fill warms as it fills
+		var heat := lerpf(0.15, 0.85, float(tg["progress"]) / 1000.0)
+		(_look_pair(_look)[0] as ShaderMaterial).set_shader_parameter("heat", heat)
+	if style != &"":
+		_update_style(n, tg)
 
 
 ## How many telegraphs are showing (tests and the tour).
@@ -267,7 +291,7 @@ func count() -> int:
 	return _nodes.size()
 
 
-## v0.10.5: the floor's load (WorldViewRoot): POOL_N hidden telegraphs of each PREPARED pair, and every boss look's
+## The floor's load (WorldViewRoot): POOL_N hidden telegraphs of each PREPARED pair, and every boss look's
 ## materials, so a floor's first windups make no node, mesh or material.
 func prepare() -> void:
 	for look: StringName in BossStrikeLooks.LOOKS:
@@ -277,7 +301,7 @@ func prepare() -> void:
 		while idle.size() < POOL_N:
 			var n := _make(pair[0], pair[1])
 			n.visible = false
-			idle.append(n)  # (v0.10.5 PC: idle outside the tree; ShaderWarmup draws idle_pieces() once)
+			idle.append(n)  # (idle outside the tree; ShaderWarmup draws idle_pieces() once)
 
 
 ## The idle telegraphs of `shape` and `style` (tests).
@@ -295,7 +319,7 @@ func _take(shape: StringName, style: StringName) -> Node3D:
 	if not idle.is_empty():
 		var n: Node3D = idle.pop_back()
 		if n.get_parent() == null:
-			add_child(n)  # (v0.10.5 PC: back in the tree)
+			add_child(n)  # (back in the tree)
 		n.visible = true
 		return n
 	var made := _make(shape, style)
@@ -313,7 +337,7 @@ func _put_back(n: Node3D) -> void:
 		remove_child(n)
 
 
-## v0.10.5 PC: the idle telegraphs outside the tree (ShaderWarmup draws them once at the load).
+## The idle telegraphs outside the tree (ShaderWarmup draws them once at the load).
 func idle_pieces() -> Array[Node]:
 	var out: Array[Node] = []
 	for key: String in _pool:
@@ -323,7 +347,7 @@ func idle_pieces() -> Array[Node]:
 	return out
 
 
-## v0.10.5 PC: how many idle telegraphs wait outside the tree (tests, scripts/checks/pool_node_count.gd).
+## How many idle telegraphs wait outside the tree (tests, scripts/checks/pool_node_count.gd).
 func idle_outside() -> int:
 	return idle_pieces().size()
 
@@ -346,7 +370,7 @@ func _make(shape: StringName, style: StringName = &"") -> Node3D:
 	deco.top_level = true
 	deco.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(deco)
-	if style == &"rune":  # v0.8.0 TX1: the owner's cast sigil in place of the code ring and spokes
+	if style == &"rune":  # The owner's cast sigil in place of the code ring and spokes
 		var mat := FxTextures.sigil_material(ThemePalette.color(&"telegraph_hostile"), 3)
 		if mat != null:
 			var sigil := MeshInstance3D.new()
@@ -421,7 +445,7 @@ func _update(n: Node3D, tg: Dictionary) -> void:
 		_update_mesh(n, tg, p)
 		return
 	var mats := _mats(tg)
-	if tg.get("tracked", false):  # v0.7.5 BF1: no fill while tracking, a full flash once locked
+	if tg.get("tracked", false):  # No fill while tracking, a full flash once locked
 		p = 1.0 if tg.get("locked", false) else 0.0
 	for c in n.get_children():
 		if c.name.begins_with("Edge"):
@@ -463,7 +487,7 @@ func _update(n: Node3D, tg: Dictionary) -> void:
 	fill.position = Vector3(-hx + len * 0.5, 0, 0)
 
 
-# --- styles (v0.3.5 AI) ------------------------------------------------------------------------------------------
+# --- styles ------------------------------------------------------------------------------------------
 
 
 func _update_style(n: Node3D, tg: Dictionary) -> void:
@@ -553,7 +577,7 @@ func _update_style(n: Node3D, tg: Dictionary) -> void:
 	_emit(deco, pts, mat)
 
 
-## v0.4.0 BO: a standing flood lane's marks: spear heads every SPEAR_STEP along it, or a molten core with bars.
+## A standing flood lane's marks: spear heads every SPEAR_STEP along it, or a molten core with bars.
 func _flood_marks(pts: Array, o: Obb, spears: bool) -> void:
 	var u := o.axis_u
 	var v := o.axis_v
@@ -578,7 +602,7 @@ func _flood_marks(pts: Array, o: Obb, spears: bool) -> void:
 		)
 
 
-# --- boss shapes (v0.3.0 C) -------------------------------------------------------------------------------------
+# --- boss shapes -------------------------------------------------------------------------------------
 
 
 func _update_mesh(n: Node3D, tg: Dictionary, p: float) -> void:
@@ -592,7 +616,7 @@ func _update_mesh(n: Node3D, tg: Dictionary, p: float) -> void:
 	if tg.get("tracked", false):
 		p = 1.0
 	match tg["shape"]:
-		&"marks":  # v0.7.5 BF1: each marker in its own state (dull while tracking, flashing once locked)
+		&"marks":  # Each marker in its own state (dull while tracking, flashing once locked)
 			_update_marks(n, tg)
 			return
 		&"ring":
@@ -636,7 +660,7 @@ func _update_mesh(n: Node3D, tg: Dictionary, p: float) -> void:
 	_emit(edge, et, mats[1])
 
 
-## v0.7.5 BF1: a marks telegraph: the locked markers' flash in the fill mesh (and their bright edges), the tracking
+## A marks telegraph: the locked markers' flash in the fill mesh (and their bright edges), the tracking
 ## ones' dull outlines in the edge mesh.
 func _update_marks(n: Node3D, tg: Dictionary) -> void:
 	var fill: ImmediateMesh = (n.get_node("Fill") as MeshInstance3D).mesh
@@ -656,7 +680,7 @@ func _update_marks(n: Node3D, tg: Dictionary) -> void:
 			var r: float = item["radius"]
 			_sector(f, c, 0.0, r, 0.0, TAU)
 			_sector(e, c, r - EDGE, r, 0.0, TAU)
-		elif item["shape"] == &"arc":  # v0.8.0 FB3: a card's swing (the Nemesis)
+		elif item["shape"] == &"arc":  # A card's swing (the Nemesis)
 			var a := _rad(item["angle"])
 			var h := _rad(item["half_arc"])
 			var r0: float = item["own_r"]
@@ -664,7 +688,7 @@ func _update_marks(n: Node3D, tg: Dictionary) -> void:
 		else:
 			for o: Obb in item["obbs"]:
 				_lane(f, e, o, 1.0)
-		if cracked:  # v0.8.0 AV: the shock lanes crack the ground instead of a flat fill
+		if cracked:  # The shock lanes crack the ground instead of a flat fill
 			(crack_lock if locked else crack_track).append_array(f)
 			(flash_e if locked else dull).append_array(e)
 		elif locked:
@@ -679,7 +703,7 @@ func _update_marks(n: Node3D, tg: Dictionary) -> void:
 	_emit(edge, dull, _dull_mat)
 
 
-## v0.8.0 AV: a telegraph drawn as cracked ground (the Gatekeeper's shock lanes: a row_lanes marks telegraph).
+## A telegraph drawn as cracked ground (the Gatekeeper's shock lanes: a row_lanes marks telegraph).
 static func is_cracked(tg: Dictionary) -> bool:
 	return tg.get("shape", &"") == &"marks" and tg.get("move", -1) == WorldReader.MOVE_ROW_LANES
 

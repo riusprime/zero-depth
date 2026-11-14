@@ -1,19 +1,20 @@
 class_name PrismClips
 extends RefCounted
-## v0.8.0 FB2 (owner Q4: code clips first, the owner's animated model replaces them by name; FINAL_BOSS.md F5): the
-## Prism's placeholder clips over her rig (BossRig: the body and her floating shards, each its own bone; PrismAvatar
-## orbits the shards and flares them). Whole-body motion here (BossClip.BODY) plus named parameters the avatar reads:
-## - idle: the float (a slow bob and sway), "spin" 0.25 (the shards' slow orbit);
-## - walk: a glide (she leans into it);
-## - cross: the Cross: the spin-up (0 .. strike: she rises and opens, "spin" climbing to 1, "charge" glowing), the
-##   spin itself (strike .. SPIN_END: aloft, the shards racing round), then the window (SPIN_END .. hold: she sags,
-##   "open" 1, the shards slow and drift wide) and the recovery back to the float;
-## - cast: a short pulse as a shard fires (a jolt up, "flare" 1), the avatar's own layer;
-## - shielded: braced, "shield" 1; flinch: a hit; stagger, roar, rise (from the Colossus's shards), death;
-## - shatter: the crack-up between bodies, "tremble" climbing (the avatar's own layer, as FinalBodyAvatar trembles);
-## - bolt_fan: a lone bolt (only when the dev panel starts her bolt attack by itself; in her fight it fires in a Cross).
-## - pattern (v0.8.0 PR, owner O84): an orb spell: she gathers through its telegraph ("charge"), then rises and holds
-##   aloft with the shards racing round ("spin") while her orbs pour out of her, and sinks back to the float.
+## The Prism's clips (the owner's torn hooded figure with nine crystals floating round her, one skinned mesh on a full
+## skeleton). Her file carries its own idle, its float, her five moves, her forming and her breaking; PrismAvatar
+## plays those in place of the clips of the same moves here (idle, walk, cross, pattern, bolt_fan, lances, kneel, rise,
+## shatter), which keep only their named parameters. The clips played from here, over the file's idle, turn her
+## bones: BODY_BONE carries the whole figure (not the floating crystals), CHEST and HEAD bend it, LIFT raises and
+## lowers the crystals with her.
+## - shielded: braced, "shield" 1; flinch: a hit throws the chest and the hood back; stagger: she sags, the hood
+##   hanging, the crystals sinking; roar: she rises with the hood thrown back, the crystals lifting higher; death:
+##   she folds and drops, the crystals after her;
+## - pulse: a short jolt up as a crystal fires, the avatar's own layer on the whole model.
+## The replaced clips, by what their move is:
+## - cross: the Cross: the spin-up (0 .. strike), the spin (strike .. SPIN_END), the window (SPIN_END .. hold);
+## - pattern: an orb spell; bolt_fan: a lone bolt (only when the dev panel starts her bolt attack by itself; in her
+##   fight it fires in a Cross).
+## Model frame: +X the front. A turn about Z leans back (+) or forward (-).
 ## Presentation only.
 
 const UP := Vector3(0, 1, 0)
@@ -21,6 +22,11 @@ const Z := Vector3(0, 0, 1)
 const X := Vector3(1, 0, 0)
 const FWD := Vector3(1, 0, 0)
 const B := BossClip.BODY
+## The bones the clips turn, spelt as the model file exports them.
+const BODY_BONE := &"body"
+const CHEST := &"chest"
+const HEAD := &"head"
+const LIFT := &"shards_lift"
 const IO := BossClip.IN_OUT
 const IN3 := BossClip.IN3
 const IN := BossClip.IN
@@ -40,7 +46,7 @@ const NAMES: Array[StringName] = [
 	&"idle",
 	&"walk",
 	&"cross",
-	&"cast",
+	&"pulse",
 	&"shielded",
 	&"flinch",
 	&"stagger",
@@ -50,7 +56,7 @@ const NAMES: Array[StringName] = [
 	&"shatter",
 	&"bolt_fan",
 	&"pattern",
-	&"lances",  # v0.10.5 O3: her last phase
+	&"lances",  # Her last phase
 	&"kneel",
 ]
 
@@ -112,42 +118,49 @@ static func library() -> Dictionary:
 			[[0, 0], [STRIKE, 1.0, IN], [0.3, 0.6, OUT], [SPIN_END, 0.6], [0.76, 0.0], [1, 0]]
 		)
 		cross.param(&"open", [[0, 0], [SPIN_END, 0], [0.77, 1.0, OUT], [HOLD, 1.0], [1, 0]])
-		var cast := BossClip.new(&"cast")
-		cast.shift(B, UP, [[0, 0], [0.2, 0.12, OUT3], [1, 0, IO]])
-		cast.turn(B, Z, [[0, 0], [0.2, -0.08, OUT3], [1, 0, IO]])
-		cast.param(&"flare", [[0, 0], [0.15, 1.0, OUT3], [1, 0, IN]])
+		var pulse := BossClip.new(&"pulse")
+		pulse.shift(B, UP, [[0, 0], [0.2, 0.12, OUT3], [1, 0, IO]])
+		pulse.turn(B, Z, [[0, 0], [0.2, -0.08, OUT3], [1, 0, IO]])
+		pulse.param(&"flare", [[0, 0], [0.15, 1.0, OUT3], [1, 0, IN]])
 		var shielded := BossClip.new(&"shielded")
-		shielded.stretch(B, [[0, 0], [0.7, -0.06, BACK], [1, -0.05]])
+		shielded.stretch(BODY_BONE, [[0, 0], [0.7, -0.06, BACK], [1, -0.05]])
+		shielded.turn(HEAD, Z, [[0, 0], [0.7, -0.14, BACK], [1, -0.12]])
 		shielded.param(&"shield", [[0, 0], [0.5, 1.0, OUT], [1, 1.0]])
 		var flinch := BossClip.new(&"flinch")
-		flinch.turn(B, Z, [[0, 0], [0.15, 0.16, OUT3], [0.5, -0.03, IO, S], [1, 0]])
-		flinch.shift(B, FWD, [[0, 0], [0.15, -0.18, OUT3], [1, 0]])
-		flinch.shift(B, UP, [[0, 0], [0.15, -0.1, OUT3], [1, 0]])
+		flinch.turn(CHEST, Z, [[0, 0], [0.15, 0.16, OUT3], [0.5, -0.03, IO, S], [1, 0]])
+		flinch.turn(HEAD, Z, [[0, 0], [0.2, 0.2, OUT3], [0.6, -0.04, IO, S], [1, 0]])
+		flinch.shift(BODY_BONE, FWD, [[0, 0], [0.15, -0.14, OUT3], [1, 0]])
+		flinch.shift(BODY_BONE, UP, [[0, 0], [0.15, -0.08, OUT3], [1, 0]])
 		var stagger := BossClip.new(&"stagger")
-		stagger.turn(B, Z, [[0, 0], [0.1, 0.2, OUT3], [0.4, 0.1], [1, 0.1]])
-		stagger.shift(B, UP, [[0, 0], [0.4, -0.3], [1, -0.28]])
+		stagger.turn(BODY_BONE, Z, [[0, 0], [0.1, 0.2, OUT3], [0.4, 0.1], [1, 0.1]])
+		stagger.turn(HEAD, Z, [[0, 0], [0.4, -0.3], [1, -0.28]])
+		stagger.shift(BODY_BONE, UP, [[0, 0], [0.4, -0.3], [1, -0.28]])
+		stagger.shift(LIFT, UP, [[0, 0], [0.5, -0.2], [1, -0.18]])
 		stagger.param(&"daze", [[0, 0], [0.3, 0.3], [0.6, 1], [1, 1]])
 		var roar := BossClip.new(&"roar")
-		roar.shift(B, UP, [[0, 0], [0.36, 0.4, BACK], [0.85, 0.35], [1, 0]])
-		roar.stretch(B, [[0, 0], [0.36, 0.12, BACK], [0.85, 0.1], [1, 0]])
+		roar.shift(BODY_BONE, UP, [[0, 0], [0.36, 0.4, BACK], [0.85, 0.35], [1, 0]])
+		roar.turn(CHEST, Z, [[0, 0], [0.36, 0.14, BACK], [0.85, 0.12], [1, 0]])
+		roar.turn(HEAD, Z, [[0, 0], [0.36, 0.25, BACK], [0.85, 0.22], [1, 0]])
+		roar.shift(LIFT, UP, [[0, 0], [0.36, 0.55, BACK], [0.85, 0.5], [1, 0]])
 		roar.param(&"spin", [[0, 0.25], [0.36, 1.2], [0.85, 1.0], [1, 0]])
 		var rise := BossClip.new(&"rise")
 		rise.shift(B, UP, [[0, -0.8], [0.5, -0.5], [0.7, 0.2, OUT], [0.8, -0.02, OUT, S], [1, 0]])
 		rise.stretch(B, [[0, -0.25], [0.5, -0.15], [0.7, 0.1, OUT], [1, 0]])
 		rise.param(&"spin", [[0, 1.5], [0.7, 0.8], [1, 0]])
 		var death := BossClip.new(&"death")
-		death.shift(B, UP, [[0, 0], [0.15, 0.2], [0.55, -0.3, IN], [0.84, -0.4], [1, -3.0, IN]])
-		death.turn(B, Z, [[0, 0], [0.55, -0.5, IN], [1, -0.55]])
+		death.shift(
+			BODY_BONE, UP, [[0, 0], [0.15, 0.2], [0.55, -0.3, IN], [0.84, -0.4], [1, -3.0, IN]]
+		)
+		death.turn(BODY_BONE, Z, [[0, 0], [0.55, -0.5, IN], [1, -0.55]])
+		death.shift(LIFT, UP, [[0, 0], [0.4, 0.1], [1, -3.2, IN]])
 		death.param(&"open", [[0, 0], [0.4, 1.0], [1, 1.0]])
+		# The file's "break" is the whole shatter, and FinalBodyAvatar trembles the body: nothing to add here.
 		var shatter := BossClip.new(&"shatter")
-		shatter.shift(B, UP, [[0, 0], [0.3, 0.15, OUT], [0.9, -0.1, IN], [1, 0]])
-		shatter.param(&"tremble", [[0, 0], [0.2, 0.2], [0.9, 1.0, IN], [1, 0]])
-		shatter.param(&"spin", [[0, 0.25], [0.9, 2.0, IN], [1, 0]])
 		var bolt := BossClip.new(&"bolt_fan")  # a lone bolt (the dev panel's start): a shard's flick
 		bolt.shift(B, UP, [[0, 0], [0.42, 0.1, BACK], [0.5, 0.04, IN3], [1, 0]])
 		bolt.turn(B, Z, [[0, 0], [0.42, 0.06], [0.5, -0.06, IN3], [1, 0]])
 		bolt.param(&"flare", [[0, 0], [0.42, 0.6], [0.5, 1.0, IN3], [1, 0]])
-		var orbs := BossClip.new(&"pattern")  # v0.8.0 PR: an orb spell
+		var orbs := BossClip.new(&"pattern")  # An orb spell
 		orbs.strike = 0.12
 		orbs.hold = 0.9
 		orbs.shift(B, UP, [[0, 0], [0.1, -0.1, IO], [0.12, 0.45, BACK], [0.9, 0.4], [1, 0, IO]])
@@ -158,7 +171,7 @@ static func library() -> Dictionary:
 			idle,
 			walk,
 			cross,
-			cast,
+			pulse,
 			shielded,
 			flinch,
 			stagger,
@@ -172,10 +185,11 @@ static func library() -> Dictionary:
 			_lib[c.name] = c
 		for c: BossClip in _last_phase():
 			_lib[c.name] = c
+		BossClip.loosen(_lib, 0.0, 1.25)  # The wind-up, the recoil, the idle sway
 	return _lib
 
 
-## v0.10.5 O3 (owner L6; O3_PRISM.md): her last phase's clips.
+## Her last phase's clips.
 ## - lances: the Facet Lances: she gathers (the windup: she rises, "charge" glowing, the shards racing out, "spin"),
 ##   holds aloft and flicks at each lance ("flare" pulses) while they strike, and sinks back to the float;
 ## - kneel: the Shattered Kneel: she falls (the windup: a drop and a lurch), lies low and tilted, "open" 1 and the

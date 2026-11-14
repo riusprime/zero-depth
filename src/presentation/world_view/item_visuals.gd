@@ -9,12 +9,12 @@ extends Node3D
 ##   trail every dash leaves, DashTrail);
 ## - burning enemies glow orange, frozen ones icy white (v0.3.0 G; StatusVisuals draws the other status effects);
 ## - v0.3.0 G: Glacial Edge, Serrated Edge and Conductor tint the blade; Cinder Shot and Barbed Bolts the bolts.
-## v0.6.0 MX1: the blade's and the bolts' looks come from the final attack specs (AttackView), not from the items
+## The blade's and the bolts' looks come from the final attack specs (AttackView), not from the items
 ## held: the same looks, read from what the attacks are.
 
 const FX_FRAMES := 14
 
-## v0.9.5 PF: false hides the burn/frozen tint (frame_probe --ab=no_burn_fx measures its cost).
+## False hides the burn/frozen tint (frame_probe --ab=no_burn_fx measures its cost).
 static var burn_tint := true
 var kit: KitView
 var actors: ActorViews
@@ -74,7 +74,7 @@ func _sync_looks(reader: WorldReader) -> void:
 			reader.attack_digest(),
 			reader.step_attack_id(),
 			reader.swing_overcharged(),
-			ElementLooks.energy_style,  # v0.9.0 MP2: the robe's energy (The Fallen's violet)
+			ElementLooks.energy_style,  # The robe's energy (The Fallen's violet)
 		]
 	)
 	if sig == _sig:
@@ -90,7 +90,7 @@ func _sync_burns(reader: WorldReader) -> void:
 		return
 	var now := {}
 	var frozen := {}
-	for i in range(1, reader.actor_count()):
+	for i in reader.burn_or_frozen_indices():  # Only the burning and the frozen, not every actor
 		if reader.actor_frozen(i):
 			frozen[reader.actor_id(i)] = true
 			now[reader.actor_id(i)] = 1

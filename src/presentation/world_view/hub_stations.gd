@@ -1,8 +1,8 @@
 class_name HubStations
 extends RefCounted
-## v0.9.0 HB: the stations on the Rune Ring (HUB_MOCKUPS option A). Each draws the owner's model where it is installed
+## The stations on the Rune Ring (HUB_MOCKUPS option A). Each draws the owner's model where it is installed
 ## (docs/art/requests/v0.9.0_ART_LIST.md §4: hub_archive, hub_trophy_pedestal, hub_wardrobe, hub_station,
-## hub_collectible_pedestal; ShopModels) and its code stand-in otherwise (L15), with the code's layered glows and hooks
+## hub_collectible_pedestal; ShopModels) and its code stand-in otherwise, with the code's layered glows and hooks
 ## on top either way. Each builder draws into `root` (a node at the station's centre on the plan frame: +x east, -z
 ## north, its front toward +z, the screen's bottom) at its footprint's size, and returns its parts: {"glow": the
 ## layered glow that brightens when the hero stands at it, "model": the owner's mesh or null, ...the hooks}.
@@ -10,12 +10,12 @@ extends RefCounted
 
 ## The Rune Archive's shelf slots for the collectibles (CL).
 const SLOTS := 16
-## v0.9.0 HB3: the owner's trophy wall's depth (m; hb3_prep.py: 3.8 m wide, 2.04 m deep with its shelf).
+## The owner's trophy wall's depth (m; hb3_prep.py: 3.8 m wide, 2.04 m deep with its shelf).
 const TROPHY_WALL_D := 2.04
-## v0.9.0 HB3: the stations' low plinths (the Archive's ledge, the Trophy Area's step) in the owner's paving, a
+## The stations' low plinths (the Archive's ledge, the Trophy Area's step) in the owner's paving, a
 ## little darker than the plaza (they were flat dark boxes).
 const LEDGE := Color(0.62, 0.6, 0.57)
-## v0.9.5 RS1: the Runic Stone's veins (RUNIC_STONE.md S3).
+## The Runic Stone's veins (RUNIC_STONE.md S3).
 const RUNE_VIOLET := Color("#9B6BFF")
 
 
@@ -82,7 +82,7 @@ static func trophy(root: Node3D, half: Vector2, h: float, bosses: Array[bool]) -
 	var dark := HubProps.stone(HubProps.STONE_DARK)
 	var w := half.x * 2.0
 	var d := half.y * 2.0
-	# v0.9.0 HB3: the owner's carved trophy wall (hub_trophy_wall) behind the pedestals, or a code wall and alcove.
+	# The owner's carved trophy wall (hub_trophy_wall) behind the pedestals, or a code wall and alcove.
 	var back := HubProps.stand_in(root)
 	HubProps.box(back, "Wall", Vector3(w, h, d * 0.4), stone, Vector3(0, h * 0.5, -d * 0.3))
 	HubProps.box(

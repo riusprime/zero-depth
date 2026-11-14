@@ -14,7 +14,7 @@ var stall := 0
 var stall_total := 0
 ## The root of the last attack that added heat (a swing adds once however many enemies it hits).
 var last_root := 0
-## v0.9.5 HT: the Gun fill's remainder (max milli x firing ticks mod gun_fill_ticks), so 840 ticks fill it exactly.
+## The Gun fill's remainder (max milli x firing ticks mod gun_fill_ticks), so 840 ticks fill it exactly.
 var fill_rem := 0
 ## Heat.TIER_* now, and the tick it last changed (the meter flashes on it).
 var tier := 0

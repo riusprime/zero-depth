@@ -231,3 +231,28 @@ func test_the_prism_cross_and_dps_hp_are_checked() -> void:
 	p = fresh.call()
 	p.phases[0].attack_ids.append("cross_ring")
 	assert_has(_codes(p), &"range", "a rotation lists each spell once")
+
+
+## v0.11.0 O3 (owner L5, Q9 a): the Gatekeeper's quake pillars compile from data, and their numbers are checked.
+func test_the_quake_pillars_compile_and_are_validated() -> void:
+	var t := ContentCompiler.compile_boss(_def(), ContentRepository.load_all())
+	assert_not_null(t.quake, "the Gatekeeper has quake pillars")
+	assert_eq([t.quake.count, t.quake.from_phase, t.quake.pulse_ticks], [3, 1, 180])
+	assert_eq([t.quake.stun_ticks, t.quake.stun_permille, t.quake.stuns_per_phase], [240, 1500, 2])
+	assert_eq(t.quake.damage_permille, 60)  # v0.11.0 F5: 60 per mille, 4 s stun
+	assert_eq(t.quake.cause_key, &"CAUSE_GATEKEEPER_PILLAR")
+	var d := _def()
+	d.quake = d.quake.duplicate()
+	d.quake["warn_seconds"] = 0.2
+	assert_has(_codes(d), &"telegraph_short", "the ring warns at least the telegraph minimum")
+	d = _def()
+	d.quake = d.quake.duplicate()
+	d.quake["shield"] = 1
+	assert_has(_codes(d), &"unknown_field")
+	d = _def()
+	d.quake = d.quake.duplicate()
+	d.quake["stuns_per_phase"] = 9
+	assert_has(_codes(d), &"range")
+	d = _def()
+	d.quake_cause_key = &""
+	assert_has(_codes(d), &"missing", "a pulse that kills needs its line")

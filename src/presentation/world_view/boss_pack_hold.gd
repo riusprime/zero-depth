@@ -1,6 +1,6 @@
 class_name BossPackHold
 extends RefCounted
-## v0.10.0 VX5 (VFX_PACK R13-R42): the boss, elite and shield views' way of using PackFx. Their effects are drawn from
+## VFX_PACK R13-R42: the boss, elite and shield views' way of using PackFx. Their effects are drawn from
 ## the sim's state every frame, so a pack effect needs a keyed owner: one-shots start once per key (`once`), held ones
 ## stay while the caller keeps asking (`hold`) and go back to the pool the frame it stops (`end`). When the effect's
 ## family is full the call answers "no" and the caller draws its old look for that instance (the fallback); the answer

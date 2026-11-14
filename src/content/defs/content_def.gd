@@ -43,10 +43,10 @@ func check_positive(issues: Array[ValidationIssue], field: String, value: float)
 		issues.append(ValidationIssue.new(&"not_positive", resource_path, "%s must be > 0" % field))
 
 
-## v0.4.0 SC: an ERROR unless `table` is a per-mille lookup table (scaling by floor or by danger tier): 1 to 64
+## An ERROR unless `table` is a per-mille lookup table (scaling by floor or by danger tier): 1 to 64
 ## entries, the first exactly 1000 (×1), each entry in 1 .. 100000 (×100, which keeps the integer products the sim
 ## takes safe), and rising (`rising`, never lower than the one before) or falling (never higher).
-## v0.9.5 EP3: the first entry may be anything in `start_min`..1000 (default 1000: exactly ×1).
+## The first entry may be anything in `start_min`..1000 (default 1000: exactly ×1).
 func check_permille_table(
 	issues: Array[ValidationIssue],
 	field: String,

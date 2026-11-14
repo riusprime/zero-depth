@@ -1,6 +1,6 @@
 class_name AttackSlots
 extends RefCounted
-## v0.9.0 AS (owner Q2–Q7, Q13, Q14; PLAN C37–C45, C60–C67, C87; docs/roadmap/v0.9.0/ATTACK_FORMS.md): the wand's slot
+## The wand's slot
 ## categories inside its slots (SIM_CONTRACTS §8e). The wand stays (its slots, read left to right, triggers cast child
 ## spells); every card has a slot category (ItemTable.slot_category, data) and some categories hold a limited number
 ## of cards (World.slot_table, data/wand/attack_slots.tres: on a Gun run Form 1, Pattern 1, Secondary 2, Element 2; on a
@@ -16,11 +16,8 @@ extends RefCounted
 ## - The form × card table (C60–C66): the run's form is the held Form card's row, else the default row (Orbs, the Gun's
 ##   own shot). A Pattern, Secondary or Element card whose cell is off for that form is never offered (usable(), read by
 ##   ItemPool.usable) and, if held, never compiled (compiles(), read by Modifiers.build_modifiers). A card the row
-##   prunes (v0.10.5 W3-P7) is never offered either, but compiles when held. The table is the
+##   prunes is never offered either, but compiles when held. The table is the
 ##   Gun's: a Blade run has no form, and every card reads as on there.
-## - An old save (trim(), on load after WandMigration): a wand saved before AS may hold more cards of a category than
-##   its limit; the leftmost ones up to the limit stay and the rest leave the build, refunded as shards (the shop's
-##   salvage price, WandMigration.refund_of), so the run loads with a legal wand.
 ## A world without the table (a lab) has no limits and no cells off: every function here reads as before AS.
 ## Pure: no randomness, no engine calls.
 
@@ -49,7 +46,7 @@ static func limit(w: World, cat: int) -> int:
 		return -1
 	var lim := t.gun_limits if gun(w) else t.blade_limits
 	var n := lim[cat - 1] if cat - 1 < lim.size() else -1
-	if cat == ELEMENT and n >= 0:  # v0.10.5 W3-P10c: C1 Prism, one Element slot more per Prism held
+	if cat == ELEMENT and n >= 0:  # C1 Prism, one Element slot more per Prism held
 		n += Constellations.count(w, Constellations.PRISM)
 	return n
 
@@ -99,14 +96,14 @@ static func replaces(w: World, code: int) -> int:
 	return held_of(w, cat)[0]
 
 
-## v0.9.0 AS2: the wand slots the player chooses from when taking `code` meets its full Secondary or Element
+## The wand slots the player chooses from when taking `code` meets its full Secondary or Element
 ## category (its held cards of that category, left to right); empty when no such choice applies.
 static func choices(w: World, code: int) -> PackedInt32Array:
 	var cat := full_category(w, code)
 	return held_of(w, cat) if chosen(cat) else PackedInt32Array()
 
 
-## v0.9.0 AS2: the category a choice for `code` is limited to (SECONDARY or ELEMENT), or FREE (any slot).
+## The category a choice for `code` is limited to (SECONDARY or ELEMENT), or FREE (any slot).
 static func choice_category(w: World, code: int) -> int:
 	var cat := full_category(w, code)
 	return cat if chosen(cat) else FREE
@@ -137,7 +134,7 @@ static func form_id(w: World) -> StringName:
 	return w.slot_table.form_ids[r] if r >= 0 else &""
 
 
-## Item `idx` works with the run's form (C60): a Pattern, Secondary or Element card whose cell is on (or on with a
+## Item `idx` works with the run's form: a Pattern, Secondary or Element card whose cell is on (or on with a
 ## rule) for the form fired now; a Form card that has a row; any other card. True without the table, on a Blade run.
 static func compatible(w: World, idx: int) -> bool:
 	var r := form_row(w)
@@ -152,7 +149,7 @@ static func compatible(w: World, idx: int) -> bool:
 
 
 ## Item `idx` may be offered (ItemPool.usable, C66): it works with the form, its category's limit isn't 0, and the
-## form doesn't prune it (v0.10.5 W3-P7: a card that measured no gain with the form; held, it still compiles).
+## form doesn't prune it (a card that measured no gain with the form; held, it still compiles).
 static func usable(w: World, idx: int) -> bool:
 	if not compatible(w, idx) or limit(w, category(w, idx)) == 0:
 		return false
@@ -163,32 +160,6 @@ static func usable(w: World, idx: int) -> bool:
 ## Held card `code` is compiled (Modifiers.build_modifiers): every card but an item the form can't use.
 static func compiles(w: World, code: int) -> bool:
 	return Offers.type_of(code) != Offers.MOD or compatible(w, code)
-
-
-## v0.9.0 AS: an old save's wand trimmed to the limits (class doc). Returns the shards refunded (0 when it was legal).
-## Deterministic, idempotent.
-static func trim(w: World) -> int:
-	if w.slot_table == null:
-		return 0
-	var counts := {}
-	var over := PackedInt32Array()
-	for s in w.mod_slots.size():
-		var code := w.mod_slots[s]
-		var cat := category(w, code)
-		var lim := limit(w, cat)
-		if lim < 0:
-			continue
-		counts[cat] = int(counts.get(cat, 0)) + 1
-		if int(counts[cat]) > lim:
-			over.append(code)
-	var refund := 0
-	for code in over:
-		refund += WandMigration.refund_of(w, code)
-		var s := w.mod_slots.find(code)
-		if s >= 0:
-			BuildSlots.drop(w, s)
-	w.shards += refund
-	return refund
 
 
 ## The slot counts the Build page shows (WorldReader.wand): per limited category in order, [category, held, limit].

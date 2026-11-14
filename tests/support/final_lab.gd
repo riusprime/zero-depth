@@ -21,7 +21,7 @@ static func run_state(run_seed: int, build: StringName = &"blade", loop: int = 1
 ## the fight's bodies wait (a base for a snapshot that holds its own). v0.9.0 FA: with `approach` the run's way in,
 ## the final approach (the causeway, the pylons; FloorPlan's build): no fight until its buildup ends.
 static func arena(run: RunState, begin: bool = true, approach: bool = false) -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var table := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))
 	var enemies := ContentCompiler.compile_enemies(repo)

@@ -1,7 +1,8 @@
 extends GutTest
 ## v0.10.5 O6 (owner P4, 2026-11-01: "Danger, plus a separate tag"; D4 flipped from hidden to shown): the depths' answer
-## tag shows the floor's catch-up m only above ×1, in en and es; the pause menu's one sentence follows it; WorldReader
-## reads m without writing it; and the curve's shown danger fills smoothly through the overtime.
+## tag (v0.11.0 F12: a heating skull and the multiplier) shows the floor's catch-up m only above ×1; the pause menu
+## has the same; WorldReader reads m without writing it; and the curve's shown danger fills smoothly through the
+## overtime.
 
 var _locale := ""
 
@@ -36,21 +37,47 @@ func test_the_tag_shows_only_above_x1() -> void:
 	assert_false(t.visible, "a new floor at ×1 hides it again")
 
 
-func test_the_tag_words_it_in_english_and_spanish() -> void:
+func test_the_tag_is_a_skull_and_the_multiplier_in_every_language() -> void:
 	var t := DepthsTag.new()
 	add_child_autofree(t)
 	TranslationServer.set_locale("en")
 	t.set_multiplier(1414)
-	assert_eq(t.label.text, "The depths answer ×1.41")
+	assert_eq(t.label.text, "×1.41", "the multiplier alone: no sentence")
+	assert_eq(t.get_child_count(), 2, "a skull and a label, nothing else")
 	TranslationServer.set_locale("es")
 	await wait_frames(1)
-	assert_eq(t.label.text, "Las profundidades responden ×1.41", "a language switch words it again")
-	t.short = true
-	t.set_multiplier(1500)
-	assert_eq(t.label.text, "×1.5", "the short form (mockup A) is the number alone")
+	assert_eq(t.label.text, "×1.41", "the same in Spanish")
 
 
-func test_the_pause_line_explains_it_in_one_sentence() -> void:
+func test_the_level_steps_with_the_multiplier() -> void:
+	assert_eq(DepthsTag.level_of(1001), 1)
+	assert_eq(DepthsTag.level_of(1150), 1, "up to 1.15")
+	assert_eq(DepthsTag.level_of(1151), 2)
+	assert_eq(DepthsTag.level_of(1400), 2, "up to 1.40")
+	assert_eq(DepthsTag.level_of(1414), 3)
+	assert_eq(DepthsTag.level_of(1800), 3, "up to 1.80")
+	assert_eq(DepthsTag.level_of(2500), 4, "up to 2.50")
+	assert_eq(DepthsTag.level_of(2501), 5, "above")
+	assert_eq(DepthsTag.level_of(9000), 5)
+	var t := DepthsTag.new()
+	add_child_autofree(t)
+	t.set_multiplier(1414)
+	assert_eq(t.level(), 3)
+
+
+func test_the_five_colours_get_darker_so_they_read_without_hue() -> void:
+	assert_eq(DepthsTag.COLORS.size(), 5)
+	for k in 4:
+		assert_gt(
+			DepthsTag.COLORS[k].get_luminance(),
+			DepthsTag.COLORS[k + 1].get_luminance(),
+			"step %d is lighter than step %d" % [k + 1, k + 2]
+		)
+	assert_eq(DepthsTag.color_of(1100), DepthsTag.COLORS[0])
+	assert_eq(DepthsTag.color_of(3000), DepthsTag.COLORS[4])
+
+
+func test_the_pause_line_is_the_same_skull_and_multiplier() -> void:
 	TranslationServer.set_locale("en")
 	var p := PauseMenu.new()
 	add_child_autofree(p)
@@ -58,13 +85,8 @@ func test_the_pause_line_explains_it_in_one_sentence() -> void:
 	assert_false(p.depths_line.visible, "×1: no line")
 	p.show_depths(1414)
 	assert_true(p.depths_line.visible)
-	assert_string_starts_with(p.depths_line.text, "The depths answer ×1.41:")
-	assert_eq(
-		p.depths_line.text.count("."), 2, "one sentence (the decimal point and the full stop)"
-	)
-	TranslationServer.set_locale("es")
-	await wait_frames(1)
-	assert_string_starts_with(p.depths_line.text, "Las profundidades responden ×1.41:")
+	assert_eq(p.depths_line.label.text, "×1.41", "no sentence")
+	assert_eq(p.depths_line.level(), 3)
 
 
 func test_the_reader_gives_the_floors_m_and_writes_nothing() -> void:

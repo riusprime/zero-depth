@@ -48,8 +48,8 @@ alpha_curve = SubResource("CurveTexture_yar8v")
 
 [sub_resource type="QuadMesh" id="QuadMesh_43hd2"]
 size = Vector2(1.5, 4)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="Animation" id="Animation_43hd2"]
 length = 0.001

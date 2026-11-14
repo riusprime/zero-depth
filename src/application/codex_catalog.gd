@@ -1,13 +1,13 @@
 class_name CodexCatalog
 extends RefCounted
-## v0.7.5 CX (owner N6): every entry the Codex lists, read from the content (ContentRepository), so new cards, enemies,
+## Every entry the Codex lists, read from the content (ContentRepository), so new cards, enemies,
 ## bosses and biomes appear without code (NB1 / NB2's biomes land on the Biomes page by their data alone).
 ## - Cards: the items, abilities and stat cards, minus the v0.6 cards `data/wand/migration.tres` retires and the
 ##   starting weapons (they are never a card). Sections (in this order): the Gun pool (wand cards that need the Gun),
 ##   the Blade pool, the shared pool (the other wand cards), the triggers, the legendary cards (legendary-rarity
 ##   items: the unique triggers), the stat cards, the utilities (Blink, Aegis), other abilities, and the passives
 ##   (the v0.5 items outside the wand that are still offered; WAND.md "Not in the table").
-## - Enemies, bosses and biomes: every definition of their category. v0.8.0 FB1: the Bosses page has a second
+## - Enemies, bosses and biomes: every definition of their category. the Bosses page has a second
 ##   section, the final boss's bodies (FinalBossDefinition, in the run's order), after the floors' bosses.
 ## Each entry is a Dictionary: page, id, section, name_key, desc_key, and by page: type (WorldReader.CARD_*), rarity
 ## (0 common, 1 rare, 2 epic, 3 legendary), leveled (it levels 1–5), alt_name_key (the Gun face of a two-faced
@@ -29,13 +29,14 @@ const SECTIONS := {
 		&"passives",
 		&"starbound",  # v0.10.5 W3-P10f
 		&"constellations",
+		&"relics",  # The relics (the City's Heart)
 	],
 	&"enemies": [&"enemies"],
 	&"bosses": [&"bosses", &"final"],
 	&"biomes": [&"biomes"],
 	&"lore": [&"lore"],  # v0.10.5 O18
 }
-## v0.10.5 W3-P10f: the Starbound cards and the Constellations (G1 §B, §C). A Starbound card is listed from its
+## The Starbound cards and the Constellations (G1 §B, §C). A Starbound card is listed from its
 ## ItemDefinition when the content has one (item_section), else from this list; a Constellation is a run rule, not
 ## content, so its entries are always this list (icon `icon_<id>.png`, falling back to `icon_unknown`).
 const STARBOUND_IDS: Array[StringName] = [
@@ -58,7 +59,7 @@ const CONSTELLATION_IDS: Array[StringName] = [
 const WAND_TAG := "wand"
 const TRIGGER_TAG := "trigger"
 
-## v0.9.0 CL: the Rune Archive's collectibles, in shelf order (CollectibleBook.defs; the Codex's Collectibles page).
+## The Rune Archive's collectibles, in shelf order (CollectibleBook.defs; the Codex's Collectibles page).
 var collectibles: Array[CollectibleDefinition] = []
 var _entries := {}
 var _index := {}
@@ -94,6 +95,8 @@ static func build(repo: ContentRepository) -> CodexCatalog:
 			sorted[&"starbound"].append(_run_rule_entry(&"starbound", id, 2))
 	for id: StringName in CONSTELLATION_IDS:
 		sorted[&"constellations"].append(_run_rule_entry(&"constellations", id, 3))
+	for def: RelicDefinition in repo.all_of(&"relic"):  # v0.11.0 O14b
+		sorted[&"relics"].append(_relic_entry(def))
 	for s: StringName in SECTIONS[&"cards"]:
 		for e: Dictionary in sorted[s]:
 			c._add(e)
@@ -107,9 +110,9 @@ static func build(repo: ContentRepository) -> CodexCatalog:
 					"id": def.id,
 					"name_key": def.name_key,
 					"desc_key": def.desc_key,
-					"kind": ContentCompiler.compile_enemy(def).kind,
+					"kind": ContentCompiler.enemy_kind(def),
 					"behaviour": def.behaviour_id,
-					"weak_to": def.weak_to,  # v0.10.5 O10: the matchup (CodexView.matchup_text)
+					"weak_to": def.weak_to,  # The matchup (CodexView.matchup_text)
 					"resists": def.resists,
 				}
 			)
@@ -159,7 +162,7 @@ static func build(repo: ContentRepository) -> CodexCatalog:
 				}
 			)
 		)
-	for id: StringName in CodexStore.LORE_IDS:  # v0.10.5 O18: one line per system
+	for id: StringName in CodexStore.LORE_IDS:  # One line per system
 		(
 			c
 			. _add(
@@ -177,7 +180,7 @@ static func build(repo: ContentRepository) -> CodexCatalog:
 	return c
 
 
-## v0.8.0 FB1: the final boss's bodies in the run's order (RunDefinition.final_bosses), then any other by id.
+## The final boss's bodies in the run's order (RunDefinition.final_bosses), then any other by id.
 static func _final_bodies(repo: ContentRepository) -> Array:
 	var out := []
 	var run: RunDefinition = repo.get_def(&"run", RunSaver.RUN_ID)
@@ -236,6 +239,21 @@ static func _run_rule_entry(section: StringName, id: StringName, rarity: int) ->
 	}
 
 
+## A relic (RelicDefinition), legendary: one in the whole game, held once a run.
+static func _relic_entry(def: RelicDefinition) -> Dictionary:
+	return {
+		"page": &"cards",
+		"section": &"relics",
+		"id": def.id,
+		"name_key": def.name_key,
+		"alt_name_key": &"",
+		"desc_key": def.desc_key,
+		"type": Offers.MOD,
+		"rarity": 3,
+		"leveled": false,
+	}
+
+
 static func _item_entry(def: ItemDefinition) -> Dictionary:
 	return {
 		"page": &"cards",
@@ -245,7 +263,7 @@ static func _item_entry(def: ItemDefinition) -> Dictionary:
 		"alt_name_key": def.name_key_gun,
 		"desc_key": def.desc_key,
 		"type": Offers.MOD,
-		"rarity": ItemTable.tier_of(int(def.rarity)),  # v0.8.0 RR: the four tiers in order
+		"rarity": ItemTable.tier_of(int(def.rarity)),  # The four tiers in order
 		"leveled": def.tags.has(WAND_TAG),
 	}
 
@@ -335,7 +353,7 @@ func boss_of_kind(kind: int) -> StringName:
 	return _boss_kinds.get(kind, &"")
 
 
-## v0.9.0 CL: collectible `id` (null when the content has none of that id).
+## Collectible `id` (null when the content has none of that id).
 func collectible(id: StringName) -> CollectibleDefinition:
 	for d in collectibles:
 		if d.id == id:

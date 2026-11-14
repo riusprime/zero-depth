@@ -9,7 +9,7 @@ const LONG := 1 << 24
 
 
 func _repo() -> ContentRepository:
-	return ContentRepository.load_all()
+	return SharedContent.repo()
 
 
 func _run_table() -> RunTable:

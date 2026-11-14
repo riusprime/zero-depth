@@ -3,29 +3,29 @@ extends RefCounted
 ## One gameplay consequence with its provenance (SIM_CONTRACTS §7). The whole Kind enum is declared now;
 ## new kinds are appended, never inserted, because kinds are hashed.
 
-## PICKUP (v0.2.0): the player took an item; amount = the item's index in World.item_tables.
-## COMBO_UNLOCKED (v0.3.0 G): owning both items unlocked a combo; amount = its index in World.combo_tables.
-## BOSS_DEFEATED (v0.3.0 C): a boss died, once per boss, after its KILL; target_id = the boss's id, amount = its
+## PICKUP: the player took an item; amount = the item's index in World.item_tables.
+## COMBO_UNLOCKED: owning both items unlocked a combo; amount = its index in World.combo_tables.
+## BOSS_DEFEATED: a boss died, once per boss, after its KILL; target_id = the boss's id, amount = its
 ## index in World.boss_tables, pos = where it fell.
-## v0.3.0 E: PICKUP is also a card taken from an altar or chest (source = the reward's id). SHARDS: a kill paid
+## PICKUP is also a card taken from an altar or chest (source = the reward's id). SHARDS: a kill paid
 ## shards; amount = how many, pos = the body, source = the dead actor's id.
-## Run flow (v0.3.0 B): BOSS_ROOM_SEALED (the boss door shut behind the player), PORTAL_OPENED (the gate is
+## Run flow: BOSS_ROOM_SEALED (the boss door shut behind the player), PORTAL_OPENED (the gate is
 ## active), FLOOR_EXIT (the player walked into the active gate).
-## Boss challenge (v0.3.0 BX, L20): ENEMY_DISSOLVED: summoning the boss removed a normal enemy from the floor (no
+## Boss challenge: ENEMY_DISSOLVED: summoning the boss removed a normal enemy from the floor (no
 ## kill, no shards); target_id = its id, amount = its kind, pos = where it stood.
-## Kit (v0.3.5 K): SKILL_USED: the build's skill started (amount = SkillTable.Kind, root = the skill's root, pos =
+## Kit: SKILL_USED: the build's skill started (amount = SkillTable.Kind, root = the skill's root, pos =
 ## where it started). VENT: the Vent button vented (amount = heat points vented). VENT_COLD: the Vent button under
 ## Hot did nothing (the cold click).
-## v0.5.0 SH: SHOP_BUY: shards spent at the shop (amount = the price, effect_id = the card's id, or &"shop_heal" /
+## SHOP_BUY: shards spent at the shop (amount = the price, effect_id = the card's id, or &"shop_heal" /
 ## &"shop_reroll"; a bought card also emits PICKUP from the terminal). SHOP_SALVAGE: retired with selling (v0.10.5
 ## W3-O9), never emitted; it keeps its place so the kinds after it keep their numbers.
-## v0.4.0 BS: PICKUP's amount is a card code (Offers): under 1000 an item (as before), 1000 + i ability i, 2000 + stat
+## PICKUP's amount is a card code (Offers): under 1000 an item (as before), 1000 + i ability i, 2000 + stat
 ## x 10 + rarity a stat card. A HIT with TAG_CRIT was a critical hit.
-## v0.8.0 N14 (owner O72): GAMBLE_FAIL: a paid use of the gamble shrine failed (no stat); source = the shrine's id,
+## GAMBLE_FAIL: a paid use of the gamble shrine failed (no stat); source = the shrine's id,
 ## pos = the shrine.
-## v0.8.0 BD (owner O83): BOSS_DOOR_OPENING: the interact press started the shut boss door's opening; BOSS_DOOR_OPENED:
+## BOSS_DOOR_OPENING: the interact press started the shut boss door's opening; BOSS_DOOR_OPENED:
 ## its slab is down and the passage open (BossFlow.DOOR_OPEN_TICKS later). pos = the door's centre.
-## v0.8.0 RM (owner O91; Remnants): REMNANT_SPAWN (a remnant was left: effect_id = its card, amount = its kind,
+## REMNANT_SPAWN (a remnant was left: effect_id = its card, amount = its kind,
 ## target_id = its enemy or the player, pos = where), REMNANT_ACTIVATE (it activated: effect_id = its card, amount =
 ## its cast's damage, target_id = the enemy it fired on or the player, pos = where) and REMNANT_END (it went: effect_id
 ## = its card, amount = why, Remnants.END_*). For the views and the tests; they never change state.
@@ -51,39 +51,40 @@ enum Kind {
 	VENT,
 	VENT_COLD,
 	SHOP_BUY,
-	SHOP_SALVAGE,  # v0.10.5 W3-O9: retired, never emitted
+	SHOP_SALVAGE,  # Retired, never emitted
 	GAMBLE_FAIL,
 	BOSS_DOOR_OPENING,
 	BOSS_DOOR_OPENED,
 	REMNANT_SPAWN,
 	REMNANT_ACTIVATE,
 	REMNANT_END,
-	BLAST,  # v0.9.0 BM: a bomb burst (Bomb.blast: pos, amount = radius in mm, effect_id = the bomb's spec key)
-	LANCE,  # v0.9.0 AF1b: a Lance ball released (Lance.on_release: pos = muzzle, amount = radius mm, amount_applied = aim)
-	COLLECTIBLE,  # v0.9.0 CL: a collectible taken (Collectibles: pos, amount = its entry, effect_id = its id)
-	STRESS_BREAK,  # v0.9.5 SM: a weak side broken (StressMarks.on_hit: pos, amount = extra damage, amount_applied = side)
-	PAIR_ON,  # v0.9.5 EE3: an element pair turned on (ElementPairs.refresh: amount = its X index 0..9, effect_id = its id)
-	DASH_REFUND,  # v0.10.5 S12: a perfect Vent readied the dash (Heat.vent: amount = heat vented)
-	STAR,  # v0.10.5 W3-P10e: Starfall's star fell (Starfall.on_crit: pos = the target, amount = the crit's amount)
-	METEOR_LAUNCH,  # v0.10.5 W3-P10e: a meteor called (pos = where it lands, amount = ticks to land)
-	METEOR_LAND,  # v0.10.5 W3-P10e: a meteor landed (pos, amount = radius in mm)
+	BLAST,  # A bomb burst (Bomb.blast: pos, amount = radius in mm, effect_id = the bomb's spec key)
+	LANCE,  # A Lance ball released (Lance.on_release: pos = muzzle, amount = radius mm, amount_applied = aim)
+	COLLECTIBLE,  # A collectible taken (Collectibles: pos, amount = its entry, effect_id = its id)
+	STRESS_BREAK,  # A weak side broken (StressMarks.on_hit: pos, amount = extra damage, amount_applied = side)
+	PAIR_ON,  # An element pair turned on (ElementPairs.refresh: amount = its X index 0..9, effect_id = its id)
+	DASH_REFUND,  # A perfect Vent readied the dash (Heat.vent: amount = heat vented)
+	STAR,  # Starfall's star fell (Starfall.on_crit: pos = the target, amount = the crit's amount)
+	METEOR_LAUNCH,  # A meteor called (pos = where it lands, amount = ticks to land)
+	METEOR_LAND,  # A meteor landed (pos, amount = radius in mm)
+	SURGE,  # A horde surge began (Surges: pos = the hero, amount = its size; its sound and HUD line)
 }
 
-## v0.9.5 EE1 (ElementLevels): a Contagion jump's STATUS_APPLY (source: the giver, target: the receiver), and the
+## ElementLevels: a Contagion jump's STATUS_APPLY (source: the giver, target: the receiver), and the
 ## Exsanguinate burst's DAMAGE (a DoT the number still shows).
 const EFFECT_VENOM_JUMP := &"venom_jump"
 const EFFECT_EXSANGUINATE := &"exsanguinate"
-## v0.9.5 EE2 (ElementLevelsFsf): an Overcharge strike (its STATUS_APPLY at the centre, and its hits' effect), a
+## ElementLevelsFsf: an Overcharge strike (its STATUS_APPLY at the centre, and its hits' effect), a
 ## Shatter (STATUS_APPLY on the broken enemy, amount = shards) and one shard (STATUS_APPLY, source: the broken enemy,
 ## target: the one it hits; also the shard hit's effect).
 const EFFECT_STORM_STRIKE := &"storm_strike"
 const EFFECT_FROST_SHATTER := &"frost_shatter"
 const EFFECT_FROST_SHARD := &"frost_shard"
-## v0.9.5 EE3 (ElementPairs): a pair burst (X1 Thermal Shock, X7 Brittle: STATUS_APPLY at the centre, amount = radius
+## ElementPairs: a pair burst (X1 Thermal Shock, X7 Brittle: STATUS_APPLY at the centre, amount = radius
 ## in mm; also its hits' effect) and a Toxic Fumes cloud laid (STATUS_APPLY, amount = radius in mm).
 const EFFECT_PAIR_BURST := &"pair_burst"
 const EFFECT_PAIR_CLOUD := &"pair_cloud"
-## v0.10.5 W3-P10e (Starfall): a star's hit (already scaled: no crit) and a meteor's hits.
+## Starfall: a star's hit (already scaled: no crit) and a meteor's hits.
 const EFFECT_STAR := &"starfall_star"
 const EFFECT_METEOR := &"meteor"
 const TAG_MELEE := 1
@@ -101,36 +102,40 @@ const TAG_GUARDED := 64
 const TAG_FULL_CHARGE := 128
 ## A Kinetic Dash body hit (v0.2.0 items).
 const TAG_DASH := 256
-## A Static Chain jump (v0.2.0 J).
+## A Static Chain jump.
 const TAG_CHAIN := 512
-## Executioner raised this hit (v0.2.0 J).
+## Executioner raised this hit.
 const TAG_EXECUTE := 1024
-## A Thorn Mantle ring bolt (v0.2.0 J).
+## A Thorn Mantle ring bolt.
 const TAG_THORN := 2048
 ## The hit struck a Warden's armoured front (its front multiplier, under 1000; owner, 2026-10-07).
 const TAG_ARMOURED := 4096
 ## The hit struck a Warden from behind (its rear multiplier, over 1000; owner, 2026-10-07).
 const TAG_WEAK_SPOT := 8192
-## A Shrapnel Storm shard (v0.3.0 G): it never bursts again.
+## A Shrapnel Storm shard: it never bursts again.
 const TAG_SHRAPNEL := 16384
-## Overclock heat (v0.3.0 L18): the hit was raised by Overclock; a Hot bolt that still pierces one enemy.
+## Overclock heat: the hit was raised by Overclock; a Hot bolt that still pierces one enemy.
 const TAG_OVERCLOCK := 32768
 const TAG_PIERCE := 65536
-## Boss challenge (v0.3.0 BX, L17): the player hit a boss from farther than its ranged armour allows (less damage).
+## Boss challenge: the player hit a boss from farther than its ranged armour allows (less damage).
 const TAG_DEFLECTED := 131072
-## Boss challenge (v0.3.0 BX, L17): the player hit a boss's open weak point up close (more damage and stagger).
+## Boss challenge: the player hit a boss's open weak point up close (more damage and stagger).
 const TAG_EXPOSED := 262144
-## Kit (v0.3.5 K): a hit from the build's skill (the Lunge Cleave, a Scatter Blast pellet). Bit 21, leaving 19 and 20
+## Kit: a hit from the build's skill (the Lunge Cleave, a Scatter Blast pellet). Bit 21, leaving 19 and 20
 ## for the step that ran in parallel.
 const TAG_SKILL := 2097152
-## v0.4.0 BS: a hit from an ability (a bomb, a drone bolt or its chain, an orbit blade, the blink's landing shock,
+## A hit on the Lantern Shade standing in the dark (its dark multiplier, 40 %) or in a lit
+## lantern's pool (its lit multiplier, 150 %). Bits 22 and 23.
+const TAG_SHADE_DARK := 4194304
+const TAG_SHADE_LIT := 8388608
+## A hit from an ability (a bomb, a drone bolt or its chain, an orbit blade, the blink's landing shock,
 ## Combo Sword's finisher shockwave). Bit 24, clear of the bits a parallel step may take.
 const TAG_ABILITY := 16777216
-## v0.10.5 O10 (Matchups): the hit (or tick) struck the enemy's weakness (its weak_to form or element), or what it
+## Matchups: the hit (or tick) struck the enemy's weakness (its weak_to form or element), or what it
 ## resists. Bits 26 and 27, clear of the bits a parallel step may take.
 const TAG_WEAK_TO := 67108864
 const TAG_RESISTED := 134217728
-## v0.10.5 W3-P10a (owner W7, G1 A1): a double crit (Stats.outgoing, from loop 2: the crit multiplier twice), always
+## A double crit (Stats.outgoing, from loop 2: the crit multiplier twice), always
 ## with TAG_CRIT. Bit 29, leaving 28 for a step that runs in parallel.
 const TAG_DOUBLE_CRIT := 536870912
 

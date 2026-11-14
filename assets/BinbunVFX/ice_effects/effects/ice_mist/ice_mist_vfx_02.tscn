@@ -27,8 +27,8 @@ alpha_curve = SubResource("CurveTexture_q74dy")
 
 [sub_resource type="QuadMesh" id="QuadMesh_dteeq"]
 size = Vector2(2.5, 2.5)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_e6o8c"]
 emission_shape_scale = Vector3(1, 0.5, 1)
@@ -40,8 +40,8 @@ alpha_curve = SubResource("CurveTexture_q74dy")
 
 [sub_resource type="QuadMesh" id="QuadMesh_267ui"]
 size = Vector2(3, 3)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="Animation" id="Animation_coelt"]
 length = 0.001

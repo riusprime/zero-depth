@@ -365,3 +365,81 @@ the mode's colour vision on the tokens and asserts:
 - Deathventory's `.shots/` scripts were never committed, so every UI pass rebuilt them from scratch
   ([`../LESSONS.md`](../LESSONS.md) L12).
 - Each release's evidence links the tour output it was checked against.
+
+## 11. Batched display
+
+A node per drawn thing is moved, notified, processed and drawn by the engine every frame, and the views that fed
+them visited every object every frame. In a horde that was the largest part of the frame (taking the enemies' nodes
+out of the tree gave back 6.0 ms at 120 swarmers and 8.9 ms at 60 enemies with the heavy build:
+[`PERF_NATIVE.md`](../roadmap/v0.11.1/evidence/PERF_NATIVE.md)). So the things a crowd has many of are drawn as
+instances of a few MultiMeshes, written in one pass a frame, and the rule for every one of them is the same: **the
+look does not change**, and a probe or a test proves it.
+
+### 11.1 What is drawn as instances, and by what
+
+| What | Drawn by | How |
+|---|---|---|
+| Enemies of the nine batched kinds (`EnemyBatch.KINDS`: Swarmer, Splitter, Splitling, Shield Bearer, Mender, Mine Layer, Sniper, Charger, Hatchling) | `EnemyBatch` (`src/presentation/world_view/enemy_batch.gd`) | No node in the tree. Each keeps its root, facing and avatar as plain objects outside it. The **furniture** (contact disc, team ring, dazed ring, health bar, blob) is one MultiMesh per mesh, written in one pass a frame |
+| Their avatars' state (clocks, strike, tell, flinch, hold, pose drives) | `BatchAvatars` (`batch_avatars.gd`) | One row of `STRIDE` (80) packed doubles a slot. While `on`, `ZdCrowd` applies each sync, steps each frame and writes the bodies from the rows: one call each, none per enemy. An event on an avatar (a flinch, a hold, a death) copies its row into the object, runs the avatar's own GDScript, and copies it back before the next native call |
+| Every VAT enemy body and its proxy shadow | `VatCrowd` (`vat_crowd.gd`) | One MultiMesh per kind and look (bodies) and per kind (shadows). A batched enemy's body is drawn at `EnemyBatch.body_at` |
+| Horde critters | `CritterCrowd` (`critter_crowd.gd`) | No node each; reads the `WorldReader` columns once a sync |
+| A dead enemy's cubes | `ShardPool` (`shard_pool.gd`) | One MultiMesh per look, `CAPACITY` 1,024 pieces; a piece lives `LIFE` 0.5 s of real time, so the pop lasts as long at any frame rate |
+| Flying shard gems | `ShardViews` (`shard_views.gd`) | Two MultiMeshes (crystals and outline shells), a slot a gem |
+| Shard drops on the floor | `ShardViews` | Each drop an instance of one of 48 cluster shapes (`DROP_SHAPES` 16 × `DROP_SIZES` 3), built once a session behind the loading cover (`warm_shapes`); the glow sprites one more batch. No node and no mesh bake in a fight |
+| Lightning bolts | `ZdBolt` (`assets/vfx_zd/lightning/bolt.gd`) | One shared strip mesh (`_strip`) for every bolt; the shader draws the jagged line from a few numbers a bolt instead of a mesh rebuilt on every move and flicker. The core always sorts in front of its shell (`CORE_SORT`) |
+| The HUD's still parts | `HudStill` (`src/presentation/hud/hud_still.gd`) | A part that has been still for a frame is rendered once into its own SubViewport and drawn from that texture; any change (a redraw, a move, a resize, a show or hide, the screen transform) draws it directly again the same frame. Layout, input and every read of the nodes are unchanged |
+
+### 11.2 Who writes the instances
+
+- **`ZdCrowd`** (the native library, `native/src/zd_crowd.h`) writes the batched enemies' furniture
+  (`write_furniture`), applies the avatars' syncs (`apply_sync`), steps them (`step_avatars`) and writes their body
+  and shadow instances (`write_bodies`). It reads only the columns the view gives it, never the sim, and holds nothing
+  between calls. Its arithmetic is the GDScript's, in the same order and width: doubles where GDScript reckons in
+  doubles, floats where it stores into a `PackedFloat32Array`, and the engine's own `sin`, `cos`, `exp`, `asin`
+  ([`NATIVE_CORE.md`](NATIVE_CORE.md) §4).
+- **The GDScript writer stays** as the reference the tests compare against and as the fallback: without the library,
+  with `EnemyBatch.native` off (the frame probe's `--ab=no_native_crowd`, the equality tests), or with
+  any batched avatar no native class covers, each enemy's GDScript runs as before. `ActorViews.batch_enemies` off
+  (`--ab=no_batch`) puts every enemy back on its own node tree.
+
+Since step 54b the dev panel has no native core switch (`NativeSwitch` is deleted: the sim is native only);
+`EnemyBatch.native` is on by default and only the frame probe and the tests turn it off. The GDScript writer stays as
+the test reference and the fallback without the library.
+
+### 11.3 What still has a node, and why
+
+| What | Why |
+|---|---|
+| The ten solo VAT kinds: Needle, Warden, Arc Caster, Bomb Drone, Lens Drone, Scrap Hound, Rock Lurker, Stone Thrower, Kiln Beetle, Cinder Priest | Their bodies are `VatCrowd` instances, but their avatars read the tree in their frame step or their death (global transforms, timers) (`EnemyBatch.KINDS`' comment) |
+| Bosses and elites | Their own rigs, models and views |
+| The hero | One, with its own rig and effects |
+| A batched enemy's status marks | An anchor node made only for an enemy that shows one (`EnemyBatch.anchor`) |
+
+### 11.4 How views read the sim
+
+- **In bulk.** A view that draws a few kinds or a few states walks only those rows, through `WorldReader`'s read-only
+  bulk getters: `telegraph_indices`, `indices_in_state`, `status_indices`, `burn_or_frozen_indices`,
+  `indices_of_kinds`, `core_indices`, the copies `actor_ids`, `actor_xs`, `actor_ys`, `projectile_ids`,
+  `projectile_xs`, `projectile_ys`, and the whole columns (`actor_ids_column`, `actor_pos_x_column`, …). None of them
+  enters the state hash or the snapshot. `LatchedReader` notes each tick by copying columns whole.
+- **Quiet when empty.** A view with nothing to show hides its pieces and does no work until content comes; a test
+  wakes each one (`tests/unit/presentation/test_view_wake.gd`).
+
+### 11.5 Keeping the look identical, and how it is proven
+
+| Proof | What it compares | Tolerance |
+|---|---|---|
+| The twin probe (`frame_probe.gd -- --twin`, `scripts/checks/batch_twin.gd`): a tool, not a test | A second `ActorViews` drawing the same scene with a node per enemy, synced on the same reader and frames; every batched enemy's body instance, furniture and bar chunks against its twin node, every frame before the draw | `EPS_POS`, `EPS_BASIS`, `EPS_COLOR` 0.0005 (the rounding between two ways of reckoning a transform); the first run matched over 47,000 instances, position within 0.000002, bar fill 0 (the enemy batch's PROGRESS row) |
+| `tests/unit/native/test_native_crowd.gd` | The native writer's buffers against the GDScript writer's for a seeded crowd over 300 frames with hits, flinches, holds, a dazed Charger, kills and spawns: places, bar fills, body places, every set's instances | none: bit for bit |
+| `scripts/checks/view_dump.gd` | A 900-frame dump of the bulk-reading views' nodes and state, before and after a change | byte-identical |
+| Pixel diffs (`scripts/shots/shard_burst.gd`; `scripts/checks/hud_still_diff.gd`) | Shots of the same frame before and after | shard drops and bursts: 0 pixels; the HUD: at most 2/255 a channel, judged against the noise floor of two captures of the same mode (the on / on-again pair) |
+
+### 11.6 Kept on purpose
+
+These reproduce what the engine did with the nodes, so the batch matches the twin; changing them is a visible change
+and goes to the owner:
+- **A body on a tick frame is drawn at the place of the sync before last** (`EnemyBatch.body_at`): resetting a node's
+  interpolation in the same frame as its sync left the engine drawing it there. On a frame with no tick it is drawn at
+  the interpolated place; far off screen, at the latest place. The furniture is drawn at the interpolated place.
+- **A health bar's first shown frame starts its fill at the current value**, not interpolated from an older one
+  (`EnemyBatch`'s furniture pass).

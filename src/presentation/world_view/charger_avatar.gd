@@ -7,10 +7,10 @@ extends AvatarBase
 ## Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame
 ## time, and nothing here feeds back into the sim. ActorViews puts it under the actor's facing node, so +X is the
 ## front and +Z the right; it never turns itself.
-## v0.8.0 TG (owner O4, Q3): no lane on the ground any more; the windup reads from the body (AvatarBase "tell"): it
+## No lane on the ground any more; the windup reads from the body (AvatarBase "tell"): it
 ## sinks into a crouch and draws back as the windup's progress climbs, the visor brightens and flashes just before
 ## the charge, and the body holds the locked facing (the sim's) the whole time.
-## v0.8.0 P1 (owner O26): the talons rise and hold by STRIKE_RAISE_BY of the windup's progress (AvatarBase.strike_raise,
+## The talons rise and hold by STRIKE_RAISE_BY of the windup's progress (AvatarBase.strike_raise,
 ## the sim's progress, not a timer), then the charge's start (the sim's ACTIVE) throws them out ahead in STRIKE_SNAP_S
 ## (strike_swing), held through the run, and they come back after it.
 
@@ -37,9 +37,8 @@ const WALK_SPEED := 3.0
 const TELEPORT_SPEED := 40.0
 ## The rise out of the ground when the spawn ends, in seconds.
 const RISE_TIME := 0.35
-const OUTLINE_M := 0.018
 
-## Colours sampled from the reference sheet (its lit and shaded tones, as albedo under the game's light). v0.8.0 EC: the
+## Colours sampled from the reference sheet (its lit and shaded tones, as albedo under the game's light). the
 ## hood (body), the back flap (trim), the front legs (grey) and the visor (eye) come from EnemyPalettes per kind.
 const FACE_COLOR := Color("#16181D")
 const CORE_COLOR := Color("#24272D")
@@ -49,11 +48,11 @@ const JOINT_COLOR := Color("#34363C")
 const TALON_COLOR := Color("#E6B596")
 const VISOR_ENERGY := 1.4
 
-## v0.8.0 FV (owner O87, the horde lag): the body and leg meshes (geometry only: every colour is a per-instance
+## The body and leg meshes (geometry only: every colour is a per-instance
 ## material), built once and shared by every Charger and Hatchling, as the Warden's are. A horde respawning a few
 ## Chargers a second rebuilt about 20 SurfaceTool meshes for each.
 static var _meshes := {}
-## v0.8.0 HR: the face's material, one for every Charger.
+## The face's material, one for every Charger.
 static var _face_mat: StandardMaterial3D
 
 ## Parts, read by tests and by ActorViews (flash materials; the visor's glow is its own).
@@ -63,13 +62,13 @@ var body: Node3D
 var visor: MeshInstance3D
 ## Hip nodes, front right, front left, back right, back left.
 var legs: Array[Node3D] = []
-## v0.10.5 W3-V4a (owner, 2026-11-06: VAT for every regular enemy): true (set before setup(), ActorViews from
+## True (set before setup(), ActorViews from
 ## ViewPrefs.enemy_vat): a VatCrowd draws the body from baked poses. setup() builds no piece and _pose() writes no
 ## node; the drives (vat_drives), the lift (vat_lift) and the visor's glow are the very numbers the nodes' pose is
 ## made of.
 var vat := false
 
-## v0.8.0 HR (O89): the visor's shared accent (EnemyLooks.accent), its energy this Charger's GLOW (last set: _visor_e).
+## The visor's shared accent (EnemyLooks.accent), its energy this Charger's GLOW (last set: _visor_e).
 var _visor_mat: ShaderMaterial
 # Everything hangs from this node, which sinks into the ground before the rise; this node itself is never moved.
 var _model := Node3D.new()
@@ -86,12 +85,12 @@ var _wind := 0.0
 var _lunge := 0.0
 var _daze := 0.0
 var _rise := 1.0
-# v0.8.0 TG: the windup's progress (0..1) from the last sync.
+# The windup's progress (0..1) from the last sync.
 var _tell_p := 0.0
-# v0.8.0 HV: the body's position this pose (the legs' hips follow it) and the visor energy last written.
+# The body's position this pose (the legs' hips follow it) and the visor energy last written.
 var _body_pos := Vector3.ZERO
 var _visor_e := VISOR_ENERGY
-# v0.10.5 W3-V4a: this pose's rise (eased), lunge (less the daze), crouch, body height and sink (the VAT drives), and
+# This pose's rise (eased), lunge (less the daze), crouch, body height and sink (the VAT drives), and
 # a leg's six angles (leg_angles: the yaw and pitch of the femur, the tibia, the talon).
 var _rise_now := 1.0
 var _lunge_now := 0.0
@@ -101,13 +100,11 @@ var _vat_lift := 0.0
 var _ang := PackedFloat64Array([0, 0, 0, 0, 0, 0])
 
 
-## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
-func setup(
-	outline_color: Color, _technique: StringName = &"outline", p_kind := WorldReader.KIND_CHARGER
-) -> void:
+## Builds the model.
+func setup(p_kind := WorldReader.KIND_CHARGER) -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	kind = p_kind
-	if vat:  # v0.10.5 W3-V4a: no nodes; the crowd draws the body
+	if vat:  # No nodes; the crowd draws the body
 		_model.free()
 		_model = null
 		_pose()
@@ -120,24 +117,24 @@ func setup(
 		[_flap_mesh(), EnemyPalettes.color(kind, &"trim")],
 		[_core_mesh(), CORE_COLOR]
 	]
-	_piece(body, shell, outline_color)
+	_piece(body, shell)
 	var face := MeshInstance3D.new()
 	face.mesh = _face_mesh()
-	face.material_override = _face_material()  # v0.8.0 HR: one for every Charger
+	face.material_override = _face_material()  # One for every Charger
 	face.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(face)
 	visor = MeshInstance3D.new()
 	visor.mesh = _visor_mesh()
 	var eye := EnemyPalettes.color(kind, &"eye")
-	_visor_mat = EnemyLooks.accent(eye, eye, VISOR_ENERGY)  # v0.8.0 HR: shared, GLOW per Charger
+	_visor_mat = EnemyLooks.accent(eye, eye, VISOR_ENERGY)  # Shared, GLOW per Charger
 	visor.material_override = _visor_mat
 	visor.position = Vector3(0.155, 0.51, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(visor)
 	for side in [1.0, -1.0]:
-		_build_leg(FRONT_HIP, FRONT_LEN, side, true, outline_color)
+		_build_leg(FRONT_HIP, FRONT_LEN, side, true)
 	for side in [1.0, -1.0]:
-		_build_leg(BACK_HIP, BACK_LEN, side, false, outline_color)
+		_build_leg(BACK_HIP, BACK_LEN, side, false)
 	_pose()
 
 
@@ -156,13 +153,14 @@ func sync(reader: WorldReader, i: int) -> void:
 ## The same as sync(), from plain values (tests drive the avatar with this); "windup" (0..1, optional) is the
 ## windup's progress.
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	var tick: int = s["tick"]
 	var pos: Vector2 = s["pos"]
 	_tell_p = clampf(float(s.get("windup", 0.0)), 0.0, 1.0)
 	_track_motion(tick, pos, TELEPORT_SPEED)
 	var prev := _state
 	_state = s["state"]
-	strike_note(_state)  # v0.8.0 P1: the charge's start throws the talons out
+	strike_note(_state)  # The charge's start throws the talons out
 	if _state == WorldReader.STATE_SPAWN:
 		_rise = 0.0
 	elif _fresh and prev != WorldReader.STATE_SPAWN:
@@ -172,6 +170,7 @@ func apply_state(s: Dictionary) -> void:
 
 ## Advances the animation by `delta` seconds of frame time.
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0 or (body == null and not vat):
 		return
@@ -195,24 +194,28 @@ func advance(delta: float) -> void:
 
 ## 0..1 how far into the wind-up pose (reared back, claws raised).
 func windup_amount() -> float:
+	_peek()
 	return _wind
 
 
-## v0.8.0 TG: 0..1 how deep the windup crouch is (from the windup's progress).
+## 0..1 how deep the windup crouch is (from the windup's progress).
 func crouch_amount() -> float:
+	_peek()
 	return tell_crouch(_tell_p) if _state == WorldReader.STATE_WINDUP else 0.0
 
 
 func visor_energy() -> float:
+	_peek()
 	return _visor_e
 
 
-## v0.10.5 W3-V4a: the accent's glow (the visor's; VatCrowd reads it as it reads a horde kind's).
+## The accent's glow (the visor's; VatCrowd reads it as it reads a horde kind's).
 func glow_energy() -> float:
+	_peek()
 	return _visor_e
 
 
-## The talon tips in this node's frame, front right, front left, back right, back left (v0.10.5 W3-V4a: none for a
+## The talon tips in this node's frame, front right, front left, back right, back left (none for a
 ## VAT Charger, which has no nodes; nothing in the game reads them).
 func leg_tips() -> Array[Vector3]:
 	var out: Array[Vector3] = []
@@ -228,7 +231,7 @@ func leg_tips() -> Array[Vector3]:
 	return out
 
 
-## v0.9.5 PF5: the hood, face and visor sit under `body`, which the lunge stretches (scale 1.14, 0.94, 0.96): a skinned
+## The hood, face and visor sit under `body`, which the lunge stretches (scale 1.14, 0.94, 0.96): a skinned
 ## mesh shades a stretched body's facets from the bone's matrix, not its inverse transpose, so they would shade up to
 ## 22 of 255 differently on the strike. They stay their own nodes; the legs (no scale) are merged.
 func rig_spec() -> Dictionary:
@@ -237,6 +240,7 @@ func rig_spec() -> Dictionary:
 
 ## The body's height above its rest pose, in metres (negative when it sinks: dazed, or before the rise).
 func body_lift() -> float:
+	_peek()
 	if vat:
 		return _vat_lift + _y_now
 	return _model.position.y + body.position.y
@@ -247,11 +251,13 @@ func body_lift() -> float:
 
 ## How far the whole body is lifted now (m): the rise-in's sink, the part of the pose VatCrowd moves the instance by.
 func vat_lift() -> float:
+	_peek()
 	return _vat_lift
 
 
 ## The drives now (ChargerVat's, 0..1; VatCrowd sends them per instance): this pose's own numbers.
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	var d := PackedFloat32Array()
 	d.resize(ChargerVat.DRIVES)
 	d[ChargerVat.WIND] = _wind
@@ -273,19 +279,9 @@ static func _loop(u: float) -> float:
 	return u - floor(u)
 
 
-## v0.10.5 W3-V4a: the Charger's VAT rig (ChargerVat.rig: its drives, grids and joints).
+## The Charger's VAT rig (ChargerVat.rig: its drives, grids and joints).
 func vat_rig() -> Dictionary:
 	return ChargerVat.rig(self)
-
-
-## v0.10.5 W3-V4a (VatBake.pose_error): poses a random state (ChargerVat.sample) and returns it.
-func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
-	return ChargerVat.sample(self, rng)
-
-
-## v0.10.5 W3-V4a: poses the state vat_sample made.
-func vat_set(s: Dictionary) -> void:
-	ChargerVat.apply(self, s)
 
 
 func _pose() -> void:
@@ -310,31 +306,31 @@ func _pose() -> void:
 	var glow := (
 		VISOR_ENERGY * (1.0 + _wind * (1.6 + shimmer) + lunge * 1.2) * tell * (1.0 - _daze * 0.7)
 	)
-	set_visor_energy(glow)  # v0.8.0 HV: written on a change only (v0.8.0 HR: the visor's GLOW)
-	if vat:  # v0.10.5 W3-V4a: the crowd draws the body (VatCrowd); only the numbers it reads
+	set_visor_energy(glow)  # Written on a change only (the visor's GLOW)
+	if vat:  # The crowd draws the body (VatCrowd); only the numbers it reads
 		return
-	if _model.position != sink:  # v0.8.0 HV: still once risen (moving it re-dirties the whole model)
+	if _model.position != sink:  # Still once risen (moving it re-dirties the whole model)
 		_model.position = sink
 	# The lunge throws the whole hood forward, nose down and stretched long, so it reads from above.
-	# v0.8.0 HV: one transform write (rotation then scale, as Node3D composes them) instead of three.
+	# One transform write (rotation then scale, as Node3D composes them) instead of three.
 	_body_pos = Vector3(body_x(_wind, crouch, lunge), y, 0)
 	body.transform = Transform3D(body_basis(_wind, lunge, _daze), _body_pos)
 	for k in legs.size():
 		_pose_leg(k, y, lunge, rise)
 
 
-## v0.10.5 W3-V4a: how far the body drops (m) for the daze, the wind-up (it rears: up), the lunge and the crouch.
+## How far the body drops (m) for the daze, the wind-up (it rears: up), the lunge and the crouch.
 static func body_drop(daze: float, wind: float, lunge: float, crouch: float) -> float:
 	return daze * 0.09 - wind * 0.05 + lunge * 0.07 + crouch * 0.09
 
 
-## v0.10.5 W3-V4a: the body's (and the hips') shift toward the front (m): drawn back on the wind-up and the crouch,
+## The body's (and the hips') shift toward the front (m): drawn back on the wind-up and the crouch,
 ## shoved forward on the lunge.
 static func body_x(wind: float, crouch: float, lunge: float) -> float:
 	return -wind * 0.06 - crouch * 0.07 + lunge * 0.16
 
 
-## v0.10.5 W3-V4a: the body's turn and stretch: nose up on the wind-up, down and stretched long on the lunge, listing
+## The body's turn and stretch: nose up on the wind-up, down and stretched long on the lunge, listing
 ## when dazed (rotation then scale, as Node3D composes them).
 static func body_basis(wind: float, lunge: float, daze: float) -> Basis:
 	var rot := Vector3(daze * 0.16, 0, wind * 0.3 - lunge * 0.3 - daze * 0.1)
@@ -342,7 +338,7 @@ static func body_basis(wind: float, lunge: float, daze: float) -> Basis:
 	return Basis.from_euler(rot) * Basis.from_scale(scl)
 
 
-## v0.8.0 HV (owner O89, the horde lag): the same maths as before in plain floats, no Array built (it made about 40
+## The same maths as before in plain floats, no Array built (it made about 40
 ## Arrays per Charger a frame), and one transform write per segment (tests/unit/presentation/
 ## test_charger_pose_hv.gd compares it with the old formula).
 func _pose_leg(k: int, body_y: float, lunge: float, rise: float) -> void:
@@ -371,36 +367,36 @@ func _pose_leg(k: int, body_y: float, lunge: float, rise: float) -> void:
 	_pose_seg(_talons[k], at, _ang[4], _ang[5], l2)
 
 
-## v0.10.5 W3-V4a: leg k's swing toward the front in its walk (rad). Diagonal pairs step together: front right with
+## Leg k's swing toward the front in its walk (rad). Diagonal pairs step together: front right with
 ## back left, front left with back right.
 static func leg_sweep(k: int, phase: float, walk: float) -> float:
 	var off := 0.0 if (k == 0 or k == 3) else PI
 	return sin(phase + off) * 0.3 * walk
 
 
-## v0.10.5 W3-V4a: leg k's lift in its walk (rad, a pitch).
+## Leg k's lift in its walk (rad, a pitch).
 static func leg_lift(k: int, phase: float, walk: float) -> float:
 	var off := 0.0 if (k == 0 or k == 3) else PI
 	return maxf(0.0, cos(phase + off)) * 0.45 * walk
 
 
-## v0.10.5 W3-V4a: idle, now and then one leg lifts and taps (a slow fidget, never two at once; rad).
+## Idle, now and then one leg lifts and taps (a slow fidget, never two at once; rad).
 static func leg_fidget(k: int, t: float, walk: float, wind: float) -> float:
 	return maxf(0.0, sin(t * 0.9 + k * 1.6 + 4.0) - 0.85) * 2.2 * (1.0 - walk) * (1.0 - wind)
 
 
-## v0.10.5 W3-V4a: hips follow the body; the femur tips to keep the feet near the ground (a cheap stand-in for IK).
+## Hips follow the body; the femur tips to keep the feet near the ground (a cheap stand-in for IK).
 static func leg_hold(k: int, body_y: float) -> float:
 	var l0: float = FRONT_LEN[0] if k < 2 else BACK_LEN[0]
 	return clampf(-body_y / l0, -0.6, 0.6)
 
 
-## v0.10.5 W3-V4a: dazed, the talons twitch (rad).
+## Dazed, the talons twitch (rad).
 static func leg_twitch(k: int, t: float, daze: float) -> float:
 	return sin(t * 9.0 + k) * 0.05 * daze
 
 
-## v0.10.5 W3-V4a: leg k's six angles from its terms, into _ang: the yaw and pitch of the femur, the tibia, the talon.
+## Leg k's six angles from its terms, into _ang: the yaw and pitch of the femur, the tibia, the talon.
 ## Each angle is a sum of the terms (the VAT rig bakes each term as a joint of its own).
 func leg_angles(
 	k: int,
@@ -464,7 +460,7 @@ func leg_angles(
 	_ang[5] = p2 + ap2
 
 
-## v0.10.5 W3-V4a: the six angles leg_angles last made (a copy).
+## The six angles leg_angles last made (a copy).
 func angles() -> PackedFloat64Array:
 	return _ang.duplicate()
 
@@ -475,7 +471,7 @@ static func _pose_seg(seg: Node3D, at: Vector3, y: float, p: float, reach: float
 	return at + Vector3(cos(p) * cos(y), sin(p), -cos(p) * sin(y)) * reach
 
 
-func _build_leg(hip: Vector3, lens: Array, side: float, front: bool, outline: Color) -> void:
+func _build_leg(hip: Vector3, lens: Array, side: float, front: bool) -> void:
 	var s := 1.0 if front else 0.8
 	var c := EnemyPalettes.color(kind, &"grey") if front else BACK_LEG_COLOR
 	var root := Node3D.new()
@@ -489,11 +485,11 @@ func _build_leg(hip: Vector3, lens: Array, side: float, front: bool, outline: Co
 	var femur_parts := [[_plate(l1, 0.046 * s, 0.042 * s), c]]
 	if not front:
 		femur_parts.append([_ball(0.05), JOINT_COLOR])
-	var femur := _piece(root, femur_parts, outline)
+	var femur := _piece(root, femur_parts)
 	var tibia_parts := [[_ball(0.05 * s), JOINT_COLOR], [_plate(l2, 0.055 * s, 0.068 * s), c]]
-	var tibia := _piece(root, tibia_parts, outline)
+	var tibia := _piece(root, tibia_parts)
 	var talon_parts := [[_ball(0.042 * s), JOINT_COLOR], [_talon_mesh(l3, 0.05 * s), TALON_COLOR]]
-	var talon := _piece(root, talon_parts, outline)
+	var talon := _piece(root, talon_parts)
 	legs.append(root)
 	_femurs.append(femur)
 	_tibias.append(tibia)
@@ -844,7 +840,7 @@ static func _build_talon_mesh(length: float, r: float) -> ArrayMesh:
 	return flat_mesh(tris, Vector3(length * 0.4, -0.01, 0))
 
 
-## v0.8.0 HR: the visor's glow on this Charger's visor (its GLOW), set only when it changes (v0.8.0 HV: by more
+## The visor's glow on this Charger's visor (its GLOW), set only when it changes (by more
 ## than 1e-4; the shared accent starts at VISOR_ENERGY, as _visor_e does).
 func set_visor_energy(e: float) -> void:
 	if absf(e - _visor_e) <= 1e-4 or (visor == null and not vat):
@@ -854,24 +850,23 @@ func set_visor_energy(e: float) -> void:
 		visor.set_instance_shader_parameter(EnemyLooks.GLOW, e)
 
 
-## v0.8.0 HR: the face's material (it writes the stencil like the body), made once.
+## The face's material, made once.
 static func _face_material() -> StandardMaterial3D:
 	if _face_mat == null:
 		_face_mat = StandardMaterial3D.new()
 		_face_mat.albedo_color = FACE_COLOR
 		_face_mat.roughness = 1.0
-		write_stencil(_face_mat)
 	return _face_mat
 
 
-## One mesh node from several [mesh, colour] parts, a surface each on a shared, two-sided, outlined body plate
-## (v0.8.0 HR: EnemyLooks, the flash this Charger's HIT); no X-ray pass since v0.9.5 PF1.
-func _piece(parent: Node3D, parts: Array, outline: Color) -> MeshInstance3D:
+## One mesh node from several [mesh, colour] parts, a surface each on a shared, two-sided body plate
+## (EnemyLooks, the flash this Charger's HIT).
+func _piece(parent: Node3D, parts: Array) -> MeshInstance3D:
 	var key := "piece"
 	for part: Array in parts:
 		key += " %d" % (part[0] as Object).get_instance_id()
 	var merged: ArrayMesh = _meshes.get(key)
-	if merged == null:  # v0.8.0 FV: one merged mesh per set of parts, shared
+	if merged == null:  # One merged mesh per set of parts, shared
 		merged = ArrayMesh.new()
 		for part: Array in parts:
 			var m: ArrayMesh = part[0]
@@ -880,9 +875,7 @@ func _piece(parent: Node3D, parts: Array, outline: Color) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	mi.mesh = merged
 	for k in parts.size():
-		mi.set_surface_override_material(
-			k, shared_body(kind, parts[k][1], null, outline, OUTLINE_M, true)
-		)
+		mi.set_surface_override_material(k, shared_body(kind, parts[k][1], null, true))
 	parent.add_child(mi)
 	_hit_pieces.append(mi)
 	return mi

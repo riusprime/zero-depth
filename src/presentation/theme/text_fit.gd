@@ -3,7 +3,7 @@ extends RefCounted
 ## Text that steps down in size until it fits its box (P-11; moved out of the retired crystal card, v0.8.0 MU): the
 ## cards, plaques, tiles and slots pick their type sizes here, so long Spanish lines stay inside.
 
-## v0.8.0 N18 (owner O76: "Shrink long words to fit"): a card name laid out in a fixed tile wraps by word; a word
+## A card name laid out in a fixed tile wraps by word; a word
 ## wider than the tile ("Electromagnetismo") steps the name's size down a pixel at a time until its widest word fits,
 ## never below this share of the size it would have had (a floor, so a name stays legible).
 const WORD_FLOOR := 0.75
@@ -40,7 +40,7 @@ static func fit_width(font: Font, text: String, width: float, sizes: Array) -> i
 	return sizes[sizes.size() - 1]
 
 
-## v0.8.0 N18: the largest size from `s` down to WORD_FLOOR x `s` at which every word of `text` fits `width` on its
+## The largest size from `s` down to WORD_FLOOR x `s` at which every word of `text` fits `width` on its
 ## own line (so word wrapping never has to break or overflow a word); the floor when none does.
 static func word_fit_size(font: Font, text: String, width: float, s: int) -> int:
 	var lowest := maxi(1, ceili(s * WORD_FLOOR))
@@ -58,7 +58,7 @@ static func widest_word(font: Font, text: String, s: int) -> float:
 	return most
 
 
-## v0.8.0 N18: sizes label `l` (its own font) for its text in a tile `width` wide: `s`, or smaller when a word would
+## Sizes label `l` (its own font) for its text in a tile `width` wide: `s`, or smaller when a word would
 ## not fit (word_fit_size). Returns the size set.
 static func fit_label_words(l: Label, width: float, s: int) -> int:
 	var size := word_fit_size(l.get_theme_font("font"), l.text, width, s)

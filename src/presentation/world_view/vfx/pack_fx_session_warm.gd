@@ -58,7 +58,7 @@ func done() -> bool:
 
 func _process(_delta: float) -> void:
 	if _todo.is_empty():
-		# v0.10.5 (DRAW_CALLS.md): the last effect drawn and back in its pool, the viewport stops rendering (it
+		# DRAW_CALLS.md: the last effect drawn and back in its pool, the viewport stops rendering (it
 		# rendered its empty world every frame of the session, a whole extra 3D pass).
 		_frame += 1
 		if _frame % STEP_FRAMES == 0:

@@ -1,6 +1,6 @@
 class_name AttackBook
 extends RefCounted
-## v0.6.0 MX1: a build's compiled attack specs (Modifiers.compile), cached on World.attack_book until the build
+## A build's compiled attack specs (Modifiers.compile), cached on World.attack_book until the build
 ## changes (an item picked, an ability levelled, a save restored). Derived from the build, so a snapshot keeps it out
 ## and a restore compiles it again; its digest is hashed (Modifiers.hash_into).
 
@@ -11,13 +11,17 @@ var order := PackedStringArray()
 var modifier_ids := PackedStringArray()
 ## SHA-256 of every spec in order (hooks and children included).
 var digest := ""
-## v0.6.0 MX2: every spec by its key (AttackSpec.key: the roots by id, each hook child under "<parent key>/<n>"), so
+## Every spec by its key (AttackSpec.key: the roots by id, each hook child under "<parent key>/<n>"), so
 ## what a launch leaves behind (a projectile, a bomb, a patch, a ring) runs its own spec.
 var by_key := {}
-## v0.8.0 RM (Remnants): every remnant hook (AttackHook.remnant) by its child's key (the key a remnant stores, so an
+## Remnants: every remnant hook (AttackHook.remnant) by its child's key (the key a remnant stores, so an
 ## activation finds its rule and its cast; derived like by_key), and the consumers (Grand Finale) in key order.
 var remnant_hooks := {}
 var consumers: Array[AttackHook] = []
+## ElementCards: each element's held card (an item index, -1 none, ElementCards.UNKNOWN not looked up), found in
+## the items held element_owned. A lookup cache only (it gives what a scan of the items gives), never hashed.
+var element_owned := PackedInt32Array()
+var element_idx := PackedInt32Array()
 
 
 func add(s: AttackSpec) -> void:
@@ -38,7 +42,7 @@ func find(key: String) -> AttackSpec:
 	return by_key.get(key)
 
 
-## v0.6.0 MX2: files every spec and every hook child by key (a child reached twice keeps its first key).
+## Files every spec and every hook child by key (a child reached twice keeps its first key).
 func register() -> void:
 	by_key = {}
 	remnant_hooks = {}
@@ -62,7 +66,7 @@ func _file(s: AttackSpec, key: String) -> void:
 				consumers.append(h)
 
 
-## v0.8.0 RM: the remnant hook whose child is filed under `key` (null: none, or the build changed).
+## The remnant hook whose child is filed under `key` (null: none, or the build changed).
 func remnant_hook(key: String) -> AttackHook:
 	return remnant_hooks.get(key)
 

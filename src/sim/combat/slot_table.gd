@@ -1,6 +1,6 @@
 class_name SlotTable
 extends RefCounted
-## v0.9.0 AS (owner Q2–Q5, Q13; AttackSlotsDefinition, data/wand/attack_slots.tres): the wand's slot limits, the
+## The wand's slot limits, the
 ## per-attack projectile caps and the form × card compatibility table in sim units (item indices). Loadout: compiled at
 ## setup (WandCompiler.slots), never written in play (World.slot_table; null = a lab world: no limits, no table, no
 ## caps, as before AS).
@@ -22,9 +22,9 @@ var merge_radius_max_permille := 2000
 var form_ids: Array[StringName] = []
 var form_cards := PackedInt32Array()
 var form_cells: Array[Dictionary] = []
-## v0.10.5 W3-P7: per form, the item indices never offered with it (AttackFormRow.pruned; index -> true).
+## Per form, the item indices never offered with it (AttackFormRow.pruned; index -> true).
 var form_pruned: Array[Dictionary] = []
-## v0.9.5 FC1: each form's own numbers (form id -> { key (String) -> int }; the Laser's: LaserMods.param).
+## Each form's own numbers (form id -> { key (String) -> int }; the Laser's: LaserMods.param).
 var params := {}
 ## The default form's row (the one without a card), or -1.
 var default_form := -1
@@ -42,6 +42,6 @@ func row_of_card(idx: int) -> int:
 	return form_cards.find(idx) if idx >= 0 else -1
 
 
-## v0.10.5 W3-P7: item `idx` is never offered while form `row` is the run's form (AttackFormRow.pruned).
+## Item `idx` is never offered while form `row` is the run's form (AttackFormRow.pruned).
 func pruned(row: int, idx: int) -> bool:
 	return row >= 0 and row < form_pruned.size() and form_pruned[row].has(idx)

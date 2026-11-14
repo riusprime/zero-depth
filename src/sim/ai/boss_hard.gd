@@ -12,12 +12,12 @@ extends RefCounted
 ##   (their sim velocity, cut short by walls), at the tick it fires; every later fan is aimed at where they stand then.
 ## - B3, the Brood Mother's Leap Chain: the last leap of the chain aims last_lead_ticks ahead of the player's movement
 ##   and lands on a disc last_radius_bonus_permille per mille wider.
-## - B4, the Hive Lens's Focus Beam: with beam_turn_milli (1/4096 turns a tick x 1000) the beam burns the whole active
-##   time and turns toward the player while it does.
+## - B4, the Hive Lens's Focus Beam: with beam_burns (turn_dps given) the beam burns the whole active time and, with
+##   beam_turn_milli > 0 (1/4096 turns a tick x 1000), turns toward the player while it does (0 = never).
 ## - B5, the Siege Engine's Mortar Grid: with safe_cells every volley strikes the whole board but that many cells,
 ##   inside its outer ring; the cells come from one draw of the ai stream at the attack's start (a permutation of the
-##   inner cells), and from the second half of the volleys on they are other cells (the later volley shows for its
-##   lock, the swap's warning).
+##   inner cells), and from the second half of the volleys on they are other cells (the later volley shows for
+##   one gap after the one before lands, the swap's warning).
 ## Pure: integer maths and the ai stream (one draw per Mortar Grid); no sin, cos or atan2.
 
 ## The BossStore point slots these use: the grid's permutation code (x of slot 1), the beam's turn remainder (y of 7).

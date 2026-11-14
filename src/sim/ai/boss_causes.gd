@@ -8,26 +8,36 @@ extends RefCounted
 ## The death recap line for a boss kill: the attack that landed it (World.killer_attack), else the boss's projectile
 ## attack for a bolt, else &"".
 static func key(w: World) -> StringName:  # gdlint: ignore=max-returns
-	if w.killer_attack == Breakables.KILL_CAUSE:  # v0.9.0 DX: an explosive barrel's blast (no actor's attack)
+	if w.killer_attack == Breakables.KILL_CAUSE:  # An explosive barrel's blast (no actor's attack)
 		return Breakables.CAUSE_KEY
-	if w.killer_attack == Lockdowns.KILL_CAUSE:  # v0.9.0 LK: a Hazard Lockdown's strike (no actor's attack)
+	if w.killer_attack == Lockdowns.KILL_CAUSE:  # A Hazard Lockdown's strike (no actor's attack)
 		return Lockdowns.CAUSE_KEY
-	if EliteAi.is_elite_kind(w.killer_kind):  # v0.9.0 EL: "The Breaker's slam …" (EliteAi.cause_key)
+	if w.killer_attack == Variants.KILL_CAUSE:  # An Ember Charger's fire trail (no attack of its own)
+		return Variants.CAUSE_KEY
+	if w.killer_attack == RuinsRocks.KILL_CAUSE:  # A Wire Weaver's live cable (no attack of its own)
+		return RuinsRocks.CAUSE_KEY
+	if CanyonShore.cause_key(w) != &"":  # A beetle's burst, a vent, an ice chunk (no attack)
+		return CanyonShore.cause_key(w)
+	if EliteAi.is_elite_kind(w.killer_kind):  # "The Breaker's slam …" (EliteAi.cause_key)
 		return EliteAi.cause_key(w)
 	var t := w.boss_table_of_kind(w.killer_kind)
 	if t == null and w.killer_attack >= BossSignatures.LATE_CAUSE:
-		# v0.8.0 BS2 (S5): a turret's ricochet names the boss that deployed it (its deploy attack's late part)
+		# A turret's ricochet names the boss that deployed it (its deploy attack's late part)
 		t = _live_table(w)
 		return BossSignatures.late_cause_key(t, w.killer_attack) if t != null else &""
 	if t == null:
 		return &""
 	if w.killer_attack == BossChallenge.ARENA_ATTACK:
 		return &"CAUSE_BOSS_ARENA"  # BX: the closing band
-	if w.killer_attack >= BossSignatures.LATE_CAUSE:  # v0.8.0 BS1: a javelin coming back, an egg's burst
+	if w.killer_attack == BossQuake.ATTACK and t.quake != null:
+		return t.quake.cause_key  # A quake pillar's pulse
+	if w.killer_attack == BossHazard.ATTACK and t.hazard != null:
+		return t.hazard.cause_key  # A lava or venom pool, a falling rock
+	if w.killer_attack >= BossSignatures.LATE_CAUSE:  # A javelin coming back, an egg's burst
 		return BossSignatures.late_cause_key(t, w.killer_attack)
 	if w.killer_attack >= 0 and w.killer_attack < t.attacks.size():
 		return t.attacks[w.killer_attack].cause_key
-	for atk in t.attacks:  # v0.7.5 BF1: a fireball's, the boss's first pattern (or bolt fan)
+	for atk in t.attacks:  # A fireball's, the boss's first pattern (or bolt fan)
 		if (
 			(atk.move == BossAttackTable.Move.BOLT_FAN or atk.move == BossAttackTable.Move.PATTERN)
 			and w.killer_tags & SimEvent.TAG_PROJECTILE
@@ -36,7 +46,7 @@ static func key(w: World) -> StringName:  # gdlint: ignore=max-returns
 	return t.attacks[0].cause_key if not t.attacks.is_empty() else &""
 
 
-## v0.8.0 BS2: the table of the first live boss (the recap of a turret's ricochet), or null.
+## The table of the first live boss (the recap of a turret's ricochet), or null.
 static func _live_table(w: World) -> BossTable:
 	for b in w.bosses.size():
 		var i := w.actors.index_of(w.bosses.ids[b])

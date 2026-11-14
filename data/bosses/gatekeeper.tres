@@ -128,7 +128,7 @@ shape_params = {
 "stagger_seconds": 0.7,
 "width_m": 1.2
 }
-telegraph_seconds = 1.35
+telegraph_seconds = 2.0
 active_seconds = 0.0167
 recovery_seconds = 1.0
 damage = 30
@@ -156,7 +156,7 @@ shape_params = {
 "stagger_seconds": 0.7,
 "width_m": 1.2
 }
-telegraph_seconds = 1.35
+telegraph_seconds = 2.0
 active_seconds = 0.0167
 recovery_seconds = 1.0
 damage = 30
@@ -184,7 +184,7 @@ shape_params = {
 "stagger_seconds": 0.7,
 "width_m": 1.2
 }
-telegraph_seconds = 1.35
+telegraph_seconds = 2.0
 active_seconds = 0.0167
 recovery_seconds = 1.0
 damage = 30
@@ -262,7 +262,6 @@ stagger_seconds = 2.5
 attacks = Array[ExtResource("1_atk")]([SubResource("A_rock_rings"), SubResource("A_rock_rings_4"), SubResource("A_fist_slam"), SubResource("A_fist_slam_2"), SubResource("A_fist_slam_3"), SubResource("A_shock_lanes"), SubResource("A_shock_lanes_follow"), SubResource("A_shock_lanes_2"), SubResource("A_sweep")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
-legacy_arena_cells = Vector2i(3, 3)
 arena_template = 2
 ranged_full_m = 5.0
 ranged_far_m = 12.0
@@ -274,10 +273,10 @@ weak_point_seconds = 2.0
 weak_point_range_m = 2.5
 weak_point_mult_permille = 2000
 weak_point_stagger_permille = 2000
-arena_close_phase = 1
-arena_close_after_seconds = 45.0
+arena_close_phase = -1
+arena_close_after_seconds = 0.0
 arena_close_step_seconds = 6.0
-arena_close_step_m = 1.0
+arena_close_step_m = 0.0
 arena_close_warn_seconds = 1.5
 arena_safe_half_m = 5.0
 arena_hazard_damage = 6
@@ -289,4 +288,20 @@ dash_read_seconds = 0.5
 gap_close_attack = &""
 gap_close_distance_m = 5.0
 gap_close_seconds = 2.0
+quake = {
+"boss_m": 2.0,
+"count": 3,
+"damage_permille": 60,
+"from_phase": 1,
+"gap_m": 7.0,
+"pillar_m": 1.2,
+"pulse_seconds": 3.0,
+"ring_m": 7.0,
+"stun_permille": 1500,
+"stun_seconds": 4.0,
+"stuns_per_phase": 2,
+"wall_m": 1.5,
+"warn_seconds": 0.8
+}
+quake_cause_key = &"CAUSE_GATEKEEPER_PILLAR"
 id = &"gatekeeper"

@@ -17,9 +17,9 @@ const MAX_DAMAGE_PERMILLE := 5000
 @export var desc_key: StringName
 ## The enabled weapon's damage x damage_permille / 1000 (the sim carries the remainder, so the average is exact).
 @export var damage_permille := 1000
-## The build's second ability on the Skill button (v0.3.5 K, owner F18): one per build, of its weapon's kind.
+## The build's second ability on the Skill button: one per build, of its weapon's kind.
 @export var skill: SkillDefinition
-## v0.8.0 N1 (owner O43, D39 "go for D39": the Blade fights close, so it takes less): the damage the hero takes while
+## The damage the hero takes while
 ## this build's weapon is held, per mille (1000 = full; the Blade 750, -25 %). It stacks with Armour (multiplied).
 @export var damage_taken_permille := 1000
 

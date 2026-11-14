@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 2
+look = &"warden_violet_ember"
+speed_mps = 4.5
+radius_m = 0.22
+range_m = 14.0
+waves = 3
+wave_gap_seconds = 0.35
+count = 5
+spread_degrees = 48.0
+turn_per_wave_degrees = 6.0
+alternate = true
+id = &"twin_wardens_orb_volley"

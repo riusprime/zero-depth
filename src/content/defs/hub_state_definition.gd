@@ -1,7 +1,7 @@
 class_name HubStateDefinition
 extends Resource
-## v0.9.0 HB (PLAN W45, W46): one evolving state of the hub, keyed on a profile flag (CONTENT_SCHEMA §11). The hub
-## reads the flag when it is built (HubFlags) and its view changes quietly: no toast (W46). The flag grammar:
+## PLAN W45, W46: one evolving state of the hub, keyed on a profile flag (CONTENT_SCHEMA §11). The hub
+## reads the flag when it is built (HubFlags) and its view changes quietly: no toast. The flag grammar:
 ## - `achievement:<id>`: that achievement is unlocked;
 ## - `codex:<page>:<id>`: that Codex entry is unlocked;
 ## - `codex_total:<page>:<counter>:<n>`: the Codex page's counter summed over its entries is at least n;

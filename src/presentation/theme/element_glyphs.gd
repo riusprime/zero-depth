@@ -1,6 +1,6 @@
 class_name ElementGlyphs
 extends RefCounted
-## v0.8.0 TX3: the owner's element glyphs (docs/art/requests/v0.8.0_textures.md, `ui_element_glyphs` and
+## The owner's element glyphs (docs/art/requests/v0.8.0_textures.md, `ui_element_glyphs` and
 ## `ui_element_glyphs_2`; scripts/assets/tx3_prep.py): eight glyphs carved in stone and glowing, four to a 2 x 2 sheet.
 ## A card whose modifier names an element (ModifierOpDefinition.ELEMENTS: an ELEMENT op) wears its element's glyph
 ## set into its socket's inlay ring (InlaySocket), so the element reads by shape as well as by the ring's colour.
@@ -26,8 +26,8 @@ const CELLS := {
 	&"venom": [0, Vector2i(1, 1)],  # a venom drop
 	&"void": [1, Vector2i(0, 0)],  # a void spiral
 	&"bleed": [1, Vector2i(1, 0)],  # a blood drop
-	&"blades": [1, Vector2i(0, 1)],  # crossed blades: a Blade card with no element (N1, D42)
-	&"star": [1, Vector2i(1, 1)],  # a star burst: a Legendary card (N1, D42)
+	&"blades": [1, Vector2i(0, 1)],  # crossed blades: a Blade card with no element
+	&"star": [1, Vector2i(1, 1)],  # a star burst: a Legendary card
 }
 ## Every card whose modifier names an element → that element (the first ELEMENT op's).
 const ELEMENT_OF := {
@@ -40,11 +40,11 @@ const ELEMENT_OF := {
 	&"venom_core": &"venom",
 }
 
-## v0.8.0 N1 (D42): the Legendary cards (ItemDefinition.Rarity.LEGENDARY); they wear the star burst.
+## The Legendary cards (ItemDefinition.Rarity.LEGENDARY); they wear the star burst.
 const LEGENDARY := {
 	&"chain_blast": true,
 }
-## v0.8.0 N1 (D42): the Blade cards (requires_weapon blade) that name no element and aren't Legendary; they wear the
+## The Blade cards (requires_weapon blade) that name no element and aren't Legendary; they wear the
 ## crossed blades.
 const BLADE_PLAIN := {
 	&"blade_orbit": true,
@@ -77,7 +77,7 @@ static func element_of(id: StringName) -> StringName:
 	return ELEMENT_OF.get(id, &"")
 
 
-## v0.8.0 N1 (D42): the glyph card `id` wears: the star burst on a Legendary card, else its element's, else the
+## The glyph card `id` wears: the star burst on a Legendary card, else its element's, else the
 ## crossed blades on a plain Blade card (&"" for none).
 static func glyph_of(id: StringName) -> StringName:
 	if LEGENDARY.has(id):

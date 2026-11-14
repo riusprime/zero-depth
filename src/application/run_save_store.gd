@@ -1,6 +1,6 @@
 class_name RunSaveStore
 extends RefCounted
-## v0.4.0 SV (ARCHITECTURE §10): the run save file, `user://saves/run.save`. One envelope
+## ARCHITECTURE §10: the run save file, `user://saves/run.save`. One envelope
 ## {save_version, game_version, payload}, stored as: the magic "ZDSV", save_version (u32), the uncompressed size (u32),
 ## the SHA-256 of the compressed body (32 bytes), then the body (zstd of var_to_bytes, no objects). Writes are atomic
 ## (a .tmp, then rename) and can run on a worker thread (write_async), so a room-entry save never holds a frame.

@@ -1,23 +1,23 @@
 class_name BulletPatternDefinition
 extends ContentDef
-## v0.7.5 BF1 (owner N15; docs/design/BOSS_FIGHTS.md): a bullet pattern, the shape a boss (or, from EF, an enemy)
+## A bullet pattern, the shape a boss (or, from EF, an enemy)
 ## fires its slow fireballs in. A boss attack with move `pattern` names one by id (shape_params "pattern_id");
 ## ContentCompiler resolves it into a BulletPatternTable and the sim's BulletPatterns fires it (CONTENT_SCHEMA §4b,
-## SIM_CONTRACTS §10d). Every number is a starting value the owner tunes (F10).
+## SIM_CONTRACTS §10d). Every number is a starting value the owner tunes.
 ## Kinds and the fields each reads (the rest are ignored):
 ## - RING: `count` shots evenly round, minus `gap_count` gaps of `gap_width` shots each (evenly spaced).
 ## - SPIRAL: `arms` streams turning at `spin_dps`, one shot an arm every wave; the turn reverses at
-##   `reverse_at_seconds` (0 = never). v0.9.5 BH3 (B9): with `counter_arms` > 0 a second spiral of that many arms
+##   `reverse_at_seconds` (0 = never). with `counter_arms` > 0 a second spiral of that many arms
 ##   turns the other way at `counter_spin_dps` (the Judge's Gear Spiral); HardRules checks the pair leaves a path.
 ## - FAN: `count` shots over `spread_degrees` toward the aim.
 ## - CROSS: `arms` streams (4 = a plus) turning at `spin_dps`, one shot an arm every wave.
 ## - WALL: a line of shots `spacing_m` apart, `wall_length_m` long, across the aim, marching along it, with a gap of
 ##   `gap_m` placed `gap_offset_m` off the aim line (moving `gap_shift_m` a wave, bouncing at the ends); `crossing`
-##   adds a second wall at right angles; v0.9.5 BH3 (B6): with `cross_delay_seconds` > 0 its wave leaves that long
+##   adds a second wall at right angles; with `cross_delay_seconds` > 0 its wave leaves that long
 ##   after the first wall's (the Foundry's Furnace Waves).
 ## - FLOWER: `count` shots round whose speed follows a rose of `petals` petals (|cos(petals × angle / 2)|, a table
 ##   lookup), from `petal_min_permille` of the speed in a valley to the full speed on a petal; shots under
-##   `petal_cut_permille` are left out, which opens the gaps between the petals. v0.7.5 BF3: with `rain_seconds`
+##   `petal_cut_permille` are left out, which opens the gaps between the petals. with `rain_seconds`
 ##   > 0 the flower rains: each wave's drops are thrown up from the body and land `rain_seconds` later, `rain_m`
 ##   (× the petal's factor) out from its edge, in the flower's shape round it, then roll on outward as the shots
 ##   (in the air they draw and don't hurt; a drop landing on the player or in a wall is left out).
@@ -35,7 +35,7 @@ enum Kind { RING, SPIRAL, FAN, CROSS, WALL, FLOWER, BURST }
 const MAX_SHOTS_PER_WAVE := 64
 ## "Small, many, slow (about 3–5 m/s against the hero's run)": the band the validation allows.
 const MIN_SPEED_MPS := 1.5
-const MAX_SPEED_MPS := 8.0  # v0.9.5 BH5 (HC1): the Colossus quake ring runs at 7.5
+const MAX_SPEED_MPS := 8.0  # The Colossus quake ring runs at 7.5
 ## A gap must let the hero through: at least this wide (metres) where the shots are `GAP_CHECK_M` out.
 const MIN_GAP_M := 1.0
 const GAP_CHECK_M := 4.0
@@ -63,7 +63,7 @@ const GAP_CHECK_M := 4.0
 @export var spin_dps := 90.0
 ## SPIRAL: the turn reverses this long after the first wave (0 = never).
 @export var reverse_at_seconds := 0.0
-## v0.9.5 BH3 (B9): a second spiral turning the other way (0 arms = none).
+## A second spiral turning the other way (0 arms = none).
 @export var counter_arms := 0
 @export var counter_spin_dps := 0.0
 ## WALL.
@@ -73,7 +73,7 @@ const GAP_CHECK_M := 4.0
 @export var gap_offset_m := 0.0
 @export var gap_shift_m := 1.5
 @export var crossing := false
-## v0.9.5 BH3 (B6): the crossing wall's wave leaves this long after the first wall's (0 = together).
+## The crossing wall's wave leaves this long after the first wall's (0 = together).
 @export var cross_delay_seconds := 0.0
 ## FLOWER.
 @export var petals := 5
@@ -82,7 +82,7 @@ const GAP_CHECK_M := 4.0
 ## BURST.
 @export var lob_seconds := 0.8
 @export var land_radius_m := 1.4
-## FLOWER (v0.7.5 BF3): the drops' flight before they land (0 = no rain: the shots leave the body), and how far out
+## FLOWER: the drops' flight before they land (0 = no rain: the shots leave the body), and how far out
 ## a petal's tip lands.
 @export var rain_seconds := 0.0
 @export var rain_m := 0.0
@@ -135,12 +135,12 @@ func validate() -> Array[ValidationIssue]:
 				if count > 16:
 					issues.append(ValidationIssue.new(&"no_gap", p, "a burst's star holds <= 16"))
 		Kind.SPIRAL, Kind.CROSS:
-			# v0.8.0 PR (O84): up to 12 (the Prism's 10-arm spiral: 36° between the arms)
+			# Up to 12 (the Prism's 10-arm spiral: 36° between the arms)
 			if arms < 1 or arms > 12:
 				issues.append(ValidationIssue.new(&"range", p, "arms must be 1..12"))
 			if reverse_at_seconds < 0.0:
 				issues.append(ValidationIssue.new(&"duration", p, "reverse_at_seconds < 0"))
-			HardRules.validate_spiral(self, issues)  # v0.9.5 BH3 (B9)
+			HardRules.validate_spiral(self, issues)  # v0.9.5 BH3
 		Kind.WALL:
 			check_positive(issues, "spacing_m", spacing_m)
 			check_positive(issues, "wall_length_m", wall_length_m)
@@ -148,7 +148,7 @@ func validate() -> Array[ValidationIssue]:
 				issues.append(ValidationIssue.new(&"no_gap", p, "a wall needs a gap of >= 1 m"))
 			if spacing_m > 0.0 and wall_length_m / spacing_m > MAX_SHOTS_PER_WAVE:
 				issues.append(ValidationIssue.new(&"too_many", p, "a wall holds too many shots"))
-			HardRules.validate_walls(self, issues)  # v0.9.5 BH3 (B6)
+			HardRules.validate_walls(self, issues)  # v0.9.5 BH3
 		Kind.FLOWER:
 			_check_count(issues, count)
 			if petals < 2 or petals > 12:
@@ -169,7 +169,7 @@ func duration_seconds() -> float:
 	return _lob_seconds() + wave_gap_seconds * (waves - 1) + cross_delay_seconds
 
 
-## The flight before the first wave's shots exist: a burst's shell, a raining flower's drops (v0.7.5 BF3).
+## The flight before the first wave's shots exist: a burst's shell, a raining flower's drops.
 func _lob_seconds() -> float:
 	if kind == Kind.BURST:
 		return lob_seconds

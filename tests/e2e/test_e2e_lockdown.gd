@@ -13,11 +13,6 @@ func after_each() -> void:
 	E2e.center_sticks()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func _seed() -> int:
 	for s in range(1, 40):
 		if not SaveLab.floor_world(s, FLOOR).floor_layout.lockdown_rooms.is_empty():
@@ -51,7 +46,7 @@ func test_walk_into_a_lockdown_see_the_bars_clear_it_and_they_rise() -> void:
 	assert_not_null(view, "the bars are built")
 	assert_false(view.bars_visible(room), "open: no bars in sight")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(
 		await e.walk_to(Lockdowns.reward_spot(f, room), 0.8), "walked into the Lockdown room"
@@ -70,7 +65,7 @@ func test_walk_into_a_lockdown_see_the_bars_clear_it_and_they_rise() -> void:
 	while w.lockdown.sealed() and clicks < 12:
 		await e.frames(75)  # the next formation stands
 		await e.tap(KEY_QUOTELEFT)
-		await _click(e, main, "ClearWave")
+		await e.click_dev("ClearWave")
 		await e.tap(KEY_QUOTELEFT)
 		clicks += 1
 		await e.frames(5)

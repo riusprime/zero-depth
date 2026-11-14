@@ -13,7 +13,7 @@ extends RefCounted
 ##   the shop's room, the curse room or an arena) holds the two switches, on two of its spawn spots SWITCH_GAP_M apart,
 ##   DOOR_GAP_M from its doorways' approaches and AVOID_M from `avoid` (rewards, pedestals, the shrine) and its item
 ##   spots; the spots are drawn from the same sub-stream;
-## - the check (W17): the walk from either switch (either may be the second) to the door, on the host's open floor at
+## - the check: the walk from either switch (either may be the second) to the door, on the host's open floor at
 ##   PATH_CLEARANCE_M (4-connected FloorReach cells: never shorter than the real path), is at most
 ##   PATH_SHARE_PERMILLE of the timer at base move speed; else other spots, then another room, else no timed door on
 ##   that floor;
@@ -25,7 +25,7 @@ const SWITCH_GAP_M := 4.0
 const DOOR_GAP_M := 2.5
 const AVOID_M := 3.0
 const PATH_CLEARANCE_M := 0.5
-## W17: the walk from the second switch to the door is at most this share of the timer at base speed.
+## The walk from the second switch to the door is at most this share of the timer at base speed.
 const PATH_SHARE_PERMILLE := 600
 
 
@@ -56,7 +56,7 @@ static func mark(
 		var host := f.door_rooms[door].x if f.door_rooms[door].y == room else f.door_rooms[door].y
 		var spots := PackedVector2Array()
 		var rooms := PackedInt32Array()
-		if steps_max > 0:  # v0.9.5 TS (owner Q7): two other rooms 1..steps_max steps away
+		if steps_max > 0:  # Two other rooms 1..steps_max steps away
 			var got := spread_spots(f, host, room, door, avoid, budget, steps_max, rng)
 			spots = got.get("spots", PackedVector2Array())
 			rooms = got.get("rooms", PackedInt32Array())
@@ -94,7 +94,7 @@ static func candidates(f: FloorLayout, taken: PackedInt32Array) -> PackedInt32Ar
 	for room in f.room_count():
 		if room in never or f.arena_rooms.has(room) or taken.has(room):
 			continue
-		if f.lockdown_rooms.has(room):  # v0.9.0 CF2: marked first from floor rules 17
+		if f.lockdown_rooms.has(room):  # Marked first (FloorScenario.build)
 			continue
 		var door := only_door(f, room)
 		if door < 0:
@@ -164,7 +164,7 @@ static func switch_spots(
 	return PackedVector2Array()
 
 
-## v0.9.5 TS (owner Q7: "spread them a bit over the map"): the two switches in two DIFFERENT rooms, each 1..steps_max
+## The two switches in two DIFFERENT rooms, each 1..steps_max
 ## doorway steps from `host` (never the secret room `dead`, nor a sealed, boss, start or shop room, nor one walked
 ## through a sealed room), on spots passing the rules. Rooms behind different first doorways out of the host are
 ## preferred. Each switch's walk to the door (through the rooms between) is at most `budget` m, so either order is
@@ -322,7 +322,7 @@ static func side_point(f: FloorLayout, door: int, room: int) -> Vector2:
 	)
 
 
-## v0.9.5 TS: the lever inside the secret room, on the wall the door is in, a metre or so beside the doorway.
+## The lever inside the secret room, on the wall the door is in, a metre or so beside the doorway.
 static func lever_spot(f: FloorLayout, room: int, door: int) -> Vector2:
 	var along := Kin.dir(f.door_angles[door])
 	var perp := Vector2(-along.y, along.x)

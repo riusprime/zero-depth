@@ -12,7 +12,7 @@ extends RefCounted
 ##   bolts, the finisher's shockwave); Blink and Aegis turn the utility button on (utility()).
 ## - Auto (tick phase 6, after the projectile sweeps): the cooldowns count down, the bombs in flight land (a hook's
 ##   lob, the Bomb Rounds' bomblets) and the echo, fire and rings run.
-## v0.10.5 O1 (owner L23): the six old abilities (Bomb Lobber, Drone Buddy, Orbit Blades, Arc Field, Frost Nova,
+## The six old abilities (Bomb Lobber, Drone Buddy, Orbit Blades, Arc Field, Frost Nova,
 ## Flame Trail) and the eight ability combos are gone; their tables are stubs (CardOrder.RETIRED_ABILITIES) that keep
 ## a save's indices, and AbilityState keeps their fields (hashed) empty.
 ## Every hit is the player's, so stats and crit apply in Damage.hit; ability hits carry TAG_ABILITY and an effect id
@@ -41,7 +41,7 @@ static func level_of(w: World, idx: int) -> int:
 	return w.ability_levels[s] if s >= 0 else 0
 
 
-## v0.8.0 N8: ability `idx`'s level after one more card (1 when new; grant's step, Offers.info and CardForecast).
+## Ability `idx`'s level after one more card (1 when new; grant's step, Offers.info and CardForecast).
 static func level_after(w: World, idx: int) -> int:
 	return mini(level_of(w, idx) + 1, AbilityTable.MAX_LEVEL)
 
@@ -70,13 +70,13 @@ static func level_of_kind(w: World, kind: int) -> int:
 
 
 ## A card for ability `idx` would do something now: a level-up of one you own below the top level, or a new one
-## (never a starting weapon, never a second utility). v0.6.0 MX2: a new modifier is offered with the six slots full
+## (never a starting weapon, never a second utility). a new modifier is offered with the six slots full
 ## too: taking it opens the swap (BuildSlots).
 static func can_take(w: World, idx: int) -> bool:
 	if w.ability_tables[idx].retired:
-		return false  # v0.6.5 WN5b: a retired ability modifier is never offered (Abilities.grant still takes it)
+		return false  # A retired ability modifier is never offered (Abilities.grant still takes it)
 	if not w.ability_tables[idx].offered:
-		return false  # v0.9.5 CLV (C19): the Pulse Gun never comes back as a card, held at any level or not
+		return false  # The Pulse Gun never comes back as a card, held at any level or not
 	var s := w.ability_owned.find(idx)
 	if s >= 0:
 		return w.ability_levels[s] < AbilityTable.MAX_LEVEL
@@ -86,7 +86,7 @@ static func can_take(w: World, idx: int) -> bool:
 	return not (t.is_utility() and utility(w) != PlayerTable.Utility.NONE)
 
 
-## Takes an ability card: a level up of an owned ability, or a new one at level 1 (v0.6.0 MX2: a new modifier only
+## Takes an ability card: a level up of an owned ability, or a new one at level 1 (a new modifier only
 ## while a modifier slot is free; BuildSlots.take swaps one out first). Returns false (and changes nothing) when the
 ## card can't apply.
 static func grant(w: World, idx: int) -> bool:
@@ -104,8 +104,8 @@ static func grant(w: World, idx: int) -> bool:
 		w.ability_owned.append(idx)
 		w.ability_levels.append(1)
 		w.ab.cd.append(0)
-	BuildSlots.sync(w)  # v0.6.0 MX2: a new modifier takes the next slot
-	w.refresh_build(true)  # v0.4.0 AB: borrowed engines; a pair at L3 evolves (its combo card)
+	BuildSlots.sync(w)  # A new modifier takes the next slot
+	w.refresh_build(true)  # Borrowed engines; a pair at L3 evolves (its combo card)
 	if t.kind == AbilityTable.Kind.BLINK:
 		w.ab.blink_charges = mini(w.ab.blink_charges + 1, t.extra(level_of(w, idx)))
 	return true
@@ -123,7 +123,7 @@ static func grant_start(w: World) -> void:
 				return
 
 
-## v0.6.0 MX2: ability slot `s` (World.ability_owned order) leaves the build: its level, cooldown and its own floor
+## Ability slot `s` (World.ability_owned order) leaves the build: its level, cooldown and its own floor
 ## state go; the combos it completed go too, and the build refreshes (BuildSlots.drop, Shop.sell).
 static func remove_slot(w: World, s: int) -> void:
 	var t := w.ability_tables[w.ability_owned[s]]
@@ -147,26 +147,19 @@ static func remove_slot(w: World, s: int) -> void:
 ## A fresh floor (after the carry restored the slots and levels): cooldowns, drones and the blink's charges start
 ## over.
 static func start_floor(w: World) -> void:
-	if w.migrate_slots:  # v0.6.0 MX2: a carry from before the slots (RunCarry.apply)
-		w.migrate_slots = false
-		BuildSlots.migrate(w)
-	else:
-		BuildSlots.sync(w)
-	WandMigration.run(w)  # v0.6.5 WN5b: an old save's retired cards become their wand cards (or shards)
-	AttackSlots.trim(w)  # v0.9.0 AS: an old save's over-full slot categories (the leftmost stay, the rest shards)
-	Stats.migrate_rules(w)  # v0.8.0 SG: a carry from before SG (RunCarry.apply) rebuilds damage and attack speed
+	BuildSlots.sync(w)
 	w.ab = AbilityState.new()
 	for s in w.ability_owned.size():
 		w.ab.cd.append(0)
 	var blink := owned_of_kind(w, AbilityTable.Kind.BLINK)
 	if blink != null:
 		w.ab.blink_charges = blink.extra(level_of_kind(w, AbilityTable.Kind.BLINK))
-	w.refresh_build(false)  # v0.4.0 AB: after the carry restored the slots
+	w.refresh_build(false)  # After the carry restored the slots
 
 
 # --- The utility button (Blink, Aegis) -------------------------------------------------------------------------
 ## The utility the player has now: the forced loadout's (PlayerTable.utility: tests, the dev runs of old), else an
-## owned Blink or Aegis (v0.4.0 F11: none at the start of a run).
+## owned Blink or Aegis (none at the start of a run).
 static func utility(w: World) -> int:
 	if w.player.utility != PlayerTable.Utility.NONE:
 		return w.player.utility
@@ -233,8 +226,8 @@ static func on_blink(w: World) -> void:
 	if w.blink_cd == 0:
 		w.blink_cd = blink_cooldown(w)
 	w.ab.shock_pending = w.tick
-	AbilityMods.on_blink(w)  # v0.5.0 CP: Afterimage
-	ModifierRuntime.on_blink(w)  # v0.6.0 MX4: the blink spec's other hooks
+	AbilityMods.on_blink(w)  # Afterimage
+	ModifierRuntime.on_blink(w)  # The blink spec's other hooks
 
 
 ## Aegis: the most guard charges the guard stores, and each one's bonus to the next swing (per mille); a Bulwark
@@ -334,7 +327,7 @@ static func after_swing(w: World, landed: bool) -> void:
 
 
 # --- Auto abilities (phase 6) ----------------------------------------------------------------------------------
-## v0.6.0 MX2: every auto ability's cooldown runs down here; the drones and the orbit move and strike; Bomb Lobber,
+## Every auto ability's cooldown runs down here; the drones and the orbit move and strike; Bomb Lobber,
 ## Arc Field and Frost Nova fire from the weapon's attacks and kills (ModifierAbilities), Flame Trail from the dash
 ## and the projectiles; bombs land, patches burn and rings grow.
 static func advance(w: World) -> void:
@@ -345,16 +338,24 @@ static func advance(w: World) -> void:
 		w.ab.shock_pending = -1
 		_blink_shock(w)
 	_land_bombs(w)
-	AbilityMods.advance(w)  # v0.5.0 CP: Afterimage's echo
+	AbilityMods.advance(w)  # Afterimage's echo
 	for s in w.ability_owned.size():
 		var t := w.ability_tables[w.ability_owned[s]]
 		if not t.auto:
 			continue
 		if s < w.ab.cd.size() and w.ab.cd[s] > 0:
 			w.ab.cd[s] -= 1
-	ModifierAbilities.advance(w)  # v0.6.0 MX2: Flame Trail's dash fire, the rings
+	var pp := w.phase_probe  # The perf probe's sub-phases (null in play)
+	if pp != null:
+		pp.begin(&"ab.rings_fire")
+	ModifierAbilities.advance(w)  # Flame Trail's dash fire, the rings
 	ElementAbilities.advance_fire(w)
-	ModifierRuntime.advance(w)  # v0.6.0 MX4: the queued launches (Twin Cast, delayed hooks), the walk's trail
+	if pp != null:
+		pp.end(&"ab.rings_fire")
+		pp.begin(&"ab.runtime")
+	ModifierRuntime.advance(w)  # The queued launches (Twin Cast, delayed hooks), the walk's trail
+	if pp != null:
+		pp.end(&"ab.runtime")
 
 
 ## An ability's damage at `level`, rounded half up.
@@ -392,7 +393,7 @@ static func hit_disc(
 
 
 ## A bomb in flight from `from` to `at`, landing `flight` ticks from now (a throw, a hook's lob, or Blink Charge's
-## drop), running spec `key` at the hook level of `ctx` (none: a root bomb). v0.6.0 MX4: only a root bomb counts as
+## drop), running spec `key` at the hook level of `ctx` (none: a root bomb). only a root bomb counts as
 ## a thrown one (bomb_split 1: Storm Bombs chains from it); a hook's (Cluster Payload's bomblets, Bomb Rounds) is 0.
 static func drop_bomb(
 	w: World,
@@ -412,7 +413,7 @@ static func drop_bomb(
 	s.bomb_root.append(w.take_root() if ctx == null or ctx.depth == 0 else ctx.root)
 	s.bomb_r.append(r)
 	s.bomb_dmg.append(dmg)
-	s.bomb_split.append(1 if ctx == null or ctx.depth == 0 else 0)  # v0.6.0 MX4: a hook's bomb is 0
+	s.bomb_split.append(1 if ctx == null or ctx.depth == 0 else 0)  # A hook's bomb is 0
 	s.bomb_spec.append(key)  # v0.6.0 MX2
 	s.bomb_depth.append(ctx.depth if ctx != null else 0)
 	s.bomb_proc.append(ctx.proc_pct if ctx != null else 100)
@@ -428,12 +429,12 @@ static func _land_bombs(w: World) -> void:
 		var r := s.bomb_r[k]
 		var dmg := s.bomb_dmg[k]
 		var root := s.bomb_root[k]
-		var key := s.bomb_spec[k] if k < s.bomb_spec.size() else ""
-		var depth := s.bomb_depth[k] if k < s.bomb_depth.size() else 0
-		var proc := s.bomb_proc[k] if k < s.bomb_proc.size() else 100
+		var key := s.bomb_spec[k]
+		var depth := s.bomb_depth[k]
+		var proc := s.bomb_proc[k]
 		var spec := Modifiers.book(w).find(key) if key != "" else null
 		var effect := EFFECT_BOMB if split else AbilityMods.EFFECT_CLUSTER
-		# v0.6.0 MX4: a hook's bomb names its own (Bomb Rounds, the bomblets): any non-bomb spec's (even none), or a
+		# A hook's bomb names its own (Bomb Rounds, the bomblets): any non-bomb spec's (even none), or a
 		# bomb spec's own when it isn't splitting.
 		if spec != null and (not spec.has_tag(&"bomb") or (not split and spec.effect_id != &"")):
 			effect = spec.effect_id
@@ -461,10 +462,9 @@ static func _remove_bomb(s: AbilityState, k: int) -> void:
 	s.bomb_r.remove_at(k)
 	s.bomb_dmg.remove_at(k)
 	s.bomb_split.remove_at(k)
-	if k < s.bomb_spec.size():
-		s.bomb_spec.remove_at(k)
-		s.bomb_depth.remove_at(k)
-		s.bomb_proc.remove_at(k)
+	s.bomb_spec.remove_at(k)
+	s.bomb_depth.remove_at(k)
+	s.bomb_proc.remove_at(k)
 
 
 # --- State hash and reads --------------------------------------------------------------------------------------
@@ -487,10 +487,10 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	h.add_int(w.rng_crit.state)
 	h.add_int(w.rng_ability.state)
 	w.ab.hash_into(h)
-	if w.item_tables.is_empty() and w.ab.touched_ab():  # v0.4.0 AB: a world without items (_hash_engines)
+	if w.item_tables.is_empty() and w.ab.touched_ab():  # A world without items (_hash_engines)
 		h.add_ints(w.combos_owned)
 		w.actors.hash_statuses(h)
-	if w.ab.touched_rc():  # v0.10.5 O9: the rule cards' state
+	if w.ab.touched_rc():  # The rule cards' state
 		w.ab.hash_rc(h)
 
 
@@ -551,7 +551,7 @@ static func fx(w: World) -> Dictionary:
 		"shock_tick": s.shock_tick,
 		"shock_pos": s.shock_pos,
 		"shock_r": s.shock_r,
-		"echo_at": s.echo_at,  # v0.5.0 CP: Afterimage (waiting: echo_pos; the last burst: tick, where, radius)
+		"echo_at": s.echo_at,  # Afterimage (waiting: echo_pos; the last burst: tick, where, radius)
 		"echo_pos": s.echo_pos,
 		"echo_tick": s.echo_tick,
 		"echo_burst_pos": s.echo_burst_pos,

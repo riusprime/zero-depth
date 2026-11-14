@@ -82,7 +82,7 @@ func test_the_portal_is_the_visors_light_blue() -> void:
 	for c: Color in [deep, mid]:
 		assert_almost_eq(c.h, visor.h, 0.02, "the same hue: %s" % c)
 	var avatar := PlayerAvatar.new()
-	avatar.setup(Color.BLACK)
+	avatar.setup()
 	assert_eq(avatar.visor_color(), visor, "the colour the visor glows")
 	avatar.free()
 	for key in ["color_deep", "color_mid", "color_light", "edge_color"]:

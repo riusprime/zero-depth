@@ -1,6 +1,6 @@
 class_name BladePack
 extends RefCounted
-## v0.10.0 VX8 (VFX_PACK N3): what the Blade's views share to draw the swings in the VFX pack's style: the pack the
+## VFX_PACK N3: what the Blade's views share to draw the swings in the VFX pack's style: the pack the
 ## view hangs under (WorldViewRoot.pack_fx, found up the tree so the views need no wiring), the ribbon material (the
 ## beam pack's scrolling noise, assets/vfx_zd/blade/blade_trail.gdshader), the rim material the baked crescents and
 ## ghost slashes wear (a copy of rim_area_04's, assets/vfx_zd/blade/blade_rim.tres) and the ribbon slots (the `trail`

@@ -1,6 +1,6 @@
 class_name PackPrefill
 extends RefCounted
-## v0.10.5 (owner PERF_PLAYLOG_1: the first use of an effect on a floor hitched): every floor makes a new PackFx, so
+## Every floor makes a new PackFx, so
 ## each pack id's pool starts empty and a floor's first hit, zone, bolt or status of each kind instanced its scene
 ## mid-fight. The floor's load (WorldViewRoot, behind the cover, one job an id) now fills the pools of the ids the
 ## floor can use with a few idle instances. The scenes and their pipelines are the session's (PackFxSessionWarm warms

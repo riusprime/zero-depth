@@ -24,7 +24,7 @@ func test_the_owners_models_load_with_their_parts() -> void:
 	for kind: int in parts:
 		var a := EliteAvatar.new()
 		add_child_autofree(a)
-		a.setup(kind, Color.BLACK)
+		a.setup(kind)
 		assert_true(a.has_model(), "kind %d: the owner's model" % kind)
 		for p: String in parts[kind]:
 			assert_true(a.parts.has(p), "kind %d has its %s" % [kind, p])
@@ -34,7 +34,7 @@ func test_the_owners_models_load_with_their_parts() -> void:
 func test_the_breaker_raises_its_fist_then_slumps_stuck() -> void:
 	var a := EliteAvatar.new()
 	add_child_autofree(a)
-	a.setup(WorldReader.KIND_BREAKER, Color.BLACK)
+	a.setup(WorldReader.KIND_BREAKER)
 	var base := {"tick": 0, "state": WorldReader.STATE_MOVE, "pick": WorldReader.ELITE_ABILITY}
 	a.apply_state(base)
 	a.advance(0.05)
@@ -56,7 +56,7 @@ func test_the_breaker_raises_its_fist_then_slumps_stuck() -> void:
 func test_the_rift_hunter_is_gone_while_it_has_vanished() -> void:
 	var a := EliteAvatar.new()
 	add_child_autofree(a)
-	a.setup(WorldReader.KIND_RIFT_HUNTER, Color.BLACK)
+	a.setup(WorldReader.KIND_RIFT_HUNTER)
 	a.apply_state(
 		{
 			"tick": 0,

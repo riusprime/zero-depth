@@ -10,9 +10,9 @@ extends AvatarBase
 ## back into the sim. The poncho's hem points are damped springs in this node's frame (which never rotates), so
 ## they lag behind acceleration and turns, stream back on a dash and settle when the wanderer stops.
 ## +X is the front and +Z the right in every local frame; the sim (x, y) maps to 3D (x, h, -y) as in SimPlane.
-## The body follows each melee combo step (v0.3.0 L11): the slashes twist the head and poncho one way, then the other;
+## The body follows each melee combo step: the slashes twist the head and poncho one way, then the other;
 ## the thrust leans into the stab; the finisher spins the whole wanderer once, low and leaning into its lunge.
-## v0.5.5 LK (owner A1: "The ability for gun and blade should match the animation"): the skills have their own poses,
+## The skills have their own poses,
 ## timed from the skill's sim ticks (WorldReader.skill_state):
 ## - Lunge Cleave: a low lunge (front leg reaching, back leg trailing, body pitched into the lunge, the poncho
 ##   streaming) with the head and poncho wound back to the arc's starting side; over the lunge's last ticks the body
@@ -22,7 +22,7 @@ extends AvatarBase
 ##   back, peaking on the blast's tick and easing out over the sim's recoil step-back) while the legs ride the real
 ##   step back.
 
-## v0.6.0 (owner, 2026-10-09): the body faces the movement, not the aim ("we have him running backwards most of the
+## The body faces the movement, not the aim ("we have him running backwards most of the
 ## time"). It turns to the aim only while an attack needs it: the Blade during a swing or a skill, the Gun while
 ## shooting and for GUN_AIM_HOLD_TICKS after the last shot, then back to the movement.
 const GUN_AIM_HOLD_TICKS := 30
@@ -48,7 +48,6 @@ const FACE_X := HOOD_HALF_LEN - 0.02
 ## The face's point, below the hood's bottom (hood-local y).
 const CHIN_Y := -0.3
 ## The avatar's rim is thinner than the other actors' (the sheet has a light line, not a heavy one).
-const OUTLINE_M := 0.014
 ## Walking speed the gait is tuned for (the sim's 6 m/s) and the stride (metres per full two-step cycle).
 const WALK_SPEED := 6.0
 const STRIDE := 1.25
@@ -60,7 +59,7 @@ const AIR_DRAG := 1.0
 const INERTIA := 0.3
 const MAX_OFFSET := 0.22
 const SUB_STEP := 1.0 / 120.0
-## v0.5.5 LK (A1): the skill poses. Ticks after the cleave's hit / the blast before the pose has fully let go; the
+## The skill poses. Ticks after the cleave's hit / the blast before the pose has fully let go; the
 ## cleave's wind-up and whip (head twist, radians); how far a full lunge or recoil leans the body.
 const SKILL_RECOVER_TICKS := 14
 const BLAST_RECOVER_TICKS := 16
@@ -68,14 +67,14 @@ const CLEAVE_WIND := -1.15
 const CLEAVE_WHIP := 1.05
 const LUNGE_LEAN := 0.34
 const RECOIL_LEAN := 0.3
-## v0.8.0 GF1 (owner O19: a light cast on every shot): the body's accent, a quick kick back from the aim and a flick
+## The body's accent, a quick kick back from the aim and a flick
 ## of the head toward the casting side, gone in about CAST_SECONDS; reduced motion drops it (HeroCastFx keeps the
 ## spark). Shots faster than that keep it up instead of stacking (it is set, never added).
 const CAST_SECONDS := 0.13
 const CAST_LEAN := 0.07
 const CAST_TWIST := 0.14
 const CAST_HOOD := 0.09
-## v0.8.0 GF3 (owner O22: the Blade gets the Gun's treatment; the swing itself stays as the owner likes it): an accent
+## An accent
 ## on every combo step, timed to the sim's swing ticks (the hit on its active tick, the blade's sweep, the recovery)
 ## and run on in frame time between syncs: a wind-up (the hips drop, the body draws back and the head and poncho wind
 ## further back) up to the hit, the swing (the body drives into the aim, the hood pitches in, the visor flares) from
@@ -89,7 +88,7 @@ const WIND_HOOD := 0.12
 const STRIKE_LEAN := 0.2
 const STRIKE_HOOD := 0.16
 const STRIKE_VISOR := 0.8
-## v0.8.0 P3 (owner O31, "Glow intensity is still excessive … particularly on … the main character"): the visor's
+## The visor's
 ## resting emission (was 2.4): it still reads as lit, and blooms less over the hood and the poncho.
 const VISOR_ENERGY := 1.4
 const FOLLOW_TWIST := 0.36
@@ -114,17 +113,15 @@ var visor: MeshInstance3D
 var face: MeshInstance3D
 var cloak: MeshInstance3D
 var legs: Array[Node3D] = []
-## v0.9.0 RB: the robe worn (the Wardrobe's colour; Cream by default), the hood the same colour; the blue core (the
+## The robe worn (the Wardrobe's colour; Cream by default), the hood the same colour; the blue core (the
 ## visor) never changes. And the rune affinity's marks (AffinityRunes: the circle under the feet, the glyph on the
 ## cloak's back; none for None).
 var cloak_color := CLOAK_COLOR
 var under_color := UNDER_COLOR
 var runes: AffinityRunes
-## v0.9.0 MP2: an epic robe's pieces (EpicRobeView: The Fallen's or the divine; null for a colour robe).
+## An epic robe's pieces (EpicRobeView: The Fallen's or the divine; null for a colour robe).
 var epic: EpicRobeView
 var _style := &""
-var _outline := Color.BLACK
-var _technique := &"outline"
 var _hood_mat: StandardMaterial3D
 
 var _pelvis := Node3D.new()
@@ -151,11 +148,11 @@ var _sweep := 0.0
 var _spin_target := 0.0
 var _guarding := false
 var _dead := false
-## v0.6.0: the Gun build (faces the aim while shooting), the last tick it shot, and whether the body faces the aim.
+## The Gun build (faces the aim while shooting), the last tick it shot, and whether the body faces the aim.
 var _gun := false
 var _last_shot_tick := -1000000
 var _face_aim := false
-## v0.5.5 LK (A1): the skill pose targets from the last sync: the lunge (0..1), the cleave's sweep (0..1, -1 when
+## The skill pose targets from the last sync: the lunge (0..1), the cleave's sweep (0..1, -1 when
 ## not cleaving), the brace (0..1) and the recoil kick (0..1).
 var _lunge_target := 0.0
 var _cleave_p := -1.0
@@ -177,9 +174,9 @@ var _lean := Vector3.ZERO
 var _lunge := 0.0
 var _brace := 0.0
 var _recoil := 0.0
-## v0.8.0 GF1: the cast accent (1 on a shot, easing to 0).
+## The cast accent (1 on a shot, easing to 0).
 var _cast := 0.0
-## v0.8.0 GF3: the swing accent's clock (swing ticks, run on in frame time up to one tick past the last sync's), the
+## The swing accent's clock (swing ticks, run on in frame time up to one tick past the last sync's), the
 ## step's hit tick, sweep and length, whether it is the finisher, and the accent now: (wind, strike, follow), 0..1.
 var _acc_clock := 0.0
 var _acc_tick := 0
@@ -190,7 +187,7 @@ var _acc_fin := false
 var _accent := Vector3.ZERO
 
 
-## v0.9.5 (seams): the rig's joints are parented only by setup(); an avatar freed without it frees them too.
+## Seams: the rig's joints are parented only by setup(); an avatar freed without it frees them too.
 func _notification(what: int) -> void:
 	if what != NOTIFICATION_PREDELETE:
 		return
@@ -198,11 +195,9 @@ func _notification(what: int) -> void:
 		AvatarBase.free_if_loose(n)
 
 
-## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
-func setup(outline_color: Color, technique: StringName = &"outline") -> void:
+## Builds the model.
+func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	_outline = outline_color
-	_technique = technique
 	var team := ThemePalette.color(&"player_core")
 	_pelvis.position.y = HIP_Y
 	add_child(_pelvis)
@@ -210,7 +205,7 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	hood = Node3D.new()
 	hood.position = Vector3(0.05, NECK_Y - HIP_Y, 0)
 	_head_yaw.add_child(hood)
-	var shell := _mesh_piece(hood, _hood_mesh(), cloak_color, outline_color, team, technique)
+	var shell := _mesh_piece(hood, _hood_mesh(), cloak_color)
 	_hood_mat = shell.material_override as StandardMaterial3D
 	_hood_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	face = MeshInstance3D.new()
@@ -218,7 +213,6 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	var fm := StandardMaterial3D.new()
 	fm.albedo_color = FACE_COLOR
 	fm.roughness = 1.0
-	write_stencil(fm)
 	face.material_override = fm
 	face.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hood.add_child(face)
@@ -230,14 +224,13 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	_visor_mat.emission_enabled = true
 	_visor_mat.emission = team
 	_visor_mat.emission_energy_multiplier = VISOR_ENERGY
-	write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
 	visor.position = Vector3(FACE_X + 0.006, 0.0, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hood.add_child(visor)
 	_build_cloak_rest()
 	# The poncho's colour comes from its vertices: cream outside, the shaded cream underneath.
-	cloak = _mesh_piece(self, _cloak_mesh, Color.WHITE, outline_color, team, technique)
+	cloak = _mesh_piece(self, _cloak_mesh, Color.WHITE)
 	var cm := cloak.material_override as StandardMaterial3D
 	cm.vertex_color_use_as_albedo = true
 	cm.vertex_color_is_srgb = true
@@ -252,20 +245,20 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 		var shin := Node3D.new()
 		shin.position.y = -(LEG_LEN - 0.1) * 0.5
 		pivot.add_child(shin)
-		_mesh_piece(shin, leg, LEG_COLOR, outline_color, team, &"outline")
+		_mesh_piece(shin, leg, LEG_COLOR)
 		# The boot: a slightly larger, lighter block with a low toe stepping out in front.
 		var boot := BoxMesh.new()
 		boot.size = Vector3(LEG_W + 0.025, 0.15, LEG_W + 0.02)
 		var foot := Node3D.new()
 		foot.position = Vector3(0.0, -LEG_LEN + 0.075, 0)
 		pivot.add_child(foot)
-		_mesh_piece(foot, boot, BOOT_COLOR, outline_color, team, &"outline")
+		_mesh_piece(foot, boot, BOOT_COLOR)
 		var toe := BoxMesh.new()
 		toe.size = Vector3(0.06, 0.055, LEG_W + 0.02)
 		var toe_at := Node3D.new()
 		toe_at.position = Vector3((LEG_W + 0.025) * 0.5 + 0.025, -LEG_LEN + 0.0275, 0)
 		pivot.add_child(toe_at)
-		_mesh_piece(toe_at, toe, BOOT_COLOR, outline_color, team, &"outline")
+		_mesh_piece(toe_at, toe, BOOT_COLOR)
 		legs.append(pivot)
 	runes = AffinityRunes.new()
 	add_child(runes)
@@ -275,7 +268,7 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	_set_epic(_style)
 
 
-## v0.9.0 RB: robe and rune from a Wardrobe.look dictionary ({} keeps Cream and no rune): the robe's colours (the
+## Robe and rune from a Wardrobe.look dictionary ({} keeps Cream and no rune): the robe's colours (the
 ## cloak and hood outside, the cloak's underside) and the rune affinity's marks (glyph 0: none) in its colour.
 func set_look(look: Dictionary) -> void:
 	if look.is_empty():
@@ -291,7 +284,7 @@ func set_look(look: Dictionary) -> void:
 	_set_epic(StringName(look.get("style", &"")))
 
 
-## v0.9.0 MP2: builds (or drops) the epic robe's pieces for `style` (&"": none) once the model exists.
+## Builds (or drops) the epic robe's pieces for `style` (&"": none) once the model exists.
 func _set_epic(style: StringName) -> void:
 	_style = style
 	ElementLooks.set_energy(style)  # The Fallen's robe turns the plain shots violet
@@ -307,10 +300,10 @@ func _set_epic(style: StringName) -> void:
 	if EpicRobeView.STYLES.has(style):
 		epic = EpicRobeView.new()
 		add_child(epic)
-		epic.build(self, style, _outline, _technique)
+		epic.build(self, style)
 
 
-## v0.9.0 MP2: what the epic robe's cloth follows: [the cloak frame, the poncho's hem springs (not a copy), the body's
+## What the epic robe's cloth follows: [the cloak frame, the poncho's hem springs (not a copy), the body's
 ## smoothed velocity, the dash and the slump].
 func cloth_drive() -> Array:
 	return [_cloak_frame(), _spring_pos, _vel_s, _dash, _slump]
@@ -319,7 +312,7 @@ func cloth_drive() -> Array:
 ## Reads the player's state after a sim tick.
 func sync(reader: WorldReader) -> void:
 	var sk := reader.skill_state()
-	var step := reader.swing_step()  # v0.9.5 PF3: one lookup for the four numbers (each read rebuilt the step)
+	var step := reader.swing_step()  # One lookup for the four numbers (each read rebuilt the step)
 	apply_state(
 		{
 			"skill_kind": int(sk.get("kind", -1)),
@@ -341,13 +334,13 @@ func sync(reader: WorldReader) -> void:
 			"dead": reader.player_dead(),
 			"gun": reader.weapon_id() == &"pulse_gun",
 			"shooting": reader.shooting(),
-			"shot": reader.shot_fired(),  # v0.8.0 GF1: the cast accent
-			"active_tick": step.active_tick,  # v0.8.0 GF3: the swing accent
+			"shot": reader.shot_fired(),  # The cast accent
+			"active_tick": step.active_tick,  # The swing accent
 			"finisher": reader.is_finisher(),
-			"swing_form": reader.blade_swing(),  # v0.6.5 WN4: Lunge Step drives in, Heavy braces
+			"swing_form": reader.blade_swing(),  # Lunge Step drives in, Heavy braces
 		}
 	)
-	if runes != null and runes.glyph > 0:  # v0.9.0 RB: A5 Guardian's ward dims and flashes the circle
+	if runes != null and runes.glyph > 0:  # A5 Guardian's ward dims and flashes the circle
 		runes.set_ward(
 			reader.affinity_ward_charges() > 0, reader.affinity_ward(), reader.affinity_ward_tick()
 		)
@@ -398,7 +391,7 @@ func apply_state(s: Dictionary) -> void:
 		_reset_springs()
 
 
-## v0.8.0 GF3: the swing accent's timing from a sync (swing tick `st`; 0: no swing).
+## The swing accent's timing from a sync (swing tick `st`; 0: no swing).
 func _set_accent_clock(s: Dictionary, st: int) -> void:
 	if st <= 0 or _dead:
 		_acc_tick = 0
@@ -413,7 +406,7 @@ func _set_accent_clock(s: Dictionary, st: int) -> void:
 	_acc_fin = bool(s.get("finisher", false))
 
 
-## v0.8.0 GF3: the swing accent at swing time `tf` (ticks, fractional) of a step hitting on `active`, sweeping
+## The swing accent at swing time `tf` (ticks, fractional) of a step hitting on `active`, sweeping
 ## `sweep` ticks and `ticks` long: (wind-up, swing, follow-through), each 0..1; `calm` (reduced motion) drops the
 ## follow-through. Before the swing and after it: zero.
 static func swing_accent(tf: float, active: int, sweep: int, ticks: int, calm: bool) -> Vector3:
@@ -433,7 +426,7 @@ static func swing_accent(tf: float, active: int, sweep: int, ticks: int, calm: b
 	return Vector3(wind, strike, follow)
 
 
-## v0.8.0 GF3: the swing accent now (wind-up, swing, follow-through), and its size (the finisher's bigger).
+## The swing accent now (wind-up, swing, follow-through), and its size (the finisher's bigger).
 func swing_accent_now() -> Vector3:
 	return _accent
 
@@ -442,7 +435,7 @@ func accent_scale() -> float:
 	return ACCENT_FINISHER if _acc_fin else 1.0
 
 
-## v0.6.5 WN4: the Blade cards that change the swing itself (WorldReader.blade_swing): Lunge Step leans into the
+## The Blade cards that change the swing itself (WorldReader.blade_swing): Lunge Step leans into the
 ## step it drives, Heavy braces for its slow crushing arc. Optional (tests may leave it out); never during a skill.
 func _apply_swing_form(form: Dictionary, st: int) -> void:
 	if st <= 0 or form.is_empty() or _cleave_p >= 0.0:
@@ -453,7 +446,7 @@ func _apply_swing_form(form: Dictionary, st: int) -> void:
 		_brace_target = maxf(_brace_target, 1.0 - _sweep)
 
 
-## v0.5.5 LK (A1): the skill pose targets from the skill's ticks (optional keys; tests may leave them out).
+## The skill pose targets from the skill's ticks (optional keys; tests may leave them out).
 ## Returns true while the skill turns the body to its angle.
 func _apply_skill(s: Dictionary, tick: int) -> bool:
 	_lunge_target = 0.0
@@ -501,7 +494,7 @@ func advance(delta: float) -> void:
 	_crouch = lerpf(_crouch, 1.0 if _guarding else 0.0, _rate(12.0, dt))
 	_slump = move_toward(_slump, 1.0 if _dead else 0.0, dt * (2.2 if _dead else 4.0))
 	_cast = move_toward(_cast, 0.0, dt / CAST_SECONDS)
-	if _acc_tick > 0:  # v0.8.0 GF3: the accent runs on between syncs, at most a tick past the last one
+	if _acc_tick > 0:  # The accent runs on between syncs, at most a tick past the last one
 		_acc_clock = minf(_acc_clock + dt * 60.0, float(_acc_tick) + 1.0)
 	_accent = (
 		swing_accent(_acc_clock, _acc_active, _acc_sweep, _acc_ticks, ViewPrefs.reduced_motion)
@@ -568,7 +561,7 @@ func body_yaw() -> float:
 	return _body_yaw + _twist + _spin + _cast * CAST_TWIST + _accent_twist()
 
 
-## v0.8.0 GF3: the head's extra twist from the swing accent: wound further back, then carried on past the arc's end
+## The head's extra twist from the swing accent: wound further back, then carried on past the arc's end
 ## (the swing's own way; a thrust winds and follows a little to its slash side, a spin the spin's way).
 func _accent_twist() -> float:
 	var way := _swing_dir
@@ -584,7 +577,7 @@ func spin_amount() -> float:
 	return _spin
 
 
-## v0.5.5 LK (A1): how far the body is in the Lunge Cleave's lunge, the Scatter Blast's brace and its recoil
+## How far the body is in the Lunge Cleave's lunge, the Scatter Blast's brace and its recoil
 ## (0..1, smoothed), and the head's twist off the aim (radians: negative wound back, positive through the cleave).
 func lunge_amount() -> float:
 	return _lunge
@@ -602,7 +595,7 @@ func twist_amount() -> float:
 	return _twist
 
 
-## v0.8.0 GF1: the cast accent now (0..1).
+## The cast accent now (0..1).
 func cast_amount() -> float:
 	return _cast
 
@@ -684,7 +677,7 @@ func _pose(dt: float) -> void:
 		+ side * sin(_t * 1.1) * 0.02 * (1.0 - _walk)
 	)
 	_lean = _lean.lerp(lean_target, _rate(9.0, dt))
-	# v0.8.0 GF3: the swing accent leans the body at once (it is already smooth; the lean's ease would blur it).
+	# The swing accent leans the body at once (it is already smooth; the lean's ease would blur it).
 	var acc_k := accent_scale()
 	var lean := (
 		_lean
@@ -908,7 +901,7 @@ static func _tri2(
 		colors.append(NECK_SHADE if at_neck else under)
 
 
-## v0.9.0 RB: the rune on the robe's back, flat on the back facet between the neck's back point `top` and the hem's
+## The rune on the robe's back, flat on the back facet between the neck's back point `top` and the hem's
 ## `hem` (the cloak's ring point 4), a little out from the cloth, upright along the back.
 func _place_back_rune(xf: Transform3D, top: Vector3, hem: Vector3) -> void:
 	if runes == null:
@@ -993,7 +986,5 @@ static func _face_mesh() -> ArrayMesh:
 	return mesh
 
 
-func _mesh_piece(
-	parent: Node3D, mesh: Mesh, c: Color, outline: Color, team: Color, technique: StringName
-) -> MeshInstance3D:
-	return _outlined(parent, mesh, Vector3.ZERO, c, outline, team, technique, OUTLINE_M)
+func _mesh_piece(parent: Node3D, mesh: Mesh, c: Color) -> MeshInstance3D:
+	return _body_piece(parent, mesh, Vector3.ZERO, c)

@@ -9,6 +9,6 @@ name_key = &"STAT_LIFESPROUT"
 desc_key = &"STAT_LIFESPROUT_DESC"
 amounts = PackedFloat32Array(10, 10, 10)
 cap = 30
-weight = 6
+weight = 0
 side = PackedFloat32Array(5, 5, 5)
 id = &"lifesprout"

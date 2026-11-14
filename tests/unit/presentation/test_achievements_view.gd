@@ -17,7 +17,7 @@ func after_each() -> void:
 
 func _book() -> AchievementBook:
 	var profile := ProfileStore.new("")
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	return AchievementBook.build(
 		repo, AchievementStore.new(profile), CodexStore.new(profile), CodexCatalog.build(repo)
 	)

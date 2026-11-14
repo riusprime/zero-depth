@@ -44,6 +44,7 @@ func _sticks_off(e: E2e) -> void:
 
 func test_the_build_screen_shows_both_cards() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	await HubWalk.new(e).to_build_screen()  # v0.9.0 HB: Play, then the Portal Machine
 	await e.frames(2)
@@ -64,6 +65,7 @@ func test_the_build_screen_shows_both_cards() -> void:
 
 func test_pick_gun_with_the_pad_then_melee_does_nothing_and_shooting_works() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	await HubWalk.new(e).to_build_screen()  # v0.9.0 HB: Play, then the Portal Machine
 	var picker := main.get_node_or_null("UI/BuildPicker") as BuildPicker
@@ -95,6 +97,7 @@ func test_pick_gun_with_the_pad_then_melee_does_nothing_and_shooting_works() -> 
 
 func test_pick_blade_with_the_keyboard_then_shooting_does_nothing() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	await HubWalk.new(e).to_build_screen()  # v0.9.0 HB: Play, then the Portal Machine
 	await e.frames(2)
@@ -121,6 +124,7 @@ func test_pick_blade_with_the_keyboard_then_shooting_does_nothing() -> void:
 
 func test_a_click_picks_a_card_and_esc_goes_back() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	await HubWalk.new(e).to_build_screen()  # v0.9.0 HB: Play, then the Portal Machine
 	await e.frames(40)
@@ -246,6 +250,7 @@ func test_out_of_combat_regen_heals_and_the_bar_pulses() -> void:
 
 func test_the_left_stick_moves_between_the_cards() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	await HubWalk.new(e).to_build_screen()  # v0.9.0 HB: Play, then the Portal Machine
 	var picker := main.get_node_or_null("UI/BuildPicker") as BuildPicker

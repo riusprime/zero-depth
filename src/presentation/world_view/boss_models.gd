@@ -5,7 +5,8 @@ extends RefCounted
 ## frame (+X the front, Y up, metres, feet on the ground) at the boss's in-game height: the mesh and its material are
 ## cached, so a spawn only instances them. A missing file gives {} and the boss keeps its code-built body.
 ## Orientation and size were read from renders of the raw models next to the sheet (evidence/BOSSES.md).
-## v0.7.5 BM: the Warlord and the Hive Lens come rigged (a skin and a Tripo skeleton, no animations; owner N14): they
+## The Warlord and the Hive Lens come rigged (a skin and a Tripo skeleton; owner N14; the Warlord's file also
+## carries its animations and extra bones for its spear, shield and cloth, scripts/assets/boss_anim/warlord): they
 ## are kept as delivered ("skinned" in SPECS) and an avatar instances the scene under a node that does the turn, the
 ## scale and the lift, so the bones animate the owner's own skin; the Foundry is one static mesh, rigged in code like
 ## the first three (BossRig). Orientation and size from renders of the raw models (v0.7.5 evidence/BOSS_MODELS.md).
@@ -18,44 +19,40 @@ const SPECS := {
 	&"stone_sentinel": {"yaw": 0.0, "height": 2.95},
 	&"crawler_queen": {"yaw": -PI * 0.5, "height": 2.4},
 	&"fortress_turret": {"yaw": 0.0, "height": 2.5},
-	# v0.7.5 BM (evidence/BOSS_MODELS.md): all three face +X as delivered. The Warlord is 2.7 m to its spear's tip;
+	# evidence/BOSS_MODELS.md: all three face +X as delivered. The Warlord is 2.7 m to its spear's tip;
 	# the Hive Lens is 1.9 m across its pods (2.08 m tall) and floats with its sphere's centre 1.75 m up (lift: the
 	# metres its lowest point is raised off the ground); the Foundry is 2.6 m.
 	&"warlord": {"yaw": 0.0, "height": 2.7, "skinned": true},
 	&"hive_lens": {"yaw": 0.0, "height": 2.08, "lift": 0.62, "skinned": true},
 	&"foundry": {"yaw": 0.0, "height": 2.6},
-	# v0.8.0 FB1 (FINAL_BOSS.md "The models"; evidence/FINAL_BOSS_1.md): the final boss's three bodies, split from the
-	# owner's one file, all facing +X as split (raw renders). The Colossus 3.2 m to its halo; the Prism 3.0 m to its
-	# crown, floating (lift) above its hanging shards; the Nemesis, the hero's small shadow, 1.5 m.
-	&"final_boss_colossus": {"yaw": 0.0, "height": 3.2, "final": true},
-	&"final_boss_prism": {"yaw": 0.0, "height": 3.0, "lift": 0.35, "final": true},
-	&"final_boss_nemesis": {"yaw": 0.0, "height": 1.5, "final": true},
-	# v0.9.0 NB1 (scripts/assets/nb_prep.py): the Tidecaller, front +Z as prepared (turned to +X here), 3.2 m (the art
-	# list's), cut into parts in the file: each part is one bone (its node's origin the pivot), the bell hanging from
-	# the staff.
-	&"boss_tidecaller":
-	# v0.9.0 NB2: the Twin Wardens, front +Z as prepared, 2.2 m each (the art list's): the amber one keeps its Mixamo
-	{"yaw": PI * 0.5, "height": 3.2, "parts": true, "parents": {&"bell": &"staff"}},
-	# skeleton (NB1 rebuilt its joint rests; nearly every vertex weighs on the hips), the violet one is cut into parts.
+	# The final boss's three bodies (FINAL_BOSS.md "The models"), all facing +X: each is one mesh skinned to a full
+	# skeleton that carries its animations (scripts/assets/boss_anim/final_colossus, final_prism, final_nemesis). The
+	# Colossus 3.2 m to its halo; the Prism 3.0 m to its crown, floating (lift) above its hanging shards; the
+	# Nemesis, the hero's small shadow, 1.5 m.
+	&"final_boss_colossus": {"yaw": 0.0, "height": 3.2, "final": true, "skinned": true},
+	# The Prism's box is centred on its floating crystals, which hang wider on its left: it stands by the bone its
+	# figure is built on (axis), so the figure, not the crystals' box, is over the boss's place.
+	&"final_boss_prism":
+	{"yaw": 0.0, "height": 3.0, "lift": 0.35, "final": true, "skinned": true, "axis": &"body"},
+	&"final_boss_nemesis": {"yaw": 0.0, "height": 1.5, "final": true, "skinned": true},
+	# The Tidecaller, front +Z as prepared (turned to +X here), 3.2 m (the art list's): skinned to a full skeleton
+	# (the staff in its right hand, the bell and its clapper hanging from it, the shell on its back) and carrying its
+	# animations (scripts/assets/boss_anim/tidecaller).
+	&"boss_tidecaller": {"yaw": PI * 0.5, "height": 3.2, "skinned": true},
+	# The Twin Wardens, front +Z as prepared, 2.2 m each (the art list's): each is skinned to a full skeleton and
+	# carries its animations (scripts/assets/boss_anim); the violet one's are the amber's mirrored.
 	&"boss_twin_warden_amber": {"yaw": PI * 0.5, "height": 2.2, "skinned": true},
-	&"boss_twin_warden_violet": {"yaw": PI * 0.5, "height": 2.2, "parts": true},
-	# v0.9.0 NB3 (PLAN NB: "can you ignore the skeleton?"): the Clockwork Judge, front +Z as prepared, 3.6 m (the art
-	# list's), cut into parts in the file (its skin unusable): body, both pendulum arms, the gears, the two hands.
-	&"boss_clockwork_judge": {"yaw": PI * 0.5, "height": 3.6, "parts": true},
-	# v0.9.0 NB4 (PLAN NB: "Keep the empty hood"): the Lantern Shade, front +Z as prepared, 3.4 m (the art list's),
-	# cut into parts in the file: body (the cloak and empty hood), both arms, the held lantern hanging from the right
-	# arm; it floats (lift: its ragged hem off the ground).
-	&"boss_lantern_shade":
-	{
-		"yaw": PI * 0.5,
-		"height": 3.4,
-		"lift": 0.3,
-		"parts": true,
-		"parents": {&"hand_lantern": &"arm_r"},
-	},
+	&"boss_twin_warden_violet": {"yaw": PI * 0.5, "height": 2.2, "skinned": true},
+	# The Clockwork Judge, front +Z as prepared, 3.6 m (the art list's): skinned to a full skeleton, and it carries
+	# its animations (scripts/assets/boss_anim/clockwork_judge); its two clock hands are bones the game turns.
+	&"boss_clockwork_judge": {"yaw": PI * 0.5, "height": 3.6, "skinned": true},
+	# PLAN NB: "Keep the empty hood": the Lantern Shade, front +Z as prepared, 3.4 m (the art list's),
+	# one mesh skinned to a full skeleton that carries its animations (scripts/assets/boss_anim); it floats (lift:
+	# its ragged hem off the ground).
+	&"boss_lantern_shade": {"yaw": PI * 0.5, "height": 3.4, "lift": 0.3, "skinned": true},
 }
 
-## v0.7.5 BM (owner N18, 2026-10-13: "Bosses could be a bit bigger so we could see the model better"): every boss
+## Every boss
 ## draws this much bigger than its SPECS height. The one place the scale lives: BossAvatar scales its whole model
 ## node by it (the owner's model or the code-built fallback, the weak point's core, the Hive Lens's hover, the
 ## anchors), so SPECS keep the heights the renders were measured at.
@@ -77,7 +74,7 @@ static func get_model(id: StringName) -> Dictionary:
 	if ResourceLoader.exists(path):
 		var spec: Dictionary = SPECS.get(id, {"yaw": 0.0, "height": 2.5})
 		var scene := load(path) as PackedScene
-		if spec.get("parts", false):  # v0.9.0 NB1: a model cut into parts in its file
+		if spec.get("parts", false):  # A model cut into parts in its file
 			out = _convert_parts(scene, spec)
 		else:
 			out = (
@@ -89,7 +86,7 @@ static func get_model(id: StringName) -> Dictionary:
 	return out
 
 
-## Reads every boss model now (the stage build), so no spawn waits on an import. v0.8.0 FB1: the final boss's three
+## Reads every boss model now (the stage build), so no spawn waits on an import. the final boss's three
 ## (their textures are big) only with `final` (a world that holds the fight: the final arena, the Playground).
 static func preload_all(final: bool = false) -> void:
 	for id: StringName in SPECS:
@@ -119,7 +116,7 @@ static func _convert(scene: PackedScene, spec: Dictionary, id: StringName) -> Di
 	var aabb: AABB = surface["aabb"]
 	var s: float = spec["height"] / maxf(aabb.size.y, 0.0001)
 	var turn := Basis(Vector3.UP, spec["yaw"])
-	var lift := -aabb.position.y * s + float(spec.get("lift", 0.0))  # v0.8.0 FB1: the Prism floats
+	var lift := -aabb.position.y * s + float(spec.get("lift", 0.0))  # The Prism floats
 	var centre := aabb.get_center()
 	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	for k in verts.size():
@@ -139,8 +136,8 @@ static func _convert(scene: PackedScene, spec: Dictionary, id: StringName) -> Di
 			ts[k + 1] = t.y
 			ts[k + 2] = t.z
 		arrays[Mesh.ARRAY_TANGENT] = ts
-	# The rig (v0.3.0 L13): bones and weights from the mesh's geometry, written into the mesh (4 per vertex).
-	var rig := BossRig.build(id, verts, _indices(arrays))
+	# The rig: bones and weights from the mesh's geometry, written into the mesh (4 per vertex).
+	var rig := BossRig.build(id, verts)
 	arrays[Mesh.ARRAY_BONES] = rig.bone_ids
 	arrays[Mesh.ARRAY_WEIGHTS] = rig.weights
 	var out := ArrayMesh.new()
@@ -166,7 +163,7 @@ static func _indices(arrays: Array) -> PackedInt32Array:
 	return out
 
 
-## v0.9.0 NB1: a model cut into parts in its file (nb_prep.py: one node per part, its origin the part's pivot) as one
+## A model cut into parts in its file (nb_prep.py: one node per part, its origin the part's pivot) as one
 ## mesh in our frame at its height, rigged with one bone per part (named in snake case: Body -> body, ArmL -> arm_l;
 ## every vertex wholly its part's; a part hangs from `parents`' bone, else from body), so the avatar poses it like the
 ## code-rigged models. Same result keys as _convert.
@@ -260,7 +257,8 @@ static func _convert_parts(scene: PackedScene, spec: Dictionary) -> Dictionary:
 
 
 ## A rigged model kept as delivered: the transform that puts its skinned mesh (as its rest pose draws it) in our
-## frame at its height, centred in x and z, its lowest point `lift` metres up.
+## frame at its height, centred in x and z, its lowest point `lift` metres up. A spec's "axis" names a bone: the
+## model is then centred on that bone's rest place instead of on its box (a figure whose box is not centred on it).
 static func _convert_skinned(scene: PackedScene, spec: Dictionary) -> Dictionary:
 	if scene == null:
 		return {}
@@ -290,6 +288,9 @@ static func _convert_skinned(scene: PackedScene, spec: Dictionary) -> Dictionary
 	var s: float = spec["height"] / maxf(box.size.y, 0.0001)
 	var turn := Basis(Vector3.UP, spec["yaw"])
 	var centre := box.get_center()
+	var axis := skel.find_bone(String(spec.get("axis", &"")))
+	if axis >= 0:
+		centre = (relative_transform(root, skel) * skel.get_bone_global_rest(axis)).origin
 	var xf := Transform3D(turn.scaled(Vector3.ONE * s), Vector3.ZERO)
 	xf.origin = (
 		turn * (-Vector3(centre.x, 0.0, centre.z) * s)

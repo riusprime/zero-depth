@@ -1,11 +1,15 @@
 # gdlint: disable=max-public-methods
 extends GutTest
 ## v0.9.0 NB4 (owner Q24 "ok go for those"; docs/roadmap/v0.9.0/BOSSES_4_5.md row N4; PLAN NB "Keep the empty hood"):
-## The Lantern Shade, floor 5's second boss. Lights out (shielded, every 12 s): 4 s after it starts the room goes dark;
-## only 3.5 m round you and the four lanterns on the room's edge (lit afresh, 4 s each, 3 m wide) stay lit; passing a
-## lantern relights it for 4 s; the Shade is only hittable when lit. Wisp Bloom: a slow flower of wisps. Snuff: a
-## tracked circle that, on strike, puts out the nearest lantern. Markers always draw. Phases at 66 % and 33 %,
-## determinism, a mid-dark save, an older save, the death lines.
+## The Lantern Shade, floor 5's second boss. Lights out (every 12 s; v0.11.0 O4b: shielded only through its 1 s
+## telegraph): 4 s after the first
+## starts the room goes dark; only 3.5 m round you and the lit lanterns on the room's edge (3 m wide) stay lit.
+## v0.11.0 O4 (owner Q10 a: "40 % damage in the dark, 150 % inside a lit pool; a lantern stays lit 6 s; dark 9 s /
+## light 4 s"): the lanterns start out and stepping on one lights it 6 s; dark 9 s and light 4 s alternate; the Shade
+## takes 40 % in the dark, 100 % in your light or the full light, 150 % in a lit pool, never 0; the hint points at the
+## unlit lanterns in the dark. Wisp Bloom: a slow flower of wisps. Snuff: a tracked circle that, on strike, puts out
+## the nearest lanterns. Markers always draw. Phases at 66 % and 33 %, determinism, a mid-dark save, an older save, the
+## death lines. The two scripted bots: test_lantern_shade_bots.gd.
 
 const LONG := 1 << 20
 ## The test world has no sealed room: the lanterns stand round where the Shade rose (BossShade.FALLBACK_HALF_M 7 m,
@@ -77,14 +81,18 @@ func test_the_data_is_the_approved_row() -> void:
 	assert_eq(t.sig_every_ticks, 720, "Lights Out every 12 s")
 	assert_eq(t.lamp_count, 4, "four lanterns on the room's edge")
 	assert_almost_eq(t.light_m, 3.5, 0.0001, "your light 3.5 m")
-	assert_eq(t.lamp_ticks, 240, "a lantern burns 4 s (BH3, B10: was 6)")
+	assert_eq(t.lamp_ticks, 360, "v0.11.0 O4 (owner Q10 a): a lantern stays lit 6 s")
 	assert_almost_eq(t.lamp_m, 3.0, 0.0001, "a lantern lights 3 m round it")
-	assert_eq(t.dark_hold_ticks, 540, "NB4b: each dark lasts 9 s (BH3, B10: was 8)")
+	assert_eq(t.dark_hold_ticks, 540, "O4: dark 9 s")
+	assert_eq(t.light_hold_ticks, 240, "O4: then light 4 s")
+	assert_eq(t.dark_mult_permille, 400, "O4: 40 % damage in the dark")
+	assert_eq(t.lit_mult_permille, 1500, "O4: 150 % inside a lit pool")
 	var lo := t.attacks[t.attack_index(&"lights_out")]
-	assert_true(lo.shielded, "shielded during the signature")
-	assert_eq(lo.dark_ticks, 240, "dark 4 s after the signature starts")
+	assert_true(lo.shielded, "v0.11.0 O4b (owner: Bring it back): shielded through its telegraph")
+	assert_eq(lo.shield_active_ticks, 0, "O4b: and only the telegraph (1 s)")
+	assert_eq(lo.windup_ticks, 60, "the telegraph is 1 s")
+	assert_eq(lo.dark_ticks, 240, "dark 4 s after the first signature starts")
 	assert_eq(lo.windup_ticks + lo.active_ticks, 240, "the wisps play out until the dark falls")
-	assert_eq(lo.shield_active_ticks, 0, "v0.10.5 O2a (L3): shielded only through the telegraph")
 	for p in 3:
 		var sig := BossTide.signature_of(t, p)
 		assert_gt(t.attacks[sig].dark_ticks, 0, "Lights Out is phase %d's signature" % p)
@@ -113,34 +121,39 @@ func _codes_with(change: Callable) -> Array:
 	return def.validate().map(func(v: ValidationIssue) -> StringName: return v.code)
 
 
+func _param_codes(key: String, value: Variant) -> Array:
+	return _codes_with(
+		func(d: BossDefinition) -> void: d.attack(&"lights_out").shape_params[key] = value
+	)
+
+
 func test_bad_light_numbers_are_errors() -> void:
 	var unshielded := func(d: BossDefinition) -> void: d.attack(&"lights_out").shielded = false
-	assert_has(_codes_with(unshielded), &"missing", "Lights Out is shielded")
-	var no_dark := func(d: BossDefinition) -> void:
-		d.attack(&"lights_out").shape_params["dark_seconds"] = 0.0
-	assert_has(_codes_with(no_dark), &"not_positive", "a real time to the dark")
-	var lamps := func(d: BossDefinition) -> void: d.attack(&"lights_out").shape_params["lamps"] = 9
-	assert_has(_codes_with(lamps), &"range", "at most 8 lanterns")
-	var no_light := func(d: BossDefinition) -> void:
-		d.attack(&"lights_out").shape_params["light_m"] = 0.0
-	assert_has(_codes_with(no_light), &"not_positive", "a real light round you")
+	assert_has(_codes_with(unshielded), &"missing", "O4b: Lights Out is shielded (its telegraph)")
+	assert_has(_param_codes("dark_seconds", 0.0), &"not_positive", "a real time to the dark")
+	assert_has(_param_codes("lamps", 9), &"range", "at most 8 lanterns")
+	assert_has(_param_codes("light_m", 0.0), &"not_positive", "a real light round you")
 	var bad_snuff := func(d: BossDefinition) -> void: d.attack(&"snuff").shape_params["snuff"] = 3
 	assert_has(_codes_with(bad_snuff), &"range", "snuff is 0 to 2")
 	var short := func(d: BossDefinition) -> void: d.signature_every_seconds = 4.5
 	assert_has(_codes_with(short), &"duration", "the cadence outlasts the windup and the dark")
-	var endless := func(d: BossDefinition) -> void:
-		d.attack(&"lights_out").shape_params["dark_lasts_seconds"] = 12.0
-	assert_has(_codes_with(endless), &"duration", "NB4b: the dark lifts before the next Lights Out")
-	assert_eq(_codes_with(endless).size(), 1, "only that")
-	var no_stretch := func(d: BossDefinition) -> void:
-		d.attack(&"lights_out").shape_params["dark_lasts_seconds"] = 0.0
-	assert_has(_codes_with(no_stretch), &"not_positive", "a real stretch of dark")
+	var endless := _param_codes("dark_lasts_seconds", 12.0)
+	assert_has(endless, &"duration", "NB4b: the dark lifts before the next Lights Out")
+	assert_eq(endless.size(), 1, "only that")
+	assert_has(_param_codes("dark_lasts_seconds", 0.0), &"not_positive", "a real stretch of dark")
 	var missing := func(d: BossDefinition) -> void:
 		d.attack(&"lights_out").shape_params.erase("dark_lasts_seconds")
 	assert_has(_codes_with(missing), &"missing", "a Lights Out names how long its dark lasts")
+	assert_has(_param_codes("light_lasts_seconds", 0.0), &"not_positive", "O4: a real light")
+	assert_has(_param_codes("dark_mult_permille", 0), &"range", "O4: never immune in the dark")
+	assert_has(_param_codes("dark_mult_permille", 1000), &"range", "O4: the dark cuts the damage")
+	assert_has(_param_codes("lit_mult_permille", 900), &"range", "O4: a lit pool never cuts it")
+	var no_cut := func(d: BossDefinition) -> void:
+		d.attack(&"lights_out").shape_params.erase("dark_mult_permille")
+	assert_has(_codes_with(no_cut), &"missing", "O4: a Lights Out names its cut")
 
 
-func test_four_lanterns_stand_on_the_edge_and_the_room_starts_lit() -> void:
+func test_four_lanterns_stand_on_the_edge_out_and_the_room_starts_lit() -> void:
 	var s := _fight(Vector2(-3, 0))
 	var w: World = s[0]
 	_hush(w, s[1])
@@ -152,13 +165,15 @@ func test_four_lanterns_stand_on_the_edge_and_the_room_starts_lit() -> void:
 		assert_almost_eq(
 			at.distance_to(LAMPS[k]), 0.0, 0.001, "lantern %d at the wall's middle" % k
 		)
-		assert_eq(w.bosses.lamp_t[k], 240, "lit")
+		assert_eq(w.bosses.lamp_t[k], 0, "O4: out until the player lights it")
 	assert_false(BossShade.dark(w), "the room is lit before the first Lights Out")
 	assert_true(BossShade.lit(w, Vector2(30, 30)), "everywhere")
-	assert_false(BossShade.unlit(w, _i(w, s[1])), "the Shade is hittable")
+	assert_eq(BossShade.light_permille(w, _i(w, s[1])), 1000, "the Shade takes full damage")
+	assert_eq(w.objectives.size(), 0, "no hint in the light")
 
 
-func test_lights_out_is_shielded_and_the_dark_falls_4_s_after_it_starts() -> void:
+func test_lights_out_is_shielded_through_its_telegraph_and_the_dark_falls_4_s_after_it_starts(
+) -> void:
 	var s := _fight(Vector2(-3, 0))
 	var w: World = s[0]
 	var aid: int = s[1]
@@ -166,31 +181,38 @@ func test_lights_out_is_shielded_and_the_dark_falls_4_s_after_it_starts() -> voi
 	_hold(w, Vector2(-3, 0), 2)
 	BossLab.start(w, _i(w, aid), &"lights_out")
 	var started := w.tick
-	assert_true(BossDodge.shielded(w, _i(w, aid)), "shielded through the telegraph")
-	_hold(w, Vector2(-3, 0), 58)
-	assert_true(BossDodge.shielded(w, _i(w, aid)), "to the telegraph's last ticks")
-	_hold(w, Vector2(-3, 0), 3)
-	assert_false(BossDodge.shielded(w, _i(w, aid)), "v0.10.5 O2a (L3): open while the light drains")
-	_hold(w, Vector2(-3, 0), 178)
+	var shield_ticks := 0
+	for k in 239:
+		var sh := BossDodge.shielded(w, _i(w, aid))
+		if sh:
+			shield_ticks += 1
+			assert_eq(w.actors.state[_i(w, aid)], EnemyAi.State.WINDUP, "O4b: only the telegraph")
+		_hold(w, Vector2(-3, 0), 1)
+	assert_gte(shield_ticks, 59, "O4b: shielded through the 1 s telegraph")
+	assert_lte(shield_ticks, 60, "O4b: and no longer (the wisps fly open)")
+	gut.p("O4b shield ticks: %d (%.2f s)" % [shield_ticks, shield_ticks / 60.0])
 	assert_false(BossShade.dark(w), "not yet dark")
 	_hold(w, Vector2(-3, 0), 2)
 	assert_true(BossShade.dark(w), "dark 4 s (240 ticks) after it started")
 	assert_eq(w.bosses.shade_at, -1)
 	assert_eq(w.bosses.shade_from, started)
-	assert_false(BossDodge.shielded(w, _i(w, aid)), "the shield is down as the dark falls")
 	for k in 4:
-		assert_gt(w.bosses.lamp_t[k], 235, "every lantern lit afresh as the dark falls")
+		assert_eq(w.bosses.lamp_t[k], 0, "O4: the lanterns stay out as the dark falls")
 
 
 func test_in_the_dark_only_your_circle_and_the_lit_lanterns_are_lit() -> void:
 	var s := _dark(Vector2(-1.5, -1.5))
 	var w: World = s[0]
 	var me := Vector2(-1.5, -1.5)
+	var lt := w.bosses.lamp_t
+	lt[0] = 200
+	w.bosses.lamp_t = lt
 	assert_true(BossShade.lit(w, me + Vector2(3.4, 0)), "3.4 m from you: lit")
 	assert_false(BossShade.lit(w, me + Vector2(3.6, 0)), "3.6 m from you (no lantern near): dark")
 	assert_true(BossShade.lit(w, LAMPS[0] + Vector2(2.9, 0)), "2.9 m from a lit lantern: lit")
+	assert_true(BossShade.in_pool(w, LAMPS[0] + Vector2(2.9, 0)), "in its pool")
+	assert_false(BossShade.in_pool(w, me), "your own light is no pool")
 	assert_false(BossShade.lit(w, Vector2(5.5, 5.5)), "a corner between lanterns: dark")
-	var lt := w.bosses.lamp_t
 	lt[0] = 0
 	w.bosses.lamp_t = lt
 	assert_false(BossShade.lit(w, LAMPS[0] + Vector2(1.0, 0)), "an out lantern lights nothing")
@@ -200,105 +222,175 @@ func test_in_the_dark_only_your_circle_and_the_lit_lanterns_are_lit() -> void:
 	assert_false(st["lamps"][0]["lit"], "the reader says it is out")
 
 
-func test_a_lantern_burns_4_s_and_passing_it_relights_it() -> void:
+## O4 (owner Q10 a: "a lantern stays lit 6 s"): stepping on a lantern lights it for 6 s, dark or light.
+func test_a_lantern_stepped_on_stays_lit_6_s() -> void:
 	var s := _dark(Vector2(-1.5, -1.5))
 	var w: World = s[0]
-	_hold(w, Vector2(-1.5, -1.5), 239)
-	assert_eq(w.bosses.lamp_t[0], 1, "still alight a tick before 4 s")
-	_hold(w, Vector2(-1.5, -1.5), 1)
-	for k in 4:
-		assert_eq(w.bosses.lamp_t[k], 0, "lantern %d burnt out 4 s after the dark fell" % k)
 	_hold(w, LAMPS[1] + Vector2(-1.0, 0), 1)
-	assert_eq(w.bosses.lamp_t[1], 240, "passing within reach relights it for 4 s")
+	assert_eq(w.bosses.lamp_t[1], 360, "stepping within reach lights it for 6 s")
 	assert_eq(w.bosses.lamp_t[0], 0, "the others stay out")
-	_hold(w, Vector2(-1.5, -1.5), 60)
-	assert_eq(w.bosses.lamp_t[1], 180, "it burns down again once you leave")
-	assert_true(BossShade.lit(w, LAMPS[1] + Vector2(-2.5, 0)), "widening the lit area")
+	_hold(w, Vector2(-1.5, -1.5), 359)
+	assert_eq(w.bosses.lamp_t[1], 1, "still alight a tick before 6 s")
+	_hold(w, Vector2(-1.5, -1.5), 1)
+	assert_eq(w.bosses.lamp_t[1], 0, "out 6 s after you left it")
+	var f := _fight(Vector2(-3, 0))
+	var lw: World = f[0]
+	_hush(lw, f[1])
+	_hold(lw, LAMPS[3] + Vector2(1.0, 0), 1)
+	assert_false(BossShade.dark(lw))
+	assert_eq(lw.bosses.lamp_t[3], 360, "in the light too")
+	_hold(lw, Vector2(-1.5, -1.5), 60)
+	assert_eq(lw.bosses.lamp_t[3], 300, "and it burns down in the light")
 
 
-func test_the_shade_is_only_hittable_when_lit() -> void:
+func _hit_tags(w: World, aid: int, amount: int) -> Array:
+	var seq := w.last_event_seq()
+	var got := _hit(w, aid, amount)
+	var ds := w.events_since(seq).filter(
+		func(e: SimEvent) -> bool: return e.kind == SimEvent.Kind.DAMAGE and e.target_id == aid
+	)
+	return [got, ds[0].tags if not ds.is_empty() else 0]
+
+
+## O4 (owner Q10 a: "40 % damage in the dark, 150 % inside a lit pool"): no immunity; the hero's own light is 100 %.
+## The player stands 6 m off (outside their 3.5 m light, inside the ranged armour's full 5 m) unless said.
+func test_the_shade_takes_40_in_the_dark_100_in_your_light_150_in_a_lit_pool() -> void:
 	var s := _dark(Vector2(-1.5, -1.5))
 	var w: World = s[0]
 	var aid: int = s[1]
 	var i := _i(w, aid)
-	w.actors.set_pos(i, Vector2(5.5, 5.5))  # a corner between lanterns, far from you
 	var lt := w.bosses.lamp_t
 	lt.fill(0)
 	w.bosses.lamp_t = lt
+	var corner := Vector2(5.5, 5.5)  # between lanterns
+	w.actors.set_pos(i, corner)
+	w.actors.set_pos(0, corner + Vector2(-6.0, 0))
+	assert_eq(BossShade.light_permille(w, i), 400, "in the dark: 40 %")
 	var hp := w.actors.hp[i]
-	assert_true(BossShade.unlit(w, i), "in the dark")
-	var seq := w.last_event_seq()
-	assert_eq(_hit(w, aid, 50), 0, "a hit sparks off it in the dark")
-	assert_eq(w.actors.hp[i], hp)
-	var hits := w.events_since(seq).filter(
-		func(e: SimEvent) -> bool: return e.kind == SimEvent.Kind.HIT and e.target_id == aid
+	var dk := _hit_tags(w, aid, 100)
+	assert_between(
+		int(dk[0]), 40, 160, "a hit lands in the dark (cut to 40 %; a crit may raise it)"
 	)
-	assert_eq(hits.size(), 1, "the hit still shows")
-	assert_ne(hits[0].tags & SimEvent.TAG_BLOCKED, 0, "blocked: it sparks off")
-	assert_true(WorldReader.new(w).boss_invulnerable(i), "the bar says so")
-	w.actors.set_pos(i, Vector2(-1.5, -1.5) + Vector2(4.4, 0))  # its body inside your 3.5 m light
-	assert_false(BossShade.unlit(w, i))
-	assert_gt(_hit(w, aid, 50), 0, "lit by your light: hit")
+	assert_eq(w.actors.hp[i], hp - int(dk[0]))
+	assert_ne(int(dk[1]) & SimEvent.TAG_SHADE_DARK, 0, "tagged: in the dark")
+	assert_eq(int(dk[1]) & SimEvent.TAG_BLOCKED, 0, "never blocked")
+	assert_false(WorldReader.new(w).boss_invulnerable(i), "the bar never says Invulnerable")
+	assert_eq(WorldReader.new(w).boss_light_permille(i), 400, "the bar reads 40 %")
+	w.actors.set_pos(0, corner + Vector2(-4.4, 0))  # its body inside your 3.5 m light
+	assert_eq(BossShade.light_permille(w, i), 1000, "in your light: 100 %")
+	var mine := int(_hit_tags(w, aid, 100)[1])
+	assert_eq(mine & (SimEvent.TAG_SHADE_DARK | SimEvent.TAG_SHADE_LIT), 0, "no light tag at 100 %")
 	w.actors.set_pos(i, LAMPS[1] + Vector2(-2.0, 0))
-	assert_true(BossShade.unlit(w, i), "by an out lantern: dark")
+	w.actors.set_pos(0, LAMPS[1] + Vector2(-8.0, 0))
+	assert_eq(BossShade.light_permille(w, i), 400, "by an out lantern: dark")
 	lt = w.bosses.lamp_t
 	lt[1] = 200
 	w.bosses.lamp_t = lt
-	assert_false(BossShade.unlit(w, i), "the lantern relit")
-	assert_gt(_hit(w, aid, 50), 0, "lit by a lantern: hit")
+	assert_eq(BossShade.light_permille(w, i), 1500, "the lantern lit: 150 %")
+	var lit := _hit_tags(w, aid, 100)
+	assert_gte(int(lit[0]), 150, "a hit in the pool: 150 %")
+	assert_ne(int(lit[1]) & SimEvent.TAG_SHADE_LIT, 0, "tagged: in the light")
+	w.actors.set_pos(0, LAMPS[1] + Vector2(-3.0, 0))
+	assert_eq(BossShade.light_permille(w, i), 1500, "a pool beats your own light")
+	assert_eq(BossShade.light_permille(w, 0), 1000, "only the Shade is scaled")
 
 
-## NB4b (owner, PLAN "Owner decisions" NB4: "Dark comes and goes"): the dark lasts 9 s, then the room is lit (the Shade
-## hittable anywhere, the lanterns unburnt, a Snuff putting none out) until the next Lights Out's dark relights them.
-func test_the_dark_lasts_8_s_then_the_light_comes_back_until_the_next_lights_out() -> void:
+## O4: Damage.tick_dot takes the same cut and bonus (a burn ticking in the dark still lands).
+func test_damage_over_time_takes_the_light_too() -> void:
+	var s := _dark(Vector2(-1.5, -1.5))
+	var w: World = s[0]
+	var aid: int = s[1]
+	var i := _i(w, aid)
+	w.actors.set_pos(i, Vector2(5.5, 5.5))
+	w.actors.set_pos(0, Vector2(-0.5, 5.5))
+	var me := w.actors.ids[0]
+	assert_eq(Damage.tick_dot(w, i, 100, me, me, &"burn"), 40, "a tick in the dark: 40 %")
+	var lt := w.bosses.lamp_t
+	lt[1] = 100
+	w.bosses.lamp_t = lt
+	w.actors.set_pos(i, LAMPS[1])
+	assert_eq(Damage.tick_dot(w, i, 100, me, me, &"burn"), 150, "in a lit pool: 150 %")
+
+
+## O4 (owner Q10 a: "dark 9 s / light 4 s"): from the first dark the room alternates on its own clock: dark 9 s, the
+## whole room lit 4 s, dark again, repeating; a Lights Out while that runs leaves the cycle be.
+func test_the_dark_lasts_9_s_then_the_light_4_s_repeating() -> void:
 	var s := _dark(Vector2(-1.5, -1.5))
 	var w: World = s[0]
 	var aid: int = s[1]
 	assert_eq(int(BossShade.state(w)["dark_left"]), w.bosses.shade_until - w.tick)
-	assert_between(
-		int(BossShade.state(w)["dark_left"]), 538, 540, "the reader counts the dark down"
-	)
-	var n := 0
-	while BossShade.dark(w) and n < 1000:
+	assert_eq(int(BossShade.state(w)["light_left"]), -1)
+	var darks := PackedInt32Array()
+	var lights := PackedInt32Array()
+	var was := true
+	var since := 0
+	for k in 60 * 40:
 		_hold(w, Vector2(-1.5, -1.5), 1)
-		n += 1
-	assert_eq(n, 540, "the dark lifts 9 s after it fell")
-	assert_eq(w.bosses.shade_until, -1)
-	assert_eq(int(BossShade.state(w)["dark_left"]), -1)
-	assert_false(bool(BossShade.state(w)["dark"]), "the reader says the room is lit")
-	assert_true(BossShade.lit(w, Vector2(5.5, 5.5)), "a corner between lanterns: lit again")
-	var i := _i(w, aid)
-	w.actors.set_pos(i, Vector2(5.5, 5.5))
-	var lt := w.bosses.lamp_t
-	lt.fill(0)
-	lt[2] = 100
-	w.bosses.lamp_t = lt
-	assert_false(BossShade.unlit(w, i), "in the light the Shade is hittable anywhere")
-	assert_gt(_hit(w, aid, 50), 0, "hit far from any light")
-	_hold(w, Vector2(-1.5, -1.5), 60)
-	assert_eq(w.bosses.lamp_t[2], 100, "a lantern does not burn while the room is lit")
-	var t := BossAi.table_of(w, i)
-	BossShade.snuff(w, t.attacks[t.attack_index(&"snuff")], LAMPS[2])
-	assert_eq(w.bosses.lamp_t[2], 100, "nor does a Snuff put it out")
-	BossLab.start(w, i, &"lights_out")
-	_hold(w, Vector2(-1.5, -1.5), 240)
-	assert_false(BossShade.dark(w), "the next Lights Out drains the light again")
-	_hold(w, Vector2(-1.5, -1.5), 1)
-	assert_true(BossShade.dark(w), "and its dark falls 4 s after it starts")
-	for k in 4:
-		assert_eq(w.bosses.lamp_t[k], 240, "every lantern relit as the dark falls")
-	w.actors.set_pos(_i(w, aid), Vector2(5.5, 5.5))
-	assert_true(BossShade.unlit(w, _i(w, aid)), "and again hittable only in light")
+		since += 1
+		var now := BossShade.dark(w)
+		if now != was:
+			if was:
+				darks.append(since)
+			else:
+				lights.append(since)
+			since = 0
+			was = now
+		if k == 60 * 15:
+			BossLab.start(w, _i(w, aid), &"lights_out")  # mid-cycle: only its wisps
+	assert_gte(darks.size(), 3, "three darks in 40 s")
+	assert_gte(lights.size(), 3, "three lights between them")
+	# (the first is counted from the tick it fell on, like the rest)
+	for k in darks.size():
+		assert_eq(darks[k], 540, "each dark lasts 9 s")
+	for n in lights:
+		assert_eq(n, 240, "each light lasts 4 s")
+	assert_eq(w.bosses.shade_at, -1, "no Lights Out reschedules the dark once it cycles")
 
 
-func test_a_mid_dark_lights_out_starts_a_fresh_stretch() -> void:
+## O4: in the full light the Shade takes 100 % anywhere (150 % still in a lit pool); a Snuff puts lanterns out there
+## too.
+func test_in_the_full_light_100_anywhere_and_snuff_still_works() -> void:
 	var s := _dark(Vector2(-1.5, -1.5))
 	var w: World = s[0]
-	_hold(w, Vector2(-1.5, -1.5), 200)
-	BossLab.start(w, _i(w, s[1]), &"lights_out")  # a phase's entry Lights Out, say, while it is dark
-	_hold(w, Vector2(-1.5, -1.5), 241)
+	var aid: int = s[1]
+	_hold(w, Vector2(-1.5, -1.5), 540)
+	assert_false(BossShade.dark(w), "the dark lifted")
+	assert_between(
+		int(BossShade.state(w)["light_left"]), 238, 240, "the reader counts the light down"
+	)
+	var i := _i(w, aid)
+	w.actors.set_pos(i, Vector2(5.5, 5.5))
+	w.actors.set_pos(0, Vector2(-0.5, 5.5))
+	assert_eq(BossShade.light_permille(w, i), 1000, "full light: 100 % far from any light")
+	var lt := w.bosses.lamp_t
+	lt[2] = 100
+	w.bosses.lamp_t = lt
+	w.actors.set_pos(i, LAMPS[2])
+	assert_eq(BossShade.light_permille(w, i), 1500, "a lit pool: 150 % in the light too")
+	var t := BossAi.table_of(w, i)
+	BossShade.snuff(w, t.attacks[t.attack_index(&"snuff")], LAMPS[2])
+	assert_eq(w.bosses.lamp_t[2], 0, "a Snuff puts it out in the light")
+
+
+## O4 (L4, Q12): while dark the hint points at every unlit lantern; lighting one drops its marker; none in the light,
+## none once the Shade is gone.
+func test_the_hint_points_at_the_unlit_lanterns_in_the_dark() -> void:
+	var s := _dark(Vector2(-1.5, -1.5))
+	var w: World = s[0]
+	assert_eq(w.objectives.size(), 4, "four unlit lanterns, four markers")
+	for k in 4:
+		assert_eq(w.objectives.reason_at(k), ObjectiveMarkers.SHADE_LANTERN)
+		assert_almost_eq(w.objectives.pos(k).distance_to(LAMPS[k]), 0.0, 0.001, "at lantern %d" % k)
+	_hold(w, LAMPS[1] + Vector2(-1.0, 0), 1)
+	assert_eq(w.objectives.size(), 3, "the lit one drops out")
+	_hold(w, Vector2(-1.5, -1.5), 539)
+	assert_false(BossShade.dark(w))
+	assert_eq(w.objectives.size(), 0, "cleared in the light")
+	_hold(w, Vector2(-1.5, -1.5), 240)
 	assert_true(BossShade.dark(w))
-	assert_between(int(BossShade.state(w)["dark_left"]), 538, 540, "its dark lasts its own 9 s")
+	assert_eq(w.objectives.size(), 4, "back as the dark falls")
+	BossSignatures.on_boss_gone(w, s[1])
+	assert_eq(w.objectives.size(), 0, "cleared at the fight's end")
 
 
 func test_snuff_puts_out_the_two_lanterns_nearest_its_strike() -> void:
@@ -306,6 +398,9 @@ func test_snuff_puts_out_the_two_lanterns_nearest_its_strike() -> void:
 	var s := _dark(Vector2(-1.5, -1.5))
 	var w: World = s[0]
 	var aid: int = s[1]
+	var lt := w.bosses.lamp_t
+	lt.fill(360)
+	w.bosses.lamp_t = lt
 	_hold(w, p, 1)
 	BossLab.start(w, _i(w, aid), &"snuff")
 	var tel := BossAi.telegraph(w, _i(w, aid))
@@ -343,6 +438,8 @@ func test_lights_out_comes_every_12_s_never_by_the_pick() -> void:
 	var was := false
 	var fell := -1
 	var stretches := PackedInt32Array()
+	var rose := -1
+	var lights := PackedInt32Array()
 	for k in 60 * 40:
 		var a := TAU * float(k) / 300.0
 		w.actors.set_pos(0, Vector2(cos(a), sin(a)) * 6.0)
@@ -355,9 +452,12 @@ func test_lights_out_comes_every_12_s_never_by_the_pick() -> void:
 		was = now
 		if BossShade.dark(w) and fell < 0:
 			fell = w.tick
+			if rose >= 0:
+				lights.append(w.tick - rose)
 		elif not BossShade.dark(w) and fell >= 0:
 			stretches.append(w.tick - fell)
 			fell = -1
+			rose = w.tick
 	assert_gte(starts.size(), 3, "three Lights Outs in 40 s")
 	assert_between(starts[0], 170, 420, "the first about 3 s in")
 	for k in range(1, starts.size()):
@@ -367,6 +467,10 @@ func test_lights_out_comes_every_12_s_never_by_the_pick() -> void:
 	for n in stretches:
 		# (counted on w.tick: a hit's freeze, which holds the world's phases, can add a few ticks)
 		assert_between(n, 540, 552, "each dark lasts 9 s")
+	# v0.11.0 O4 (owner Q10 a): then 4 s of light, on the room's own clock (not the next Lights Out's).
+	assert_gte(lights.size(), 2, "the light came and went at least twice")
+	for n in lights:
+		assert_between(n, 240, 252, "each light lasts 4 s")
 
 
 func test_the_phases_open_with_lights_out() -> void:
@@ -427,33 +531,6 @@ func test_deterministic_and_a_mid_dark_save_restores() -> void:
 	assert_eq(restored.state_hash(), a.state_hash(), "same hash 300 ticks on")
 
 
-func test_an_older_snapshot_without_the_light_loads() -> void:
-	var s := _fight(Vector2(-6, 2))
-	var w: World = s[0]
-	CombatLab.idle(w, 60)
-	var snap := WorldSnapshot.take(w)
-	var bosses: Dictionary = snap["world"][&"bosses"]
-	assert_true(bosses.has(&"lamp_t"), "the light is saved")
-	for f: StringName in [
-		&"shade_boss",
-		&"shade_dark",
-		&"shade_at",
-		&"shade_from",
-		&"shade_until",
-		&"lamp_x",
-		&"lamp_y",
-		&"lamp_t"
-	]:
-		bosses.erase(f)
-	var base := BossLab.world()
-	BossLab.ready_boss(base, &"lantern_shade")
-	assert_eq(WorldSnapshot.apply(base, snap), "", "a save from before NB4 loads")
-	assert_eq(base.bosses.shade_boss, -1, "with no light yet")
-	CombatLab.idle(base, 2)
-	assert_gte(base.bosses.shade_boss, 0, "the Shade takes the room's light again")
-	assert_eq(base.bosses.lamp_x.size(), 4)
-
-
 func test_a_world_without_a_shade_has_no_light_state() -> void:
 	var w := BossLab.world()
 	BossLab.ready_boss(w, &"clockwork_judge")
@@ -492,3 +569,55 @@ func test_the_death_lines_name_the_dark() -> void:
 	assert_eq(BossAi.cause_key(w), &"CAUSE_SHADE_SNUFF")
 	w.killer_attack = t.attack_index(&"lantern_sweep")
 	assert_eq(BossAi.cause_key(w), &"CAUSE_SHADE_SWEEP")
+
+
+## v0.11.0 S2b (owner Q2, "Wider still"): the escape lane in a Wisp Bloom wave (the edge-to-edge gap between the two
+## wisps either side of a petal valley, where the wave crosses 4 m from the Shade) is at least the hero's diameter
+## (0.70 m) + 0.7 m = 1.40 m. Bloom 1 too (owner, 2026-11-07: 30 -> 25 wisps a wave).
+func test_s2b_bloom_lanes_leave_hero_plus_0_7_m_at_4_m() -> void:
+	var ring := 4.0
+	var away := Vector2(0, -400)
+	var need := 2.0 * PlayerTable.starting_values().radius_m + 0.7
+	for atk in [&"wisp_bloom", &"wisp_bloom_2", &"wisp_bloom_3"]:
+		var s := _fight(Vector2(ring, 0))
+		var w: World = s[0]
+		_hush(w, s[1])
+		_hold(w, Vector2(ring, 0), 2)
+		BossLab.start(w, _i(w, s[1]), atk)
+		var prev := {}
+		var first_wave := {}  # proj id -> true, the ids seen on the first tick any wisp exists
+		var angles: Array[float] = []
+		var radius := 0.0
+		var fired := false
+		for tick in 400:
+			_hold(w, away if fired else Vector2(ring, 0), 1)
+			var ps := w.projectiles
+			var any := false
+			for j in ps.ids.size():
+				if ps.team[j] != ActorStore.TEAM_ENEMY:
+					continue
+				any = true
+				var id: int = ps.ids[j]
+				if not fired:
+					first_wave[id] = true
+				var p := Vector2(ps.pos_x[j], ps.pos_y[j])
+				radius = ps.radius[j]
+				if first_wave.has(id) and prev.has(id):
+					var a: Vector2 = prev[id]
+					if a.length() < ring and p.length() >= ring:
+						angles.append(
+							a.lerp(p, (ring - a.length()) / (p.length() - a.length())).angle()
+						)
+				prev[id] = p
+			if any:
+				fired = true
+			if fired and not any:
+				break
+		assert_gt(angles.size(), 6, "%s: the first wave crossed 4 m" % atk)
+		angles.sort()
+		var widest := 0.0
+		for q in angles.size():
+			var nxt: float = angles[(q + 1) % angles.size()]
+			var d: float = nxt - angles[q] + (TAU if q == angles.size() - 1 else 0.0)
+			widest = maxf(widest, 2.0 * ring * sin(d / 2.0) - 2.0 * radius)
+		assert_gte(widest, need, "%s: lane %.3f m at 4 m (need %.2f)" % [atk, widest, need])

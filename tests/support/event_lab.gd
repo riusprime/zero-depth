@@ -10,7 +10,7 @@ static var _repo: ContentRepository
 
 static func repo() -> ContentRepository:
 	if _repo == null:
-		_repo = ContentRepository.load_all()
+		_repo = SharedContent.repo()
 	return _repo
 
 
@@ -42,9 +42,7 @@ static func world(
 	run.scale_enemies(enemies)
 	var bosses := ContentCompiler.compile_bosses(r)
 	run.scale_bosses(bosses)
-	var boss := FloorShape.boss(
-		run, RunContentCompiler.compile_boss_pools(r, run.table.floors), run.floor_index
-	)
+	var boss := FloorShape.boss(run, SharedContent.boss_pools(run.table.floors), run.floor_index)
 	var arena := (
 		BossArenaSpec.make(bosses[boss].arena_cells, bosses[boss].arena_template, boss)
 		if boss >= 0
@@ -75,7 +73,13 @@ static func world(
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(r.get_def(&"heat", &"overclock")))
-	EventCompiler.setup(w, r, Events.CURSE_RULES_N19, false, rare)  # v0.9.5 AQ: rare false = the old 1-2 rooms
+	var rules := EventCompiler.compile_rules(r.get_def(&"event_rules", &"floor"))
+	if not rare:  # TEST SETUP: 1-2 event rooms on every floor, repeats allowed (more pedestals to test)
+		rules.rooms_min = 1
+		rules.rooms_max = 2
+		rules.event_floor_chance_permille = 1000
+		rules.events_max_per_run = 0
+	Events.setup(w, EventCompiler.compile_events(r), EventCompiler.compile_curses(r), rules)
 	return w
 
 

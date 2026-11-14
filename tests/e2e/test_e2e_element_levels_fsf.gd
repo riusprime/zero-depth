@@ -13,11 +13,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## The altar nearest the hero (its index), or -1.
 func _altar(w: World) -> int:
 	var best := -1
@@ -41,7 +36,7 @@ func test_frost_at_level_three_shatters_and_a_shard_hits_the_neighbour() -> void
 	await e.start_from_menu(&"gun")
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)
 	var k := W.item(w, &"frost_core")
@@ -70,10 +65,10 @@ func test_frost_at_level_three_shatters_and_a_shard_hits_the_neighbour() -> void
 	await e.frames(2)
 	var guard := 0
 	while main.driver.debug.mod_choice != k and guard < 300:
-		await _click(e, main, "NextMod")
+		await e.click_dev("NextMod")
 		guard += 1
 	for n in 2:
-		await _click(e, main, "GrantMod")
+		await e.click_dev("GrantMod")
 		await e.frames(3)
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)

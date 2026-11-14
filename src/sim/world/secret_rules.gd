@@ -1,6 +1,6 @@
 class_name SecretRules
 extends RefCounted
-## v0.9.0 DX (owner W §4 C, §5; Q23): the destructibles' numbers for one floor's setup (Breakables.setup), from
+## The destructibles' numbers for one floor's setup (Breakables.setup), from
 ## SecretsDefinition (data/secrets/secrets.tres; FloorPlan copies them here). The defaults equal the data's starting
 ## values, so a world built without content gets the same floor. Setup copies the numbers play needs into Breakables
 ## itself (they ride the save with it); this object is not kept.

@@ -1,6 +1,6 @@
 class_name GambleIcons
 extends RefCounted
-## The gamble shrine's stat symbols and lines (v0.3.0 L19), drawn with CanvasItem calls, no external art. Each icon
+## The gamble shrine's stat symbols and lines, drawn with CanvasItem calls, no external art. Each icon
 ## is a list of shapes in a unit box (0..1, y down), like ItemIcons: {"t": "line"|"loop"|"poly", "pts", "w"} or
 ## {"t": "circle", "c", "r", "w" (0 = filled)}; "dark": true draws it in DARK.
 

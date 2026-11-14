@@ -29,6 +29,8 @@ shader_parameter/flash_emission = 5.999999865888
 [sub_resource type="SphereMesh" id="SphereMesh_2pu8q"]
 radius = 0.15
 height = 0.3
+radial_segments = 20
+rings = 10
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_0qyq3"]
 render_priority = 0
@@ -178,6 +180,8 @@ scale_curve = SubResource("CurveTexture_88hbr")
 [sub_resource type="SphereMesh" id="SphereMesh_iqhg4"]
 radius = 0.03
 height = 0.2
+radial_segments = 16
+rings = 8
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_tlxxc"]
 render_priority = 0
@@ -191,6 +195,8 @@ shader_parameter/flash_emission = 3.999999910592
 [sub_resource type="SphereMesh" id="SphereMesh_3lxh0"]
 radius = 0.25
 height = 0.5
+radial_segments = 26
+rings = 13
 
 [sub_resource type="Curve" id="Curve_t0hfc"]
 _data = [Vector2(0, 1), 0.0, -1.0023087, 0, 0, Vector2(1, 0), -1.212547, 0.0, 0, 0]
@@ -221,6 +227,8 @@ alpha_curve = SubResource("CurveTexture_ifnag")
 [sub_resource type="SphereMesh" id="SphereMesh_popbu"]
 radius = 0.05
 height = 0.5
+radial_segments = 26
+rings = 13
 
 [node name="LaserVFX_04" type="Node3D" unique_id=1404719460]
 script = ExtResource("1_yglh1")

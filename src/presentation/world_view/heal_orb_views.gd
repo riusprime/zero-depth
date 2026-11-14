@@ -1,9 +1,9 @@
 class_name HealOrbViews
 extends Node3D
-## Heal orbs (v0.4.0 TU, owner D8): each orb the sim lays down is a green, softly glowing crystal that pulses
+## Heal orbs: each orb the sim lays down is a green, softly glowing crystal that pulses
 ## where it lies until the player walks over it. Reads WorldReader.heal_orbs / heal_orb_ids only; the pulse is
 ## frame time, cosmetic.
-## v0.6.1 SW (owner R3, the shard look): the green sphere became an outlined faceted shard (ShardMesh) lit by the
+## The green sphere became an outlined faceted shard (ShardMesh) lit by the
 ## scene with its own emission, turning slowly in a soft additive green glow; same colour, height and pulse.
 
 const COLOR := Color("#5CFF8A")

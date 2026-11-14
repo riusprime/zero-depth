@@ -10,7 +10,7 @@ func _parts() -> Dictionary:
 	var profile := ProfileStore.new("")
 	var codex := CodexStore.new(profile)
 	var store := AchievementStore.new(profile)
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var book := AchievementBook.build(repo, store, codex, CodexCatalog.build(repo))
 	return {"profile": profile, "tracker": AchievementTracker.new(book), "store": store}
 
@@ -62,7 +62,7 @@ func test_the_remembered_blade_falls_back_to_the_gun_while_locked() -> void:
 
 
 func test_the_achievement_is_defined_and_valid() -> void:
-	var d := ContentRepository.load_all().get_def(&"achievements", &"sword_unbound")
+	var d := SharedContent.repo().get_def(&"achievements", &"sword_unbound")
 	assert_not_null(d)
 	assert_eq((d as AchievementDefinition).problems().size(), 0)
 	assert_eq((d as AchievementDefinition).stat, &"final:won_gun")

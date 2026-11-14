@@ -16,12 +16,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## F10 -> Restart floor (Enter on the focused button, as test_e2e_ascension): the run's current floor rebuilt.
 func _restart_floor(e: E2e, main: Main) -> void:
 	await e.tap(KEY_F10)
@@ -76,7 +70,7 @@ func test_a_starbound_card_is_offered_in_loop_two_and_taken_with_the_keys() -> v
 	var card := Starbound.offer_card(w, altar)
 	var altar_id := w.rewards.ids[altar]
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")  # the walk is about the card, not survival
+	await e.click_dev("God")  # the walk is about the card, not survival
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(await e.walk_to(w.rewards.pos(altar), w.reward_table.interact_radius_m * 0.6))
 	await e.tap(KEY_E)

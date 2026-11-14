@@ -1,13 +1,13 @@
 class_name NemesisViews
 extends Node3D
-## v0.8.0 FB3 (owner F6 "Weapon + dash + 2-3 cards"; FINAL_BOSS.md F6): the Nemesis's tells beside its avatar, read from
+## The Nemesis's tells beside its avatar, read from
 ## the sim (WorldReader.nemesis; EI-07), never decided here:
 ## - a card's cast: through its windup the card's own name (the player's card, tr of its name key) floats over the
 ##   Nemesis's head and a violet sigil opens at its feet, brightening until the cast lands (its parts on the ground are
 ##   TelegraphViews', its shots FireballViews', its strikes BossStrikeViews');
 ## - its dash: dark afterimages left along its way, fading (as the hero's DashTrail, in the Nemesis's colours).
 ## Ticks are the sim's (the views pause with it); reduced motion: no pulse, the afterimages still fade.
-## v0.8.0 N2 (owner O52; WorldReader.final_pace): The Fallen's mimic window: through its warning a thin violet ring
+## The Fallen's mimic window: through its warning a thin violet ring
 ## pulses at the hero's feet and at The Fallen's, closing in; through the window both rings burn solid and a violet
 ## thread joins them (your power is tied to its level), fading as the window ends.
 
@@ -16,20 +16,20 @@ const GHOST := Color(0.16, 0.06, 0.22)
 ## The card's name floats this high (m); the sigil's radius (m).
 const LABEL_Y := 2.1
 const SIGIL_R := 1.1
-## v0.10.0 VX5 (R13): the cast sigil is a MagicArea in the blood element; false: the owner's sigil texture.
+## The cast sigil is a MagicArea in the blood element; false: the owner's sigil texture.
 const PACK_SIGIL := true
 ## An afterimage every GHOST_EVERY ticks of a dash, at most GHOSTS alive, each fading over GHOST_TICKS.
 const GHOST_EVERY := 2
 const GHOSTS := 8
 const GHOST_TICKS := 18
-## v0.8.0 N2: the window cue's colour and its rings' radius (m).
+## The window cue's colour and its rings' radius (m).
 const CUE := Color(0.82, 0.45, 1.0)
 const CUE_R := 1.0
 
 var label := Label3D.new()
 var _sigil := MeshInstance3D.new()
 var _sigil_mat := StandardMaterial3D.new()
-## v0.8.0 TX1: the owner's sigil (FxTextures.sigil_material; null: the code disc).
+## The owner's sigil (FxTextures.sigil_material; null: the code disc).
 var _sigil_tex: ShaderMaterial
 var _area: MagicArea = null
 var _ghosts: Array[MeshInstance3D] = []
@@ -40,7 +40,7 @@ var _tick := 0
 var _casting := -1
 var _progress := 0.0
 var _t := 0.0
-## v0.8.0 N2: the window cue (the rings at the hero's and The Fallen's feet, the thread between them).
+## The window cue (the rings at the hero's and The Fallen's feet, the thread between them).
 var _cue_hero := MeshInstance3D.new()
 var _cue_body := MeshInstance3D.new()
 var _cue_link := MeshInstance3D.new()
@@ -73,7 +73,7 @@ func _init() -> void:
 	_sigil_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	_sigil_mat.albedo_color = Color(SIGIL, 0.0)
 	_sigil.material_override = _sigil_mat
-	_sigil_tex = FxTextures.sigil_material(SIGIL, 0)  # v0.8.0 TX1: the owner's sigil, in its violet
+	_sigil_tex = FxTextures.sigil_material(SIGIL, 0)  # The owner's sigil, in its violet
 	if _sigil_tex != null:
 		_sigil.mesh = FxTextures.floor_quad(SIGIL_R * 2.3)
 		_sigil.material_override = _sigil_tex
@@ -150,7 +150,7 @@ func sync(reader: WorldReader) -> void:
 		_sigil.visible = true
 		_sigil.layers = 1
 		if PACK_SIGIL and MagicArea.kinds().has("circle"):
-			# R13: the cast sigil is a blood magic circle at its feet (the old sigil stays as the flag the tests read)
+			# The cast sigil is a blood magic circle at its feet (the old sigil stays as the flag the tests read)
 			if _area == null or not is_instance_valid(_area):
 				_area = MagicArea.add(
 					self,
@@ -169,7 +169,7 @@ func sync(reader: WorldReader) -> void:
 	_sync_cue(reader, i)
 
 
-## v0.8.0 N2: the window cue from WorldReader.final_pace (its state and the ticks left of it).
+## The window cue from WorldReader.final_pace (its state and the ticks left of it).
 func _sync_cue(reader: WorldReader, i: int) -> void:
 	var pace := (
 		reader.final_pace() if i >= 0 and reader.actor_kind(i) == WorldReader.KIND_NEMESIS else {}
@@ -249,7 +249,7 @@ func sigil_shown() -> bool:
 	return _sigil.visible
 
 
-## v0.8.0 N2: the window cue showing (0 none, 1 the warning's rings, 2 the window's rings and thread; tests).
+## The window cue showing (0 none, 1 the warning's rings, 2 the window's rings and thread; tests).
 func cue_shown() -> int:
 	if not _cue_hero.visible:
 		return 0

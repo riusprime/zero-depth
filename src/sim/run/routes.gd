@@ -2,15 +2,15 @@ class_name Routes
 extends RefCounted
 ## Optional routes (v0.5.0 PLAN R5, step RT). After the boss of a run's floor before the last, the boss room opens
 ## two portals: the normal gate and a Deep gate beside it (Routes.place_deep_gate; v0.9.0 DP, owner Q26b: only once
-## the floor's purple runes are awakened, PurpleRunes; a floor saved before DP: always). Walking into one takes that
+## the floor's purple runes are awakened, PurpleRunes). Walking into one takes that
 ## route (BossFlow.route_taken); the other closes. The next floor is then normal or Deep (RunState.routes):
 ## - Deep scaling: enemies' and bosses' HP and damage × RunTable.deep_scale_permille, composed into the floor's own
 ##   factors (RunState.scale_enemies / scale_bosses: one multiplication per table, never applied twice; the danger
 ##   tier's power still comes on top as each enemy arrives);
 ## - one extra chest (RunTable.deep_extra_chests) and a curse-free epic altar (Offers.roll_epic: epic stat cards and
-##   ability level-ups only), on item spots the floor's own rewards left free; v0.5.5 DS (S5) the epic altar on the
+##   ability level-ups only), on item spots the floor's own rewards left free; v0.5.5 DS the epic altar on the
 ##   free spot nearest the boss door, the floor's end (end_first);
-## - v0.5.5 DS (S5): a Deep-only event (Events.draw_event) (its elite in every combat room went in v0.9.0 DP, Q24),
+## - v0.5.5 DS: a Deep-only event (Events.draw_event) (its elite in every combat room went in v0.9.0 DP, Q24),
 ##   the violet look (StageView), and the extra threat raises the hidden catch-up's caps (CatchUp).
 ## - +1 threat T per Deep floor taken (World.deep_threat, set by RunState.prepare; Curses.threat adds it).
 ## Pure sim code: no stream is drawn here (placement is a pure function of the layout), so a Deep floor's loot and
@@ -23,8 +23,6 @@ enum Route { NORMAL, DEEP }
 const GATE_GAP := 4.8
 ## Further candidates step this far (m) along a wall.
 const STEP := 0.5
-## The depth margin (m) of a gate's kept-clear zone past the front square (its side margin: GateClearance.zone_side).
-const ZONE_DEPTH := 1.0
 ## The Deep gate keeps this clear of where the boss appears (m), and of the boss door's passage.
 const SPAWN_CLEAR := 2.6
 const DOOR_CLEAR := 1.5
@@ -109,7 +107,7 @@ static func fits(
 	var box := collider_at(pos, angle)
 	if not room.encloses(box.bounds()) or not room.encloses(_front(pos, angle)):
 		return false
-	if not GateClearance.oval_fits(f, room, pos, angle):  # v0.9.0 PT: clear of the room's walls
+	if not GateClearance.oval_fits(f, room, pos, angle):  # Clear of the room's walls
 		return false
 	var z := zone(f, pos, angle)
 	if z.intersects(f.gate_zone()):
@@ -184,7 +182,7 @@ static func _face(r: Rect2, s: int) -> float:
 ## A gate's centre on side s of r at coordinate u along that side.
 static func _on_wall(f: FloorLayout, r: Rect2, s: int, u: float) -> Vector2:
 	var face := Vector2(_face(r, s), u) if s % 2 == 0 else Vector2(u, _face(r, s))
-	return face + Kin.dir(_SIDE_ANGLES[s]) * GateClearance.wall_offset(f)  # v0.9.0 PT: clear of the wall
+	return face + Kin.dir(_SIDE_ANGLES[s]) * GateClearance.wall_offset(f)  # Clear of the wall
 
 
 ## A Deep floor's extras (setup, after Rewards.place): the epic altar, then the extra chests, on the item spots the
@@ -205,7 +203,7 @@ static func place_deep_rewards(w: World, layout: FloorLayout, extra_chests: int)
 			w.add_reward(RewardStore.Kind.CHEST, spots[k], price)
 
 
-## v0.5.5 DS (owner S5, "a guaranteed epic chest at the floor's end"): `spots` with the one nearest the boss door
+## `spots` with the one nearest the boss door
 ## (the floor's end) moved to the front, so the epic altar stands by the way to the boss. Pure.
 static func end_first(layout: FloorLayout, spots: PackedVector2Array) -> PackedVector2Array:
 	var best := -1
@@ -229,7 +227,7 @@ static func to_front(arr: Variant, best: int) -> Variant:
 
 ## Spots free for an extra reward: unused item spots in spot order, then open spawn spots (rooms in order), each
 ## REWARD_CLEAR from every reward and from each other. Never in the start hall, the boss room, the Overrun room
-## (v0.4.0 AB) or the room the shop will take (v0.5.0 SH: ShopPlacement.pick is a pure function of the layout, so
+##  or the room the shop will take (ShopPlacement.pick is a pure function of the layout, so
 ## its room is known before FloorScenario.add_shop places the terminal).
 static func free_spots(w: World, layout: FloorLayout) -> PackedVector2Array:
 	var out := PackedVector2Array()

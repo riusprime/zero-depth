@@ -1,67 +1,72 @@
 class_name Main
 extends Node
-## Composition root (ARCHITECTURE §2): boots the input map, profile and settings, then runs the menus and the
-## stage. Only app/ may wire layers together.
+## Composition root (ARCHITECTURE §2): input map, profile, settings, then menus and stage; only app/ wires layers.
 
 const STAGE_SEED := 20261006
 const END_PANEL_DELAY_TICKS := 45
-## Run flow (v0.3.0 B): the run's data; the fade-in when a floor starts is the loading cover's (v0.8.0 N3).
-const RUN_ID := RunSaver.RUN_ID  # v0.9.0 FV: five floors (a v0.8.0 save resumes in its own three)
+## Run flow: the run's data; the fade-in when a floor starts is the loading cover's.
+const RUN_ID := RunSaver.RUN_ID  # Five floors
 const FADE_SECONDS := 0.45
-## v0.8.0 N3 (owner O45): a portal's cover opens on the new floor over this long (CoverLoads).
+## A portal's cover opens on the new floor over this long (CoverLoads).
 const PORTAL_UNVEIL_SECONDS := 0.55
-## v0.7.5 AP: the Codex profile page the Ascension counters live on (_record_ascension; not a Codex page you browse).
+## The Codex profile page the Ascension counters live on (_record_ascension; not a Codex page you browse).
 const ASCENSION_PAGE := &"runs"
 
-## v0.8.0 N1 (owner O53): how a new run's seed is picked (RunSeeds: random in the game; RunSeeds.AUTO resolves at boot;
+## How a new run's seed is picked (RunSeeds: random in the game; RunSeeds.AUTO resolves at boot;
 ## a seed >= 0 fixes the order on purpose: E2e.boot sets it before main.tscn boots).
 static var fixed_seed := RunSeeds.AUTO
+## A test-only switch, false in the game (E2e.boot sets it; nothing in src/
+## does): Play opens the build pick (no hub), the pick starts the run at once, and floor 1's arrival runs in one frame.
+static var quick_start := false
 
 var profile: ProfileStore
 var driver: SimDriver
 var view: WorldViewRoot
 var ui := CanvasLayer.new()
+var fps_counter := FpsCounter.new()
 ## The run in progress (null outside one): floors, biome order, carry, totals. _stage_seed is its run seed.
 var run: RunState
-## Sounds, ambience and captions (v0.3.0 AU); it outlives floors so the ambience can crossfade.
+## Sounds, ambience and captions; it outlives floors so the ambience can crossfade.
 var audio := AudioDirector.new()
-## v0.4.0 SV: the run save (room entries, close, Continue).
+## The run save (room entries, close, Continue).
 var saves: RunSaver
-## v0.7.5 CX: the Codex's counters (in the profile) and the recorder that reads each floor's ticks into them.
+## The Codex's counters (in the profile) and the recorder that reads each floor's ticks into them.
 var codex: CodexStore
 var codex_recorder: CodexRecorder
-## v0.7.5 AC: the achievements (in the profile), the tracker that unlocks them from each floor's ticks and the Codex,
+## The achievements (in the profile), the tracker that unlocks them from each floor's ticks and the Codex,
 ## and the toast that shows an unlock (on the UI layer, so it outlives a floor).
 var achievements: AchievementStore
 var achievement_tracker: AchievementTracker
 var toast := AchievementToast.new()
-## v0.7.5 SM (N8): the first-run hints (seen ones in the profile's hints section), on the UI layer like the toast.
+## The first-run hints (seen ones in the profile's hints section), on the UI layer like the toast.
 var hint_store: HintStore
 var hints := OnboardingHints.new()
-## v0.8.0 N3 (owner O45): every floor load runs behind the loading cover (CoverLoads; it took over the fade-in).
+## Every floor load runs behind the loading cover (CoverLoads; it took over the fade-in).
 var loads := CoverLoads.new()
-## v0.7.5 PG (owner N20, docs/tools/PLAYGROUND.md): the Playground while it runs (null otherwise).
+## The Playground while it runs (null otherwise).
 var playground: PlaygroundSession
-## v0.9.0 HB (owner Q27): the hub while it runs (null otherwise: the menu, a run, the Playground).
+## The hub while it runs (null otherwise: the menu, a run, the Playground).
 var hub: HubSession
-## v0.10.5 O17 (owner P17): the hub's Training Room while it runs (null otherwise).
+## The hub's Training Room while it runs (null otherwise).
 var training: TrainingSession
-## v0.10.5: the play recorder (`-- --perf-log` or `--perf-log=light`, docs/process/PERF_LOG.md); null without the flag.
+## The play recorder (`-- --perf-log` or `--perf-log=light`, docs/process/PERF_LOG.md); null without the flag.
 var perf: PerfRecorder
 ## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, put in the content before compiling.
-## v0.7.5 SM: a build with the panel locked (DevGate) ignores any tuning file left on the PC.
+## A build with the panel locked (DevGate) ignores any tuning file left on the PC.
 var tuning := DevTuning.load_saved() if DevGate.enabled() else DevTuning.new()
 var _menu: Control
 var _pause: PauseMenu
-## Options opened from the pause menu (v0.3.0 O), over the paused stage.
+## Options opened from the pause menu, over the paused stage.
 var _pause_options: OptionsMenu
-## v0.6.5 WN2: the Build page opened from the pause menu, over the paused stage.
+## The Build page opened from the pause menu, over the paused stage.
 var _pause_build: BuildPage
-## v0.7.5 CX: the Codex opened from the pause menu, and its catalog (from the content, built on first use).
+## The Codex opened from the pause menu, and its catalog (from the content, built on first use).
 var _pause_codex: CodexView
 var _codex_catalog: CodexCatalog
 var _achievement_book: AchievementBook
 var _dev: DevPanel
+## God, ticked in the dev panel, carried to the run's next floor (owner, 2026-11-10: "until you untick it").
+var _god_kept := false
 var _devm: DevMasterPanel
 ## The current floor's biome file (the dev panel's lighting edits re-read its mood).
 var _biome_path := ""
@@ -75,14 +80,16 @@ var _ended_ticks := 0
 var _stage_seed := STAGE_SEED
 var _seeds: RunSeeds
 var _run_biomes: Array[StringName] = []
-var _pg_build := &"gun"  # v0.7.5 PG: the Playground weapon and biome (kept across Restart)
+var _pg_build := &"gun"  # The Playground weapon and biome (kept across Restart)
 var _pg_biome := &"ruins"
 
 
 func _ready() -> void:
-	UserDirMigration.run_for_user_dir()  # v0.9.5 TT: carry the saves over from the pre-name folder
+	UserDirMigration.run_for_user_dir()  # Carry the saves over from the pre-name folder
+	if not NativeCheck.passes(self):  # No native library: the one error, exit code 1 (native/README.md)
+		return
 	get_tree().set_auto_accept_quit(false)
-	_seeds = RunSeeds.new(RunSeeds.resolve(fixed_seed, STAGE_SEED))  # v0.8.0 N1 (O53)
+	_seeds = RunSeeds.new(RunSeeds.resolve(fixed_seed, STAGE_SEED))  # v0.8.0 N1
 	_stage_seed = _seeds.mode if _seeds.mode >= 0 else STAGE_SEED
 	get_window().theme = load(ThemePalette.UI_THEME)
 	InputDefaults.apply()
@@ -94,18 +101,20 @@ func _ready() -> void:
 	GameSettings.apply_all(profile)
 	audio.setup(profile)
 	add_child(audio)
-	ViewPrefs.apply_settings(profile)  # v0.3.0 O: reduced motion, colour-blind palette
+	ViewPrefs.apply_settings(profile)  # Reduced motion, colour-blind palette
 	ui.name = "UI"
 	add_child(ui)
 	ui.add_child(loads.cover)  # v0.8.0 N3
 	ui.add_child(toast)  # v0.7.5 AC
-	# v0.8.0 N18: a toast waits while a load's cover is shut; v0.9.0 SA: and through the floor's arrival.
+	# A toast waits while a load's cover is shut; and through the floor's arrival.
 	toast.hold = func() -> bool:
 		return loads.cover.shut() or (driver != null and driver.reader.arriving())
 	hint_store = HintStore.new(profile)  # v0.7.5 SM
 	hints.setup(hint_store)
 	ui.add_child(hints)
-	add_child(GameCursor.new())  # v0.9.5 MC2: the cursor
+	add_child(GameCursor.new())  # The cursor
+	add_child(fps_counter)
+	fps_counter.apply(profile)
 	PackFxSessionWarm.start(self)  # v0.10.0 VX-W: the VFX pack warms up behind the menu
 	show_main_menu()
 	var perf_mode := PerfRecorder.mode_of(OS.get_cmdline_user_args())
@@ -115,13 +124,13 @@ func _ready() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
-		saves.close()  # v0.4.0 SV: the last room entry is on disk
+		saves.close()  # The last room entry is on disk
 		profile.save_file()
 		get_tree().quit()
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# v0.8.0 N12: not while a load builds a floor behind the cover.
+	# Not while a load builds a floor behind the cover.
 	if (  # the master dev panel (docs/tools/DEV_PANEL.md): every build, anywhere
 		event is InputEventKey
 		and event.pressed
@@ -129,7 +138,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		and event.physical_keycode == KEY_F10
 		and DevGate.enabled()
 		and not loads.busy()
-	):  # v0.7.5 SM: one switch locks it for a public release (ROADMAP §0.4)
+	):  # One switch locks it for a public release (ROADMAP §0.4)
 		get_viewport().set_input_as_handled()
 		_toggle_master_panel()
 		return
@@ -149,10 +158,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		driver != null
 		and _end == null
 		and not driver.reader.choosing()  # Rewards: the pick's own cancel comes first.
-		and not driver.reader.event_open()  # v0.5.0 EV: so does an event panel's
-		and not driver.reader.shop_open()  # v0.5.0 SH: so does the shop's
-		and not driver.reader.swapping()  # v0.6.0 MX2: so does the swap's skip
-		and not (training != null and training.is_panel_open())  # v0.10.5 O17: the terminal's own
+		and not driver.reader.event_open()  # So does an event panel's
+		and not driver.reader.shop_open()  # So does the shop's
+		and not driver.reader.swapping()  # So does the swap's skip
+		and not (training != null and training.is_panel_open())  # The terminal's own
 		and event.is_action_pressed(&"pause")
 	):
 		get_viewport().set_input_as_handled()
@@ -166,52 +175,29 @@ func is_playing() -> bool:
 	return driver != null
 
 
-## v0.9.0 HB (owner Q27): the small menu: Continue (the saved run, straight in), Play (the hub), Options, Quit.
+## The small menu: Continue (the saved run, straight in), Play (the hub), Options, Quit.
 func show_main_menu() -> void:
-	saves.close()  # v0.4.0 SV: leaving a run (pause -> Main menu) keeps its last room entry
+	saves.close()  # Leaving a run (pause -> Main menu) keeps its last room entry
 	_end_stage()
 	_end_hub()
-	loads.cover.unveil(FADE_SECONDS)  # v0.8.0 N3: a cover left up by a run that was left (none: nothing)
+	loads.cover.unveil(FADE_SECONDS)  # A cover left up by a run that was left (none: nothing)
 	audio.set_ambience(&"")
-	var m := MainMenu.new(GameVersion.label(), saves.store.has_save())
+	var m := MainMenu.new(GameVersion.label(), not saves.usable().is_empty(), saves.take_refused())
 	m.continue_pressed.connect(
-		func() -> void: loads.behind(get_tree(), ui, _covered_continue, FADE_SECONDS)  # v0.8.0 N3 (O45)
+		func() -> void: loads.behind(get_tree(), ui, _covered_continue, FADE_SECONDS)  # v0.8.0 N3
 	)
-	m.play_pressed.connect(_show_hub)
+	m.play_pressed.connect(show_build_picker if quick_start else _show_hub)  # Tests only
 	m.options_pressed.connect(show_options)
-	m.credits_pressed.connect(show_credits)  # v0.9.5 RS1: the Credits moved from the hub to the menu
+	m.credits_pressed.connect(show_credits)  # The Credits moved from the hub to the menu
 	m.quit_pressed.connect(
 		func() -> void: get_tree().root.propagate_notification(NOTIFICATION_WM_CLOSE_REQUEST)
 	)
 	_set_menu(m)
 
 
-## v0.9.0 HB (owner Q27; HUB_MOCKUPS option A): the hub, from Play or the end panel. A station's interact opens its
-## panel (_open_station; Back returns to the hub). It reads the profile, never the run's save.
+## The hub, from Play, the end panel or the pause menu (HubFlow.open).
 func _show_hub() -> void:
-	saves.close()
-	_end_stage()
-	_end_hub()
-	_set_menu(null)
-	var repo := _content()
-	hub = HubSession.new()
-	add_child(hub)
-	hub.setup(repo, profile, [codex, achievements, codex_catalog(repo)], ui)
-	hub.station_used.connect(_open_station)
-	hub.options_requested.connect(show_options.bind(hub.open_pause))
-	hub.main_menu_requested.connect(show_main_menu)
-	hub.cue_requested.connect(audio.play)  # v0.9.5 RS1: the Runic Stone's hum
-	hub.training_requested.connect(TrainingFlow.enter.bind(self))  # v0.10.5 O17: the south door
-	loads.cover.unveil(FADE_SECONDS)
-	audio.set_ambience(HubSession.BIOME)
-
-
-func _open_station(_id: StringName, panel: StringName) -> void:
-	match panel:
-		&"portal":
-			show_build_picker()
-		&"codex", &"achievements":
-			show_codex(CodexView.page_of(panel))  # v0.9.0 CL: the Rune Archive opens on its collectibles
+	HubFlow.open(self)
 
 
 func _close_station() -> void:
@@ -224,28 +210,28 @@ func _end_hub() -> void:
 		hub = null
 
 
-## The hub's Portal Machine (v0.9.0 HB) -> pick the build (v0.3.0 L15: Blade or Gun) -> the run. The pick is
-## remembered in the profile; the build is the run's (RunState.build_id) and holds on every floor. v0.4.0 BS (F11): no
+## The hub's Portal Machine -> pick the build (Blade or Gun) -> the run. The pick is
+## remembered in the profile; the build is the run's (RunState.build_id) and holds on every floor. no
 ## utility pick; Blink and Aegis are ability cards found in the run.
 func show_build_picker() -> void:
 	var defs := ContentRepository.load_all().all_of(&"build")
-	var last := Wardrobe.build_of(profile)  # v0.9.5 SL: the Gun while the Blade is locked
+	var last := Wardrobe.build_of(profile)  # The Gun while the Blade is locked
 	var p := BuildPicker.new(defs, last, SwordLock.locked_builds(profile))
 	p.picked.connect(
 		func(id: StringName) -> void:
 			profile.section("loadout")["build"] = String(id)
-			_stage_seed = _seeds.next()  # v0.8.0 N1 (O53): every new run its own seed
+			_stage_seed = _seeds.next()  # Every new run its own seed
 			var go := func() -> void: loads.behind(get_tree(), ui, _covered_start, FADE_SECONDS)  # N3
 			if hub == null:
 				go.call()
-			else:  # v0.9.0 HB2: the hero walks up the machine's steps into the portal first
+			else:  # The hero walks up the machine's steps into the portal first
 				hub.walk_into_portal(go, _set_menu.bind(null))
 	)
 	p.back_pressed.connect(_close_station if hub != null else show_main_menu)
 	_set_menu(p)
 
 
-## Options from the main menu, or (v0.9.0 HB) from the hub's pause: `back` (null: the main menu).
+## Options from the main menu, or from the hub's pause: `back` (null: the main menu).
 func show_options(back: Callable = Callable()) -> void:
 	var o := OptionsMenu.new(profile)
 	o.back_pressed.connect(
@@ -257,7 +243,7 @@ func show_options(back: Callable = Callable()) -> void:
 	_set_menu(o)
 
 
-## Options from the pause menu (v0.3.0 O): the pause menu hides under it and comes back on Back.
+## Options from the pause menu: the pause menu hides under it and comes back on Back.
 func open_pause_options() -> void:
 	if _pause == null or _pause_options != null:
 		return
@@ -280,8 +266,11 @@ func close_pause_options() -> void:
 
 ## A setting changed in Options: what lives in the view follows at once (GameSettings already applied the engine's).
 func _on_setting_changed(_key: String) -> void:
+	fps_counter.apply(profile)
 	ViewPrefs.apply_settings(profile)
-	if hub != null:  # v0.9.0 HB: Options from the hub's pause
+	if _hud != null:  # its parts redraw only on a change of what they show: a palette or a motion setting is one
+		_hud.redraw_all()
+	if hub != null:  # Options from the hub's pause
 		hub.apply_settings(profile)
 	if view != null:
 		view.rig.shake_enabled = GameSettings.get_value(profile, "shake") == "on"
@@ -292,12 +281,12 @@ func _on_setting_changed(_key: String) -> void:
 func show_credits() -> void:
 	var repo := ContentRepository.load_all()
 	var credits: CreditsDefinition = repo.get_def(&"credits", &"main")
-	var c := CreditsView.new(credits, repo.get_def(&"licences", &"generated"))  # v0.7.5 SM: with the licence list
-	c.back_pressed.connect(_close_station if hub != null else show_main_menu)  # v0.9.0 HB: the Credits stone
+	var c := CreditsView.new(credits, repo.get_def(&"licences", &"generated"))  # With the licence list
+	c.back_pressed.connect(_close_station if hub != null else show_main_menu)  # The Credits stone
 	_set_menu(c)
 
 
-## v0.7.5 CX: the Codex; v0.7.5 AC: with the Achievements page. v0.9.0 HB: from the hub's Rune Archive (`page` empty)
+## The Codex; with the Achievements page. from the hub's Rune Archive (`page` empty)
 ## and its Trophy Area (`page` the Achievements); Back returns to the hub (the main menu when no hub runs: the tools).
 func show_codex(page: StringName = &"") -> void:
 	var c := CodexView.new(codex_catalog(), codex, _achievements_book())
@@ -314,7 +303,7 @@ func codex_catalog(repo: ContentRepository = null) -> CodexCatalog:
 	return _codex_catalog
 
 
-## v0.7.5 AC: every achievement (the content's definitions, the Codex's per-boss and per-biome entries), built once.
+## Every achievement (the content's definitions, the Codex's per-boss and per-biome entries), built once.
 func _achievements_book(repo: ContentRepository = null) -> AchievementBook:
 	if _achievement_book == null:
 		if repo == null:
@@ -330,10 +319,10 @@ func show_gallery() -> void:
 	var g := Gallery.new()
 	g.name = "Gallery"
 	add_child(g)
-	g.setup(&"ruins", 35.26, &"outline", true)
+	g.setup(&"ruins", 35.26, true)
 
 
-## Starts a run (v0.3.0 B) with the run seed _stage_seed, on its first floor, all in this frame (the tools and the
+## Starts a run with the run seed _stage_seed, on its first floor, all in this frame (the tools and the
 ## tests; the game's Play builds it behind the cover over frames: _covered_start).
 func start_stage() -> void:
 	_end_hub()
@@ -345,7 +334,7 @@ func start_stage() -> void:
 	_open_floor_now(plan)
 
 
-## v0.4.0 SV: Continue resumes the saved run at its last room entry. A save that doesn't fit is set aside.
+## Continue resumes the saved run at its last room entry. A save that doesn't fit is set aside.
 func continue_run() -> void:
 	var save := _usable_save()
 	if save.is_empty():
@@ -357,14 +346,14 @@ func continue_run() -> void:
 	plan.build()
 	_adopt_run(plan)
 	if plan.err != "":
-		saves.store.reject(plan.err)
+		saves.refuse(plan.err)
 		show_main_menu()
 		return
 	_open_floor_now(plan)
 
 
 ## Builds the run's current floor: its seed, biome and enemy scaling from the run, the carry applied. `resume`: a
-## save's payload (v0.4.0 SV), whose world snapshot is then written into the fresh floor; returns why it didn't fit. All
+## save's payload, whose world snapshot is then written into the fresh floor; returns why it didn't fit. All
 ## in this frame (the dev panel's Restart floor, the tools); a portal builds the next floor over frames (_next_floor).
 func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> String:
 	var plan := FloorPlan.next_floor(run, _run_biomes, resume, ViewPrefs.reduced_motion)
@@ -376,7 +365,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	return ""
 
 
-## v0.8.0 N12 (owner O70: "the loading screens still freeze the game … never stop moving or freezing"): the loads
+## The loads
 ## behind the cover. The World is built on a worker thread (FloorPlan.build, CoverLoads.on_worker) and the view in
 ## slices of a few milliseconds a frame (CoverLoads.build_view), so the cover and its mark move on every frame;
 ## the same FloorPlan and the same view jobs as the one-frame build above, so the floor is the same. Play, Continue
@@ -389,7 +378,7 @@ func _load_plan(plan: FloorPlan) -> String:
 		_adopt_run(plan)
 	if plan.err != "":
 		return plan.err
-	await loads.prebuild_view(get_tree())  # v0.8.0 LD (O70): the view's parts a few a frame, so its frame holds none
+	await loads.prebuild_view(get_tree())  # The view's parts a few a frame, so its frame holds none
 	var nodes := _floor_nodes(plan)
 	await loads.build_view(get_tree(), nodes["queue"])
 	_floor_live(nodes)
@@ -397,12 +386,9 @@ func _load_plan(plan: FloorPlan) -> String:
 
 
 func _usable_save() -> Dictionary:
-	var save := saves.store.read()
-	if not RunSaver.is_usable(save):
-		if not save.is_empty():
-			saves.store.reject("payload version %s" % str(save.get("version")))
+	var save := saves.usable()
+	if save.is_empty():  # None, or refused: the menu says so
 		show_main_menu()
-		return {}
 	return save
 
 
@@ -427,9 +413,9 @@ func _open_floor_now(plan: FloorPlan) -> void:
 ## yet) and the view, added but not processing, its build queued (ViewBuildQueue).
 func _floor_nodes(plan: FloorPlan) -> Dictionary:
 	var repo := plan.repo
-	if codex_recorder == null:  # v0.7.5 CX: built on the first floor, from the content already loaded
+	if codex_recorder == null:  # Built on the first floor, from the content already loaded
 		codex_recorder = CodexRecorder.new(codex, codex_catalog(repo))
-	if achievement_tracker == null:  # v0.7.5 AC: before the biome's visit, so its Codex write is heard
+	if achievement_tracker == null:  # Before the biome's visit, so its Codex write is heard
 		achievement_tracker = AchievementTracker.new(_achievements_book(repo))
 		achievement_tracker.achieved.connect(toast.push)
 	var world := plan.world
@@ -437,23 +423,29 @@ func _floor_nodes(plan: FloorPlan) -> Dictionary:
 	var resume := plan.resume
 	saves.begin_floor(world, run, _stage_seed, resume.get("rooms", PackedByteArray()))
 	_tweaked_run_check()
-	if resume.is_empty() and plan.arena_def == null:  # v0.8.0 FB1: the final arena isn't a Codex biome
-		codex_recorder.enter_biome(biome.id)  # v0.7.5 CX: a visit (not when Continue resumes the floor)
+	if resume.is_empty() and plan.arena_def == null:  # The final arena isn't a Codex biome
+		codex_recorder.enter_biome(biome.id)  # A visit (not when Continue resumes the floor)
 	var d := SimDriver.new()
 	d.name = "SimDriver"
 	d.setup(world)
-	d.hold = loads.cover.showing  # v0.8.0 N11 (O69): the arrival starts once the loading cover opened
+	if _god_kept:  # God, ticked on an earlier floor of this run, carries on
+		d.debug = DebugApi.new(world)
+		d.debug.god = true
+		d.debug.reseed_requested.connect(_reseed)
+	d.hold = loads.cover.showing  # The arrival starts once the loading cover opened
+	d.rush_arrival = quick_start and plan.mode == FloorPlan.Mode.NEW_RUN  # Tests only
 	var v := WorldViewRoot.new()
 	v.name = "WorldView"
 	v.stage.prop_style = biome.id
-	v.stage.mood = biome.mood  # v0.5.9: the biome's lighting mood
-	v.stage.look = biome.look  # v0.7.5 NB1: the biome's own dressing and edge (null: the hand-written look)
+	v.stage.mood = biome.mood  # The biome's lighting mood
+	v.stage.look = biome.look  # The biome's own dressing and edge (null: the hand-written look)
 	if biome.look != null:
 		v.actors.enemy_tint = biome.look.enemy_tint
-	v.actors.hero_look = Wardrobe.hero_look(repo, profile, run.affinity)  # v0.9.0 RB: robe and locked rune
+	v.actors.hero_look = Wardrobe.hero_look(repo, profile, run.affinity)  # Robe and locked rune
+	v.heart_lines = repo.get_def(&"runic_lines", &"main") as RunicLinesDefinition  # The heart room's runes
 	_biome_path = biome.resource_path
 	v.stage.lighting = GameSettings.get_value(profile, "lighting")
-	v.process_mode = Node.PROCESS_MODE_DISABLED  # v0.8.0 N12: nothing in it runs until it is built (_floor_live),
+	v.process_mode = Node.PROCESS_MODE_DISABLED  # Nothing in it runs until it is built (_floor_live),
 	v.visible = false  # and the renderer draws none of it under the closed cover
 	add_child(v)
 	# The boss room makes the floor's bounds lopsided; props scatter over a square centred on the origin.
@@ -477,49 +469,49 @@ func _floor_live(nodes: Dictionary) -> void:
 	view.visible = true
 	view.rig.shake_enabled = GameSettings.get_value(profile, "shake") == "on"
 	view.ink.set_style(InkPass.style_from_setting(GameSettings.get_value(profile, "outline")))
-	var player_input := PlayerInput.new(view.rig, driver.reader)
+	var player_input := PlayerInput.new(view.rig, driver.reader, AimAssist.make(plan.repo, profile))
 	player_input.name = "PlayerInput"
 	view.add_child(player_input)
 	driver.input_source = player_input.sample
-	driver.frame_ticked.connect(view.sync)  # v0.10.5 Q5: the views sync once a frame, on the latest tick
+	driver.frame_ticked.connect(view.sync)  # The views sync once a frame, on the latest tick
 	driver.ticked.connect(view.note_tick)  # and keep what lasts one tick (ViewTickNotes)
-	codex_recorder.attach(driver.reader)  # v0.7.5 CX: the Codex reads every tick (after the save's entry check)
-	achievement_tracker.attach(driver.reader)  # v0.7.5 AC: and the achievements
+	codex_recorder.attach(driver.reader)  # The Codex reads every tick (after the save's entry check)
+	achievement_tracker.attach(driver.reader)  # And the achievements
 	audio.attach(driver.reader, biome.id)
 	driver.ticked.connect(audio.sync.bind(driver.reader))
 	_hud = Hud.new()
-	_hud.minimap.state.preset = saves.rooms.duplicate()  # v0.4.0 SV: the rooms already entered
+	_hud.minimap.state.preset = saves.rooms.duplicate()  # The rooms already entered
 	ui.add_child(_hud)
 	ui.move_child(_hud, 0)
-	hints.stack_under = _hud.phase_hud  # v0.10.5 W3-O20: a top hint sits under the phase lines
-	# Rewards: a pick is input; so is a shop action (v0.5.0 SH), a swap answer (v0.6.0 MX2), a Constellation (W3-P10c)
+	hints.stack_under = _hud.phase_hud  # A top hint sits under the phase lines
+	# Rewards: a pick is input; so is a shop action, a swap answer, a Constellation (W3-P10c)
 	for p: ModalPanel in [_hud.pick_panel(), _hud.shop.panel, _hud.swap, _hud.constellation]:
 		p.picked.connect(driver.latch.note_pick)
-	_hud.swap.moved.connect(driver.latch.queue_wand_move)  # v0.6.5 WN2: and its reorders and inserts.
+	_hud.swap.moved.connect(driver.latch.queue_wand_move)  # And its reorders and inserts.
 	_hud.sync(driver.reader)
 	_hud.show_floor(
 		run.floor_index,
 		String(biome.name_key),
-		run.is_deep(),  # v0.5.0 RT: "Floor 2 · Deep"
+		run.is_deep(),  # "Floor 2 · Deep"
 		driver.reader.shards_left_behind() if resume.is_empty() else 0,  # v0.5.5 EC (Q-S4)
-		run.loop,  # v0.7.5 AP: "Loop 2 · Floor 1"
-		RunCarry.hp_grown(run) if resume.is_empty() else 0,  # v0.9.0 SV: "Max HP +15"
-		LoopRules.newest(run) if resume.is_empty() else &""  # v0.10.5 O5b: "New rule: …"
+		run.loop,  # "Loop 2 · Floor 1"
+		RunCarry.hp_grown(run) if resume.is_empty() else 0,  # "Max HP +15"
+		LoopRules.newest(run) if resume.is_empty() else &""  # "New rule: …"
 	)
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))
-	driver.frame_ticked.connect(_on_frame.bind(driver))  # v0.10.5 Q5: the HUD reads once a frame
-	if not loads.cover.showing():  # v0.8.0 N3 (O45): the cover that hid the load fades or opens on the new floor
+	driver.frame_ticked.connect(_on_frame.bind(driver))  # The HUD reads once a frame
+	if not loads.cover.showing():  # The cover that hid the load fades or opens on the new floor
 		loads.cover.cover_now(LoadingCover.Style.BLACK)
 	var portal := loads.cover.style != LoadingCover.Style.BLACK
 	loads.cover.unveil(PORTAL_UNVEIL_SECONDS if portal else FADE_SECONDS)
 	ui.move_child(loads.cover, ui.get_child_count() - 1)
-	ui.move_child(hints, ui.get_child_count() - 1)  # v0.7.5 SM: the hints read over the fade-in too
-	ui.move_child(toast, ui.get_child_count() - 1)  # v0.7.5 AC: a toast reads over the fade-in
+	ui.move_child(hints, ui.get_child_count() - 1)  # The hints read over the fade-in too
+	ui.move_child(toast, ui.get_child_count() - 1)  # A toast reads over the fade-in
 	hints.begin_floor(run.floor_index, driver.reader)  # v0.7.5 SM
 
 
-## v0.10.5 Q5: once a rendered frame that ran a tick (SimDriver.frame_ticked), after the views: the HUD reads the
+## Once a rendered frame that ran a tick (SimDriver.frame_ticked), after the views: the HUD reads the
 ## latest tick (its pickups and DPS read the event log from their own cursors, so nothing between frames is lost).
 func _on_frame(from: SimDriver) -> void:
 	if from != driver or _hud == null:
@@ -530,42 +522,42 @@ func _on_frame(from: SimDriver) -> void:
 func _on_tick(from: SimDriver) -> void:
 	if from != driver or _hud == null:
 		return  # a stage that already ended, ticking once more before it's freed
-	saves.after_tick(driver.world, run, _stage_seed)  # v0.4.0 SV: a first entry into a room saves
+	saves.after_tick(driver.world, run, _stage_seed)  # A first entry into a room saves
 	codex_recorder.observe(driver.reader)  # v0.7.5 CX
-	MetaHooks.observe(self)  # v0.7.5 AC: the achievements; v0.9.0 CL: the collectibles taken, into the profile
+	MetaHooks.observe(self)  # The achievements; the collectibles taken, into the profile
 	hints.observe(driver.reader)  # v0.7.5 SM
 	var outcome := driver.reader.outcome()
 	if _end == null:
-		loads.closing(driver.reader)  # v0.8.0 N3 (O45): the portal's iris closes as the hero goes in
+		loads.closing(driver.reader)  # The portal's iris closes as the hero goes in
 	if outcome == 3 and _end == null:
 		loads.portal(get_tree(), ui, driver, _next_floor, func() -> bool: return driver != null)
 		return
 	if outcome == 0 or _end != null:
 		return
 	if _ended_ticks == 0:
-		saves.discard()  # v0.4.0 SV: a death or a win ends the run's save
+		saves.discard()  # A death or a win ends the run's save
 	_ended_ticks += 1
 	if _ended_ticks >= END_PANEL_DELAY_TICKS:
 		show_end_panel(outcome == 1)
 
 
-## The run's portal was taken: carry over, then the next floor (with its card and a fade-in). v0.7.5 AP: through the
+## The run's portal was taken: carry over, then the next floor (with its card and a fade-in). through the
 ## Loop device (v0.8.0 P2; the Ascension portal's Ascend before it) the next floor is the next loop's first, and the
 ## Codex counts it (_record_ascension).
 func _next_floor() -> void:
 	var looped := driver.reader.ascension_choice() == WorldReader.ASCEND_LOOP
-	MetaHooks.finish_floor(self)  # v0.9.0 MP: RunState.finish_floor, then the Purple Portal's unlock
+	MetaHooks.finish_floor(self)  # RunState.finish_floor, then the Purple Portal's unlock
 	if looped:
 		_record_ascension(run.loop)
 	var from := Time.get_ticks_usec()
 	_end_floor()
 	loads.phases["end_floor"] = (Time.get_ticks_usec() - from) / 1000.0
-	# v0.8.0 N12 (O70): built over frames, the cover moving.
+	# Built over frames, the cover moving.
 	await _load_plan(FloorPlan.next_floor(run, _run_biomes, {}, ViewPrefs.reduced_motion))
 
 
-## v0.7.5 AP: the Ascension counters for the achievements (AC) in the Codex's profile section, through its counter API
-## (docs/roadmap/v0.7.5/evidence/ASCENSION.md): `runs` / `ascended` / `times` counts every Ascend (v0.8.0 P2: every
+## The Ascension counters for the achievements (AC) in the Codex's profile section, through its counter API
+## (docs/roadmap/v0.7.5/evidence/ASCENSION.md): `runs` / `ascended` / `times` counts every Ascend (every
 ## Loop device taken), `runs` / `loop` / `best` keeps the highest loop reached. A tweaked run (the dev panel's balance
 ## edits) records nothing, as the Codex.
 func _record_ascension(loop: int) -> void:
@@ -573,17 +565,17 @@ func _record_ascension(loop: int) -> void:
 		return
 	codex.add(ASCENSION_PAGE, &"ascended", &"times")
 	codex.raise_to(ASCENSION_PAGE, &"loop", &"best", loop)
-	MetaHooks.record_loop(self, loop)  # v0.7.5 AC's count; v0.10.5 O5a: loop achievements, records, robes
+	MetaHooks.record_loop(self, loop)  # v0.7.5 AC's count; loop achievements, records, robes
 
 
 func show_end_panel(won: bool) -> void:
 	close_pause()
-	hints.set_covered(true)  # v0.7.5 SM: the recap is over the game
+	hints.set_covered(true)  # The recap is over the game
 	_end = EndPanel.new(
 		won, driver.reader.killer_kind(), driver.reader.killer_cause_key(), MetaHooks.recap(self)
 	)
 	_end.restart_pressed.connect(restart)
-	_end.hub_pressed.connect(_show_hub)  # v0.9.0 HB (Q27, W48): Restart in one press, or the hub
+	_end.hub_pressed.connect(_show_hub)  # Restart in one press, or the hub
 	ui.add_child(_end)
 	_end.focus_first()
 
@@ -598,12 +590,12 @@ func run_biome_id() -> StringName:
 	return _run_biomes[run.biome_of()] if run != null else &""
 
 
-## A new run with a new seed (v0.8.0 N1: random, or the next under a fixed mode), the same build, behind the cover (N3).
+## A new run with a new seed (random, or the next under a fixed mode), the same build, behind the cover.
 func restart() -> void:
-	if training != null:  # v0.10.5 O17: the Training Room's Restart resets the room
+	if training != null:  # The Training Room's Restart resets the room
 		TrainingFlow.reset(self, training.build_id)
 		return
-	if playground != null:  # v0.7.5 PG: the pause menu's Restart rebuilds the room
+	if playground != null:  # The pause menu's Restart rebuilds the room
 		_end_stage()
 		_start_playground(_pg_build, _pg_biome)
 		return
@@ -613,9 +605,9 @@ func restart() -> void:
 	loads.behind(get_tree(), ui, _covered_restart, FADE_SECONDS)
 
 
-## v0.8.0 N3 (O45): the loads CoverLoads runs behind its cover (Play, Continue, Restart).
+## The loads CoverLoads runs behind its cover (Play, Continue, Restart).
 func _covered_start() -> void:
-	_end_hub()  # v0.9.0 HB: the Portal Machine's run starts behind the cover
+	_end_hub()  # The Portal Machine's run starts behind the cover
 	_set_menu(null)
 	await _load_plan(_new_run_plan())
 
@@ -628,7 +620,7 @@ func _covered_continue() -> void:
 	_set_menu(null)
 	var err := await _load_plan(FloorPlan.continued(RUN_ID, save, ViewPrefs.reduced_motion))
 	if err != "":
-		saves.store.reject(err)
+		saves.refuse(err)
 		show_main_menu()
 
 
@@ -642,15 +634,19 @@ func toggle_dev_panel() -> void:
 	if _dev != null:
 		_dev.queue_free()
 		_dev = null
-		driver.debug = null
+		if driver.debug.god:  # God lasts until it is unticked (owner, 2026-11-10), not until the panel closes
+			driver.debug.release()
+		else:
+			driver.debug = null
 		return
-	driver.debug = DebugApi.new(driver.world)
-	driver.debug.reseed_requested.connect(_reseed)
+	if driver.debug == null:  # else God is still on from an earlier visit: the panel shows it
+		driver.debug = DebugApi.new(driver.world)
+		driver.debug.reseed_requested.connect(_reseed)
 	_dev = DevPanel.new(driver.debug)
 	ui.add_child(_dev)
 
 
-## Opens or closes the master dev panel (F10). In a run it pauses the sim and carries the debug tools.
+## Opens or closes the master dev panel. In a run it pauses the sim and carries the debug tools.
 func _toggle_master_panel() -> void:
 	if _devm != null:
 		_close_master_panel()
@@ -662,15 +658,15 @@ func _toggle_master_panel() -> void:
 			driver.debug.reseed_requested.connect(_reseed)
 		tools = DevPanel.new(driver.debug)
 		driver.paused = true
-	_devm = DevMasterPanel.new(tuning, tools, driver == null)  # v0.8.0 N6: Playground off a run only
+	_devm = DevMasterPanel.new(tuning, tools, driver == null)  # Playground off a run only
 	_devm.changed.connect(_on_tuning_changed)
 	_devm.playground_requested.connect(_open_playground_from_panel)
-	_devm.galleries_requested.connect(show_gallery)  # v0.9.0 HB: off the main menu, onto F10 (off a run)
+	_devm.galleries_requested.connect(show_gallery)  # Off the main menu, onto F10 (off a run)
 	_devm.effects_gallery_requested.connect(EffectsGallery.open.bind(self))  # v0.10.5 W3-O12
 	_devm.restart_requested.connect(_restart_floor)
 	_devm.close_requested.connect(_close_master_panel)
 	ui.add_child(_devm)
-	_sync_pause()  # v0.9.0 HB: the hub holds under it
+	_sync_pause()  # The hub holds under it
 
 
 func _close_master_panel() -> void:
@@ -701,9 +697,9 @@ func _tweaked_run_check() -> void:
 	if tweaked and run != null:
 		saves.discard()
 	if codex_recorder != null:
-		codex_recorder.enabled = not tweaked  # v0.7.5 CX: a tweaked run fills no Codex
+		codex_recorder.enabled = not tweaked  # A tweaked run fills no Codex
 	if achievement_tracker != null:
-		achievement_tracker.enabled = not tweaked  # v0.7.5 AC: and unlocks no achievement
+		achievement_tracker.enabled = not tweaked  # And unlocks no achievement
 	if _dev_mark == null:
 		_dev_mark = DevMasterPanel.mark_label()
 		ui.add_child(_dev_mark)
@@ -733,23 +729,23 @@ func _reseed(seed_value: int) -> void:
 
 func open_pause() -> void:
 	driver.paused = true
-	hints.set_covered(true)  # v0.7.5 SM: a hint waits under the pause menu
-	_pause = PauseMenu.new(playground == null)  # v0.9.0 HB: a run leaves to the hub, the Playground to the menu
+	hints.set_covered(true)  # A hint waits under the pause menu
+	_pause = PauseMenu.new(playground == null)  # A run leaves to the hub, the Playground to the menu
 	_pause.resume_pressed.connect(close_pause)
 	_pause.options_pressed.connect(open_pause_options)
 	_pause.build_pressed.connect(_open_pause_build)
 	_pause.codex_pressed.connect(_open_pause_codex)
 	_pause.restart_pressed.connect(restart)
 	_pause.main_menu_pressed.connect(show_main_menu)
-	_pause.hub_pressed.connect(_show_hub)  # v0.9.0 HB (owner 2026-10-23): the run stays saved; Continue resumes it
-	var recap := run_recap()  # v0.5.5 A5: the run's line under the pause list; v0.10.5 O5b: the loop rules
-	_pause.show_recap(recap, driver.reader)  # v0.10.5 O6: and the depths' answer, in one sentence (above ×1)
-	if driver.reader.has_gamble():  # v0.3.0 L19: the stats won at the gamble shrine.
+	_pause.hub_pressed.connect(_show_hub)  # The run stays saved; Continue resumes it
+	var recap := run_recap()  # The run's line under the pause list; the loop rules
+	_pause.show_recap(recap, driver.reader)  # And the depths' answer, in one sentence (above ×1)
+	if driver.reader.has_gamble():  # The stats won at the gamble shrine.
 		var stats := GambleStatsPanel.new()
 		_pause.add_child(stats)
 		stats.place_top_right(84)
 		stats.sync(driver.reader)
-	if driver.reader.threat_peak() > 0:  # v0.5.0 EV: threat T and the curses held
+	if driver.reader.threat_peak() > 0:  # Threat T and the curses held
 		var threat := ThreatPanel.new()
 		_pause.add_child(threat)
 		threat.place_top_left(84)
@@ -773,14 +769,14 @@ func close_pause() -> void:
 		_pause.queue_free()
 		_pause = null
 	if driver != null:
-		driver.latch.drop_presses()  # v0.6.5 WN2: a click in a menu is not a swing once the game runs
+		driver.latch.drop_presses()  # A click in a menu is not a swing once the game runs
 		driver.paused = false
-		_sync_pause()  # the master dev panel (F10) and the Playground's panel keep the run paused behind it
+		_sync_pause()  # the master dev panel and the Playground's panel keep the run paused behind it
 	if _end == null:
 		hints.set_covered(false)  # v0.7.5 SM
 
 
-## v0.6.5 WN2: the Build page (the wand's order) from the pause menu; the pause menu hides under it and comes back on
+## The Build page (the wand's order) from the pause menu; the pause menu hides under it and comes back on
 ## Back. The page starts from the sim's wand with the moves still waiting in the latch applied (the page may open
 ## twice in one pause), and the sim gets its change as input when the page closes (_queue_build_moves).
 func _open_pause_build() -> void:
@@ -810,7 +806,7 @@ func _close_pause_build() -> void:
 		(_pause.box.get_node("Build") as Button).grab_focus()
 
 
-## v0.7.5 CX: the Codex from the pause menu, over the paused stage; the pause menu hides under it and comes back on
+## The Codex from the pause menu, over the paused stage; the pause menu hides under it and comes back on
 ## Back. What this run has met is already in it (the recorder writes as the run goes).
 func _open_pause_codex() -> void:
 	if _pause == null or _pause_codex != null:
@@ -856,7 +852,7 @@ func _sync_pause() -> void:
 # --- v0.7.5 PG: the Playground (owner N20, docs/tools/PLAYGROUND.md) ------------------------------------------------
 
 
-## v0.8.0 N6 (owner O60: "nah playground will be hidden as a dev option"): F10's Playground button (off a run only)
+## F10's Playground button (off a run only)
 ## shuts the panel and opens the Playground's weapon pick.
 func _open_playground_from_panel() -> void:
 	_close_master_panel()
@@ -889,7 +885,7 @@ func _start_playground(build_id: StringName, biome_id: StringName) -> void:
 		driver, ui, PlaygroundScenario.biomes(repo), biome_id, PlaygroundScenario.source_names(repo)
 	)
 	playground.on_pause_change = _sync_pause
-	var run_table := PlaygroundScenario.final_run(repo)  # v0.8.0 FB1: the final boss's summon
+	var run_table := PlaygroundScenario.final_run(repo)  # The final boss's summon
 	playground.api.final_shatter_ticks = run_table.final_shatter_ticks
 	playground.api.final_name_key = run_table.final_name_key
 	playground.biome_requested.connect(_set_playground_biome)
@@ -904,7 +900,7 @@ func _start_playground(build_id: StringName, biome_id: StringName) -> void:
 	ui.add_child(_hud)
 	ui.move_child(_hud, 0)
 	_hud.sync(driver.reader)
-	driver.frame_ticked.connect(_on_playground_tick)  # v0.10.5 Q5: the HUD reads once a frame
+	driver.frame_ticked.connect(_on_playground_tick)  # The HUD reads once a frame
 	driver.edited.connect(_on_playground_tick)
 	_tweaked_run_check()
 
@@ -942,23 +938,25 @@ func _set_menu(m: Control) -> void:
 		ui.add_child(m)
 		if m.has_method("focus_first"):
 			m.call("focus_first")
-	_sync_pause()  # v0.9.0 HB: the hub holds while a panel or menu is over it
+	_sync_pause()  # The hub holds while a panel or menu is over it
 
 
 func _end_stage() -> void:
 	_end_floor()
+	_god_kept = false  # a new run starts without it
 	run = null
 
 
 ## Frees one floor's nodes (driver, view, HUD, panels); the run itself stays.
 func _end_floor() -> void:
+	_god_kept = driver != null and driver.debug != null and driver.debug.god
 	close_pause()
 	audio.detach()
 	if codex_recorder != null:
 		codex_recorder.detach()
 	hints.end_floor()  # v0.7.5 SM
 	hints.set_covered(false)
-	if hint_store.dirty:  # v0.7.5 SM: the hints seen reach the file
+	if hint_store.dirty:  # The hints seen reach the file
 		hint_store.dirty = not (profile.save_file() or profile.path.is_empty())
 	if achievement_tracker != null:
 		achievement_tracker.detach()
@@ -968,7 +966,7 @@ func _end_floor() -> void:
 		achievements.dirty = not kept
 	for n in [_hud, _end, _dev, _devm, playground, training, driver, get_node_or_null("Gallery")]:
 		_drop(n)
-	if view != null and loads.busy():  # v0.8.0 N12 (O70): behind the cover, the old view is freed over frames
+	if view != null and loads.busy():  # Behind the cover, the old view is freed over frames
 		view.get_parent().remove_child(view)
 		loads.free_slowly(get_tree(), view)
 	else:

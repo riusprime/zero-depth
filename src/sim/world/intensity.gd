@@ -11,9 +11,9 @@ extends RefCounted
 ## then the state: BUILD_UP → PEAK at peak_level (its length and the quiet's drawn from the `ai:intensity:<cycle>`
 ## stream, derived from the world's seed); PEAK → PULL_BACK when its timer ends; PULL_BACK → QUIET when at most
 ## pull_back_enemies are within pull_back_radius_m or pull_back_max_ticks pass; QUIET → BUILD_UP (cycle + 1) when its
-## timer ends (v0.10.5 O4: on time; intensity then drops to at most relax_level, and the first pack waits a build-up
+## timer ends (on time; intensity then drops to at most relax_level, and the first pack waits a build-up
 ## interval). PULL_BACK and QUIET send no new packs (sending()); the enemies out stay.
-## v0.10.5 O4 (owner D46): every tick it reads the hero (read_standing: HP share and the kills of the last ~10 s of
+## Every tick it reads the hero (read_standing: HP share and the kills of the last ~10 s of
 ## fighting). A STRUGGLING hero peaks lower (struggle_peak_level), its peak runs out faster, a quiet that begins while
 ## it struggles is longer (struggle_quiet_permille) and its packs are capped one smaller (pack_size); a STRONG one
 ## and one BETWEEN get the build-up as before. Besides that pack cap, nothing here touches what spawns or how strong:
@@ -96,11 +96,11 @@ static func step_mode(w: World, t: IntensityTable, s: IntensityState) -> void:
 			s.timer -= 1
 			if s.timer <= 0 or near(w, t.pull_back_radius_m) <= t.pull_back_enemies:
 				s.mode = IntensityState.Mode.QUIET
-				if s.standing == IntensityState.Standing.STRUGGLING:  # v0.10.5 O4: a longer quiet
+				if s.standing == IntensityState.Standing.STRUGGLING:  # A longer quiet
 					s.quiet_len = SpawnTable.scale(s.quiet_len, t.struggle_quiet_permille)
 				s.timer = s.quiet_len
 		IntensityState.Mode.QUIET:
-			# v0.10.5 O4 (D46's "not working"): the quiet ends on its drawn time. Before, it also waited for intensity to
+			# D46's "not working": the quiet ends on its drawn time. Before, it also waited for intensity to
 			# fall to relax, which leftovers the hero can't reach never let happen: every quiet ran to its 20 s top.
 			s.timer -= 1
 			if s.timer > 0:
@@ -108,7 +108,7 @@ static func step_mode(w: World, t: IntensityTable, s: IntensityState) -> void:
 			s.level = mini(s.level, t.relax_level)  # the build-up starts from relax at most
 			s.mode = IntensityState.Mode.BUILD_UP
 			s.cycle += 1
-			# v0.10.5 O4: the room refills one pack at a time from what is left: the first pack waits a build-up interval
+			# The room refills one pack at a time from what is left: the first pack waits a build-up interval
 			# (the clock ran down to 0 during the quiet, and the cap's worth arrived in a burst).
 			w.spawn_cd = maxi(w.spawn_cd, interval(w, w.spawner.interval_now(w.run_ticks)))
 

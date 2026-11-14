@@ -1,6 +1,6 @@
 class_name AttackFormMeshes
 extends RefCounted
-## v0.6.0 MX3: the shared meshes and materials the attack forms are drawn with (AttackFormView's MultiMesh pools).
+## The shared meshes and materials the attack forms are drawn with (AttackFormView's MultiMesh pools).
 ## Built once per run of the game and reused by every pool, so no effect compiles a shader on its first use (the
 ## v0.2.0 H rule) and nothing toggles a material feature at runtime (the damage-lag rule, PRESENTATION §7).
 ##

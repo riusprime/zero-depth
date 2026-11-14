@@ -293,7 +293,10 @@ func test_beating_the_nemesis_on_a_later_loop_is_the_true_ending() -> void:
 	assert_eq(main.driver.reader.loop(), 2, "on the second loop")
 	assert_true(await _e.awaken_final_altar(), "v0.9.0 FA: the pylons woke the altar")
 	await _e.tap(KEY_QUOTELEFT)
-	await _click(main, "God")
+	# God, ticked on the floor before, carries into the arena (it lasts until it is unticked): the reopened panel
+	# shows it on, and clicking it here would turn it off
+	var god := main.get_node("UI/DevPanel").find_child("God", true, false) as Button
+	assert_true(god.button_pressed, "God mode carried into the final arena")
 	await _e.frames(150)
 	for phase in [0, 1]:  # the Colossus's and the Prism's segments end
 		await _click(main, "KillBoss")
@@ -301,8 +304,8 @@ func test_beating_the_nemesis_on_a_later_loop_is_the_true_ending() -> void:
 		while main.driver.reader.final_phase() == phase and frames < 260:
 			await _e.frames(1)
 			frames += 1
-	# v0.8.0 N2: the panel stays open (its buttons take no focus), so God mode holds while the hero waits for The
-	# Fallen's window (closing it drops the debug tools: O27's hits would kill the hero meanwhile)
+	# The panel stays open (its buttons take no focus) for Kill boss; God mode keeps the hero standing while it waits
+	# for The Fallen's window, whose hits would kill it meanwhile
 	var reader := main.driver.reader
 	w = _e.world()
 	var i := await _risen(main)
@@ -318,6 +321,7 @@ func test_beating_the_nemesis_on_a_later_loop_is_the_true_ending() -> void:
 	assert_eq(reader.nemesis(i)["weapon"], &"blade", "the run's Blade")
 	await _window_shows(main)
 	assert_true(await _dash_answered(main, 20), "in its window it answers a dash")
+	assert_false(w.player_dead(), "the hero stands (God mode)")
 	await _click(main, "KillBoss")
 	frames = 0
 	while main.get_node_or_null("UI/EndPanel") == null and frames < 600:

@@ -23,29 +23,30 @@ enum Move {
 	ROW_FLOOD,
 	GAZE,
 	MELT,
-	COMBO,  # v0.8.0 FB1 (FINAL_BOSS.md F4): the Colossus's moves (BossColossus)
+	COMBO,  # FINAL_BOSS.md F4: the Colossus's moves (BossColossus)
 	SPIKE_CHASE,
 	SPIKE_BURST,
-	CROSS,  # v0.8.0 FB2 (FINAL_BOSS.md F5): the Prism's turning Cross (BossPrism)
-	MIMIC_COMBO,  # v0.8.0 FB3 (FINAL_BOSS.md F6): the Nemesis's moves (BossNemesis)
+	CROSS,  # FINAL_BOSS.md F5: the Prism's turning Cross (BossPrism)
+	MIMIC_COMBO,  # FINAL_BOSS.md F6: the Nemesis's moves (BossNemesis)
 	MIMIC_SHOTS,
 	CARD_CAST,
-	TIDE,  # v0.9.0 NB1 (BOSSES_4_5.md N1): the Tidecaller's Pull (BossTide)
-	CROSSFIRE,  # v0.9.0 NB2 (BOSSES_4_5.md N2): the Twin Wardens' fans whose gaps meet between them (BossTwin)
-	CHAIN_SWEEP,  # v0.9.0 NB2: their chain's line tracks the player, locks and lashes (BossTwin)
-	ECHO,  # v0.9.0 NB3 (BOSSES_4_5.md N3): the Clockwork Judge's echo of the player's path (BossJudge)
-	VERDICT,  # v0.9.0 NB3: its tracked square, locked, a pendulum strike dropping on it (BossJudge)
-	WAVE,  # v0.9.5 BH4 (BOSSES_HARD.md T3): the Tidecaller's crossing wave (BossStream; never a boss's own attack)
-	INTERPHASE,  # v0.9.5 BH6 (HC5): a carrier of the Fallen's interphase hits (BossInterphase; never picked)
-	LANCES,  # v0.10.5 O3 (L6): the Prism's Facet Lances, her last phase (BossPrism)
-	KNEEL,  # v0.10.5 O3 (L6): the Prism's Shattered Kneel, her core open (BossPrism)
+	TIDE,  # BOSSES_4_5.md N1: the Tidecaller's Pull (BossTide)
+	CROSSFIRE,  # BOSSES_4_5.md N2: the Twin Wardens' fans whose gaps meet between them (BossTwin)
+	CHAIN_SWEEP,  # Their chain's line tracks the player, locks and lashes (BossTwin)
+	ECHO,  # BOSSES_4_5.md N3: the Clockwork Judge's echo of the player's path (BossJudge)
+	VERDICT,  # Its tracked square, locked, a pendulum strike dropping on it (BossJudge)
+	WAVE,  # BOSSES_HARD.md T3: the Tidecaller's crossing wave (BossStream; never a boss's own attack)
+	INTERPHASE,  # A carrier of the Fallen's interphase hits (BossInterphase; never picked)
+	LANCES,  # The Prism's Facet Lances, her last phase (BossPrism)
+	KNEEL,  # The Prism's Shattered Kneel, her core open (BossPrism)
+	GREAT_JAVELIN,  # The Warlord's great javelin: thrown, it quakes in the floor, then flies back
 }
 
-## v0.8.0 FB3: the runs a Nemesis attack answers to (`weapon` below).
+## The runs a Nemesis attack answers to (`weapon` below).
 const WEAPON_ANY := 0
 const WEAPON_BLADE := 1
 const WEAPON_GUN := 2
-## v0.8.0 N2 (owner O52): The Fallen's own kit, picked only outside its mimic windows.
+## The Fallen's own kit, picked only outside its mimic windows.
 const WEAPON_OWN := 3
 
 var id := &""
@@ -56,7 +57,7 @@ var active_ticks := 1
 var recover_ticks := 0
 var cooldown_ticks := 0
 var damage := 0
-## v0.8.0 BP (owner O27): each orb or shot of its bullet pattern deals this when > 0 (a small hit beside a bigger one:
+## Each orb or shot of its bullet pattern deals this when > 0 (a small hit beside a bigger one:
 ## a leap's ring, a burrow's eruption, an egg's burst); 0 = damage. BossAi.orb_damage reads it.
 var orb_damage := 0
 var min_range_m := 0.0
@@ -88,7 +89,7 @@ var erupt_ticks := 24
 ## Brood and deploy: the actor kind that comes out, and how many of them may be alive.
 var enemy_kind := ActorStore.Kind.CHARGER
 var max_alive := 99
-## Boss challenge (v0.3.0 BX): a pull drags the player toward the boss during its windup at pull speed (metres per
+## Boss challenge: a pull drags the player toward the boss during its windup at pull speed (metres per
 ## tick) from within pull_range_m; its recovery opens the weak point; a follow-up attack (index, -1 = none) may start
 ## at once instead of the recovery, follow_up_permille of the time.
 var pull := 0.0
@@ -96,10 +97,10 @@ var pull_range_m := 0.0
 var opens_weak := false
 var follow_up := -1
 var follow_up_permille := 0
-## v0.4.0 BO: a flood's lanes stand gap_m apart (centre to centre) and hurt again every burn_ticks while active.
+## A flood's lanes stand gap_m apart (centre to centre) and hurt again every burn_ticks while active.
 var gap_m := 0.0
 var burn_ticks := 1
-## v0.7.5 BF1 (owner N15, "Track, then lock 0.8 s"): a tracked attack follows the player's exact position until its
+## A tracked attack follows the player's exact position until its
 ## last lock_ticks of windup (0 = the boss's track_commit rule, with lead), then holds; a `marks` or `row_lanes`
 ## attack's later markers start mark_gap_ticks apart, each with the same track and lock. A shielded attack (the
 ## signature pattern) keeps the boss shielded through its windup and active time (BossDodge.shielded). A `pattern`
@@ -107,59 +108,69 @@ var burn_ticks := 1
 var lock_ticks := 0
 var mark_gap_ticks := 0
 var shielded := false
-## v0.10.5 O2a: >= 0 drops a shielded attack's shield this many ticks into its active time (BossDodge.shielded); -1
+## >= 0 drops a shielded attack's shield this many ticks into its active time (BossDodge.shielded); -1
 ## keeps it up through the whole active time.
 var shield_active_ticks := -1
-## v0.10.5 O3 (owner L6, 2026-11-01: "Boring pattern"; O3_PRISM.md; BossPrism): a `lances` attack's `count` lances
+## A `lances` attack's `count` lances
 ## start mark_gap_ticks apart from its active time's start; each one's line runs from its rim spot (distance_m from
 ## her, `spread` turns apart round her from the player's side) through the player: it follows them for track_ticks,
 ## holds for lock_ticks, then strikes for strike_ticks as a lane half_width_m each side, as far as length_m or a wall.
 var strike_ticks := 1
-## v0.10.5 O3 (L6: "something cooler while he's down"): a `kneel` attack: she is down (open) for its active time;
+## L6: "something cooler while he's down": a `kneel` attack: she is down (open) for its active time;
 ## hits from within the weak range of her edge deal core_mult_permille; once she has lost crack_permille of her max HP
 ## since it began her core bursts (burst_permille of her max HP, the world's own damage) and she rises.
 var crack_permille := 0
 var burst_permille := 0
 var core_mult_permille := 1000
 var pattern: BulletPatternTable = null
-## v0.8.0 PR (owner O84: "the all small balls he shoots should be shooted on a predictable pattern"): a `pattern`
+## A `pattern`
 ## attack with fixed_aim >= 0 fires its waves from this angle (1/4096 turns, the world's frame) instead of at the
 ## player, so the same spell always opens the same way; -1 = aimed at the player (every other boss).
 var fixed_aim := -1
-## v0.7.5 BF3: a `grid` attack's cells stand cell_m apart (centre to centre), `count` a side, struck in `volleys`
+## A `grid` attack's cells stand cell_m apart (centre to centre), `count` a side, struck in `volleys`
 ## alternating colours of the checkerboard, mark_gap_ticks apart.
 var cell_m := 0.0
-## v0.8.0 BS1 (owner O5; BOSS_SIGNATURES.md S1): a `row_lanes` attack with pillar_ticks > 0 leaves stone pillars
+## A `row_lanes` attack with pillar_ticks > 0 leaves stone pillars
 ## along its struck lanes (squares pillar_m a side, pillar_step_m apart from the crossing) that stand as walls for
 ## pillar_ticks (BossSignatures).
 var pillar_ticks := 0
 var pillar_m := 0.0
 var pillar_step_m := 0.0
-## v0.8.0 BS1 (S2): a `pattern` attack with recall_ticks > 0 throws javelins that stick where they stop and all fly
+## A `pattern` attack with recall_ticks > 0 throws javelins that stick where they stop and all fly
 ## back along their lines recall_at ticks after its active time began (the pattern's waves, their flight, then
 ## recall_ticks); its active time covers their way back too.
 var recall_ticks := 0
 var recall_at := 0
-## v0.8.0 BS1 (S3): a `marks` attack with egg_ticks > 0 lays an egg (enemy_kind, egg_hp at the kind's base HP) on
+## A `marks` attack with egg_ticks > 0 lays an egg (enemy_kind, egg_hp at the kind's base HP) on
 ## each circle as it strikes, up to max_alive of the kind; an egg hatches after egg_ticks, or from phase index
 ## burst_phase on bursts into the attack's pattern instead.
 var egg_ticks := 0
+## A `great_javelin` attack's embedded time; its quake ring's radius (m), period,
+## warning (ticks) and damage (per mille of the hero's max HP); the recall line's warning (ticks) and the way back's
+## speed (metres per tick). The throw's speed, radius and range are the attack's speed, radius_m and length_m.
+var great_embed_ticks := 0
+var great_ring_m := 0.0
+var great_pulse_ticks := 1
+var great_warn_ticks := 0
+var great_pulse_permille := 0
+var great_recall_warn_ticks := 0
+var great_recall_speed := 0.0
 var egg_hp := 0
 var burst_phase := 99
-## v0.8.0 BS1: the death line for the attack's late part (the javelins coming back, an egg's burst).
+## The death line for the attack's late part (the javelins coming back, an egg's burst).
 var late_cause_key := &""
-## v0.8.0 BS2 (owner O5; BOSS_SIGNATURES.md S4): a `gaze` attack's beam turns a quarter turn (1024) every
+## A `gaze` attack's beam turns a quarter turn (1024) every
 ## quarter_ticks from its start (aimed away from the player), reversing every reverse_ticks; it reaches length_m
 ## from the boss's edge (cut short by walls), half_width_m each side, and hurts once every burn_ticks. Its `pattern`
 ## (the orbs) fires again every orb_every_ticks from orb_every_ticks on (0 = none).
 var quarter_ticks := 0
 var reverse_ticks := 0
 var orb_every_ticks := 0
-## v0.8.0 BS2 (S5): a `pattern` attack's shots bounce off walls this many times (once); a `deploy` attack's turrets'
+## A `pattern` attack's shots bounce off walls this many times (once); a `deploy` attack's turrets'
 ## shots bounce once from phase index bounce_phase on (99 = never).
 var bounces := 0
 var bounce_phase := 99
-## v0.8.0 BS2 (S6): a `row_flood` attack's lanes leave molten floor for lava_ticks where they struck (lava_damage
+## A `row_flood` attack's lanes leave molten floor for lava_ticks where they struck (lava_damage
 ## once every lava_burn_ticks to a player standing in it), every lane cut by fords ford_m wide (a lava-free way to
 ## the boss and to an exit). A `melt` attack melts the room's outer ring for good: everything farther from the room's
 ## centre than its inscribed radius less melt_ring_m, then melt_step_m closer every melt_step_ticks (each step glows
@@ -174,13 +185,13 @@ var melt_min_m := 0.0
 var melt_step_m := 0.0
 var melt_step_ticks := 0
 var melt_warn_ticks := 0
-## v0.8.0 FB1 (owner O17; FINAL_BOSS.md F4; BossColossus): a `spike_chase` line's or a `spike_burst` ray's spikes
+## A `spike_chase` line's or a `spike_burst` ray's spikes
 ## (steps of them, step_m apart). A `combo`'s swings use count, half_arc, reach_m, speed (its step toward the player
 ## while a swing follows) and mark_gap_ticks (between strikes); its slam radius_m. A `leap` with a pattern fires it
 ## from where it lands (its shockwave ring).
 var steps := 1
 var step_m := 0.0
-## v0.8.0 FB2 (owner O17; FINAL_BOSS.md F5, F7; BossPrism): a `cross` attack's `count` beams in a plus from the body
+## A `cross` attack's `count` beams in a plus from the body
 ## (length_m, half_width_m, cut short by walls) turn a quarter turn every quarter_ticks at full HP, down to
 ## fast_quarter_ticks at no HP (set as each windup begins), reversing every reverse_ticks, for spin_ticks; then its
 ## window (window_ticks, the rest of its active time): the beams are out and the shield is down. Its `pattern` (the
@@ -192,7 +203,7 @@ var spin_ticks := 0
 var window_ticks := 0
 var bolt_attack := -1
 var bolt_every_ticks := 0
-## v0.8.0 FB3 (owner F6 "Weapon + dash + 2-3 cards"; FINAL_BOSS.md F6; BossNemesis): the Nemesis's moves. The run's
+## The Nemesis's moves. The run's
 ## weapon an attack answers to (WEAPON_ANY, or only a Blade run's or a Gun run's: the pick leaves the others out), and a
 ## `card_cast`'s card (0 = the strongest card of the player's wand it casts, 1 the next, 2 the third). A
 ## `mimic_combo` swings `count` of the player's combo steps (each its own arc), mark_gap_ticks apart, each tracked then
@@ -200,7 +211,7 @@ var bolt_every_ticks := 0
 ## them `spread` apart when the build throws none) gap_ticks apart down the lines it locked.
 var weapon := WEAPON_ANY
 var card := -1
-## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): a `tide` attack's Pull: for tide_pull_ticks of its active time the player
+## BOSSES_4_5.md N1; BossTide: a `tide` attack's Pull: for tide_pull_ticks of its active time the player
 ## drifts toward the boss at tide_pull (metres per tick), then for tide_push_ticks away from it at tide_push; its
 ## pattern (the Tide Rings) fires only inside the pull, and the boss's shots turn toward it by tide_bend (1/4096 turns
 ## a tick) while the pull is on. A `marks` attack with drag_m > 0 (the Undertow) drags a player within drag_reach_m
@@ -212,13 +223,15 @@ var tide_push_ticks := 0
 var tide_bend := 0
 var drag_m := 0.0
 var drag_reach_m := 0.0
-## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): a `crossfire` attack's safe spot stands distance_m off the middle of the
+## BOSSES_4_5.md N2; BossTwin: a `crossfire` attack's safe spot stands distance_m off the middle of the
 ## chain, on the player's side, and each body's fan (its pattern, aimed at the spot) leaves out the shots within gap_m
 ## of it there (gap_m, distance_m above). A `chain_sweep` lashes a lane half_width_m each side of its line, which runs
 ## from the body through the player and reach_m past them. The twin's Crossfire shots take twin_look ("" = the
 ## pattern's own).
 var twin_look := &""
-## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): an `echo` replays the path its boss recorded (echo_points points,
+## The twin body's attack (its moveset: the violet Warden's magic); false = the boss body's.
+var twin_body := false
+## BOSSES_4_5.md N3; BossJudge: an `echo` replays the path its boss recorded (echo_points points,
 ## echo_gap_ticks apart): point k strikes a disc radius_m wide on active tick k × echo_gap_ticks; a point within
 ## radius_m + the player's radius + echo_safe_m of where the player stood as it started is left out. A `verdict`'s
 ## square reaches square_half_m each way from its tracked centre.
@@ -226,12 +239,12 @@ var echo_points := 0
 var echo_gap_ticks := 1
 var echo_safe_m := 0.0
 var square_half_m := 0.0
-## v0.9.0 NB4 (BOSSES_4_5.md N4; BossShade): a `pattern` with dark_ticks > 0 is the Lantern Shade's Lights Out (its
+## BOSSES_4_5.md N4; BossShade: a `pattern` with dark_ticks > 0 is the Lantern Shade's Lights Out (its
 ## signature on the cadence): dark_ticks after it starts the room goes dark and the lanterns are lit afresh. A `marks`
 ## attack with snuff puts out the lit lantern nearest each struck circle (the Snuff).
 var dark_ticks := 0
 var snuff := false
-## v0.9.5 BH2 (BOSSES_HARD.md B1-B5; BossHard): a `row_lanes` attack with second_ticks > 0 follows each cross with a
+## BOSSES_HARD.md B1-B5; BossHard: a `row_lanes` attack with second_ticks > 0 follows each cross with a
 ## second one second_ticks after it strikes, shifted second_offset_m. A `pattern` with lead_ticks > 0 aims its first
 ## wave that many ticks ahead of the player's movement and every later wave at them. A `leap` with last_lead_ticks > 0
 ## aims its last leap that far ahead, and one with last_radius_bonus_permille > 0 lands that last leap that much
@@ -244,18 +257,20 @@ var lead_ticks := 0
 var last_lead_ticks := 0
 var last_radius_bonus_permille := 0
 var beam_turn_milli := 0
+## The beam burns its whole active time (turn_dps given, 0 = it never turns).
+var beam_burns := false
 var safe_cells := 0
-## v0.9.5 BH3 (BOSSES_HARD.md B8; BossTwin): a `crossfire` with lines_turn_milli > 0 aims both bodies' lines at the
+## BOSSES_HARD.md B8; BossTwin: a `crossfire` with lines_turn_milli > 0 aims both bodies' lines at the
 ## player and, for lines_ticks of its windup, turns each toward them by at most that many 1/4096 turns x 1000 a tick;
 ## the crossing point of the lines is the safe spot, and the fans fire along the last aim.
 var lines_ticks := 0
 var lines_turn_milli := 0
-## v0.9.5 BH3 (B10; BossShade): a `marks` Snuff puts out the snuff_count lit lanterns nearest each struck circle.
+## B10; BossShade: a `marks` Snuff puts out the snuff_count lit lanterns nearest each struck circle.
 var snuff_count := 0
-## v0.9.5 BH4 (BOSSES_HARD.md T1; BossTide): the most a `tide` attack moves the player (metres per tick; 0 = BossTide's
+## BOSSES_HARD.md T1; BossTide: the most a `tide` attack moves the player (metres per tick; 0 = BossTide's
 ## own ceiling).
 var tide_max := 0.0
-## v0.9.5 BH4 (T3; BossStream): a `wave`'s lengths (metres), thickness, speed (metres per tick), shove (metres along its
+## T3; BossStream: a `wave`'s lengths (metres), thickness, speed (metres per tick), shove (metres along its
 ## travel) and the clear distance from the player's projection on its wall; its telegraph is windup_ticks.
 var wave_lengths := PackedFloat32Array()
 var wave_thick_m := 0.0

@@ -1,6 +1,6 @@
 class_name PackFxDefinition
 extends ContentDef
-## v0.10.0 VX0 (docs/roadmap/v0.9.5/VFX_PACK.md, the owner's purchased Binbun VFX pack): the table of pack effects the
+## The table of pack effects the
 ## game spawns, one row per short id (PackFx). Later steps only add rows. One `.tres` (data/vfx/pack_fx.tres); the
 ## fields are parallel arrays, one entry per effect:
 ## - ids: the short name the views spawn by (`explosion_fire_a`);
@@ -9,7 +9,7 @@ extends ContentDef
 ## - scales: the scale the scene is drawn at when a caller asks for 1.0;
 ## - primary / secondary / tertiary: the scene's colours; an alpha of 0 keeps the scene's own.
 
-## The families a row may name; PackFx.CAPS holds each one's live cap (I5).
+## The families a row may name; PackFx.CAPS holds each one's live cap.
 const FAMILIES: Array[StringName] = [
 	&"hit",
 	&"impact",
@@ -42,7 +42,7 @@ func count() -> int:
 	return ids.size()
 
 
-## v0.10.0: `other`'s rows appended to this table (PackFx joins every file in data/vfx; an id already here is skipped,
+## `other`'s rows appended to this table (PackFx joins every file in data/vfx; an id already here is skipped,
 ## the content test keeps ids unique across files).
 func append_rows(other: PackFxDefinition) -> void:
 	for k in other.count():

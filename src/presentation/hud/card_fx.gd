@@ -1,6 +1,6 @@
 class_name CardFx
 extends Node2D
-## v0.8.0 N8 (owner O62, D48): a reward card's motion and light, at the card's centre: the pivot its stone face
+## A reward card's motion and light, at the card's centre: the pivot its stone face
 ## (StoneCard's Face) hangs from, and the light rays behind it (drawn by the pick panel under every card). The pick
 ## panel sets it each frame from its CardDeal and the pointer; nothing here decides an outcome (EI-07; presentation
 ## may animate).
@@ -10,7 +10,7 @@ extends Node2D
 ## - Light: the white flash as a high card lands, the light rays rising behind it, and a Legendary card's looping
 ##   holographic shine across its face (a still gloss under reduced motion).
 ## - Burn: a card not picked burns away from its foot (a dissolve with an ember edge, shared by every part of the
-##   face through use_parent_material), and the picked one's icon flies to the HUD (CardFly). v0.10.5 W3-O15: the
+##   face through use_parent_material), and the picked one's icon flies to the HUD (CardFly). the
 ##   burn is a noise-texture dissolve with a glare edge, and a GlareBurst of sparkles and streaks flies off the card.
 
 const RAYS := 14
@@ -87,7 +87,7 @@ var tilt := Vector2.ZERO
 var sink := 0.0
 var rays := 0.0
 var burn := 0.0
-## v0.10.5 W3-O15: the glare's sparkles while the card dissolves (null otherwise) and its seed (the card's id).
+## The glare's sparkles while the card dissolves (null otherwise) and its seed (the card's id).
 var glare: GlareBurst
 var glare_seed := &""
 var _burn_mat: ShaderMaterial
@@ -227,7 +227,7 @@ func burning() -> bool:
 	return _burn_mat != null
 
 
-## v0.9.0 AS (owner Q5 "Marked, old one burns"): a fresh burn material (the same dissolve, its params at 0) for any
+## A fresh burn material (the same dissolve, its params at 0) for any
 ## other part that burns, the pick card's replaced-card chip (PickSlot.burn_replaced).
 static func burn_material() -> ShaderMaterial:
 	var m := ShaderMaterial.new()
@@ -236,7 +236,7 @@ static func burn_material() -> ShaderMaterial:
 	return m
 
 
-## v0.10.5 W3-O15: the glare's sparkles follow the dissolve (0 or 1: none, its node freed).
+## The glare's sparkles follow the dissolve (0 or 1: none, its node freed).
 func _set_glare(t: float) -> void:
 	if t <= 0.0 or t >= 1.0:
 		if glare != null:

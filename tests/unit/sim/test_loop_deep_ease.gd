@@ -6,9 +6,7 @@ extends GutTest
 
 
 func _run_table() -> RunTable:
-	return ContentCompiler.compile_run(
-		ContentRepository.load_all().get_def(&"run", RunSaver.RUN_ID)
-	)
+	return ContentCompiler.compile_run(SharedContent.repo().get_def(&"run", RunSaver.RUN_ID))
 
 
 ## A run on floor 2 of `loop`, its route into floor 2 `route` (Routes.Route).
@@ -31,7 +29,7 @@ func _enemies(r: RunState) -> Array[EnemyTable]:
 
 
 func _bosses(r: RunState) -> Array[BossTable]:
-	var t := ContentCompiler.compile_bosses(ContentRepository.load_all())
+	var t := ContentCompiler.compile_bosses(SharedContent.repo())
 	r.scale_bosses(t)
 	return t
 

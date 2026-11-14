@@ -1,6 +1,6 @@
 class_name HubSession
 extends Node
-## v0.9.0 HB (owner Q27; HUB_MOCKUPS option A, the Rune Ring): the hub while it runs. The hero walks it with the normal
+## The hub while it runs. The hero walks it with the normal
 ## controls on the run's own World rules (HubScenario, HubDriver: a deterministic World stepped at 60 Hz, walls and
 ## dash and all, no combat), HubView draws it, and this node tells which station the hero stands at (HubLayout) and
 ## sends the interact there. Why a World and not a scene of its own: the hero's walk, dash, collision and feel are the
@@ -8,9 +8,9 @@ extends Node
 ## reading the hero's position. The hub never touches a run's save (RunSaver never sees this World) and reads the
 ## profile only (HubFlags).
 ## The stations whose panels Main owns (the Portal Machine's build pick, the Codex, the achievements) go
-## out as `station_used`; the stand-in panels (the Wardrobe, the Progression Station) and the hub's pause menu (Esc /
+## out as `station_used`; the Wardrobe's and Progression Station's panels and the hub's pause menu (Esc /
 ## Start: Resume, Options, Main menu) are this node's own (`overlay`).
-## v0.9.0 CL (COLLECTIBLES.md #16, W47): the Archive's shelf lights each collectible found (HubView.show_found); once
+## COLLECTIBLES.md #16, W47: the Archive's shelf lights each collectible found (HubView.show_found); once
 ## the north gate is open (12 on the shelves) the Keystone waits on the alcove's pedestal, and walking up to it takes
 ## it: written to the profile at once with its Rune Fragment, its floor rune and niche light, and the hub's line says it
 ## was added to the Rune Archive (no toast: the hub's changes stay silent, W46).
@@ -18,9 +18,9 @@ extends Node
 signal station_used(id: StringName, panel: StringName)
 signal options_requested
 signal main_menu_requested
-## v0.9.5 RS1: a sound the hub asks Main to play (AudioDirector.play: cue, position or null, pitch).
+## A sound the hub asks Main to play (AudioDirector.play: cue, position or null, pitch).
 signal cue_requested(id: StringName, pos: Variant, pitch: float)
-## v0.10.5 O17 (owner P17): the hero walked down the south door's lane: Main opens the Training Room.
+## The hero walked down the south door's lane: Main opens the Training Room.
 signal training_requested
 
 const HUB_ID := &"rune_ring"
@@ -29,7 +29,7 @@ const BIOME := &"ruins"
 ## The stations whose panels are this node's own: the Wardrobe's (v0.9.0 RB, WardrobePanel) and the Progression
 ## Station's (v0.9.0 MP, ProgressionPanel).
 const STAND_INS: Array[StringName] = [&"wardrobe", &"progression"]
-## v0.9.0 CL: how near the alcove's middle (m) the hero takes the Keystone, and how long the hub's line says so.
+## How near the alcove's middle (m) the hero takes the Keystone, and how long the hub's line says so.
 const KEYSTONE_M := 1.6
 const FOUND_LINE_TICKS := 240
 
@@ -47,12 +47,12 @@ var at := &""
 ## A panel or menu of Main's is over the hub (Main sets it), or one of this node's (`overlay`).
 var held := false
 var overlay: MenuPanel
-## v0.9.0 HB2: the hero is walking into the portal (the hub holds; input is ignored but for a press that skips it).
+## The hero is walking into the portal (the hub holds; input is ignored but for a press that skips it).
 var walking := false
-## v0.9.0 RB: the content and the profile the Wardrobe reads and writes (its robe and affinity).
+## The content and the profile the Wardrobe reads and writes (its robe and affinity).
 var repo: ContentRepository
 var profile: ProfileStore
-## v0.9.0 CL: the collectibles in shelf order (the catalog's), the hub's own (the Keystone; null without one) and the
+## The collectibles in shelf order (the catalog's), the hub's own (the Keystone; null without one) and the
 ## ticks left of the line that says it was found.
 var collectibles: Array[CollectibleDefinition] = []
 var keystone: CollectibleDefinition
@@ -95,7 +95,7 @@ func setup(
 		biome.palette,
 		lighting
 	)
-	view.set_look(look())  # v0.9.0 RB: the hero wears the Wardrobe's choice
+	view.set_look(look())  # The hero wears the Wardrobe's choice
 	collectibles = (stores[2] as CodexCatalog).collectibles  # v0.9.0 CL
 	for d in collectibles:
 		if d.source == &"hub_keystone":
@@ -110,7 +110,7 @@ func setup(
 	hud = HubHud.new()
 	ui.add_child(hud)
 	ui.move_child(hud, 0)
-	runic = HubRunic.new()  # v0.9.5 RS1: the Runic Stone (was the Credits stone)
+	runic = HubRunic.new()  # The Runic Stone (was the Credits stone)
 	add_child(runic)
 	runic.setup(self, stores)
 	runic.cue_requested.connect(cue_requested.emit)
@@ -129,7 +129,7 @@ func _on_tick() -> void:
 	view.focus(at)
 	var keys := runic.keys(at, layout.keys_of(at))
 	var pos := driver.reader.player_pos()
-	if at == &"" and layout.near_training_door(pos):  # v0.10.5 O17: the door's name, no press (walk in)
+	if at == &"" and layout.near_training_door(pos):  # The door's name, no press (walk in)
 		keys = [hub.training_name_key, &""]
 	if layout.in_training_door(pos) and not _training_asked and not (held or overlay != null):
 		_training_asked = true
@@ -137,13 +137,13 @@ func _on_tick() -> void:
 	runic.tick(at)
 
 	_take_keystone()
-	if _found_ticks > 0 and keystone != null:  # v0.9.0 CL: "Keystone · Added to the Rune Archive"
+	if _found_ticks > 0 and keystone != null:  # "Keystone · Added to the Rune Archive"
 		_found_ticks -= 1
 		keys = [keystone.name_key, CollectibleBook.HEADER_KEY]
 	hud.show_station(keys[0], keys[1], driver.reader)
 
 
-## v0.9.0 CL: the shelf's niches, the floor runes (one per collectible found) and the Keystone, from the profile.
+## The shelf's niches, the floor runes (one per collectible found) and the Keystone, from the profile.
 func show_collectibles() -> void:
 	var colors: Array[Color] = []
 	for d in collectibles:
@@ -156,7 +156,7 @@ func show_collectibles() -> void:
 	view.set_keystone(waits, keystone.color if keystone != null else HubProps.BLUE)
 
 
-## v0.9.0 CL: the hero walked up to the Keystone: the profile records it with its fragment, saved at once.
+## The hero walked up to the Keystone: the profile records it with its fragment, saved at once.
 func _take_keystone() -> void:
 	if not view.keystone_shown() or keystone == null:
 		return
@@ -176,7 +176,7 @@ func _take_keystone() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if walking:  # v0.9.0 HB2: every input is the walk's; a press of interact or accept skips it
+	if walking:  # Every input is the walk's; a press of interact or accept skips it
 		get_viewport().set_input_as_handled()
 		if event.is_action_pressed(&"interact") or event.is_action_pressed(&"ui_accept"):
 			view.finish_walk()
@@ -190,14 +190,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		var panel := layout.panel_of(at)
 		if at == HubRunic.STATION:
-			runic.press()  # v0.9.5 RS1: the stone speaks (or hums) in the hub; no panel
+			runic.press()  # The stone speaks (or hums) in the hub; no panel
 		elif at in STAND_INS:
 			_open_stand_in(at)
 		else:
 			station_used.emit(at, panel)
 
 
-## v0.9.0 HB2 (owner: "click, choose weapon and then the character walks upstairs towards the portal and crosses it"):
 ## the weapon is picked; `before` (Main's: the build pick closes) runs, the hero walks up the machine's steps and
 ## through its ring (HubView.walk_into_portal, about 2-3 s, a press skips it), then `done` (Main's: the run's load
 ## behind the cover, as before). The hub holds through it all (the World doesn't step). Returns the walk's length (s).
@@ -230,14 +229,14 @@ func open_pause() -> void:
 	_show_overlay(m)
 
 
-## v0.9.0 RB: the hero's look from the profile's Wardrobe choice (Wardrobe.look).
+## The hero's look from the profile's Wardrobe choice (Wardrobe.look).
 func look() -> Dictionary:
 	return Wardrobe.look(
 		repo, Wardrobe.worn_robe(repo, profile), Wardrobe.chosen_affinity(repo, profile)
 	)
 
 
-## v0.9.0 RB: the Wardrobe's panel; each pick is worn at once and kept in the profile (written when it closes).
+## The Wardrobe's panel; each pick is worn at once and kept in the profile (written when it closes).
 func open_wardrobe() -> void:
 	var robes := Wardrobe.robes(repo)
 	var unlocked: Array[bool] = []
@@ -264,9 +263,9 @@ func open_wardrobe() -> void:
 	_show_overlay(p)
 
 
-## v0.9.0 MP: the Progression Station's panel: the robes Rune Fragments buy (MetaProgress.buy_robe, which calls
+## The Progression Station's panel: the robes Rune Fragments buy (MetaProgress.buy_robe, which calls
 ## Wardrobe.unlock_robe); each buy is written to the profile at once. A bought robe is then worn at the Wardrobe.
-## MP2: every row shows its price now (MetaProgress.price_of); buying the "???" robe reveals its name.
+## Every row shows its price now (MetaProgress.price_of); buying the "???" robe reveals its name.
 func open_progression() -> void:
 	var wares := MetaProgress.wares(repo)
 	var p := ProgressionPanel.new(
@@ -308,7 +307,7 @@ func _owned(wares: Array) -> Array[bool]:
 	return out
 
 
-## MP2: each ware's price now (MetaProgress.price_of).
+## Each ware's price now (MetaProgress.price_of).
 func _prices(wares: Array) -> Array[int]:
 	var out: Array[int] = []
 	for r: RobeDefinition in wares:
@@ -316,18 +315,12 @@ func _prices(wares: Array) -> Array[int]:
 	return out
 
 
-## A stand-in station's panel (none left: v0.9.0 RB: the Wardrobe has its own; MP: the Progression Station too).
+## The own panel of a station this node handles (the Wardrobe, the Progression Station).
 func _open_stand_in(id: StringName) -> void:
 	if id == &"wardrobe":
 		open_wardrobe()
-		return
-	if id == &"progression":
+	elif id == &"progression":
 		open_progression()
-		return
-	var keys := layout.keys_of(id)
-	var p := HubStationPanel.new(id, String(keys[0]), "HUB_%s_SOON" % String(id).to_upper())
-	p.back_pressed.connect(close_overlay)
-	_show_overlay(p)
 
 
 func _show_overlay(m: MenuPanel) -> void:

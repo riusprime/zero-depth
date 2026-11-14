@@ -1,11 +1,11 @@
 class_name EndPanel
 extends MenuPanel
 ## Shown when the fight ends (PLAN v0.1.0 Step 5): "You died" with what killed you, or "Arena cleared". Restart has
-## focus. On a run (v0.3.0 B) it is the run recap: "Run complete" or "You died", the floor reached, the run's time,
+## focus. On a run it is the run recap: "Run complete" or "You died", the floor reached, the run's time,
 ## kills, shards (only when the run counts them), the items you held and the killing cause.
-## v0.5.5 A5; v0.8.0 MU (Ember stone, MenuStyle): the game blurred behind, the title, recap and buttons on a stone slab.
-## v0.9.0 HB (owner Q27, W48): its second row goes to the hub (Restart stays one press, focused first).
-## v0.10.5 W3-O18: in Astral (MenuPanel.astral): the cause in Atkinson, the recap's lines quieter under it, a fading
+## Ember stone: the game blurred behind, the title, recap and buttons on a stone slab.
+## Its second row goes to the hub (Restart stays one press, focused first).
+## In Astral (MenuPanel): the cause in Atkinson, the recap's lines quieter under it, a fading
 ## hairline before the rows.
 
 signal restart_pressed
@@ -25,22 +25,42 @@ const CAUSES := {
 	WorldReader.KIND_MINE_LAYER: "CAUSE_MINE_LAYER",
 	WorldReader.KIND_SNIPER: "CAUSE_SNIPER",
 	WorldReader.KIND_LENS_DRONE: "CAUSE_LENS_DRONE",
+	WorldReader.KIND_DUST_MITE: "CAUSE_DUST_MITE",  # The horde critters' touch
+	WorldReader.KIND_CAVE_BAT: "CAUSE_CAVE_BAT",
+	WorldReader.KIND_EMBER_FLEA: "CAUSE_EMBER_FLEA",
+	WorldReader.KIND_ICE_CRAB: "CAUSE_ICE_CRAB",
+	WorldReader.KIND_STAR_MOTE: "CAUSE_STAR_MOTE",
+	WorldReader.KIND_RUBBLE_WARDEN: "CAUSE_RUBBLE_WARDEN",  # The biome variants
+	WorldReader.KIND_DIM_NEEDLE: "CAUSE_DIM_NEEDLE",
+	WorldReader.KIND_EMBER_CHARGER: "CAUSE_EMBER_CHARGER",
+	WorldReader.KIND_FROST_CHARGER: "CAUSE_FROST_CHARGER",
+	WorldReader.KIND_SPLIT_SNIPER: "CAUSE_SPLIT_SNIPER",
+	WorldReader.KIND_WIRE_WEAVER: "CAUSE_WIRE_WEAVER",  # The Ruins and Night Rocks signatures
+	WorldReader.KIND_SCRAP_HOUND: "CAUSE_SCRAP_HOUND",
+	WorldReader.KIND_ROCK_LURKER: "CAUSE_ROCK_LURKER",
+	WorldReader.KIND_STONE_THROWER: "CAUSE_STONE_THROWER",
+	WorldReader.KIND_KILN_BEETLE: "CAUSE_KILN_BEETLE",  # R5-R8
+	WorldReader.KIND_CINDER_PRIEST: "CAUSE_CINDER_PRIEST",
+	WorldReader.KIND_FROST_SPITTER: "CAUSE_FROST_SPITTER",
+	WorldReader.KIND_GLACIER_TURTLE: "CAUSE_GLACIER_TURTLE",
+	WorldReader.KIND_STAR_WARPER: "CAUSE_STAR_WARPER",  # The Starfall signatures
+	WorldReader.KIND_GRAVITY_NODE: "CAUSE_GRAVITY_NODE",
 }
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted
-## when the run has no shards), "items" (Array of item name keys), "routes" (v0.5.0 RT: each floor's route, floor 1
+## when the run has no shards), "items" (Array of item name keys), "routes" (each floor's route, floor 1
 ## first, as WorldReader.ROUTE_* ints), "threat" and "threat_peak" (ints; v0.5.0 EV), "loop" and "loops_cleared"
-## (ints; v0.7.5 AP: the floor line says "Loop N · " past the first loop, and a line counts the loops cleared),
-## "true_ending" (bool; v0.8.0 FB1: the final boss was beaten, its line first), "fragments" and "fragments_total"
-## (ints; v0.9.0 MP: the Rune Fragments the run banked and the profile's balance after it).
+## (ints; the floor line says "Loop N · " past the first loop, and a line counts the loops cleared),
+## "true_ending" (bool; the final boss was beaten, its line first), "fragments" and "fragments_total"
+## (ints; the Rune Fragments the run banked and the profile's balance after it).
 var recap := {}
 
 
-## `cause_key` (v0.3.0 C): a boss's attack line (WorldReader.killer_cause_key), used before the kind's line.
+## `cause_key`: a boss's attack line (WorldReader.killer_cause_key), used before the kind's line.
 func _init(
 	won: bool, killer_kind: int, cause_key: StringName = &"", p_recap: Dictionary = {}
 ) -> void:
-	super(true)  # v0.10.5 W3-O18: in Astral
+	super()  # In Astral (MenuPanel)
 	name = "EndPanel"
 	recap = p_recap
 	add_backdrop()
@@ -62,7 +82,7 @@ func _init(
 	gap.name = "RowsRule"
 	box.add_child(gap)
 	add_button("UI_RESTART", func() -> void: restart_pressed.emit()).name = "Restart"
-	add_button("UI_TO_HUB", func() -> void: hub_pressed.emit()).name = "Hub"  # v0.9.0 HB (Q27, W48)
+	add_button("UI_TO_HUB", func() -> void: hub_pressed.emit()).name = "Hub"  # v0.9.0 HB
 	add_hint("UI_MENU_HINT")
 
 
@@ -73,7 +93,7 @@ func recap_line(line_name: String) -> String:
 
 
 func _add_recap() -> void:
-	if bool(recap.get("true_ending", false)):  # v0.8.0 FB1 (F1): the final boss beaten
+	if bool(recap.get("true_ending", false)):  # The final boss beaten
 		_line("TrueEnding", tr("UI_RECAP_TRUE_ENDING"), 24)
 	if recap.has("floor"):
 		_line(
@@ -83,12 +103,12 @@ func _add_recap() -> void:
 				+ tr("UI_RECAP_FLOOR") % [recap["floor"], recap.get("floors", recap["floor"])]
 			)
 		)
-	var looped := clampi(int(recap.get("loop", 1)) - 1, 0, 3)  # v0.9.5 BH1 (Q11): the loops that eased the fight
+	var looped := clampi(int(recap.get("loop", 1)) - 1, 0, 3)  # The loops that eased the fight
 	if looped >= 1:
 		_line("Looped", tr("RUN_SUMMARY_LOOPED") % looped)
-	if recap.has("loops_cleared"):  # v0.7.5 AP: the Ascension loop
+	if recap.has("loops_cleared"):  # The Ascension loop
 		_line("Loops", tr("UI_RECAP_LOOPS") % recap["loops_cleared"])
-	if bool(recap.get("record_loop", false)):  # v0.10.5 O5a (D3): this run set the weapon's deepest loop
+	if bool(recap.get("record_loop", false)):  # This run set the weapon's deepest loop
 		_line("RecordLoop", tr("UI_RECAP_RECORD_LOOP") % int(recap.get("loop", 1)))
 	if bool(recap.get("record_time", false)):  # and its fastest true ending
 		_line("RecordTime", tr("UI_RECAP_RECORD_TIME"))
@@ -104,7 +124,7 @@ func _add_recap() -> void:
 		_line("Kills", tr("UI_RECAP_KILLS") % recap["kills"])
 	if recap.has("shards"):
 		_line("Shards", tr("UI_RECAP_SHARDS") % recap["shards"])
-	if recap.has("fragments"):  # v0.9.0 MP: banked when the run ended
+	if recap.has("fragments"):  # Banked when the run ended
 		_line(
 			"Fragments",
 			(
@@ -112,12 +132,12 @@ func _add_recap() -> void:
 				% [recap["fragments"], recap.get("fragments_total", recap["fragments"])]
 			)
 		)
-		var bonus := int(recap.get("loop_bonus_permille", 1000))  # v0.10.5 O5a: more fragments a loop
+		var bonus := int(recap.get("loop_bonus_permille", 1000))  # More fragments a loop
 		if bonus > 1000:
 			_line("LoopBonus", tr("UI_RECAP_LOOP_BONUS") % ("%.1f" % (bonus / 1000.0)), 20)
 	if recap.has("routes"):
 		_line("Route", tr("UI_RECAP_ROUTE") % route_text(self, recap["routes"]))
-	if recap.has("threat"):  # v0.5.0 EV: threat T now and the run's peak
+	if recap.has("threat"):  # Threat T now and the run's peak
 		_line(
 			"Threat",
 			tr("UI_RECAP_THREAT") % [recap["threat"], recap.get("threat_peak", recap["threat"])]
@@ -151,7 +171,7 @@ func _line(line_name: String, text: String, font_size: int = 24) -> Label:
 	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	l.add_theme_font_size_override("font_size", font_size)
-	# v0.10.5 W3-O18: the cause (26) bright, the recap (24) in body text, the small lines (20) dim.
+	# The cause (26) bright, the recap (24) in body text, the small lines (20) dim.
 	match font_size:
 		26:
 			AstralMenu.body(l, 22, AstralCardArt.TEXT)

@@ -165,13 +165,23 @@ func test_the_beam_turns_a_quarter_every_quarter_and_reverses() -> void:
 		(2048 - way * BossGaze.LEAD) & 4095,
 		"the player at -x: it starts LEAD short of -x (W3-O2)"
 	)
-	assert_eq(atk.quarter_ticks, 120, "a quarter turn every 2.0 s (a starting value)")
-	assert_eq(atk.reverse_ticks, 480, "reversing every 8.0 s: one whole turn each way")
+	assert_eq(
+		atk.quarter_ticks,
+		180,
+		"a quarter turn every 3.0 s: 30 degrees a second (v0.11.0 F4, was 2.0 s)"
+	)
+	assert_eq(
+		atk.reverse_ticks, 480, "reversing every 8.0 s: 240 degrees each way at 30 degrees a second"
+	)
 	var q := atk.quarter_ticks
 	assert_eq(BossGaze.angle_at(w, i, 0), a0)
 	assert_eq(BossGaze.angle_at(w, i, q), (a0 + way * 1024) & 4095, "a quarter turn")
 	assert_eq(BossGaze.angle_at(w, i, 2 * q), (a0 + way * 2048) & 4095, "a half turn")
-	assert_eq(BossGaze.angle_at(w, i, atk.reverse_ticks - q), (a0 - way * 1024) & 4095)
+	assert_eq(
+		BossGaze.angle_at(w, i, atk.reverse_ticks - q),
+		(a0 + way * (atk.reverse_ticks - q) * 1024 / q) & 4095,
+		"just before the reversal it is 240 degrees round, less a quarter"
+	)
 	assert_eq(
 		BossGaze.angle_at(w, i, atk.reverse_ticks + q),
 		BossGaze.angle_at(w, i, atk.reverse_ticks - q),
@@ -714,22 +724,6 @@ func test_lava_and_the_melt_are_deterministic_and_survive_a_save() -> void:
 	assert_eq(a.bosses.melt_boss.size(), 1, "and the ring melted")
 	assert_eq(a.state_hash(), b.state_hash(), "two runs agree")
 	_round_trip(a, make.call(), "lava")
-
-
-func test_an_older_save_mid_fight_has_no_molten_floor_and_plays_on() -> void:
-	var s := _fight(&"foundry", Vector2(2, 3), Vector2(-4, -6), 11.0)
-	var w: World = s[0]
-	CombatLab.idle(w, 30)
-	var snap := WorldSnapshot.take(w)
-	var bosses: Dictionary = snap["world"][&"bosses"]
-	for f: StringName in WorldSnapshot.ADDED_SINCE_V05[&"BossStore"]:
-		bosses.erase(f)
-	var base := _fight(&"foundry", Vector2(2, 3), Vector2(-4, -6), 11.0)[0] as World
-	assert_eq(WorldSnapshot.apply(base, snap), "", "a save from before BS2 restores")
-	assert_eq(base.state_hash(), w.state_hash(), "the same fight")
-	assert_eq(base.bosses.lava_x.size(), 0)
-	_flood(base, base.boss_id, &"molten_flood")
-	assert_gt(base.bosses.lava_x.size(), 0, "and its next flood leaves lava")
 
 
 func test_the_trimmed_moves_are_gone() -> void:

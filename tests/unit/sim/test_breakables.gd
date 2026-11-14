@@ -347,17 +347,14 @@ func test_no_prop_within_one_and_a_half_metres_of_a_doorway() -> void:
 	var repo := ContentRepository.load_all()
 	var kept := 0
 	var dropped := 0
-	var before := 0
 	for s in range(1, 101):
 		var w := RunLab.new(repo, s, &"blade").floor_world()
-		Breakables.setup(w, CrackLab.rules(false), false)  # the placement before BK
-		before += w.breakables.pos.size() if w.breakables != null else 0
-		Breakables.setup(w, CrackLab.rules(false), true)
+		Breakables.setup(w, CrackLab.rules(false))
 		if w.breakables != null:
 			kept += w.breakables.pos.size()
 			dropped += w.breakables.dropped
 			for q in w.breakables.pos:
 				for d in w.floor_layout.door_centers:
 					assert_gte((q - d).length(), Breakables.DOOR_CLEAR_M, "seed %d" % s)
-	gut.p("BK| seeds=100 before=%d kept=%d dropped=%d" % [before, kept, dropped])
-	assert_eq(kept + dropped, before, "the draws are unchanged: only drops")
+	gut.p("BK| seeds=100 kept=%d dropped=%d" % [kept, dropped])
+	assert_gt(kept, 0, "props still stand away from the doorways")

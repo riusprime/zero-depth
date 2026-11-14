@@ -1,0 +1,4 @@
+{
+	"pre_run_script": "res://tests/support/native_required_hook.gd",
+	"post_run_script": "res://tests/support/native_required_hook.gd"
+}

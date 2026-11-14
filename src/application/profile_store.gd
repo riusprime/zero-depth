@@ -3,15 +3,15 @@
 # migration cut; quarantine keeps every bad file (timestamped) instead of overwriting profile.bad.json.
 class_name ProfileStore
 extends RefCounted
-## The player profile: settings, key bindings, unlocks, seen hints, (v0.7.5 CX) the Codex and (AC) the achievements
+## The player profile: settings, key bindings, unlocks, seen hints, the Codex and (AC) the achievements
 ## in one `user://profile.json`. Never part of a run's state or any sim hash. Headless runs (tests, sims, CI) keep it in
 ## memory only. Saves are atomic (write a .tmp, then rename). A corrupt file is kept as profile.bad.<time>.json and
 ## a fresh profile starts.
 
 const PLAYER_PATH := "user://profile.json"
-## v0.9.0 MP: 2 adds the `progress` section (Rune Fragments, the Purple Portal travelled; MetaProgress). A version-1
+## 2 adds the `progress` section (Rune Fragments, the Purple Portal travelled; MetaProgress). A version-1
 ## profile loads with 0 fragments and the portal not travelled (_migrate).
-## v0.9.0 CL: 3 adds the `collectibles` section (the Rune Archive's finds; CollectibleBook). An older profile loads with
+## 3 adds the `collectibles` section (the Rune Archive's finds; CollectibleBook). An older profile loads with
 ## none found (_migrate).
 const PROFILE_VERSION := 3
 
@@ -57,10 +57,10 @@ static func fresh() -> Dictionary:
 		"bindings": {},
 		"unlocks": {},
 		"hints": {"seen": []},
-		"codex": CodexStore.fresh(),  # v0.7.5 CX: the Codex's unlocks and counters (its own version inside)
-		"achievements": AchievementStore.fresh(),  # v0.7.5 AC: unlocks and run counters (its own version)
-		"progress": MetaProgress.fresh(),  # v0.9.0 MP: Rune Fragments and the Purple Portal flag
-		"collectibles": CollectibleBook.fresh(),  # v0.9.0 CL: the collectibles found (id -> the run seed)
+		"codex": CodexStore.fresh(),  # The Codex's unlocks and counters (its own version inside)
+		"achievements": AchievementStore.fresh(),  # Unlocks and run counters (its own version)
+		"progress": MetaProgress.fresh(),  # Rune Fragments and the Purple Portal flag
+		"collectibles": CollectibleBook.fresh(),  # The collectibles found (id -> the run seed)
 	}
 
 
@@ -100,12 +100,12 @@ func _merge_loaded(loaded: Dictionary) -> void:
 	data["profile_version"] = PROFILE_VERSION
 
 
-## v0.9.0 MP: a profile from before version 2 starts its `progress` fresh (0 Rune Fragments, the Purple Portal not
+## A profile from before version 2 starts its `progress` fresh (0 Rune Fragments, the Purple Portal not
 ## travelled: the Void stays locked until the player travels through one).
 func _migrate(from: int) -> void:
 	if from < 2:
 		data["progress"] = MetaProgress.fresh()
-	if from < 3:  # v0.9.0 CL: none found before the Rune Archive's collectibles
+	if from < 3:  # None found before the Rune Archive's collectibles
 		data["collectibles"] = CollectibleBook.fresh()
 
 

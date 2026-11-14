@@ -28,6 +28,7 @@ func _hero(main: Main) -> PlayerAvatar:
 func test_pick_a_robe_and_an_affinity_then_run_with_them() -> void:
 	var profile := ProfileStore.new("")
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot(profile)
 	var repo := ContentRepository.load_all()
 	var ash: RobeDefinition = repo.get_def(&"robe", &"ash")
@@ -90,6 +91,7 @@ func test_buy_the_hidden_robe_and_run_in_it() -> void:
 	var profile := ProfileStore.new("")
 	MetaProgress.bank(profile, 260)  # earlier runs' fragments (a test helper)
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot(profile)
 	var repo := ContentRepository.load_all()
 	var fallen: RobeDefinition = repo.get_def(&"robe", &"fallen")

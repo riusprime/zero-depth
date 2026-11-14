@@ -53,7 +53,6 @@ func test_the_ember_glow_is_apart_from_the_heat_colours() -> void:
 	var dh := absf(e.h - HeatLooks.OVERCLOCK.h)
 	assert_gte(minf(dh, 1.0 - dh), 0.04, "hue apart from Overclock")
 	assert_gte(absf(e.s - HeatLooks.OVERCLOCK.s), 0.3, "and saturation")
-	assert_eq(MenuStyle.EMBER, e, "the menus' accent is the ember")
 
 
 func test_no_crystal_art_is_left_in_the_ui() -> void:
@@ -95,9 +94,6 @@ func test_every_card_surface_is_carved_stone() -> void:
 	item.show_item(&"wildfire", "Wildfire", "Kills spread burn.", Color.ORANGE)
 	assert_true(item.plaque_box() is StoneBox, "the item plaque")
 	# v0.10.5 W3-O16 (on purpose): the shop's heal and reroll are Astral plates now (test_astral_store.gd)
-	var gamble := GambleCard.new()
-	add_child_autofree(gamble)
-	assert_true(gamble.plaque_box() is StoneBox, "the shrine card")
 	# v0.10.5 W3-O19 (on purpose, owner 2026-11-04 night: every UI element in Astral): the Codex's tiles and the
 	# wand's tiles are Astral frames now, the codex tile's picture in a medallion ring
 	var tile := CodexTile.new()
@@ -113,9 +109,7 @@ func test_every_card_surface_is_carved_stone() -> void:
 	var hud := BuildHud.new()
 	add_child_autofree(hud)
 	assert_true(hud.pip_box(0) is StoneBox, "a wand pip")
-	var toast := AchievementToast.new()
-	add_child_autofree(toast)
-	assert_eq(toast.slab().rim, Color(EmberStone.GOLD, 0.75), "the toast's gold rim")
+	# v0.11.1 Step 12: the achievement toast is only the Astral panel now (its unreachable stone slab is gone)
 	var catalog := CodexCatalog.build(ContentRepository.load_all())
 	var view := CodexView.new(catalog, CodexStore.new(ProfileStore.new("")))
 	add_child_autofree(view)
@@ -131,12 +125,15 @@ func test_every_card_surface_is_carved_stone() -> void:
 		)
 
 
-func test_every_menu_is_on_ember_stone() -> void:
-	var t := MenuStyle.theme()
-	assert_true(t.get_stylebox("panel", "PanelContainer") is StoneBox, "panels are slabs")
+## v0.11.1 Step 13 (owner 2026-11-10: "Astral current one live should be the only HUD style for all elements
+## throughout the game"): every menu wears Astral; the Ember stone menu theme (MenuStyle) is gone.
+func test_every_menu_wears_astral() -> void:
+	var t := AstralMenu.theme()
+	assert_false(
+		t.get_stylebox("panel", "PanelContainer") is StoneBox, "panels are Astral veils, not slabs"
+	)
 	for s in ["focus", "pressed", "hover"]:
-		assert_true(t.get_stylebox(s, "Button") is StoneBox, "a %s row is a lit slab" % s)
-	assert_true(t.get_stylebox("normal", "Button") is StyleBoxEmpty, "a plain row is type only")
+		assert_false(t.get_stylebox(s, "Button") is StoneBox, "a %s row is not a lit slab" % s)
 	var main := MainMenu.new("v", false)
 	add_child_autofree(main)
 	assert_not_null(main.backdrop.texture, "v0.9.5 MM: the owner's picture is behind the main menu")
@@ -148,6 +145,15 @@ func test_every_menu_is_on_ember_stone() -> void:
 		BuildPicker.new(_defs("res://data/builds"), &"blade"),
 		PauseMenu.new(),
 		EndPanel.new(false, 0),
+		HubPauseMenu.new(),
+		ProgressionPanel.new(MetaProgress.wares(repo), [] as Array[bool], 0, false),
+		WardrobePanel.new(
+			Wardrobe.robes(repo),
+			[true] as Array[bool],
+			&"cream",
+			Wardrobe.affinities(repo),
+			&"none"
+		),
 		OptionsMenu.new(ProfileStore.new("")),
 		CreditsView.new(repo.get_def(&"credits", &"main"), repo.get_def(&"licences", &"generated")),
 	]:
@@ -156,6 +162,22 @@ func test_every_menu_is_on_ember_stone() -> void:
 		var bd := screen.find_child("MenuBackdrop", true, false) as MenuBackdrop
 		assert_not_null(bd, "%s: the backdrop" % screen.name)
 		assert_true(bd.astral, "%s: under Astral's ink" % screen.name)
+		assert_null(
+			screen.find_child("EmberMarker", true, false), "%s: no ember diamond" % screen.name
+		)
+		assert_null(
+			screen.find_child("TitleGroove", true, false), "%s: no ember groove" % screen.name
+		)
+	# v0.11.1 Step 13: the Training Room's terminal (no backdrop: the room stays in sight) is Astral too.
+	var terminal := TrainingPanel.new(
+		[], [1], [{"id": &"blade", "name_key": "BUILD_BLADE"}], &"blade", [], 5
+	)
+	add_child_autofree(terminal)
+	assert_eq(terminal.theme, AstralMenu.theme(), "the terminal wears the Astral theme")
+	assert_true(
+		terminal.slab.get_theme_stylebox("panel") is AstralMenu.VeilBox, "on an Astral veil"
+	)
+	assert_true(terminal.box.get_node("Back") is AstralButton, "its rows are Astral rows")
 
 
 func test_focus_is_visible_for_mouse_and_pad_under_every_colour_mode() -> void:
@@ -171,14 +193,15 @@ func test_focus_is_visible_for_mouse_and_pad_under_every_colour_mode() -> void:
 		assert_gt(s.card.glow_alpha(), idle, "%s: and glows" % mode)
 		assert_gt(s.panel_box().dim, StoneCard.IDLE_DIM, "%s: and is brighter" % mode)
 	ThemePalette.mode = &"off"
-	var t := MenuStyle.theme()
-	var lit := t.get_stylebox("focus", "Button") as StoneBox
-	var hover := t.get_stylebox("hover", "Button") as StoneBox
-	assert_eq(lit.focus, 1.0, "a focused row (keys, pad) is fully lit")
-	assert_gt(
-		lit.focus, hover.focus, "a hovered row (mouse) half lit, so the focus still stands out"
+	# v0.11.1 Step 13: the menus are Astral (the Ember stone theme is gone): a focused button's frame is lit
+	var t := AstralMenu.theme()
+	var lit := t.get_stylebox("focus", "Button") as AstralChrome.FrameBox
+	var idle := t.get_stylebox("normal", "Button") as AstralChrome.FrameBox
+	assert_eq(lit.focus, 1.0, "a focused button (keys, pad) is fully lit")
+	assert_gt(lit.focus, idle.focus, "brighter than an idle one, so the focus stands out")
+	assert_eq(
+		(t.get_stylebox("hover", "Button") as AstralChrome.FrameBox).focus, 1.0, "hover alike"
 	)
-	assert_gt(hover.focus, 0.0)
 	# v0.10.5 W3-O19 (on purpose): the codex and wand tiles are Astral frames; focus brightens the frame
 	var tile := CodexTile.new()
 	add_child_autofree(tile)
@@ -234,7 +257,7 @@ func test_the_screens_fit_at_interface_size_110() -> void:
 	add_child_autofree(main)
 	var slab := main.slab.get_combined_minimum_size()
 	assert_lt(slab.y, visible.y, "the longest main menu fits (%d px)" % slab.y)
-	assert_lt(MenuStyle.LIST_LEFT + slab.x, visible.x)
+	assert_lt(AstralMenu.LEFT + slab.x, visible.x)
 	TranslationServer.set_locale(_locale)
 
 

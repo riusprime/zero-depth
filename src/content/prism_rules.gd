@@ -1,6 +1,6 @@
 class_name PrismRules
 extends RefCounted
-## v0.10.5 O3 (owner L6, 2026-11-01; O3_PRISM.md; BossPrism): the content rules of the Prism's last phase (their own
+## The content rules of the Prism's last phase (their own
 ## file: the definitions stay small). The Facet Lances: 1..MAX_LANCES lances (BossStore.MAX_PTS holds their points),
 ## each tracking a real time, locked at least the telegraph minimum (the attack's lock), striking a real time and over
 ## before the next one strikes, from a real rim spot as real lanes, all within the attack's active time; shielded.

@@ -156,23 +156,3 @@ func test_carries_are_hashed_and_saved() -> void:
 	assert_eq(
 		Stats.outgoing(r, 5, 0)[0], Stats.outgoing(w, 5, 0)[0], "and the next hit lands the same"
 	)
-
-
-func test_an_old_save_without_the_carries_loads_with_none() -> void:
-	var w := _world()
-	var snap: Dictionary = bytes_to_var(var_to_bytes(w.to_snapshot()))
-	var data: Dictionary = snap["world"]
-	for f: StringName in [&"dmg_carry", &"dot_carry", &"shot_carry"]:
-		data.erase(f)
-		data.erase(String(f))
-	assert_false(
-		data.has(&"dmg_carry") or data.has("dmg_carry"), "the fields are gone, as in an older save"
-	)
-	var base := _world()
-	base.dmg_carry = 0
-	var r := World.from_snapshot(snap, base)
-	assert_not_null(r, "an older save restores (%s)" % WorldSnapshot.apply(_world(), snap))
-	if r == null:
-		return
-	assert_eq(r.dmg_carry, 0)
-	assert_eq(r.state_hash(), w.state_hash(), "an untouched carry hashes as before")

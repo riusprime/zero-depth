@@ -1,6 +1,6 @@
 class_name PerfMarks
 extends RefCounted
-## v0.9.5 PF2: opt-in main-thread timing for the frame probe (scripts/checks/frame_probe.gd --breakdown). Off in
+## Opt-in main-thread timing for the frame probe (scripts/checks/frame_probe.gd --breakdown). Off in
 ## play: every call site is one bool check. The sim never calls it (it reads the clock); the callers around it do.
 ## `us` holds the microseconds each bucket took since the probe last cleared it, `calls` how often it was entered.
 

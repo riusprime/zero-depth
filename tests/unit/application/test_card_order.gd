@@ -3,8 +3,6 @@ extends GutTest
 ## their saved indices (CardOrder's frozen orders, EventCompiler.RETIRED_CURSES), so a save written before O1 still
 ## names the same live cards, and the deleted ones are retired stubs that no run offers.
 
-const OLD_SAVE := "res://tests/fixtures/saves/v061_blade_floor1.save"
-
 var _repo: ContentRepository
 
 
@@ -90,53 +88,6 @@ func test_every_migration_row_names_a_stub_or_a_live_card() -> void:
 			CardOrder.RETIRED_ITEMS.has(id) or CardOrder.RETIRED_ABILITIES.has(id),
 			"%s has a stub" % id
 		)
-
-
-## An old save that names deleted cards (the v0.6.1 fixture), a deleted combo (Plasma Arc) and a deleted curse
-## (Swift Foes) loads: the cards map onto their wand cards (test_old_saves), the combo and the curse are dropped, and
-## the run plays on.
-func test_an_old_save_with_a_deleted_combo_and_curse_loads_and_plays_on() -> void:
-	var r := RunSaveStore.decode(FileAccess.get_file_as_bytes(OLD_SAVE))
-	assert_eq(r[1], "", "decodes")
-	var p: Dictionary = (r[0] as Dictionary).get("payload", {})
-	assert_true(RunSaver.is_usable(p))
-	var plasma := CardOrder.COMBOS.find(&"plasma_arc")
-	var harvest := CardOrder.COMBOS.find(&"blood_harvest")
-	var swift := EventCompiler.curse_ids(_repo).find(&"swift_foes")
-	var snap: Dictionary = p["world"]
-	snap[&"combos_owned"] = PackedInt32Array([plasma])
-	snap[&"curses_owned"] = PackedInt32Array([swift])
-	var run := SaveLab.run_from(p)
-	var w := SaveLab.build_floor(run)
-	assert_eq(WorldSnapshot.apply(w, snap), "", "the snapshot fits the floor")
-	assert_false(w.combos_owned.has(plasma), "the deleted combo is dropped on load")
-	assert_false(w.curses_owned.has(swift), "the deleted curse is dropped on load")
-	assert_eq(w.combo_mask, 0, "no combo effect stays on")
-	WandMigration.run(w)
-	for idx in w.items_owned:
-		assert_false(w.item_tables[idx].retired, "%s still held" % w.item_tables[idx].id)
-	for idx in w.ability_owned:
-		assert_false(w.ability_tables[idx].retired, "%s still held" % w.ability_tables[idx].id)
-	for t in 120:
-		w.step(AttackScenario.frame(t))
-	assert_false(w.player_dead(), "the run plays on")
-	assert_false(w.combos_owned.has(plasma))
-	assert_true(
-		harvest >= 0 and not w.combo_tables[harvest].retired, "a live combo keeps its index"
-	)
-
-
-## A carry written before O1 (a floor change) holding the deleted combo and curse: the next floor drops both.
-func test_a_carry_with_a_deleted_combo_and_curse_drops_them() -> void:
-	var plasma := CardOrder.COMBOS.find(&"plasma_arc")
-	var swift := EventCompiler.curse_ids(_repo).find(&"swift_foes")
-	var w := SaveLab.floor_world(7, 1)
-	RunCarry.apply(w, {&"combos_owned": PackedInt32Array([plasma])})
-	Abilities.start_floor(w)
-	assert_false(w.combos_owned.has(plasma), "dropped when the build refreshes")
-	w.curses_owned = PackedInt32Array([swift])
-	Curses.drop_retired(w)
-	assert_false(w.curses_owned.has(swift), "dropped as Marked was (Curses.drop_retired)")
 
 
 func test_the_dev_panel_never_picks_a_deleted_card() -> void:

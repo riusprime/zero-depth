@@ -1,6 +1,6 @@
 class_name HubProps
 extends RefCounted
-## v0.9.0 HB: the hub's code stand-ins (until the owner's models arrive: docs/art/requests/v0.9.0_ART_LIST.md §4) and
+## The hub's code stand-ins (until the owner's models arrive: docs/art/requests/v0.9.0_ART_LIST.md §4) and
 ## the layered glows they share. Owner's VFX bar (PLAN VX: "every VFX has a high quality layered effect … no cheap 2d
 ## flat arts with just plane colours"): every glow here is a stack, never one flat colour: an emissive core, a soft
 ## camera-facing halo, a glow pooled on the floor, a real light, and (where it lives) motes drifting up.
@@ -273,7 +273,7 @@ static func motes(
 	return p
 
 
-## v0.9.0 HB3 (the VX bar: layered, never flat): a brazier's fire at `at` under `parent`, `size` m across: flame licks
+## The VX bar: layered, never flat: a brazier's fire at `at` under `parent`, `size` m across: flame licks
 ## from the owner's flame sheet (fx_flame_shapes, 2 x 2: a random lick each, rising and shrinking, white-gold at the
 ## root to deep orange, gone in smoke-red), a hot halo, a warm pool on the floor, a real light (HubView flickers it:
 ## flicker()) and embers drifting up. Returns HubProps.glow's pieces plus {"flames", "embers"}.

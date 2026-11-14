@@ -17,12 +17,12 @@ extends Node3D
 ## Presentation only (EI-07): it reads the reader, never writes; a burst's life is sim ticks.
 
 const BURSTS_MAX := 6
-## v0.9.5 FC4: Ring's lightning rings drawn at once, and the ring shader's phase that puts its band at ARC_FRONT of the
+## Ring's lightning rings drawn at once, and the ring shader's phase that puts its band at ARC_FRONT of the
 ## quad's half-width (0.25 + 0.72 u), so a ring of radius r is drawn at r / ARC_FRONT.
 const ARCS_MAX := 6
 const ARC_U := 0.7
 const ARC_FRONT := 0.754
-## v0.9.5 FC4: a split shard's sparks along its line.
+## A split shard's sparks along its line.
 const SHARD_SPARKS := 6
 const BURST_TICKS := 12.0
 const HEIGHT := SimPlane.CORE_HEIGHT
@@ -34,7 +34,7 @@ const BURST_RADII := 3.5
 ## v0.9.0 VX V19: a wall stop's flash and extra (ticks), and how many play at once.
 const WALL_TICKS := 18.0
 const WALLS_MAX := 4
-## v0.10.0 VX2 (VFX_PACK R5): the charge circle is a MagicArea circle of the element (its brightness and spin follow the
+## VFX_PACK R5: the charge circle is a MagicArea circle of the element (its brightness and spin follow the
 ## charge), the release's muzzle burst the pack's big_flash_02 (the ball in flight: HeroPulseViews' big orb). False: the
 ## swirl and burst quads, for before/after shots. At most CIRCLES_MAX circles alive (one charging, the rest fading).
 const PACK_LANCE := true
@@ -120,10 +120,10 @@ var last_burst_radius := 0.0
 ## v0.9.0 VX V19: the wall stops playing now, and since the view began (the tests).
 var walls := 0
 var walls_seen := 0
-## v0.9.5 FC4: the rings drawn now and the split shards in view (the tests).
+## The rings drawn now and the split shards in view (the tests).
 var arcs := 0
 var shards := 0
-## v0.10.0 VX2: the pack the muzzle burst draws with (WorldViewRoot hands it in), and the charge circle's MagicArea.
+## The pack the muzzle burst draws with (WorldViewRoot hands it in), and the charge circle's MagicArea.
 var pack_fx: PackFx = null
 var charge_area: MagicArea = null
 
@@ -157,7 +157,7 @@ func _init() -> void:
 		var n := _quad(quad, BURST_SHADER)
 		_burst_nodes.append(n)
 		_burst_mat.append(n.material_override as ShaderMaterial)
-	var flat := PlaneMesh.new()  # v0.9.5 FC4: Ring's lightning ring (the Bomb's ring look, as the Void's)
+	var flat := PlaneMesh.new()  # Ring's lightning ring (the Bomb's ring look, as the Void's)
 	flat.size = Vector2(2.0, 2.0)
 	var arc_mat := ShaderMaterial.new()
 	arc_mat.shader = _shader(BombView.RING_SHADER)
@@ -260,7 +260,7 @@ func sync(reader: WorldReader) -> void:
 	shards = _shards.size()
 
 
-## v0.10.0 VX2 (R5): the charging circle as a MagicArea circle (fire, frost, poison, blood, arcane; storm is the arcane
+## The charging circle as a MagicArea circle (fire, frost, poison, blood, arcane; storm is the arcane
 ## one in the storm's blue) round the ball, grown by scale (a radius change would rebuild it), brighter and faster with
 ## the charge. False: no pack, or CIRCLES_MAX alive; the swirl quad draws.
 func _pack_circle(pos: Vector2) -> bool:
@@ -300,7 +300,7 @@ func _on_circle_done() -> void:
 	_circles_alive = maxi(0, _circles_alive - 1)
 
 
-## v0.10.0 VX2 (R5): the release's muzzle burst as the pack's big_flash_02, turned along the aim. False: no pack or no
+## The release's muzzle burst as the pack's big_flash_02, turned along the aim. False: no pack or no
 ## room (the burst quads draw).
 func _pack_burst(pos: Vector2, dir: Vector2, radius: float) -> bool:
 	if not PACK_LANCE or pack_fx == null or not pack_fx.has_room(&"hit"):
@@ -319,7 +319,7 @@ func _pack_burst(pos: Vector2, dir: Vector2, radius: float) -> bool:
 	return true
 
 
-## v0.9.5 FC4: the Ring card's lightning rings growing from where a lance ended.
+## The Ring card's lightning rings growing from where a lance ended.
 func _place_arcs(reader: WorldReader) -> void:
 	arcs = 0
 	for row in reader.lance_rings():
@@ -338,7 +338,7 @@ func _place_arcs(reader: WorldReader) -> void:
 		_arcs[k].visible = false
 
 
-## V19: the balls in flight this sync; a ball that left where a wall stands just ahead of it (its last place plus its
+## The balls in flight this sync; a ball that left where a wall stands just ahead of it (its last place plus its
 ## step, within its radius of a wall) stopped on that wall: a flash and its element's extra play there.
 func _sync_walls(reader: WorldReader) -> void:
 	var was := _balls_was
@@ -405,7 +405,7 @@ static func _glow(c: Color, f: float) -> Color:
 
 
 ## VfxLayer's drawer (WorldViewRoot appends it): each young burst's sparks thrown outward, its glow and a light; each
-## wall stop's flash and element extra (V19); the full charge's circle lights the hero's hand.
+## wall stop's flash and element extra; the full charge's circle lights the hero's hand.
 func draw_fx(layer: VfxCore) -> void:
 	var now := layer.now()
 	for k in _live.size():
@@ -430,7 +430,7 @@ func draw_fx(layer: VfxCore) -> void:
 		var sd := 4211 + k * 17 + int(float(_walls[k][1]))
 		HeroFx.flash(layer, p, _form.core, _form.edge, minf(1.0, u * 1.6), 1.2, sd, 6)
 		HeroFx.impact(layer, _form.kind, p, _walls[k][2], u, sd)
-	for sh in _shards:  # v0.9.5 FC4: Split's shards, sparks racing along their lines
+	for sh in _shards:  # Split's shards, sparks racing along their lines
 		var u := clampf(float(sh["age"]) / float(sh["span"]), 0.0, 1.0)
 		var from: Vector2 = sh["from"]
 		var to: Vector2 = sh["to"]

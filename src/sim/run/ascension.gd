@@ -21,7 +21,7 @@ enum Choice { NONE, ASCENSION, LOOP }
 
 ## The Loop device takes the hero within this far (m) of its centre.
 const LOOP_RADIUS_M := 0.9
-## v0.9.5 SB: the Loop device's footprint (a 1 m square at its spot, facing as placed) is solid (FloorScenario registers
+## The Loop device's footprint (a 1 m square at its spot, facing as placed) is solid (FloorScenario registers
 ## it in World.solids), so the hero cannot walk through it; a body within LOOP_TOUCH_M of its surface enters it.
 const LOOP_HALF_M := 0.5
 const LOOP_TOUCH_M := 0.15
@@ -57,7 +57,7 @@ static func loop_footprint(f: FloorLayout) -> Obb:
 	return Obb.make(f.loop_pos, Vector2(LOOP_HALF_M, LOOP_HALF_M), f.loop_angle)
 
 
-## v0.9.5 SB: a body of radius `r` at p touches the solid Loop device (its face, or 0.15 m off it).
+## A body of radius `r` at p touches the solid Loop device (its face, or 0.15 m off it).
 static func touching_loop_device(f: FloorLayout, p: Vector2, r: float) -> bool:
 	if not f.has_loop_device:
 		return false

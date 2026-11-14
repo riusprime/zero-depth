@@ -10,6 +10,7 @@ func after_each() -> void:
 
 
 func _enter_hub(e: E2e, profile: ProfileStore) -> Main:
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot(profile)
 	assert_true(await HubWalk.new(e).enter(), "Play goes to the hub")
 	return main
@@ -39,6 +40,7 @@ func test_locked_stone_shows_no_prompt_and_only_hums() -> void:
 
 func test_a_purple_activation_wakes_the_stone_on_the_next_visit() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var profile := ProfileStore.new("")
 	var main: Main = await e.boot(profile)
 	# The run's side: the tracker records a purple-rune room activated (AchievementTracker -> the stat).
@@ -56,11 +58,11 @@ func test_a_purple_activation_wakes_the_stone_on_the_next_visit() -> void:
 	await e.frames(2)
 	var bubble := hub.runic.bubble
 	assert_true(bubble.visible and bubble.mode == RuneBubble.Mode.LINE, "the bubble opens")
-	var want := RuneCipher.encode("WHAT SLEEPS BELOW REMEMBERS").filter(
+	var want := RuneCipher.encode("I WAKE FALL TEN TIMES AND I WILL KNOW YOU").filter(
 		func(g: int) -> bool: return g != RuneCipher.GAP
 	)
 	assert_eq(bubble.glyph_count(), want.size(), "the line, in glyphs")
-	await e.frames(90)
+	await e.frames(150)
 	assert_eq(bubble.shown_count(), want.size(), "every glyph faded in")
 	# Walking away closes it.
 	assert_true(await walk.walk_to(&"archive"))
@@ -69,6 +71,7 @@ func test_a_purple_activation_wakes_the_stone_on_the_next_visit() -> void:
 
 func test_seven_presses_learn_the_third_line() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var profile := ProfileStore.new("")
 	var main: Main = await e.boot(profile)
 	AchievementStore.new(profile).add_stat(RunicStone.PURPLE_STAT)
@@ -83,7 +86,7 @@ func test_seven_presses_learn_the_third_line() -> void:
 	await e.tap(KEY_E)
 	await e.frames(2)
 	assert_true(hub.runic.stone.knows(&"r3"), "the seventh in a row")
-	var want := RuneCipher.encode("PATIENCE IS A KEY").filter(
+	var want := RuneCipher.encode("I ANSWER NOW FACE A GUARDIAN UNTOUCHED").filter(
 		func(g: int) -> bool: return g != RuneCipher.GAP
 	)
 	assert_eq(hub.runic.bubble.glyph_count(), want.size(), "the bubble shows the new line")

@@ -14,11 +14,11 @@ static func rules(crack: bool) -> SecretRules:
 
 
 static func world(build: StringName = &"blade", crack: bool = true, first_seed: int = 1) -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	for s in range(first_seed, first_seed + 80):
 		var lab := RunLab.new(repo, s, build)
 		var w := lab.floor_world()
-		Breakables.setup(w, rules(crack), true)
+		Breakables.setup(w, rules(crack))
 		if w.breakables == null or (crack and not w.breakables.has_crack()):
 			continue
 		w.actors.invuln[0] = LONG

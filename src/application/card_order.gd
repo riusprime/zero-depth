@@ -1,6 +1,6 @@
 class_name CardOrder
 extends RefCounted
-## v0.10.5 O1 (owner L23: "remove them from the game to have a cleaner code"): the frozen index orders of the item,
+## The frozen index orders of the item,
 ## ability and combo tables. Saves hold indices, not ids (RunCarry.FIELDS, World.to_snapshot), so a deleted card keeps
 ## its place, the way EventCompiler.RETIRED_CURSES keeps a deleted curse's: a stub table (its id, kind, rarity and
 ## weapon, `retired`, no modifiers) that no run offers, that WandMigration still maps by id (data/wand/migration.tres)
@@ -322,14 +322,6 @@ static func ability_stub(id: StringName) -> AbilityTable:
 	t.retired = true
 	t.offered = false
 	return t
-
-
-## The ability ids in index order (ability_slots).
-static func ability_ids(repo: ContentRepository) -> Array[StringName]:
-	var out: Array[StringName] = []
-	for s in ability_slots(repo):
-		out.append(s if s is StringName else (s as AbilityDefinition).id)
-	return out
 
 
 ## The combo slots in index order: a ComboDefinition, or a retired id (as item_slots).

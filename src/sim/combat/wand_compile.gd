@@ -37,15 +37,15 @@ extends RefCounted
 ##   hit's second) are repeats (AttackSpec.recast): a spell built from one casts each of its own triggers once, and a
 ##   repeat's hit (Echo, a Double Slash echo) launches no later cast (Attacks.run_hook). A card with an alt_target
 ##   (Split Wave) reads a spec of that target the other way while it has no child of the card's own target.
-## - v0.8.0 PF2 (owner O9): a spec a cast-free hook made (WandTable.cast_free_lines: Blade Storm's blades, and anything
+## - v0.8.0 PF2: a spec a cast-free hook made (WandTable.cast_free_lines: Blade Storm's blades, and anything
 ##   built from them) takes no trigger cut: the trigger still ends it, but its hits cast nothing.
-## - v0.8.0 BL (B6): a spec a once-per-line hook made (WandTable.once_per_line: Split's splits, Explosive's blast, and
+## - v0.8.0 BL: a spec a once-per-line hook made (WandTable.once_per_line: Split's splits, Explosive's blast, and
 ##   anything built from them: its lineage holds one) takes none of those hooks again: the first shot splits and
 ##   explodes, its splits neither split nor explode (the lineage guard alone stopped only the same card).
 ## - v0.8.0 AO (owner O37: "make the order of the attacks be more important"; evidence/ATTACK_ORDER.md): a SHAPE card
 ##   (ModifierTable.OrderKind; Ring) takes in what is left of it when it sets the form (take_in): a count becomes the
 ##   ring's pulses, a motion throws the whole ring group; COUNT and MOTION cards to its right then multiply and move
-##   the rings (v0.9.0 AS: a count beside the Ring is gone with the one-Pattern rule). v0.8.0 N3 (owner O47): the ring
+##   the rings (a count beside the Ring is gone with the one-Pattern rule). the ring
 ##   is the shot, flying the shot's flight (ring_flight); a motion left of it makes it wobble as it flies (WandRings).
 ##   Stat-like cards stay order-free. A bolt child built on such a ring (a card to the Ring's right: Split's shards,
 ##   a trigger's cast) keeps at most WandRings.RING_CHILD_ALIVE_MAX alive (WandRings.cap_child): every ring of a
@@ -62,7 +62,7 @@ const MAX_DEPTH := 2
 
 ## The cards in slot order.
 var mods: Array[ModifierTable] = []
-## v0.10.5 W3-P10a (owner W7, G1 A5): the deepest hook level this compile builds (for_world: Attacks.hook_depth, the
+## The deepest hook level this compile builds (for_world: Attacks.hook_depth, the
 ## loop's; a lab compile without a world: MAX_DEPTH).
 var max_depth := MAX_DEPTH
 ## A Gun run: T4 cuts on a crit (its trigger_gun); otherwise on the Blade's finisher.
@@ -73,15 +73,15 @@ var finisher_id := &""
 ## nothing), and its damage share.
 var child_base: AttackSpec
 var child_damage_permille := 500
-## v0.8.0 BL (B3): a Blade run (its slashes' hit triggers cast hit_casts times, cast_gap_ticks apart).
+## A Blade run (its slashes' hit triggers cast hit_casts times, cast_gap_ticks apart).
 var blade := false
 var hit_casts := 2
 var cast_gap_ticks := 6
-## v0.8.0 BL (B6): the hook cards a line takes once (WandTable.once_per_line).
+## The hook cards a line takes once (WandTable.once_per_line).
 var once_per_line: Array[StringName] = [&"split_shot"]
-## v0.8.0 PF2: the hook cards whose children cast no trigger (WandTable.cast_free_lines).
+## The hook cards whose children cast no trigger (WandTable.cast_free_lines).
 var cast_free_lines: Array[StringName] = [&"blade_storm"]
-## v0.9.0 AS (owner Q13; ShotCap): the most shots one attack launches (0: no cap: a lab, a Blade run), and a merged
+## The most shots one attack launches (0: no cap: a lab, a Blade run), and a merged
 ## shot's largest radius (per mille of its own).
 var shot_cap := 0
 var merge_radius_max_permille := 2000
@@ -104,7 +104,7 @@ static func for_world(w: World, p_mods: Array[ModifierTable]) -> WandCompile:
 	c.cast_gap_ticks = t.blade_cast_gap_ticks
 	c.once_per_line = t.once_per_line
 	c.cast_free_lines = t.cast_free_lines  # v0.8.0 PF2
-	c.shot_cap = ShotCap.per_attack(w)  # v0.9.0 AS (Q13)
+	c.shot_cap = ShotCap.per_attack(w)  # v0.9.0 AS
 	if w.slot_table != null:
 		c.merge_radius_max_permille = w.slot_table.merge_radius_max_permille
 	return c
@@ -128,7 +128,7 @@ static func _small_copy(w: World, t: WandTable, bolt: bool) -> AttackSpec:
 	return s
 
 
-## `base` rewritten by every card (a fresh spec; `base` is not written). v0.9.0 AS: then within the per-attack shot
+## `base` rewritten by every card (a fresh spec; `base` is not written). then within the per-attack shot
 ## cap (ShotCap.tree; none without one).
 func spec(base: AttackSpec) -> AttackSpec:
 	var s := run(base.copy(), 0)
@@ -141,38 +141,38 @@ func run(s: AttackSpec, from: int) -> AttackSpec:
 	var moment := s.has_tag(Modifiers.TAG_MOMENT)
 	for i in range(from, mods.size()):
 		var m := mods[i]
-		var alt := alt_reading(s, m)  # v0.8.0 MR: the card's other reading (Split Wave without a wave)
+		var alt := alt_reading(s, m)  # The card's other reading (Split Wave without a wave)
 		if not alt and (not s.matches(m.target) or (moment and m.target.is_empty())):
 			continue
 		if m.is_trigger():
 			_cut(s, m, i)
 			break
-		if s.beam_hold > 0 and LaserMods.is_card(m.id):  # v0.9.5 FC1: the Laser's cards are LaserMods'
+		if s.beam_hold > 0 and LaserMods.is_card(m.id):  # The Laser's cards are LaserMods'
 			if not s.modifier_ids.has(String(m.id)):
 				s.modifier_ids.append(String(m.id))
 			continue
-		if s.blast_mm > 0 and BombMods.is_card(m.id):  # v0.9.5 FC2: the Bomb's cards are BombMods'
+		if s.blast_mm > 0 and BombMods.is_card(m.id):  # The Bomb's cards are BombMods'
 			BombMods.note_card(s, m)
 			continue
-		if s.void_mm > 0 and VoidMods.is_card(m.id):  # v0.9.5 FC3: the Void's cards are VoidMods'
+		if s.void_mm > 0 and VoidMods.is_card(m.id):  # The Void's cards are VoidMods'
 			VoidMods.note_card(s, m)
 			continue
-		if s.lance > 0 and LanceMods.is_card(m.id):  # v0.9.5 FC4: the Lance's cards are LanceMods'
+		if s.lance > 0 and LanceMods.is_card(m.id):  # The Lance's cards are LanceMods'
 			LanceMods.note_card(s, m)
 			continue
-		if s.rune_mm > 0 and RuneMods.is_card(m.id):  # v0.9.5 FC5: the Rune Explosion's cards are RuneMods'
+		if s.rune_mm > 0 and RuneMods.is_card(m.id):  # The Rune Explosion's cards are RuneMods'
 			RuneMods.note_card(s, m)
 			continue
-		if s.glaive > 0 and GlaiveMods.is_card(m.id):  # v0.9.5 FC6: the Glaive's cards are GlaiveMods'
+		if s.glaive > 0 and GlaiveMods.is_card(m.id):  # The Glaive's cards are GlaiveMods'
 			GlaiveMods.note_card(s, m)
 			continue
-		if s.wave_mm > 0 and WaveMods.is_card(m.id):  # v0.9.5 FC8: the Wave's cards are WaveMods'
+		if s.wave_mm > 0 and WaveMods.is_card(m.id):  # The Wave's cards are WaveMods'
 			WaveMods.note_card(s, m)
 			continue
-		if s.seekers > 0 and SeekerMods.is_card(m.id):  # v0.9.5 FC7: the Seekers' cards are SeekerMods'
+		if s.seekers > 0 and SeekerMods.is_card(m.id):  # The Seekers' cards are SeekerMods'
 			SeekerMods.note_card(s, m)
 			continue
-		if s.wisps > 0 and WispMods.is_card(m.id):  # v0.9.5 FC9: five of the Wisps' cards are WispMods'
+		if s.wisps > 0 and WispMods.is_card(m.id):  # Five of the Wisps' cards are WispMods'
 			WispMods.note_card(s, m)
 			if m.id == WispMods.MINE_ID:
 				s.hooks.append(_wisp_mine(s, m, i))
@@ -186,7 +186,7 @@ func run(s: AttackSpec, from: int) -> AttackSpec:
 				applied = true
 		if applied and not s.modifier_ids.has(String(m.id)):
 			s.modifier_ids.append(String(m.id))
-	SpecForms.halo_homing_reach(s)  # v0.10.5 W3-S18: Halo's back shots, with Homing
+	SpecForms.halo_homing_reach(s)  # Halo's back shots, with Homing
 	SpecForms.settle(s)
 	return s
 
@@ -195,10 +195,10 @@ func run(s: AttackSpec, from: int) -> AttackSpec:
 func apply(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> void:
 	match op.op:
 		ModifierOp.Op.SET_FORM:
-			if s.form_layers == 0:  # v0.9.0 AS (C63): one form a spec; a later form op is skipped
+			if s.form_layers == 0:  # One form a spec; a later form op is skipped
 				if m.order_kind == ModifierTable.OrderKind.SHAPE:
-					take_in(s, op.form)  # v0.8.0 AO: the shape takes in what is left of it
-				SpecForms.change_form(s, op.form)  # v0.6.0 MX4: keeps its range
+					take_in(s, op.form)  # The shape takes in what is left of it
+				SpecForms.change_form(s, op.form)  # Keeps its range
 				s.form_layers = 1
 		ModifierOp.Op.STATUS:
 			s.set_status(op.status, op.stacks, op.every)
@@ -206,12 +206,12 @@ func apply(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> void:
 			if not s.elements.has(String(op.element)):
 				s.elements.append(String(op.element))
 		ModifierOp.Op.HOOK:
-			if s.depth < max_depth and not s.lineage.has(String(m.id)):  # v0.6.0 MX4: lineage
-				if not once_more(s, m.id):  # v0.8.0 BL (B6)
+			if s.depth < max_depth and not s.lineage.has(String(m.id)):  # Lineage
+				if not once_more(s, m.id):  # v0.8.0 BL
 					s.hooks.append(_hook(s, m, op, i))
 		ModifierOp.Op.TRIGGER:
 			pass  # a trigger is a card of its own (run cuts there)
-		ModifierOp.Op.REMNANT:  # v0.8.0 RM: a hook that leaves a remnant (class doc)
+		ModifierOp.Op.REMNANT:  # A hook that leaves a remnant (class doc)
 			if op.remnant == null or s.depth >= max_depth or s.lineage.has(String(m.id)):
 				return
 			if not once_more(s, m.id):
@@ -220,21 +220,21 @@ func apply(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> void:
 			Modifiers.numeric(s, op)
 
 
-## v0.8.0 AO (owner O37; evidence/ATTACK_ORDER.md): a SHAPE card (Ring) turning `s` into `form` takes in what is left
+## A SHAPE card (Ring) turning `s` into `form` takes in what is left
 ## of it: v0.8.0 N3 the bolt's flight becomes the ring's (ring_flight), and a Swirl left of it makes the ring wobble
-## round its line as it flies (Swirl · Ring). v0.9.0 AS (owner Q3): a count can't stand beside the Ring any more (one
+## round its line as it flies (Swirl · Ring). a count can't stand beside the Ring any more (one
 ## Pattern), so the count's pulses and the spinning group of several rings are gone. Only a ring has a layout; another
 ## form keeps the old meaning.
 static func take_in(s: AttackSpec, form: int) -> void:
 	if form != AttackSpec.Form.RING:
 		return
 	s.ring_layout = 1
-	s.ring_flight = s.life_ticks if s.form == AttackSpec.Form.BOLT else 0  # v0.8.0 N3: the shot's flight
+	s.ring_flight = s.life_ticks if s.form == AttackSpec.Form.BOLT else 0  # The shot's flight
 	s.swirl_group = 1 if s.swirl > 0 or s.swirl_group > 0 else 0
 	s.swirl = 0
 
 
-## v0.8.0 MR (owner O91: "Make Split Wave useful without Wave"): whether card `m` reads `s` the other way: `s` is of
+## Whether card `m` reads `s` the other way: `s` is of
 ## its alt_target and not its target, and no hook of `s` has a child of its target yet (a flying slash). Its `alt` ops
 ## run there instead of the others (ModifierTable.alt_target).
 static func alt_reading(s: AttackSpec, m: ModifierTable) -> bool:
@@ -246,7 +246,7 @@ static func alt_reading(s: AttackSpec, m: ModifierTable) -> bool:
 	return true
 
 
-## v0.8.0 BL (B6): whether hook card `id` is a once-per-line card and `s` already comes from one (class doc).
+## Whether hook card `id` is a once-per-line card and `s` already comes from one (class doc).
 func once_more(s: AttackSpec, id: StringName) -> bool:
 	if not once_per_line.has(id):
 		return false
@@ -256,7 +256,7 @@ func once_more(s: AttackSpec, id: StringName) -> bool:
 	return false
 
 
-## v0.8.0 PF2: whether `s` comes from a cast-free hook card (class doc): its lineage holds one.
+## Whether `s` comes from a cast-free hook card (class doc): its lineage holds one.
 func cast_free(s: AttackSpec) -> bool:
 	for l in s.lineage:
 		if cast_free_lines.has(StringName(l)):
@@ -278,15 +278,15 @@ func _hook(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHoo
 	c.reach_m = op.reach_m
 	c.seek = op.form == AttackSpec.Form.BEAM
 	c.effect_id = op.effect_id
-	SpecForms.hook_base(c, s)  # v0.6.0 MX2: the lingering forms' times; MX4: a bolt's flight, an arc's width
-	BladeForms.hook_base(c, s)  # v0.6.5 WN4: a spin's wave flies all round
-	var shape := WandCompile.new()  # v0.6.0 MX4: the child's own shape (a count, a status, an element...)
+	SpecForms.hook_base(c, s)  # The lingering forms' times; MX4: a bolt's flight, an arc's width
+	BladeForms.hook_base(c, s)  # A spin's wave flies all round
+	var shape := WandCompile.new()  # The child's own shape (a count, a status, an element...)
 	shape.max_depth = max_depth  # v0.10.5 W3-P10a
 	for o in op.child_ops:
 		shape.apply(c, m, o, -1)
-	c.lineage = s.lineage.duplicate()  # v0.6.0 MX4: this modifier's hook never rides its own child
+	c.lineage = s.lineage.duplicate()  # This modifier's hook never rides its own child
 	c.lineage.append(String(m.id))
-	c.recast = s.recast  # v0.8.0 MR: built from a later cast, it casts its triggers once
+	c.recast = s.recast  # Built from a later cast, it casts its triggers once
 	var k := AttackHook.new()
 	k.id = m.id
 	k.trigger = op.trigger
@@ -295,11 +295,11 @@ func _hook(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHoo
 	k.damage_permille = op.damage_permille
 	k.delay_ticks = op.delay_ticks  # v0.6.0 MX4
 	k.when = op.when
-	k.child = WandRings.cap_child(s, run(c, i))  # v0.8.0 AO: a ring's shards, at most so many alive
+	k.child = WandRings.cap_child(s, run(c, i))  # A ring's shards, at most so many alive
 	return k
 
 
-## v0.9.5 FC9 (FORM_COMBOS.md P5): the Mine card on the Wisps is a hook (ON_WISP, which no moment fires; WispMods drops
+## FORM_COMBOS.md P5: the Mine card on the Wisps is a hook (ON_WISP, which no moment fires; WispMods drops
 ## it from each wisp): the card's own mine, a still bolt the orbs' Mine card would leave (its ops run on it: the wait
 ## and the zone it ends in), at the wisp shot's damage.
 func _wisp_mine(s: AttackSpec, m: ModifierTable, i: int) -> AttackHook:
@@ -325,7 +325,7 @@ func _wisp_mine(s: AttackSpec, m: ModifierTable, i: int) -> AttackHook:
 	return k
 
 
-## v0.8.0 RM: the REMNANT op `op` of card `m` (slot `i`) on `s`: a hook (its child built as _hook builds one) that
+## The REMNANT op `op` of card `m` (slot `i`) on `s`: a hook (its child built as _hook builds one) that
 ## carries the remnant, its card's slot and section, and whether `s` extracts (class doc).
 func _remnant(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHook:
 	var k := _hook(s, m, op, i)
@@ -340,7 +340,7 @@ func _remnant(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> Attack
 	return k
 
 
-## v0.8.0 RM: the trigger section of slot `i`: how many trigger cards stand left of it.
+## The trigger section of slot `i`: how many trigger cards stand left of it.
 func section_of(i: int) -> int:
 	var n := 0
 	for k in mini(i, mods.size()):
@@ -353,7 +353,7 @@ func section_of(i: int) -> int:
 func _cut(s: AttackSpec, m: ModifierTable, i: int) -> void:
 	if child_base == null or s.depth >= max_depth or s.lineage.has(String(m.id)):
 		return
-	if cast_free(s):  # v0.8.0 PF2: Blade Storm's blades cast nothing
+	if cast_free(s):  # Blade Storm's blades cast nothing
 		return
 	var op := m.trigger_op()
 	var trig := op.trigger_gun if gun and op.trigger_gun >= 0 else op.trigger
@@ -364,27 +364,27 @@ func _cut(s: AttackSpec, m: ModifierTable, i: int) -> void:
 	var casts := maxi(1, op.casts)
 	var gap := op.delay_ticks
 	var hit := trig == AttackSpec.Trigger.ON_HIT or trig == AttackSpec.Trigger.ON_KILL
-	if blade and hit and s.form == AttackSpec.Form.ARC:  # v0.8.0 BL (B3): a slash hit casts twice
+	if blade and hit and s.form == AttackSpec.Form.ARC:  # A slash hit casts twice
 		casts *= maxi(1, hit_casts)
 		gap = gap if gap > 0 else cast_gap_ticks
-	if s.recast != 0:  # v0.8.0 MR (O91): a later cast (or a spell built from one) casts each trigger once
+	if s.recast != 0:  # A later cast (or a spell built from one) casts each trigger once
 		casts = 1
-	for n in casts:  # v0.6.5 WN5b: a legendary trigger casts again, delay_ticks apart
+	for n in casts:  # A legendary trigger casts again, delay_ticks apart
 		var c := child_base.copy()
 		c.id = m.id
 		c.effect_id = m.id
 		c.depth = s.depth + 1
-		if not c.tags.has(WandCasts.TAG_CAST):  # v0.6.5 WN5a: a trigger's cast (the views draw it as one)
+		if not c.tags.has(WandCasts.TAG_CAST):  # A trigger's cast (the views draw it as one)
 			c.tags.append(WandCasts.TAG_CAST)
 		c.lineage = s.lineage.duplicate()
 		c.lineage.append(String(m.id))
-		c.recast = 1 if n > 0 or s.recast != 0 else 0  # v0.8.0 MR (O91): the later casts are repeats
+		c.recast = 1 if n > 0 or s.recast != 0 else 0  # The later casts are repeats
 		var k := AttackHook.new()
 		k.id = m.id
 		k.trigger = trig
 		k.damage_permille = child_damage_permille
 		k.delay_ticks = gap * n
-		k.child = WandRings.cap_child(s, run(c, i + 1))  # v0.8.0 AO: a ring's casts, likewise
+		k.child = WandRings.cap_child(s, run(c, i + 1))  # A ring's casts, likewise
 		s.hooks.append(k)
 	if not s.modifier_ids.has(String(m.id)):
 		s.modifier_ids.append(String(m.id))

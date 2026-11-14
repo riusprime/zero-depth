@@ -540,37 +540,6 @@ func test_a_snapshot_mid_phase_3_round_trips() -> void:
 	assert_eq(w2.state_hash(), w.state_hash(), "the duel goes on the same")
 
 
-func test_a_save_from_before_fb3_mid_phase_3_restores() -> void:
-	var run := FinalLab.run_state(329, &"gun")
-	var w := FinalLab.arena(run)
-	w.actors.invuln[0] = NemesisLab.LONG
-	NemesisLab.grant(w, GUN_CARDS)
-	FinalLab.past_rise(w)
-	FinalBoss.jump(w, 2)
-	CombatLab.idle(w, 30)  # mid-rise, as a save at the body's start resumes
-	var p := RunSaver.payload_of(w, run, 329, PackedByteArray())
-	var ff: Dictionary = p["world"]["world"][&"final_fight"]
-	for f: StringName in WorldSnapshot.ADDED_SINCE_V05[&"FinalFight"]:
-		if not f in [&"home", &"dps_secs", &"dps_head", &"dps_closed", &"dps_acc", &"dps_t"]:
-			ff.erase(f)  # as a payload written by FB2
-	var table := ContentCompiler.compile_run(
-		ContentRepository.load_all().get_def(&"run", SaveLab.RUN_ID)
-	)
-	var w2 := FinalLab.arena(RunSaver.run_from(p, table), false)
-	assert_eq(WorldSnapshot.apply(w2, p["world"]), "", "an FB2 snapshot restores mid-phase-3")
-	assert_false(w2.final_fight.ready, "with no mimic state")
-	var w3 := FinalLab.arena(RunSaver.run_from(p, table), false)
-	assert_eq(WorldSnapshot.apply(w3, p["world"]), "")
-	for k in 300:
-		w2.step(InputFrame.new())
-		w3.step(InputFrame.new())
-	assert_true(w2.final_fight.ready, "the build read at its next tick")
-	assert_eq(w2.final_fight.weapon, BossAttackTable.WEAPON_GUN)
-	assert_eq(w2.final_fight.casts.size(), 3, "its cards")
-	assert_gt(w2.final_fight.echo_n, 0, "the echo records again")
-	assert_eq(w2.state_hash(), w3.state_hash(), "and two restores go on the same")
-
-
 func test_beating_it_wins_the_fight() -> void:
 	var w := NemesisLab.world(330, &"gun", GUN_CARDS)
 	FinalLab.hit(w, w.actors.hp[_body(w)] * 10)

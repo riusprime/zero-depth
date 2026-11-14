@@ -8,14 +8,14 @@ extends RefCounted
 ## - The cracked wall (FloorLayout.crack_*, CrackedRooms.mark): a wall section across a dead end's doorway, a barrier
 ##   from the floor's first tick (World.add_barrier, as the timed door's slab). Only the build's Skill wears it down
 ##   (on_skill, from PlayerSkill when the Skill lands: Lunge Cleave's fan touching it, or a Scatter Blast pellet ending
-##   on it; v0.10.5: a Blast a Form card reshaped, the Ring's lightning ring, by that form's reach), one hit a use,
+##   on it; a Blast a Form card reshaped, the Ring's lightning ring, by that form's reach), one hit a use,
 ##   crack_hits (3) uses; nothing else does (no other attack reaches a wall). Broken, the barrier is gone for good
 ##   and the hidden room behind (an epic altar or a chest, Secrets.place_reward from
-##   `loot:cracked_wall`; no enemy spawns) is open and seen. Nothing tells the player (Q23).
+##   `loot:cracked_wall`; no enemy spawns) is open and seen. Nothing tells the player.
 ## - Containers (crates, urns, barrels): any of the hero's attacks breaks one in one hit (on_attack, from
 ##   Attacks.launch: an arc, a burst, a ray; and the hero's projectiles, swept each tick in advance). Each was rolled
 ##   at setup from the `loot:containers` sub-stream: a drop (container_drop_permille) of a few shards or a heal orb
-##   (HealOrbs, Lifesprout's orb), or nothing.
+##   (HealOrbs), or nothing.
 ## - Explosive barrels: any hit lights the fuse (fuse_ticks, 1.0 s); then the blast (radius_m, 2.0 m) hurts every enemy
 ##   and the hero in it (Damage.hit from no actor, effect EFFECT: the readable cause, CAUSE_KEY; a blast that kills the
 ##   hero sets World.killer_attack to KILL_CAUSE for the recap), breaks the containers in it and lights the barrels.
@@ -24,7 +24,7 @@ extends RefCounted
 ##   containers and, with barrel_room_permille, 1..barrels_max explosive barrels, on its spawn spots DOOR_GAP_M from its
 ##   doorways' approaches, AVOID_M from rewards, pedestals, the shrine, the shop and the puzzles' pieces and PROP_GAP_M
 ##   apart.
-## - v0.9.5 BK (owner Q17 a: "Breakables solid until broken; kept 1.5 m from doorways"): under floor rules 22 each
+## - Owner: "Breakables solid until broken; kept 1.5 m from doorways". Each
 ##   unbroken prop is a Solids entry (crate 0.4 m half-side, urn and barrels 0.3 m), gone the tick it breaks or blows;
 ##   shots still reach it (it is not a wall). Generation drops (never moves) a prop within DOOR_CLEAR_M of a doorway.
 
@@ -35,7 +35,7 @@ const PROP_RADIUS_M := 0.4
 const DOOR_GAP_M := 2.0
 const AVOID_M := 2.5
 const PROP_GAP_M := 1.5
-## v0.9.5 BK: the doorway clearance (m, to the doorway centre) and the solid footprints' half-sides.
+## The doorway clearance (m, to the doorway centre) and the solid footprints' half-sides.
 const DOOR_CLEAR_M := 1.5
 const CRATE_HALF_M := 0.4
 const ROUND_HALF_M := 0.3
@@ -72,12 +72,12 @@ var fuse_ticks := 60
 var radius_m := 2.0
 var damage := 40
 var hero_damage := 15
-## v0.9.5 BK: props generation dropped for standing within DOOR_CLEAR_M of a doorway (setup, not hashed).
+## Props generation dropped for standing within DOOR_CLEAR_M of a doorway (setup, not hashed).
 var dropped := 0
 
 
 ## Sets up `w`'s destructibles (setup, after the rewards, events, shrine, shop, timed door and rune puzzle).
-static func setup(w: World, rules: SecretRules, bk := false) -> void:
+static func setup(w: World, rules: SecretRules) -> void:
 	var f := w.floor_layout
 	if f == null:
 		return
@@ -94,12 +94,12 @@ static func setup(w: World, rules: SecretRules, bk := false) -> void:
 		var got := Secrets.place_reward(w, f.crack_room, REWARD_STREAM)
 		b.crack_reward_id = got.x
 		b.crack_reward_epic = got.y
-	_place_props(w, b, rules, bk)
+	_place_props(w, b, rules)
 	if b.crack_max == 0 and b.pos.is_empty():
 		w.breakables = null
 
 
-static func _place_props(w: World, b: Breakables, rules: SecretRules, bk: bool) -> void:
+static func _place_props(w: World, b: Breakables, rules: SecretRules) -> void:
 	var f := w.floor_layout
 	var rng := RngStream.derive(f.seed_value, STREAM)
 	var loot := RngStream.derive(f.seed_value, DROP_STREAM)
@@ -132,12 +132,11 @@ static func _place_props(w: World, b: Breakables, rules: SecretRules, bk: bool) 
 				)
 				if dr == Drop.SHARDS:
 					amount = loot.range_int(rules.container_shards_min, rules.container_shards_max)
-			if bk and not _far(spots[k], f.door_centers, DOOR_CLEAR_M):
-				b.dropped += 1  # v0.9.5 BK: dropped, never moved (every draw above is made as before)
+			if not _far(spots[k], f.door_centers, DOOR_CLEAR_M):
+				b.dropped += 1  # Dropped, never moved (every draw above is made as before)
 				continue
 			b.add(spots[k], kd, r, dr, amount)
-			if bk:
-				b.make_solid(w, b.pos.size() - 1)
+			b.make_solid(w, b.pos.size() - 1)
 
 
 ## Room `r`'s free spots for props, drawn from rng (none closer than PROP_GAP_M to each other or to `taken`).
@@ -173,7 +172,7 @@ func add(at: Vector2, p_kind: int, p_room: int, p_drop: int, amount: int) -> voi
 	drop_amount.append(amount)
 
 
-## v0.9.5 BK: prop i stands as a solid footprint (Solids.Kind.BREAKABLE, ref i) until it breaks.
+## Prop i stands as a solid footprint (Solids.Kind.BREAKABLE, ref i) until it breaks.
 func make_solid(w: World, i: int) -> void:
 	var h := CRATE_HALF_M if kind[i] == Kind.CRATE else ROUND_HALF_M
 	w.solids.add_square(Solids.Kind.BREAKABLE, i, pos[i], h)
@@ -245,16 +244,13 @@ static func hit(w: World, i: int) -> void:
 	var me := w.actors.ids[0]
 	match b.drop[i]:
 		Drop.SHARDS:
-			var got := Affinities.shards(w, b.drop_amount[i])  # v0.9.0 RB: A5 Guardian picks up fewer
+			var got := Affinities.shards(w, b.drop_amount[i])  # A5 Guardian picks up fewer
 			w.shards += got
 			var e := w.emit_event(SimEvent.Kind.SHARDS, 0, me, me, b.pos[i])
 			e.amount = got
 		Drop.HEAL:
-			if w.orbs.size() >= w.tuning.heal_orbs_max:
-				w.orbs.remove_at(0)
-			var id := w.take_id()
-			w.orbs.add(id, b.pos[i])
-			w.emit_event(SimEvent.Kind.SPAWN, id, id, id, b.pos[i])
+			if HealOrbs.may_appear(w):  # Else it holds nothing; the meter is not touched
+				HealOrbs.drop(w, b.pos[i])
 
 
 ## PlayerSkill, when a Skill use lands (`cleave`: Lunge Cleave's fan from `center` facing `angle`; else Scatter
@@ -293,7 +289,7 @@ static func on_skill(
 		b.crack_up = 0
 
 
-## v0.10.5 (owner: "I could not open it shooting it with L2"): a Scatter Blast that a Form card reshaped sends no
+## A Scatter Blast that a Form card reshaped sends no
 ## pellets (the Ring, "Your shot becomes a lightning ring", targets projectiles, and the Blast is one), so it reaches
 ## the wall by its form: a ring, burst or zone round `center` out to its area radius; a lob where it lands; any other
 ## form along `angle` for reach_m.

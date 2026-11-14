@@ -1,7 +1,7 @@
 # gdlint: disable=max-file-lines
 class_name FireballViews
 extends Node3D
-## v0.7.5 BF1 (owner N15; BOSS_FIGHTS.md "Readable"): the hostile fireballs (WorldReader.projectile_look not empty;
+## The hostile fireballs (WorldReader.projectile_look not empty;
 ## the plain shots stay ActorViews'). Hundreds at once, so each look is three MultiMeshes (one draw each): the core,
 ## a dark edge behind it (a bigger copy drawn from the inside, so it rings the core) and a trail stretched back along
 ## the shot's way. Positions are blended between the last two ticks each frame (physics interpolation by hand:
@@ -10,7 +10,7 @@ extends Node3D
 ##   new pattern draws before its look is made): colour, size, a spear tip (a longer core) and a trail.
 ## - Hostile fireballs never use the hero's attack colours (the cyan core, the heat tiers; a test pins the distance).
 ## - Effects density (ViewPrefs.effects_density): Low thins the trails (every other ball, narrower); the balls stay.
-## - v0.7.5 EF (owner N16): the enemies' looks (Arc Caster, Lens Drone, Bomb Drone), and the Bomb Drone's lobbed
+## - v0.7.5 EF: the enemies' looks (Arc Caster, Lens Drone, Bomb Drone), and the Bomb Drone's lobbed
 ##   fireball in the air (its telegraph's "lob", drawn as a bigger ball of its look on an arc; no ground circle).
 ## - v0.7.5 BF3: a look with "smoke" draws its trail as unlit smoke (no glow; the Siege Engine's cannon embers), and
 ##   a raining pattern's drops in the air (WorldReader.boss_rain: the Foundry's Slag Fountain) are drawn in their
@@ -22,7 +22,7 @@ extends Node3D
 ##   boss's signature shots) ask VfxCore for a small light within its budget (draw_lights, a VfxCore drawer).
 ##   Reduced motion stills the swirl, the turning and the wobble.
 
-## v0.8.0 AV (owner O8): each look is a real 3D body (FireballShaders, ProjectileMeshes): "mesh" its shape, "body"
+## Each look is a real 3D body (FireballShaders, ProjectileMeshes): "mesh" its shape, "body"
 ## its lit surface, "energy" its glow, "crack" how much of it glows only in veins (stone, crust) rather than all
 ## over (plasma), "swirl" the noise speed inside, "spin" / "tumble" its own turn, "wobble" (a glob), "facets" (a gem's
 ## glints), "opacity" (< 1: translucent), and its trail: "trail_style" &"glow" (additive), &"smoke" (unlit, mixed,
@@ -112,7 +112,7 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.3,
 	},
-	## v0.7.5 BF2: Brood Mother: sickly green acid globs (fat, wobbly, see-through; dripping).
+	## Brood Mother: sickly green acid globs (fat, wobbly, see-through; dripping).
 	&"acid_glob":
 	{
 		"core": Color("#C8FF6A"),
@@ -130,7 +130,7 @@ const LOOKS := {
 		"trail_style": &"drips",
 		"tail": 0.6,
 	},
-	## v0.7.5 BF2: Hive Lens: magenta-red prism orbs (faceted gems with glints; a long bright trail).
+	## Hive Lens: magenta-red prism orbs (faceted gems with glints; a long bright trail).
 	&"prism_orb":
 	{
 		"core": Color("#FF78D0"),
@@ -149,7 +149,7 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.1,
 	},
-	## v0.8.0 FB2: the Prism (the final boss's second body): her shards' orbs, deep red crystal gems turning as they
+	## The Prism (the final boss's second body): her shards' orbs, deep red crystal gems turning as they
 	## drift, a crimson trail (redder and darker than the Hive Lens's magenta prism orbs). The core is a hot rose
 	## (a bright core, apart from the spear embers and the lens orbs; v0.8.0 fix).
 	&"crown_orb":
@@ -170,7 +170,7 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.15,
 	},
-	## v0.8.0 FB2: the Prism's fast bolts: long pale-rose crystal spears with a long red streak behind (pinker than
+	## The Prism's fast bolts: long pale-rose crystal spears with a long red streak behind (pinker than
 	## the hero's white-hot; v0.8.0 fix).
 	&"crown_bolt":
 	{
@@ -189,7 +189,7 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.1,
 	},
-	## v0.8.0 FB3: the Nemesis's copies of the hero's shots: the hero's bolt as a pale violet spear on a black body (never
+	## The Nemesis's copies of the hero's shots: the hero's bolt as a pale violet spear on a black body (never
 	## the hero's cyan), and the hero's flying slash as a black crescent with a hot magenta-violet core.
 	&"nemesis_bolt":
 	{
@@ -225,7 +225,7 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.4,
 	},
-	## v0.7.5 BF3: Siege Engine: orange cannon embers with a smoke trail.
+	## Siege Engine: orange cannon embers with a smoke trail.
 	&"cannon_ember":
 	{
 		"core": Color("#D79000"),
@@ -245,7 +245,7 @@ const LOOKS := {
 		"trail_style": &"smoke",
 		"tail": 1.8,
 	},
-	## v0.7.5 BF3: Foundry: white-yellow molten drops, a crust over the glow, drips behind.
+	## Foundry: white-yellow molten drops, a crust over the glow, drips behind.
 	&"molten_drop":
 	{
 		"core": Color("#FFF07A"),
@@ -262,7 +262,7 @@ const LOOKS := {
 		"trail_style": &"drips",
 		"tail": 0.5,
 	},
-	## v0.9.0 NB1: the Tidecaller: sea-green bubbles (a translucent wobbling skin round a bright core, a dark teal
+	## The Tidecaller: sea-green bubbles (a translucent wobbling skin round a bright core, a dark teal
 	## rim, a trail of droplets; greener than the hero's cyan).
 	&"tide_bubble":
 	{
@@ -281,7 +281,7 @@ const LOOKS := {
 		"trail_style": &"drips",
 		"tail": 0.45,
 	},
-	## v0.9.0 NB2: the Twin Wardens' Crossfire: cracked stone embers glowing from inside, gold-amber from the boss, pale
+	## The Twin Wardens' Crossfire: cracked stone embers glowing from inside, gold-amber from the boss, pale
 	## violet from its twin (a rock skin over a hot core, a trail in each body's colour; cores clear of the hero's
 	## colours and of the other bosses' looks).
 	&"warden_amber_ember":
@@ -302,7 +302,7 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.5,
 	},
-	## v0.9.0 NB3: the Clockwork Judge's Gear Spiral: hot brass gear-sparks, a bright brass core in a dark bronze rim
+	## The Clockwork Judge's Gear Spiral: hot brass gear-sparks, a bright brass core in a dark bronze rim
 	## (the rock skin cut like a cog), spinning fast, a short bright trail of filings.
 	&"gear_spark":
 	{
@@ -322,7 +322,7 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.45,
 	},
-	## v0.9.0 NB4: the Lantern Shade's wisps: dim violet will-o'-wisps (BOSSES_4_5 N4), a soft wobbling orb, a thin
+	## The Lantern Shade's wisps: dim violet will-o'-wisps (BOSSES_4_5 N4), a soft wobbling orb, a thin
 	## dark smoke trail (they glow only inside light: ShadeViews' dark covers them; their outline is ShadeViews').
 	## The core is a pale ghost-violet (was #C38CFF, near the Nemesis' bolt and crescent): bright, 0.18 from every look.
 	&"shade_wisp":
@@ -360,6 +360,22 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.5,
 	},
+	## ENEMIES.md V2: the Dim Needle's shot once lit (within its dark distance of the hero): a foxfire
+	## green (clear of the hero's colours and the other shots), the pack's mprojectile_basic_vfx_01 recoloured
+	## (shot_dim_needle). Dark (farther), it draws DIM_DARK.
+	&"dim_needle":
+	{
+		"core": Color("#00FF66"),
+		"edge": Color("#04140A"),
+		"trail": Color("#0A8A3A"),
+		"size": 0.9,
+		"tip": 1.0,
+		"trail_m": 0.45,
+		"mesh": &"orb",
+		"energy": 2.8,
+		"trail_style": &"glow",
+		"tail": 0.3,
+	},
 }
 const DEFAULT_LOOK := {
 	"core": Color("#F0A890"),
@@ -373,7 +389,7 @@ const DEFAULT_LOOK := {
 	"trail_style": &"glow",
 	"tail": 0.3,
 }
-## v0.8.0 TX1: the owner's painted cores (FxTextures; docs/art/requests/v0.8.0_textures.md): look -> [sheet, cell (0
+## The owner's painted cores (FxTextures; docs/art/requests/v0.8.0_textures.md): look -> [sheet, cell (0
 ## top left .. 3 bottom right), turn (radians: a spear-shaped painting, its tip down-left, turned to point along the
 ## flight)]. Tinted by the look's own colours. A look not listed (the Lens Drone's orbs, DEFAULT_LOOK) or a sheet not
 ## installed keeps the code noise. The Colossus's boulder shards share the Gatekeeper's ember_stone look (its data), so
@@ -384,12 +400,12 @@ const TEX_CORES := {
 	&"acid_glob": ["fx_orb_cores", 1, 0.0],
 	&"prism_orb": ["fx_orb_cores", 2, 0.0],
 	&"molten_drop": ["fx_orb_cores", 3, 0.0],
-	&"tide_bubble": ["fx_orb_cores", 1, 0.0],  # v0.9.0 NB1: the glob painting, tinted seafoam
+	&"tide_bubble": ["fx_orb_cores", 1, 0.0],  # The glob painting, tinted seafoam
 	&"spear_ember": ["fx_orb_cores_2", 0, SPEAR_TURN],
 	&"cannon_ember": ["fx_orb_cores_2", 1, 0.0],
-	&"warden_amber_ember": ["fx_orb_cores_2", 1, 0.0],  # v0.9.0 NB2: the cannon ember painting, tinted
+	&"warden_amber_ember": ["fx_orb_cores_2", 1, 0.0],  # The cannon ember painting, tinted
 	&"warden_violet_ember": ["fx_orb_cores_2", 1, 0.0],
-	&"gear_spark": ["fx_orb_cores_2", 1, 0.0],  # v0.9.0 NB3: the cannon ember painting, tinted brass
+	&"gear_spark": ["fx_orb_cores_2", 1, 0.0],  # The cannon ember painting, tinted brass
 	&"arc_plasma": ["fx_orb_cores_2", 2, 0.0],
 	&"bomb_cinder": ["fx_orb_cores_2", 3, 0.0],
 	&"crown_orb": ["fx_orb_cores_final", 1, 0.0],
@@ -397,16 +413,16 @@ const TEX_CORES := {
 	&"nemesis_bolt": ["fx_orb_cores_final", 3, 0.0],
 	&"nemesis_crescent": ["fx_orb_cores_final", 3, 0.0],
 }
-## v0.8.0 TX1: the fx_trails rows: flame, smoke, acid drips, crystal sparkle.
+## The fx_trails rows: flame, smoke, acid drips, crystal sparkle.
 const TRAIL_FLAME := 0
 const TRAIL_SMOKE := 1
 const TRAIL_DRIPS := 2
 const TRAIL_CRYSTAL := 3
 ## Trail length and share by Effects density (low: every other ball, shorter).
 const TRAIL_SCALE := {"low": 0.45, "medium": 0.75, "high": 1.0}
-## v0.8.0 AV: the trail strip's width by Effects density (low: thin; the balls stay).
+## The trail strip's width by Effects density (low: thin; the balls stay).
 const TRAIL_WIDTH := {"low": 0.55, "medium": 0.8, "high": 1.0}
-## v0.8.0 AV: the lights the big ones ask VfxCore for (its budget; the brightest requests win): a lobbed fireball or a
+## The lights the big ones ask VfxCore for (its budget; the brightest requests win): a lobbed fireball or a
 ## raining drop each (merged within LIGHT_MERGE m), and a boss's signature shots (merged clusters, at most
 ## SIGNATURE_LIGHTS of them).
 const LIGHT_ENERGY := 1.6
@@ -414,7 +430,7 @@ const LIGHT_RANGE := 3.5
 const LIGHT_MERGE := 2.5
 const SIGNATURE_LIGHTS := 3
 const SIGNATURE_ENERGY := 0.9
-## v0.10.0 VX4 (VFX_PACK R31-R35): each look's core and trail are a held pack effect (PackFx, family enemy_shot, id
+## VFX_PACK R31-R35: each look's core and trail are a held pack effect (PackFx, family enemy_shot, id
 ## "shot_<look>", data/vfx/pack_fx_vx4.tres) that follows its shot, faces its way and goes back to its pool when the
 ## shot ends; the dark edge MultiMesh stays under it (it marks a shot hostile). A shot the family has no room for draws
 ## the old MultiMesh core and trail. false: the old look everywhere (before/after shots, tests). The nemesis_crescent
@@ -429,9 +445,25 @@ const PACK_HIDE := {
 	&"prism_orb": ["Flare"],
 	&"crown_orb": ["Flare"],
 }
-## Looks without a pack effect (they stay the MultiMesh).
-const PACK_SKIP: Array[StringName] = [&"nemesis_crescent"]
-## v0.10.0 VX7 (VFX_PACK N4): the nemesis_crescent keeps its shape and takes a copy of the pack's rim_area_04 glow
+## The look a Dim Needle's shot draws with while it is dark (sync; look_of): a near-black core, a faint
+## green edge, no trail, the MultiMesh only (PACK_SKIP). Not one of LOOKS (whose cores are all bright).
+const DIM_DARK_LOOK := &"dim_needle_dark"
+const DIM_DARK := {
+	"core": Color("#0C140E"),
+	"edge": Color("#0E3A1C"),
+	"trail": Color("#0C140E"),
+	"size": 0.8,
+	"tip": 1.0,
+	"trail_m": 0.01,
+	"mesh": &"orb",
+	"energy": 0.15,
+	"trail_style": &"smoke",
+	"tail": 0.05,
+}
+## Looks without a pack effect (they stay the MultiMesh). the Shade's wisp stays the MultiMesh so the
+## Shade's dark covers it (only its 4 m outline shows over the dark). a dark Dim Needle shot too.
+const PACK_SKIP: Array[StringName] = [&"nemesis_crescent", &"shade_wisp", DIM_DARK_LOOK]
+## VFX_PACK N4: the nemesis_crescent keeps its shape and takes a copy of the pack's rim_area_04 glow
 ## material in its own colours (a sheet of UVs cut from where each point lies); false: the shader core as before.
 const PACK_CRESCENT := true
 
@@ -439,22 +471,22 @@ const CRESCENT_KEY := &"nemesis_crescent"
 ## The crescent mesh's reach along its flight (x, m): what its UV's v runs over.
 const CRESCENT_X0 := -0.05
 const CRESCENT_X1 := 0.5
-## v0.8.0 AV: the dark shell's size over the core's.
+## The dark shell's size over the core's.
 const EDGE_SCALE := 1.15
 const HEIGHT := 0.55
-## v0.7.5 EF: a lobbed fireball's radius (metres) and how high its arc rises over HEIGHT at the middle of its flight.
+## A lobbed fireball's radius (metres) and how high its arc rises over HEIGHT at the middle of its flight.
 const LOB_RADIUS := 0.3
 const LOB_RISE := 1.4
 
-## v0.7.5 BF3: a raining drop leaves the boss this high and peaks this much above its straight path.
+## A raining drop leaves the boss this high and peaks this much above its straight path.
 const RAIN_FROM_Y := 2.6
 const RAIN_ARC_Y := 2.2
 
-## v0.8.0 AV: the effects layer the big ones ask for light from (WorldViewRoot sets it with the new look; null: none).
+## The effects layer the big ones ask for light from (WorldViewRoot sets it with the new look; null: none).
 var vfx: VfxCore
-## v0.10.0 VX4: the pack effects (the effects layer's, or set directly: tests, the shot tool); none: the old look.
+## The pack effects (the effects layer's, or set directly: tests, the shot tool); none: the old look.
 var pack_fx: PackFx = null
-## v0.10.5 W3-Q7: false (WorldViewRoot): one draw a frame, by draw_lights (in VfxLayer.finish: the lights are this
+## False (WorldViewRoot): one draw a frame, by draw_lights (in VfxLayer.finish: the lights are this
 ## frame's) or _process, not in sync at fraction 1.0 as well; true (tests, the shot tool) draws in sync too.
 var draw_on_sync := true
 var draws := 0  # (tests)
@@ -471,17 +503,17 @@ var _balls := {}
 var _edges := {}
 var _cores := {}
 var _trails := {}
-## v0.7.5 EF: the lobbed fireballs in the air this tick, per look (3D positions).
+## The lobbed fireballs in the air this tick, per look (3D positions).
 var _lobs := {}
 
-## v0.7.5 BF3: the raining drops this tick, per look: [from, to, progress, progress a tick, radius] each.
+## The raining drops this tick, per look: [from, to, progress, progress a tick, radius] each.
 var _rain := {}
-## v0.8.0 AV: the light requests of the last draw: [position, colour, energy, range, merge] each.
+## The light requests of the last draw: [position, colour, energy, range, merge] each.
 var _light_wants: Array = []
-## v0.8.0 AV: the look of the boss's signature pattern while it fires (its shots get lights), else &"".
+## The look of the boss's signature pattern while it fires (its shots get lights), else &"".
 var _signature := &""
 var _motion := -1.0
-## v0.8.0 AV: the trail strips' width factor in the last draw (tests: Low narrows them).
+## The trail strips' width factor in the last draw (tests: Low narrows them).
 var _trail_width := 1.0
 ## Shot (a projectile id, or "lob:<look>:n" / "rain:<look>:n") -> {"node": Node3D, "s": float}; and the shots seen in
 ## the draw in progress.
@@ -496,7 +528,7 @@ func _exit_tree() -> void:
 		_unpack(token)
 
 
-## v0.10.5 (owner PERF_PLAYLOG_1: view.fireballs 53.1 ms on f1 and 47.3 ms on f2, the first time a look flew): every
+## Every
 ## look's three MultiMeshes and their materials, made at the floor's load (WorldViewRoot, behind the cover; then
 ## ShaderWarmup draws each once), so a look's first shot builds nothing. Hidden until drawn (0 instances shown).
 func prepare() -> void:
@@ -505,32 +537,34 @@ func prepare() -> void:
 			_sets[key] = _make_set(key, false)
 
 
-## v0.10.5 PC (owner PERF_PLAYLOG_2: idle pool nodes in the tree cost every frame): the prepared sets of the looks
+## The prepared sets of the looks
 ## not drawn yet wait outside the tree (ShaderWarmup draws them once at the load); a look joins it at its first draw.
 func idle_pieces() -> Array[Node]:
 	return FireballPack.detached(_sets)
 
 
-## v0.10.5 PC: how many set nodes wait outside the tree (tests, scripts/checks/pool_node_count.gd).
+## How many set nodes wait outside the tree (tests, scripts/checks/pool_node_count.gd).
 func idle_outside() -> int:
 	return idle_pieces().size()
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_PREDELETE:  # (v0.10.5 PC: the sets outside the tree go with the view)
+	if what == NOTIFICATION_PREDELETE:  # (the sets outside the tree go with the view)
 		for n in idle_pieces():
 			n.free()
 
 
 func sync(reader: WorldReader) -> void:
 	_before = _now
-	var latched := reader as LatchedReader  # v0.10.5 W3-Q7: the places a tick before (a frame of several ticks)
+	var latched := reader as LatchedReader  # The places a tick before (a frame of several ticks)
 	_now = {}
 	_drawn = {}
 	for i in reader.projectile_count():
 		var key := StringName(reader.projectile_look(i))
 		if key == &"":
 			continue
+		if key == WorldReader.DIM_LOOK and reader.projectile_dark(i):  # Dark until near
+			key = DIM_DARK_LOOK
 		var id := reader.projectile_id(i)
 		var p := reader.projectile_pos(i)
 		_now[id] = p
@@ -538,7 +572,7 @@ func sync(reader: WorldReader) -> void:
 		_radius[id] = reader.projectile_radius(i)
 		var was: Variant = latched.projectile_pos_before(id) if latched != null else null
 		if was != null:
-			_before[id] = was  # v0.10.5 W3-Q7: drawn between the last two ticks, not from the last sync
+			_before[id] = was  # Drawn between the last two ticks, not from the last sync
 		elif not _before.has(id):
 			_before[id] = p  # a new ball appears where it spawned
 		var list: PackedInt32Array = _drawn.get(key, PackedInt32Array())
@@ -588,7 +622,7 @@ func count() -> int:
 	return _now.size()
 
 
-## v0.7.5 EF: how many lobbed fireballs are in the air now (tests).
+## How many lobbed fireballs are in the air now (tests).
 func lob_count() -> int:
 	var n := 0
 	for key in _lobs:
@@ -596,7 +630,7 @@ func lob_count() -> int:
 	return n
 
 
-## v0.7.5 EF: the Bomb Drones' fireballs in the air (their telegraph's "lob": from the drone to where it lands, on an
+## The Bomb Drones' fireballs in the air (their telegraph's "lob": from the drone to where it lands, on an
 ## arc), each a bigger ball of its look.
 func _sync_lobs(reader: WorldReader) -> void:
 	_lobs = {}
@@ -614,15 +648,15 @@ func _sync_lobs(reader: WorldReader) -> void:
 		list.append(SimPlane.to_3d(at, HEIGHT + LOB_RISE * 4.0 * p * (1.0 - p)))
 		_lobs[key] = list
 		var ids: Array = _lob_ids.get(key, [])
-		ids.append(reader.actor_id(i))  # v0.10.0 FX: the drone's id names its lob's effect (not its place in the list)
+		ids.append(reader.actor_id(i))  # The drone's id names its lob's effect (not its place in the list)
 		_lob_ids[key] = ids
 		if not _drawn.has(key):
 			_drawn[key] = PackedInt32Array()
 
 
-## The look a key draws with (tests): LOOKS[key] or DEFAULT_LOOK.
+## The look a key draws with: LOOKS[key], a dark Dim Needle shot's DIM_DARK, or DEFAULT_LOOK.
 static func look_of(key: StringName) -> Dictionary:
-	return LOOKS.get(key, DEFAULT_LOOK)
+	return DIM_DARK if key == DIM_DARK_LOOK else LOOKS.get(key, DEFAULT_LOOK)
 
 
 ## The instances the trails of a look draw now (tests: Effects density Low thins them).
@@ -630,12 +664,12 @@ func trail_count(key: StringName) -> int:
 	return _trails.get(key, 0)
 
 
-## v0.10.0 VX4: the dark edges drawn for a look in the last draw (one a shot, pack effect or not).
+## The dark edges drawn for a look in the last draw (one a shot, pack effect or not).
 func edge_count(key: StringName) -> int:
 	return _edges.get(key, 0)
 
 
-## v0.10.0 VX4: the MultiMesh cores drawn (the shots without a pack effect).
+## The MultiMesh cores drawn (the shots without a pack effect).
 func core_count(key: StringName) -> int:
 	return _cores.get(key, 0)
 
@@ -645,7 +679,7 @@ func ball_count(key: StringName) -> int:
 	return _balls.get(key, 0)
 
 
-## v0.7.5 BF3: raining drops drawn in the air now (tests and the tour).
+## Raining drops drawn in the air now (tests and the tour).
 func rain_count() -> int:
 	var n := 0
 	for key in _rain:
@@ -653,25 +687,25 @@ func rain_count() -> int:
 	return n
 
 
-## v0.8.0 AV: the trail strips' width factor in the last draw (TRAIL_WIDTH by density; tests).
+## The trail strips' width factor in the last draw (TRAIL_WIDTH by density; tests).
 func trail_width() -> float:
 	return _trail_width
 
 
-## v0.8.0 AV: the lights the big ones asked for in the last draw (tests).
+## The lights the big ones asked for in the last draw (tests).
 func light_requests() -> int:
 	return _light_wants.size()
 
 
-## v0.8.0 AV: a VfxCore drawer (WorldViewRoot adds it): the big ones' lights, into the layer's light budget.
+## A VfxCore drawer (WorldViewRoot adds it): the big ones' lights, into the layer's light budget.
 func draw_lights(layer: VfxCore) -> void:
 	if not draw_on_sync:
-		_process(0.0)  # v0.10.5 W3-Q7: the frame's draw first (this view's _process comes after the layer's finish)
+		_process(0.0)  # The frame's draw first (this view's _process comes after the layer's finish)
 	for w: Array in _light_wants:
 		layer.light_merged(w[0], w[1], w[2], w[3], w[4])
 
 
-## v0.7.5 BF3: where a raining drop is drawn at progress f (0 leaving the boss, 1 landing): along the ground from
+## Where a raining drop is drawn at progress f (0 leaving the boss, 1 landing): along the ground from
 ## `from` to `to`, from RAIN_FROM_Y down to the fireballs' height, on an arc RAIN_ARC_Y high.
 static func rain_point(from: Vector2, to: Vector2, f: float) -> Vector3:
 	var g := clampf(f, 0.0, 1.0)
@@ -692,7 +726,7 @@ func _draw(f: float) -> void:
 		pack_fx = (vfx as VfxLayer).pack_fx
 	for key in _drawn:
 		var ids: PackedInt32Array = _drawn[key]
-		# PF2: a look with nothing in the air now and nothing drawn last time has nothing to write (its three
+		# A look with nothing in the air now and nothing drawn last time has nothing to write (its three
 		# MultiMeshes already show 0 instances)
 		if (
 			ids.is_empty()
@@ -749,16 +783,16 @@ func _draw(f: float) -> void:
 		for at: Vector3 in _lobs.get(key, []):
 			var lr := LOB_RADIUS * size
 			var lid: int = lob_ids[lob_n] if lob_n < lob_ids.size() else -1 - lob_n
-			var lob_token := "lob:%s:%d" % [key, lid]  # v0.10.0 FX: by the drone, not the list index
+			var lob_token := "lob:%s:%d" % [key, lid]  # By the drone, not the list index
 			lob_n += 1
 			if not _pack_shot(lob_token, key, look, at, Vector2.RIGHT, lr / PACK_REF_RADIUS):
 				cores.append_array(_row(Transform3D(Basis().scaled(Vector3.ONE * lr), at)))
 			edges.append_array(_row(Transform3D(Basis().scaled(Vector3.ONE * lr * EDGE_SCALE), at)))
 			_light_wants.append([at, glow, LIGHT_ENERGY, LIGHT_RANGE, LIGHT_MERGE])
-		for d: Array in _rain.get(key, []):  # v0.7.5 BF3: the drops in the air, on their arc
+		for d: Array in _rain.get(key, []):  # The drops in the air, on their arc
 			var r: float = 0.22 * size
 			var at := rain_point(d[0], d[1], d[2] + d[3] * f)
-			var rain_token := "rain:%s:%s:%s" % [key, d[0], d[1]]  # v0.10.0 FX: by the drop, as the lobs
+			var rain_token := "rain:%s:%s:%s" % [key, d[0], d[1]]  # By the drop, as the lobs
 			if not _pack_shot(rain_token, key, look, at, Vector2.RIGHT, r / PACK_REF_RADIUS):
 				cores.append_array(_row(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * r), at)))
 			edges.append_array(
@@ -769,16 +803,16 @@ func _draw(f: float) -> void:
 		_cores[key] = cores.size() / 12
 		_edges[key] = edges.size() / 12
 		_trails[key] = trails.size() / 12
-		FireballPack.attach(self, _sets[key])  # v0.10.5 PC: a prepared look's first draw puts its set in the tree
+		FireballPack.attach(self, _sets[key])  # A prepared look's first draw puts its set in the tree
 		_fill(_sets[key]["core"], cores)
 		_fill(_sets[key]["edge"], edges)
 		_fill(_sets[key]["trail"], trails)
-	for token in _packed.keys():  # v0.10.0 VX4: the shots that ended give their effect back
+	for token in _packed.keys():  # The shots that ended give their effect back
 		if not _packed_seen.has(token):
 			_unpack(token)
 
 
-## v0.10.0 VX4: the pack effect that draws the shot `token` of look `key` at `at`, facing `dir`, `scale_f` times its
+## The pack effect that draws the shot `token` of look `key` at `at`, facing `dir`, `scale_f` times its
 ## table scale. It spawns when the shot first draws (held), follows it and is released when the shot stops drawing
 ## (_draw). false (the caller draws the old core and trail): no pack, the look has no pack effect, or the family is
 ## full.
@@ -792,7 +826,7 @@ func _pack_shot(
 		_packed.erase(token)  # (PackFx took it back: its pool may hand it to another shot)
 		slot = {}
 	if slot.is_empty():
-		var pid := CandidateLooks.bolt_id(key)  # v0.10.5 W3-O7: "shot_<key>", or a G2 candidate's
+		var pid := CandidateLooks.bolt_id(key)  # "shot_<key>", or a G2 candidate's
 		if not pack_fx.has_id(pid) or not pack_fx.has_room(PACK_FAMILY):
 			return false
 		var colors := _pack_colors(look)
@@ -814,7 +848,7 @@ func _pack_shot(
 		n.global_transform = t
 	else:
 		n.transform = t
-	PackFx.settle(n, was, at)  # v0.10.0 FX: a jump starts its trail again
+	PackFx.settle(n, was, at)  # A jump starts its trail again
 	_packed_seen[token] = true
 	return true
 
@@ -836,7 +870,7 @@ func _unpack(token: Variant) -> void:
 		(slot["fx"] as PackFx).release(slot["node"] as Node3D)
 
 
-## v0.8.0 AV: reduced motion stills the swirl, the turning and the wobble (set on every look when it changes).
+## Reduced motion stills the swirl, the turning and the wobble (set on every look when it changes).
 func _update_motion() -> void:
 	var m := 0.0 if ViewPrefs.reduced_motion else 1.0
 	if m == _motion:
@@ -895,7 +929,7 @@ static func _fill(mi: MultiMeshInstance3D, buf: PackedFloat32Array) -> void:
 
 func _make_set(key: StringName, attach := true) -> Dictionary:
 	var look := look_of(key).duplicate()
-	look["key"] = key  # v0.8.0 TX1: the materials pick the owner's textures by the look's key
+	look["key"] = key  # The materials pick the owner's textures by the look's key
 	var mesh := ProjectileMeshes.get_mesh(look.get("mesh", &"orb"))
 	var core_mesh: Mesh = mesh
 	var core_mat: Material = core_material(look)
@@ -933,7 +967,7 @@ func _make_set(key: StringName, attach := true) -> Dictionary:
 	return out
 
 
-## v0.8.0 AV: a look's lit 3D core (FireballShaders.core).
+## A look's lit 3D core (FireballShaders.core).
 static func core_material(look: Dictionary) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = FireballShaders.core(float(look.get("opacity", 1.0)) < 1.0)
@@ -962,7 +996,7 @@ static func core_material(look: Dictionary) -> ShaderMaterial:
 	return m
 
 
-## v0.8.0 TX1: the fx_trails row a look's trail draws with: smoke, drips, crystal (gems and the Prism's bolts), else
+## The fx_trails row a look's trail draws with: smoke, drips, crystal (gems and the Prism's bolts), else
 ## flame.
 static func trail_row(look: Dictionary) -> int:
 	var style: StringName = look.get("trail_style", &"glow")
@@ -975,7 +1009,7 @@ static func trail_row(look: Dictionary) -> int:
 	return TRAIL_FLAME
 
 
-## v0.8.0 AV: the dark shell, turning with the core (FireballShaders.edge).
+## The dark shell, turning with the core (FireballShaders.edge).
 static func edge_material(look: Dictionary) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = FireballShaders.edge()
@@ -986,7 +1020,7 @@ static func edge_material(look: Dictionary) -> ShaderMaterial:
 	return m
 
 
-## v0.8.0 AV: the trail strip (FireballShaders.trail): glowing and additive, or smoke (mixed, no glow, widening), or
+## The trail strip (FireballShaders.trail): glowing and additive, or smoke (mixed, no glow, widening), or
 ## drips.
 static func trail_material(look: Dictionary) -> ShaderMaterial:
 	var style: StringName = look.get("trail_style", &"glow")
@@ -1003,7 +1037,7 @@ static func trail_material(look: Dictionary) -> ShaderMaterial:
 	m.set_shader_parameter("scroll", 0.8 if smoke else 2.2)
 	m.set_shader_parameter("opacity", 0.6 if smoke else 0.85)
 	m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
-	var strip := FxTextures.get_tex("fx_trails")  # v0.8.0 TX1: the owner's trail strip
+	var strip := FxTextures.get_tex("fx_trails")  # The owner's trail strip
 	if strip != null:
 		m.set_shader_parameter("trail_tex", strip)
 		m.set_shader_parameter("tex_on", 1.0)

@@ -28,9 +28,16 @@ const PHASES: Array[StringName] = [
 	&"move.walls",
 	&"move.grid",
 	&"move.pairs",
+	&"move.native",
 	&"actions",
 	&"resolve",
-	&"proj"
+	&"proj",
+	&"proj.steer",
+	&"proj.sweep",
+	&"proj.damage",
+	&"proj.procs",
+	&"proj.end",
+	&"proj.remove"
 ]
 
 
@@ -42,6 +49,10 @@ func _initialize() -> void:
 		for s in String(args["--counts"]).split(","):
 			counts.append(int(s))
 	var ticks := int(args.get("--ticks", 1800))
+	if not NativeWorld.available():
+		NativeWorld.report_missing()
+		quit(1)
+		return
 	var repo := ContentRepository.load_all()
 	for n in counts:
 		_measure(repo, n, ticks)
@@ -108,15 +119,15 @@ func _measure(repo: ContentRepository, n: int, ticks: int) -> void:
 
 
 ## The flood alone, on the world as the run left it (its hero's cell and its enemies' cells as targets): NavField.flood
-## from scratch FLOOD_REPS times; the min and median ms (the min is the least noisy on a busy machine), its work and
-## the grid's cells, and a hash of the distances (the same before and after a speed-up).
+## (native, on the world's side) from scratch FLOOD_REPS times; the min and median ms (the min is the least noisy on
+## a busy machine), its work and the grid's cells, and a hash of the distances (the same before and after a speed-up).
 func _flood_bench(w: World) -> void:
 	var targets: PackedInt32Array = w._nav_targets()
 	var times := []
 	for r in FLOOD_REPS:
 		w.nav._flooded = Vector3i(-1, -1, -1)
 		var t0 := Time.get_ticks_usec()
-		w.nav.flood(w.player_pos(), NavField.WORLD_FLOOD_STEPS, targets)
+		w.nav.flood(w.player_pos(), NavField.WORLD_FLOOD_STEPS, targets, w.native)
 		times.append((Time.get_ticks_usec() - t0) / 1000.0)
 	times.sort()
 	var h := StateHasher.new()

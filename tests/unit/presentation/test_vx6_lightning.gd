@@ -102,11 +102,14 @@ func test_a_bolt_rejitters_while_it_lives_and_fades_out() -> void:
 	assert_lt(b.brightness(), 0.05, "gone after its fade")
 
 
-func test_a_bolt_builds_a_two_layer_ribbon() -> void:
+func test_a_bolt_draws_a_two_layer_ribbon_shell_then_core() -> void:
 	var b := _bolt()
 	b.set_ends(A, B, 9, 0.12)
-	var mesh := (b.get_child(0) as MeshInstance3D).mesh as ArrayMesh
-	assert_eq(mesh.get_surface_count(), 2, "shell and core")
+	var shell := b.get_child(0) as MeshInstance3D
+	var core := b.get_child(1) as MeshInstance3D
+	assert_true(shell.get_surface_override_material(0).get_shader_parameter(&"outer"), "shell")
+	assert_false(core.get_surface_override_material(0).get_shader_parameter(&"outer"), "core")
+	assert_gt(core.sorting_offset, shell.sorting_offset, "the core always draws over its shell")
 
 
 # --- Where bolts go ------------------------------------------------------------------------------------------------
@@ -146,6 +149,22 @@ func test_a_storm_ring_holds_a_rim_and_bolts_along_it() -> void:
 	_frame(10.0, func() -> void: _layer.ring(&"storm", Vector3(2, 0, 2), 3.0, 1.0, 10.0, 6))
 	assert_eq(_live(&"vx6_ring").size(), 1)
 	assert_gte(_live(&"vx6_bolt").size(), 3)
+
+
+func test_a_travelling_ring_followed_by_its_seed_keeps_its_rim_and_bolts_as_it_flies() -> void:
+	var at := func(k: int) -> Vector3: return Vector3(2 + 0.3 * k, 0, 2 + 0.2 * k)
+	_frame(10.0, func() -> void: _layer.ring(&"storm", at.call(0), 3.0, 1.0, 10.0, 6, true))
+	var rim := _live(&"vx6_ring")
+	assert_eq(rim.size(), 1)
+	var spawned := _fx.spawned
+	for k in range(1, 11):
+		var t := 10.0 + k
+		_frame(t, func() -> void: _layer.ring(&"storm", at.call(k), 3.0, 1.0, t, 6, true))
+	assert_eq(_fx.spawned, spawned, "nothing taken again from PackFx while the ring moved 3.6 m")
+	assert_eq(_live(&"vx6_ring"), rim, "the same rim, following the ring")
+	assert_almost_eq(rim[0].global_position.x, (at.call(10) as Vector3).x, 0.001)
+	var anim := rim[0].get_node("AnimationPlayer") as AnimationPlayer
+	assert_almost_eq(anim.current_animation_position, 0.0, 0.0001, "held at its animation's start")
 
 
 func test_a_storm_burst_is_one_pulse_and_three_to_five_bolts() -> void:

@@ -1,12 +1,12 @@
 class_name VatBake
 extends RefCounted
-## v0.10.5 W3-V1 (owner, 2026-11-06: the enemy VAT pilot, "keeping their current animation"): bakes an enemy kind's
+## Bakes an enemy kind's
 ## pose code into a texture, so a VatCrowd can draw every enemy of that kind as one MultiMesh whose shader poses it.
 ## Nothing is recorded by hand: the bake builds the kind's real avatar (its real pieces) and runs its own pose code over
 ## a grid of the inputs the pose is made of. The bake is made once per rig and session (the first VAT enemy, or the
 ## shader warm-up behind the loading cover), so it can never go stale against the pose code.
 ##
-## v0.10.5 W3-V4a (owner: "can we apply it to the rest of the enemies"): any avatar can be baked. Its RIG says how
+## Any avatar can be baked. Its RIG says how
 ## (rig_of), a Dictionary:
 ## - "key": the bake's name (kinds that pose alike share one: the Charger and the Hatchling);
 ## - "drives": how many continuous numbers the pose is made of (each 0..1; a loop's a phase 0..1). The first four go to
@@ -17,7 +17,7 @@ extends RefCounted
 ##   by its joint's chain (joint after parent, any depth), as the scene tree composed the nodes;
 ## - "row": Callable(grid, drives: PackedFloat64Array) -> Array of Transform3D: that grid's joints (in joint order)
 ##   posed by the avatar's own code at those drives (the other drives 0);
-## - "scaled": whether a joint scales (the normals then take the inverse transpose); "outline_m": the outline's width;
+## - "scaled": whether a joint scales (the normals then take the inverse transpose);
 ## - plus what the kind's crowd reads (a HordeAvatar's "period").
 ## The part of the pose that is a plain lift of the whole body (an idle bob, a rise-in's sink) is not baked: it is the
 ## avatar's vat_lift(), sent with the instance's transform (exact).
@@ -29,11 +29,12 @@ extends RefCounted
 ## sample, the first axis fastest), three texels per joint slot (the 3x4 matrix's rows: basis row and origin). The
 ## mesh: every piece's surfaces merged into one surface in its joint's space, with per-vertex CUSTOM0 = albedo (linear)
 ## + mode (0 a body plate: the hit flash and rest glow; 1 an accent: the glow; 2 a plain plate: neither), CUSTOM1 =
-## emission (linear; a plate's times its rest energy) + outline flag, CUSTOM2 = joint, one-sided (1: its back faces are
+## emission (linear; a plate's times its rest energy) + 0 (unused), CUSTOM2 = joint, one-sided (1: its back faces are
 ## not drawn, in a mesh that also has two-sided pieces), v0.10.5 W3-V4c: glow source (0: the instance's glow; k: drive
-## k - 1), unshaded (1: VatLooks draws its albedo as is). v0.10.5 W3-V4c: the stand-alone kinds' StandardMaterial3D
-## pieces take their looks from SoloVat.surface_look (with vertex colours where their material takes them). eval_* run
-## the shader's arithmetic on the CPU (the bake report's pose error, the tests). Presentation only (EI-07).
+## k - 1), unshaded (1: VatLooks draws its albedo as is). the stand-alone kinds' StandardMaterial3D
+## pieces take their looks from SoloVat.surface_look (with vertex colours where their material takes them). VatVerify
+## (tests/support) runs the shader's arithmetic on the CPU (the bake report's pose error, the tests). Presentation only
+## (EI-07).
 
 const GRID_NONE := -1
 const GRID_STANCE := 0
@@ -69,49 +70,47 @@ static func gait_period(kind: int) -> float:
 
 ## A reference avatar of horde `kind`, built with its pieces as ActorViews builds one (not in the tree; the caller
 ## frees it).
-static func reference_avatar(
-	kind: int, tint: Color, role_glow: float, outline: Color
-) -> HordeAvatar:
+static func reference_avatar(kind: int, tint: Color, role_glow: float) -> HordeAvatar:
 	var a := HordeAvatar.new()
 	a.enemy_tint = tint
 	a.role_glow = role_glow
-	a.setup(kind, outline, &"outline")
+	a.setup(kind)
 	a.set_process(false)
 	return a
 
 
-## v0.10.5 W3-V4a: a reference avatar of any VAT `kind` (reference_avatar's, or a ChargerAvatar for the Charger and
+## A reference avatar of any VAT `kind` (reference_avatar's, or a ChargerAvatar for the Charger and
 ## the Hatchling).
-static func reference_of(kind: int, tint: Color, role_glow: float, outline: Color) -> AvatarBase:
-	if SoloVat.is_solo(kind):  # v0.10.5 W3-V4c: the Needle, Warden, Arc Caster, Bomb Drone
-		return SoloVat.reference_of(kind, tint, role_glow, outline)
+static func reference_of(kind: int, tint: Color, role_glow: float) -> AvatarBase:
+	if SoloVat.is_solo(kind):  # The Needle, Warden, Arc Caster, Bomb Drone
+		return SoloVat.reference_of(kind, tint, role_glow)
 	if is_charger(kind):
 		var c := ChargerAvatar.new()
 		c.enemy_tint = tint
 		c.role_glow = role_glow
-		c.setup(outline, &"outline", kind)
+		c.setup(kind)
 		c.set_process(false)
 		return c
-	return reference_avatar(kind, tint, role_glow, outline)
+	return reference_avatar(kind, tint, role_glow)
 
 
-## v0.10.5 W3-V4a: a VAT avatar of `kind` (no pieces), as ActorViews builds one with the switch on (tools, tests; not
+## A VAT avatar of `kind` (no pieces), as ActorViews builds one with the switch on (tools, tests; not
 ## in the tree; the caller frees it).
-static func vat_avatar_of(kind: int, outline: Color) -> AvatarBase:
+static func vat_avatar_of(kind: int) -> AvatarBase:
 	if SoloVat.is_solo(kind):  # v0.10.5 W3-V4c
-		return SoloVat.vat_avatar_of(kind, outline)
+		return SoloVat.vat_avatar_of(kind)
 	if is_charger(kind):
 		var c := ChargerAvatar.new()
 		c.vat = true
-		c.setup(outline, &"outline", kind)
+		c.setup(kind)
 		return c
 	var h := HordeAvatar.new()
 	h.vat = true
-	h.setup(kind, outline)
+	h.setup(kind)
 	return h
 
 
-## v0.10.5 W3-V4a: the kinds a ChargerAvatar draws.
+## The kinds a ChargerAvatar draws.
 static func is_charger(kind: int) -> bool:
 	return kind == WorldReader.KIND_CHARGER or kind == WorldReader.KIND_HATCHLING
 
@@ -130,7 +129,7 @@ static func joint_spec(avatar: HordeAvatar) -> Array:
 	return out
 
 
-## v0.10.5 W3-V4a: the rig of `avatar` (see the class notes): its own (vat_rig()), or a HordeAvatar's (horde_rig).
+## The rig of `avatar` (see the class notes): its own (vat_rig()), or a HordeAvatar's (horde_rig).
 static func rig_of(avatar: Node3D) -> Dictionary:
 	if avatar.has_method(&"vat_rig"):
 		return avatar.call(&"vat_rig")
@@ -143,7 +142,7 @@ static func rig_of(avatar: Node3D) -> Dictionary:
 ## stance grid (drives 0, 1, 2: the windup raise, the strike, the crouch; at the clock 0, fully risen) and the gait
 ## grid (drive 3: the legs' phase over gait_period), each read from its nodes after HordeAvatar.pose_at.
 static func horde_rig(avatar: HordeAvatar) -> Dictionary:
-	if avatar.kind != WorldReader.KIND_SWARMER:  # v0.10.5 W3-V4b: the other horde kinds' (HordeVat)
+	if avatar.kind != WorldReader.KIND_SWARMER:  # The other horde kinds' (HordeVat)
 		return HordeVat.rig(avatar)
 	var js: Array = []
 	var index := {}
@@ -169,7 +168,6 @@ static func horde_rig(avatar: HordeAvatar) -> Dictionary:
 		"joints": js,
 		"row": func(g: int, d: PackedFloat64Array) -> Array: return _horde_row(avatar, js, g, d),
 		"scaled": false,
-		"outline_m": HordeAvatar.OUTLINE_M,
 		"period": gait_period(avatar.kind),
 	}
 
@@ -202,11 +200,11 @@ static func _slotted(rig: Dictionary) -> Array:
 
 
 ## The baked poses of `kind`: {texture (ImageTexture), image, data (its floats), width, joints, grids, drives,
-## drive_texels, scaled, outline_m, key}, and for a horde kind the pilot's stance / gait / gait_row / period.
+## drive_texels, scaled, key}, and for a horde kind the pilot's stance / gait / gait_row / period.
 static func pose_for(kind: int) -> Dictionary:
 	if _kind_keys.has(kind) and _poses.has(_kind_keys[kind]):
 		return _poses[_kind_keys[kind]]
-	var a := reference_of(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var a := reference_of(kind, Color(0, 0, 0, 0), 0.0)
 	var key: String = rig_of(a).get("key", "kind%d" % kind)
 	if not _poses.has(key):
 		_poses[key] = bake(a)
@@ -295,10 +293,9 @@ static func bake(avatar: Node3D) -> Dictionary:
 		"drives": n_drives,
 		"drive_texels": maxi(0, ceili((n_drives - 4) / 4.0)),
 		"scaled": bool(rig.get("scaled", false)),
-		"outline_m": float(rig.get("outline_m", HordeAvatar.OUTLINE_M)),
 		"key": rig.get("key", ""),
 	}
-	if rig.has("albedo_tex"):  # v0.10.5 W3-V4b: the owner's model's colour map (VatLooks' textured variant)
+	if rig.has("albedo_tex"):  # The owner's model's colour map (VatLooks' textured variant)
 		out["albedo_tex"] = rig["albedo_tex"]
 	if rig.has("period"):  # the pilot's (VatCrowd's horde drives, tests)
 		var gait: Dictionary = table[GRID_GAIT]
@@ -336,13 +333,14 @@ static func _write(
 		_put(data, width, slot * 3 + r, row, Vector4(b.x[r], b.y[r], b.z[r], xf.origin[r]))
 
 
-## The merged body of `kind` in this look (the biome's cast `tint`, the role glow, the outline colour): an ArrayMesh
-## (one surface, see the class notes; meta "two_sided": some piece is drawn from both sides), cached by look.
+## The merged body of `kind` in this look (the biome's cast `tint`, the role glow; `outline`, the biome's outline
+## colour, only keeps each biome's cache entry its own): an ArrayMesh (one surface, see the class notes; meta
+## "two_sided": some piece is drawn from both sides), cached by look.
 static func mesh_for(kind: int, tint: Color, role_glow: float, outline: Color) -> ArrayMesh:
 	var key := look_key(kind, tint, role_glow, outline)
 	if _meshes.has(key):
 		return _meshes[key]
-	var a := reference_of(kind, tint, role_glow, outline)
+	var a := reference_of(kind, tint, role_glow)
 	var mesh := build_mesh(a)
 	a.free()
 	_meshes[key] = mesh
@@ -355,14 +353,13 @@ static func look_key(kind: int, tint: Color, role_glow: float, outline: Color) -
 	for slot: StringName in [&"body", &"trim", &"grey", &"eye"]:
 		cols.append(EnemyPalettes.color(kind, slot).to_html())
 	return (
-		"%d|%s|%.4f|%s|%s|%d"
+		"%d|%s|%.4f|%s|%s"
 		% [
 			kind,
 			tint.to_html(),
 			role_glow,
 			outline.to_html(),
 			",".join(cols),
-			int(ActorLooks.OUTLINES)
 		]
 	)
 
@@ -382,7 +379,7 @@ static func pieces(avatar: Node3D, js: Array) -> Array:
 
 static func _collect(n: Node, avatar: Node, index: Dictionary, out: Array) -> void:
 	for c in n.get_children():
-		if c.has_meta(SoloVat.LIVE):  # v0.10.5 W3-V4c: a node the VAT avatar keeps (a ground disc, the dust)
+		if c.has_meta(SoloVat.LIVE):  # A node the VAT avatar keeps (a ground disc, the dust)
 			continue
 		var mi := c as MeshInstance3D
 		if mi != null and mi.mesh != null:
@@ -408,11 +405,11 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 	var ps := pieces(avatar, js)
 	var looks: Array = []
 	var any_two := false
-	var textured := avatar is HordeAvatar and HordeVat.texture(avatar) != null  # v0.10.5 W3-V4b: UVs too
+	var textured := HordeVat.texture(avatar) != null  # UVs too
 	var uvs := PackedVector2Array()
 	for p: Dictionary in ps:
 		var look := surface_look(p["node"], p["surface"])
-		if HordeVat.alt_glow(avatar, p["node"]):  # v0.10.5 W3-V4b: the Sniper's muzzle (VatLooks' mode 3)
+		if HordeVat.alt_glow(avatar, p["node"]):  # The Sniper's muzzle (VatLooks' mode 3)
 			(look[0] as Array)[3] = 3.0
 		looks.append(look)
 		any_two = any_two or bool(look[2])
@@ -437,7 +434,7 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 				uvs.append_array(zero)
 		var nr: Variant = arrays[Mesh.ARRAY_NORMAL]
 		var base := verts.size()
-		# v0.10.5 W3-V4c: an accent's glow source (0: the instance's; k: drive k - 1) and the unshaded flag
+		# An accent's glow source (0: the instance's; k: drive k - 1) and the unshaded flag
 		var jp := PackedFloat32Array(
 			[
 				float(p["joint"]),
@@ -446,7 +443,7 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 				float(look[4]) if look.size() > 4 else 0.0,
 			]
 		)
-		# v0.10.5 W3-V4c: a material taking its mesh's vertex colours as albedo (the Warden's facets): albedo x colour
+		# A material taking its mesh's vertex colours as albedo (the Warden's facets): albedo x colour
 		var vc: Variant = arrays[Mesh.ARRAY_COLOR] if look.size() > 5 and bool(look[5]) else null
 		var has_vc := vc is PackedColorArray and (vc as PackedColorArray).size() == v.size()
 		for k in v.size():
@@ -508,15 +505,19 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 	return mesh
 
 
-## A piece surface's look: [albedo (linear) rgb + mode, emission (linear) rgb + outline, two-sided], read from its
-## EnemyLooks material (a body plate: zd_hit; an accent: zd_glow), or (v0.10.5 W3-V4a: the Charger's face) a plain
+## A piece surface's look: [albedo (linear) rgb + mode, emission (linear) rgb + 0, two-sided], read from its
+## EnemyLooks material (a body plate: zd_hit; an accent: zd_glow), or (the Charger's face) a plain
 ## untextured StandardMaterial3D: its albedo, no emission, no flash. A material of any other kind is drawn as a dark
 ## plate and reported (the kind is then not VAT-ready).
 static func surface_look(mi: MeshInstance3D, s: int) -> Array:
 	var std := mi.material_override as StandardMaterial3D
 	if std == null:
 		std = mi.get_surface_override_material(s) as StandardMaterial3D
-	if std != null and std.albedo_texture == null and std.has_meta(SoloVat.LOOK):
+	if (
+		std != null
+		and std.has_meta(SoloVat.LOOK)
+		and (std.albedo_texture == null or std.has_meta(&"enemy_tex"))
+	):
 		return SoloVat.surface_look(std)
 	if std != null and std.albedo_texture == null and not std.emission_enabled:
 		var c := std.albedo_color.srgb_to_linear()
@@ -531,7 +532,7 @@ static func surface_look(mi: MeshInstance3D, s: int) -> Array:
 	if m == null or m.shader == null:
 		push_error("VatBake: %s has no EnemyLooks material" % mi.get_path())
 		return [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], false]
-	var code := m.shader.code  # (v0.10.5 W3-V4b: a textured plate's map is the pose's albedo_tex, VatLooks)
+	var code := m.shader.code  # (a textured plate's map is the pose's albedo_tex, VatLooks)
 	var albedo: Color = m.get_shader_parameter("albedo")
 	var emission: Color = m.get_shader_parameter("emission")
 	var energy := float(m.get_shader_parameter("emission_energy"))
@@ -539,97 +540,11 @@ static func surface_look(mi: MeshInstance3D, s: int) -> Array:
 	var a := albedo.srgb_to_linear()
 	var e := emission.srgb_to_linear()
 	var k := 1.0 if accent else energy
-	var outline := 1.0 if m.next_pass != null else 0.0
 	return [
 		[a.r, a.g, a.b, 1.0 if accent else 0.0],
-		[e.r * k, e.g * k, e.b * k, outline],
+		[e.r * k, e.g * k, e.b * k, 0.0],
 		code.contains("cull_disabled"),
 	]
-
-
-# --- the shader's arithmetic on the CPU (the bake report, tests) -------------------------------------------------
-
-
-## The drives as the shader reads them, from a Vector4 (the pilot's four) or a packed array.
-static func _drives(d: Variant) -> PackedFloat32Array:
-	if d is Vector4:
-		var v: Vector4 = d
-		return PackedFloat32Array([v.x, v.y, v.z, v.w])
-	return PackedFloat32Array(d)
-
-
-## Joint (`slot`, `grid`)'s baked local transform at the drives `d`, as the shader samples it (VatLooks: multilinear
-## over the grid's axes, a loop linear and wrapped).
-static func eval_local(pose: Dictionary, slot: int, grid: int, dv: Variant) -> Transform3D:
-	if grid == GRID_NONE:
-		return Transform3D.IDENTITY
-	var d := _drives(dv)
-	var t: Dictionary = (pose["grids"] as Array)[grid]
-	var axes: Array = t["axes"]
-	var n: Vector3i = t["n"]
-	var i0 := Vector3i.ZERO
-	var i1 := Vector3i.ZERO
-	var f := Vector3.ZERO
-	for a in axes.size():
-		var na: int = n[a]
-		if na < 2:
-			continue
-		var di: int = axes[a][0]
-		var v: float = d[di] if di < d.size() else 0.0
-		if bool(axes[a][2]):
-			var u: float = (v - floor(v)) * na
-			var k0 := int(floor(u)) % na
-			i0[a] = k0
-			i1[a] = (k0 + 1) % na
-			f[a] = u - floor(u)
-		else:
-			var g := clampf(v, 0.0, 1.0) * (na - 1)
-			var k0 := mini(int(floor(g)), na - 2)
-			i0[a] = k0
-			i1[a] = k0 + 1
-			f[a] = g - k0
-	var rows: Array[Vector4] = [Vector4.ZERO, Vector4.ZERO, Vector4.ZERO]
-	var data: PackedFloat32Array = pose["data"]
-	var width: int = pose["width"]
-	var row0: int = t["row0"]
-	for c in 8:
-		var o := Vector3i(c & 1, (c >> 1) & 1, (c >> 2) & 1)
-		var w := (
-			(f.x if o.x == 1 else 1.0 - f.x)
-			* (f.y if o.y == 1 else 1.0 - f.y)
-			* (f.z if o.z == 1 else 1.0 - f.z)
-		)
-		if w == 0.0:
-			continue
-		var ix := Vector3i(
-			i1.x if o.x == 1 else i0.x, i1.y if o.y == 1 else i0.y, i1.z if o.z == 1 else i0.z
-		)
-		var r := row0 + ix.x + n.x * (ix.y + n.y * ix.z)
-		for k in 3:
-			var p := (r * width + slot * 3 + k) * 4
-			rows[k] += Vector4(data[p], data[p + 1], data[p + 2], data[p + 3]) * w
-	return Transform3D(
-		Basis(
-			Vector3(rows[0].x, rows[1].x, rows[2].x),
-			Vector3(rows[0].y, rows[1].y, rows[2].y),
-			Vector3(rows[0].z, rows[1].z, rows[2].z)
-		),
-		Vector3(rows[0].w, rows[1].w, rows[2].w)
-	)
-
-
-## Joint `j`'s chain at the drives `d` (joint after parent, to the root), as the shader composes it.
-static func eval_chain(pose: Dictionary, j: int, dv: Variant) -> Transform3D:
-	var d := _drives(dv)
-	var js: Array = pose["joints"]
-	var m := Transform3D.IDENTITY
-	var k := 0
-	while j >= 0 and k < MAX_CHAIN:
-		var e: Dictionary = js[j]
-		m = eval_local(pose, e["slot"], e["grid"], d) * m
-		j = e["parent"]
-		k += 1
-	return m
 
 
 ## The gait phase (0..1) the crowd sends for a horde avatar at clock `t`.
@@ -641,13 +556,13 @@ static func gait_phase(pose: Dictionary, t: float) -> float:
 	return u - floor(u)
 
 
-## v0.10.5 W3-V4a: the drives VatCrowd sends for `avatar` now: its own (vat_drives()), or a horde avatar's four (the
+## The drives VatCrowd sends for `avatar` now: its own (vat_drives()), or a horde avatar's four (the
 ## windup raise, the strike, the crouch, the gait phase).
 static func drives_of(avatar: Node3D, pose: Dictionary) -> PackedFloat32Array:
 	if avatar.has_method(&"vat_drives"):
 		return avatar.call(&"vat_drives")
 	var h := avatar as HordeAvatar
-	if h.kind != WorldReader.KIND_SWARMER:  # v0.10.5 W3-V4b: the other horde kinds' (HordeVat)
+	if h.kind != WorldReader.KIND_SWARMER:  # The other horde kinds' (HordeVat)
 		return h.vat_grid_drives()
 	return PackedFloat32Array(
 		[
@@ -657,176 +572,3 @@ static func drives_of(avatar: Node3D, pose: Dictionary) -> PackedFloat32Array:
 			gait_phase(pose, h.anim_time()),
 		]
 	)
-
-
-## Every vertex of `mesh` (build_mesh's) in the avatar's space at the drives `d` and the lift, as the shader poses it.
-static func eval_vertices(
-	pose: Dictionary, mesh: ArrayMesh, dv: Variant, lift: float
-) -> PackedVector3Array:
-	return eval_vertices_at(pose, mesh, dv, Transform3D(Basis.IDENTITY, Vector3(0, lift, 0)))
-
-
-## v0.10.5 W3-V4b: eval_vertices with the body's whole instance transform `offset` (HordeAvatar.vat_offset) for the
-## lift.
-static func eval_vertices_at(
-	pose: Dictionary, mesh: ArrayMesh, dv: Variant, offset: Transform3D
-) -> PackedVector3Array:
-	var d := _drives(dv)
-	var arrays := mesh.surface_get_arrays(0)
-	var v: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-	var c2: PackedFloat32Array = arrays[Mesh.ARRAY_CUSTOM2]
-	var out := PackedVector3Array()
-	out.resize(v.size())
-	var cache := {}
-	for k in v.size():
-		var j := int(c2[k * 4])
-		if not cache.has(j):
-			cache[j] = offset * eval_chain(pose, j, d)
-		out[k] = (cache[j] as Transform3D) * v[k]
-	return out
-
-
-## Every piece vertex of `avatar` (posed, with its pieces) in its own space, in build_mesh's order. v0.10.5 W3-V4c: a
-## hidden node folds what hangs from it to its origin (what a VAT kind draws for it: the Bomb Drone's dropped bomb).
-static func live_vertices(avatar: Node3D) -> PackedVector3Array:
-	var out := PackedVector3Array()
-	for p: Dictionary in pieces(avatar, joints(avatar)):
-		var mi: MeshInstance3D = p["node"]
-		var xf := Transform3D.IDENTITY
-		var up: Node = mi
-		while up != avatar:
-			xf = (up as Node3D).transform * xf
-			if not (up as Node3D).visible:
-				xf = Transform3D(Basis() * 0.0, (up as Node3D).position)
-			up = up.get_parent()
-		var v: PackedVector3Array = mi.mesh.surface_get_arrays(p["surface"])[Mesh.ARRAY_VERTEX]
-		out.append_array(xf * v)
-	return out
-
-
-## The largest distance (m) between `live`'s and the VAT avatar `vat`'s pose over `samples` random states, each posed
-## on both by the avatar's own code, the VAT side through the baked texture: {max_m, mean_m, worst (the state),
-## vertices, samples}. A horde avatar's state: the windup raise, the strike, the crouch, the clock up to `t_max` s and
-## the rise-in (HordeAvatar.pose_at); any other's: its vat_sample (every drive anywhere in its range, mixed freely).
-static func pose_error(
-	live: Node3D,
-	vat: Node3D,
-	pose: Dictionary,
-	mesh: ArrayMesh,
-	samples: int,
-	seed_value: int,
-	t_max := 20.0
-) -> Dictionary:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = seed_value
-	var worst := 0.0
-	var sum := 0.0
-	var count := 0
-	var at := {}
-	for i in samples:
-		var state := {}
-		var d := PackedFloat32Array()
-		if live is HordeAvatar:
-			var w := rng.randf()
-			var s := rng.randf()
-			var c := rng.randf()
-			var t := rng.randf() * t_max
-			var r := rng.randf()
-			if i % 4 == 0:  # a quarter fully risen and still (the commonest pose)
-				r = 1.0
-			(live as HordeAvatar).pose_at(w, s, c, t, r)
-			(vat as HordeAvatar).pose_at(w, s, c, t, r)
-			state = {"wind": w, "strike": s, "crouch": c, "t": t, "rise": r}
-			d = PackedFloat32Array([w, s, c, gait_phase(pose, t)])
-		else:
-			state = live.call(&"vat_sample", rng)
-			vat.call(&"vat_set", state)
-			d = drives_of(vat, pose)
-		var a := live_vertices(live)
-		var b := eval_vertices(pose, mesh, d, float(vat.call(&"vat_lift")))
-		for k in a.size():
-			var e := a[k].distance_to(b[k])
-			sum += e
-			count += 1
-			if e > worst:
-				worst = e
-				at = state.duplicate()
-				at["vertex"] = k
-	return {
-		"max_m": worst,
-		"mean_m": sum / maxf(1.0, count),
-		"worst": at,
-		"vertices": count / maxi(1, samples),
-		"samples": samples,
-	}
-
-
-## v0.10.5 W3-V4b: pose_error for the kinds past the Swarmer: over `samples` random sets of every input the pose reads
-## (HordeVat.sample: the windup raise, the strike, the crouch, the clock, the rise-in, the death, the walk,
-## the heal, the tell), both avatars posed by pose_with, the VAT side through the baked texture at its own drives and
-## instance transform (vat_drives, vat_offset). A vertex of a hidden piece (the dropped mine) must fold to its joint's
-## point on the VAT side instead: `hidden_spread_m` is how far apart those land (0: drawn as nothing). {max_m, mean_m,
-## worst (the inputs), vertices, samples, hidden, hidden_spread_m}.
-static func pose_error_full(
-	live: HordeAvatar,
-	vat: HordeAvatar,
-	pose: Dictionary,
-	mesh: ArrayMesh,
-	samples: int,
-	seed_value: int,
-	t_max := 20.0
-) -> Dictionary:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = seed_value
-	var worst := 0.0
-	var sum := 0.0
-	var count := 0
-	var hidden := 0
-	var spread := 0.0
-	var at := {}
-	var ps := pieces(live, joints(live))
-	for i in samples:
-		var s := HordeVat.sample(rng, t_max)
-		live.pose_with(s)
-		vat.pose_with(s)
-		var a := live_vertices(live)
-		var b := eval_vertices_at(pose, mesh, vat.vat_grid_drives(), vat.vat_offset())
-		var k0 := 0
-		for p: Dictionary in ps:
-			var mi: MeshInstance3D = p["node"]
-			var nv: int = (
-				(mi.mesh.surface_get_arrays(p["surface"])[Mesh.ARRAY_VERTEX] as PackedVector3Array)
-				. size()
-			)
-			if not _shown(mi, live):
-				hidden += nv
-				for k in range(k0, k0 + nv):
-					spread = maxf(spread, b[k].distance_to(b[k0]))
-			else:
-				for k in range(k0, k0 + nv):
-					var e := a[k].distance_to(b[k])
-					sum += e
-					count += 1
-					if e > worst:
-						worst = e
-						at = s.duplicate()
-						at["vertex"] = k
-			k0 += nv
-	return {
-		"max_m": worst,
-		"mean_m": sum / maxf(1.0, count),
-		"worst": at,
-		"vertices": (count + hidden) / maxi(1, samples),
-		"samples": samples,
-		"hidden": hidden,
-		"hidden_spread_m": spread,
-	}
-
-
-## Whether `n` and every node above it up to `avatar` is visible (the avatar may be out of the tree).
-static func _shown(n: Node, avatar: Node) -> bool:
-	while n != null and n != avatar:
-		if n is Node3D and not (n as Node3D).visible:
-			return false
-		n = n.get_parent()
-	return true

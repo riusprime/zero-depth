@@ -40,8 +40,10 @@ func test_the_shock_lanes_lock_for_0_55_s_and_phases_2_and_3_follow_them_with_a_
 	var t := _table(&"gatekeeper")
 	for id: StringName in [&"shock_lanes", &"shock_lanes_follow", &"shock_lanes_2"]:
 		var atk := _atk(t, id)
-		assert_eq(atk.lock_ticks, 33, "%s: locks 0.55 s (was 0.8)" % id)
-		assert_eq(atk.windup_ticks, 81, "%s: still tracks 0.8 s before the lock" % id)
+		assert_eq(atk.lock_ticks, 33, "%s: locks 0.55 s" % id)
+		assert_eq(
+			atk.windup_ticks, 120, "%s: 2.0 s in all, so 1.45 s of tracking before the lock" % id
+		)
 		assert_eq(atk.damage, 30, "%s: damage unchanged" % id)
 	assert_eq(_atk(t, &"shock_lanes").second_ticks, 0, "phase 1 has no second cross")
 	for id: StringName in [&"shock_lanes_follow", &"shock_lanes_2"]:

@@ -1,6 +1,6 @@
 class_name TideViews
 extends Node3D
-## v0.9.0 NB1 (BOSSES_4_5.md N1; the VX quality bar: layered, never a flat single-colour shape): the Tidecaller's Pull,
+## BOSSES_4_5.md N1; the VX quality bar: layered, never a flat single-colour shape: the Tidecaller's Pull,
 ## drawn from WorldReader.boss_tide (EI-07: it reads; the drift itself is the sim's, BossTide).
 ## - The bell's toll (its windup): sound rings rising off the bell and spreading over the floor, brighter each toll.
 ## - The current: a wide disc of moving water round the boss (TIDE_SHADER): a deep teal body, spiral streaks of
@@ -16,7 +16,7 @@ const BUBBLES := 72
 const SEA := Color(0.45, 1.0, 0.76)
 const DEEP := Color(0.03, 0.16, 0.16)
 const TOLL_RINGS := 3
-## v0.10.0 VX7 (VFX_PACK N8): the current's disc is the pack's ripple (ripple_area_02, held while the tide runs: rings
+## VFX_PACK N8: the current's disc is the pack's ripple (ripple_area_02, held while the tide runs: rings
 ## running in on a pull and out on a push), the push's swell the pack's pulse (pulse_area_02), the bubbles' spray the
 ## pack's poison bubble in blue (pops now and then over the disc); data/vfx/pack_fx_vx7.tres. Each falls back to the old
 ## look when PackFx has no room. false: the old looks. The bell's toll rings, the light and the sim are untouched.
@@ -66,7 +66,7 @@ void fragment() {
 }
 """
 
-## v0.10.0 VX7: the pack effects (found through the parent, or set directly: tests, the shot tool); the held disc;
+## The pack effects (found through the parent, or set directly: tests, the shot tool); the held disc;
 ## whether the swell now rolling is the pack's pulse (the torus hides), a push's swell not yet started; the pops owed.
 var pack_fx: PackFx = null:
 	set(v):
@@ -74,6 +74,8 @@ var pack_fx: PackFx = null:
 		water_hold.pack = v if PACK_WATER else null
 var water_hold := FormPackHold.new()
 var swell_packed := false
+## True once a frame with no tide and every fade done drew it all hidden: later frames return at once.
+var quiet := false
 var pops := 0
 var _swell_due := false
 var _pop_owed := 0.0
@@ -186,6 +188,13 @@ func _process(delta: float) -> void:
 
 ## Frame-time animation (the tests and the shot scripts call it too).
 func advance(delta: float) -> void:
+	# No tide and every fade done: the last frame drew all of it hidden, so another would change nothing
+	if _tide.is_empty() and _strength == 0.0 and _toll == 0.0 and _swell_t >= 1.0:
+		if quiet:
+			return
+		quiet = true
+	else:
+		quiet = false
 	var phase := int(_tide.get("phase", WorldReader.TIDE_NONE))
 	var tolling := bool(_tide.get("windup", false))
 	var running := phase != WorldReader.TIDE_NONE
@@ -221,7 +230,7 @@ func advance(delta: float) -> void:
 		_swell_mat.albedo_color = Color(SEA, 0.55 * (1.0 - _swell_t))
 
 
-## v0.10.0 VX7: the disc as the pack's ripple, held at the tide's centre, sized to the current's reach and strength, its
+## The disc as the pack's ripple, held at the tide's centre, sized to the current's reach and strength, its
 ## rings running in on a pull (its speed negative) and out on a push. False: no pack or no room (the shader disc draws).
 func _pack_disc() -> bool:
 	if not water_hold.active():
@@ -240,7 +249,7 @@ func _pack_disc() -> bool:
 	return true
 
 
-## v0.10.0 VX7: a push's swell is the pack's pulse (once, when the push starts); the torus hides while it rolls.
+## A push's swell is the pack's pulse (once, when the push starts); the torus hides while it rolls.
 func _pack_swell() -> void:
 	if _swell_due:
 		_swell_due = false
@@ -257,7 +266,7 @@ func _pack_swell() -> void:
 		swell_packed = false
 
 
-## v0.10.0 VX7: the spray as bubbles popping over the disc (blue), POPS_PER_S a second at full strength; true when the
+## The spray as bubbles popping over the disc (blue), POPS_PER_S a second at full strength; true when the
 ## pack draws it (the old droplets hide). Each pop lands on its own spoke and radius.
 func _pack_pops(delta: float, shown: bool) -> void:
 	var on := shown and water_hold.active() and pack_fx.has_id(BUBBLE_ID)

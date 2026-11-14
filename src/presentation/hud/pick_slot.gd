@@ -1,29 +1,29 @@
 class_name PickSlot
 extends VBoxContainer
-## One card of the 3-card pick and of the shop's stock (v0.3.0 E; v0.8.0 MU: a carved stone tablet, StoneCard, in
+## One card of the 3-card pick and of the shop's stock (a carved stone tablet, StoneCard, in
 ## place of v0.5.5 A4's crystal frames). The card wears its family's colour (CardFrames; a cursed offer the curse
 ## violet, an epic card the epic gold) on its title and inlay groove, its element's colour on the icon's inlay ring,
 ## the rarity on the carved gem and the rarity words; under it the card's number key and, on a cursed offer, the
 ## curse's line. The rarity also reads as the ember glow under the tablet (and a gold rim on epic and legendary). The
 ## focused card lifts, its glow grows and its lower edge lights up. A mouse click or hover reports itself; the panel
 ## decides what happens.
-## v0.9.0 AS (owner Q5, Q14); AS2 (G2 AS = B, "ribbon + pips"): a Form, Pattern, Secondary or Element card names its
+## v0.9.0 AS; AS2 (G2 AS = B, "ribbon + pips"): a Form, Pattern, Secondary or Element card names its
 ## slot in its rarity line ("Pattern · Modifier · Rare", PickPanel.slot_face) and, when that slot is full, wears a
 ## ribbon across it (StoneCard.show_ribbon): "Replaces Twin", which burns away when this card is picked
 ## (burn_replaced, the pick panel's outro), or "Choose one to replace" (a full Secondary or Element slot: the Swap).
-## v0.10.5 W3-O15: the card is an Astral card (StoneCard.astral: the owner's carved frame and painted icon).
+## The card is an Astral card (StoneCard.astral: the owner's carved frame and painted icon).
 
 signal clicked(slot: int)
 signal hovered(slot: int)
 
 const COMMON := Color("#9AA4B2")
-## v0.8.0 RR (owner O33, four tiers each with its colour): rare is blue (was the amber #F0B840, too close to the
+## Rare is blue (was the amber #F0B840, too close to the
 ## legendary gold); the tier's word is always on the card too, so no tier reads by colour alone.
 const RARE := Color("#4AA8F0")
-## v0.4.0 BS: an epic stat card, and an ability card (the hero's cyan).
+## An epic stat card, and an ability card (the hero's cyan).
 const EPIC := Color("#C77DFF")
 const ABILITY := Color("#2BC4E2")
-## v0.5.5 AR (X1b): a legendary card (the boss's tier): bright gold.
+## A legendary card (the boss's tier): bright gold.
 const LEGENDARY := Color("#FFD84A")
 ## The mark's colour by tier: common, rare, epic, ability, legendary (CardFrames.LEGENDARY_TIER).
 const TIERS: Array[Color] = [COMMON, RARE, EPIC, ABILITY, LEGENDARY]
@@ -34,14 +34,14 @@ var index := 0
 var card: StoneCard
 var focused := false
 var rare := false
-## v0.4.0 BS: 0 common, 1 rare, 2 epic, 3 an ability card, 4 (v0.5.5 AR) a legendary card (TIERS).
+## 0 common, 1 rare, 2 epic, 3 an ability card, 4 a legendary card (TIERS).
 var tier := 0
 var _key := Label.new()
-## v0.5.0 EV: a cursed card's mark and line, under the card (hidden on a clean card).
+## A cursed card's mark and line, under the card (hidden on a clean card).
 var _curse := HBoxContainer.new()
 var _curse_text := Label.new()
 var _face := {}
-## v0.9.0 AS2: the ribbon's burn (the replaced card burning).
+## The ribbon's burn (the replaced card burning).
 var _old_burn: ShaderMaterial
 
 
@@ -51,11 +51,11 @@ func _init(p_index: int, p_scale: float = PICK_SCALE) -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	# W3-S14: the slot number sits below the tilted, glowing card, not on its edge
 	add_theme_constant_override("separation", 20)
-	card = StoneCard.new(p_scale, true)  # v0.10.5 W3-O15: the Astral card (the owner's frame and icon)
+	card = StoneCard.new(p_scale, true)  # The Astral card (the owner's frame and icon)
 	add_child(card)
 	_key.text = str(p_index + 1)
 	_key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_key.add_theme_font_size_override("font_size", HudStyle.MIN_LABEL)  # v0.10.5 W3-O20: 15 read ~10 px at 720p
+	_key.add_theme_font_size_override("font_size", HudStyle.MIN_LABEL)  # 15 read ~10 px at 720p
 	_key.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_key.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_key)
@@ -81,7 +81,7 @@ func show_item(
 	)
 
 
-## v0.4.0 BS: shows any card's face (PickPanel.card_face: id, title, sentence, color, tier, tier_text, and since
+## Shows any card's face (PickPanel.card_face: id, title, sentence, color, tier, tier_text, and since
 ## v0.5.5 type).
 func show_card(face: Dictionary) -> void:
 	_face = face
@@ -90,8 +90,8 @@ func show_card(face: Dictionary) -> void:
 	_render()
 
 
-## v0.5.0 EV: marks the card cursed with `line` (CurseLook.line), or clean with "". A cursed card wears the curse
-## colour (v0.5.5 A4).
+## Marks the card cursed with `line` (CurseLook.line), or clean with "". A cursed card wears the curse
+## colour.
 func show_curse(line: String) -> void:
 	_curse_text.text = line
 	_curse.visible = not line.is_empty()
@@ -112,7 +112,7 @@ func colour_id() -> StringName:
 	return card.colour_id
 
 
-## v0.8.0 RR: the shown card's type (WorldReader.CARD_*; -1 for a face without one).
+## The shown card's type (WorldReader.CARD_*; -1 for a face without one).
 func face_type() -> int:
 	return int(_face.get("type", -1))
 
@@ -143,23 +143,23 @@ func _render() -> void:
 		tier,
 		rarity_color(),
 		_face.get("tier_text", ""),
-		_face.get("level_text", ""),  # v0.7.5 SM: the level badge
-		_face.get("color", Color(0, 0, 0, 0))  # v0.8.0 MU: the element's colour on the inlay ring
+		_face.get("level_text", ""),  # The level badge
+		_face.get("color", Color(0, 0, 0, 0))  # The element's colour on the inlay ring
 	)
-	card.show_gain(_face.get("gain", {}))  # v0.8.0 N8: what gets better, old → new
+	card.show_gain(_face.get("gain", {}))  # What gets better, old → new
 	card.show_form_line(_face.get("form_line", ""), _face.get("form_color", Color.WHITE))  # v0.9.5 TX
 	_show_slot_line()
 	_apply()
 
 
-## v0.9.0 AS2 (G2 AS = B): the ribbon from the face (PickPanel.slot_face): "Replaces Twin" or "Choose one to replace"
+## G2 AS = B: the ribbon from the face (PickPanel.slot_face): "Replaces Twin" or "Choose one to replace"
 ## across the card, none when the card's slot has room (its tag is in the rarity line).
 func _show_slot_line() -> void:
 	card.show_ribbon(_face.get("replaces_text", ""))
 	burn_replaced(0.0)
 
 
-## v0.9.0 AS: the card's slot tag ("" when none; AS2: shown in the rarity line) and the ribbon's words ("" when the
+## The card's slot tag ("" when none; AS2: shown in the rarity line) and the ribbon's words ("" when the
 ## slot has room).
 func slot_text() -> String:
 	return _face.get("slot_text", "") if int(_face.get("slot", 0)) != WorldReader.SLOT_NONE else ""
@@ -169,7 +169,7 @@ func replaces_text() -> String:
 	return card.ribbon.text if card.ribbon.visible else ""
 
 
-## v0.9.0 AS (owner Q5): 0..1 of the replaced card's burn (0: whole; 1: gone), N8's dissolve (CardFx); AS2: the
+## 0..1 of the replaced card's burn (0: whole; 1: gone), N8's dissolve (CardFx); AS2: the
 ## ribbon naming it burns.
 func burn_replaced(t: float) -> void:
 	var r := card.ribbon
@@ -186,7 +186,7 @@ func burn_replaced(t: float) -> void:
 	r.use_parent_material = false
 	r.material = _old_burn
 	_old_burn.set_shader_parameter("burn", t)
-	_old_burn.set_shader_parameter("edge_color", AstralCardArt.GLARE)  # v0.10.5 W3-O15: the glare edge
+	_old_burn.set_shader_parameter("edge_color", AstralCardArt.GLARE)  # The glare edge
 	_old_burn.set_shader_parameter("rect_pos", r.get_global_transform().origin)
 	_old_burn.set_shader_parameter("rect_size", r.get_global_rect().size.max(Vector2.ONE))
 
@@ -215,7 +215,7 @@ func _build_curse(s: float) -> void:
 	add_child(_curse)
 
 
-## Shows or hides the number key under the card (v0.6.0 UP: the Swap panel's single card has none).
+## Shows or hides the number key under the card (the Swap panel's single card has none).
 func set_key_visible(v: bool) -> void:
 	_key.visible = v
 

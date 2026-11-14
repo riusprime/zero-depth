@@ -2,10 +2,10 @@ class_name CreditsView
 extends Control
 ## Credits: the owner's line, "Made with Godot Engine", the Godot licence, third-party notices and the font's
 ## licence. GUT is not shipped (the export smoke and zip audit check that).
-## v0.5.5 A5; v0.8.0 MU: in the Ember stone look (MenuStyle) over the menu's ember backdrop (MenuBackdrop).
-## v0.7.5 SM (N8): the app icon beside the title, and the generated licence list (LicenceListDefinition, built from
+## In the Ember stone look over the menu's ember backdrop (MenuBackdrop).
+## The app icon beside the title, and the generated licence list (LicenceListDefinition, built from
 ## the repo's manifests, fonts and addons by scripts/content/build_credits.gd) before the engine's notices.
-## v0.10.5 W3-O18: in Astral (AstralMenu): Astral's night behind, the title in letter-spaced Cinzel over a fading
+## In Astral (AstralMenu): Astral's night behind, the title in letter-spaced Cinzel over a fading
 ## hairline, the text in Atkinson, Back a lozenge plate.
 
 signal back_pressed
@@ -33,7 +33,7 @@ func _init(credits: CreditsDefinition, licences: LicenceListDefinition = null) -
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 16)
 	col.add_child(head)
-	var icon := TextureRect.new()  # v0.7.5 SM: the app icon (project.godot's config/icon)
+	var icon := TextureRect.new()  # The app icon (project.godot's config/icon)
 	icon.name = "AppIcon"
 	icon.texture = load(app_icon_path()) as Texture2D
 	icon.custom_minimum_size = Vector2(56, 56)
@@ -70,7 +70,7 @@ func focus_first() -> void:
 	(find_child("Back", true, false) as Button).grab_focus()
 
 
-## v0.9.0 HB: Esc or pad B leaves, as the Codex does (the credits open from the hub's Credits stone).
+## Esc or pad B leaves, as the Codex does (the credits open from the hub's Credits stone).
 func _unhandled_input(event: InputEvent) -> void:
 	if is_visible_in_tree() and event.is_action_pressed(&"ui_cancel"):
 		get_viewport().set_input_as_handled()
@@ -108,7 +108,7 @@ static func legal_text(
 	return "\n\n".join(out)
 
 
-## v0.7.5 SM: the generated list in words: the assets' provenance lines under one heading, then each font and each
+## The generated list in words: the assets' provenance lines under one heading, then each font and each
 ## addon with its licence's full text (a tool the export leaves out says so).
 static func licence_sections(l: LicenceListDefinition) -> PackedStringArray:
 	var out := PackedStringArray()

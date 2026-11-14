@@ -1,6 +1,6 @@
 class_name ProgressionPanel
 extends MenuPanel
-## v0.9.0 MP (PLAN W44, W49-W52; LOCKED_DECISIONS PD-06: sideways only): the hub Progression Station's panel. The
+## PLAN W44, W49-W52; LOCKED_DECISIONS PD-06: sideways only: the hub Progression Station's panel. The
 ## profile's Rune Fragments, one row per robe they buy (its colour, its name, its price or "owned"), a line on the Void
 ## form's unlock (travel through a Purple Portal), a status line, and Back. Pressing a row asks to buy it
 ## (`buy_requested`); HubSession buys through MetaProgress and calls `show_state` back. Nothing here is a stat.
@@ -8,6 +8,7 @@ extends MenuPanel
 ## robes 75, 100, 125, 150 in the order bought, so every unbought robe shows the next price; the epic robes 250, tagged
 ## "epic"); a hidden robe not bought yet is "???" with a hooded silhouette for its swatch until it is bought.
 ## Keyboard, mouse and pad through the focus, as every menu; Esc or pad B closes it.
+## v0.11.1 Step 13 (owner: Astral the only style): in Astral (MenuPanel); each row an AstralButton with its swatch.
 
 signal buy_requested(id: StringName)
 signal back_pressed
@@ -37,30 +38,28 @@ func _init(
 	_wares = wares
 	add_backdrop()
 	add_title("HUB_PROGRESSION").name = "Title"
-	balance = _label("Balance", MenuStyle.BUTTON_SIZE, MenuStyle.TEXT)
-	intro = _label("Intro", MenuStyle.NOTE_SIZE + 2, MenuStyle.DIM)
+	balance = _label("Balance", AstralMenu.ROW_SIZE, AstralCardArt.TEXT, true)
+	intro = _label("Intro", AstralMenu.BODY_SIZE, AstralCardArt.DIM)
 	for r: RobeDefinition in wares:
 		var b := add_button("", _on_row.bind(r.id))
 		b.name = "Robe_%s" % r.id
 		b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		b.set_meta(&"robe", r.id)
 		rows.append(b)
-	void_line = _label("VoidLine", MenuStyle.NOTE_SIZE + 2, MenuStyle.DIM)
-	status = _label("Status", MenuStyle.NOTE_SIZE + 2, MenuStyle.TEXT)
+	void_line = _label("VoidLine", AstralMenu.BODY_SIZE, AstralCardArt.DIM)
+	status = _label("Status", AstralMenu.BODY_SIZE, AstralCardArt.TEXT)
 	add_button("UI_BACK", func() -> void: back_pressed.emit()).name = "Back"
 	add_hint("UI_MENU_HINT")
 	show_state(owned, fragments, void_open, prices)
-	AstralUi.dress(self)  # v0.10.5 W3-O19 (owner: every UI element in Astral): the station in the Astral style
 
 
-func _label(node_name: String, font_size: int, color: Color) -> Label:
+func _label(node_name: String, font_size: int, color: Color, bold: bool = false) -> Label:
 	var l := Label.new()
 	l.name = node_name
 	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.custom_minimum_size = Vector2(MenuStyle.LIST_W + 60, 0)
-	l.add_theme_font_size_override("font_size", font_size)
-	l.add_theme_color_override("font_color", color)
+	l.custom_minimum_size = Vector2(AstralMenu.LIST_W + 60, 0)
+	AstralMenu.body(l, font_size, color, bold)
 	box.add_child(l)
 	return l
 
@@ -77,7 +76,7 @@ static func _swatch(c: Color, frame: Color = Color(0, 0, 0, 0)) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
-## MP2: the "???" robe's swatch: a hooded figure's dark silhouette with a faint violet edge, on nothing.
+## The "???" robe's swatch: a hooded figure's dark silhouette with a faint violet edge, on nothing.
 static func silhouette() -> ImageTexture:
 	var img := Image.create(SWATCH, SWATCH, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))

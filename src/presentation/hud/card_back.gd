@@ -1,6 +1,6 @@
 class_name CardBack
 extends Control
-## v0.8.0 N8 (owner O62, "paint the whole card"): a reward card's back, face down while the cards are dealt: the
+## A reward card's back, face down while the cards are dealt: the
 ## same carved stone slab (StoneBox) painted in the card's rarity colour, its frame in that colour, a carved ember
 ## diamond in the middle with a ring round it, and for an Epic or Legendary card waiting to flip a glow in its colour
 ## round the slab (`glow`). It draws what it is given; it decides nothing (EI-07).
@@ -15,13 +15,13 @@ var glow := 0.0:
 			_box.under = 0.2 + 1.4 * v
 			_box.focus = 0.9 * v
 			queue_redraw()
-## v0.10.5 W3-S13 (owner 2026-11-04: his carved card backs): an Astral back wears his carved slate back (one of four,
+## An Astral back wears his carved slate back (one of four,
 ## the same variant as the card's front, its focused twin while the card is focused) instead of the stone slab, with
 ## the rarity as a small gem at the medallion. `variant` is set by the card (AstralCardArt.variant_of its id).
 var astral := false
 var variant := 1:
 	set(v):
-		variant = clampi(v, 1, AstralCardArt.STARBOUND)  # v0.10.5 W3-P10b: the gold Starbound back too
+		variant = clampi(v, 1, AstralCardArt.STARBOUND)  # The gold Starbound back too
 		_sync_art()
 var focused := false:
 	set(v):

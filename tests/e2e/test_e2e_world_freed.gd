@@ -32,12 +32,6 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_floor_one_world_is_freed_once_floor_two_loads() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
@@ -46,7 +40,7 @@ func test_floor_one_world_is_freed_once_floor_two_loads() -> void:
 	var wr: WeakRef = weakref(w)
 	var f := w.floor_layout
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(await e.open_boss_door(), "E opened the boss door")
 	var sealed: bool = await _walk(
 		e,
@@ -59,7 +53,7 @@ func test_floor_one_world_is_freed_once_floor_two_loads() -> void:
 	if not sealed:
 		return
 	await e.frames(30)
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(3)
 	assert_true(main.driver.reader.portal_active(), "the portal is open")
 	var entered: bool = await _walk(

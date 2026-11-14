@@ -25,7 +25,7 @@ var knock_dirs := PackedVector2Array()
 var knock_left := PackedInt32Array()
 ## The last Vent press under Hot (the cold click), as a tick.
 var cold_tick := -1
-## v0.9.5 HT: ticks until Vent may go again (it starts at the heat table's vent_cooldown_ticks on a vent).
+## Ticks until Vent may go again (it starts at the heat table's vent_cooldown_ticks on a vent).
 var vent_cd := 0
 
 
@@ -55,7 +55,7 @@ func hash_into(h: StateHasher) -> void:
 	for p in pellet_ends:
 		h.add_f32(p.x)
 		h.add_f32(p.y)
-	if vent_cd != 0:  # v0.9.5 HT: only while it runs, so a kit that never vented keeps its hash
+	if vent_cd != 0:  # Only while it runs, so a kit that never vented keeps its hash
 		h.add_int(vent_cd)
 	h.add_ints(knock_ids)
 	h.add_ints(knock_left)

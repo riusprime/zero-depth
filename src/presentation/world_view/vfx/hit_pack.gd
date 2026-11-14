@@ -1,6 +1,6 @@
 class_name HitPack
 extends RefCounted
-## v0.10.0 VX1 (VFX_PACK R10, R11, R14-R17, R43): the hit, impact, spark and flash effects as the pack's scenes
+## VFX_PACK R10, R11, R14-R17, R43: the hit, impact, spark and flash effects as the pack's scenes
 ## (PackFx), shared by ImpactFx, HeroFx, HeroCastFx and HitFeel. The old draws are per-frame functions of `u`; a pack
 ## scene is spawned once, so `state` remembers which instance (layer, tag, seed) already chose its look: PACK (the
 ## scene plays on its own) or OLD (the family was full, the caller keeps drawing the old look). A new instance is one
@@ -166,7 +166,7 @@ static func hit(layer: VfxCore, kind: StringName, p: Vector3, u: float, sd: int,
 	return mode == PACK
 
 
-## R16: a slash's impact at `p` along `tan` (flat, unit), element kind `kind`, strength `s`: the cut turned to the
+## A slash's impact at `p` along `tan` (flat, unit), element kind `kind`, strength `s`: the cut turned to the
 ## slash; a heavy one (the finisher) adds the impact scene. As `hit`.
 static func slash(
 	layer: VfxCore, kind: StringName, p: Vector3, tan: Vector3, u: float, sd: int, s: float
@@ -190,7 +190,7 @@ static func slash(
 	return mode == PACK
 
 
-## R10: a volley's muzzle spark at `p` along `dir`, in colours `hot` and `col`. As `hit`.
+## A volley's muzzle spark at `p` along `dir`, in colours `hot` and `col`. As `hit`.
 static func muzzle(
 	layer: VfxCore, p: Vector3, dir: Vector3, hot: Color, col: Color, u: float, sd: int
 ) -> bool:
@@ -230,7 +230,7 @@ static func muzzle_at(pk: PackFx, p: Vector3, dir: Vector3, hot: Color, col: Col
 	return node
 
 
-## R11: a heavy cast flash `size` m across at `p`. As `hit`; false below FLASH_MIN_M.
+## A heavy cast flash `size` m across at `p`. As `hit`; false below FLASH_MIN_M.
 static func flash(
 	layer: VfxCore, p: Vector3, hot: Color, col: Color, u: float, size: float, sd: int
 ) -> bool:
@@ -253,7 +253,7 @@ static func flash(
 	return mode == PACK
 
 
-## R17: a spark scene `id` at `p` tinted `c`, scaled `k`; false when the family is full (the caller draws its boxes).
+## A spark scene `id` at `p` tinted `c`, scaled `k`; false when the family is full (the caller draws its boxes).
 static func spark(pk: PackFx, id: StringName, p: Vector3, k: float, c: Color) -> bool:
 	if pk == null or not pk.has_room(&"hit"):
 		return false

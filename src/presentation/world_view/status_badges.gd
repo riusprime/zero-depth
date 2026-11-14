@@ -3,7 +3,7 @@ extends RefCounted
 ## v0.10.0 FX (owner, 2026-10-31: "replace the current pixel-like indicators above enemy heads ... a small, recognizable
 ## status icon or mark, a compact stack counter alongside it: x1, x2, x3"): one badge per stacking status over an
 ## enemy's health bar, an icon and its count, in a row that faces the camera. They replace the shock pips and the
-## poison and bleed dots (v0.9.5 EE1). The icons are drawn here once, in code (a flame, a drop, bubbles, a bolt, a
+## poison and bleed dots. The icons are drawn here once, in code (a flame, a drop, bubbles, a bolt, a
 ## snowflake on a dark disc), in each status's own colour. Presentation only (EI-07): StatusVisuals hands the stacks.
 
 ## The statuses with a badge, in the row's order.
@@ -24,7 +24,7 @@ static var _icons := {}
 var badges := {}
 var _root: Node3D
 var _bar_y := 1.3
-## v0.10.5 W3-Q6: the row last laid out (its statuses in order, each one's count, and the right it was laid along): an
+## The row last laid out (its statuses in order, each one's count, and the right it was laid along): an
 ## update that would lay out the same row writes nothing.
 var _shown_key := PackedInt32Array()
 var _shown_right := Vector3.INF

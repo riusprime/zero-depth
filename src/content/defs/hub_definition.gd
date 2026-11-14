@@ -1,6 +1,6 @@
 class_name HubDefinition
 extends ContentDef
-## v0.9.0 HB (owner Q27; HUB_MOCKUPS option A, the Rune Ring, owner "3. option A"): the hub between runs
+## The hub between runs
 ## (CONTENT_SCHEMA §11). One round plaza: the Portal Machine in the centre, the stations on the rim, 16 floor runes
 ## ringing the machine (lit one per collectible: CL), and a sealed gate in the north rim to a small alcove (opened by
 ## a profile flag). Everything is on the hub's plan: metres from the centre, +y north (the screen's top), +x east.
@@ -20,10 +20,10 @@ extends ContentDef
 @export var rune_count := 16
 @export var rune_ring_m := 5.4
 @export var rune_flag := "count:collectibles:%d"
-## v0.9.0 HB3: where each rune stands on its ring (plan degrees, counter-clockwise from east, rune 0 first): the owner's
+## Where each rune stands on its ring (plan degrees, counter-clockwise from east, rune 0 first): the owner's
 ## centre medallion's 16 sockets (scripts/assets/hb3_prep.py measures them). Empty: evenly round from due south.
 @export var rune_angles := PackedFloat32Array()
-## v0.9.0 HB3: the pillar braziers (plan points, m; each a solid square of pillar_half_m) and the dressing props
+## The pillar braziers (plan points, m; each a solid square of pillar_half_m) and the dressing props
 ## ({"id": the owner's model, "at": plan point, "half": its footprint's half size}; each turned to face the plaza's
 ## middle like the stations, and solid).
 @export var pillars: Array[Vector2] = []
@@ -33,7 +33,7 @@ extends ContentDef
 @export var gate_half_m := 1.6
 @export var alcove_at := Vector2(0.0, 15.2)
 @export var alcove_r := 2.2
-## v0.10.5 O17 (owner P17): the Training Room's door in the south rim (its gap's half width, m; 0: no door), how far
+## The Training Room's door in the south rim (its gap's half width, m; 0: no door), how far
 ## its short lane runs out past the rim (m: walking to its end enters the room), and the name shown near it.
 @export var training_door_half_m := 0.0
 @export var training_lane_m := 2.6

@@ -298,5 +298,7 @@ func test_split_wave_alone_throws_crescents_from_each_slash_hit() -> void:
 
 
 func test_flag_keys_have_text() -> void:
-	for key: StringName in [Wand.DEAD_AFTER_TRIGGER, Wand.DEAD_TOO_DEEP, &"WAND_READ_DEAD"]:
+	for key: StringName in [
+		Wand.DEAD_AFTER_TRIGGER, Wand.DEAD_TOO_DEEP, Wand.DEAD_FORM, &"WAND_READ_DEAD"
+	]:
 		assert_ne(tr(key), String(key), "%s has an en text" % key)

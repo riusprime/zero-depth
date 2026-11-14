@@ -1,19 +1,19 @@
 class_name EliteAi
 extends RefCounted
-## v0.9.0 EL (owner Q26; G1 docs/roadmap/v0.9.0/ELITES.md rows E1-E3, "ok go for those"): the three elite archetypes'
+## The three elite archetypes'
 ## behaviour. Each is one state machine in ActorStore, as EnemyAi's (state, state_t, pick, cd, fire_cd, windup, lock_*),
 ## run from EnemyAi's hooks (think in phase 3, EnemyAi.move in phase 5: the walk follows EnemyAi.plan, resolve in
 ## phase 6). Every elite has ONE special ability (pick ABILITY: telegraph, strike, recovery: the punish window) and at
-## most one plain attack between them (pick BASIC); no speed or damage stacking (W59). Numbers: EliteTable.
-## - The Breaker (E1): walks at you slowly. Ground Slam, every_ticks start to start once you are near: it raises the
+## most one plain attack between them (pick BASIC); no speed or damage stacking. Numbers: EliteTable.
+## - The Breaker: walks at you slowly. Ground Slam, every_ticks start to start once you are near: it raises the
 ##   fist (windup_ticks; a ground circle of radius_m fills in under it), slams (damage in the circle), then stays stuck
 ##   recover_ticks with its fist in the ground, taking vulnerable_permille of every hit. Between slams a short punch
 ##   (basic_damage, reaching basic_range_m past its body) at you when you stand close.
-## - The Rift Hunter (E2): keeps keep_min_m..keep_max_m away, circling. Rift Step, every_ticks start to start within
+## - The Rift Hunter: keeps keep_min_m..keep_max_m away, circling. Rift Step, every_ticks start to start within
 ##   range_m: it marks a spot on you (a rift on the floor; the mark follows you for track_ticks, then locks), vanishes
 ##   for the windup's last vanish_ticks (no body, no hits), reappears on the mark and slashes the disc of radius_m round
 ##   it, then stands still recover_ticks.
-## - The Conduit (E3): floats, keeps keep_min_m..keep_max_m away, never hurts by contact. Charged Beam, every_ticks
+## - The Conduit: floats, keeps keep_min_m..keep_max_m away, never hurts by contact. Charged Beam, every_ticks
 ##   start to start: it plants its staff and charges (a line from it toward you, following you for track_ticks, then
 ##   locked and brightening), fires a beam half_width_m either side of the line to the room's wall (damage, once),
 ##   then overloads recover_ticks: down on the floor, taking vulnerable_permille of every hit. Between beams it casts a
@@ -74,7 +74,7 @@ static func think(w: World, i: int) -> void:
 		return
 	if EnemyAi.plans_now(w, i):  # the staggered walk, as every enemy's (EnemyAi.plan; its walk is EnemyAi.move)
 		EnemyAi.plan(w, i)
-	if a.frozen_t[i] > 0:
+	if a.frozen_t[i] > 0 or Spells.held_still(w, i):  # A spell stun holds it too
 		return
 	a.state_t[i] += 1
 	if a.cd[i] > 0:

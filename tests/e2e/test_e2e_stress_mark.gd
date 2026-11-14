@@ -14,11 +14,6 @@ func _item(w: World, id: StringName) -> int:
 	return AttackScenario.item_index(w.item_tables, id)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## True when the straight line a to b crosses no wall.
 static func clear_line(w: World, a: Vector2, b: Vector2) -> bool:
 	for i in w.walls_along(a, b, 0.6):
@@ -71,7 +66,7 @@ func test_a_hit_from_the_shown_side_deals_double() -> void:
 	await e.start_from_menu(&"gun")
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)
 	assert_true(await take_at_altar(e, main, &"shared_stress_mark"), "took the Stress Mark")

@@ -1,6 +1,6 @@
 class_name ElementLevels
 extends RefCounted
-## v0.9.5 EE1 (ELEMENTS.md E1, E2; the owner: "each element should have its own reward system for levelling"): what the
+## ELEMENTS.md E1, E2; the owner: "each element should have its own reward system for levelling": what the
 ## Venom card (Gun) and the Bleed card (both weapons) do at their levels. Lv 1 is the engine as it was. Venom Lv 2,
 ## Contagion: every el_jump_ticks a poisoned enemy passes its poison to the nearest unpoisoned enemy in range, the whole
 ## room at most one jump per el_jump_gap_ticks (4 a second: a tick that is a multiple of the gap, so no counter to
@@ -36,7 +36,7 @@ static func card(w: World, venom: bool) -> ItemTable:
 	return null
 
 
-## The Venom (or Bleed) card is held (v0.9.5 EP1: a pair is on while both of its elements are).
+## The Venom (or Bleed) card is held (a pair is on while both of its elements are).
 static func held(w: World, venom: bool) -> bool:
 	for idx in w.items_owned:
 		var t := w.item_tables[idx]
@@ -56,7 +56,7 @@ static func level(w: World, venom: bool) -> int:
 			(t.poison_max_stacks if venom else t.bleed_max_stacks) > 0
 			and CardLevels.is_card(w, idx)
 		):
-			return CardLevels.base_level(w, idx)  # v0.10.5 W3-P3: overlevels grow the damage, not the rules
+			return CardLevels.base_level(w, idx)  # Overlevels grow the damage, not the rules
 	return 1
 
 
@@ -188,13 +188,13 @@ static func exsanguinate(w: World, i: int, period: int) -> void:
 	var t := card(w, false)
 	var burst := t.el_burst_stacks
 	if Constellations.has(w, Constellations.DEEP_WOUNDS):
-		burst = maxi(burst, bleed_cap(w))  # v0.10.5 W3-P10d: the burst waits for the lifted cap
+		burst = maxi(burst, bleed_cap(w))  # The burst waits for the lifted cap
 	if a.bleed_stacks[i] < burst or a.dead[i] == 1:
 		return
 	var ticks := 0
 	if a.bleed_t[i] >= a.bleed_cd[i]:
 		ticks = 1 + (a.bleed_t[i] - a.bleed_cd[i]) / period
-	# v0.10.5 W3-P10k: Deep Wounds' x 1.25 on each tick the burst deals at once, as on the ticks themselves
+	# Deep Wounds' x 1.25 on each tick the burst deals at once, as on the ticks themselves
 	var dmg := deep_dot(w, w.item_mods.bleed_damage * a.bleed_stacks[i]) * ticks
 	a.bleed_stacks[i] = 0
 	a.bleed_t[i] = 0

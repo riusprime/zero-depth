@@ -16,26 +16,37 @@ extends GutTest
 const SEEDS := 200
 
 var _repo: ContentRepository
+var _maps := {}
+var _arenas: ArenaTable
 
 
 func before_all() -> void:
-	_repo = ContentRepository.load_all()
+	_repo = SharedContent.repo()
+	_arenas = RunContentCompiler.compile_arena(_repo.get_def(&"arena", &"arena"))
 
 
 func _table() -> LockdownTable:
 	return RunContentCompiler.compile_lockdown(_repo.get_def(&"lockdown", &"lockdown"))
 
 
+## v0.11.1 Step 3: the floor's map (the room layouts in) is compiled once per floor index and the arena table once
+## per file, not once per seed; FloorGenerator and the room markers only read them.
+func _map(floor_index: int) -> FloorParams:
+	if not _maps.has(floor_index):
+		var map := RunContentCompiler.compile_map(_repo.get_def(&"map", &"floor"))
+		map.room_layouts = SharedContent.room_layouts()
+		_maps[floor_index] = map
+	return _maps[floor_index]
+
+
 func _layout(seed_value: int, run: RunState, floor_index: int) -> FloorLayout:
-	var map := RunContentCompiler.compile_map(_repo.get_def(&"map", &"floor"))
-	map.room_layouts = RunContentCompiler.compile_room_layouts(_repo)
-	var arenas := RunContentCompiler.compile_arena(_repo.get_def(&"arena", &"arena"))
+	var map := _map(floor_index)
 	var secrets: SecretsDefinition = _repo.get_def(&"secrets", &"secrets")
 	var p := FloorShape.size_floor(run, map, floor_index)
 	var f := FloorGenerator.generate(seed_value, p)
 	BossRoomBuilder.attach(f, BossArenaSpec.make(Vector2i(4, 4), FloorLayout.Template.OPEN))
 	OverrunRooms.mark(f)
-	ArenaRooms.mark(f, arenas.share_permille)
+	ArenaRooms.mark(f, _arenas.share_permille)
 	Routes.place_deep_gate(f)
 	var speed := PlayerTable.starting_values().move_speed
 	var none := PackedInt32Array()
@@ -307,19 +318,6 @@ func test_a_save_while_sealed_resumes_exactly() -> void:
 	var h0 := w.state_hash()
 	w.lockdown.pulled += 1
 	assert_ne(w.state_hash(), h0, "the Lockdown's state is hashed")
-
-
-func test_a_floor_saved_before_lk_has_none() -> void:
-	var with := 0
-	for s in range(1, 9):
-		var r := SaveLab.run_state(s, 2)
-		r.floor_rules = RunState.FLOOR_RULES_V090_DP
-		var old := SaveLab.build_floor(r)
-		assert_null(old.lockdown, "seed %d: none under floor rules 12" % s)
-		assert_true(old.floor_layout.lockdown_rooms.is_empty())
-		if not SaveLab.floor_world(s, 2).floor_layout.lockdown_rooms.is_empty():
-			with += 1
-	assert_gt(with, 0, "today's floors have them")
 
 
 func test_the_encounter_lasts_about_20_to_40_s() -> void:

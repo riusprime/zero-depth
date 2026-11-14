@@ -1,33 +1,56 @@
 class_name ClockworkJudgeAvatar
 extends BossAvatar
-## v0.9.0 NB3 (BOSSES_4_5.md N3; art list §2; PLAN NB: "can you ignore the skeleton?"): The Clockwork Judge, floor
-## 5's boss: a tall brass automaton with a clock-face chest and two pendulum arms ending in gavels, gold and black. The
-## owner's model (assets/models/bosses/boss_clockwork_judge.glb) comes cut into parts (scripts/assets/nb_prep.py:
-## Body, ArmL, ArmR, Gears, HandHour, HandMinute; its broken skeleton dropped); BossModels rigs each part as a bone and
-## it plays ClockworkJudgeClips, and on top of them (_pose_rig) the sim's echo (WorldReader.boss_echo) drives it: the
-## clock hands sweep, faster and faster as the echo records the player's path and racing while it replays; the waist
-## gears turn (whirring in the echo and the Gear Spiral); the pendulum arms keep a slow swing, and the Verdict's gavel
-## sways over its square as it locks before the clip swings it down. A gold light at the clock face follows the clips'
-## glow and the echo. With the file missing it is a code stand-in of the same parts (a tall clock-case body, a round
-## face with two hands, a gear cage at the waist, a crown of gears with a lens eye, two thin arms with gavel weights)
-## posed from the same inputs (_pose). Presentation only (EI-07): it reads the sim and moves its own children.
+## BOSSES_4_5.md N3; art list §2: The Clockwork Judge, floor 5's boss: a tall brass automaton with a clock-face
+## chest and two arms ending in gavels, gold and black. The owner's model
+## (assets/models/bosses/boss_clockwork_judge.glb) is skinned to a skeleton (the pelvis "body", chest, head, each arm
+## an upper arm, a forearm and a gavel, legs whose shins slide, the coat's fins and tails, the pendulum, the gear,
+## the clock's two hands) and carries its own animations: "idle" and "walk" replace the code clips of those names
+## and OWNER_PLAYS says which animation each move plays. The reactions (the flinch, the stall, the roar, the rise,
+## the death) are ClockworkJudgeClips, added on top of the file's animations (BossAvatar). On top of them
+## (_pose_rig) the sim's echo (WorldReader.boss_echo) drives the clock hands: they sweep, faster and faster as the
+## echo records the player's path and racing while it replays. The waist gear and the arms' swing are the file's
+## animations' alone. A gold light at the clock face follows the clips' glow and the echo. With the file missing it
+## is a code stand-in (a tall clock-case body, a round face with two hands, a gear cage at the waist, a crown of
+## gears with a lens eye, two thin arms with gavel weights) posed from the same inputs (_pose), which turns its own
+## gears and sways its own arms. Presentation only (EI-07): it reads the sim and moves its own children.
 
 const HEIGHT := 3.6
 const WALK_SPEED := 1.3
-const STRIDE := 1.0
+## The metres one loop of the file's walk covers at the size the game draws it (1.2 m at the model's 3.6 m, times
+## BossModels.SIZE_SCALE), so its feet don't slide.
+const STRIDE := 1.56
+## The file's animations by the move that plays them, with the seconds of each one's strike pose and of the end of
+## its active part.
+const OWNER_PLAYS := {
+	&"verdict": {"anim": &"gavel_strike", "strike": 1.5, "recover": 1.93},
+	&"slam_ring": {"anim": &"double_slam", "strike": 0.83, "recover": 1.33},
+	&"echo": {"anim": &"spread", "strike": 0.8, "recover": 1.8},
+	&"pattern": {"anim": &"brace", "strike": 0.77, "recover": 1.67},
+}
+## Seconds of the file's idle loop, played at the speed it was made at.
+const IDLE_SECONDS := 3.2
 
 const BRASS := Color("#C99A3A")
 const BRASS_DARK := Color("#6E5020")
 const IRON := Color("#1E1C1F")
 const FACE := Color("#E8DDB8")
 const GOLD := Color("#FFC94A")
-## Points on the owner's model at rest (metres, model frame: nb_prep.py's pivots turned to +X front): the lens eye,
-## the clock face's centre, the gear cage, the gavels' heads.
+## Points on the owner's model at rest (metres, model frame: +X the front): the lens eye, the clock face's centre,
+## the gear cage, the gavels' heads. Each rides a bone (ANCHOR_BONES).
 const MODEL_EYE := Vector3(0.3, 3.25, 0.0)
 const MODEL_CLOCK := Vector3(0.32, 2.32, 0.0)
 const MODEL_GEARS := Vector3(0.22, 1.55, 0.0)
 const MODEL_GAVEL_L := Vector3(0.05, 0.55, -0.97)
 const MODEL_GAVEL_R := Vector3(0.05, 0.55, 0.97)
+## The bone that carries each anchor. The gear cage rides the pelvis, not the gear: a point off the gear's axle
+## would circle with every tick.
+const ANCHOR_BONES := {
+	&"eye": [&"head", MODEL_EYE],
+	&"clock": [&"chest", MODEL_CLOCK],
+	&"gears": [&"body", MODEL_GEARS],
+	&"gavel_l": [&"gavel_L", MODEL_GAVEL_L],
+	&"gavel_r": [&"gavel_R", MODEL_GAVEL_R],
+}
 const LIGHT_ENERGY := 1.3
 ## The minute hand's sweep at rest (radians a second) and at the echo's height.
 const HAND_REST := TAU / 30.0
@@ -86,7 +109,7 @@ func _weak_point_at() -> Vector3:
 
 
 func _weak_bone() -> StringName:
-	return &"body"
+	return &"chest"
 
 
 func anchor_names() -> Array[StringName]:
@@ -103,16 +126,9 @@ func _anchor(point: StringName) -> Vector3:
 			&"gavel_r": arm_r.position + arm_r.basis * Vector3(0, -1.9, 0),
 		}
 		return code.get(point, weak_core.position)
-	var rest := {
-		&"eye": [&"body", MODEL_EYE],
-		&"clock": [&"body", MODEL_CLOCK],
-		&"gears": [&"gears", MODEL_GEARS],
-		&"gavel_l": [&"arm_l", MODEL_GAVEL_L],
-		&"gavel_r": [&"arm_r", MODEL_GAVEL_R],
-	}
-	if not rest.has(point):
+	if not ANCHOR_BONES.has(point):
 		return weak_core.position
-	return _on_bone(rest[point][0], rest[point][1])
+	return _on_bone(ANCHOR_BONES[point][0], ANCHOR_BONES[point][1])
 
 
 ## The minute hand's angle now (radians; tests).
@@ -123,11 +139,6 @@ func minute_angle() -> float:
 ## How fast the hands sweep now (radians a second; tests): faster as the echo records.
 func hand_speed() -> float:
 	return HAND_REST + (HAND_FAST - HAND_REST) * _rush
-
-
-## The gears' turn now (radians; tests).
-func gear_angle() -> float:
-	return _gear
 
 
 ## A gold light at the clock face that follows the glow and the echo.
@@ -222,7 +233,7 @@ func _pose(dt: float) -> void:
 	var s := sin(_phase)
 	var windup := _state == WorldReader.STATE_WINDUP
 	var fade := _act_fade()
-	_advance_clock(dt, 0.0, 0.0)
+	_advance_clock(dt, 0.0)
 	var spread := 0.0
 	var haul := 0.0
 	var slam := 0.0
@@ -251,15 +262,15 @@ func _pose(dt: float) -> void:
 		clock_light.light_energy = LIGHT_ENERGY * glow
 
 
-## The hands' sweep (faster as the echo records, racing as it replays), the gears' turn and the arms' slow pendulum
-## swing (stiller while the Verdict locks: the gavel hangs poised).
-func _advance_clock(dt: float, tick: float, spin: float) -> void:
+## The hands' sweep (faster as the echo records, racing as it replays), and for the stand-in its gears' turn and
+## its arms' slow pendulum swing (stiller while the Verdict locks: the gavel hangs poised).
+func _advance_clock(dt: float, tick: float) -> void:
 	var replay := _echo_phase != WorldReader.ECHO_NONE
 	var target := 1.0 if replay else _recording * _recording
 	_rush = lerpf(_rush, target, _rate(5.0, dt))
 	var calm := 0.3 if ViewPrefs.reduced_motion else 1.0
 	_minute = fposmod(_minute + dt * calm * (hand_speed() + tick), TAU)
-	_gear = fposmod(_gear + dt * calm * (0.5 + 2.5 * _rush + spin), TAU)
+	_gear = fposmod(_gear + dt * calm * (0.5 + 2.5 * _rush), TAU)
 	var poised := 0.25 if _verdict_on and _verdict_lock > 0.0 else 1.0
 	_sway = sin(_t * 1.6) * 0.08 * poised * calm
 
@@ -277,20 +288,21 @@ func _stride() -> float:
 
 
 func _idle_seconds() -> float:
-	return 2.4
+	return IDLE_SECONDS
 
 
-## After the clips: the hands sweep and the gears turn (plus the clips' tick and spin), the arms' slow pendulum swing;
-## the light follows the glow and the echo.
+func _owner_plays() -> Dictionary:
+	return OWNER_PLAYS
+
+
+## After the clips: the hands sweep (plus the clips' tick); the light follows the glow and the echo. The file's
+## animations leave the two hands alone, turn the gear and swing the arms.
 func _pose_rig(dt: float) -> void:
 	var an := animator
-	_advance_clock(dt, an.param(&"tick"), an.param(&"spin"))
+	_advance_clock(dt, an.param(&"tick"))
 	poser.turn(&"hand_minute", Vector3.RIGHT, -_minute)
 	poser.turn(&"hand_hour", Vector3.RIGHT, -_minute / 12.0)
-	poser.turn(&"gears", Vector3.RIGHT, _gear)
-	poser.turn(&"arm_l", Vector3.BACK, _sway)
-	poser.turn(&"arm_r", Vector3.BACK, -_sway)
 	if clock_light != null:
 		var glow := maxf(0.0, 1.0 + 0.6 * an.param(&"glow") + 1.5 * _rush)
 		clock_light.light_energy = LIGHT_ENERGY * glow * (1.0 - 0.6 * _stagger)
-		clock_light.position = _on_bone(&"body", MODEL_CLOCK) + Vector3(0.45, 0, 0)
+		clock_light.position = _on_bone(&"chest", MODEL_CLOCK) + Vector3(0.45, 0, 0)

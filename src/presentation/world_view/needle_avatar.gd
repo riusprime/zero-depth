@@ -8,7 +8,7 @@ extends AvatarBase
 ## back into the sim. The legs are solved by two-bone IK toward foot targets on the ground, so the feet stay planted
 ## while the body bobs, crouches or recoils. +X is the front (the cannon) and +Z the right; ActorViews parents this
 ## under the actor's facing node.
-## v0.8.0 TG (owner O4, Q3): its burst lanes are no longer drawn on the ground; the windup reads from the body
+## Its burst lanes are no longer drawn on the ground; the windup reads from the body
 ## (AvatarBase "tell"): the cube squats and tips its nose down the aim as the windup's progress climbs, the eyes and
 ## the muzzle charge up and flash just before the burst. The aim is the facing (the sim's, held through the windup).
 
@@ -44,15 +44,14 @@ const BURST_GAP_TICKS := 6
 const BURST_COUNT := 3
 ## Faster than this between two ticks is a teleport, not motion.
 const TELEPORT_SPEED := 20.0
-const OUTLINE_M := 0.022
 
-## Colours sampled from the reference sheet (the lit faces), as albedo under the game's light. v0.8.0 EC: the cube
+## Colours sampled from the reference sheet (the lit faces), as albedo under the game's light. the cube
 ## (body), the flank pods (trim), the barrel and legs (grey) and the eye slits (eye) come from EnemyPalettes.
 const KIND := WorldReader.KIND_NEEDLE
 const GREY_LIGHT := Color("#6D625C")
 const DARK := Color("#3A383C")
 const HOLE := Color("#141417")
-## v0.10.5 W3-V4c (SoloVat): the raw drives (_vd) and their specs [lo, hi, loop]: the body's shift and height, its
+## SoloVat: the raw drives (_vd) and their specs [lo, hi, loop]: the body's shift and height, its
 ## lean (a turn's rotation vector, x and z), its pitch, the barrel's slide, each leg's yaw and its thigh and shin
 ## angles (LEG0 + 3 k + 0 / 1 / 2: loops, the IK may turn them anywhere), and the muzzle's glow (sent as it is: the
 ## bore's accent reads it).
@@ -87,12 +86,16 @@ const VAT_DRIVES := [
 	[0.0, 0.0, false],
 ]
 
+## The chamfered boxes and prisms made so far, by their sizes: every avatar asking for the same one gets the same mesh,
+## so a spawn builds and uploads none (building them was most of a code-built enemy's spawn).
+static var _chamfered := {}
+
 ## Parts, read by tests and by ActorViews (flash materials).
 var body: Node3D
 var barrel: Node3D
 var legs: Array[Node3D] = []
 var feet: Array[Node3D] = []
-## v0.10.5 W3-V4c (owner, 2026-11-06: VAT for every regular enemy): true (set before setup(), ActorViews from
+## True (set before setup(), ActorViews from
 ## ViewPrefs.enemy_vat): a VatCrowd draws the body from baked poses; setup() builds no piece.
 var vat := false
 var kind := KIND
@@ -118,46 +121,42 @@ var _brace := 0.0
 var _charge := 0.0
 var _heat := 0.0
 var _kick := 0.0
-# v0.8.0 TG: the windup's progress (0..1) from the last sync; -1 when the caller gave none.
+# The windup's progress (0..1) from the last sync; -1 when the caller gave none.
 var _tell_p := -1.0
 var _vd := PackedFloat32Array()
 
 
-## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
-func setup(outline_color: Color, technique: StringName = &"outline") -> void:
+## Builds the model.
+func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_vd.resize(VAT_DRIVES.size())
-	if vat:  # v0.10.5 W3-V4c: the crowd draws the body; the legs' hips and rest spots only
+	if vat:  # The crowd draws the body; the legs' hips and rest spots only
 		for k in 4:
 			_leg_spots(k)
 		_pose(0.0)
 		return
-	var team := ThemePalette.color(&"enemy_body")
 	body = Node3D.new()
 	add_child(body)
 	var cube := _chamfer_box(Vector3.ONE * BODY, BODY_BEVEL, BODY_BULGE)
 	var red := EnemyPalettes.color(KIND, &"body")
-	_piece(body, cube, Vector3(0, BODY_Y, 0), red, outline_color, team, technique)
+	_piece(body, cube, Vector3(0, BODY_Y, 0), red)
 	# The chassis under the cube, which the hips hang from.
 	var chassis := _chamfer_box(Vector3(0.3, 0.07, 0.3), 0.015)
-	_piece(body, chassis, Vector3(0, HIP.y + 0.02, 0), DARK, outline_color, team, &"outline")
+	_piece(body, chassis, Vector3(0, HIP.y + 0.02, 0), DARK)
 	# The flank pods: big bevels make them octagons from the side; their faces carry the same shallow facets.
 	var pod := _chamfer_box(Vector3(0.24, 0.26, 0.1), 0.06, 0.012)
 	for side in [-1.0, 1.0]:
 		var at := Vector3(-0.03, 0.46, side * (BODY * 0.5 + 0.045))
-		_piece(body, pod, at, EnemyPalettes.color(KIND, &"trim"), outline_color, team, technique)
+		_piece(body, pod, at, EnemyPalettes.color(KIND, &"trim"))
 	# The collar on the front face that the barrel comes out of, with a red slit eye on each flank.
 	var collar := _chamfer_box(Vector3(0.12, 0.25, 0.2), 0.02)
 	var collar_x := BODY * 0.5 + 0.03
-	_piece(
-		body, collar, Vector3(collar_x, BARREL_Y - 0.01, 0), DARK, outline_color, team, &"outline"
-	)
+	_piece(body, collar, Vector3(collar_x, BARREL_Y - 0.01, 0), DARK)
 	var glow := EnemyPalettes.color(KIND, &"eye")
 	_eye_mat.albedo_color = glow
 	_eye_mat.emission_enabled = true
 	_eye_mat.emission = glow
 	_eye_mat.emission_energy_multiplier = 2.0
-	write_stencil(_eye_mat)
 	var slit := BoxMesh.new()
 	slit.size = Vector3(0.035, 0.11, 0.01)
 	for side in [-1.0, 1.0]:
@@ -167,9 +166,9 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 		eye.position = Vector3(collar_x + 0.015, BARREL_Y, side * 0.1)
 		eye.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		body.add_child(eye)
-	_build_barrel(outline_color, team, technique)
+	_build_barrel()
 	for k in 4:
-		_build_leg(k, outline_color, team)
+		_build_leg(k)
 	_pose(0.0)
 
 
@@ -257,14 +256,14 @@ func foot_positions() -> Array[Vector3]:
 	return out
 
 
-## v0.8.0 TG: the windup's progress the tell reads (the sim's, else paced on WINDUP_TICKS); 0 outside the windup.
+## The windup's progress the tell reads (the sim's, else paced on WINDUP_TICKS); 0 outside the windup.
 func tell_progress() -> float:
 	if _state != WorldReader.STATE_WINDUP:
 		return 0.0
 	return _tell_p if _tell_p >= 0.0 else clampf(float(_ticks_in) / WINDUP_TICKS, 0.0, 1.0)
 
 
-## v0.8.0 TG: 0..1 how deep the windup crouch is.
+## 0..1 how deep the windup crouch is.
 func crouch_amount() -> float:
 	return tell_crouch(tell_progress()) if _state == WorldReader.STATE_WINDUP else 0.0
 
@@ -291,11 +290,11 @@ func _pose(dt: float) -> void:
 	# The body: an idle hum, a bob on each step, the crouch of the brace, the rise-in, the recoil.
 	var hum := sin(_t * 9.0) * 0.003 + sin(_t * 1.7) * 0.01 * (1.0 - _walk)
 	var bob := cos(_phase * TAU * 2.0) * 0.012 * _walk
-	# v0.8.0 TG: the windup squats the cube lower and tips its nose down along the aim (no ground lines any more).
+	# The windup squats the cube lower and tips its nose down along the aim (no ground lines any more).
 	var calm := ViewPrefs.reduced_motion
 	var crouch := crouch_amount()
 	var y := hum + bob - _brace * 0.06 - crouch * 0.06 - (1.0 - _rise) * 0.24 + kick * 0.01
-	# v0.10.5 W3-V4c: the pose's numbers first (the VAT drives), then the nodes from them (the old path).
+	# The pose's numbers first (the VAT drives), then the nodes from them (the old path).
 	# Lean into the walk (a turn about the axis across the walk, as its rotation vector's x and z); brace leans back a
 	# little; each shot rocks the nose up.
 	var lean := Vector3.ZERO
@@ -338,7 +337,7 @@ func _pose(dt: float) -> void:
 			_place_leg(k, hip, ik)
 
 
-## v0.10.5 W3-V4c: the body's transform from its numbers: shifted by (ax, ay), pivoting about the hips, so a pitch
+## The body's transform from its numbers: shifted by (ax, ay), pivoting about the hips, so a pitch
 ## rocks the cube instead of swinging it about the ground; its turn is the lean (rotation vector (lx, 0, lz)) after
 ## the pitch about Z.
 static func body_xf(ax: float, ay: float, lx: float, lz: float, pitch: float) -> Transform3D:
@@ -350,7 +349,7 @@ static func body_xf(ax: float, ay: float, lx: float, lz: float, pitch: float) ->
 	)
 
 
-## v0.10.5 W3-V4c: the lean's turn from its rotation vector (lx, 0, lz) (none at zero).
+## The lean's turn from its rotation vector (lx, 0, lz) (none at zero).
 static func lean_basis(lx: float, lz: float) -> Basis:
 	var r := Vector3(lx, 0, lz)
 	var a := r.length()
@@ -358,7 +357,7 @@ static func lean_basis(lx: float, lz: float) -> Basis:
 
 
 ## Two-bone IK from the hip to the foot (knee up and out like the reference's): the leg's yaw toward the foot and the
-## thigh's and shin's angles (v0.10.5 W3-V4c: the numbers only; _place_leg writes them).
+## thigh's and shin's angles (the numbers only; _place_leg writes them).
 static func leg_ik(hip: Vector3, foot: Vector3) -> Vector3:
 	var flat := Vector2(foot.x - hip.x, foot.z - hip.z)
 	var yaw := atan2(-flat.y, flat.x)
@@ -434,7 +433,7 @@ func vat_rig() -> Dictionary:
 	var grids: Array = [[[AX, 2]], [[AY, 2]], [[LX, 9], [LZ, 9]], [[PITCH, 33]], [[BARREL, 2]]]
 	for d in range(LEG0, MUZZLE):
 		grids.append([[d, LEG_SAMPLES]])
-	return SoloVat.rig("needle", VAT_DRIVES, grids, j, OUTLINE_M, false)
+	return SoloVat.rig("needle", VAT_DRIVES, grids, j, false)
 
 
 ## The lean's joint at its grid's values (lx, lz): the turn at the pivot, or (`inverse`) the turn undone.
@@ -443,67 +442,22 @@ static func _lean_joint(v: Array, at: Vector3, inverse: bool) -> Transform3D:
 	return Transform3D(b.inverse() if inverse else b, at)
 
 
-func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
-	var dir := rng.randf() * TAU
-	var ranges := {
-		"_vel_s": Vector3(cos(dir), 0, sin(dir)) * rng.randf() * 4.0,
-		"_t": [0.0, 40.0],
-		"_walk": [0.0, 1.0],
-		"_phase": [0.0, 1.0],
-		"_rise": [0.0, 1.0],
-		"_brace": [0.0, 1.0],
-		"_charge": [0.0, 1.0],
-		"_kick": [0.0, 1.0],
-		"_heat": [0.0, 1.0],
-		"_tell_p": [0.0, 1.0],
-		"_state":
-		[
-			WorldReader.STATE_MOVE,
-			WorldReader.STATE_WINDUP,
-			WorldReader.STATE_ACTIVE,
-			WorldReader.STATE_RECOVER
-		],
-	}
-	return SoloVat.sample(self, rng, ranges, _pose.bind(0.0))
-
-
-func vat_set(s: Dictionary) -> void:
-	SoloVat.apply(self, s, _pose.bind(0.0))
-
-
-func _build_barrel(outline_color: Color, team: Color, technique: StringName) -> void:
+func _build_barrel() -> void:
 	barrel = Node3D.new()
 	barrel.position = Vector3(BODY * 0.5 + 0.06, BARREL_Y, 0)
 	body.add_child(barrel)
 	var tube := _chamfer_box(Vector3(BARREL_LEN, BARREL_W, BARREL_W), 0.012)
-	_piece(
-		barrel,
-		tube,
-		Vector3(BARREL_LEN * 0.5, 0, 0),
-		EnemyPalettes.color(KIND, &"grey"),
-		outline_color,
-		team,
-		technique
-	)
+	_piece(barrel, tube, Vector3(BARREL_LEN * 0.5, 0, 0), EnemyPalettes.color(KIND, &"grey"))
 	# A slightly wider sleeve at the muzzle, as on the sheet's side view.
 	var sleeve := _chamfer_box(Vector3(0.07, BARREL_W + 0.012, BARREL_W + 0.012), 0.012)
-	_piece(
-		barrel,
-		sleeve,
-		Vector3(BARREL_LEN - 0.035, 0, 0),
-		EnemyPalettes.color(KIND, &"grey"),
-		outline_color,
-		team,
-		&"outline"
-	)
+	_piece(barrel, sleeve, Vector3(BARREL_LEN - 0.035, 0, 0), EnemyPalettes.color(KIND, &"grey"))
 	# The square bore: dark when cold; it glows the hostile-shot colour while charging and firing.
 	var shot := ThemePalette.color(&"proj_hostile")
 	_hole_mat.albedo_color = HOLE
 	_hole_mat.emission_enabled = true
 	_hole_mat.emission = shot
 	_hole_mat.emission_energy_multiplier = 0.0
-	_hole_mat.set_meta(SoloVat.GLOW, MUZZLE + 1)  # v0.10.5 W3-V4c: a VAT Needle's bore glows at its MUZZLE drive
-	write_stencil(_hole_mat)
+	_hole_mat.set_meta(SoloVat.GLOW, MUZZLE + 1)  # A VAT Needle's bore glows at its MUZZLE drive
 	var hole := MeshInstance3D.new()
 	var hb := BoxMesh.new()
 	hb.size = Vector3(0.01, BARREL_W * 0.72, BARREL_W * 0.72)
@@ -516,51 +470,35 @@ func _build_barrel(outline_color: Color, team: Color, technique: StringName) -> 
 
 ## One leg: a root at the hip (turned toward the foot), the hip hub, the thigh, the knee joint, the shin, and the
 ## flat foot under an ankle that keeps it level.
-func _build_leg(k: int, outline_color: Color, team: Color) -> void:
+func _build_leg(k: int) -> void:
 	_leg_spots(k)
 	var root := Node3D.new()
 	add_child(root)
 	legs.append(root)
 	var hub := _prism(0.05, 0.08, 8)
-	_piece(root, hub, Vector3.ZERO, DARK, outline_color, team, &"outline")
+	_piece(root, hub, Vector3.ZERO, DARK)
 	var thigh := Node3D.new()
 	root.add_child(thigh)
 	_thighs.append(thigh)
 	var tm := _chamfer_box(Vector3(THIGH_LEN, 0.075, 0.07), 0.014)
-	_piece(
-		thigh,
-		tm,
-		Vector3(THIGH_LEN * 0.5, 0, 0),
-		EnemyPalettes.color(KIND, &"grey"),
-		outline_color,
-		team,
-		&"outline"
-	)
+	_piece(thigh, tm, Vector3(THIGH_LEN * 0.5, 0, 0), EnemyPalettes.color(KIND, &"grey"))
 	var knee := Node3D.new()
 	knee.position.x = THIGH_LEN
 	thigh.add_child(knee)
 	_knees.append(knee)
-	_piece(knee, _prism(0.042, 0.1, 8), Vector3.ZERO, GREY_LIGHT, outline_color, team, &"outline")
+	_piece(knee, _prism(0.042, 0.1, 8), Vector3.ZERO, GREY_LIGHT)
 	var sm := _chamfer_box(Vector3(SHIN_LEN, 0.085, 0.08), 0.016)
-	_piece(
-		knee,
-		sm,
-		Vector3(SHIN_LEN * 0.5, 0, 0),
-		EnemyPalettes.color(KIND, &"grey"),
-		outline_color,
-		team,
-		&"outline"
-	)
+	_piece(knee, sm, Vector3(SHIN_LEN * 0.5, 0, 0), EnemyPalettes.color(KIND, &"grey"))
 	var ankle := Node3D.new()
 	ankle.position.x = SHIN_LEN
 	knee.add_child(ankle)
 	_ankles.append(ankle)
-	_piece(ankle, _prism(0.03, 0.09, 6), Vector3.ZERO, DARK, outline_color, team, &"outline")
+	_piece(ankle, _prism(0.03, 0.09, 6), Vector3.ZERO, DARK)
 	var fm := _chamfer_box(Vector3(0.13, 0.045, 0.1), 0.012)
 	var foot := Node3D.new()
 	foot.position = Vector3(0.015, -ANKLE_H + 0.0225, 0)
 	ankle.add_child(foot)
-	_piece(foot, fm, Vector3.ZERO, GREY_LIGHT, outline_color, team, &"outline")
+	_piece(foot, fm, Vector3.ZERO, GREY_LIGHT)
 	feet.append(foot)
 
 
@@ -572,21 +510,21 @@ func _leg_spots(k: int) -> void:
 	_rests.append(Vector3(FOOT.x * sx, 0.0, FOOT.z * sz))
 
 
-func _piece(
-	parent: Node3D,
-	mesh: Mesh,
-	at: Vector3,
-	c: Color,
-	outline: Color,
-	team: Color,
-	technique: StringName
-) -> MeshInstance3D:
-	return _outlined(parent, mesh, at, c, outline, team, technique, OUTLINE_M)
+func _piece(parent: Node3D, mesh: Mesh, at: Vector3, c: Color) -> MeshInstance3D:
+	return _body_piece(parent, mesh, at, c)
 
 
 ## A box with bevelled edges and cut corners, centred on the origin, flat-shaded. With `bulge` each of the six faces
-## is a shallow pyramid whose centre stands that far out, so its four triangles catch the light differently.
+## is a shallow pyramid whose centre stands that far out, so its four triangles catch the light differently. Shared:
+## nobody changes the mesh it returns.
 static func _chamfer_box(size: Vector3, bevel: float, bulge: float = 0.0) -> ArrayMesh:
+	var key := [size, bevel, bulge]
+	if not _chamfered.has(key):
+		_chamfered[key] = _build_chamfer_box(size, bevel, bulge)
+	return _chamfered[key]
+
+
+static func _build_chamfer_box(size: Vector3, bevel: float, bulge: float) -> ArrayMesh:
 	var h := size * 0.5
 	var b := minf(bevel, minf(h.x, minf(h.y, h.z)) * 0.95)
 	var tris := []
@@ -637,8 +575,16 @@ static func _chamfer_box(size: Vector3, bevel: float, bulge: float = 0.0) -> Arr
 	return _mesh_from(tris)
 
 
-## A flat-shaded prism along Z (a joint pin): `sides` sides of circumradius r, `length` long, centred.
+## A flat-shaded prism along Z (a joint pin): `sides` sides of circumradius r, `length` long, centred. Shared like
+## _chamfer_box's.
 static func _prism(r: float, length: float, sides: int) -> ArrayMesh:
+	var key := [&"prism", r, length, sides]
+	if not _chamfered.has(key):
+		_chamfered[key] = _build_prism(r, length, sides)
+	return _chamfered[key]
+
+
+static func _build_prism(r: float, length: float, sides: int) -> ArrayMesh:
 	var tris := []
 	var z := length * 0.5
 	for k in sides:

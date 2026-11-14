@@ -87,9 +87,11 @@ current version. Those changes ship as patch versions.
 See [`../architecture/TEST_MATRIX.md`](../architecture/TEST_MATRIX.md) §5. In short:
 - **docs only:** nothing locally;
 - **assets:** the asset tests;
-- **code, data, tests or project files:** the full suite.
+- **code, data, tests or project files:** an agent runs lint, the tests of the folders it touched and their e2e;
+  the lead, after merging, runs `bash scripts/ci/seams.sh`. There is no local full suite (CLAUDE.md "Testing before a
+  push").
 
-CI runs everything on every PR.
+The full suite runs once per version, on GitHub, on the PR into `main`.
 
 ### 0.6 Session continuity
 
@@ -180,7 +182,9 @@ M4b. Exit gates name who checks each item:
 | **v0.9.0** | World and weapons | — | (Owner-directed 2026-10-22, O92: "move into the next version that is coming with feedback and much more to develop"; [`v0.9.0/PLAN.md`](v0.9.0/PLAN.md).) The owner's two v0.8.0 documents: tall floor portals, the arrival altar, the final approach, the door sound; attack forms (Orbs, Laser, Bomb, Void …) with one pattern and element slots, the legendary nerf, VFX, card text; timed doors, lockdowns, rune alignment, destructibles, elite archetypes; the hub and meta progression (scope Q1). Plus UC and the rest of EM carried from v0.8.0 | Owner playtest (**owner**) | Built 2026-10-24; merged through PR riusprime/zero-depth#9 (2026-10-25); played by the owner; feedback → v0.9.5 |
 | **v0.9.5** | The v0.9.0 feedback pass | — | (Owner-directed 2026-10-25, [`v0.9.5/PLAN.md`](v0.9.5/PLAN.md).) The owner's v0.9.0 playtest: bosses without stagger and with one hard spell each, the Tidecaller and Hollow Crown reworked, more form × card combinations, Rune Explosion, element levels, card levels trimmed, the trigger cards removed, Stress Mark rebuilt, dash 10 s / blink 15 s, the Blade locked, the Runic Stone, locked rooms vs Overrun, the HUD's ability squares, prompts, backgrounds, a cursor, difficulty to minute 10, heat, performance last | Owner playtest (**owner**) | Built; released in the v0.10.5 PR into `main` |
 | **v0.10.0** | The new look of attacks | — | (Owner-directed 2026-10-31, [`v0.10.0/PLAN.md`](v0.10.0/PLAN.md).) The owner's purchased VFX pack replaces the attack effects as G1 [`v0.9.5/VFX_PACK.md`](v0.9.5/VFX_PACK.md) answered (R1–R43, I0–I10), and the gaps are built in the pack's style (N1–N10). The Blade's forms (v0.9.5 Q15) land here too. The Blade's forms are its Q1 | Owner playtest, together with v0.9.5 (**owner**); hitch probe and the 144 fps target on the owner's PC (**test**) | Built; released in the v0.10.5 PR into `main` |
-| v0.10.5 | Feedback pass | — | (Owner-directed 2026-10-31.) The owner's feedback from playing v0.9.5 and v0.10.0 together | Owner playtest (**owner**) | Built 2026-11-06; PR into `main` for the owner's playtest ([`v0.10.5/PLAYTEST.md`](v0.10.5/PLAYTEST.md)) |
+| v0.10.5 | Feedback pass | — | (Owner-directed 2026-10-31.) The owner's feedback from playing v0.9.5 and v0.10.0 together | Owner playtest (**owner**) | Built 2026-11-06; merged through PR riusprime/zero-depth#10; played by the owner; feedback → v0.11.0 |
+| **v0.11.0** | Fights worth learning | — | (Owner-directed 2026-11-07, [`v0.11.0/PLAN.md`](v0.11.0/PLAN.md), DRAFT.) The owner's v0.10.5 brief: the Void, Lantern and Siege fixes; the Laser as a 3 s lance with a curved Homing + Pierce path; bosses with learnable mechanics instead of immunity; horde enemies; elemental auto-spells (4 slots); enemy models, new enemies and biome rosters; room messages; rooms with a purpose. Scope: everything (owner, Q1) | Owner playtest (**owner**) | Built 2026-11-08 except the owner-blocked items (the boss brief O6–O8, the Laser sketch); release prepared, version bump waits on the owner (OWNER_QUESTIONS §J N11) |
+| v0.11.1 | Clean and fast | — | (Owner-approved 2026-11-10, [`v0.11.1/PLAN.md`](v0.11.1/PLAN.md), from the code audit [`../audits/CODE_AUDIT_2026-11-10.md`](../audits/CODE_AUDIT_2026-11-10.md).) Faster tests (seam tests only, shared fixtures, 200 seeds locally, e2e without the hub walk); the unused HUD styles, the outline plumbing and other unreferenced code removed, every menu in Astral; measured performance work in the sim, the view and the HUD; aim assist wired in; old run saves refused and their code removed; one deliberate golden reset. A patch version: it runs between v0.11.0's playtest rounds, on the same branch | Seams time and frame time measured before and after (**bench**, owner's PC). Goldens identical except the named reset (**test**). Nothing feels different except aim assist and the menus (**owner**) | Planned 2026-11-10; nothing built |
 | v0.8.x (planned as v0.8.0) | Content Beta | M6 | 60–80 items if the evidence justifies them. A second kit or character. Meta unlocks (alternatives, information, cosmetics). A journal/codex. The final visual and audio language (the visual look starts in v0.5.9). Full onboarding | New content adds variety without reopening any P0 failure (**sims** + **owner**) | — |
 | v0.9.x | Launch line | — | Final credits and licenses, local achievements, an accessibility pass, a Steam build, trailer moments | The owner's launch list (**owner**) | — |
 
@@ -249,3 +253,6 @@ M4b. Exit gates name who checks each item:
   release step done (version 0.10.5, patch notes en/es for v0.10.0 and v0.10.5, [`v0.10.5/PLAYTEST.md`](v0.10.5/PLAYTEST.md));
   one PR into `main` carries v0.9.5, v0.10.0 and v0.10.5. W10 (the Blade against one target in loops) moves to a
   later version. The screenshot tour is NOT RUN.
+- 2026-11-10 — Code audit run (read-only, [`../audits/CODE_AUDIT_2026-11-10.md`](../audits/CODE_AUDIT_2026-11-10.md)) and v0.11.1
+  "Clean and fast" planned from it ([`v0.11.1/PLAN.md`](v0.11.1/PLAN.md)); the owner answered its decisions the same day.
+  Nothing built yet. v0.11.0 stays the active version; its playtest feedback goes first.

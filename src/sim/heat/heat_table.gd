@@ -10,7 +10,7 @@ var max_heat := 100
 var gain_swing := 2500
 var gain_finisher := 5000
 var gain_bolt := 900
-## v0.9.5 HT: ticks a Gun run takes to fill 0 to max while firing; ticks after the last gain before the cooling
+## Ticks a Gun run takes to fill 0 to max while firing; ticks after the last gain before the cooling
 ## starts; the milli-points it then loses per tick.
 var gun_fill_ticks := 840
 var cool_delay_ticks := 60
@@ -25,10 +25,10 @@ var stall_move_permille := 600
 var vent_radius_m := 2.5
 ## Blast damage per heat point vented, per mille (500 = half a point of damage per point of heat).
 var vent_damage_permille := 500
-## v0.9.5 HT: Vent needs this many milli-points, then waits this many ticks.
+## Vent needs this many milli-points, then waits this many ticks.
 var vent_min_milli := 40000
 var vent_cooldown_ticks := 360
-## v0.10.5 S12: a Vent from at least this many milli-points readies the dash at once.
+## A Vent from at least this many milli-points readies the dash at once.
 var perfect_vent_milli := 90000
 
 

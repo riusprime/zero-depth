@@ -264,20 +264,6 @@ static func _put(w: World, q: Vector2) -> void:
 	w.actors.pos_y[0] = q.y
 
 
-## Without shop rooms (a floor saved before SR; RunSaver.floor_tables leaves them out), the terminal stands.
-func test_without_a_shop_room_the_terminal_stands() -> void:
-	var run := SaveLab.run_state(11, 1)
-	run.floor_rules = RunState.FLOOR_RULES_V080_RT1
-	var w := SaveLab.build_floor(run)
-	assert_true(w.shop.present())
-	assert_false(WorldReader.new(w).shop_stall(), "the terminal")
-	assert_eq(w.floor_layout.shop_layout, &"")
-	var term := ShopPlacement.collider(w.floor_layout.shop_pos, w.floor_layout.shop_angle)
-	assert_true(
-		_keys(w.walls).has(FloorLayout.piece_key(term)), "the terminal's footprint is a wall"
-	)
-
-
 class ShopStallLike:
 	## A shop_props entry's footprint on the sim plane (its size turned by its axis-aligned angle).
 	static func bounds(p: Array) -> Rect2:

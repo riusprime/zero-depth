@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SpellDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/spell_definition.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+name_key = &"SPELL_BALL_LIGHTNING"
+desc_key = &"SPELL_BALL_LIGHTNING_DESC"
+level_keys = Array[StringName]([&"SPELL_BALL_LIGHTNING_LV1", &"SPELL_BALL_LIGHTNING_LV2", &"SPELL_BALL_LIGHTNING_LV3", &"SPELL_BALL_LIGHTNING_LV4", &"SPELL_BALL_LIGHTNING_LV5"])
+element = &"lightning"
+element_card = &"storm_core"
+affinity = &"storm"
+weight = 10
+cooldown_s = 12.0
+reach_m = 8.0
+damage = PackedInt32Array(5, 5, 5, 5, 5)
+radius_m = PackedFloat32Array(2.5, 3, 3, 3.5, 3.5)
+seconds = PackedFloat32Array(4, 4, 4, 4, 4)
+count = PackedInt32Array(1, 1, 2, 2, 2)
+period_s = 0.3
+speed_mps = 2.0
+bonus_damage = 15
+bonus_radius_m = 3.0
+stacks = 1
+id = &"spell_ball_lightning"

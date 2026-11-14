@@ -1,6 +1,6 @@
 class_name AchievementBook
 extends RefCounted
-## v0.7.5 AC (owner N7): every achievement the game has, from the content (`data/achievements/*.tres`,
+## Every achievement the game has, from the content (`data/achievements/*.tres`,
 ## AchievementDefinition), with a CODEX_EACH definition expanded into one achievement per Codex entry (CodexCatalog),
 ## so a new boss or biome in the data has its own. It answers what each one needs and how far along the profile is
 ## (AchievementStore for what unlocked and the run counters, CodexStore for the Codex's counters). Pure reads; the

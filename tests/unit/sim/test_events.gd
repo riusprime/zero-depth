@@ -116,39 +116,6 @@ func test_scrap_heap_buys_or_digs_up_a_mod() -> void:
 	assert_eq(hp - v.actors.hp[0], v.actors.max_hp[0] * 150 / 1000, "Dig costs 15 % HP")
 
 
-## v0.9.0 EL (owner Q25, "Remove it"): the Ambush Cache is deleted. Its place in the event table stays retired (never
-## drawn on a floor built today); a save made before EL whose floor held its pedestal (or a Marked curse, or a ×2 HP
-## elite with its core) loads: the pedestal is closed, the curse dropped, the plain enemy's core dropped.
-func test_an_old_saves_ambush_marked_curse_and_elite_core_are_dropped_on_load() -> void:
-	var w := _world(&"unstable_core")
-	var ambush := EventLab.event_index(w, &"ambush_cache")
-	assert_gte(ambush, 0, "the retired event keeps its place")
-	assert_true(w.ev.events[ambush].retired)
-	assert_eq(w.ev.events[ambush].weight, 0, "never drawn today")
-	EventLab.set_event(w, &"ambush_cache")  # test setup: the pedestal an old save's floor holds
-	var marked := EventLab.curse_index(w, &"marked_hunt")
-	w.curses_owned = PackedInt32Array([marked, EventLab.curse_index(w, &"rooted")])
-	var id := w.add_enemy(ActorStore.Kind.WARDEN, w.player_pos() + Vector2(4, 0))
-	w.cores.add(id, 0, false)  # test setup: an old ×2 HP elite's core
-	var snap := w.to_snapshot()
-	var base := _world(&"unstable_core")
-	assert_eq(WorldSnapshot.apply(base, snap), "", "the old save loads")
-	assert_eq(base.ev.state[0], Events.State.DONE, "its Ambush Cache pedestal is closed")
-	assert_eq(
-		base.curses_owned,
-		PackedInt32Array([EventLab.curse_index(base, &"rooted")]),
-		"Marked is dropped, the rest kept"
-	)
-	assert_eq(base.cores.size(), 0, "the plain enemy's core is dropped")
-	assert_gte(base.actors.index_of(id), 0, "the enemy itself stays")
-	var legacy := EventCompiler.compile_events(EventLab.repo(), true)
-	assert_eq(
-		legacy[ambush].weight,
-		10,
-		"a floor saved before EL rebuilds with its old weight (its draws as saved)"
-	)
-
-
 func test_overclock_vent_overheats_now_for_more_overclock_damage() -> void:
 	var w := _world(&"overclock_vent")
 	EventLab.open(w)

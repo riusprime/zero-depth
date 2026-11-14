@@ -1,13 +1,10 @@
-# gdlint: disable=max-file-lines
 class_name Hud
 extends Control
 ## The fight's HUD (PLAN v0.1.0 Step 5): health (bottom left; the ability squares bottom right), wave and enemies left
 ## (top centre); on a floor, the carried-item icons (bottom right) and the item card (bottom centre). It never
-## takes mouse input, so clicks reach the game. v0.3.0 UI (L21, L23, L24), calmer in v0.3.5 (F15): drawn in the
+## takes mouse input, so clicks reach the game. v0.3.0 UI, calmer in v0.3.5: drawn in the
 ## HudStyle look (plain type, thin bars, a hairline per group); the top group shows floor, biome, time and a visual
 ## danger meter (no numbers); below 30 % HP the HP bar and the screen edge pulse red.
-## v0.5.5 A5 (owner pick B "Ember stone"): the groups sit on chipped stone slabs (HudStyle.EMBER); the HP and top
-## plates carry the warm ember line; HP is a red bar; the vent hint gets a small slab of its own.
 ## v0.10.5 W3-O17 (owner, 2026-11-04: "and what about the rest of the UI? it should match the new style"; ASTRAL,
 ## W3_O13_UI_STYLE_G2.md round 2): unboxed, over a faint ink wash at the top and the bottom. Bottom left: the HP
 ## medallion (a ring, a four-point star, the HP rune) joined to one continuous HP bar in a hairline frame, the weapon's
@@ -15,99 +12,100 @@ extends Control
 ## between two stars and fading hairlines, the time in Cinzel, the danger bar, the kills in small caps. Top right: the
 ## Astral shard and the wallet in Cinzel. The floor-title card is Cinzel over a star rule, on an ink veil.
 
-## v0.9.5 HU (owner: "make it just a 15% bigger"): the HP plate's bar and type, 1.15 x the old 300 x 10 and 14 pt.
+## The HP plate's bar and type, 1.15 x the old 300 x 10 and 14 pt.
 const BAR := Vector2(345, 12)
 const HP_FONT := 16
-## The carried-item row sits this far above the bottom edge: clear of the ability squares (px).
-const ITEMS_LIFT := AbilitySquares.MARGIN_BOTTOM + AbilitySquares.SIDE + 12.0
+## The carried-item row sits this far above the bottom edge: clear of the ability squares and the
+## spell squares over them (px).
+const ITEMS_LIFT := AbilitySquares.MARGIN_BOTTOM + AbilitySquares.SIDE + 12.0 + SpellSquares.BAND
 ## The plate bottom and the ability squares share one line this far above the screen bottom (owner, 2026-10-26).
 const BOTTOM_LINE := AbilitySquares.MARGIN_BOTTOM
 ## The top plate's width (px).
 const TOP_W := 540.0
-## Floor (PLAN v0.2.0 F, K): a row of icons for the items you carry, a compact item card (on pickup, and as a
-## preview while you stand by a pedestal), the sealed-gate note.
-const CARD_SECONDS := 3.0
+## Floor (PLAN v0.2.0 F, K): a row of icons for the items you carry, a compact item card (as a
+## preview while you stand by a pedestal; a pickup is a NoticeTicker line), the sealed-gate note.
 ## Standing this close to a pedestal (m) previews its item.
 const PREVIEW_M := 2.0
 const ROW_ICON := 40.0
-## Rewards (v0.3.0 E): the shard counter (top right) pulses this long when it grows.
+## Rewards: the shard counter (top right) pulses this long when it grows.
 const SHARD_PULSE_S := 0.3
 const POOR := Color("#FF5A4D")
-## v0.10.5 W3-O20: the gap between the top centre's stacked lines (px).
+## The gap between the top centre's stacked lines (px).
 const STACK_GAP := 6.0
 
-## v0.3.0 G: a combo's card stays this long, above the item card; its badges sit in a row above the item icons.
-const COMBO_CARD_SECONDS := 4.0
-## v0.9.5 EP4: an element pair's card stays this long; its big title fades in, holds and fades out (presentation only).
-const PAIR_CARD_SECONDS := 6.0
-const PAIR_TITLE_IN := 0.25
-const PAIR_TITLE_HOLD := 1.6
-const PAIR_TITLE_OUT := 0.4
+## A combo's badges sit in a row above the item icons (its unlock is a NoticeTicker line).
 const COMBO_BADGE := 44.0
-## v0.6.1 R1: each badge sits in a small stone plaque this tall (v0.8.0 MU) (the combo's nearest colour).
+## Each badge sits in a small stone plaque this tall (the combo's nearest colour).
 const COMBO_PLAQUE_H := 96.0
-## Run flow (v0.3.0 B): the floor-title card stays this long (s), fading over the last FLOOR_CARD_FADE; the boss
+## Run flow: the floor-title card stays this long (s), fading over the last FLOOR_CARD_FADE; the boss
 ## warning shows within BOSS_WARN_M of the boss door, on the near side, until it seals.
 const FLOOR_CARD_SECONDS := 2.6
 const FLOOR_CARD_FADE := 0.7
-## v0.5.0 RT: a Deep floor's label colour (a light violet, readable on the HUD plate).
+## A Deep floor's label colour (a light violet, readable on the HUD plate).
 const DEEP_TEXT := Color("#C9A2FF")
 const BOSS_WARN_M := 6.0
-## v0.10.5 W3-O17: ASTRAL: the HP bar's mid-line this far above the HP plate's foot (the medallion's centre).
+## ASTRAL: the HP bar's mid-line this far above the HP plate's foot (the medallion's centre).
 const ASTRAL_BAR_FOOT := 40.0
 
-## The boss bar (v0.3.0 C), shown while a boss is alive.
+## The boss bar, shown while a boss is alive.
 var boss_bar := BossBar.new()
-## Overclock heat (v0.3.0 L18): the heat meter, bottom centre (hidden without heat).
+## Overclock heat: the heat meter, bottom centre (hidden without heat).
 var heat_meter := HeatMeter.new()
-## The gamble shrine's prompt, result card and stats (v0.3.0 L19).
+## The gamble shrine's prompt, result card and stats.
 var gamble := GambleHud.new()
-## The minimap (v0.3.0 MM): the corner map, and the full map while Tab / pad Select is held.
+## The minimap: the corner map, and the full map while Tab / pad Select is held.
 var minimap := Minimap.new()
-## v0.3.5 K: the vent hint beside the heat meter.
+## The vent hint beside the heat meter.
 var kit_hud := KitHud.new()
-## v0.9.5 HU: the four ability squares (Attack, Skill, Dash, Blink), bottom right.
+## The four ability squares (Attack, Skill, Dash, Blink), bottom right.
 var ability_squares := AbilitySquares.new()
-## v0.10.5 O6 (owner P4): the depths' answer (the floor's catch-up m), under the top plate's right end; hidden at ×1.
+## The four spell squares, just above the ability squares.
+var spell_squares := SpellSquares.new()
+## The depths' answer (the floor's catch-up m), under the top plate's right end; hidden at ×1.
 var depths_tag := DepthsTag.new()
-## v0.5.0 EV: the event prompt, status and panel, and threat T with the curses held.
+## Pickups, combos and element pairs as short lines under the top plate.
+var notices := NoticeTicker.new()
+## The event prompt, status and panel, and threat T with the curses held.
 var events := EventHud.new()
-var constellation := ConstellationPanel.new()  # v0.10.5 W3-P10c: a new loop's Constellation pick
-## v0.4.0 AB: the Overrun room's banner (its kills, then what clearing it paid).
+var constellation := ConstellationPanel.new()  # A new loop's Constellation pick
+## The Overrun room's banner (its kills, then what clearing it paid).
 var overrun_hud := OverrunHud.new()
-## v0.9.0 LK: the Lockdown banner (sealed: its formations and enemies left; then the exits open).
+## The Lockdown banner (sealed: its formations and enemies left; then the exits open).
 var lockdown_hud := LockdownHud.new()
 ## v0.9.0 SH, HF: the Blood and Chaos shrines' and the fountain's result lines (the Chaos challenge's enemies left).
 var shrine_hud := ShrineHud.new()
-## v0.4.0 TU: the difficulty phase's name, and the line announcing a new phase or a new enemy kind.
+## The difficulty phase's name, and the line announcing a new phase or a new enemy kind.
 var phase_hud := PhaseHud.new()
-var starbound_hud := StarboundHud.new()  # v0.10.5 W3-P10b: the Starbound buff row, above the combo row
-## v0.5.0 SH: the shop's prompt and panel.
+var starbound_hud := StarboundHud.new()  # The Starbound buff row, above the combo row
+## The shop's prompt and panel.
 var shop := ShopHud.new()
-## v0.8.0 BD (O83): the boss door's interact prompt.
+## The boss door's interact prompt.
 var boss_door := BossDoorHud.new()
-## v0.9.0 IX: the shared interactables' one prompt (the FA pylons, the timed doors' switches).
+## The shared interactables' one prompt (the FA pylons, the timed doors' switches).
 var interact := InteractPromptHud.new()
-## v0.6.0 MX2: the weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
+## The boss hint arrow and ping (MetaHooks sets its gate: MechanicHints).
+var objective_hints := ObjectiveHints.new()
+## The weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
 var build_hud := BuildHud.new()
-## v0.8.0 N8 (owner O62): the picked cards' icons fly over everything to their HUD slots.
+## The picked cards' icons fly over everything to their HUD slots.
 var flights := CardFlights.new()
+## Draws the parts below from a texture while they do not change (HudStill).
+var still := HudStill.new()
 var swap := SwapPanel.new()
 var _hp_bar := HudBar.new()
 var _hp_text := HudStyle.label(HP_FONT, true)
-var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
+var _regen := RegenPulse.new()  # Green pulse on the HP bar while regenerating.
 var _wave := HudStyle.label(22, true)
 var _left := HudStyle.label(14)
 var _items := HBoxContainer.new()
 var _card := ItemCard.new()
 var _gate := Label.new()
-var _card_left := 0.0
-## What the card shows: &"pickup", &"preview" or &"".
+## What the card shows: &"preview" (a nearby pedestal's item) or &"".
 var _card_mode := &""
 var _preview_item := -1
 var _last_seq := 0
 var _items_shown := -1
-# Rewards (v0.3.0 E): the shard counter, the interact prompt by an altar or chest, the 3-card pick.
+# Rewards: the shard counter, the interact prompt by an altar or chest, the 3-card pick.
 var _shards := Label.new()
 var _shard_box := HBoxContainer.new()
 var _shard_pulse := 0.0
@@ -115,58 +113,54 @@ var _shards_shown := -1
 var _prompt := InteractPrompt.new()
 var _pick := PickPanel.new()
 var _combos := HBoxContainer.new()
-var _combo_card := ComboCard.new()
-var _combo_left := 0.0
 var _combo_pending := -1
-## v0.9.5 EE3: an element pair that just turned on (its X index; -1 none): its name shows on the combo card.
+## An element pair that just turned on (its X index; -1 none): its name shows on the combo card.
 var _pair_pending := -1
-## v0.9.5 EP4: that pair's new level (1-3), the big centred title (PairTitle) and its clock (-1: not showing), and the
-## pair badges' signature (mask and levels) they were built from.
+## That pair's new level (1-3), and the pair badges' signature (mask and levels) they were built from.
 var _pair_level_pending := 3
-var _pair_title := HudStyle.label(56, true)
-var _pair_title_t := -1.0
 var _pair_sig := -1
 var _combos_shown := -1
-# Run flow (v0.3.0 B).
+# Run flow.
 var _floor := HudStyle.label(16)
 var _floor_card := VBoxContainer.new()
 var _floor_card_title := HudStyle.label(56, true)
 var _floor_card_biome := HudStyle.label(22)
 var _floor_card_shards := HudStyle.label(18)  # v0.5.5 EC (Q-S4)
-var _floor_card_hp := HudStyle.label(18)  # v0.9.0 SV: "Max HP +15" on a floor the hero grew into
-var _floor_card_rule := HudStyle.label(22)  # v0.10.5 O5b: "New rule: Quickened" on a loop's first floor
+var _floor_card_hp := HudStyle.label(18)  # "Max HP +15" on a floor the hero grew into
+var _floor_card_rule := HudStyle.label(22)  # "New rule: Quickened" on a loop's first floor
 var _floor_card_left := 0.0
 var _biome_key := ""
-## The floor card's [floor, deep, shards lost, loop, max HP gained], so a language switch can word it again (v0.6.0 UP).
+## The floor card's [floor, deep, shards lost, loop, max HP gained], so a language switch can word it again.
 var _floor_card_args := []
-## v0.8.0 N11 (owner O69): the hero is still arriving (the last sync): the HUD stays hidden and the floor card waits.
+## The hero is still arriving (the last sync): the HUD stays hidden and the floor card waits.
 var _landing := false
-# v0.3.0 UI: the danger meter (L23), the low-HP edge glow (L24) and the style's plates.
+# The danger meter, the low-HP edge glow and the groups' frames.
 var _danger := DangerMeter.new()
 var _vignette := LowHpVignette.new()
-## v0.10.5 W3-O17: ASTRAL's ink wash, the HP medallion, the weapon's name on the HP row and the floor line's stars.
-var _astral := HudStyle.current == HudStyle.Style.ASTRAL
+## ASTRAL's ink wash, the HP medallion, the weapon's name on the HP row and the floor line's stars.
 var _wash := AstralHudParts.Wash.new()
 var _hp_medal := AstralHudParts.HpMedal.new()
 var _weapon_name := Label.new()
 var _floor_marks := AstralHudParts.FloorMarks.new()
 var _top_frame := HudFrame.new(Vector2(20, 8))
 var _hp_frame := HudFrame.new(Vector2(16, 10))
+var _corner := VBoxContainer.new()
+var _shard_plate := HudFrame.new(Vector2(14, 5))
 var _t := 0.0
 ## P-7: what each per-tick label last rendered from (slot -> value), so an unchanged one skips its format and its
 ## theme override; cleared on a language switch.
 var _shown := {}
 var _shown_locale := ""
-var _reader: WorldReader  # v0.8.0 N8: the last sync's (a picked card's flight reads where it landed)
+var _reader: WorldReader  # The last sync's (a picked card's flight reads where it landed)
 
 
 func _init() -> void:
 	name = "Hud"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if _astral:
-		add_child(_wash)
+	add_child(_wash)
 	add_child(_vignette)
+	add_child(objective_hints)  # Under every panel and plate
 	_build_corner()
 	_build_top()
 	_items.name = "ItemIcons"
@@ -194,17 +188,14 @@ func _init() -> void:
 	_combos.offset_right = -28
 	_combos.offset_top = -ITEMS_LIFT - ROW_ICON - 12
 	_combos.offset_bottom = -ITEMS_LIFT - ROW_ICON - 12
-	add_child(starbound_hud)  # v0.10.5 W3-P10b: it places itself (StarboundHud.LIFT)
-	_build_pair_title()
-	add_child(_combo_card)
-	_combo_card.place_bottom_centre(-196 - ItemCard.HEIGHT - 10)  # v0.6.1 R1: above the taller item plaque
+	add_child(starbound_hud)  # It places itself (StarboundHud.LIFT)
+	add_child(notices)  # The ticker under the top plate
 	_gate.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_gate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_gate.custom_minimum_size = Vector2(900, 0)
 	_gate.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	HudStyle.style_label(_gate, 22, true)
-	if _astral:
-		HudStyle.serif_label(_gate, 22, 3)
+	HudStyle.serif_label(_gate, 22, 3)
 	add_child(_gate)
 	_gate.position = Vector2(-450, -150)
 	_build_floor_card()
@@ -216,6 +207,7 @@ func _init() -> void:
 	add_child(kit_hud)  # v0.3.5 K
 	kit_hud.heat_anchor = heat_meter
 	add_child(ability_squares)  # v0.9.5 HU
+	add_child(spell_squares)  # v0.11.0 O10
 	add_child(overrun_hud)  # v0.4.0 AB
 	add_child(lockdown_hud)  # v0.9.0 LK
 	add_child(shrine_hud)  # v0.9.0 SH, HF
@@ -223,36 +215,64 @@ func _init() -> void:
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_pick)  # after the loop: the pick takes mouse input
-	add_child(events)  # v0.5.0 EV: so do the event panel's cards; a choice is input, like a pick
+	add_child(events)  # So do the event panel's cards; a choice is input, like a pick
 	events.panel.picked.connect(_pick.picked.emit)
 	add_child(constellation)  # v0.10.5 W3-P10c
-	add_child(shop)  # v0.5.0 SH: so does the shop panel
+	add_child(shop)  # So does the shop panel
 	add_child(boss_door)  # v0.8.0 BD
 	add_child(interact)  # v0.9.0 IX
 	add_child(build_hud)  # v0.6.0 MX2
 	build_hud.anchor = _hp_frame
-	add_child(swap)  # v0.6.0 MX2: last, over the pick and the shop; its answer is input
-	flights.squares = ability_squares  # v0.8.0 N8: where a picked card's icon flies
+	add_child(swap)  # Last, over the pick and the shop; its answer is input
+	flights.squares = ability_squares  # Where a picked card's icon flies
 	flights.build = build_hud
 	flights.items = _items
 	flights.plate = _hp_frame
 	add_child(flights)
+	add_child(still)
 	# deferred: the HUD's slots sync after the pick panel
 	_pick.card_taken.connect(
 		func(code: int, from: Rect2) -> void: flights.launch.call_deferred(_reader, code, from)
 	)
 
 
+func _ready() -> void:
+	# The run's lasting parts; panels that come and go (the pick, the shop, the swap) draw directly.
+	for part: CanvasItem in [
+		_corner,
+		_top_frame,
+		_shard_plate,
+		_items,
+		_combos,
+		starbound_hud,
+		depths_tag,
+		boss_bar,
+		heat_meter,
+		minimap.corner,  # the map scrolls under the hero: still only while the hero stands
+		minimap.ticks,  # its frame never moves
+		spell_squares,
+		build_hud,
+	]:
+		still.add_part(part)
+	still.add_part(ability_squares, ability_squares.drawn_rect)  # a full-screen Control that draws in a corner
+
+
+## Redraws every item of the HUD (a setting changed how they draw: the palette, reduced motion).
+func redraw_all() -> void:
+	for c in find_children("*", "CanvasItem", true, false):
+		(c as CanvasItem).queue_redraw()
+
+
 func sync(reader: WorldReader) -> void:
 	_reader = reader
-	if _landing != reader.arriving():  # v0.8.0 N11: hidden until the hero lands, then shown
+	if _landing != reader.arriving():  # Hidden until the hero lands, then shown
 		_landing = reader.arriving()
 		visible = not _landing
 	var locale := TranslationServer.get_locale()
 	if locale != _shown_locale:  # P-7: words again in a new language
 		_shown_locale = locale
 		_shown.clear()
-	# v0.10.5: each part's cost goes to its own PerfMarks bucket "hud.<part>" (the perf log's `bd` column). Off, each
+	# Each part's cost goes to its own PerfMarks bucket "hud.<part>" (the perf log's `bd` column). Off, each
 	# is one bool check. The calls keep their order.
 	var t := PerfMarks.start()
 	_sync_hp(reader)
@@ -307,6 +327,7 @@ func sync(reader: WorldReader) -> void:
 	t = PerfMarks.start()
 	kit_hud.sync(reader)  # v0.3.5 K
 	ability_squares.sync(reader)  # v0.9.5 HU
+	spell_squares.sync(reader)  # v0.11.0 O10
 	PerfMarks.add(&"hud.kit", t)
 	t = PerfMarks.start()
 	events.sync(reader)  # v0.5.0 EV
@@ -324,6 +345,7 @@ func sync(reader: WorldReader) -> void:
 	t = PerfMarks.start()
 	boss_door.sync(reader)  # v0.8.0 BD
 	interact.sync(reader)  # v0.9.0 IX
+	objective_hints.sync(reader)  # v0.11.0 O2
 	PerfMarks.add(&"hud.prompts", t)
 	t = PerfMarks.start()
 	build_hud.sync(reader)  # v0.6.0 MX2
@@ -348,13 +370,12 @@ func _sync_hp(reader: WorldReader) -> void:
 		_hp_text.text = tr("HUD_HP") % [hp, mx]
 		_hp_text.add_theme_color_override("font_color", hp_color)
 	_regen.sync(reader, Vector2(_hp_bar.size.x * _hp_bar.shown_fraction(), _hp_bar.size.y))
-	if _astral:
-		var weapon := reader.weapon_id()
-		if _changed(&"weapon", weapon):
-			_weapon_name.text = ""
-			for a: Dictionary in reader.abilities():
-				if a["id"] == weapon:
-					_weapon_name.text = tr(a["name_key"])
+	var weapon := reader.weapon_id()
+	if _changed(&"weapon", weapon):
+		_weapon_name.text = ""
+		for a: Dictionary in reader.abilities():
+			if a["id"] == weapon:
+				_weapon_name.text = tr(a["name_key"])
 
 
 ## The gate note at the bottom and the floor line at the top.
@@ -363,14 +384,14 @@ func _sync_floor_lines(reader: WorldReader) -> void:
 	_floor.visible = reader.has_boss_room()
 	if not _floor.visible:
 		return
-	var deep := reader.floor_is_deep()  # v0.5.0 RT: a Deep floor says so, in the Deep gate's violet
+	var deep := reader.floor_is_deep()  # A Deep floor says so, in the Deep gate's violet
 	var floor_index := reader.floor_index()
 	var loop := reader.loop()
 	if _changed(&"floor", [floor_index, deep, _biome_key, loop]):
 		_floor.text = (
 			loop_prefix(self, loop)
 			+ tr("HUD_FLOOR_DEEP" if deep else "HUD_FLOOR") % [floor_index, tr(_biome_key)]
-		)  # v0.7.5 AP: "Loop 2 · Floor 1 · <biome>" past the first loop
+		)  # "Loop 2 · Floor 1 · <biome>" past the first loop
 		if deep:
 			_floor.add_theme_color_override("font_color", DEEP_TEXT)
 		_floor_marks.queue_redraw()
@@ -378,17 +399,9 @@ func _sync_floor_lines(reader: WorldReader) -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
-	_hp_frame.tint = (
-		Color.WHITE.lerp(HudStyle.warn(), HudStyle.pulse(_t)) if _hp_bar.warn else Color.WHITE
-	)
-	if _astral:
-		_hp_medal.warn = HudStyle.pulse(_t) if _hp_bar.warn else 0.0
-	if _card_left > 0.0:
-		_card_left -= delta
-	if _combo_left > 0.0:
-		_combo_left -= delta
-	_advance_pair_title(delta)
-	if _floor_card_left > 0.0 and not _landing:  # v0.8.0 N11: the card shows once the hero landed
+	_hp_medal.warn = HudStyle.pulse(_t) if _hp_bar.warn else 0.0
+	notices.advance(delta)  # v0.11.0 F12
+	if _floor_card_left > 0.0 and not _landing:  # The card shows once the hero landed
 		_floor_card_left -= delta
 		_floor_card.modulate.a = clampf(_floor_card_left / FLOOR_CARD_FADE, 0.0, 1.0)
 		_floor_card.visible = _floor_card_left > 0.0
@@ -398,8 +411,8 @@ func _process(delta: float) -> void:
 
 
 ## Run flow: names the floor's biome (a locale key) and shows the floor-title card ("Floor 2 · Deep" on a Deep
-## floor, v0.5.0 RT). v0.5.5 EC (owner Q-S4): `shards_lost` > 0 adds a line that the portal kept half your shards.
-## v0.7.5 AP: `loop` > 1 puts "Loop N · " before the card's title.
+## floor, v0.5.0 RT). `shards_lost` > 0 adds a line that the portal kept half your shards.
+## `loop` > 1 puts "Loop N · " before the card's title.
 func show_floor(
 	floor_index: int,
 	biome_key: String,
@@ -418,11 +431,11 @@ func show_floor(
 	_floor_card_left = FLOOR_CARD_SECONDS
 	_floor_card.modulate.a = 1.0
 	_floor_card.visible = true
-	if _reader != null:  # v0.8.0 N11: the floor line names the biome now (the sim waits for the cover to open)
+	if _reader != null:  # The floor line names the biome now (the sim waits for the cover to open)
 		sync(_reader)
 
 
-## The floor-title card's words in the language now (v0.6.0 UP: again on a language switch while it shows).
+## The floor-title card's words in the language now (again on a language switch while it shows).
 func _word_floor_card() -> void:
 	if _floor_card_args.is_empty():
 		return
@@ -434,7 +447,7 @@ func _word_floor_card() -> void:
 	_floor_card_shards.text = tr("HUD_SHARDS_HALVED") % shards_lost if shards_lost > 0 else ""
 	var hp_gained: int = _floor_card_args[4]
 	_floor_card_hp.text = tr("HUD_MAX_HP_GROWN") % hp_gained if hp_gained > 0 else ""
-	var rule: StringName = _floor_card_args[5]  # v0.10.5 O5b: the loop's new rule, and what it does
+	var rule: StringName = _floor_card_args[5]  # The loop's new rule, and what it does
 	_floor_card_rule.text = (
 		(
 			(tr("HUD_LOOP_NEW_RULE") % tr("LOOP_RULE_%s_NAME" % String(rule).to_upper()))
@@ -452,7 +465,7 @@ func _notification(what: int) -> void:
 		_word_floor_card()
 
 
-## v0.7.5 AP: "Loop N · " (translated through `ci`) past the first loop; "" on loop 1, so a run that never ascended
+## "Loop N · " (translated through `ci`) past the first loop; "" on loop 1, so a run that never ascended
 ## reads as before.
 static func loop_prefix(ci: Object, loop: int) -> String:
 	return ci.tr("HUD_LOOP") % loop + " · " if loop > 1 else ""
@@ -485,12 +498,12 @@ func floor_text() -> String:
 	return _floor.text
 
 
-## v0.3.0 UI: the danger meter (tests read its tier; v0.10.5 O6: its fill, colour and blink).
+## The danger meter (tests read its tier; its fill, colour and blink).
 func danger_meter() -> DangerMeter:
 	return _danger
 
 
-## v0.3.0 UI: the low-HP warning is on (the HP bar pulses red and the screen edge glows).
+## The low-HP warning is on (the HP bar pulses red and the screen edge glows).
 func low_hp_warning() -> bool:
 	return _hp_bar.warn and _vignette.active
 
@@ -512,43 +525,40 @@ func top_texts() -> PackedStringArray:
 
 
 func _build_corner() -> void:
-	var corner := VBoxContainer.new()
+	var corner := _corner
+	corner.name = "HpCorner"
 	corner.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	corner.position = Vector2(28, -BOTTOM_LINE)  # v0.9.5 HU: the plate's bottom on the squares' line
+	corner.position = Vector2(28, -BOTTOM_LINE)  # The plate's bottom on the squares' line
 	corner.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	add_child(corner)
 	_hp_frame.name = "HpPlate"
-	_hp_frame.ember = true
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 7)
 	_hp_frame.add_child(col)
-	if _astral:  # v0.10.5 W3-O17: the medallion at the bar's left end; the weapon's name and the HP over the bar
-		corner.position.x = 20.0
-		var row := HBoxContainer.new()
-		row.name = "HpRow"
-		row.add_theme_constant_override("separation", 0)
-		corner.add_child(row)
-		row.add_child(_hp_medal)
-		row.add_child(_hp_frame)
-		_hp_frame.size_flags_vertical = Control.SIZE_SHRINK_END
-		AstralHudParts.set_margins(_hp_frame, 0, 26, 0, ASTRAL_BAR_FOOT - BAR.y * 0.5)
-		_hp_medal.bar_y = ASTRAL_BAR_FOOT
-		col.add_theme_constant_override("separation", 6)
-		var top := HBoxContainer.new()
-		top.name = "HpLine"
-		col.add_child(top)
-		_weapon_name.name = "WeaponName"
-		_weapon_name.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		_weapon_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_weapon_name.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-		_weapon_name.clip_text = true
-		HudStyle.serif_label(_weapon_name, 15, 4, HudStyle.A_TEXT)
-		top.add_child(_weapon_name)
-		_hp_text.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-		top.add_child(_hp_text)
-	else:
-		corner.add_child(_hp_frame)
-		col.add_child(_hp_text)
+	# The medallion at the bar's left end; the weapon's name and the HP over the bar
+	corner.position.x = 20.0
+	var row := HBoxContainer.new()
+	row.name = "HpRow"
+	row.add_theme_constant_override("separation", 0)
+	corner.add_child(row)
+	row.add_child(_hp_medal)
+	row.add_child(_hp_frame)
+	_hp_frame.size_flags_vertical = Control.SIZE_SHRINK_END
+	AstralHudParts.set_margins(_hp_frame, 0, 26, 0, ASTRAL_BAR_FOOT - BAR.y * 0.5)
+	_hp_medal.bar_y = ASTRAL_BAR_FOOT
+	col.add_theme_constant_override("separation", 6)
+	var top := HBoxContainer.new()
+	top.name = "HpLine"
+	col.add_child(top)
+	_weapon_name.name = "WeaponName"
+	_weapon_name.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_weapon_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_weapon_name.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_weapon_name.clip_text = true
+	HudStyle.serif_label(_weapon_name, 15, 4, HudStyle.A_TEXT)
+	top.add_child(_weapon_name)
+	_hp_text.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	top.add_child(_hp_text)
 	_hp_bar.name = "HpBar"
 	_hp_bar.color = HudStyle.hp_color()
 	_hp_bar.custom_minimum_size = BAR
@@ -559,7 +569,6 @@ func _build_corner() -> void:
 ## The top plate: "FLOOR 01 // RUINS" over the run time, the danger meter and the kills.
 func _build_top() -> void:
 	_top_frame.name = "TopPlate"
-	_top_frame.ember = true
 	_top_frame.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_top_frame.position = Vector2(-TOP_W * 0.5, 10)
 	_top_frame.custom_minimum_size = Vector2(TOP_W, 0)
@@ -584,19 +593,19 @@ func _build_top() -> void:
 	_left.add_theme_color_override("font_color", Color(HudStyle.text_color(), 0.85))
 	row.add_child(_left)
 	add_child(depths_tag)
-	if _astral:  # v0.10.5 W3-O17: Cinzel, letter-spaced; the floor line between two stars
-		AstralHudParts.set_margins(_top_frame, 20, 20, 2, 6)
-		col.add_theme_constant_override("separation", 6)
-		row.add_theme_constant_override("separation", 18)
-		HudStyle.serif_label(_floor, 15, 5, HudStyle.A_TEXT)
-		_floor_marks.label = _floor
-		_floor.add_child(_floor_marks)
-		_floor.resized.connect(_floor_marks.queue_redraw)
-		HudStyle.serif_label(_wave, 22, 2, HudStyle.A_TEXT)
-		HudStyle.serif_label(_left, 13, 3, HudStyle.A_DIM)
+	# Cinzel, letter-spaced; the floor line between two stars
+	AstralHudParts.set_margins(_top_frame, 20, 20, 2, 6)
+	col.add_theme_constant_override("separation", 6)
+	row.add_theme_constant_override("separation", 18)
+	HudStyle.serif_label(_floor, 15, 5, HudStyle.A_TEXT)
+	_floor_marks.label = _floor
+	_floor.add_child(_floor_marks)
+	_floor.resized.connect(_floor_marks.queue_redraw)
+	HudStyle.serif_label(_wave, 22, 2, HudStyle.A_TEXT)
+	HudStyle.serif_label(_left, 13, 3, HudStyle.A_DIM)
 
 
-## v0.10.5 O6 (G2 pick C): the tag hangs just under the top plate, right-aligned to its inner edge.
+## G2 pick C: the tag hangs just under the top plate, right-aligned to its inner edge.
 func _place_depths_tag() -> void:
 	var tag_size := depths_tag.get_combined_minimum_size()
 	depths_tag.size = tag_size
@@ -611,7 +620,7 @@ func gate_text() -> String:
 
 
 ## The note at the bottom: the sealed gate, the boss warning near the boss door, the open portal (in the boss room
-## after the boss; none outside it). v0.8.0 N18 (owner O76: the game stops explaining): PB's second line ("explore the
+## after the boss; none outside it). PB's second line ("explore the
 ## rest of the floor") and, on a loop's last floor, the Ascension portal's and the Loop device's lines are gone: no note
 ## there at all.
 func _gate_note(reader: WorldReader) -> String:
@@ -621,7 +630,7 @@ func _gate_note(reader: WorldReader) -> String:
 		if reader.portal_active():
 			if reader.floor_room_of(reader.player_pos()) != reader.boss_room():
 				return ""
-			if reader.ascension_floor():  # v0.8.0 N18: the Ascension portal and the Loop device speak for themselves
+			if reader.ascension_floor():  # The Ascension portal and the Loop device speak for themselves
 				return ""
 			return tr("HUD_PORTALS_OPEN" if reader.has_deep_portal() else "HUD_PORTAL_OPEN")
 		if not reader.boss_door_sealed():
@@ -643,23 +652,20 @@ func _build_floor_card() -> void:
 	_floor_card_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_floor_card_title.add_theme_constant_override("outline_size", 6)
 	_floor_card.add_child(_floor_card_title)
-	if _astral:  # v0.10.5 W3-O17: Cinzel over a star rule, on an ink veil
-		HudStyle.serif_label(_floor_card_title, 48, 8, HudStyle.A_TEXT)
-		_floor_card.add_child(AstralChrome.Rule.new(220.0))
-		_floor_card.draw.connect(_draw_floor_card_veil)
+	# Cinzel over a star rule, on an ink veil
+	HudStyle.serif_label(_floor_card_title, 48, 8, HudStyle.A_TEXT)
+	_floor_card.add_child(AstralChrome.Rule.new(220.0))
+	_floor_card.draw.connect(_draw_floor_card_veil)
 	var plate := HudFrame.new(Vector2(28, 4))
 	plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_floor_card.add_child(plate)
 	_floor_card_biome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_floor_card_biome.add_theme_color_override("font_color", HudStyle.accent())
-	if _astral:
-		HudStyle.serif_label(_floor_card_biome, 22, 6, HudStyle.A_ACCENT)
+	HudStyle.serif_label(_floor_card_biome, 22, 6, HudStyle.A_ACCENT)
 	plate.add_child(_floor_card_biome)
 	_floor_card_shards.name = "FloorCardShards"
 	_floor_card_shards.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_floor_card_shards.add_theme_color_override(
-		"font_color", HudStyle.A_ACCENT if _astral else ShardIcon.MID
-	)
+	_floor_card_shards.add_theme_color_override("font_color", HudStyle.A_ACCENT)
 	_floor_card_shards.add_theme_constant_override("outline_size", 4)
 	_floor_card_shards.visible = false
 	_floor_card.add_child(_floor_card_shards)
@@ -669,7 +675,7 @@ func _build_floor_card() -> void:
 	_floor_card_hp.add_theme_constant_override("outline_size", 4)
 	_floor_card_hp.visible = false
 	_floor_card.add_child(_floor_card_hp)
-	_floor_card_rule.name = "FloorCardRule"  # v0.10.5 O5b: the loop's new rule, in the Loop device's violet
+	_floor_card_rule.name = "FloorCardRule"  # The loop's new rule, in the Loop device's violet
 	_floor_card_rule.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_floor_card_rule.add_theme_color_override("font_color", DEEP_TEXT)
 	_floor_card_rule.add_theme_constant_override("outline_size", 6)
@@ -678,13 +684,13 @@ func _build_floor_card() -> void:
 	_floor_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
-## v0.10.5 W3-O17: the floor-title card's veil (AstralChrome's store window: ink fading at its sides, two hairlines).
+## The floor-title card's veil (AstralChrome's store window: ink fading at its sides, two hairlines).
 func _draw_floor_card_veil() -> void:
 	var r := Rect2(Vector2(80, -18), Vector2(_floor_card.size.x - 160, _floor_card.size.y + 36))
 	AstralChrome.veil(_floor_card, r, 160.0)
 
 
-# --- Rewards (v0.3.0 E) -------------------------------------------------------------------------------------
+# --- Rewards -------------------------------------------------------------------------------------
 ## The 3-card pick panel (the app connects its `picked` signal to the input latch).
 func pick_panel() -> PickPanel:
 	return _pick
@@ -704,7 +710,7 @@ func prompt_poor() -> bool:
 
 
 func _build_rewards() -> void:
-	var plate := HudFrame.new(Vector2(14, 5))
+	var plate := _shard_plate
 	plate.name = "Shards"
 	plate.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	plate.grow_horizontal = Control.GROW_DIRECTION_BEGIN
@@ -712,13 +718,13 @@ func _build_rewards() -> void:
 	plate.offset_right = -28
 	plate.offset_top = 20
 	_shard_box.add_theme_constant_override("separation", 10)
-	_shard_box.add_child(ShardIcon.new(26.0 if _astral else 22.0, _astral))
+	_shard_box.add_child(ShardIcon.new(26.0, true))
 	_shards.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	HudStyle.style_label(_shards, 22, true)
 	_shards.add_theme_color_override("font_color", ShardIcon.LIGHT)
-	if _astral:  # v0.10.5 W3-O17: the wallet in Cinzel by the Astral shard
-		HudStyle.serif_label(_shards, 26, 1, HudStyle.A_TEXT)
-		(_shard_box.get_child(0) as Control).size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# The wallet in Cinzel by the Astral shard
+	HudStyle.serif_label(_shards, 26, 1, HudStyle.A_TEXT)
+	(_shard_box.get_child(0) as Control).size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_shard_box.add_child(_shards)
 	plate.add_child(_shard_box)
 	add_child(plate)
@@ -740,11 +746,11 @@ func _sync_rewards(reader: WorldReader) -> void:
 		var line := ""
 		if reader.reward_is_epic(i):  # v0.5.0 RT
 			line = tr("REWARD_OPEN_EPIC_ALTAR")
-		elif reader.reward_kind(i) == WorldReader.REWARD_DROP:  # v0.6.0 CU: a free card drop
+		elif reader.reward_kind(i) == WorldReader.REWARD_DROP:  # A free card drop
 			line = tr("REWARD_OPEN_DROP")
 		elif reader.reward_kind(i) == WorldReader.REWARD_ALTAR:
 			line = tr("REWARD_OPEN_ALTAR")
-		else:  # v0.9.5 PR: the price shows red when you cannot pay it
+		else:  # The price shows red when you cannot pay it
 			line = tr("REWARD_OPEN_CHEST") % price
 		_prompt.show_prompt(reader, line, not reader.reward_affordable(i))
 	else:
@@ -785,25 +791,21 @@ func _sync_items(reader: WorldReader) -> void:
 	for e in reader.events_since(_last_seq):
 		_last_seq = e.seq
 		if e.kind == SimEvent.Kind.PICKUP:
-			_show_card(reader, e.amount, tr("HUD_PICKED_UP"))
-			_card_mode = &"pickup"
-			_card_left = CARD_SECONDS
+			var face := PickPanel.card_face(self, reader, e.amount)  # A ticker line, no card
+			notices.add_item(face["id"], face["color"], face["title"])
 		elif e.kind == SimEvent.Kind.COMBO_UNLOCKED:
 			_combo_pending = e.amount
-		elif e.kind == SimEvent.Kind.PAIR_ON:  # v0.9.5 EE3: an element pair turned on
+		elif e.kind == SimEvent.Kind.PAIR_ON:  # An element pair turned on
 			_pair_pending = e.amount
 			_pair_level_pending = 3 if e.amount_applied <= 0 else e.amount_applied
-	if _card_mode == &"pickup" and _card_left <= 0.0:
+	var near := preview_pickup(reader)
+	var item := reader.pickup_item(near) if near >= 0 else -1
+	if item >= 0 and (_card_mode != &"preview" or item != _preview_item):
+		_show_card(reader, item, "")
+		_card_mode = &"preview"
+	elif item < 0 and _card_mode == &"preview":
 		_card_mode = &""
-	if _card_mode != &"pickup":
-		var near := preview_pickup(reader)
-		var item := reader.pickup_item(near) if near >= 0 else -1
-		if item >= 0 and (_card_mode != &"preview" or item != _preview_item):
-			_show_card(reader, item, "")
-			_card_mode = &"preview"
-		elif item < 0 and _card_mode == &"preview":
-			_card_mode = &""
-		_preview_item = item
+	_preview_item = item
 	if _card_mode == &"":
 		_card.hide_card()
 	var owned := reader.items_owned()
@@ -820,7 +822,7 @@ func _sync_items(reader: WorldReader) -> void:
 		_items.add_child(icon)
 
 
-## v0.4.0 BS: `idx` is a card code (an item, an ability or a stat card; PickPanel.card_face).
+## `idx` is a card code (an item, an ability or a stat card; PickPanel.card_face).
 func _show_card(reader: WorldReader, idx: int, caption: String) -> void:
 	var face := PickPanel.card_face(self, reader, idx)
 	var type := int(face.get("type", -1))
@@ -828,14 +830,9 @@ func _show_card(reader: WorldReader, idx: int, caption: String) -> void:
 		face["id"], type, int(face["tier"]), type == WorldReader.CARD_CURSE
 	)
 	var sentence: String = face["sentence"]
-	if face.has("form_line"):  # v0.9.5 TX: what the card does on the form held, under the sentence
+	if face.has("form_line"):  # What the card does on the form held, under the sentence
 		sentence += "\n" + String(face["form_line"])
 	_card.show_item(face["id"], face["title"], sentence, face["color"], caption, plaque)
-
-
-## The combo card (tests and shot scripts read it).
-func combo_card() -> ComboCard:
-	return _combo_card
 
 
 ## The number of combo badges in the row.
@@ -847,43 +844,20 @@ func combo_badge_count() -> int:
 	return n
 
 
-## v0.3.0 G: a combo that just unlocked shows its card; the badge row follows the combos owned.
+## A combo that just unlocked adds a ticker line; the badge row follows the combos owned.
 func _sync_combos(reader: WorldReader) -> void:
 	if _combo_pending >= 0:
 		var c := _combo_pending
 		_combo_pending = -1
 		var pair := reader.combo_item_ids(c)
-		_combo_card.show_combo(
-			reader.combo_id(c),
-			pair[0],
-			pair[1],
-			tr(reader.combo_name_key(c)),
-			tr(reader.combo_desc_key(c)),
-			tr("UI_COMBO_UNLOCKED")
-		)
-		_combo_left = COMBO_CARD_SECONDS
-		_combo_card.place_bottom_centre(-196 - _card.plaque_height() - 10)  # above the item plaque
-	if _pair_pending >= 0:  # v0.9.5 EE3: the pair's banner is the combo card, with its two element cards
+		notices.add_combo(reader.combo_id(c), pair[0], pair[1], tr(reader.combo_name_key(c)))
+	if _pair_pending >= 0:  # An element pair: a ticker line, the two element icons, its name and level
 		var x := _pair_pending
 		_pair_pending = -1
 		var cards := reader.pair_card_ids(x)
-		var lvl := _pair_level_pending
-		var pname := tr(reader.pair_name_key(x))
-		_combo_card.show_combo(
-			reader.pair_id(x),
-			cards[0],
-			cards[1],
-			pname if lvl <= 1 else "%s · %s" % [pname, tr("UI_WAND_LEVEL") % lvl],
-			tr(reader.pair_desc_key(x)),
-			tr("UI_PAIR_ON") if lvl <= 1 else tr("UI_PAIR_LEVEL") % lvl
+		notices.add_pair(
+			reader.pair_id(x), cards[0], cards[1], tr(reader.pair_name_key(x)), _pair_level_pending
 		)
-		_combo_left = PAIR_CARD_SECONDS
-		_combo_card.place_bottom_centre(-196 - _card.plaque_height() - 10)
-		_pair_title.text = tr("UI_PAIR_BIG") % pname
-		_pair_title.add_theme_color_override("font_color", ItemLooks.combo_color(reader.pair_id(x)))
-		_pair_title_t = 0.0
-	if _combo_left <= 0.0 and _combo_card.is_showing():
-		_combo_card.hide_card()
 	_sync_pair_badges(reader)
 	var owned := reader.combos_owned()
 	if owned.size() == _combos_shown:
@@ -912,42 +886,7 @@ func _sync_combos(reader: WorldReader) -> void:
 	_sync_pair_badges(reader)
 
 
-## v0.9.5 EP4: the big centred "Element pair! <name>" title (PairTitle), hidden until a pair turns on.
-func _build_pair_title() -> void:
-	_pair_title.name = "PairTitle"
-	_pair_title.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_pair_title.anchor_top = 0.28
-	_pair_title.anchor_bottom = 0.28
-	_pair_title.offset_top = 0.0
-	_pair_title.offset_bottom = 80.0
-	_pair_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_pair_title.add_theme_constant_override("outline_size", 8)
-	_pair_title.add_theme_color_override("font_outline_color", Color.BLACK)
-	_pair_title.modulate.a = 0.0
-	_pair_title.visible = false
-	add_child(_pair_title)
-
-
-## v0.9.5 EP4: the title fades in, holds and fades out by `delta` (the view's clock; nothing in the sim waits on it).
-func _advance_pair_title(delta: float) -> void:
-	if _pair_title_t < 0.0:
-		return
-	_pair_title_t += delta
-	var total := PAIR_TITLE_IN + PAIR_TITLE_HOLD + PAIR_TITLE_OUT
-	if _pair_title_t >= total:
-		_pair_title_t = -1.0
-		_pair_title.visible = false
-		return
-	var a := 1.0
-	if _pair_title_t < PAIR_TITLE_IN:
-		a = _pair_title_t / PAIR_TITLE_IN
-	elif _pair_title_t > PAIR_TITLE_IN + PAIR_TITLE_HOLD:
-		a = (total - _pair_title_t) / PAIR_TITLE_OUT
-	_pair_title.modulate.a = clampf(a, 0.0, 1.0)
-	_pair_title.visible = true
-
-
-## v0.9.5 EP4: one badge per pair that is on (PairBadge<X>: its two element icons and "Lv N"), after the combo badges;
+## One badge per pair that is on (PairBadge<X>: its two element icons and "Lv N"), after the combo badges;
 ## rebuilt when the mask or any level changes.
 func _sync_pair_badges(reader: WorldReader) -> void:
 	var sig := reader.pair_mask()
@@ -995,10 +934,21 @@ func _sync_pair_badges(reader: WorldReader) -> void:
 ## first-run tips (OnboardingHints.stack_under) sit under the phase's lines in turn. A look only (EI-07).
 func _stack_top_centre() -> void:
 	var y := PhaseHud.TOP
+	var under := -1.0  # the lowest bottom of the boss bar and the room banners (-1: none shown)
 	if boss_bar.visible:
-		y = maxf(y, boss_bar.bottom() + STACK_GAP)
+		under = boss_bar.bottom() + STACK_GAP
 	for b: Control in [overrun_hud, lockdown_hud, shrine_hud]:
 		if b.visible:
-			y = maxf(y, b.offset_top + b.get_combined_minimum_size().y + STACK_GAP)
+			under = maxf(under, b.offset_top + b.get_combined_minimum_size().y + STACK_GAP)
+	y = maxf(y, under)
+	# The notice ticker hangs under the top plate, or under those banners; the phase line goes under it.
+	var top := _top_frame.position.y + _top_frame.size.y + 3.0
+	if under > 0.0:
+		top = maxf(top, under)
+	if notices.position.x != _top_frame.position.x or notices.position.y != top:
+		notices.position = Vector2(_top_frame.position.x, top)
+	notices.size = Vector2(TOP_W, notices.get_combined_minimum_size().y)
+	if not notices.is_empty():
+		y = maxf(y, top + notices.stack_height() + STACK_GAP)
 	if phase_hud.offset_top != y:
 		phase_hud.offset_top = y

@@ -29,7 +29,7 @@ const SIDE_TONES := [1.0, 0.66, 0.86, 0.58, 0.94, 0.7, 0.8]
 const TIP_TONES := [1.0, 0.84]
 const STONE := Color("#5B5550")
 const STONE_TOP := Color("#736C66")
-## v0.8.0 GX (owner O86, graphics feedback §5): crystals glint under the fire props (a little metallic, a low
+## Crystals glint under the fire props (a little metallic, a low
 ## roughness) against the matte stone; every crystal material takes this metallic.
 const CRYSTAL_METALLIC := 0.2
 
@@ -239,6 +239,68 @@ static func cluster(
 		root.add_child(pivot)
 	root.set_meta(&"shards", count)
 	return root
+
+
+## The same pieces as one draw per material: every MeshInstance3D under `piece` (a cluster(), say) is baked, in its
+## place relative to `piece`, into one mesh per material and shadow setting. A cluster of n shards then costs two
+## camera draws and one shadow draw instead of 2n and n, with the same triangles, tones and materials, so the same
+## pixels. For pieces that never move apart; `piece` is freed. The returned node keeps `piece`'s metadata.
+static func baked(piece: Node3D) -> Node3D:
+	var out := Node3D.new()
+	out.name = piece.name
+	for key in piece.get_meta_list():
+		out.set_meta(key, piece.get_meta(key))
+	var groups := {}  # [material, cast_shadow] -> [name, verts, normals, colors]
+	var stack: Array[Node] = [piece]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		stack.append_array(n.get_children())
+		if not n is MeshInstance3D or (n as MeshInstance3D).mesh == null:
+			continue
+		var mi := n as MeshInstance3D
+		var t := mi.transform
+		var p := mi.get_parent()
+		while p != piece:
+			t = (p as Node3D).transform * t
+			p = p.get_parent()
+		var key := [mi.material_override, mi.cast_shadow]
+		if not groups.has(key):
+			groups[key] = [mi.name, PackedVector3Array(), PackedVector3Array(), PackedColorArray()]
+		var g: Array = groups[key]
+		var nb := t.basis.inverse().transposed()
+		for s in mi.mesh.get_surface_count():
+			var arr := mi.mesh.surface_get_arrays(s)
+			# packed arrays are values: each is filled here and stored back
+			var verts: PackedVector3Array = g[1]
+			var normals: PackedVector3Array = g[2]
+			var colors: PackedColorArray = g[3]
+			for v: Vector3 in arr[Mesh.ARRAY_VERTEX]:
+				verts.append(t * v)
+			for v: Vector3 in arr[Mesh.ARRAY_NORMAL]:
+				normals.append((nb * v).normalized())
+			if arr[Mesh.ARRAY_COLOR] != null:
+				colors.append_array(arr[Mesh.ARRAY_COLOR])
+			g[1] = verts
+			g[2] = normals
+			g[3] = colors
+	for key: Array in groups:
+		var g: Array = groups[key]
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = g[1]
+		arrays[Mesh.ARRAY_NORMAL] = g[2]
+		if (g[3] as PackedColorArray).size() == (g[1] as PackedVector3Array).size():
+			arrays[Mesh.ARRAY_COLOR] = g[3]
+		var m := ArrayMesh.new()
+		m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		var mi := MeshInstance3D.new()
+		mi.name = g[0]
+		mi.mesh = m
+		mi.material_override = key[0]
+		mi.cast_shadow = key[1]
+		out.add_child(mi)
+	piece.free()
+	return out
 
 
 ## A small outlined floating fragment in `mat`, radius r.

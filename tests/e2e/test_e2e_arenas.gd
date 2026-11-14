@@ -16,12 +16,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO) -> bool:
 	var w := e.world()
 	var nav := NavField.new()
@@ -56,8 +50,8 @@ func test_walk_into_an_arena_room_fight_its_burst_and_open_its_reward() -> void:
 		return
 	assert_eq(main.view.arenas.frame_count(), 0, "no amber frames: they are locked rooms (DR)")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
-	await _click(e, main, "GoArena")  # the dev route: by an arena's door, outside it
+	await e.click_dev("God")
+	await e.click_dev("GoArena")  # the dev route: by an arena's door, outside it
 	await e.frames(2)
 	await e.tap(KEY_QUOTELEFT)
 	var room := -1
@@ -103,7 +97,7 @@ func test_walk_into_an_arena_room_fight_its_burst_and_open_its_reward() -> void:
 			cleared = true
 			break
 		await e.tap(KEY_QUOTELEFT)
-		await _click(e, main, "ClearWave")
+		await e.click_dev("ClearWave")
 		await e.frames(2)
 		await e.tap(KEY_QUOTELEFT)
 	assert_true(cleared, "after %d formations the room opens" % waves)
@@ -135,7 +129,7 @@ func test_the_boss_leaves_a_legendary_pick() -> void:
 	var f := w.floor_layout
 	var hud: Hud = main.get_node("UI/Hud")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
@@ -147,7 +141,7 @@ func test_the_boss_leaves_a_legendary_pick() -> void:
 		return
 	assert_eq(w.legendary_id, -1, "no legendary while the boss lives")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(3)
 	var r := w.rewards.index_of(w.legendary_id)

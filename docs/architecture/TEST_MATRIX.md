@@ -86,3 +86,68 @@ Since 2026-10-13 (owner; CLAUDE.md "Testing before a push" and LOCKED_DECISIONS)
 - a golden changed without a PROGRESS entry;
 - `src/sim/` gained a banned token, or presentation writes sim state;
 - a visible string skips `tr()`.
+
+## 7. The native core and the batched display
+
+What each test proves about the C++ library ([`NATIVE_CORE.md`](NATIVE_CORE.md)) and the batched views
+([`PRESENTATION_CONTRACTS.md`](PRESENTATION_CONTRACTS.md) §11). The library is required: a GUT run without it stops
+before its first test (below).
+
+| File | What it proves |
+|---|---|
+| `tests/unit/app/test_native_move.gd` | The collision passes part bodies and clear walls by their rules (a crowd pressed into a wall ends no deeper than the GDScript passes did, `GDSCRIPT_CROWD_DEPTH_M`, give or take 0.05 m); a kernel's columns come back as new arrays (an array read before the call is untouched); the same start gives the same hashes; **`determinism_probe` equals the value MSVC gives**; the per-kind table agrees with `EnemyAi` for every kind, every kind runs in its mode, hooks and shapes follow `EnemyAi`, the table's numbers are the `EnemyTable`s', the native side holds what was sent and lists the script rows |
+| `tests/unit/app/test_native_core.gd` | Every `World` made directly has its native side (with the direction tables); a `NavField` of its own floods on its own native side; **a run saved through the real save path resumes into the same hashed state and matches the run that was not saved every 60 ticks for 600** |
+| `tests/unit/native/test_native_geom.gd` | `dir` equals `Kin` for every angle (and the wrap), `angle_of` for seeded vectors, `turn_toward` exactly; the tables must be whole; the nav grid slot takes a world's field |
+| `tests/unit/native/test_native_ai.gd` | The native side reads the table at `NativeKindTable`'s offsets; **every table kind only ever takes the state machine's steps** (SPAWN → MOVE → WINDUP → ACTIVE → RECOVER → MOVE, a windup that ends early to RECOVER) and most attack in 600 ticks; each intent reaches its rule (the Mender heals, the Rubble Warden sheds its crust, the Ember Charger leaves its trail, the Sniper relocates and walks to its spot, a wall sends the walk along the flow field); a horde run is the same twice and a snapshot restored mid-run continues exactly |
+| `tests/unit/native/test_native_strike.gd` | The codes and shapes are the GDScript ones; **most table kinds hurt a hero standing in their reach and the shooters fire**; a wall raised during a windup stops the hit; same twice, resumes exactly |
+| `tests/unit/native/test_native_shots.gd` | A tie goes to the wall, then the lower body; a Void shot meets walls only; a shot that meets nothing advances and ends with its life; the whole phase applies a hit, a pierce through two bodies, a bounce off a wall and the end of range; a body killed earlier in the phase is not hit; same twice; a snapshot restored mid-run goes on as the run did |
+| `tests/unit/native/test_native_nav.gd` | **The native flood equals `NavField.flood_reference` (the GDScript oracle) cell for cell** on generated floors, from free and blocked hero cells, with and without extra cells (`ZD_NAV_FLOORS=<n>` for more floors); the native direction lookup equals `NavField.direction` bit for bit; a world floods whole on its period tick; deterministic, and resumes exactly |
+| `tests/unit/native/test_native_crowd.gd` | **The native crowd writer's buffers equal the GDScript writer's, bit for bit,** over 300 seeded frames; events reach the buffers on their frame; the GDScript pass is taken without the library or with the switch off; the native avatars draw the script avatars' bodies; an avatar read during native play has the latest numbers |
+| `tests/golden/test_native_fixtures.gd` | **Every kernel's hash on its seeded inputs, and the horde scene's state hash, equal the values recorded from MSVC** (`tests/golden/fixtures/native_*_hash.txt`, `NativeFixtures`); the same inputs give the same hashes twice. Linux CI (gcc) and `scripts/native/check_release.sh` (the release library) run the same check |
+
+Since step 54b only the crowd writer's test compares two implementations (its GDScript writer stays). The sim's
+native tests are rule tests and determinism tests: there is no GDScript version of the ported loops to compare with,
+so each compares against a rule, an oracle that stays (`flood_reference`, `NavField.direction`, `Kin`), a value
+recorded once (the probe, the fixtures, `GDSCRIPT_CROWD_DEPTH_M`), or the same run twice. The pending-without-library
+rule and `ZD_NATIVE_REQUIRED` are gone: a GUT run without the library stops before its first test with one error and
+exit code 1 (`tests/support/native_required_hook.gd`, set as the pre- and post-run hook in `res://.gutconfig.json`).
+
+**Not tests:** the twin probe (`frame_probe.gd -- --twin`) compares the batched enemies with a node view every frame
+of a real scene; `scripts/checks/native_compare.gd` compared fight outcomes over seeds until step 54b (deleted with the
+GDScript path; its last output is the step's evidence); `view_dump.gd` and
+`hud_still_diff.gd` give before/after dumps and pixel diffs. Their results go into evidence, never into CI
+([`../process/PERF_TOOLS.md`](../process/PERF_TOOLS.md)).
+
+### 7.1 How to run them
+
+```bash
+bash scripts/native/ensure.sh                                           # the library first: build + import (native/README.md)
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd \
+  -gdir=res://tests/unit/native,res://tests/unit/app -ginclude_subdirs -gexit; echo "exit $?"
+```
+- `tests/unit/app` and `tests/unit/native` are both in `scripts/ci/seams.sh` (since step 54b).
+- **Every rule test runs native:** the sim has one path, so `tests/unit/sim` and the e2e tests exercise the kernels
+  as they are. The pre-run hook `tests/support/native_move_hook.gd` and the `ZD_NATIVE_*` variables are gone (step
+  54b); the one hook left, `tests/support/native_required_hook.gd`, only stops a run that has no library.
+- **Run the parts together.** Each kernel passed alone before the lead first ran them all on together; an exit crash
+  appeared only with two test files in one process ([`../LESSONS.md`](../LESSONS.md) L25). After a merge, run the
+  native, presentation, arch and golden folders in one process.
+
+### 7.2 A run is judged by its exit code and its totals
+
+- **The totals:** GUT exits 0 when it cannot start a test file (a parse error, an unimported `class_name`), so a run
+  passes only when its summary shows every test passing and the count is right (§3, `scripts/ci/check_gut_log.sh`).
+- **The exit code:** an engine crash while quitting (a segfault, exit 139) comes after the summary, which still reads
+  all passed. Only the exit code shows it. `seams.sh` fails on GUT's exit code; a hand-run command must print it
+  (`echo "exit $?"`).
+
+### 7.3 What runs only on GitHub
+
+| Check | Where | First run |
+|---|---|---|
+| The Linux (gcc) build of the library, and that the engine loads it | `verify.yml` `prepare` (`scripts/ci/native_lib.sh`, debug and release; a failed build fails there); the checks job and the shards restore it (a missing one fails the restore) and the checks job runs the fixtures with both builds | the PR into `main` |
+| `determinism_probe` on gcc: the cross-compiler identity | `test_native_move.gd` in a shard | the PR into `main` |
+| The Windows debug and release builds, the goldens, the export with the release library | `windows.yml` | the PR into `main` |
+
+Until that run is green, "identical across compilers" is a rule of the build, not a result. If `native_lib.sh` fails,
+it removes the library so the shards run without it, and the `verify` job then fails on the `native` output.

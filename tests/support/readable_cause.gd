@@ -10,6 +10,8 @@ extends RefCounted
 ## v0.9.0 EL: an elite's hit is booked to the attack it was making at the last observe (its ability, its plain attack,
 ## or, while it walked, a touch of its body: ELITE_CONTACT, readable by the body itself, no telegraph needed); its line
 ## is EliteAi's.
+## v0.11.0 O9: a horde critter's hit is its touch (the native TOUCH), readable by its body too; its line is
+## EndPanel's.
 
 ## A projectile on screen this long is readable by itself (starting value: the telegraph minimum, 0.4 s).
 const PROJECTILE_MIN_TICKS := SimTick.MIN_TELEGRAPH_TICKS
@@ -115,17 +117,7 @@ func _check(w: World, e: SimEvent) -> void:
 	var attack: int = _attack.get(e.owner_id, -1)
 	var shown := 0
 	var age := -1
-	if e.effect_id == &"arena_band":
-		_arena_hit(e)
-		return
-	if e.effect_id == &"molten_floor":  # v0.8.0 BS2: lava or the meltdown
-		_molten_hit(w, e)
-		return
-	if e.effect_id == Breakables.EFFECT:  # v0.9.0 DX: an explosive barrel's blast
-		_barrel_hit(w, e)
-		return
-	if e.effect_id == Lockdowns.HAZARD_EFFECT:  # v0.9.0 LK: a Hazard Lockdown's strike
-		_hazard_hit(w, e)
+	if _no_actor_hit(w, e):  # the floor's and the bosses' hazards (v0.11.0 O13a: moved out, max-returns)
 		return
 	if _birth.has(e.source_id):
 		var b: Array = _birth[e.source_id]
@@ -138,6 +130,8 @@ func _check(w: World, e: SimEvent) -> void:
 			problems.append(
 				"projectile on screen %d ticks, fired after a %d-tick telegraph" % [age, shown]
 			)
+	elif EnemyAi.is_critter(kind):  # v0.11.0 O9: a critter's touch, readable by its body (as an elite's)
+		pass
 	elif attack != ELITE_CONTACT or not EliteAi.is_elite_kind(kind):
 		shown = _telegraphed(e.owner_id)
 		if shown < SimTick.MIN_TELEGRAPH_TICKS:
@@ -290,3 +284,188 @@ func _update_streaks(w: World) -> void:
 		elif int(_streak.get(id, 0)) > 0:
 			_last_run[id] = _streak[id]
 			_streak[id] = 0
+
+
+## v0.11.0 O3 (owner L5): a quake pillar's pulse is damage over time from the boss, not from its attack in progress:
+## its warning is its own ring, growing for QuakeTable.warn_ticks (at least the telegraph minimum) before it hits,
+## its recap line the table's cause_key.
+func _boss_hazard_hit(w: World, e: SimEvent) -> void:
+	var bi := w.actors.index_of(e.owner_id)
+	var h: HazardTable = BossAi.table_of(w, bi).hazard if bi >= 0 else null
+	var key := String(h.cause_key) if h != null else ""
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	if h == null or h.warn_ticks < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("an arena hazard warns shorter than the telegraph minimum")
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)
+
+
+func _quake_hit(w: World, e: SimEvent) -> void:
+	var bi := w.actors.index_of(e.owner_id)
+	var q: QuakeTable = BossAi.table_of(w, bi).quake if bi >= 0 else null
+	var key := String(q.cause_key) if q != null else ""
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	if q == null or q.warn_ticks < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("a quake pillar's ring warns shorter than the telegraph minimum")
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)
+
+
+## v0.11.0 F9: the great javelin's flights and pulses are its own warnings: the throw's line (its windup), the recall's
+## line, the ring's growth, each at least the telegraph minimum (GreatJavelinRules); the recap: the attack's two lines.
+func _great_javelin_hit(w: World, e: SimEvent) -> void:
+	var bi := w.actors.index_of(e.owner_id)
+	var atk: BossAttackTable = null
+	if bi >= 0:
+		for a in BossAi.table_of(w, bi).attacks:
+			if a.move == BossAttackTable.Move.GREAT_JAVELIN:
+				atk = a
+	var key := ""
+	var warned := 0
+	if atk != null:
+		key = String(
+			atk.late_cause_key if e.effect_id == BossGreatJavelin.RETURN_EFFECT else atk.cause_key
+		)
+		match e.effect_id:
+			BossGreatJavelin.THROW_EFFECT:
+				warned = atk.windup_ticks
+			BossGreatJavelin.RETURN_EFFECT:
+				warned = atk.great_recall_warn_ticks
+			BossGreatJavelin.QUAKE_EFFECT:
+				warned = atk.great_warn_ticks
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	if warned < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("a great javelin's %s warned for %d ticks" % [e.effect_id, warned])
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)
+
+
+## v0.11.0 O13a: an Ember Charger's fire trail is no attack of its own: its warning is the fire itself, on the ground
+## for its arm time (at least the telegraph minimum) before it burns; its recap line Variants.CAUSE_KEY.
+func _trail_hit(w: World, e: SimEvent) -> void:
+	var key := String(Variants.CAUSE_KEY)
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	var t := w.enemy_table(ActorStore.Kind.EMBER_CHARGER)
+	if t == null or t.trail_arm_ticks < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("a fire trail that burns before the telegraph minimum")
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)
+
+
+## A hit no actor's attack landed (each booked by its own rule), dispatched by its effect; false for any other hit.
+func _no_actor_hit(w: World, e: SimEvent) -> bool:
+	match e.effect_id:
+		&"arena_band":
+			_arena_hit(e)
+		&"molten_floor":  # v0.8.0 BS2: lava or the meltdown
+			_molten_hit(w, e)
+		BossQuake.EFFECT:  # v0.11.0 O3: a quake pillar's pulse
+			_quake_hit(w, e)
+		BossHazard.EFFECT, BossHazard.IMPACT_EFFECT:  # v0.11.0 F8: an arena hazard
+			_boss_hazard_hit(w, e)
+		BossGreatJavelin.THROW_EFFECT, BossGreatJavelin.RETURN_EFFECT, BossGreatJavelin.QUAKE_EFFECT:  # v0.11.0 F9
+			_great_javelin_hit(w, e)
+		Breakables.EFFECT:  # v0.9.0 DX: an explosive barrel's blast
+			_barrel_hit(w, e)
+		Lockdowns.HAZARD_EFFECT:  # v0.9.0 LK: a Hazard Lockdown's strike
+			_hazard_hit(w, e)
+		Variants.FIRE_EFFECT:  # v0.11.0 O13a: an Ember Charger's fire trail
+			_trail_hit(w, e)
+		RuinsRocks.CABLE_EFFECT:  # v0.11.0 O13b: a Wire Weaver's live cable
+			_cable_hit(w, e)
+		CanyonShore.BURST_EFFECT, CanyonShore.VENT_EFFECT, CanyonShore.CHUNK_EFFECT:  # v0.11.0 O13c
+			_canyon_shore_hit(w, e)
+		_:
+			return false
+	return true
+
+
+## v0.11.0 O13b: a Wire Weaver's live cable is no attack of its own: its warning is the Weaver's marked line and the
+## posts sparking as they go in (its windup, at least the telegraph minimum), then the cable itself in plain sight; its
+## recap line RuinsRocks.CAUSE_KEY.
+func _cable_hit(w: World, e: SimEvent) -> void:
+	var key := String(RuinsRocks.CAUSE_KEY)
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	var t := w.enemy_table(ActorStore.Kind.WIRE_WEAVER)
+	if t == null or t.windup_ticks < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("a cable planted before the telegraph minimum")
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)
+
+
+## v0.11.0 O13c: a Kiln Beetle's burst, a lava vent's eruption or an ice chunk is no actor's attack: each one's warning
+## is on the floor first (the burst's circle for its delay, the vent's pulse, the chunk sliding), at least the telegraph
+## minimum (CanyonShore.warning_ticks); its recap line CanyonShore.cause_of_effect.
+func _canyon_shore_hit(w: World, e: SimEvent) -> void:
+	var key := String(CanyonShore.cause_of_effect(e.effect_id))
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	if CanyonShore.warning_ticks(w, e.effect_id) < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("%s warned for less than the telegraph minimum" % e.effect_id)
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)

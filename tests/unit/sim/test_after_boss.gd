@@ -10,7 +10,7 @@ const LONG := 1 << 24
 
 
 func _repo() -> ContentRepository:
-	return ContentRepository.load_all()
+	return SharedContent.repo()
 
 
 ## Floor 1 of run `run_seed` as Main builds it (the floor's curve, the D9 heal, two gates), the player invulnerable.

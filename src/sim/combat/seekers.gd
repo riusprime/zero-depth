@@ -21,7 +21,7 @@ extends RefCounted
 ## (gun_seekers.tres: 13 m of flight, so a dart can curve onto a target at the edge), and a target must be in sight of
 ## the hero (no wall between: a longer search would otherwise pick more enemies behind walls).
 const SEEK_M := 12.0
-## v0.9.5 FC7: target() answers STRAIGHT when a Pierce dart or a Split child has no enemy left to seek (no homing).
+## target() answers STRAIGHT when a Pierce dart or a Split child has no enemy left to seek (no homing).
 const STRAIGHT := -2
 
 
@@ -51,7 +51,7 @@ static func target(w: World, pi: int) -> int:
 	var spec := Attacks.projectile_spec(w, pi)
 	if not is_seekers(spec):
 		return -1
-	var picked := SeekerMods.pick(w, pi)  # v0.9.5 FC7: Pierce's next enemy, a Split child's own
+	var picked := SeekerMods.pick(w, pi)  # Pierce's next enemy, a Split child's own
 	if picked != SeekerMods.NO_PICK:
 		return picked
 	var n := maxi(1, SeekerMods.count(w, spec, SeekerMods.mask(spec)))

@@ -3,7 +3,7 @@ extends ContentDef
 ## A named combo (v0.3.0 PLAN L8, G): owning both items unlocks it, with its own effect, card and look. `effect`
 ## picks what it does; only that effect's fields are read and validated. Values are starting values the owner tunes
 ## after playing. Pairs are unordered; the validator checks both items exist and that no pair repeats.
-## v0.10.5 O1 (owner P1: "The combos can go away yeah, that's old"; then "Keep those 4"): Blood Harvest, Shatter Dash,
+## Blood Harvest, Shatter Dash,
 ## Slipstream and Spiked Phase stay; the twelve others (and the v0.4.0 AB ability combos with them) are gone, their
 ## effects RETIRED (their places in the enum stay; CardOrder.RETIRED_COMBOS keeps their saved indices).
 
@@ -27,7 +27,7 @@ enum Effect {
 	EMBER_WARD,
 }
 
-## v0.10.5 O1: the effects no combo may use any more.
+## The effects no combo may use any more.
 const RETIRED_EFFECTS: Array[int] = [
 	Effect.PLASMA_ARC,
 	Effect.RESONANCE,

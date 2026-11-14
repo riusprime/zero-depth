@@ -1,12 +1,12 @@
 class_name ConstellationPanel
 extends PickPanel
-## v0.10.5 W3-P10c (owner W7, docs/roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md §C): a new loop's free Constellation pick.
+## A new loop's free Constellation pick.
 ## The 3-card pick's look and feel (PickPanel: the Astral heading and hint, the deal, the tilt, the glare and the
 ## noise dissolve of the cards not taken) on the owner's violet Constellation cards (AstralCardArt.CONSTELLATION:
 ## frame_constellation.png, back_constellation.png; icon_const_<name>.png, else icon_unknown). It opens while the
 ## sim's offer is open (WorldReader.constellation_open) and sends the pick as input (`picked` -> InputLatch ->
 ## InputFrame.pick). Mouse, keyboard (1/2/3, arrows, Enter) and pad as the pick; there is no way to leave it (owner
-## Q3: permanent, never rerolled), so a cancel (Esc, pad B) passes on to the pause menu. It decides nothing (EI-07).
+## Permanent, never rerolled), so a cancel (Esc, pad B) passes on to the pause menu. It decides nothing (EI-07).
 
 ## The card tier its cards wear (PickSlot.TIERS: epic, the violet one).
 const TIER := 2

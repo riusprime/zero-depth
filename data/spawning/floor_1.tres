@@ -75,6 +75,104 @@ weight = 1
 unlock_tier = 3
 pack = 1
 
+[sub_resource type="Resource" id="M_rubble_warden"]
+script = ExtResource("1_mix")
+enemy_id = &"rubble_warden"
+weight = 2
+unlock_tier = 1
+
+[sub_resource type="Resource" id="M_dim_needle"]
+script = ExtResource("1_mix")
+enemy_id = &"dim_needle"
+weight = 2
+unlock_tier = 0
+
+[sub_resource type="Resource" id="M_ember_charger"]
+script = ExtResource("1_mix")
+enemy_id = &"ember_charger"
+weight = 3
+unlock_tier = 0
+
+[sub_resource type="Resource" id="M_frost_charger"]
+script = ExtResource("1_mix")
+enemy_id = &"frost_charger"
+weight = 3
+unlock_tier = 0
+
+[sub_resource type="Resource" id="M_split_sniper"]
+script = ExtResource("1_mix")
+enemy_id = &"split_sniper"
+weight = 1
+unlock_tier = 2
+pack = 1
+
+[sub_resource type="Resource" id="M_wire_weaver"]
+script = ExtResource("1_mix")
+enemy_id = &"wire_weaver"
+weight = 2
+unlock_tier = 1
+pack = 1
+
+[sub_resource type="Resource" id="M_scrap_hound"]
+script = ExtResource("1_mix")
+enemy_id = &"scrap_hound"
+weight = 2
+unlock_tier = 0
+pack = 1
+
+[sub_resource type="Resource" id="M_rock_lurker"]
+script = ExtResource("1_mix")
+enemy_id = &"rock_lurker"
+weight = 2
+unlock_tier = 1
+pack = 1
+
+[sub_resource type="Resource" id="M_stone_thrower"]
+script = ExtResource("1_mix")
+enemy_id = &"stone_thrower"
+weight = 2
+unlock_tier = 1
+pack = 1
+
+[sub_resource type="Resource" id="M_kiln_beetle"]
+script = ExtResource("1_mix")
+enemy_id = &"kiln_beetle"
+weight = 2
+unlock_tier = 1
+
+[sub_resource type="Resource" id="M_cinder_priest"]
+script = ExtResource("1_mix")
+enemy_id = &"cinder_priest"
+weight = 1
+unlock_tier = 1
+pack = 1
+
+[sub_resource type="Resource" id="M_frost_spitter"]
+script = ExtResource("1_mix")
+enemy_id = &"frost_spitter"
+weight = 2
+unlock_tier = 1
+
+[sub_resource type="Resource" id="M_glacier_turtle"]
+script = ExtResource("1_mix")
+enemy_id = &"glacier_turtle"
+weight = 1
+unlock_tier = 1
+pack = 1
+
+[sub_resource type="Resource" id="M_star_warper"]
+script = ExtResource("1_mix")
+enemy_id = &"star_warper"
+weight = 2
+unlock_tier = 1
+
+[sub_resource type="Resource" id="M_gravity_node"]
+script = ExtResource("1_mix")
+enemy_id = &"gravity_node"
+weight = 1
+unlock_tier = 1
+pack = 1
+
 [resource]
 script = ExtResource("2_sdd")
 id = &"floor_1"
@@ -92,4 +190,4 @@ pack_max_by_floor = PackedInt32Array(3, 4, 4, 5, 5)
 min_distance_m = 8.0
 edge_band_m = 3.0
 calm_antechamber_floor = 3
-mix = Array[ExtResource("1_mix")]([SubResource("M_charger"), SubResource("M_needle"), SubResource("M_warden"), SubResource("M_arc_caster"), SubResource("M_bomb_drone"), SubResource("M_swarmer"), SubResource("M_splitter"), SubResource("M_shield_bearer"), SubResource("M_mine_layer"), SubResource("M_sniper"), SubResource("M_mender")])
+mix = Array[ExtResource("1_mix")]([SubResource("M_charger"), SubResource("M_needle"), SubResource("M_warden"), SubResource("M_arc_caster"), SubResource("M_bomb_drone"), SubResource("M_swarmer"), SubResource("M_splitter"), SubResource("M_shield_bearer"), SubResource("M_mine_layer"), SubResource("M_sniper"), SubResource("M_mender"), SubResource("M_rubble_warden"), SubResource("M_dim_needle"), SubResource("M_ember_charger"), SubResource("M_frost_charger"), SubResource("M_split_sniper"), SubResource("M_wire_weaver"), SubResource("M_scrap_hound"), SubResource("M_rock_lurker"), SubResource("M_stone_thrower"), SubResource("M_kiln_beetle"), SubResource("M_cinder_priest"), SubResource("M_frost_spitter"), SubResource("M_glacier_turtle"), SubResource("M_star_warper"), SubResource("M_gravity_node")])

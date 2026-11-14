@@ -62,12 +62,7 @@ static func active(w: World) -> bool:
 	return PlayerBuild.has_gun(w) and not PlayerBuild.has_blade(w) and is_void(Modifiers.bolt(w))
 
 
-## The aura's radius of `s` now (m): void_mm, the area stat on it.
-static func aura_m(w: World, s: AttackSpec) -> float:
-	return Stats.area(w, s.void_mm / 1000.0)
-
-
-## The aura's radius of void projectile `sid` now (m): its own (v0.9.5 FC3: Big Shot's, Rapid Fire's, a mini's), the
+## The aura's radius of void projectile `sid` now (m): its own (Big Shot's, Rapid Fire's, a mini's), the
 ## area stat on it.
 static func aura_of(w: World, s: AttackSpec, sid: int) -> float:
 	return Stats.area(w, VoidMods.aura_mm(w, s, sid) / 1000.0)
@@ -84,7 +79,7 @@ static func pull_permille(w: World, i: int) -> int:
 	var a := w.actors
 	if a.invuln[i] > 0 or BossAi.is_boss_kind(a.kinds[i]):
 		return 0
-	if EliteAi.is_elite_kind(a.kinds[i]):  # v0.9.0 EL: an elite archetype
+	if EliteAi.is_elite_kind(a.kinds[i]):  # An elite archetype
 		return 0
 	return HEAVY_PERMILLE if a.radius[i] >= HEAVY_RADIUS_M else 1000
 
@@ -156,7 +151,7 @@ static func _aura(w: World, pi: int) -> void:
 		if Laser.feeds(ModifierRuntime.count(w, COUNT_KEY), pm):
 			Attacks.land(w, spec, ctx, i, at, pos)
 			continue
-		var before := w.strike_spec  # v0.10.5 O10: a bare hit is still the Void's form (Matchups)
+		var before := w.strike_spec  # A bare hit is still the Void's form (Matchups)
 		w.strike_spec = spec
 		var got := Attacks.land(w, _bare_spec(), ctx, i, at, pos)
 		w.strike_spec = before
@@ -180,7 +175,7 @@ static func steps(w: World, shots: PackedInt32Array) -> Array:
 		var most := spec.void_pull_mmps / 1000.0 / SimTick.TICKS_PER_SECOND
 		if reach <= 0.0 or most <= 0.0:
 			continue
-		var dir := v / speed if speed > 0.0 else Vector2.ZERO  # v0.9.5 FC3: a still void pulls toward its point
+		var dir := v / speed if speed > 0.0 else Vector2.ZERO  # A still void pulls toward its point
 		for i in w.enemies_near(at, reach):
 			var f := pull_permille(w, i)
 			if f <= 0:

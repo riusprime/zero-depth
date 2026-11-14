@@ -1,6 +1,6 @@
 class_name ViewSchedule
 extends RefCounted
-## v0.9.5 PF4 (owner: "Effects update every other tick"): the purely decorative views that sync at 30 Hz, each on a
+## The purely decorative views that sync at 30 Hz, each on a
 ## fixed tick parity (view id -> 0 even, 1 odd), so the load is split. A view not listed syncs every tick. Never list
 ## anything that shows a telegraph, a hitbox, a projectile, HP or anything the player dodges by.
 ## - status_fx: the burn / frost / poison particles, rings and pips that ride an enemy's own node (the node moves every
@@ -12,7 +12,7 @@ extends RefCounted
 const HALF_RATE := {&"status_fx": 0, &"modifier_marks": 1}
 
 
-## Whether view `id` syncs on `tick`; a half-rate view's first sync (`seen` has no `id`) always runs. v0.10.5 Q5: the
+## Whether view `id` syncs on `tick`; a half-rate view's first sync (`seen` has no `id`) always runs. the
 ## views sync once a frame, and a frame can run several ticks, so a parity alone could skip a view for good (a steady
 ## two ticks a frame lands on one parity): a view also syncs once two ticks or more passed since its last sync.
 ## `seen` keeps each half-rate view's last synced tick.

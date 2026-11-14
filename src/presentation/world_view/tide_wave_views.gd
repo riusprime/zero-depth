@@ -71,6 +71,8 @@ void fragment() {
 }
 """
 
+## True once a frame with no wave drew none: later frames return at once (and the sync's placing likewise).
+var quiet := false
 var _bands: Array[MeshInstance3D] = []
 var _band_mats: Array[ShaderMaterial] = []
 var _lines: Array[MeshInstance3D] = []
@@ -78,6 +80,7 @@ var _line_mats: Array[ShaderMaterial] = []
 var _motes := MultiMeshInstance3D.new()
 var _mote_mat := StandardMaterial3D.new()
 var _waves: Array[Dictionary] = []
+var _placed_empty := false
 var _clock := 0.0
 var _shown_bands := 0
 var _shown_lines := 0
@@ -175,6 +178,10 @@ static func wave_mesh() -> ArrayMesh:
 
 func sync(reader: WorldReader) -> void:
 	_waves = reader.boss_waves()
+	# No wave, and the last placing hid every slot already
+	if _waves.is_empty() and _placed_empty:
+		return
+	_placed_empty = _waves.is_empty()
 	_place()
 
 
@@ -184,6 +191,12 @@ func _process(delta: float) -> void:
 
 ## Frame-time animation (the tests and the shot scripts call it too).
 func advance(delta: float) -> void:
+	if _waves.is_empty():  # The last frame with no wave drew no mote already
+		if quiet:
+			return
+		quiet = true
+	else:
+		quiet = false
 	_clock += delta * (0.35 if ViewPrefs.reduced_motion else 1.0)
 	for k in SLOTS:
 		(_band_mats[k] as ShaderMaterial).set_shader_parameter("clock", _clock)

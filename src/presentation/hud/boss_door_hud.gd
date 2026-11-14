@@ -1,6 +1,6 @@
 class_name BossDoorHud
 extends Control
-## v0.8.0 BD (owner O83: "opening the door now is a press button"): the interact prompt by the shut boss door, as the
+## The interact prompt by the shut boss door, as the
 ## shop's by its terminal (ShopHud). Reads only (WorldReader.boss_door_in_reach); the press goes out as input.
 
 var _prompt := InteractPrompt.new()

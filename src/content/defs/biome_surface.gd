@@ -1,11 +1,11 @@
 class_name BiomeSurface
 extends Resource
-## A biome's ground that plays differently (v0.7.5 NB1): patches of a surface laid on some rooms' open floor, and
+## A biome's ground that plays differently: patches of a surface laid on some rooms' open floor, and
 ## how the hero moves on them. Today one kind, ice: the hero takes longer to speed up and to stop, so they slide.
 ## Compiled into the sim's IceField (BiomeCompiler) and placed per floor from the `map:ice` sub-stream (IcePatches).
 ## Mild flavour, never a difficulty step (PD-04): it never hurts, the dash is unchanged, and the start hall, the
 ## boss room and the portal's room never get any. Starting values, tuned at the owner's playtest.
-## v0.7.5 NB2: a second kind, starglow (Starfall): pools of star light where the hero runs faster (speed_scale) and
+## A second kind, starglow (Starfall): pools of star light where the hero runs faster (speed_scale) and
 ## drifts a little when stopping; the same placement rules, drawn from its own `map:starglow` sub-stream. It only
 ## helps (never hurts), and the dash is unchanged.
 
@@ -27,7 +27,7 @@ const KINDS: Array[StringName] = [&"ice", &"starglow"]
 ## 0.083 s, PlayerDefinition).
 @export var accel_seconds := 0.35
 @export var stop_seconds := 0.6
-## v0.7.5 NB2: the hero's top walking speed on the surface, times their own (1.0: unchanged, as on ice).
+## The hero's top walking speed on the surface, times their own (1.0: unchanged, as on ice).
 @export var speed_scale := 1.0
 
 

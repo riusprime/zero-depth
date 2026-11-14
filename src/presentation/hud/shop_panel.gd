@@ -1,11 +1,11 @@
 class_name ShopPanel
 extends ModalPanel
-## The shop panel (v0.5.0 SH): while the sim waits on the open shop, the stock (the pick's cards, PickSlot, in the
+## The shop panel: while the sim waits on the open shop, the stock (the pick's cards, PickSlot, in the
 ## current CardStyle, with a price and the shard icon under each), the heal and the reroll (v0.10.5 W3-O9, owner
 ## 2026-11-04: nothing else; the salvage list and the curse lift are gone). It shows what the sim offers and sends the
 ## player's choice as input (`picked` → InputLatch.note_pick → InputFrame.pick); it decides nothing.
 ## A card you can't afford or can't use, a spent heal and an unaffordable reroll are dimmed and send nothing.
-## v0.5.5 EC (owner S2, S3): a line under the title shows how many cards you can still buy on this floor; at the limit
+## A line under the title shows how many cards you can still buy on this floor; at the limit
 ## it turns red and says so, the unsold cards and the reroll dim and send nothing. A reroll with every slot sold
 ## dims too ("Nothing left to reroll"): rerolls redraw only the unsold slots.
 ## - Mouse: hover focuses, a click acts.
@@ -13,7 +13,7 @@ extends ModalPanel
 ##   buys, Esc leaves.
 ## - Pad: d-pad or left stick moves the focus, A (Cross) acts, B (Circle) leaves.
 ## Space (dash) never confirms: the panel doesn't use ui_accept.
-## v0.6.1 R1: the services are plaques (ShopTile); v0.8.0 MU: the plaques and the stock's cards are carved Ember
+## The services are plaques (ShopTile); the plaques and the stock's cards are carved Ember
 ## stone (PlaqueBox, StoneCard).
 ## v0.10.5 W3-O16 (owner 2026-11-04: "Yes, go on"; the shop's layout A, W3_O9_SHOP_G2.md, in the Astral style,
 ## W3_O13_UI_STYLE_G2.md): one store window (AstralChrome.veil: an ink veil between two fading hairlines). Its header
@@ -24,10 +24,10 @@ extends ModalPanel
 
 ## Key repeats (PanelInput.Echo): only the arrows repeat; a held Enter acts once.
 const ECHO := PanelInput.Echo.ARROWS
-## v0.5.5 A4: the stock's cards are drawn a little smaller than the pick's, so the services fit under them at 1080p.
+## The stock's cards are drawn a little smaller than the pick's, so the services fit under them at 1080p.
 const CARD_SCALE := 0.92
 const POOR := AstralCardArt.POOR
-## v0.10.5 W3-O16: the window's padding, the gap between cards and between the two plates, a plate's width (px).
+## The window's padding, the gap between cards and between the two plates, a plate's width (px).
 const PAD := Vector2(64, 32)
 const CARD_GAP := 24
 const PLATE_GAP := 64
@@ -61,7 +61,7 @@ func _init() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_add_dim(_dim, 0.55)
-	_dim.color = Color(AstralChrome.INK, 0.55)  # v0.10.5 W3-O16: Astral's ink, not black
+	_dim.color = Color(AstralChrome.INK, 0.55)  # Astral's ink, not black
 	var outer := _centred_column(VBoxContainer.new(), 0)
 	_window.name = "ShopWindow"
 	_window.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -214,7 +214,7 @@ func title_text() -> String:
 	return _heading.full_text()
 
 
-## v0.5.5 EC (S3): the buys line ("Cards you can still buy on this floor: 3", or the limit's message).
+## The buys line ("Cards you can still buy on this floor: 3", or the limit's message).
 func buys_text() -> String:
 	return _buys.text
 
@@ -260,7 +260,7 @@ func _add_card(reader: WorldReader, k: int, c: Dictionary) -> void:
 	box.add_theme_constant_override("separation", 4)
 	var slot := PickSlot.new(k, CARD_SCALE)
 	box.add_child(slot)
-	# v0.10.5 W3-O16: the price tag hung under the card: Astral's shard and the price, short hairlines either side.
+	# The price tag hung under the card: Astral's shard and the price, short hairlines either side.
 	var row := HBoxContainer.new()
 	row.name = "PriceTag"
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -302,7 +302,7 @@ func _add_card(reader: WorldReader, k: int, c: Dictionary) -> void:
 	price.add_theme_color_override("font_color", POOR if poor else AstralCardArt.TEXT)
 	icon.tint = POOR if poor else AstralCardArt.ACCENT
 	slot.modulate = Color(1, 1, 1, 1.0 if ok else 0.45)
-	slot.set_meta(GameCursor.META_INVALID, not ok)  # v0.9.5 MC2: INVALID over a card you can't buy
+	slot.set_meta(GameCursor.META_INVALID, not ok)  # INVALID over a card you can't buy
 	var at := _entries.size()
 	slot.hovered.connect(func(_i: int) -> void: _set_focus(at))
 	slot.clicked.connect(func(_i: int) -> void: _act(at))
@@ -328,7 +328,7 @@ func _render_services(s: Dictionary) -> void:
 		Color("#9CF29C"),
 		Plaques.of_use(&"shop_heal")
 	)
-	var any_left := int(s["unsold"]) > 0  # v0.5.5 EC (S2): only unsold slots reroll
+	var any_left := int(s["unsold"]) > 0  # Only unsold slots reroll
 	var reroll_ok := _shards_now() >= int(s["reroll_price"]) and any_left and not _limit
 	reroll_tile.show_tile(
 		tr("SHOP_REROLL"),
@@ -426,10 +426,10 @@ func _set_focus(k: int) -> void:
 	for i in _entries.size():
 		(_entries[i]["focus"] as Callable).call(i == k)
 	for box in _cards.get_children():
-		(box.get_child(1) as Control).queue_redraw()  # v0.10.5 W3-O16: the focused card's price tag lights
+		(box.get_child(1) as Control).queue_redraw()  # The focused card's price tag lights
 
 
-## v0.10.5 W3-O16: a card's price tag: short hairlines fading out either side, brighter under the focused card.
+## A card's price tag: short hairlines fading out either side, brighter under the focused card.
 func _draw_tag(row: Control) -> void:
 	var slot := row.get_parent().get_child(0) as PickSlot
 	var lit := slot != null and slot.focused

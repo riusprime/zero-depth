@@ -10,11 +10,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_walk_over_the_red_rune_into_an_overrun() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
@@ -26,8 +21,8 @@ func test_walk_over_the_red_rune_into_an_overrun() -> void:
 	assert_gte(main.view.overrun_doors.rune_count(), 1, "a red rune lies outside its doorway")
 	assert_true(main.view.overrun_doors.is_lit(), "glowing")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
-	await _click(e, main, "GoOverrun")  # the dev route: by the door, outside the room
+	await e.click_dev("God")
+	await e.click_dev("GoOverrun")  # the dev route: by the door, outside the room
 	await e.frames(2)
 	await e.tap(KEY_QUOTELEFT)
 	assert_ne(w.floor_layout.room_of(w.player_pos()), w.floor_layout.overrun_room, "outside it")

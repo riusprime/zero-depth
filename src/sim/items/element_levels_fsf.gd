@@ -1,6 +1,6 @@
 class_name ElementLevelsFsf
 extends RefCounted
-## v0.9.5 EE2 (ELEMENTS.md E3-E5; the owner: "each element should have its own reward system for levelling"): what the
+## ELEMENTS.md E3-E5; the owner: "each element should have its own reward system for levelling": what the
 ## Fire, Lightning and Frost cards (Gun) do at their levels. Lv 1 is the card as it was (nothing here changes it). Fire
 ## Lv 2, Wildfire: the burning ground its kills leave is el_patch_wide_permille wider and lasts el_patch_extra_ticks
 ## longer (the patch already burns what stands in it); Lv 3, Heat sync: a burning enemy takes el_heat_permille more from
@@ -24,8 +24,20 @@ const FIRE_ID := &"ember_core"
 const WINDOW := 60  # a budget's "second", in ticks
 
 
-## The index of the owned wand card of `which` (FIRE, STORM, FROST), or -1.
+## The index of the owned wand card of `which` (FIRE, STORM, FROST), or -1. Every hero hit asks, so the answer is
+## kept until the items held change (ElementCards).
 static func _find(w: World, which: int) -> int:
+	if which < FIRE or which > FROST:
+		return _scan(w, which)
+	var slot := ElementCards.FSF_BASE + which
+	var idx := ElementCards.cached(w, slot)
+	if idx == ElementCards.UNKNOWN:
+		idx = _scan(w, which)
+		ElementCards.keep(w, slot, idx)
+	return idx
+
+
+static func _scan(w: World, which: int) -> int:
 	for idx in w.items_owned:
 		var t := w.item_tables[idx]
 		var mine := false
@@ -41,7 +53,7 @@ static func _find(w: World, which: int) -> int:
 	return -1
 
 
-## The element is held (v0.9.5 EP1: a pair is on while both of its elements are).
+## The element is held (a pair is on while both of its elements are).
 static func held(w: World, which: int) -> bool:
 	return _find(w, which) >= 0
 
@@ -156,7 +168,7 @@ static func shatter(w: World, target: int, dmg: int, tags: int, effect_id: Strin
 		return
 	a.frozen_t[target] = 0
 	if w.pair_mask != 0:
-		ElementPairs.on_frozen_end(w, target)  # v0.9.5 EE3: Brittle
+		ElementPairs.on_frozen_end(w, target)  # Brittle
 	var pid := a.ids[0]
 	var from := a.pos(target)
 	var root := w.take_root()

@@ -15,7 +15,7 @@ func after_each() -> void:
 
 
 func _world() -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var w := FloorScenario.build(
 		4,
 		PlayerTable.starting_values(),
@@ -42,25 +42,22 @@ func test_hud_shows_the_pairs_name_when_it_turns_on() -> void:
 	var hud := Hud.new()
 	add_child_autofree(hud)
 	hud.sync(reader)
-	assert_false(hud.combo_card().is_showing())
+	assert_true(hud.notices.is_empty())
 	_grant(w, &"ember_core", 3)
 	Modifiers.book(w)
 	hud.sync(reader)
-	assert_false(hud.combo_card().is_showing(), "one element: no pair")
+	assert_true(hud.notices.is_empty(), "one element: no pair")
 	_grant(w, &"frost_core", 3)
 	Modifiers.book(w)
 	hud.sync(reader)
 	await wait_process_frames(1)
-	assert_true(hud.combo_card().is_showing(), "the banner shows")
-	assert_eq(hud.combo_card().title_text(), "Thermal Shock · Lv 3")  # v0.9.5 EP4: the level joins the title
-	assert_eq(hud.combo_card().desc_text(), tr("PAIR_THERMAL_SHOCK_DESC"))
 	assert_eq(
-		hud.combo_card().pair_ids(), [&"ember_core", &"frost_core"], "with both elements' icons"
+		hud.notices.texts(), PackedStringArray(["Thermal Shock"]), "its name is a ticker line"
 	)
-	assert_eq(hud.combo_badge_count(), 0, "it is a banner, not a combo badge")
-	hud._combo_left = 0.0
-	hud.sync(reader)
-	assert_false(hud.combo_card().is_showing(), "it goes after its time")
+	assert_eq(hud.notices.find_child("Pips", true, false).level, 3, "with its level as pips")
+	assert_eq(hud.combo_badge_count(), 0, "it is a ticker line, not a combo badge")
+	hud.notices.advance(NoticeTicker.PAIR_HOLD + NoticeTicker.FADE_OUT + 0.1)
+	assert_true(hud.notices.is_empty(), "it goes after its time")
 
 
 func test_the_ten_banners_fit_in_english_and_spanish() -> void:
@@ -149,11 +146,9 @@ func test_banner_title_and_badge_show_the_pairs_level() -> void:
 	Modifiers.book(w)
 	hud.sync(reader)
 	await wait_process_frames(2)
-	assert_eq(hud.combo_card().title_text(), "Thermal Shock · Lv 2")
-	var title := hud.find_child("PairTitle", true, false) as Label
-	assert_not_null(title)
-	assert_true(title.visible, "the big title shows")
-	assert_eq(title.text, "Element pair! Thermal Shock")
+	assert_eq(hud.notices.texts(), PackedStringArray(["Thermal Shock"]))
+	assert_eq(hud.notices.find_child("Pips", true, false).level, 2, "the level shows as pips")
+	assert_null(hud.find_child("PairTitle", true, false), "no big centred title")
 	var badge := hud.find_child("PairBadge0", true, false)
 	assert_not_null(badge, "X1 has a badge")
 	assert_eq((badge.find_child("Level", true, false) as Label).text, "Lv 2")

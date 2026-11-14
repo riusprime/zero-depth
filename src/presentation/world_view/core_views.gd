@@ -86,7 +86,7 @@ static func glow_material(c: Color, energy: float) -> StandardMaterial3D:
 func sync(reader: WorldReader) -> void:
 	var live := {}
 	_hero = SimPlane.to_3d(reader.player_pos())
-	for i in range(1, reader.actor_count()):
+	for i in reader.core_indices():  # Only the carriers, not every actor
 		var code := reader.actor_core(i)
 		if code < 0 or reader.actor_dead(i):
 			continue
@@ -181,13 +181,6 @@ func _make_ring() -> MeshInstance3D:
 ## Cores drawn now, and the steal rings showing.
 func core_count() -> int:
 	return _gems.size()
-
-
-func ring_count() -> int:
-	var n := 0
-	for id in _rings:
-		n += 1 if (_rings[id] as Node3D).visible else 0
-	return n
 
 
 ## The colour actor `id`'s core glows (Color.BLACK when none).

@@ -1,6 +1,6 @@
 class_name FormCardText
 extends RefCounted
-## v0.9.5 TX: what a Pattern or Secondary Gun card does on the form you hold. FC1-FC9 made each of those cards behave
+## What a Pattern or Secondary Gun card does on the form you hold. FC1-FC9 made each of those cards behave
 ## differently per Gun form (docs/roadmap/v0.9.5/FORM_COMBOS.md), so the card's generic sentence is not the whole
 ## story: line_for() gives the one short line for the (form, card) cell, "FORMCARD_<FORM>_<CARD>" in locale/strings.csv
 ## (en, es). A card the form does not allow reads "Does nothing on this form" (FORMCARD_OFF; the allowed list is

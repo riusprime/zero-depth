@@ -1,6 +1,6 @@
 class_name EventPedestalViews
 extends Node3D
-## Event rooms in the world (v0.5.0 EV): one lit pedestal per event (a stepped hexagonal base, a slanted lectern
+## Event rooms in the world: one lit pedestal per event (a stepped hexagonal base, a slanted lectern
 ## column and a floating violet glyph crystal over it, with its own light); the Wandering Drone's ring on the floor
 ## filling as you hold it; and a gold crown ring under every elite.
 ## v0.8.0 N17 (owner O75: "the name displayed on top of the model of the curses device … you get to see it when you
@@ -22,15 +22,15 @@ const STONE_TOP := Color("#545B6A")
 const GLYPH_Y := 1.45
 const GLYPH_ENERGY := 2.6
 const LIGHT_ENERGY := 1.3
-## v0.8.0 N17: the curse altar's stone, and the owner's model that replaces it.
-const CURSE_STONE := Color("#4A4C5E")  # v0.10.5 S5: lifted from #1C1D24 (a black silhouette); starting value
-const CURSE_TOP := Color("#62647A")  # v0.10.5 S5: lifted from #2A2B36; starting value
+## The curse altar's stone, and the owner's model that replaces it.
+const CURSE_STONE := Color("#4A4C5E")  # Lifted from #1C1D24 (a black silhouette); starting value
+const CURSE_TOP := Color("#62647A")  # Lifted from #2A2B36; starting value
 const CURSE_MODEL_ID := &"curse_altar"
-## v0.10.5 S5 (owner: "you can't even see the model"): the owner's altar texture is near black, so its copy of the
+## The owner's altar texture is near black, so its copy of the
 ## material is brightened (albedo only, no self-glow, so details still shade); the shared material is untouched.
 ## S5b (owner: "whited out"): the old emission flattened everything. Starting value.
 const CURSE_ALBEDO_LIFT := 2.8
-## v0.8.0 N17 (owner, 2026-10-18: "give a little light on the floating symbol over the altar"): the altar's crystal
+## The altar's crystal
 ## light: cold violet, low, short, no shadow (BIOME_PERF_AND_LIGHT: never one of the 4 shadow casters), faded out with
 ## distance, pulsing gently with the room's glyphs (CurseRoomView.GLOW_SPEED; reduced motion: steady).
 const CURSE_LIGHT := Color("#9C8CFF")
@@ -39,7 +39,7 @@ const CURSE_LIGHT_RANGE := 2.4
 const CURSE_PULSE := 0.25
 const RING_SEGMENTS := 48
 
-## v0.8.0 N17: the curse room's dressing (null on a floor without one); the altar draws the owner's model.
+## The curse room's dressing (null on a floor without one); the altar draws the owner's model.
 var curse_room: CurseRoomView
 var curse_uses_model := false
 var _reader: WorldReader
@@ -77,7 +77,7 @@ func setup(reader: WorldReader) -> void:
 		root.position = SimPlane.to_3d(reader.event_pos(k))
 		add_child(root)
 		_roots.append(root)
-	if reader.event_curse_altar() >= 0:  # v0.8.0 N17 (O75): the dark room round it
+	if reader.event_curse_altar() >= 0:  # The dark room round it
 		curse_room = CurseRoomView.new()
 		add_child(curse_room)
 		curse_room.setup(reader)
@@ -97,7 +97,7 @@ func pedestal_count() -> int:
 	return _roots.size()
 
 
-## v0.8.0 N17 (O75): the Label3D nodes over the pedestals (none: the name shows only in the panel).
+## The Label3D nodes over the pedestals (none: the name shows only in the panel).
 func label_count() -> int:
 	return find_children("*", "Label3D", true, false).size()
 
@@ -139,7 +139,7 @@ func _process(delta: float) -> void:
 		var turn := 0.9
 		match state:
 			WorldReader.EVENT_ACTIVE:
-				c = GUARD  # v0.9.0 EL: a defence (the Ambush Cache's fight is gone)
+				c = GUARD  # A defence (the Ambush Cache's fight is gone)
 				energy = GLYPH_ENERGY * (1.0 + 0.6 * absf(sin(_t * 5.0)))
 				turn = 2.4
 			WorldReader.EVENT_DONE:
@@ -151,7 +151,7 @@ func _process(delta: float) -> void:
 		m.emission_energy_multiplier = energy
 		_lights[k].light_color = c
 		_lights[k].light_energy = LIGHT_ENERGY * energy / GLYPH_ENERGY
-		if k == _curse_k:  # v0.8.0 N17: its own soft light, breathing with the glyphs
+		if k == _curse_k:  # Its own soft light, breathing with the glyphs
 			var pulse := curse_pulse() if state == WorldReader.EVENT_READY else 1.0
 			m.emission_energy_multiplier = energy * pulse
 			_lights[k].light_color = CURSE_LIGHT if state == WorldReader.EVENT_READY else c
@@ -188,7 +188,7 @@ func make_pedestal(k: int) -> Node3D:
 	return n
 
 
-## v0.8.0 N17 (O75): the curse room's altar: a squat dark stone altar (a plinth, a block with a sunken top, two
+## The curse room's altar: a squat dark stone altar (a plinth, a block with a sunken top, two
 ## horn-like side stones) and over it a cracked crystal (two halves split apart, chips between them) that glows and
 ## turns like a pedestal's. The owner's `curse_altar` model (docs/OWNER_TODO.md §3.1) replaces the stone once the
 ## manifest lists it; the crystal and its light stay.
@@ -238,14 +238,14 @@ func make_curse_altar(k: int) -> Node3D:
 	return n
 
 
-## v0.8.0 N17: the curse altar's pulse now (1 ± CURSE_PULSE on the glyphs' beat; 1 under reduced motion).
+## The curse altar's pulse now (1 ± CURSE_PULSE on the glyphs' beat; 1 under reduced motion).
 func curse_pulse() -> float:
 	if ViewPrefs.reduced_motion:
 		return 1.0
 	return 1.0 + CURSE_PULSE * sin(_t * CurseRoomView.GLOW_SPEED)
 
 
-## v0.8.0 N17: the altar's crystal light (null without a curse altar; tests read it).
+## The altar's crystal light (null without a curse altar; tests read it).
 func curse_light() -> OmniLight3D:
 	return _lights[_curse_k] if _curse_k >= 0 else null
 

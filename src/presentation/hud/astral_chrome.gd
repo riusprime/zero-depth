@@ -386,6 +386,8 @@ class FrameBox:
 	var focus := 0.0
 	var dim := 1.0
 	var rim := Color(0, 0, 0, 0)
+	## An opaque ink behind the fill (a lifted card reads over the cards under it).
+	var backing := false
 
 	func _init(p_focus: float = 0.0, p_dim: float = 1.0, margins := Vector2(8, 6)) -> void:
 		focus = p_focus
@@ -403,6 +405,8 @@ class FrameBox:
 			line = rim
 		line.a *= dim
 		var rs := RenderingServer
+		if backing:
+			rs.canvas_item_add_rect(to, o, Color(INK, 1.0))
 		rs.canvas_item_add_rect(to, o, Color(FILL_HI if lit else FILL, (FILL.a) * dim + 0.08))
 		if lit:
 			rs.canvas_item_add_rect(to, o.grow(-3), Color(AstralCardArt.ACCENT, 0.07))

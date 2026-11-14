@@ -1,6 +1,6 @@
 class_name AttackFormPool
 extends MultiMeshInstance3D
-## v0.6.0 MX3: one MultiMesh pool of an attack form's layer (or a particle kind): a fixed number of instances,
+## One MultiMesh pool of an attack form's layer (or a particle kind): a fixed number of instances,
 ## refilled every drawn frame (begin → add → finish) and shown up to the count added. One draw call per pool however
 ## many attacks are on screen; a pool never grows, so a crowd of attacks costs no allocation (PRESENTATION §7).
 
@@ -46,9 +46,12 @@ func add(xf: Transform3D, c: Color) -> bool:
 	return true
 
 
+## Each write is a RenderingServer call, so a pool that shows the same as last frame writes nothing.
 func finish() -> void:
-	multimesh.visible_instance_count = used
-	visible = used > 0
+	if multimesh.visible_instance_count != used:
+		multimesh.visible_instance_count = used
+	if visible != (used > 0):
+		visible = used > 0
 
 
 ## The instance's transform and colour as last added (tests).

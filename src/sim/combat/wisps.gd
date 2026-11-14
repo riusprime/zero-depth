@@ -25,7 +25,7 @@ const ORBIT_TICKS := 150
 const SHOT_SIZE_PERMILLE := 650
 ## A wisp's orb leaves this far from the wisp (m).
 const MUZZLE_M := 0.12
-## v0.9.5 WB (owner Q13): a wisp's shot passes through this many enemies (on top of the build's pierce).
+## A wisp's shot passes through this many enemies (on top of the build's pierce).
 const EXTRA_PIERCE := 1
 
 
@@ -55,7 +55,7 @@ static func turn(w: World, k: int, n: int) -> int:
 	)
 
 
-## Wisp `k` of `n`'s place now (v0.9.5 FC9: Orbit widens the circle).
+## Wisp `k` of `n`'s place now (Orbit widens the circle).
 static func pos(w: World, k: int, n: int) -> Vector2:
 	return w.player_pos() + Kin.dir(turn(w, k, n)) * WispMods.radius_m(w, Modifiers.bolt(w))
 
@@ -66,7 +66,7 @@ static func wait(w: World, k: int, n: int, period: int) -> int:
 	return (period - t) % period
 
 
-## v0.9.5 FC9b: a wisp shot's damage in thousandths of a point (the Gun's factor, the wisps' share and Halo's keep their
+## A wisp shot's damage in thousandths of a point (the Gun's factor, the wisps' share and Halo's keep their
 ## fractions; WispMods.take deals the whole part).
 static func shot_milli(w: World, spec: AttackSpec) -> int:
 	var dmg := PlayerBuild.bolt_damage(w, Attacks.bolt_base_damage(spec))
@@ -76,9 +76,9 @@ static func shot_milli(w: World, spec: AttackSpec) -> int:
 	return milli
 
 
-## A wisp shot's damage under the Gun's factor, the wisps' share and Halo's (v0.9.5 FC9).
+## A wisp shot's damage under the Gun's factor, the wisps' share and Halo's.
 static func shot_damage(w: World, spec: AttackSpec) -> int:
-	var dmg := PlayerBuild.bolt_damage(w, Attacks.bolt_base_damage(spec))  # Builds: the Gun's factor (L16)
+	var dmg := PlayerBuild.bolt_damage(w, Attacks.bolt_base_damage(spec))  # Builds: the Gun's factor
 	dmg = maxi(1, (dmg * spec.wisp_permille + 500) / 1000)
 	return WispMods.share(w, spec, dmg)
 
@@ -101,7 +101,7 @@ static func advance(w: World) -> void:
 		var foe := target(w, from, spec)
 		if foe >= 0:
 			_fire(w, spec, from, w.actors.pos(foe))
-	WispMods.advance(w, spec, n)  # v0.9.5 FC9: Orbit's touches, Mine's drops, the rings and gaps running out
+	WispMods.advance(w, spec, n)  # Orbit's touches, Mine's drops, the rings and gaps running out
 
 
 ## The enemy wisp shots from `from` go for: the nearest within an orb's flight with no wall between (-1: none; a tie
@@ -121,12 +121,12 @@ static func target(w: World, from: Vector2, spec: AttackSpec) -> int:
 
 
 static func _fire(w: World, spec: AttackSpec, from: Vector2, to: Vector2) -> void:
-	var dmg := WispMods.take(w, shot_milli(w, spec))  # v0.9.5 FC9b: thousandths; the carry deals the whole part
+	var dmg := WispMods.take(w, shot_milli(w, spec))  # Thousandths; the carry deals the whole part
 	var tags := SimEvent.TAG_PROJECTILE
 	var ctx := AttackContext.make(from, Kin.angle_of(to - from), dmg, 0, tags, &"")
 	ctx.base_damage = dmg
 	ctx.repeat = true  # no root launch: no Ascension charge, no Backfire
-	ctx.wisp = true  # but Echo's repeat is open to it (v0.9.5 FC9)
+	ctx.wisp = true  # but Echo's repeat is open to it
 	ctx.size_permille = SHOT_SIZE_PERMILLE
 	ctx.muzzle_m = MUZZLE_M
 	ctx.extra_pierce = EXTRA_PIERCE

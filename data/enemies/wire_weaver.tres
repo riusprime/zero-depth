@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/enemy_definition.gd" id="2_enm"]
+
+[sub_resource type="Resource" id="Resource_atk"]
+script = ExtResource("1_atk")
+id = &"cable"
+shape = 2
+shape_params = {
+"length_m": 6.0,
+"half_width_m": 0.12
+}
+telegraph_seconds = 0.7
+active_seconds = 0.0167
+recovery_seconds = 0.5
+damage = 8
+
+[resource]
+script = ExtResource("2_enm")
+name_key = &"ENEMY_WIRE_WEAVER"
+desc_key = &"ENEMY_WIRE_WEAVER_DESC"
+behaviour_id = &"wire_weaver"
+behaviour_params = {
+"attack_range_m": 9.0,
+"cooldown_seconds": 3.5,
+"keep_min_m": 4.0,
+"keep_max_m": 7.0,
+"max_cables": 2,
+"post_hp": 10,
+"post_radius_m": 0.25,
+"cable_period_seconds": 0.5
+}
+hp = 40
+radius_m = 0.4
+move_speed_mps = 2.6
+attacks = Array[ExtResource("1_atk")]([SubResource("Resource_atk")])
+stress_tags = PackedStringArray("guard")
+weak_to = &"gun_glaive"
+resists = &"storm"
+weak_permille = 1250
+resist_permille = 750
+shards = 4
+id = &"wire_weaver"

@@ -55,14 +55,9 @@ func _watch_load(main: Main) -> Dictionary:
 	return {"frames": frames, "still": still, "done": not main.loads.busy()}
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_a_run_starts_behind_the_black_cover_and_a_portal_covers_in_its_colours() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	var cover := main.loads.cover
 	assert_false(cover.showing(), "no cover on the menu")
@@ -96,7 +91,7 @@ func test_a_run_starts_behind_the_black_cover_and_a_portal_covers_in_its_colours
 	# Into the portal.
 	var f := w.floor_layout
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
@@ -107,7 +102,7 @@ func test_a_run_starts_behind_the_black_cover_and_a_portal_covers_in_its_colours
 	if not sealed:
 		return
 	await e.frames(30)
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(3)
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.driver.reader.portal_active(), "the portal is open")

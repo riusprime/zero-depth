@@ -1,6 +1,6 @@
 class_name LockdownState
 extends RefCounted
-## v0.9.0 LK (owner Q21; Lockdowns): the floor's Lockdowns in play (World.lockdown; null on a floor without any).
+## The floor's Lockdowns in play (World.lockdown; null on a floor without any).
 ## Hashed whenever it exists.
 
 ## The numbers (content, kept by the snapshot as loadout).
@@ -17,7 +17,7 @@ var next_wave_tick := -1
 var formation := -1
 ## The encounter's enemies (actor ids) this sealing, alive or not.
 var members := PackedInt32Array()
-## v0.9.0 CF: the members still waiting to come in (the room holds only so many at once: ClosedFights), in order:
+## The members still waiting to come in (the room holds only so many at once: ClosedFights), in order:
 ## their enemy kinds (an elite's as -1 - its kind) and spots.
 var later_kinds := PackedInt32Array()
 var later_pos := PackedVector2Array()
@@ -70,7 +70,7 @@ func hash_into(h: StateHasher) -> void:
 		h.add_f32(o.center.x)
 		h.add_f32(o.center.y)
 	h.add_int(rng.state if rng != null else 0)
-	if not later_kinds.is_empty():  # v0.9.0 CF: hashed only while members wait (a fight before CF hashes as it did)
+	if not later_kinds.is_empty():  # Hashed only while members wait (a fight before CF hashes as it did)
 		h.add_ints(later_kinds)
 		for q in later_pos:
 			h.add_f32(q.x)

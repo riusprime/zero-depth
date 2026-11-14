@@ -1,6 +1,6 @@
 class_name TrainingFlow
 extends RefCounted
-## v0.10.5 O17 (owner P17): how Main goes into and out of the hub's Training Room, behind the loading cover (CoverLoads,
+## How Main goes into and out of the hub's Training Room, behind the loading cover (CoverLoads,
 ## as a run's floor): the hero walking down the hub's south door lane goes in with the hub hero's weapon; the terminal's
 ## weapon pick, its Reset and the pause menu's Restart build the room again; the exit pad goes back to the hub. The
 ## room (TrainingScenario) is built with none of the run's recorders attached: MetaHooks, CodexRecorder,
@@ -73,7 +73,7 @@ static func start(main: Main, build_id: StringName) -> void:
 	main.ui.add_child(hud)
 	main.ui.move_child(hud, 0)
 	hud.sync(driver.reader)
-	driver.frame_ticked.connect(main._on_playground_tick)  # v0.10.5 Q5: the HUD reads once a frame
+	driver.frame_ticked.connect(main._on_playground_tick)  # The HUD reads once a frame
 	driver.edited.connect(main._on_playground_tick)
 	main.audio.set_ambience(HubSession.BIOME)
 	main._sync_pause()
@@ -89,7 +89,7 @@ static func weapons(repo: ContentRepository, profile: ProfileStore) -> Array:
 	return out
 
 
-## v0.10.5 O17 (moved from Main): the Playground's or the Training Room's view of the driver's one room in `biome`,
+## Moved from Main: the Playground's or the Training Room's view of the driver's one room in `biome`,
 ## its input and sounds.
 
 
@@ -111,11 +111,12 @@ static func room_view(main: Main, biome: BiomeDefinition) -> PlayerInput:
 	main.view.ink.set_style(
 		InkPass.style_from_setting(GameSettings.get_value(main.profile, "outline"))
 	)
-	var player_input := PlayerInput.new(main.view.rig, main.driver.reader)
+	var assist := AimAssist.make(ContentRepository.load_all(), main.profile)  # The dummies pull the aim too
+	var player_input := PlayerInput.new(main.view.rig, main.driver.reader, assist)
 	player_input.name = "PlayerInput"
 	main.view.add_child(player_input)
 	main.driver.input_source = player_input.sample
-	main.driver.frame_ticked.connect(main.view.sync)  # v0.10.5 Q5: once a frame
+	main.driver.frame_ticked.connect(main.view.sync)  # Once a frame
 	main.driver.ticked.connect(main.view.note_tick)
 	main.driver.edited.connect(main.view.sync)
 	main.audio.detach()

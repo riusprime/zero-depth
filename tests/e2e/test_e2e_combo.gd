@@ -109,10 +109,10 @@ func test_pick_a_combo_pair_from_altars_and_chests() -> void:
 	assert_true(w.combos_owned.has(combo), "owning both items unlocked the combo")
 	await e.frames(2)
 	var reader := main.driver.reader
-	assert_true(hud.combo_card().is_showing(), "the combo card shows")
-	assert_eq(hud.combo_card().title_text(), tr(reader.combo_name_key(combo)))
-	assert_eq(hud.combo_card().desc_text(), tr(reader.combo_desc_key(combo)))
-	assert_eq(hud.combo_card().pair_ids(), reader.combo_item_ids(combo), "with both items' icons")
+	assert_true(
+		hud.notices.texts().has(tr(reader.combo_name_key(combo))),
+		"the combo is a ticker line, named"
+	)
 	assert_eq(hud.combo_badge_count(), w.combos_owned.size(), "and a badge in the HUD")
 	gut.p("combo %s from %d rewards" % [w.combo_tables[combo].id, offers.size()])
 

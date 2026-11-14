@@ -1,6 +1,6 @@
 class_name GatekeeperClips
 extends RefCounted
-## v0.8.0 BA: the Gatekeeper's clips (the owner's Stone Sentinel, rigged in code by BossRig: torso, head, arm_l/r,
+## The Gatekeeper's clips (the owner's Stone Sentinel, rigged in code by BossRig: torso, head, arm_l/r,
 ## fist_l/r, leg_l/r). A colossal stone golem, so every move is slow to load and lands hard: a deep breath and a
 ## sway when idle, a stomping walk that dips and squashes on each plant, both fists hauled overhead and hammered down
 ## for the Fist Slam (once per marker), one fist wound far back and driven into the floor for the Shock Lanes, arms
@@ -46,6 +46,7 @@ static func library() -> Dictionary:
 			_death(),
 		]:
 			_lib[c.name] = c
+		BossClip.loosen(_lib, 0.025)  # The wind-up, the recoil, the idle sway
 	return _lib
 
 
@@ -217,7 +218,7 @@ static func _marks() -> BossClip:
 
 
 ## The Shock Lanes: it twists away with its right fist wound far up and back, the left arm thrown out for balance,
-## then whips round and drives the fist into the floor in front of it on a wide, low stance. v0.8.0 BS1 (S1): as it
+## then whips round and drives the fist into the floor in front of it on a wide, low stance. as it
 ## recovers it heaves both arms up, palms rising, raising the stone pillars that stay along the lanes.
 static func _row_lanes() -> BossClip:
 	var c := BossClip.new(&"row_lanes")

@@ -1,6 +1,6 @@
 class_name GlaiveMods
 extends RefCounted
-## v0.9.5 FC6 (docs/roadmap/v0.9.5/FORM_COMBOS.md G1-G11): what eleven cards do to the Glaive form. One handler per
+## What eleven cards do to the Glaive form. One handler per
 ## card. A disc ignores these cards' generic ops (WandCompile.run: it only notes the id in modifier_ids), and this file
 ## reads them from there: mask(spec).
 ## - At the throw (Attacks._bolts): Halo's four discs round the aim (halo_offsets()), Big Shot's and Rapid Fire's size,
@@ -462,16 +462,23 @@ static func _target(w: World, pi: int, cur: int, skip: int) -> int:
 	return best
 
 
-## Disc `pi` is holding at its far point (Mine): enemies it touches take a hit, each at most once per mine_gap_ticks
-## (the world skips its sweep). True: it holds.
-static func hold(w: World, pi: int) -> bool:
+## Disc `pi` is holding at its far point this tick (Mine: its steer started the hold), so it is not swept.
+static func held(w: World, pi: int) -> bool:
 	var s := w.mx
 	if s.gm_kind.is_empty():
 		return false
+	var k := row_of(s, w.projectiles.ids[pi])
+	return k >= 0 and s.gm_kind[k] & F_HELD != 0
+
+
+## Disc `pi` is holding at its far point (Mine): enemies it touches take a hit, each at most once per mine_gap_ticks
+## (the world skips its sweep). True: it holds.
+static func hold(w: World, pi: int) -> bool:
+	if not held(w, pi):
+		return false
+	var s := w.mx
 	var p := w.projectiles
 	var k := row_of(s, p.ids[pi])
-	if k < 0 or s.gm_kind[k] & F_HELD == 0:
-		return false
 	var spec := Attacks.projectile_spec(w, pi)
 	var sec := SecondaryProc.of_projectile(w, pi) != 1000
 	_pulse(

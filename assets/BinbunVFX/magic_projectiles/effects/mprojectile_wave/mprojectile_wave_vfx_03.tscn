@@ -29,6 +29,8 @@ height = 1.6
 [sub_resource type="SphereMesh" id="SphereMesh_wqdsh"]
 radius = 0.3
 height = 0.8
+radial_segments = 24
+rings = 12
 
 [sub_resource type="Animation" id="Animation_e2thh"]
 length = 0.001

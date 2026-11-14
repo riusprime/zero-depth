@@ -4,7 +4,7 @@ extends GutTest
 
 
 func _world() -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var enc := ContentCompiler.compile_encounter(repo.get_def(&"encounters", &"combat_lab"), repo)
 	return StageScenario.build(77, PlayerTable.starting_values(), CombatLab.tables(), enc)
 

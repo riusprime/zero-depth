@@ -1,6 +1,6 @@
 class_name BossAnimator
 extends RefCounted
-## v0.8.0 BA (owner O6, Q4): plays a boss model's keyframed clips (BossClip) in layers and writes the sum onto its
+## Plays a boss model's keyframed clips (BossClip) in layers and writes the sum onto its
 ## bones (through the avatar's BonePoser) and its pivot. Every layer is additive over the rest pose:
 ## - the base: idle (a loop in seconds) and walk (a loop whose time is the gait's phase, so the steps match its
 ##   speed), weighted by how fast it walks;
@@ -11,6 +11,14 @@ extends RefCounted
 ## the same name as one of these clips ("idle", "walk", "marks", "death" …), that animation is played instead of
 ## the code clip, at the same time and weight. An attack animation may carry the markers "strike" (the pose on the
 ## active tick) and "recover" (the end of the active part); without them its length stands for 0..1 of the clip.
+## A body may also say which of its file's animations each clip plays (bind_owner's `plays`): one "cast" can serve
+## several moves, each with its own strike and recover times, so a new move needs a table row, not a new animation.
+## A clip the owner's animation replaces keeps its code clip's PARAM tracks (the glow, the tremble, the chain's pull):
+## the animation moves the bones, the parameters still drive the lights and the effects.
+## The code clips that stay (a flinch, the stagger, the roar, a move the file has no animation for) and the avatar's
+## own pose layer still turn bones the file's animations key: every frame apply_owner writes those bones from the
+## animations alone, starting from their rest pose, and the avatar's BonePoser then adds the code's turns, shifts and
+## stretches on top (BonePoser.lay_over), so a flinch shows over the file's idle and leaves nothing behind.
 ## Presentation only (EI-07): it writes the avatar's own skeleton and pivot; per frame it allocates nothing.
 
 ## Layer slots, applied in this order.
@@ -50,20 +58,22 @@ const MOVE_CLIPS := {
 	WorldReader.MOVE_ROW_FLOOD: &"row_flood",
 	WorldReader.MOVE_GAZE: &"gaze",  # v0.8.0 BS2
 	WorldReader.MOVE_MELT: &"melt",
-	WorldReader.MOVE_COMBO: &"combo",  # v0.8.0 FB1: the Colossus
+	WorldReader.MOVE_COMBO: &"combo",  # The Colossus
 	WorldReader.MOVE_SPIKE_CHASE: &"spike_chase",
 	WorldReader.MOVE_SPIKE_BURST: &"spike_burst",
-	WorldReader.MOVE_CROSS: &"cross",  # v0.8.0 FB2: the Prism
-	WorldReader.MOVE_MIMIC_COMBO: &"mimic_combo",  # v0.8.0 FB3: the Nemesis (a slash, a shot, a cast)
+	WorldReader.MOVE_CROSS: &"cross",  # The Prism
+	WorldReader.MOVE_MIMIC_COMBO: &"mimic_combo",  # The Nemesis (a slash, a shot, a cast)
 	WorldReader.MOVE_MIMIC_SHOTS: &"mimic_shots",
 	WorldReader.MOVE_CARD_CAST: &"card_cast",
-	WorldReader.MOVE_TIDE: &"tide",  # v0.9.0 NB1: the Tidecaller's Pull
-	WorldReader.MOVE_CROSSFIRE: &"crossfire",  # v0.9.0 NB2: the Twin Wardens
+	WorldReader.MOVE_TIDE: &"tide",  # The Tidecaller's Pull
+	WorldReader.MOVE_WAVE: &"wave",  # Its crossing wave
+	WorldReader.MOVE_CROSSFIRE: &"crossfire",  # The Twin Wardens
 	WorldReader.MOVE_CHAIN_SWEEP: &"chain_sweep",
-	WorldReader.MOVE_ECHO: &"echo",  # v0.9.0 NB3: the Clockwork Judge
+	WorldReader.MOVE_ECHO: &"echo",  # The Clockwork Judge
 	WorldReader.MOVE_VERDICT: &"verdict",
-	WorldReader.MOVE_LANCES: &"lances",  # v0.10.5 O3: the Prism's last phase
+	WorldReader.MOVE_LANCES: &"lances",  # The Prism's last phase
 	WorldReader.MOVE_KNEEL: &"kneel",
+	WorldReader.MOVE_GREAT_JAVELIN: &"great_javelin",  # The Warlord's great throw
 }
 ## The clips every boss has besides its moves'.
 const COMMON: Array[StringName] = [
@@ -84,8 +94,11 @@ var body_turn := Quaternion.IDENTITY
 var body_shift := Vector3.ZERO
 var body_squash := 0.0
 var _serial := -1
-## The owner's animations by clip name: [Animation, track indices, bone indices, track types].
+## The owner's animations by clip name: [Animation, track indices, bone indices, track types, strike, recover]
+## (the two times in seconds, or -1 to read the animation's own markers).
 var _owner := {}
+## The bones any of the owner's animations keys.
+var _owned := PackedInt32Array()
 
 
 func _init(library: Dictionary) -> void:
@@ -179,10 +192,13 @@ func apply(poser: BonePoser, pivot: Node3D, reduced: bool) -> void:
 	for s in SLOTS:
 		var c := slot_clip[s]
 		var w := slot_w[s]
-		if c == null or w <= 0.0001 or _owner.has(c.name):
+		if c == null or w <= 0.0001:
 			continue
+		var owned := _owner.has(c.name)  # Its bones come from the owner's animation; its parameters still play
 		var t := slot_t[s]
 		for k in c.targets.size():
+			if owned and c.channels[k] != BossClip.PARAM:
+				continue
 			var v := c.value(k, t, reduced) * w
 			if v == 0.0:
 				continue
@@ -213,13 +229,14 @@ func apply(poser: BonePoser, pivot: Node3D, reduced: bool) -> void:
 		)
 
 
-# --- The owner's clips (Q4) -------------------------------------------------------------------------------------
+# --- The owner's clips -------------------------------------------------------------------------------------
 
 
 ## Binds the owner's animations: every animation of `player` with bone tracks on `skeleton` (rotation, position,
 ## scale; matched by bone name) replaces the code clip of the same name. Stops the player (we sample it ourselves).
-## Returns how many were bound.
-func bind_owner(player: AnimationPlayer, skeleton: Skeleton3D) -> int:
+## `plays` adds clips that play an animation of another name: {clip: {"anim": its name, "strike": seconds,
+## "recover": seconds}} (the two times optional). Returns how many clips were bound.
+func bind_owner(player: AnimationPlayer, skeleton: Skeleton3D, plays: Dictionary = {}) -> int:
 	player.active = false
 	clips = clips.duplicate()
 	var n := 0
@@ -245,24 +262,53 @@ func bind_owner(player: AnimationPlayer, skeleton: Skeleton3D) -> int:
 		if tracks.is_empty():
 			continue
 		var key := StringName(String(full).get_slice("/", String(full).get_slice_count("/") - 1))
-		_owner[key] = [anim, tracks, bones, types]
+		_owner[key] = [anim, tracks, bones, types, -1.0, -1.0]
 		if not clips.has(key):
 			clips[key] = BossClip.new(key, key == &"idle" or key == &"walk")
 		n += 1
+	for clip_name: StringName in plays:
+		var spec: Dictionary = plays[clip_name]
+		var from: Array = _owner.get(spec.get("anim", &""), [])
+		if from.is_empty():
+			continue
+		var entry := from.duplicate()
+		entry[4] = float(spec.get("strike", -1.0))
+		entry[5] = float(spec.get("recover", -1.0))
+		_owner[clip_name] = entry
+		if not clips.has(clip_name):
+			clips[clip_name] = BossClip.new(clip_name)
+		n += 1
+	var seen := {}
+	for entry: Array in _owner.values():
+		for b: int in entry[2]:
+			seen[b] = true
+	_owned = PackedInt32Array(seen.keys())
 	return n
 
 
+## The bones (by index) the owner's animations key: apply_owner writes each of them every frame.
+func owner_bones() -> PackedInt32Array:
+	return _owned
+
+
 ## The owner's animation time for a code clip's time t: a loop wraps over its length; an attack maps its windup to
-## 0..the "strike" marker, its active part to "strike".."recover" and its recovery to the end.
-static func owner_time(anim: Animation, c: BossClip, t: float) -> float:
+## 0..the "strike" marker, its active part to "strike".."recover" and its recovery to the end. `strike` and
+## `recover` (seconds) stand in for the markers when given.
+static func owner_time(
+	anim: Animation, c: BossClip, t: float, strike: float = -1.0, recover: float = -1.0
+) -> float:
 	var length := anim.length
 	if c.loop:
 		return fposmod(t, 1.0) * length
 	t = clampf(t, 0.0, 1.0)
-	if not anim.has_marker(&"strike"):
+	if strike < 0.0 and not anim.has_marker(&"strike"):
 		return t * length
-	var ts := anim.get_marker_time(&"strike")
-	var th := anim.get_marker_time(&"recover") if anim.has_marker(&"recover") else ts
+	var ts := strike if strike >= 0.0 else anim.get_marker_time(&"strike")
+	var th := ts
+	if recover >= 0.0:
+		th = recover
+	elif strike < 0.0 and anim.has_marker(&"recover"):
+		th = anim.get_marker_time(&"recover")
 	if t < c.strike:
 		return t / c.strike * ts
 	if t < c.hold:
@@ -270,11 +316,15 @@ static func owner_time(anim: Animation, c: BossClip, t: float) -> float:
 	return lerpf(th, length, (t - c.hold) / (1.0 - c.hold))
 
 
-## After the code pose is written: each bound owner animation in a live layer sets its bones' poses, blended in by
-## the layer's weight.
+## Before the code pose is written (BonePoser.commit adds it on top): every bone an owner's animation keys goes back
+## to its rest pose, then each bound animation in a live layer is blended onto its bones by the layer's weight, in
+## layer order. The idle is the stance the other layers blend over, so it is written in full however light its
+## layer: between standing and walking the pose is a blend of those two animations, never part rest pose.
 func apply_owner(skeleton: Skeleton3D) -> void:
 	if _owner.is_empty() or skeleton == null:
 		return
+	for b in _owned:
+		skeleton.reset_bone_pose(b)
 	for s in SLOTS:
 		var c := slot_clip[s]
 		var w := slot_w[s]
@@ -285,22 +335,21 @@ func apply_owner(skeleton: Skeleton3D) -> void:
 		var tracks: PackedInt32Array = entry[1]
 		var bones: PackedInt32Array = entry[2]
 		var types: PackedInt32Array = entry[3]
-		var time := owner_time(anim, c, slot_t[s])
+		var time := owner_time(anim, c, slot_t[s], entry[4], entry[5])
+		var k := 1.0 if s == IDLE else minf(w, 1.0)
 		for j in tracks.size():
 			var b := bones[j]
 			match types[j]:
 				Animation.TYPE_ROTATION_3D:
 					var q := anim.rotation_track_interpolate(tracks[j], time)
 					skeleton.set_bone_pose_rotation(
-						b, skeleton.get_bone_pose_rotation(b).slerp(q, minf(w, 1.0))
+						b, skeleton.get_bone_pose_rotation(b).slerp(q, k)
 					)
 				Animation.TYPE_POSITION_3D:
 					var p := anim.position_track_interpolate(tracks[j], time)
 					skeleton.set_bone_pose_position(
-						b, skeleton.get_bone_pose_position(b).lerp(p, minf(w, 1.0))
+						b, skeleton.get_bone_pose_position(b).lerp(p, k)
 					)
 				Animation.TYPE_SCALE_3D:
 					var sc := anim.scale_track_interpolate(tracks[j], time)
-					skeleton.set_bone_pose_scale(
-						b, skeleton.get_bone_pose_scale(b).lerp(sc, minf(w, 1.0))
-					)
+					skeleton.set_bone_pose_scale(b, skeleton.get_bone_pose_scale(b).lerp(sc, k))

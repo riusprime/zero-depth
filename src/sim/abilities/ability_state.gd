@@ -31,7 +31,7 @@ var bomb_land := PackedInt32Array()
 var bomb_root := PackedInt32Array()
 var bomb_r := PackedFloat32Array()
 var bomb_dmg := PackedInt32Array()
-## v0.5.0 CP: 1 = a thrown bomb (Cluster Payload splits it on landing), 0 = a bomblet.
+## 1 = a thrown bomb (Cluster Payload splits it on landing), 0 = a bomblet.
 var bomb_split := PackedInt32Array()
 ## v0.5.0 CP, Afterimage: the echo a blink leaves (where, the tick it bursts, -1 = none) and the last burst (tick,
 ## where, radius) for the view.
@@ -115,7 +115,7 @@ var ring_root := PackedInt32Array()
 var ring_spec := PackedStringArray()
 var ring_depth := PackedInt32Array()
 var ring_proc := PackedInt32Array()
-## v0.8.0 N3 (owner O47; WandRings): a travelling ring's velocity (metres per tick), its orbit round its travelling
+## A travelling ring's velocity (metres per tick), its orbit round its travelling
 ## centre (metres; 0 = none) and the orbit's start angle, and its pulses (0 = a plain ring that grows where it was
 ## cast), and which ring of its launch it is; ring_seen: who each travelling ring already hit, as triples [root,
 ## ring of the launch × 8 + pulse, target id] (ModifierAbilities: once per ring and pulse). Hashed only once a ring
@@ -142,7 +142,7 @@ var rc_reflex_root := 0
 var rc_mend_tick := -1
 
 
-## v0.10.5 O9: any RuleCards field away from its default.
+## Any RuleCards field away from its default.
 func touched_rc() -> bool:
 	return (
 		rc_rush_until != 0
@@ -279,7 +279,7 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(v)
 
 
-## v0.8.0 N3: any ring alive travels (its travel columns hash).
+## Any ring alive travels (its travel columns hash).
 func _rings_travelled() -> bool:
 	for p in ring_pulse:
 		if p != 0:

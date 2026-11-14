@@ -6,7 +6,9 @@ extends SceneTree
 ## held lantern glowing); a Wisp Bloom has opened toward the hero (wisps outlined within 4 m) and a Snuff's circle
 ## tracks the hero (markers always draw over the dark). Needs a renderer (no --headless):
 ##   godot --path . --audio-driver Dummy --resolution 1280x720 -s scripts/shots/nb_lantern_shade.gd
-## Writes build/shots/v0.9.0/nb4/1_lantern_shade_dark.jpg and prints its path and the light's state.
+## Writes build/shots/v0.11.0/o4/1_lantern_shade_dark.jpg (v0.11.0 O4; was v0.9.0/nb4) and prints its path and the
+## light's state (O4: the lanterns start out, so the shot lights south and west as if stepped on, and prints the
+## Shade's damage multiplier).
 
 const SIZE := Vector2i(1280, 720)
 const HERO_AT := Vector2(-2.2, -1.2)
@@ -24,7 +26,7 @@ var _stage := 0
 var _ticks := 0
 var _boss := -1
 var _t: BossTable
-var _dir := "res://build/shots/v0.9.0/nb4/"
+var _dir := "res://build/shots/v0.11.0/o4/"
 
 
 func _initialize() -> void:
@@ -93,6 +95,8 @@ func _process(_delta: float) -> bool:
 				var lt := _world.bosses.lamp_t
 				lt[1] = 0
 				lt[0] = 70
+				lt[2] = 360  # v0.11.0 O4: the lanterns start out; these two as if stepped on
+				lt[3] = 360
 				_world.bosses.lamp_t = lt
 				BossAi.start_attack(_world, i, _t.attack_index(&"wisp_bloom"))
 				_ticks = 0
@@ -131,8 +135,8 @@ func _process(_delta: float) -> bool:
 		l.get("dark"),
 		" lamps left ",
 		lit,
-		" boss lit ",
-		l.get("boss_lit"),
+		" boss mult ",
+		l.get("boss_mult"),
 		" dark strength ",
 		_view.shades.dark_strength(),
 		" lights ",

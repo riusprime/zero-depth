@@ -145,25 +145,20 @@ var _p_age := PackedFloat32Array()
 var _p_seed := PackedFloat32Array()
 
 
-## Builds `p_style`'s pieces on `p_avatar` (outlined and X-rayed like its body: `outline`, `technique`).
-func build(
-	p_avatar: PlayerAvatar, p_style: StringName, outline: Color, technique: StringName
-) -> void:
+## Builds `p_style`'s pieces on `p_avatar`.
+func build(p_avatar: PlayerAvatar, p_style: StringName) -> void:
 	name = "EpicRobe"
 	avatar = p_avatar
 	style = p_style
 	_look = LOOKS.get(style, LOOKS[&"fallen"])
-	var team := ThemePalette.color(&"player_core")
 	for _j in COLUMNS:
 		_hem_pos.append(Vector3.ZERO)
 		_hem_vel.append(Vector3.ZERO)
 		_hem_target.append(Vector3.ZERO)
 		_mid.append(Vector3.ZERO)
 		_top.append(Vector3.ZERO)
-	# The cloth: outlined, X-rayed and hit-flashed with the body (the avatar's pieces), a velvet rim on it.
-	cape = avatar._outlined(
-		self, _mesh, Vector3.ZERO, Color.WHITE, outline, team, technique, 0.014, true, "Cape"
-	)
+	# The cloth: hit-flashed with the body (the avatar's pieces), a velvet rim on it.
+	cape = avatar._body_piece(self, _mesh, Vector3.ZERO, Color.WHITE, true, "Cape")
 	var cm := cape.material_override as StandardMaterial3D
 	cm.vertex_color_is_srgb = true
 	cm.roughness = 0.9
@@ -200,7 +195,7 @@ func build(
 			"HoodSheen", shell.mesh, _look["sheen"], 0.6 if style == &"fallen" else 0.35, 2.5
 		)
 		shell.add_child(hood_sheen)
-	_build_crown(outline, team, technique)
+	_build_crown()
 	if style == &"fallen":
 		_build_eyes()
 	else:
@@ -554,19 +549,10 @@ func _follow_head() -> void:
 	head.transform = t
 
 
-func _build_crown(outline: Color, team: Color, technique: StringName) -> void:
+func _build_crown() -> void:
 	var fallen := style == &"fallen"
-	crown = avatar._outlined(
-		head,
-		EpicRobeParts.crown_mesh(fallen),
-		Vector3.ZERO,
-		_look["metal"],
-		outline,
-		team,
-		technique,
-		0.008,
-		false,
-		"Crown"
+	crown = avatar._body_piece(
+		head, EpicRobeParts.crown_mesh(fallen), Vector3.ZERO, _look["metal"], false, "Crown"
 	)
 	var m := crown.material_override as StandardMaterial3D
 	m.metallic = 0.7 if fallen else 0.6
@@ -591,7 +577,6 @@ func _build_crown(outline: Color, team: Color, technique: StringName) -> void:
 	gm.emission_enabled = true
 	gm.emission = _look["gem"]
 	gm.emission_energy_multiplier = 2.2 if fallen else 3.0
-	AvatarBase.write_stencil(gm)
 	gems.material_override = gm
 	gems.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	head.add_child(gems)
@@ -635,7 +620,6 @@ func _build_eyes() -> void:
 	em.emission_enabled = true
 	em.emission = c
 	em.emission_energy_multiplier = 2.6
-	AvatarBase.write_stencil(em)
 	eyes.material_override = em
 	eyes.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	head.add_child(eyes)
@@ -666,7 +650,6 @@ func _build_halo() -> void:
 	bm.emission_energy_multiplier = 0.9
 	bm.rim_enabled = true
 	bm.rim = 0.6
-	AvatarBase.write_stencil(bm)
 	band.material_override = bm
 	band.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	halo.add_child(band)
@@ -684,7 +667,6 @@ func _build_halo() -> void:
 	km.emission_enabled = true
 	km.emission = Color("#FFF3D6")
 	km.emission_energy_multiplier = 4.0
-	AvatarBase.write_stencil(km)
 	core.material_override = km
 	core.position.y = 0.02
 	core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

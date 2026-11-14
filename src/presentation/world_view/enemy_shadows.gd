@@ -37,6 +37,11 @@ static func cached_kinds() -> int:
 	return _cache.size()
 
 
+## Whether `kind`'s proxy mesh is made (proxy_mesh then needs no host).
+static func has_proxy(kind: int) -> bool:
+	return _cache.has(kind)
+
+
 ## Gives the actor `root` (its parts under `facing`; `host` the avatar, or the facing for a model without one) its
 ## shadow in `mode`, after turning off every visible part's own. Returns the stand-in node (null if none).
 static func apply(
@@ -58,7 +63,7 @@ static func apply(
 
 
 ## The proxy mesh of `kind` (null: no casting part): the cached one, else merged now from `host`'s casting parts
-## (v0.10.5 W3-V1: a VatCrowd gives a reference avatar, its own enemies having no parts).
+## (a VatCrowd gives a reference avatar, its own enemies having no parts).
 static func proxy_mesh(kind: int, host: Node3D) -> ArrayMesh:
 	if _cache.has(kind):
 		return _cache[kind]
@@ -72,7 +77,7 @@ static func proxy_mesh(kind: int, host: Node3D) -> ArrayMesh:
 	return mesh
 
 
-## v0.10.5 W3-V5 (owner, V3: "yes"): a fresh avatar is built posed for the rise-in, sunk under the floor; merged so,
+## A fresh avatar is built posed for the rise-in, sunk under the floor; merged so,
 ## the stand-in sat under the floor and cast nothing. It is posed standing for the merge (its first state as a
 ## standing one: every avatar rises fully then), then put back to a fresh, unsynced one (its first real sync poses it
 ## from the sim's state, as before). Presentation only. False: `host` is not a fresh avatar (left as it is).
@@ -170,6 +175,20 @@ static func _merge(casters: Array) -> ArrayMesh:
 
 ## The blob: a flat soft disc under the actor (on its root, so it never tilts with the body).
 static func _add_blob(root: Node3D, radius: float) -> MeshInstance3D:
+	blob_parts()
+	var blob := MeshInstance3D.new()
+	blob.name = BLOB_NAME
+	blob.mesh = _blob_mesh
+	blob.material_override = _blob_mat
+	blob.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	blob.scale = Vector3.ONE * maxf(radius, 0.2) * BLOB_SCALE
+	blob.position.y = BLOB_Y
+	root.add_child(blob)
+	return blob
+
+
+## The blob's shared [mesh, material] (CritterCrowd draws the critters' blobs as one MultiMesh of it).
+static func blob_parts() -> Array:
 	if _blob_mesh == null:
 		_blob_mesh = QuadMesh.new()
 		_blob_mesh.size = Vector2.ONE
@@ -189,12 +208,4 @@ static func _add_blob(root: Node3D, radius: float) -> MeshInstance3D:
 		_blob_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		_blob_mat.albedo_color = Color(1, 1, 1, BLOB_ALPHA)
 		_blob_mat.albedo_texture = tex
-	var blob := MeshInstance3D.new()
-	blob.name = BLOB_NAME
-	blob.mesh = _blob_mesh
-	blob.material_override = _blob_mat
-	blob.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	blob.scale = Vector3.ONE * maxf(radius, 0.2) * BLOB_SCALE
-	blob.position.y = BLOB_Y
-	root.add_child(blob)
-	return blob
+	return [_blob_mesh, _blob_mat]

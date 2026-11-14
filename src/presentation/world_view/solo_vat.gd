@@ -1,8 +1,9 @@
 class_name SoloVat
 extends RefCounted
-## v0.10.5 W3-V4c (owner, 2026-11-06: "can we apply it to the rest of the enemies and test it?"): VAT for the
-## stand-alone enemies (the Needle, the Warden, the Arc Caster, the Bomb Drone): their reference and VAT avatars, the
-## looks of their own StandardMaterial3D pieces, and the rig they declare (VatBake's, see its class notes).
+## VAT for the
+## stand-alone enemies (the Needle, the Warden, the Arc Caster, the Bomb Drone; the Lens Drone): their
+## reference and VAT avatars, the looks of their own StandardMaterial3D pieces, and the rig they declare (VatBake's,
+## see its class notes).
 ##
 ## Their rigs are one-number joints. Each avatar's pose code works out a few plain numbers (an angle, a height, a
 ## scale: its RAW drives, the avatar's _vd) and writes its nodes from them; each joint of its rig is one of those
@@ -27,6 +28,12 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_WARDEN,
 	WorldReader.KIND_ARC_CASTER,
 	WorldReader.KIND_BOMB_DRONE,
+	WorldReader.KIND_LENS_DRONE,
+	WorldReader.KIND_SCRAP_HOUND,  # v0.11.0 O17a
+	WorldReader.KIND_ROCK_LURKER,  # v0.11.0 O17b
+	WorldReader.KIND_STONE_THROWER,  # On the owner's model
+	WorldReader.KIND_CINDER_PRIEST,  # The owner's model, animated in code
+	WorldReader.KIND_KILN_BEETLE,  # v0.11.0 O17e
 ]
 ## Metas: a piece material's look (its role: &"plate", &"accent", &"unshaded"), an accent's glow drive (+ 1), a node
 ## kept live.
@@ -39,6 +46,13 @@ static func is_solo(kind: int) -> bool:
 	return KINDS.has(kind)
 
 
+## The Cinder Priest model, in the palette of `kind` (the Priest or the Arc Caster).
+static func _priest_of(kind: int) -> AvatarBase:
+	var a := CinderPriestAvatar.new()
+	a.kind = kind
+	return a
+
+
 static func _new(kind: int) -> AvatarBase:
 	match kind:
 		WorldReader.KIND_NEEDLE:
@@ -46,21 +60,34 @@ static func _new(kind: int) -> AvatarBase:
 		WorldReader.KIND_WARDEN:
 			return WardenAvatar.new()
 		WorldReader.KIND_ARC_CASTER:
-			return ArcCasterAvatar.new()
+			return _priest_of(kind)
 		WorldReader.KIND_BOMB_DRONE:
 			return BombDroneAvatar.new()
+		WorldReader.KIND_LENS_DRONE:
+			return LensDroneAvatar.new()
+		WorldReader.KIND_SCRAP_HOUND:  # v0.11.0 O17a
+			return ScrapHoundAvatar.new()
+		WorldReader.KIND_ROCK_LURKER:  # v0.11.0 O17b
+			return RockLurkerAvatar.new()
+		WorldReader.KIND_STONE_THROWER:
+			return StoneThrowerAvatar.new()
+		WorldReader.KIND_CINDER_PRIEST:
+			return _priest_of(kind)
+		WorldReader.KIND_KILN_BEETLE:  # v0.11.0 O17e
+			return KilnBeetleAvatar.new()
 	return null
 
 
 ## A reference avatar of `kind` with its pieces (not in the tree; the caller frees it), its body plates in the look
 ## ActorViews gives a fresh enemy (tint_greys under the biome's cast `tint`, role_glow at `role_glow`), each piece
 ## material marked with its role (LOOK).
-static func reference_of(kind: int, tint: Color, role_glow: float, outline: Color) -> AvatarBase:
+static func reference_of(kind: int, tint: Color, role_glow: float) -> AvatarBase:
 	var a := _new(kind)
-	a.setup(outline, &"outline")
+	a.setup()
 	a.set_process(false)
 	a.set_meta(&"mats", a.body_materials)
 	ActorViews.tint_greys(a, tint)
+	ActorViews.lift_model(a, kind)  # v0.11.0 F2
 	ActorViews.role_glow(a, kind, role_glow)
 	for m in a.body_materials:
 		m.set_meta(LOOK, &"plate")
@@ -72,32 +99,36 @@ static func _mark(n: Node) -> void:
 	for c in n.get_children():
 		var mi := c as MeshInstance3D
 		if mi != null:
-			var m := mi.material_override as StandardMaterial3D
-			if m != null and not m.has_meta(LOOK):
-				var unshaded := m.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED
-				m.set_meta(LOOK, &"unshaded" if unshaded else &"accent")
+			var ms: Array = [mi.material_override]
+			if mi.mesh != null:  # The Lens Drone model's pieces carry theirs per surface
+				for k in mi.mesh.get_surface_count():
+					ms.append(mi.get_surface_override_material(k))
+			for mat: Variant in ms:
+				var m := mat as StandardMaterial3D
+				if m != null and not m.has_meta(LOOK):
+					var unshaded := m.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED
+					m.set_meta(LOOK, &"unshaded" if unshaded else &"accent")
 		_mark(c)
 
 
 ## A VAT avatar of `kind` (no pieces; tools, tests; not in the tree; the caller frees it).
-static func vat_avatar_of(kind: int, outline: Color) -> AvatarBase:
+static func vat_avatar_of(kind: int) -> AvatarBase:
 	var a := _new(kind)
 	a.set(&"vat", true)
-	a.setup(outline, &"outline")
+	a.setup()
 	return a
 
 
 ## VatBake.surface_look for a marked StandardMaterial3D piece: [albedo (linear) + mode, emission (linear; a plate's
-## times its rest energy) + outline, two-sided, glow source, unshaded, vertex colours].
+## times its rest energy) + 0, two-sided, glow source, unshaded, vertex colours].
 static func surface_look(m: StandardMaterial3D) -> Array:
 	var role: StringName = m.get_meta(LOOK)
 	var a := m.albedo_color.srgb_to_linear()
 	var e := m.emission.srgb_to_linear() if m.emission_enabled else Color.BLACK
 	var k := m.emission_energy_multiplier if role == &"plate" else 1.0
-	var outline := 1.0 if m.stencil_mode == BaseMaterial3D.STENCIL_MODE_OUTLINE else 0.0
 	return [
 		[a.r, a.g, a.b, 0.0 if role == &"plate" else 1.0],
-		[e.r * k, e.g * k, e.b * k, outline],
+		[e.r * k, e.g * k, e.b * k, 0.0],
 		m.cull_mode == BaseMaterial3D.CULL_DISABLED,
 		float(m.get_meta(GLOW, 0)),
 		1.0 if role == &"unshaded" else 0.0,
@@ -107,7 +138,7 @@ static func surface_look(m: StandardMaterial3D) -> Array:
 
 ## The rig (VatBake's) of `avatar` from its drive specs, grids and joints (see the class notes).
 static func rig(
-	key: String, drives: Array, grids: Array, joints: Array, outline_m: float, scaled: bool
+	key: String, drives: Array, grids: Array, joints: Array, scaled: bool
 ) -> Dictionary:
 	var gs: Array = []
 	for g: Array in grids:
@@ -126,7 +157,6 @@ static func rig(
 		"row":
 		func(g: int, d: PackedFloat64Array) -> Array: return _row(drives, grids, joints, g, d),
 		"scaled": scaled,
-		"outline_m": outline_m,
 	}
 
 
@@ -206,7 +236,7 @@ static func stretch_by(base: Vector3, per: Vector3, pre := Transform3D.IDENTITY)
 	return f
 
 
-## VatBake.pose_error: a random state of `a` from `ranges` ({private var: [lo, hi]}, or [values...] to pick from),
+## VatVerify.pose_error: a random state of `a` from `ranges` ({private var: [lo, hi]}, or [values...] to pick from),
 ## posed (`pose`: the avatar's own pose call) and returned.
 static func sample(
 	a: Object, rng: RandomNumberGenerator, ranges: Dictionary, pose: Callable

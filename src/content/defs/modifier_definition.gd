@@ -1,6 +1,6 @@
 class_name ModifierDefinition
 extends ContentDef
-## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md §2; CONTENT_SCHEMA "Modifiers"): a modifier, one `.tres` in
+## docs/design/MODIFIER_ENGINE.md §2; CONTENT_SCHEMA "Modifiers": a modifier, one `.tres` in
 ## data/modifiers/, discovered by ContentScanner like every definition. It rewrites the attack specs whose tags
 ## include every tag of `target` (empty: every spec), at `stage` (an op may name another), with `ops` in order.
 ## Modifiers apply stage by stage (FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE), each stage in pick order
@@ -10,9 +10,9 @@ extends ContentDef
 
 ## The fixed stage order (appended, never renumbered: it is the compile order).
 enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }
-## Appended, never renumbered. v0.6.0 MX4: LEGENDARY (the boss's tier only).
+## Appended, never renumbered. LEGENDARY (the boss's tier only).
 enum Rarity { COMMON, RARE, LEGENDARY }
-## v0.8.0 AO (owner O37: "make the order of the attacks be more important"; evidence/ATTACK_ORDER.md): what the card
+## What the card
 ## does to the cards to its left in the wand. FREE: a plain rewrite (stat-like; order changes nothing on its own).
 ## SHAPE: it changes what the attack is, and takes in what is left of it (Ring: a count left of it becomes the ring's
 ## pulses, a motion left of it throws the whole ring). COUNT: it multiplies what is left of it (Spread, Halo: right of
@@ -22,7 +22,7 @@ enum OrderKind { FREE, SHAPE, COUNT, MOTION }
 
 ## Spec tags a target filter (and a hook's attack) may name. weapon: the run's weapon attacks; melee / projectile:
 ## what they physically are; skill: the Skill button; area / chain: a burst or a jump; hook: an attack a hook spawned.
-## v0.6.0 MX2: the six ability modifiers' own attacks (Modifiers.ability specs): bomb (Bomb Lobber's lob), drone (the
+## The six ability modifiers' own attacks (Modifiers.ability specs): bomb (Bomb Lobber's lob), drone (the
 ## drone's copy), orbit (Orbit Blades' orbiters), field (Arc Field's shock zone), nova (Frost Nova's ring), trail
 ## (Flame Trail's fire).
 const TAGS: Array[StringName] = [
@@ -41,7 +41,7 @@ const TAGS: Array[StringName] = [
 	&"field",
 	&"nova",
 	&"trail",
-	# v0.6.0 MX4: the moments that launch from specs too: the dash (its start and end), Vent's blast, walking (every
+	# The moments that launch from specs too: the dash (its start and end), Vent's blast, walking (every
 	# Modifiers.MOVE_STEP_M), a blink's start, and the player's body (the defence and charge rules: Aether Shell,
 	# Ascension, Resonance read its numbers; it never launches).
 	&"dash",
@@ -49,11 +49,11 @@ const TAGS: Array[StringName] = [
 	&"move",
 	&"blink",
 	&"body",
-	# v0.6.5 WN4 (the Blade pool): a flying slash (Wave's crescent, Counter's: Split Wave targets it) and the combo's
+	# The Blade pool: a flying slash (Wave's crescent, Counter's: Split Wave targets it) and the combo's
 	# last step (Finisher+).
 	&"wave",
 	&"finisher",
-	# v0.9.0 XP (owner Q11, "Burning ground on kill"): Fire's burning patch (its hits feed their statuses whole).
+	# Fire's burning patch (its hits feed their statuses whole).
 	&"ground",
 ]
 ## The card families (CardFrames.FRAME's keys: the frame colour a card of this modifier wears).
@@ -80,9 +80,9 @@ const FAMILIES: Array[StringName] = [
 @export var ops: Array[ModifierOpDefinition] = []
 ## An optional visual overlay id (the design's §4: only when the spec change alone isn't readable). Empty in MX1.
 @export var overlay: StringName = &""
-## v0.8.0 AO: OrderKind (what the card does to the cards to its left).
+## OrderKind (what the card does to the cards to its left).
 @export var order_kind := OrderKind.FREE
-## v0.8.0 MR (owner O91, Split Wave without Wave): the card's other reading: on a spec carrying every tag here (and not
+## The card's other reading: on a spec carrying every tag here (and not
 ## the target) that has no hook child matching the target yet, the ops marked `alt` run instead of the others
 ## (ModifierTable.alt_target). Empty: none.
 @export var alt_target: PackedStringArray = PackedStringArray()
@@ -104,7 +104,7 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(ValidationIssue.new(&"range", resource_path, "unknown stage %d" % stage))
 	if order_kind < OrderKind.FREE or order_kind > OrderKind.MOTION:
 		issues.append(ValidationIssue.new(&"range", resource_path, "unknown order kind"))
-	if order_kind == OrderKind.SHAPE and not _sets_form():  # v0.8.0 AO: a shape card changes the form
+	if order_kind == OrderKind.SHAPE and not _sets_form():  # A shape card changes the form
 		issues.append(ValidationIssue.new(&"order", resource_path, "a shape card sets a form"))
 	_check_tag_list(issues, "target", target)
 	_check_tag_list(issues, "alt_target", alt_target)  # v0.8.0 MR
@@ -112,7 +112,7 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(ValidationIssue.new(&"alt", resource_path, "an alt op needs an alt_target"))
 	if ops.is_empty():
 		issues.append(ValidationIssue.new(&"missing", resource_path, "a modifier needs ops"))
-	if is_trigger() and ops.size() != 1:  # v0.6.5 WN1: a trigger card is its cut, nothing else
+	if is_trigger() and ops.size() != 1:  # A trigger card is its cut, nothing else
 		issues.append(
 			ValidationIssue.new(&"trigger", resource_path, "a trigger modifier has its one op only")
 		)
@@ -124,7 +124,7 @@ func validate() -> Array[ValidationIssue]:
 	return issues
 
 
-## v0.8.0 MR: some op is of the card's other reading (ModifierOpDefinition.alt).
+## Some op is of the card's other reading (ModifierOpDefinition.alt).
 func _has_alt() -> bool:
 	for o in ops:
 		if o != null and o.alt:
@@ -199,14 +199,14 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 		o.hook_casts != 1
 		and (o.op != ModifierOpDefinition.Op.TRIGGER or o.hook_casts < 1 or o.hook_casts > 3)
 	):
-		issues.append(  # v0.6.5 WN5b: a legendary trigger casts its spell 1..3 times
+		issues.append(  # A legendary trigger casts its spell 1..3 times
 			ValidationIssue.new(
 				&"range", resource_path, "%s: hook_casts is 1..3, on a trigger" % where
 			)
 		)
 	var hooked := o.op == ModifierOpDefinition.Op.HOOK or o.op == ModifierOpDefinition.Op.REMNANT
 	if o.per_level != 0.0 and not (o.is_numeric() or hooked):
-		issues.append(  # v0.6.5 WN3: a level grows a number (or a hook's damage share)
+		issues.append(  # A level grows a number (or a hook's damage share)
 			ValidationIssue.new(
 				&"range", resource_path, "%s: per_level on a numeric op or a hook" % where
 			)
@@ -222,13 +222,13 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 			issues.append(
 				ValidationIssue.new(&"range", resource_path, "%s: level_values below 0" % where)
 			)
-	if o.per_level_after < 1 or o.per_level_after > 4:  # v0.8.0 BL (B2): the steps start above 1..4
+	if o.per_level_after < 1 or o.per_level_after > 4:  # The steps start above 1..4
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "%s: per_level_after is 1..4" % where)
 		)
 
 
-## v0.9.5 CLV: any entry of `values` is below 0.
+## Any entry of `values` is below 0.
 static func _has_negative(values: PackedFloat32Array) -> bool:
 	for v in values:
 		if v < 0.0:
@@ -236,7 +236,7 @@ static func _has_negative(values: PackedFloat32Array) -> bool:
 	return false
 
 
-## v0.8.0 RM (Remnants): a remnant's numbers are in range, and its cast (unless it never casts: an anchor's pull) is
+## Remnants: a remnant's numbers are in range, and its cast (unless it never casts: an anchor's pull) is
 ## a hook's child (_check_hook's rules, but its trigger: the remnant decides when).
 func _check_remnant(issues: Array[ValidationIssue], where: String, o: ModifierOpDefinition) -> void:
 	if (
@@ -330,7 +330,7 @@ func _check_remnant(issues: Array[ValidationIssue], where: String, o: ModifierOp
 		_check_hook(issues, where, o)
 
 
-## v0.8.0 AO: one of the card's own ops changes the form (SET_FORM).
+## One of the card's own ops changes the form (SET_FORM).
 func _sets_form() -> bool:
 	for o in ops:
 		if o != null and o.op == ModifierOpDefinition.Op.SET_FORM:
@@ -338,7 +338,7 @@ func _sets_form() -> bool:
 	return false
 
 
-## v0.6.5 WN1: the modifier is a wand trigger (its op is TRIGGER).
+## The modifier is a wand trigger (its op is TRIGGER).
 func is_trigger() -> bool:
 	for o in ops:
 		if o != null and o.op == ModifierOpDefinition.Op.TRIGGER:
@@ -346,7 +346,7 @@ func is_trigger() -> bool:
 	return false
 
 
-## v0.6.5 WN1: a trigger cuts on one of the wand's triggers (and its Gun trigger, when set, is one too).
+## A trigger cuts on one of the wand's triggers (and its Gun trigger, when set, is one too).
 func _check_trigger(issues: Array[ValidationIssue], where: String, o: ModifierOpDefinition) -> void:
 	if not int(o.hook_trigger) in ModifierOpDefinition.WAND_TRIGGERS:
 		issues.append(
@@ -383,7 +383,7 @@ func _check_hook(issues: Array[ValidationIssue], where: String, o: ModifierOpDef
 	):
 		issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown when" % where))
 	_check_tag_list(issues, "%s.hook_tags" % where, o.hook_tags)
-	for k in o.hook_ops.size():  # v0.6.0 MX4: the child's shaping ops (any op but a hook)
+	for k in o.hook_ops.size():  # The child's shaping ops (any op but a hook)
 		var c := o.hook_ops[k] as ModifierOpDefinition
 		var cw := "%s.hook_ops[%d]" % [where, k]
 		if (
@@ -412,15 +412,15 @@ func _check_hook(issues: Array[ValidationIssue], where: String, o: ModifierOpDef
 			check_positive(issues, "%s.hook_radius_m" % where, o.hook_radius_m)
 		ModifierOpDefinition.Form.BEAM:
 			check_positive(issues, "%s.hook_reach_m" % where, o.hook_reach_m)
-		ModifierOpDefinition.Form.BOLT, ModifierOpDefinition.Form.ARC:  # v0.6.0 MX4: a shot, a slash
+		ModifierOpDefinition.Form.BOLT, ModifierOpDefinition.Form.ARC:  # A shot, a slash
 			check_positive(
 				issues,
 				"%s.hook_radius_m or hook_reach_m" % where,
 				maxf(o.hook_radius_m, o.hook_reach_m)
 			)
-		ModifierOpDefinition.Form.WEAPON:  # v0.6.0 MX4: a copy of the weapon's attack (its own sizes)
+		ModifierOpDefinition.Form.WEAPON:  # A copy of the weapon's attack (its own sizes)
 			pass
-		ModifierOpDefinition.Form.ORBITER:  # v0.6.5 WN4: Orbit Blades' blade (its orbit's radius)
+		ModifierOpDefinition.Form.ORBITER:  # Orbit Blades' blade (its orbit's radius)
 			check_positive(issues, "%s.hook_reach_m" % where, o.hook_reach_m)
 		_:
 			(
@@ -449,7 +449,7 @@ func _check_hook(issues: Array[ValidationIssue], where: String, o: ModifierOpDef
 		issues.append(ValidationIssue.new(&"range", resource_path, "%s: hook_every >= 0" % where))
 
 
-## v0.6.0 MX1: every item's modifiers exist (ItemDefinition.modifiers names ModifierDefinition ids); MX2: every
+## Every item's modifiers exist (ItemDefinition.modifiers names ModifierDefinition ids); MX2: every
 ## ability's too (AbilityDefinition.modifiers).
 static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 	var issues: Array[ValidationIssue] = []
@@ -470,7 +470,7 @@ static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 				issues.append(
 					ValidationIssue.new(&"unknown_modifier", d.resource_path, "no modifier %s" % id)
 				)
-			elif bool(mods[id]) != trigger_card:  # v0.6.5 WN1: a trigger only on a trigger card
+			elif bool(mods[id]) != trigger_card:  # A trigger only on a trigger card
 				(
 					issues
 					. append(

@@ -1,12 +1,10 @@
 class_name LaserWeight
 extends RefCounted
-## v0.10.5 W3-O8 (owner F14, 2026-11-04: the Laser "doesn't feel as powerful or impactful as other attack forms"):
 ## what gives the Laser's beam its weight, as numbers LaserView reads:
 ## - core + glow: the ribbon is GLOW_WIDTH times the look's width; the look's strip draws in its middle 1 / GLOW_WIDTH
 ##   (the core, as before) and a soft halo in the look's edge and deep colours fills the rest (glow(), by density);
 ## - a slight width pulse (PULSE, over PULSE_TICKS) and a start flash (the first FLASH_TICKS of a firing: the muzzle
 ##   and the impact star FLASH_GROW bigger, the beam FLASH_WIDEN wider, fading out);
-## - hit sparks at the impact point: sparks() a frame by Effects density, thrown out from it (spark_offset()).
 ## Starting values, all of them. Its sprites draw through the hero's budget (VfxCore.hero_budget, O12).
 ## Presentation only (EI-07): the clock is the sim's tick the view last read; nothing here decides an outcome.
 
@@ -19,10 +17,11 @@ const FLASH_GROW := 1.3
 const FLASH_WIDEN := 0.6
 ## The impact star this much bigger than the look's (the hit reads at the end of the beam).
 const IMPACT_MUL := 1.3
-## The impact's sparks a frame by density, how long each lives (ticks) and how far it flies (m).
-const SPARKS := {"low": 3, "medium": 5, "high": 8}
-const SPARK_TICKS := 14.0
-const SPARK_REACH_M := 0.7
+## v0.11.0 O1 (owner Q7: "instant, drawn fast (~0.15 s), glow fading ~0.5 s"): the lance, hit whole on its firing
+## tick, draws out from the hero over DRAW_TICKS and its glow fades out by the end of WorldReader.LANCE_GLOW_TICKS.
+## A minimal look: the final one waits for the owner's sketch (PLAN X2).
+const DRAW_TICKS := 9.0
+const LANCE_ENERGY := 1.7
 
 
 ## The halo's strength by Effects density (unknown: medium).
@@ -30,9 +29,18 @@ static func glow(density: String) -> float:
 	return float(GLOW.get(density, GLOW["medium"]))
 
 
-## The impact's sparks a frame by Effects density (unknown: medium).
-static func sparks(density: String) -> int:
-	return int(SPARKS.get(density, SPARKS["medium"]))
+## The share of the lance drawn `age` ticks after its shot (0 to 1 over DRAW_TICKS, eased out).
+static func lance_drawn(age: float) -> float:
+	var u := clampf(age / DRAW_TICKS, 0.0, 1.0)
+	return 1.0 - (1.0 - u) * (1.0 - u)
+
+
+## The lance's glow `age` ticks after its shot, of `glow_ticks` in all: 1 while it draws, then down to 0.
+static func lance_fade(age: float, glow_ticks: float) -> float:
+	if age <= DRAW_TICKS:
+		return 1.0
+	var u := clampf((age - DRAW_TICKS) / maxf(1.0, glow_ticks - DRAW_TICKS), 0.0, 1.0)
+	return (1.0 - u) * (1.0 - u)
 
 
 ## The start flash at `age` ticks since the beam began firing: 1 at once, 0 from FLASH_TICKS (eased out).
@@ -46,15 +54,3 @@ static func flash(age: float) -> float:
 ## The beam's width factor at `tick` with the start flash `f`: the pulse (1 +- PULSE) and the flash's widening.
 static func width_mul(tick: float, f: float) -> float:
 	return 1.0 + PULSE * sin(TAU * tick / PULSE_TICKS) + FLASH_WIDEN * f
-
-
-## Spark `j`'s place (from the impact) and life share (0..1) at `tick`: each spark flies out on its own heading,
-## up and away, then starts again (the impact keeps throwing them while the beam hits).
-static func spark_offset(j: int, n: int, tick: float) -> Array:
-	var u := fposmod(tick / SPARK_TICKS + float(j) / float(maxi(1, n)), 1.0)
-	var a := (
-		TAU * (float(j) / float(maxi(1, n)))
-		+ 0.7 * floorf(tick / SPARK_TICKS + float(j) / maxi(1, n))
-	)
-	var r := SPARK_REACH_M * (1.0 - (1.0 - u) * (1.0 - u))
-	return [Vector3(cos(a) * r, 0.15 + 0.5 * u * (1.0 - u) * 2.0, sin(a) * r), u]

@@ -21,11 +21,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_take_an_event_choice_and_a_cursed_chest_card() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot(null, null, CHEST_SEED)
@@ -35,7 +30,7 @@ func test_take_an_event_choice_and_a_cursed_chest_card() -> void:
 	assert_gt(w.ev.size(), 0, "the floor has an event room")
 	assert_eq(main.view.events.pedestal_count(), w.ev.size(), "its pedestal is drawn")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(await e.walk_to(w.ev.pos(0), 0.6), "walked to the pedestal")
 	await e.frames(2)
@@ -76,7 +71,7 @@ func test_take_an_event_choice_and_a_cursed_chest_card() -> void:
 	assert_false(panel.visible, "the panel closed")
 	# The cursed chest: the dev route marks the next chest offer cursed.
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "CurseChest")
+	await e.click_dev("CurseChest")
 	await e.tap(KEY_QUOTELEFT)
 	var chest := E2e.nearest_reward(w, RewardStore.Kind.CHEST)
 	assert_gte(chest, 0, "a chest on the floor")

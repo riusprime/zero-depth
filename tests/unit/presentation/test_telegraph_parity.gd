@@ -6,8 +6,8 @@ const S := EnemyAi.State
 const EPS := 0.03
 
 
-## Puts actor i into its windup with a fixed lock (as _start_windup would), the player at `at`, and runs the
-## attack out. Returns the damage the player took.
+## Puts actor i into its windup with a fixed lock along angle 0 (as the native think starts it: _windup), the player at
+## `at`, and runs the attack out. Returns the damage the player took.
 func _attack(kind: int, at: Vector2) -> Array:
 	var w := CombatLab.world()
 	var id := w.add_enemy(kind, Vector2.ZERO)
@@ -15,7 +15,7 @@ func _attack(kind: int, at: Vector2) -> Array:
 	w.actors.invuln[i] = 0
 	w.actors.set_pos(0, at)
 	w.enemy_tables[kind].charge_turn = 0  # the drawn lane is the windup's; a steered charge has its own test
-	EnemyAi._start_windup(w, i, 0)
+	_windup(w, i)
 	var tg := EnemyAi.telegraph(w, i)
 	w.actors.state_t[i] = 0
 	for k in 200:
@@ -64,3 +64,17 @@ func test_needle_line() -> void:
 		var got := _attack(ActorStore.Kind.NEEDLE, Vector2(6, d))
 		var drawn := _inside_lane(got[1], Vector2(6, d), pr)
 		assert_eq(got[0].size() > 0, drawn, "lateral %.2f: hit iff inside the drawn line" % d)
+
+
+## An attack's start along angle 0 as the native think makes it for these kinds: WINDUP, locked where the body stands
+## (EnemyAi._start_windup's common part), a charge's run cut short by walls, an aimed shot's aim.
+func _windup(w: World, i: int) -> void:
+	EnemyAi._start_windup(w, i, 0)
+	var t := w.enemy_table(w.actors.kinds[i])
+	match EnemyAi.behaviour_of(w.actors.kinds[i]):
+		ActorStore.Kind.CHARGER:
+			w.actors.lock_len[i] = EnemyAi.clear_run(
+				w, w.actors.pos(i), 0, t.charge_distance_m, t.radius_m
+			)
+		ActorStore.Kind.NEEDLE:
+			EnemyAi._aim(w, i)

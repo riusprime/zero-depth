@@ -1,6 +1,6 @@
 class_name StatusVisuals
 extends Node3D
-## Engine statuses and combo payoffs on screen (v0.3.0 G). Reads the sim through WorldReader only:
+## Engine statuses and combo payoffs on screen. Reads the sim through WorldReader only:
 ## - burn: embers rising around the enemy (more stacks, more embers); its orange glow is ItemVisuals' tint;
 ## - shock: flickering sparks; a discharge draws a lightning line to each enemy it jumped to;
 ## - v0.10.0 FX: every stacking status (burn, bleed, poison, shock, frost) shows its icon and count ("x3") over the
@@ -21,7 +21,7 @@ extends Node3D
 const JUMP_TICKS := 15.0
 const SPLASH_TICKS := 20.0
 const SPLASH_RADIUS_M := 1.2
-## v0.9.5 EE2: the "+" over a burning (Heat sync) or frozen (Shatter) enemy's bar at Lv 3; an Overcharge strike's bolt
+## The "+" over a burning (Heat sync) or frozen (Shatter) enemy's bar at Lv 3; an Overcharge strike's bolt
 ## and a shard's streak last 0.33 s and 0.25 s.
 const PLUS_FIRE := Color("#FFB347")
 const PLUS_FROST := Color("#BDEBFF")
@@ -33,14 +33,14 @@ const DRIPS := 3
 const CRYSTALS := 4
 const ORBS := 3
 const FX_FRAMES := 16
-## v0.10.5: the ring radii the payoffs draw (m), their meshes made by prepare(); and the fading pieces it pools (a
+## The ring radii the payoffs draw (m), their meshes made by prepare(); and the fading pieces it pools (a
 ## starting value: a discharge's bolt and its ring).
 const RING_RADII: Array[float] = [0.8, 0.9, 1.0, SPLASH_RADIUS_M, 1.6]
 const FX_PREFILL := 6
-## v0.8.0 HV: a status's reach past the actor's radius for the cull: its flames and arcs (about 1.5 m over the body)
+## A status's reach past the actor's radius for the cull: its flames and arcs (about 1.5 m over the body)
 ## and its light (VfxLayer._light_status: 3 m range).
 const STATUS_REACH_M := 3.5
-## v0.10.5 W3-Q7: a payoff's reach past its point for the cull: a burst's widest light (VfxLayer._explosion_rest:
+## A payoff's reach past its point for the cull: a burst's widest light (VfxLayer._explosion_rest:
 ## r * 3 + 2 m) and its rising smoke; a line's length and the light at its far end (StormPack.lightning: 4 m).
 const SHOT_REACH_PER_M := 3.0
 const SHOT_REACH_M := 2.5
@@ -49,20 +49,23 @@ const SHOT_LINE_REACH_M := 4.0
 ## P-9: the pieces the effects layer draws instead (hidden under the new look).
 const VFX_DRAWN: Array[String] = ["embers", "drips", "crystals", "sparks"]
 
-## v0.9.5 PF: false hides the burn embers (frame_probe --ab=no_burn_fx measures their cost).
+## False hides the burn embers (frame_probe --ab=no_burn_fx measures their cost).
 static var burn_embers := true
 var actors: ActorViews
 ## The new look's effects layer (null: the boxes and rings as before).
 var vfx: VfxLayer
-## v0.8.0 HV (owner O89): the camera's view (WorldViewRoot sets it): a status wholly out of the picture (past its
+## The camera's view (WorldViewRoot sets it): a status wholly out of the picture (past its
 ## reach + ScreenCull.MARGIN_M) is not drawn into the effects layer. Null: every status draws.
 var cull: ScreenCull
-## v0.8.0 HV: statuses drawn into the effects layer last frame, and skipped as off screen (tests, the perf probe).
+## Statuses drawn into the effects layer last frame, and skipped as off screen (tests, the perf probe).
 var statuses_drawn := 0
 var statuses_culled := 0
-## v0.10.5 W3-Q7: payoffs drawn into the effects layer last frame, and skipped as off screen (tests, the perf probe).
+## Payoffs drawn into the effects layer last frame, and skipped as off screen (tests, the perf probe).
 var shots_drawn := 0
 var shots_culled := 0
+## The syncs that visited actors; a sync with no status anywhere, before or now, goes straight to the payoffs
+## (tests read it).
+var worked := 0
 ## Kept for the view's life, one per look (see the class note).
 var _mats := {}
 var _box := BoxMesh.new()
@@ -73,18 +76,18 @@ var _shell := SphereMesh.new()
 var _views := {}
 var _frame := 0
 var _last_tick := -1
-## v0.10.0 FX: the camera's right (world), the badges' row direction.
+## The camera's right (world), the badges' row direction.
 var _right := Vector3.RIGHT
-## v0.9.5 EE1: the last event read (Contagion jumps, the Exsanguinate burst).
+## The last event read (Contagion jumps, the Exsanguinate burst).
 var _last_seq := 0
-## v0.9.5 EE2: where the last Shatter broke (its shards fly from there), and whether the "+" shows this sync.
+## Where the last Shatter broke (its shards fly from there), and whether the "+" shows this sync.
 var _shatter_at := Vector2.ZERO
 var _plus_fire := false
 var _plus_frost := false
 var _seen := {}
 var _fx: Array = []
 var _fx_template := SkillVisuals._make_template()
-## v0.10.5 (each payoff ring made a TorusMesh and a material): the ring meshes by radius (shared), and the idle fading
+## Each payoff ring made a TorusMesh and a material: the ring meshes by radius (shared), and the idle fading
 ## pieces (rings and bolt segments), each with its own material, reused instead of freed.
 var _tori := {}
 var _idle_fx: Array[MeshInstance3D] = []
@@ -92,7 +95,7 @@ var _idle_fx: Array[MeshInstance3D] = []
 var _on := {}
 ## Payoffs drawn by the vfx layer: [kind, at (Vector3), radius, start tick, life, seed, to (Array of Vector3)].
 var _shots: Array = []
-## v0.8.0 HV: the per-tick Dictionaries kept and refilled instead of built every tick: the actors alive with a
+## The per-tick Dictionaries kept and refilled instead of built every tick: the actors alive with a
 ## status, each one's _on entry by id ({on, r, node, top}, its "on" swapped with the scratch), and the scratch a
 ## status-free enemy is read into (left empty, nothing kept for it).
 var _alive := {}
@@ -123,20 +126,29 @@ func use_vfx(layer: VfxLayer) -> void:
 
 
 func sync(reader: WorldReader) -> void:
-	# v0.9.5 PF4: it may sync every other tick, so the animation clock counts ticks, not syncs.
+	# It may sync every other tick, so the animation clock counts ticks, not syncs.
 	var tick := reader.tick()
 	_frame += clampi(tick - _last_tick, 1, 2)
 	_last_tick = tick
 	_plus_fire = reader.element_plus(true)  # v0.9.5 EE2
 	_plus_frost = reader.element_plus(false)
+	# Only the actors that show something are visited: the hero with guard charges, and the ones the sim's status
+	# columns mark (one bulk read, not a status check and an anchor lookup per actor).
+	var shown := reader.status_indices()
+	if reader.guard_charges() > 0 and reader.actor_count() > 0:
+		shown.insert(0, 0)
+	_on.clear()
+	if shown.is_empty() and _views.is_empty() and _entries.is_empty():
+		_sync_payoffs(reader)  # Nothing on any actor, before or now
+		return
+	worked += 1
 	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
 	if cam != null:
 		_right = cam.global_transform.basis.x
-	_on.clear()
 	_alive.clear()
-	for i in reader.actor_count():
+	for i in shown:
 		var id := reader.actor_id(i)
-		var node := actors.actor_node(id)
+		var node := actors.anchor_node(id)  # (a batched enemy's anchor in the tree)
 		if node == null:
 			continue
 		_scratch.clear()
@@ -172,7 +184,7 @@ func sync(reader: WorldReader) -> void:
 	_sync_payoffs(reader)
 
 
-## What actor i shows: {status: stacks}, filled into `out` (v0.8.0 HV: a kept Dictionary, emptied by the caller).
+## What actor i shows: {status: stacks}, filled into `out` (a kept Dictionary, emptied by the caller).
 ## Enemies show burn/shock/bleed/frost/frozen; the player its charges.
 func _statuses(reader: WorldReader, i: int, out: Dictionary) -> Dictionary:
 	if i == 0:
@@ -184,7 +196,7 @@ func _statuses(reader: WorldReader, i: int, out: Dictionary) -> Dictionary:
 	if reader.burn_stacks(i) > 0:
 		out[&"burn"] = reader.burn_stacks(i)
 		if _plus_fire:
-			out[&"plus_fire"] = 1  # v0.9.5 EE2: Heat sync
+			out[&"plus_fire"] = 1  # Heat sync
 	if reader.shock_stacks(i) > 0:
 		out[&"shock"] = reader.shock_stacks(i)
 	if reader.bleed_stacks(i) > 0:
@@ -194,7 +206,7 @@ func _statuses(reader: WorldReader, i: int, out: Dictionary) -> Dictionary:
 	if reader.actor_frozen(i):
 		out[&"frozen"] = 1
 		if _plus_frost:
-			out[&"plus_frost"] = 1  # v0.9.5 EE2: Shatter
+			out[&"plus_frost"] = 1  # Shatter
 	if reader.poison_stacks(i) > 0:
 		out[&"poison"] = reader.poison_stacks(i)
 	return out
@@ -208,6 +220,8 @@ func _build(node: Node3D, r: float) -> Dictionary:
 	var bar_y := 1.3
 	if node.has_meta(&"bar"):
 		bar_y = (node.get_meta(&"bar") as Node3D).get_parent().position.y
+	elif node.has_meta(&"bar_y"):  # A batched enemy's anchor (its bar is the batch's)
+		bar_y = node.get_meta(&"bar_y")
 	var v := {
 		"root": root,
 		"bar_y": bar_y,
@@ -217,7 +231,7 @@ func _build(node: Node3D, r: float) -> Dictionary:
 		"dots_plus_frost": []
 	}
 	if vfx != null:
-		# v0.8.0 FV (owner O87, the horde lag): the effects layer draws the embers, drips, crystals, sparks and shell,
+		# The effects layer draws the embers, drips, crystals, sparks and shell,
 		# so none of their ~15 hidden meshes is built per affected enemy (a burning horde built and freed them as
 		# statuses came and went); the badges and guard orbs are built the first time they show (_update).
 		for kind: String in VFX_DRAWN:
@@ -240,7 +254,7 @@ func _build(node: Node3D, r: float) -> Dictionary:
 	return v
 
 
-## v0.9.5 EE2: the "+" (one bigger dot, beside the bar's right end) of `status` (plus_fire or plus_frost).
+## The "+" (one bigger dot, beside the bar's right end) of `status` (plus_fire or plus_frost).
 func _update_plus(v: Dictionary, status: StringName, on: bool) -> void:
 	var dots: Array = v[&"dots_plus_fire" if status == &"plus_fire" else &"dots_plus_frost"]
 	if on and dots.is_empty():
@@ -268,7 +282,7 @@ func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 				p.visible = false
 		if v["shell"] != null:
 			(v["shell"] as Node3D).visible = false
-	(v["badges"] as StatusBadges).update(on, _right)  # v0.10.0 FX: icon and "xN" a status
+	(v["badges"] as StatusBadges).update(on, _right)  # Icon and "xN" a status
 	_update_plus(v, &"plus_fire", on.has(&"plus_fire"))
 	_update_plus(v, &"plus_frost", on.has(&"plus_frost"))
 	var charges: int = on.get(&"guard", 0)
@@ -276,7 +290,7 @@ func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 		_build_orbs(v)
 	for k in (v["orbs"] as Array).size():
 		var o: Node3D = v["orbs"][k]
-		# v0.10.0 VX3 (R41): the pack's orbs draw the first guard_orbs_packed of them (one frame behind)
+		# The pack's orbs draw the first guard_orbs_packed of them (one frame behind)
 		o.visible = k < charges and (vfx == null or k >= vfx.guard_orbs_packed)
 		var a := t * 3.0 + TAU * k / ORBS
 		o.position = Vector3(cos(a) * (r + 0.35), 0.7, sin(a) * (r + 0.35))
@@ -312,7 +326,7 @@ func _update_pieces(v: Dictionary, on: Dictionary, r: float, t: float) -> void:
 		s.rotation = Vector3(0.4 * k, a, 0.6)
 
 
-## v0.10.0 FX: the count the badge of `status` shows on actor `id` (0: none).
+## The count the badge of `status` shows on actor `id` (0: none).
 func badge(id: int, status: StringName) -> int:
 	var v: Dictionary = _views.get(id, {})
 	return 0 if v.is_empty() else (v["badges"] as StatusBadges).shown(status)
@@ -359,7 +373,7 @@ func _sync_payoffs(reader: WorldReader) -> void:
 		_ring(reader.player_pos(), 0.9, ItemLooks.combo_color(&"slipstream"))
 
 
-## v0.9.5 EE1: a Contagion jump draws a thin green arc from the giver to the receiver for 0.25 s; the Exsanguinate
+## A Contagion jump draws a thin green arc from the giver to the receiver for 0.25 s; the Exsanguinate
 ## burst splashes red (ElementLevels). Read from the event log; both go through the effects layer's pooled lines and
 ## bursts (their caps and Effects density), or the old look's bolt line and ring.
 func _sync_element_events(reader: WorldReader) -> void:
@@ -390,7 +404,7 @@ func _sync_element_events(reader: WorldReader) -> void:
 			_sync_fsf_event(e, now)
 
 
-## v0.9.5 EE2: an Overcharge strike (a bolt from above and a ring), a Shatter (a crackle where the ice broke) and its
+## An Overcharge strike (a bolt from above and a ring), a Shatter (a crackle where the ice broke) and its
 ## shards (streaks to the enemies they hit), through the effects layer's pooled lines and bursts (their caps and
 ## Effects density), or the old look's bolt line and ring.
 func _sync_fsf_event(e: SimEvent, now: float) -> void:
@@ -413,7 +427,7 @@ func _sync_fsf_event(e: SimEvent, now: float) -> void:
 				)
 			else:
 				_ring(e.pos, 1.0, ItemLooks.status_color(&"frozen"))
-		SimEvent.EFFECT_PAIR_BURST:  # v0.9.5 EE3: Thermal Shock, Brittle: the frost burst at the pair's radius
+		SimEvent.EFFECT_PAIR_BURST:  # Thermal Shock, Brittle: the frost burst at the pair's radius
 			var reach := float(e.amount) / 1000.0
 			if vfx != null:
 				_shots.append(
@@ -458,18 +472,18 @@ func _draw_vfx(layer: VfxCore) -> void:
 	statuses_culled = 0
 	for id: int in _on:
 		var s: Dictionary = _on[id]
-		var node_v: Variant = s["node"]  # PF4: a sync every other tick may see it freed
+		var node_v: Variant = s["node"]  # A sync every other tick may see it freed
 		if not is_instance_valid(node_v) or not (node_v as Node3D).is_inside_tree():
 			continue
 		var p := (node_v as Node3D).global_position
 		var ground := Vector3(p.x, 0.0, p.z)
 		var r := float(s["r"])
-		if cull != null and not cull.shows(ground, r + STATUS_REACH_M):  # v0.8.0 HV: wholly off screen
+		if cull != null and not cull.shows(ground, r + STATUS_REACH_M):  # Wholly off screen
 			statuses_culled += 1
 			continue
 		statuses_drawn += 1
 		fx.status(ground, r, s["on"], id, float(s["top"]))
-	# v0.10.5 W3-Q7: the payoffs in flight, kept in place (no new Array a frame); one wholly off screen (past its reach
+	# The payoffs in flight, kept in place (no new Array a frame); one wholly off screen (past its reach
 	# + ScreenCull.MARGIN_M) draws nothing but the floor mark it leaves, so the mark is there when the camera arrives
 	shots_drawn = 0
 	shots_culled = 0
@@ -490,7 +504,7 @@ func _draw_vfx(layer: VfxCore) -> void:
 	_shots.resize(n)
 
 
-## v0.10.5 W3-Q7: how far past its point a payoff can show: a line's length and the light at its far end, a burst's
+## How far past its point a payoff can show: a line's length and the light at its far end, a burst's
 ## widest light and smoke.
 static func _shot_reach(shot: Array) -> float:
 	var reach := 0.0
@@ -531,9 +545,9 @@ func _draw_shot(fx: VfxLayer, shot: Array, u: float) -> void:
 		&"shard":
 			var to: Vector3 = (shot[6] as Array)[0]
 			fx.line(&"frost", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
-		&"shatter":  # v0.10.0 VX3: the frost burst and a small ice patch
+		&"shatter":  # The frost burst and a small ice patch
 			fx.burst(&"shatter", shot[1], shot[2], u, int(shot[5]))
-		&"wildfire":  # v0.10.0 VX3: fire_area_03 (the fire sprites' explosion without room)
+		&"wildfire":  # fire_area_03 (the fire sprites' explosion without room)
 			fx.burst(&"wildfire", shot[1], shot[2], u, int(shot[5]))
 		_:
 			fx.burst(&"bleed", shot[1], shot[2], u, int(shot[5]))
@@ -598,7 +612,7 @@ func _add_fx(n: MeshInstance3D, c: Color, a: float, grow: float) -> void:
 	_fx.append([n, m, FX_FRAMES, a, grow])
 
 
-## v0.10.5: the floor's load (WorldViewRoot): the payoff rings' meshes and FX_PREFILL idle pieces, so a floor's first
+## The floor's load (WorldViewRoot): the payoff rings' meshes and FX_PREFILL idle pieces, so a floor's first
 ## payoff makes no mesh, node or material.
 func prepare() -> void:
 	for r in RING_RADII:
@@ -628,13 +642,13 @@ func _torus(radius: float) -> TorusMesh:
 func _take_fx() -> MeshInstance3D:
 	var n: MeshInstance3D = _idle_fx.pop_back() if not _idle_fx.is_empty() else _new_fx()
 	if n.get_parent() == null:
-		add_child(n)  # (v0.10.5 PC: idle outside the tree)
+		add_child(n)  # (idle outside the tree)
 	n.transform = Transform3D.IDENTITY
 	n.visible = true
 	return n
 
 
-## A hidden fading piece with its own material (each fades on its own); v0.10.5 PC: made outside the tree, _take_fx
+## A hidden fading piece with its own material (each fades on its own); made outside the tree, _take_fx
 ## puts it in.
 func _new_fx() -> MeshInstance3D:
 	var n := MeshInstance3D.new()
@@ -645,7 +659,7 @@ func _new_fx() -> MeshInstance3D:
 	return n
 
 
-## v0.10.5 PC (owner PERF_PLAYLOG_2: idle pool nodes in the tree cost every frame): the idle pieces outside the tree
+## The idle pieces outside the tree
 ## (ShaderWarmup draws them once at the load).
 func idle_pieces() -> Array[Node]:
 	var out: Array[Node] = []
@@ -655,7 +669,7 @@ func idle_pieces() -> Array[Node]:
 	return out
 
 
-## v0.10.5 PC: how many idle pieces wait outside the tree (tests, scripts/checks/pool_node_count.gd).
+## How many idle pieces wait outside the tree (tests, scripts/checks/pool_node_count.gd).
 func idle_outside() -> int:
 	return idle_pieces().size()
 
@@ -680,7 +694,7 @@ func _process(_delta: float) -> void:
 			var done := fx[0] as MeshInstance3D
 			done.visible = false
 			_idle_fx.append(done)
-			remove_child(done)  # (v0.10.5 PC: idle outside the tree)
+			remove_child(done)  # (idle outside the tree)
 			_fx.remove_at(k)
 
 

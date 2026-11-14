@@ -1,14 +1,14 @@
 class_name InlaySocket
 extends Control
-## v0.8.0 MU (Ember stone, EmberStone): a round socket carved into the stone with a glowing inlay ring in an element's
+## Ember stone, EmberStone: a round socket carved into the stone with a glowing inlay ring in an element's
 ## colour, holding a card's icon (ItemIconView) or any picture. It draws behind its children; it takes no input.
-## v0.8.0 TX3: an elemental card's socket also wears the owner's glyph of its element (ElementGlyphs) in a small
+## An elemental card's socket also wears the owner's glyph of its element (ElementGlyphs) in a small
 ## carved badge set into the ring at its lower right, over the icon (none on a socket too small to read it).
 ## Presentation only (EI-07).
 
 ## The icon's inset inside the socket (share of the socket's size on each side).
 const INSET := 0.24
-## v0.8.0 TX3: the glyph badge's radius (share of the socket's), where on the ring it sits (radians, y down), and the
+## The glyph badge's radius (share of the socket's), where on the ring it sits (radians, y down), and the
 ## smallest socket (px) that shows one (starting values).
 const BADGE := 0.36
 const BADGE_AT := 0.25 * PI
@@ -25,7 +25,7 @@ var glow := 0.0:
 		queue_redraw()
 ## The picture in the socket (an ItemIconView by default; null for an empty socket).
 var icon: ItemIconView
-## v0.8.0 TX3: the glyph the badge shows (&"": none): an element's, or (N1, D42) the star burst or crossed blades.
+## The glyph the badge shows (&"": none): an element's, or the star burst or crossed blades.
 var element := &"":
 	set(v):
 		element = v
@@ -58,7 +58,7 @@ func show_item(id: StringName, icon_color: Color, ring: Color) -> void:
 	if icon != null:
 		icon.set_item(id, icon_color)
 		icon.visible = id != &""
-	element = ElementGlyphs.glyph_of(id)  # v0.8.0 N1 (D42): the star, the element, or the crossed blades
+	element = ElementGlyphs.glyph_of(id)  # The star, the element, or the crossed blades
 
 
 func _draw() -> void:

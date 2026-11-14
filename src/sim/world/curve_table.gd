@@ -6,7 +6,7 @@ extends RefCounted
 ## phase the danger tier (per mille of a tier), the alive cap and the spawn interval (per mille of SC's values at that
 ## tier) ramp linearly toward the next phase's values, unless the phase holds (the calm minute). Integer math only.
 
-const OVERTIME_BASE_TIER := 3  # v0.9.5 DC: the overtime counts tiers above this one
+const OVERTIME_BASE_TIER := 3  # The overtime counts tiers above this one
 
 ## Phase starts in floor ticks (the first is 0), and per phase: tier × 1000, cap, interval, enemy HP and damage per
 ## mille (of SC's values at the tier), the largest
@@ -20,7 +20,7 @@ var damage_permille := PackedInt32Array([1000])
 var pack_cap := PackedInt32Array([0])
 var holds := PackedByteArray([0])
 var name_keys: Array[StringName] = [&""]
-## v0.9.5 DC (owner: "aim to a 10 minutes max per floor"): the overtime after the peak phase. `overtime_starts` are the
+## The overtime after the peak phase. `overtime_starts` are the
 ## floor ticks tiers 4, 5, ... start at (ascending); past the last, +1 tier every `overtime_step` ticks up to
 ## `overtime_max_tier`. Each tier above OVERTIME_BASE_TIER adds `cap_per_tier_permille` to the cap and takes
 ## `interval_per_tier_permille` off the interval (never below `interval_min_ticks`); the largest pack grows by one at
@@ -29,7 +29,7 @@ var overtime_starts := PackedInt32Array()
 var overtime_step := 1800
 var overtime_max_tier := 20
 var cap_per_tier_permille := 0
-var cap_bonus_max_permille := 0  # v0.9.5: the cap's overtime factor stops here (0 = none)
+var cap_bonus_max_permille := 0  # The cap's overtime factor stops here (0 = none)
 var interval_per_tier_permille := 0
 var interval_min_ticks := 48
 var pack_cap_bumps := PackedInt32Array()
@@ -60,7 +60,7 @@ func tier_permille_at(ticks: int) -> int:
 	return maxi(base, overtime_tier_at(ticks) * 1000)
 
 
-## v0.9.5 DC: the overtime's scheduled tier at `ticks` of floor time (0 before it starts or without one).
+## The overtime's scheduled tier at `ticks` of floor time (0 before it starts or without one).
 func overtime_tier_at(ticks: int) -> int:
 	var n := overtime_starts.size()
 	if n == 0 or ticks < overtime_starts[0]:
@@ -74,7 +74,7 @@ func overtime_tier_at(ticks: int) -> int:
 	return mini(tier, overtime_max_tier)
 
 
-## v0.10.5 O6: the danger tier × 1000 as the HUD's bar reads it: tier_permille_at, plus, at the peak (the last
+## The danger tier × 1000 as the HUD's bar reads it: tier_permille_at, plus, at the peak (the last
 ## phase, with an overtime), the share of the way to the overtime's next tier, so the bar fills smoothly instead of in
 ## steps. Its whole tier is always tier_permille_at's. Read only; nothing in the sim uses it.
 func shown_permille_at(ticks: int) -> int:
@@ -101,18 +101,18 @@ func shown_permille_at(ticks: int) -> int:
 	return clampi(shown, t, whole + 999)
 
 
-## v0.9.5 DC: tiers above the base the overtime has reached at `tier`.
+## Tiers above the base the overtime has reached at `tier`.
 func extra_tiers(tier: int) -> int:
 	return maxi(0, tier - OVERTIME_BASE_TIER) if not overtime_starts.is_empty() else 0
 
 
-## v0.9.5 DC: the cap's overtime factor at `tier`, per mille.
+## The cap's overtime factor at `tier`, per mille.
 func cap_bonus_permille(tier: int) -> int:
 	var f := 1000 + cap_per_tier_permille * extra_tiers(tier)
 	return mini(f, cap_bonus_max_permille) if cap_bonus_max_permille > 0 else f
 
 
-## v0.9.5 DC: `interval_ticks` (already scaled for the tier) shortened by the overtime, never below interval_min_ticks.
+## `interval_ticks` (already scaled for the tier) shortened by the overtime, never below interval_min_ticks.
 func overtime_interval(interval_ticks: int, tier: int) -> int:
 	var e := extra_tiers(tier)
 	if e == 0:

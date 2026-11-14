@@ -13,16 +13,17 @@ extends RefCounted
 ## - its members stand on a ring around the anchor (anchor first, then 6 spots at PACK_STEP_M, then 12 at twice
 ##   that), each in the anchor's room, clear of walls and at least min_distance_m from the player;
 ## - v0.5.0 EV curses: Swarm Call adds to every pack's size (still under the cap); a Wandering Drone defence runs the
-##   interval clock twice as fast; v0.9.0 EL: the first pack after a room's elite arrived is one smaller (Elites);
+##   interval clock twice as fast; the first pack after a room's elite arrived is one smaller (Elites);
 ## - each arrives with its max HP and damage scaled by the tier (SpawnTable; the floor scaling is already in the
-##   compiled enemy tables, RunState.scale_enemies), then (v0.5.5 DS, D4) the floor's hidden catch-up (CatchUp).
+##   compiled enemy tables, RunState.scale_enemies), then the floor's hidden catch-up (CatchUp).
 ## With no anchor far enough, that pack is skipped and the interval starts again.
-## v0.8.0 N5 (owner O58): with the intensity director (SpawnTable.intensity) packs come only while it builds up or
+## With the intensity director (SpawnTable.intensity) packs come only while it builds up or
 ## peaks (Intensity.sending); pulling back and quiet hold them (the interval clock runs down and waits at 0). It
 ## gates only when: the kind, size, tier and scaling above are untouched.
-## v0.9.0 TD (owner Q22: "A quarter of the rate"): while the hero stands in an unsolved puzzle's room (a calm room of
+## While the hero stands in an unsolved puzzle's room (a calm room of
 ## World.interactables) the interval clock runs one tick in four, so new packs come at a quarter of the rate; the
 ## enemies already out keep fighting, and normal spawning resumes once it's solved or the hero leaves the room.
+## Once or twice a floor a horde surge of the biome's critter (Surges), on its own clock.
 
 ## Distance between the rings of a pack's spots, and their count per ring.
 const PACK_STEP_M := 1.1
@@ -39,29 +40,30 @@ static func advance(w: World) -> void:
 		w.spawn_cd = t.interval_now(0)
 	w.run_ticks += 1
 	if w.spawn_cd > 0:
-		# v0.9.0 TD (Q22, Interactables.spawn_clock_step): in an unsolved puzzle's room the clock runs at a quarter
+		# Q22, Interactables.spawn_clock_step: in an unsolved puzzle's room the clock runs at a quarter
 		var step := Interactables.spawn_clock_step(w)
 		if step > 0:
-			w.spawn_cd = maxi(0, w.spawn_cd - step - Events.spawn_haste(w))  # v0.5.0 EV: Wandering Drone
-	Intensity.advance(w)  # v0.8.0 N5 (owner O58): intensity and the build-up / peak / pull back / quiet rhythm
+			w.spawn_cd = maxi(0, w.spawn_cd - step - Events.spawn_haste(w))  # Wandering Drone
+	Intensity.advance(w)  # Intensity and the build-up / peak / pull back / quiet rhythm
+	Surges.advance(w)  # The floor's horde surges (their own clock, never gated by intensity)
 	if w.spawn_cd > 0:
 		return
-	if _calm_antechamber(w, t):
+	if calm_antechamber(w, t):
 		return
-	if not Intensity.sending(w):  # v0.8.0 N5: pulling back or quiet: no new packs (the enemies out stay)
+	if not Intensity.sending(w):  # Pulling back or quiet: no new packs (the enemies out stay)
 		return
-	# v0.4.0 TU: the cap and the interval follow the floor's difficulty curve (SpawnTable.cap_now, interval_now).
-	# v0.5.5 AR: no Overrun multiplier any more: a sealed arena (the Overrun too) pauses this director (Arenas).
+	# The cap and the interval follow the floor's difficulty curve (SpawnTable.cap_now, interval_now).
+	# No Overrun multiplier any more: a sealed arena (the Overrun too) pauses this director (Arenas).
 	var ticks := w.run_ticks - 1
 	var room := t.cap_now(w.floor_index, ticks) - WaveDirector.enemies_alive(w)
 	if room <= 0:
 		return
-	w.spawn_cd = Intensity.interval(w, t.interval_now(ticks))  # v0.8.0 N5: the build-up's ramp
+	w.spawn_cd = Intensity.interval(w, t.interval_now(ticks))  # The build-up's ramp
 	_spawn_pack(w, t, ticks, room)
 
 
-## v0.10.5 O14: whether the hero stands in the boss room's host room on the calm-antechamber floor.
-static func _calm_antechamber(w: World, t: SpawnTable) -> bool:
+## Whether the hero stands in the boss room's host room on the calm-antechamber floor.
+static func calm_antechamber(w: World, t: SpawnTable) -> bool:
 	var f := w.floor_layout
 	if t.calm_antechamber_floor <= 0 or w.floor_index != t.calm_antechamber_floor or f == null:
 		return false
@@ -115,13 +117,21 @@ static func anchor_points(w: World) -> PackedVector2Array:
 
 
 ## Indices into the mix that may spawn at `ticks` of floor time (open by tier or by curve phase, with a compiled
-## enemy table).
+## enemy table). a biome's own kind (SpawnTable.biome_only: a signature or a variant) only
+## on a floor of that biome (World.roster_kinds); so every biome spawns its roster: the shared core, its own kinds and
+## the floor-unlocked kinds.
 static func unlocked(w: World, t: SpawnTable, ticks: int) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for k in t.kinds.size():
-		if t.row_open(k, ticks) and w.enemy_table(t.kinds[k]) != null:
+		if t.row_open(k, ticks) and w.enemy_table(t.kinds[k]) != null and in_roster(w, t, k):
 			out.append(k)
 	return out
+
+
+## Whether mix row k may spawn on this floor's biome (always, unless it is a biome's own kind that this
+## floor's roster lacks).
+static func in_roster(w: World, t: SpawnTable, k: int) -> bool:
+	return k >= t.biome_only.size() or t.biome_only[k] == 0 or w.roster_kinds.has(t.kinds[k])
 
 
 ## Up to `count` spots for a pack around `anchor`, in ring order (the anchor first): each in the anchor's room (on a
@@ -148,7 +158,7 @@ static func pack_spots(w: World, anchor: Vector2, count: int) -> PackedVector2Ar
 	return out
 
 
-## v0.10.5 O15: whether `q` is a walkable spot of room `home` (-1: any), clear of walls, away from the hero, and not
+## Whether `q` is a walkable spot of room `home` (-1: any), clear of walls, away from the hero, and not
 ## in the boss room.
 static func spot_ok(w: World, q: Vector2, home: int, min_hero_m: float) -> bool:
 	if Kin.length(q - w.player_pos()) < min_hero_m:
@@ -189,18 +199,18 @@ static func _spawn_pack(w: World, t: SpawnTable, ticks: int, room: int) -> void:
 	var size := t.packs[entry] if entry < t.packs.size() else 0
 	if size <= 0:
 		size = w.rng_map.range_int(t.pack_min(w.floor_index), t.pack_max(w.floor_index))
-	if t.pack_cap_now(ticks) > 0:  # v0.4.0 TU: the phase's largest pack
+	if t.pack_cap_now(ticks) > 0:  # The phase's largest pack
 		size = mini(size, t.pack_cap_now(ticks))
-	size = Intensity.pack_size(w, t, entry, size)  # v0.10.5 O4 (owner D46): one smaller while the hero struggles
-	size = Elites.escort_size(w, size)  # v0.9.0 EL (ELITES.md E0): one smaller beside a room's elite
+	size = Intensity.pack_size(w, t, entry, size)  # One smaller while the hero struggles
+	size = Elites.escort_size(w, size)  # ELITES.md E0: one smaller beside a room's elite
 	var spots := pack_spots(w, anchor, mini(size, room))
 	for k in spots.size():
 		w.add_enemy(kind, spots[k])
 		scale_arrival(w, w.actors.size() - 1, ticks)
-		# v0.9.0 DP (owner Q24, Q26b): a Deep floor's room no longer brings an elite in its first pack (v0.5.5 DS's
-		# deep_elite is gone). World.deep_elite_rooms stays for the saves that hold it. v0.9.0 EL: no spawn becomes an
+		# A Deep floor's room no longer brings an elite in its first pack (v0.5.5 DS's
+		# deep_elite is gone). World.deep_elite_rooms stays for the saves that hold it. no spawn becomes an
 		# elite any more (the Marked curse is gone); elites come from elite rooms (Elites).
-	# v0.10.5 O15: an authored duo's partners join the pack (only in the cap's slack left, so they are dropped first)
+	# An authored duo's partners join the pack (only in the cap's slack left, so they are dropped first)
 	if t.pairings != null and not spots.is_empty():
 		var open_kinds := PackedInt32Array()
 		for k in open:
@@ -209,7 +219,7 @@ static func _spawn_pack(w: World, t: SpawnTable, ticks: int, room: int) -> void:
 
 
 ## An enemy arriving now (actor i, just added): max HP and damage scaled by the danger tier (SpawnTable; the floor
-## scaling is already in the compiled tables), then the Overrun's ×1.5 when it arrives there. v0.4.0 TU: also every
+## scaling is already in the compiled tables), then the Overrun's ×1.5 when it arrives there. also every
 ## enemy that joins mid-fight through World.queue_enemy (Splitlings, boss summons), so they match the spawner's.
 ## `ticks`: the floor time the tier is read at.
 static func scale_arrival(w: World, i: int, ticks: int) -> void:
@@ -220,5 +230,5 @@ static func scale_arrival(w: World, i: int, ticks: int) -> void:
 	w.actors.hp[i] = hp
 	w.actors.max_hp[i] = hp
 	w.actors.power[i] = t.power_now(ticks)
-	Overrun.on_spawn(w, i)  # v0.4.0 AB: an Overrun enemy (x1.5 on the tier's HP and power)
-	CatchUp.on_enemy(w, i)  # v0.5.5 DS (D4): the floor's hidden catch-up, HP x m and damage x sqrt(m)
+	Overrun.on_spawn(w, i)  # An Overrun enemy (x1.5 on the tier's HP and power)
+	CatchUp.on_enemy(w, i)  # The floor's hidden catch-up, HP x m and damage x sqrt(m)

@@ -1,7 +1,7 @@
 # gdlint: disable=max-public-methods
 class_name ModifierState
 extends RefCounted
-## v0.6.0 MX4: the modifier engine's state in play (World.mx; ModifierRuntime), per floor: the launches waiting for
+## The modifier engine's state in play (World.mx; ModifierRuntime), per floor: the launches waiting for
 ## their tick (Twin Cast's repeats, a delayed hook's child: Long Shadow's afterimage), the counters of the every-N
 ## rules (an EVERY_NTH hook's launches, an inherited every-N status's hits on a form), and the moments' and body
 ## rules' marks (the dash's start, the walk since the last trail drop, the last attack for Ascension, the last absorb
@@ -11,9 +11,9 @@ extends RefCounted
 ## A queued launch's flags: a repeat (it never repeats again), launched from where the player is when it fires.
 const FLAG_REPEAT := 1
 const FLAG_AT_PLAYER := 2
-## v0.8.0 MR (owner O91): a secondary attack (an Echo's repeat, a Double Slash echo: SecondaryProc).
+## A secondary attack (an Echo's repeat, a Double Slash echo: SecondaryProc).
 const FLAG_SECONDARY := 4
-## v0.10.5 W3-P10k: a Starbound Echo Cast repeat (its damage merges when ShotCap has no room: Attacks._bolts), a full
+## A Starbound Echo Cast repeat (its damage merges when ShotCap has no room: Attacks._bolts), a full
 ## Lance charge, and the launch's Blade combo step + 1 (0: none) and size per mille (0: 1000) packed above them.
 const FLAG_ECHO_CAST := 8
 const FLAG_LANCE_FULL := 16
@@ -51,26 +51,26 @@ var last_attack := 0
 var charge_tick := -1
 var shell_tick := -1
 var trail_tick := -1
-## v0.6.5 WN3 (GunForms, G13 Charge): the ticks the shot in the barrel has charged (0 = none).
+## GunForms, G13 Charge: the ticks the shot in the barrel has charged (0 = none).
 var hold_t := 0
-## v0.9.0 AF1b (Lance): the Lance release's push back still to come (ticks) and its step a tick (m). Hashed only
+## Lance: the Lance release's push back still to come (ticks) and its step a tick (m). Hashed only
 ## while one runs (older digests unchanged).
 var recoil_t := 0
 var recoil_step := Vector2.ZERO
-## v0.6.5 WN5a (WandCasts): the small spells cast for the views (parallel arrays, oldest first): the tick, the child
+## WandCasts: the small spells cast for the views (parallel arrays, oldest first): the tick, the child
 ## spec's book key, where from, which way, and 1 for a trigger's cast. View data only: not hashed, not in touched().
 var cast_tick := PackedInt32Array()
 var cast_key := PackedStringArray()
 var cast_pos := PackedVector2Array()
 var cast_angle := PackedInt32Array()
 var cast_flag := PackedInt32Array()
-## v0.9.0 VP (owner Q10, the Void form; VoidShots): an enemy a Void shot's aura hit waits for its next tick of that
+## An enemy a Void shot's aura hit waits for its next tick of that
 ## shot (parallel arrays: the shot's projectile id, the enemy's actor id, the first tick it may be hit again). An entry
 ## leaves once its tick comes. Hashed only while one waits (older digests unchanged).
 var void_shot := PackedInt32Array()
 var void_foe := PackedInt32Array()
 var void_next := PackedInt32Array()
-## v0.9.5 FC0 (RuneExplosion): the rune bursts alive, oldest first (parallel arrays): a uid (from rune_next), the spec's
+## RuneExplosion: the rune bursts alive, oldest first (parallel arrays): a uid (from rune_next), the spec's
 ## book key, the tick it starts, its full radius (m), its damage and root, SimEvent tags. The enemies each burst hit
 ## (burst uid, actor id) and the enemies being shoved (actor id, direction, ticks left). Hashed only while any is set
 ## (older digests unchanged).
@@ -86,14 +86,11 @@ var rune_hit_foe := PackedInt32Array()
 var rune_push_id := PackedInt32Array()
 var rune_push_dir := PackedVector2Array()
 var rune_push_left := PackedInt32Array()
-## v0.9.5 FC1 (LaserMods): the Laser cards' state. lz_aim: the beam's own aim while Homing or Big Shot lag it (-1: the
-## player's); lz_hold: ticks the beam has been held (Rapid Fire's ramp); lz_targets: Homing's actor ids, nearest first;
+## LaserMods: the Laser cards' state (the lance plans Homing at each shot and nothing lags or
+## ramps, so the aim, hold and target fields are gone);
 ## lz_mine_*: the mines alive (place, tick dropped, damage) and the tick the next drops (0: not yet set);
 ## lz_echo_*: Echo's waiting strikes, one row a main leg (tick due, from, to, width, damage). Hashed only while any is
 ## set (older digests unchanged).
-var lz_aim := -1
-var lz_hold := 0
-var lz_targets := PackedInt32Array()
 var lz_mine_next := 0
 var lz_mine_at := PackedVector2Array()
 var lz_mine_born := PackedInt32Array()
@@ -103,7 +100,14 @@ var lz_echo_from := PackedVector2Array()
 var lz_echo_to := PackedVector2Array()
 var lz_echo_r := PackedFloat32Array()
 var lz_echo_dmg := PackedInt32Array()
-## v0.9.5 FC2 (BombMods): the Bomb cards' rows, one a bomb waiting or a ring growing (kind, place, tick due, tick born,
+## LaserMods.record; view-only, not hashed, like cast_*: they decide nothing: the last lance's paths for
+## its glow (WorldReader.beams): the tick it fired (-1: none), each path's from and to, and 4 ints a path (kind, lane,
+## width per mille, flags).
+var lz_shot_tick := -1
+var lz_shot_from := PackedVector2Array()
+var lz_shot_to := PackedVector2Array()
+var lz_shot_row := PackedInt32Array()
+## BombMods: the Bomb cards' rows, one a bomb waiting or a ring growing (kind, place, tick due, tick born,
 ## blast in mm, damage, aim, root, id) and Ring's hits (id * 65536 + actor). Hashed only while any row is set (older
 ## digests unchanged).
 var bm_next := 0
@@ -117,7 +121,7 @@ var bm_dmg := PackedInt32Array()
 var bm_ang := PackedInt32Array()
 var bm_root := PackedInt32Array()
 var bm_hit := PackedInt32Array()
-## v0.9.5 FC3 (VoidMods): the Void cards' rows, one a live void's state, a void to open or a ring growing (kind and
+## VoidMods: the Void cards' rows, one a live void's state, a void to open or a ring growing (kind and
 ## flags, the void's projectile id, place or target, mine stop, tick due, tick born, aim, aura and pull in mm, damage,
 ## life, ring radius in mm, root) and Ring's hits (id * 65536 + actor). Hashed only while any row is set.
 var vm_next := 0
@@ -136,7 +140,7 @@ var vm_life := PackedInt32Array()
 var vm_r := PackedInt32Array()
 var vm_root := PackedInt32Array()
 var vm_hit := PackedInt32Array()
-## v0.9.5 FC6 (GlaiveMods): the Glaive cards' rows, one a live disc's state or a disc to open (kind and flags, the
+## GlaiveMods: the Glaive cards' rows, one a live disc's state or a disc to open (kind and flags, the
 ## disc's projectile id, place, tick due, tick born, angle, damage, radius in mm, aux and aux2 (see GlaiveMods), root)
 ## and the per-enemy hit gaps of Ring and Mine (row id, actor id, the tick the gap ends). Hashed only while set.
 var gm_next := 0
@@ -155,7 +159,7 @@ var gm_root := PackedInt32Array()
 var gm_hit_row := PackedInt32Array()
 var gm_hit_actor := PackedInt32Array()
 var gm_hit_until := PackedInt32Array()
-## v0.9.5 FC8 (WaveMods): the Wave cards' rows, one a live wave's state or a wave to open (kind and flags, the wave's
+## WaveMods: the Wave cards' rows, one a live wave's state or a wave to open (kind and flags, the wave's
 ## projectile id, place, tick due, tick born, angle, damage, radius in mm, width in mm, aux and aux2 (see WaveMods),
 ## root). Hashed only while set.
 var wm_next := 0
@@ -172,7 +176,7 @@ var wm_w := PackedInt32Array()
 var wm_aux := PackedInt32Array()
 var wm_aux2 := PackedInt32Array()
 var wm_root := PackedInt32Array()
-## v0.9.5 FC7 (SeekerMods): the Seekers cards' rows, one a live dart's state, a dart to open (an Echo ghost, a Split
+## SeekerMods: the Seekers cards' rows, one a live dart's state, a dart to open (an Echo ghost, a Split
 ## child) or a ring (kind and flags, the dart's projectile id, place, tick due, tick born, angle, damage, radius in mm,
 ## aux and aux2 (see SeekerMods), root) and Pierce's hits (row id, actor id). Hashed only while set.
 var sk_next := 0
@@ -190,18 +194,18 @@ var sk_aux2 := PackedInt32Array()
 var sk_root := PackedInt32Array()
 var sk_hit_row := PackedInt32Array()
 var sk_hit_actor := PackedInt32Array()
-## v0.9.5 FC7b: the thousandths of a Seekers dart's damage not yet dealt (SeekerMods.take); 0..999.
+## The thousandths of a Seekers dart's damage not yet dealt (SeekerMods.take); 0..999.
 var sk_carry := 0
-## v0.9.5 FC9 (WispMods): the Wisps cards' rows: the lightning rings a shot left (place, tick born; the view's) and
+## WispMods: the Wisps cards' rows: the lightning rings a shot left (place, tick born; the view's) and
 ## Orbit's hit gaps (wisp, actor, tick it may hit again). Hashed only while any is set.
 var pm_ring_at := PackedVector2Array()
 var pm_ring_born := PackedInt32Array()
 var pm_hit_wisp := PackedInt32Array()
 var pm_hit_actor := PackedInt32Array()
 var pm_hit_until := PackedInt32Array()
-## v0.9.5 FC9b: the thousandths of a wisp shot (or Orbit touch) not yet dealt (WispMods.take); 0..999.
+## The thousandths of a wisp shot (or Orbit touch) not yet dealt (WispMods.take); 0..999.
 var pm_carry := 0
-## v0.9.5 FC4 (LanceMods): the Lance cards' rows, one a live lance's state, a ghost lance to open, a ring growing or a
+## LanceMods: the Lance cards' rows, one a live lance's state, a ghost lance to open, a ring growing or a
 ## split shard (kind and flags, the lance's projectile id, place, tick due, tick born, angle, damage, radius in mm,
 ## aux (bounces of a ghost, enemies a lance has split on), root) and Ring's hits (id * 65536 + actor). Hashed only
 ## while any row is set.
@@ -219,7 +223,7 @@ var lm_aux := PackedInt32Array()
 var lm_root := PackedInt32Array()
 var lm_hit := PackedInt32Array()
 
-## v0.9.5 FC5 (RuneMods): the Rune Explosion cards' rows, one a burst's meta (kind and flags, the burst's uid in rm_ref,
+## RuneMods: the Rune Explosion cards' rows, one a burst's meta (kind and flags, the burst's uid in rm_ref,
 ## its fixed centre), a held lightning ring, a shrinking shield, a trap or a shard (kind and flags, uid, place, tick
 ## born, life in ticks, damage, root, radius in mm, the source actor or burst, aim) and the hits (row uid, actor id).
 ## Hashed only while any row is set (older digests unchanged).
@@ -236,7 +240,7 @@ var rm_ref := PackedInt32Array()
 var rm_ang := PackedInt32Array()
 var rm_hit_row := PackedInt32Array()
 var rm_hit_foe := PackedInt32Array()
-## v0.8.0 MR (owner O91; FireRhythm): Rapid Fire's ramp (the consecutive shots so far, the tick of the last shot) and
+## Rapid Fire's ramp (the consecutive shots so far, the tick of the last shot) and
 ## Flurry's burst (the swing's place in its burst, 1 = the first after a pause; the tick its last swing ends); and
 ## SecondaryProc's carry (per mille of a status stack a secondary hit owes, so halved stacks are exact on average).
 ## Hashed only when set (older digests unchanged).
@@ -245,7 +249,7 @@ var ramp_tick := 0
 var burst_n := 0
 var burst_free := 0
 var sec_carry := 0
-## v0.8.0 RM (owner O91; Remnants, SIM_CONTRACTS §8l): the remnants alive, oldest first (parallel arrays): a uid (from
+## The remnants alive, oldest first (parallel arrays): a uid (from
 ## rem_next), the kind (RemnantRule.Kind), the card that left it, its cast's book key (AttackBook.remnant_hook), its
 ## card's slot and trigger section, its activation's hook level (depth, proc) and the root that left it, the tick it
 ## was left, its life (ticks), hit gap (ticks), charges left (-1: until its life ends) and the damage of the hit that
@@ -275,7 +279,7 @@ var rem_dir := PackedInt32Array()
 var rem_target := PackedInt32Array()
 var rem_target2 := PackedInt32Array()
 var rem_count := PackedInt32Array()
-## v0.8.0 RM: the path a remnant belongs to (the uid of its first segment: a slash's arc replays as one; its own uid
+## The path a remnant belongs to (the uid of its first segment: a slash's arc replays as one; its own uid
 ## otherwise): its hit gaps are kept per path.
 var rem_group := PackedInt32Array()
 var rem_next := 0
@@ -322,23 +326,13 @@ func touched() -> bool:
 	)
 
 
-## v0.9.5 FC1: a Laser card's state is set.
+## A Laser card's state is set.
 func lz_touched() -> bool:
-	return (
-		lz_aim != -1
-		or lz_hold != 0
-		or lz_mine_next != 0
-		or not lz_targets.is_empty()
-		or not lz_mine_at.is_empty()
-		or not lz_echo_due.is_empty()
-	)
+	return lz_mine_next != 0 or not lz_mine_at.is_empty() or not lz_echo_due.is_empty()
 
 
 func lz_clear() -> void:
-	lz_aim = -1
-	lz_hold = 0
 	lz_mine_next = 0
-	lz_targets = PackedInt32Array()
 	lz_mine_at = PackedVector2Array()
 	lz_mine_born = PackedInt32Array()
 	lz_mine_dmg = PackedInt32Array()
@@ -349,7 +343,15 @@ func lz_clear() -> void:
 	lz_echo_dmg = PackedInt32Array()
 
 
-## v0.9.5 FC2: a Bomb card's row is set.
+## Drops the view's record of the last lance.
+func lz_shot_clear() -> void:
+	lz_shot_tick = -1
+	lz_shot_from = PackedVector2Array()
+	lz_shot_to = PackedVector2Array()
+	lz_shot_row = PackedInt32Array()
+
+
+## A Bomb card's row is set.
 func bm_touched() -> bool:
 	return bm_next != 0 or not bm_kind.is_empty()
 
@@ -368,7 +370,7 @@ func bm_clear() -> void:
 	bm_hit = PackedInt32Array()
 
 
-## v0.9.5 FC3: a Void card's row is set.
+## A Void card's row is set.
 func vm_touched() -> bool:
 	return vm_next != 0 or not vm_kind.is_empty()
 
@@ -392,7 +394,7 @@ func vm_clear() -> void:
 	vm_hit = PackedInt32Array()
 
 
-## v0.9.5 FC9: a Wisps card's row is set.
+## A Wisps card's row is set.
 func pm_touched() -> bool:
 	return not pm_ring_born.is_empty() or not pm_hit_wisp.is_empty() or pm_carry != 0
 
@@ -406,7 +408,7 @@ func pm_clear() -> void:
 	pm_carry = 0
 
 
-## v0.9.5 FC8: a Wave card's row is set.
+## A Wave card's row is set.
 func wm_touched() -> bool:
 	return wm_next != 0 or not wm_kind.is_empty()
 
@@ -428,12 +430,12 @@ func wm_clear() -> void:
 	wm_root = PackedInt32Array()
 
 
-## v0.9.5 FC6: a Glaive card's row is set.
+## A Glaive card's row is set.
 func gm_touched() -> bool:
 	return gm_next != 0 or not gm_kind.is_empty()
 
 
-## v0.9.5 FC7: a Seekers card's row is set.
+## A Seekers card's row is set.
 func sk_touched() -> bool:
 	return sk_next != 0 or not sk_kind.is_empty() or sk_carry != 0
 
@@ -475,7 +477,7 @@ func gm_clear() -> void:
 	gm_hit_until = PackedInt32Array()
 
 
-## v0.9.5 FC4: a Lance card's row is set.
+## A Lance card's row is set.
 func lm_touched() -> bool:
 	return lm_next != 0 or not lm_kind.is_empty()
 
@@ -496,7 +498,7 @@ func lm_clear() -> void:
 	lm_hit = PackedInt32Array()
 
 
-## v0.9.5 FC5: a Rune Explosion card's row is set.
+## A Rune Explosion card's row is set.
 func rm_touched() -> bool:
 	return rm_next != 0 or not rm_kind.is_empty()
 
@@ -517,7 +519,7 @@ func rm_clear() -> void:
 	rm_at = PackedVector2Array()
 
 
-## v0.8.0 RM: a remnant card has acted (Remnants): its block is hashed from then on.
+## A remnant card has acted (Remnants): its block is hashed from then on.
 func remnants_touched() -> bool:
 	return rem_next != 0 or link_id != -1 or imprint_until != -1 or finale_tick != 0
 
@@ -563,19 +565,19 @@ func hash_into(h: StateHasher) -> void:
 	h.add_f32(trail_at.y)
 	for v in [1 if trail_on else 0, last_attack, charge_tick, shell_tick, trail_tick]:
 		h.add_int(v)
-	if hold_t != 0:  # v0.6.5 WN3: only while a shot charges (older digests unchanged)
+	if hold_t != 0:  # Only while a shot charges (older digests unchanged)
 		h.add_int(hold_t)
-	if recoil_t != 0:  # v0.9.0 AF1b: only while the Lance's push back runs
+	if recoil_t != 0:  # Only while the Lance's push back runs
 		h.add_string("recoil")
 		h.add_int(recoil_t)
 		h.add_f32(recoil_step.x)
 		h.add_f32(recoil_step.y)
-	if not void_shot.is_empty():  # v0.9.0 VP: only while a Void shot's aura waits on an enemy
+	if not void_shot.is_empty():  # Only while a Void shot's aura waits on an enemy
 		h.add_string("void")
 		h.add_ints(void_shot)
 		h.add_ints(void_foe)
 		h.add_ints(void_next)
-	if not rune_uid.is_empty() or not rune_push_id.is_empty():  # v0.9.5 FC0: only while a rune burst lives
+	if not rune_uid.is_empty() or not rune_push_id.is_empty():  # Only while a rune burst lives
 		h.add_string("rune")
 		h.add_string(",".join(rune_key))
 		for arr: PackedInt32Array in [
@@ -594,13 +596,10 @@ func hash_into(h: StateHasher) -> void:
 		for d in rune_push_dir:
 			h.add_f32(d.x)
 			h.add_f32(d.y)
-	if lz_touched():  # v0.9.5 FC1: only while a Laser card's state is set
+	if lz_touched():  # Only while a Laser card's state is set
 		h.add_string("lz")
-		for v in [lz_aim, lz_hold, lz_mine_next]:
-			h.add_int(v)
-		for arr: PackedInt32Array in [
-			lz_targets, lz_mine_born, lz_mine_dmg, lz_echo_due, lz_echo_dmg
-		]:
+		h.add_int(lz_mine_next)
+		for arr: PackedInt32Array in [lz_mine_born, lz_mine_dmg, lz_echo_due, lz_echo_dmg]:
 			h.add_ints(arr)
 		h.add_f32s(lz_echo_r)
 		for arr: PackedVector2Array in [lz_mine_at, lz_echo_from, lz_echo_to]:
@@ -608,7 +607,7 @@ func hash_into(h: StateHasher) -> void:
 			for p in arr:
 				h.add_f32(p.x)
 				h.add_f32(p.y)
-	if bm_touched():  # v0.9.5 FC2: only while a Bomb card's row is set
+	if bm_touched():  # Only while a Bomb card's row is set
 		h.add_string("bm")
 		h.add_int(bm_next)
 		for arr: PackedInt32Array in [
@@ -619,7 +618,7 @@ func hash_into(h: StateHasher) -> void:
 		for p in bm_at:
 			h.add_f32(p.x)
 			h.add_f32(p.y)
-	if vm_touched():  # v0.9.5 FC3: only while a Void card's row is set
+	if vm_touched():  # Only while a Void card's row is set
 		h.add_string("vm")
 		h.add_int(vm_next)
 		for arr: PackedInt32Array in [
@@ -643,7 +642,7 @@ func hash_into(h: StateHasher) -> void:
 			for p in arr:
 				h.add_f32(p.x)
 				h.add_f32(p.y)
-	if gm_touched():  # v0.9.5 FC6: only while a Glaive card's row is set
+	if gm_touched():  # Only while a Glaive card's row is set
 		h.add_string("gm")
 		h.add_int(gm_next)
 		for arr: PackedInt32Array in [
@@ -667,7 +666,7 @@ func hash_into(h: StateHasher) -> void:
 		for p in gm_at:
 			h.add_f32(p.x)
 			h.add_f32(p.y)
-	if wm_touched():  # v0.9.5 FC8: only while a Wave card's row is set
+	if wm_touched():  # Only while a Wave card's row is set
 		h.add_string("wm")
 		h.add_int(wm_next)
 		for arr: PackedInt32Array in [
@@ -689,7 +688,7 @@ func hash_into(h: StateHasher) -> void:
 		for p in wm_at:
 			h.add_f32(p.x)
 			h.add_f32(p.y)
-	if sk_touched():  # v0.9.5 FC7: only while a Seekers card's row is set
+	if sk_touched():  # Only while a Seekers card's row is set
 		h.add_string("sk")
 		h.add_int(sk_next)
 		h.add_int(sk_carry)
@@ -713,7 +712,7 @@ func hash_into(h: StateHasher) -> void:
 		for p in sk_at:
 			h.add_f32(p.x)
 			h.add_f32(p.y)
-	if pm_touched():  # v0.9.5 FC9: only while a Wisps card's row is set
+	if pm_touched():  # Only while a Wisps card's row is set
 		h.add_string("pm")
 		h.add_int(pm_carry)
 		for arr: PackedInt32Array in [pm_ring_born, pm_hit_wisp, pm_hit_actor, pm_hit_until]:
@@ -722,7 +721,7 @@ func hash_into(h: StateHasher) -> void:
 		for p in pm_ring_at:
 			h.add_f32(p.x)
 			h.add_f32(p.y)
-	if lm_touched():  # v0.9.5 FC4: only while a Lance card's row is set
+	if lm_touched():  # Only while a Lance card's row is set
 		h.add_string("lm")
 		h.add_int(lm_next)
 		for arr: PackedInt32Array in [
@@ -733,7 +732,7 @@ func hash_into(h: StateHasher) -> void:
 		for p in lm_at:
 			h.add_f32(p.x)
 			h.add_f32(p.y)
-	if rm_touched():  # v0.9.5 FC5: only while a Rune Explosion card's row is set
+	if rm_touched():  # Only while a Rune Explosion card's row is set
 		h.add_string("rmx")
 		h.add_int(rm_next)
 		for arr: PackedInt32Array in [
@@ -754,11 +753,11 @@ func hash_into(h: StateHasher) -> void:
 		for p in rm_at:
 			h.add_f32(p.x)
 			h.add_f32(p.y)
-	if ramp_n != 0 or burst_n != 0 or sec_carry != 0:  # v0.8.0 MR: only once a rhythm or a carry is set
+	if ramp_n != 0 or burst_n != 0 or sec_carry != 0:  # Only once a rhythm or a carry is set
 		h.add_string("mr")
 		for v in [ramp_n, ramp_tick, burst_n, burst_free, sec_carry]:
 			h.add_int(v)
-	if remnants_touched():  # v0.8.0 RM: only once a remnant card acted (older digests unchanged)
+	if remnants_touched():  # Only once a remnant card acted (older digests unchanged)
 		_hash_remnants(h)
 
 

@@ -25,10 +25,8 @@ func after_each() -> void:
 	NavField.skip_build = false
 
 
-func _floor(s: int, floor_index: int, rules: int = RunState.FLOOR_RULES) -> World:
-	var run := SaveLab.run_state(s, floor_index, &"blade", 0, _repo)
-	run.floor_rules = rules
-	return SaveLab.build_floor(run, &"", _repo)
+func _floor(s: int, floor_index: int) -> World:
+	return SaveLab.build_floor(SaveLab.run_state(s, floor_index, &"blade", 0, _repo), &"", _repo)
 
 
 ## Kind -> the floor's closed-fight rooms.
@@ -46,15 +44,6 @@ func _fights(w: World) -> Dictionary:
 		&"lockdown": f.lockdown_rooms.duplicate(),
 		&"chaos": chaos,
 	}
-
-
-func _has_small(w: World) -> bool:
-	var fights := _fights(w)
-	for k: StringName in fights:
-		for r in fights[k] as PackedInt32Array:
-			if w.floor_layout.room_cell_count(r) < 2:
-				return true
-	return false
 
 
 # --- The cap ------------------------------------------------------------------------------------------------------
@@ -122,36 +111,11 @@ func test_no_closed_fight_in_a_1x1_room_and_big_rooms_hold_every_fight() -> void
 		assert_gt(seen[k], 0, "%s fights to check" % k)
 
 
-func test_a_floor_saved_before_cf_keeps_its_rooms() -> void:
-	NavField.skip_build = true
-	var found := false
-	for s in range(1, 60):
-		for fl in range(1, FLOORS + 1):
-			var old := _floor(s, fl, RunState.FLOOR_RULES_V090_EL)
-			if not _has_small(old):
-				continue
-			var again := _floor(s, fl, RunState.FLOOR_RULES_V090_EL)
-			assert_eq(_fights(again), _fights(old), "seed %d floor %d: rebuilt as saved" % [s, fl])
-			var now := _floor(s, fl)
-			assert_eq(now.floor_layout.room_cells, old.floor_layout.room_cells, "the same rooms")
-			assert_false(_has_small(now), "today's rules: none in a 1 x 1")
-			gut.p(
-				(
-					"CF_OLD| seed %d floor %d: before %s, today %s"
-					% [s, fl, _fights(old), _fights(now)]
-				)
-			)
-			found = true
-			break
-		if found:
-			break
-	assert_true(found, "a floor under the old rules with a closed fight in a 1 x 1")
-
-
 # --- Arenas -------------------------------------------------------------------------------------------------------
 func _arena_world(from: int) -> World:
 	for s in range(from, from + 40):
-		var w := _floor(s, 1, RunState.FLOOR_RULES_V095_AQ)  # v0.9.5 DR: the wave Arenas are rules 19's
+		var w := _floor(s, 1)
+		w.lockdown = null  # TEST SETUP: without the Lockdowns the arena rooms are wave arenas
 		if not w.floor_layout.arena_rooms.is_empty():
 			w.actors.invuln[0] = LONG
 			w.actors.hp[0] = 100000

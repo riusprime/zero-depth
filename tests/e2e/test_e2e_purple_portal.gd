@@ -39,14 +39,8 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## Opens the boss door (E), walks in, kills the boss (the dev panel). True once the boss is dead.
-func _beat_boss(e: E2e, main: Main) -> bool:
+func _beat_boss(e: E2e) -> bool:
 	var w := e.world()
 	var f := w.floor_layout
 	assert_true(await e.open_boss_door(), "E opened the boss door")
@@ -59,7 +53,7 @@ func _beat_boss(e: E2e, main: Main) -> bool:
 	if not sealed:
 		return false
 	await e.frames(30)
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(3)
 	return w.boss_flow.portal_active()
 
@@ -87,6 +81,7 @@ func _take_gate(e: E2e, main: Main, pos: Vector2, angle: int, next: int) -> bool
 
 func test_awaken_the_purple_runes_and_the_boss_opens_the_purple_portal() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot(null, null, SEED)
 	await e.start_from_menu()
 	var w := e.world()
@@ -94,8 +89,8 @@ func test_awaken_the_purple_runes_and_the_boss_opens_the_purple_portal() -> void
 	assert_null(w.purple, "never on floor 1")
 	assert_false(reader.has_deep_portal(), "floor 1 has no Purple Portal")
 	await e.tap(KEY_QUOTELEFT)  # the dev panel stays open (closing it drops its tools)
-	await _click(e, main, "God")
-	assert_true(await _beat_boss(e, main), "floor 1's boss is dead")
+	await e.click_dev("God")
+	assert_true(await _beat_boss(e), "floor 1's boss is dead")
 	assert_true(reader.gate_open(WorldReader.ROUTE_NORMAL), "the gate is open")
 	assert_false(reader.gate_open(WorldReader.ROUTE_DEEP), "and no Deep gate beside it")
 	var f := w.floor_layout
@@ -110,7 +105,7 @@ func test_awaken_the_purple_runes_and_the_boss_opens_the_purple_portal() -> void
 		return
 	assert_false(reader.has_deep_portal(), "not earned yet")
 	await e.tap(KEY_QUOTELEFT)  # a new floor's dev panel: God again for the walks
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	var view := main.view.purple
 	assert_not_null(view, "the dais and its runes are drawn")
 	assert_false(view.lit, "dim")
@@ -132,7 +127,7 @@ func test_awaken_the_purple_runes_and_the_boss_opens_the_purple_portal() -> void
 	if rig.shake_enabled and not ViewPrefs.reduced_motion:
 		assert_gt(peak, 0.2, "the camera vibrated")
 	assert_true(reader.has_deep_portal(), "the floor earned the Purple Portal")
-	assert_true(await _beat_boss(e, main), "floor 2's boss is dead")
+	assert_true(await _beat_boss(e), "floor 2's boss is dead")
 	assert_true(reader.gate_open(WorldReader.ROUTE_NORMAL), "the gate is open")
 	assert_true(reader.gate_open(WorldReader.ROUTE_DEEP), "and the Purple Portal beside it")
 	await e.frames(BossFlow.PORTAL_FORM_TICKS + 5)

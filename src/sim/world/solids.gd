@@ -5,8 +5,8 @@ extends RefCounted
 ## oriented box that blocks ACTORS (the hero and the enemies: World's wall pass and the enemies' steering) once the
 ## hero is clear of it (CLEAR_M from its surface), so a prop that appears under the hero's feet never traps them, and
 ## leaves with its owner (remove). They are NOT in World.walls: shots, beams, glaives, bombs, area attacks and lines of
-## sight pass over them, as over the shrine and the fountain. A world holds them only under floor rules after
-## FLOOR_RULES_V090_CF2 (`on`): a floor saved before SB has none. Pure: no stream is drawn.
+## sight pass over them, as over the shrine and the fountain. A world holds them only on a run's floor
+## (`on`, rules_on). Pure: no stream is drawn.
 
 ## Owners of an entry (with the owner's own ref).
 enum Kind {
@@ -31,6 +31,8 @@ const PYLON_HALF_M := 0.5
 const CLEAR_M := 0.5
 ## The free circle (m) kept at a room's doorways and their approaches (clear_of_doors).
 const DOOR_CLEAR_M := 0.6
+## The broadphase margin of blocks() (m, over rounding).
+const BROAD_MARGIN_M := 0.01
 
 var on := false
 var kind := PackedInt32Array()
@@ -43,7 +45,7 @@ var placed := PackedByteArray()
 
 ## Whether a run's current floor uses the solids (a new floor; a world built with no run, as the tests do, has none).
 static func rules_on(run: RunState) -> bool:
-	return run != null and run.floor_rules > RunState.FLOOR_RULES_V090_CF2
+	return run != null
 
 
 func size() -> int:
@@ -109,7 +111,7 @@ static func reach_bonus(w: World, p_kind: int, p_ref: int) -> float:
 	return maxf(w.solids.half[i].x, w.solids.half[i].y) if i >= 0 else 0.0
 
 
-## v0.9.5 SB (generation safety): `p`, a prop of half-side `h` placed on a spawn spot, moved just far enough that its
+## Generation safety: `p`, a prop of half-side `h` placed on a spawn spot, moved just far enough that its
 ## footprint leaves a 0.6 m circle (the hero and 0.2 m to spare) free at each of its room's doorways and their
 ## approaches. Unchanged when it already does (and when the solids are off).
 func clear_of_doors(f: FloorLayout, p: Vector2, h: float = PROP_HALF_M) -> Vector2:
@@ -162,28 +164,21 @@ func bonus(h: float = PROP_HALF_M) -> float:
 	return h if on else 0.0
 
 
-## The standing footprints' push on a circle of radius r at `at` (the sum over the entries it overlaps).
-func push(at: Vector2, r: float) -> Vector2:
-	var out := Vector2.ZERO
-	for i in kind.size():
-		if placed[i] == 1:
-			var reach := r + half[i].length()
-			if absf(at.x - center[i].x) <= reach and absf(at.y - center[i].y) <= reach:
-				out += Collide.circle_vs_obb(at + out, r, obb(i))
-	return out
-
-
-## Whether a standing footprint may touch the box `rect`.
-func any_near(rect: Rect2) -> bool:
-	for i in kind.size():
-		if placed[i] == 1 and rect.grow(half[i].length()).has_point(center[i]):
-			return true
-	return false
-
-
 ## Whether a body of radius r sweeping from a to b meets a standing footprint (the enemies' steering).
+## v0.11.0 O9b (a surge's 120 critters each plan the line to the hero through every footprint: most of their plan's
+## cost): a footprint whose centre lies farther than its reach from the segment's box is skipped before its Obb is
+## made. The sweep only hits within the box grown by r on each axis (its corners at |half + (r, r)| from the centre),
+## so with BROAD_MARGIN_M over rounding the answer is the same.
 func blocks(a: Vector2, b: Vector2, r: float) -> bool:
+	var lo := Vector2(minf(a.x, b.x), minf(a.y, b.y))
+	var hi := Vector2(maxf(a.x, b.x), maxf(a.y, b.y))
 	for i in kind.size():
-		if placed[i] == 1 and Collide.sweep_vs_obb(a, b, r, obb(i)) >= 0.0:
+		if placed[i] != 1:
+			continue
+		var reach := (half[i] + Vector2(r, r)).length() + BROAD_MARGIN_M
+		var c := center[i]
+		if c.x < lo.x - reach or c.x > hi.x + reach or c.y < lo.y - reach or c.y > hi.y + reach:
+			continue
+		if Collide.sweep_vs_obb(a, b, r, obb(i)) >= 0.0:
 			return true
 	return false

@@ -5,10 +5,10 @@ extends RefCounted
 ## Deep) stays; on top of it:
 ## - power(w): the build's power P, per mille of a fresh build (1000), a pure function of the loadout and never of
 ##   how well it is played: weapon level × (damage stat + Onrush: v0.8.0 SG's additive bucket, Hoarder left out) ×
-##   Glass Cannon × expected crit (relative to the base crit) × the attack rate (v0.8.0 SG: the attack speed stat
+##   Glass Cannon × expected crit (relative to the base crit) × the attack rate (the attack speed stat
 ##   plus the held cards' rate bonus, order-free, through AttackRate's curve) × (1 + the modifier slots' levels and
 ##   the utility's level, the items without a slot and the combos, at their table weights). The one place the build's
-##   power is read (v0.6.0 MX2: the weapon, the utility and the modifier slots, BuildSlots; v0.6.5 WN1: the wand's
+##   power is read (the weapon, the utility and the modifier slots, BuildSlots; the wand's
 ##   slots).
 ## - multiplier(P, E, cap): m = clamp(sqrt(P / E), 1, cap), per mille, integer square root (no float).
 ## - v0.7.5 AP: past the first loop both caps get World.loop_cap_permille more (and the loop's threat raises them
@@ -19,7 +19,7 @@ extends RefCounted
 ##   ActorStore.power) × sqrt(m).
 ## - on_boss(w, i): a boss as it spawns: its own m from P now against the expected power at the floor's end and the
 ##   boss cap (cap + threat_cap × T); max HP × m, its attacks' damage × sqrt(m) (ActorStore.power, BossAi.powered).
-## v0.9.5 BH1 (owner Q2): the boss's m is read when its door starts to open (read_boss) and held to the spawn, its cap
+## The boss's m is read when its door starts to open (read_boss) and held to the spawn, its cap
 ## is 2.5 / 3.0 / 3.5 / 4.0 / 4.5 by floor, and a +-8 % spread is drawn once per boss fight.
 ## v0.10.5 O2b (owner D38 (a): "fights should last 1-2 minutes", a one-shot "on very very rare ocassions"): with the
 ## table's boss_pace_permille set, a floor boss's HP no longer takes m but the paced multiplier (pace_multiplier: the
@@ -28,7 +28,7 @@ extends RefCounted
 ## damage keeps × sqrt(m). The final boss's bodies keep m (FinalPace paces them).
 ## A world without World.catch_up_table (labs, kernel, arena) is untouched. Nothing here is shown to the player.
 
-## v0.9.5 BH1 (Q2): the named stream of a boss fight's HP spread (see spread_stream).
+## The named stream of a boss fight's HP spread (see spread_stream).
 const BOSS_SPREAD_STREAM := "boss:hp_spread"
 
 
@@ -38,18 +38,18 @@ static func power(w: World) -> int:
 	if t == null:
 		return 1000
 	var p := Abilities.weapon_permille(w)
-	# v0.8.0 SG (owner O91): the additive bucket (damage + Onrush, always counted; Hoarder not), x Glass Cannon
+	# The additive bucket (damage + Onrush, always counted; Hoarder not), x Glass Cannon
 	p = p * (Stats.value(w, Stats.Stat.DAMAGE) + Stats.value(w, Stats.Stat.ONRUSH)) / 1000
 	p = p * Stats.value(w, Stats.Stat.GLASS_CANNON) / 1000
-	# v0.10.5 W3-P10k: the loadout's crit damage, without Rising Edge's room count (how it is played; Fervour's haste
+	# The loadout's crit damage, without Rising Edge's room count (how it is played; Fervour's haste
 	# never reaches rate_permille)
 	var crit_m := Stats.crit_mult(w) - Starbound.crit_bonus(w)
 	p = p * expected_crit(w, Stats.crit_chance(w), crit_m) / base_crit(w)
-	# v0.8.0 SG: the effective rate, the stat and the wand's rate bonus through the curve (no curse: the curses were
+	# The effective rate, the stat and the wand's rate bonus through the curve (no curse: the curses were
 	# never counted)
 	p = p * rate_permille(w) / 1000
-	# v0.6.0 MX2: per modifier level (each slot's card: an ability modifier's level, an attack item 1) and the
-	# utility's level at the table's per-level weight; the items without a slot at the item weight. v0.6.5 WN1: the
+	# Per modifier level (each slot's card: an ability modifier's level, an attack item 1) and the
+	# utility's level at the table's per-level weight; the items without a slot at the item weight. the
 	# wand's cards (its slots, whatever their order: a reorder never changes P), a trigger card 1.
 	var levels := 0
 	for s in Wand.size(w):
@@ -69,13 +69,13 @@ static func power(w: World) -> int:
 	return maxi(1, p * (1000 + extra) / 1000)
 
 
-## v0.8.0 SG: the attack rate P counts, per mille: 1000 + the curve of the attack speed stat's bonus and the wand's
+## The attack rate P counts, per mille: 1000 + the curve of the attack speed stat's bonus and the wand's
 ## rate bonus (AttackRate.curve; Heavy Hands left out, as P never read the curses).
 static func rate_permille(w: World) -> int:
 	return maxi(1, 1000 + AttackRate.curve(w.tuning, AttackRate.stat_bonus(w) + wand_rate_bonus(w)))
 
 
-## v0.8.0 SG: the rate bonus the held cards add to an attack, per mille, whatever their order (SIM_CONTRACTS: a
+## The rate bonus the held cards add to an attack, per mille, whatever their order (SIM_CONTRACTS: a
 ## reorder never changes P): every card's own rate_bonus_permille ADD ops at its level (Rapid Fire, Rapid Coil,
 ## Flurry, Heavy ...), not the ones a trigger or hook passes on. It equals the compiled weapon attack's bonus
 ## (AttackRate.weapon_bonus) while those cards sit before any trigger.
@@ -84,7 +84,7 @@ static func wand_rate_bonus(w: World) -> int:
 	for code in w.items_owned:
 		if code < 0 or code >= w.item_tables.size():
 			continue
-		var lvl := CardLevels.base_level(w, code)  # v0.10.5 W3-P3: overlevels never shift the catch-up
+		var lvl := CardLevels.base_level(w, code)  # Overlevels never shift the catch-up
 		for m in w.item_tables[code].modifiers:
 			for o in m.ops:
 				if o.op == ModifierOp.Op.ADD and o.field == &"rate_bonus_permille":
@@ -92,8 +92,8 @@ static func wand_rate_bonus(w: World) -> int:
 	return sum
 
 
-## v0.6.0 MX4: what slot `s`'s card counts in levels: an ability modifier its level; a v0.5 item 1; an M-list card
-## 1, a rare one (the trinkets, the ability merges) 2, a legendary one (the boss's tier) 3; v0.6.5 WN3: a wand card
+## What slot `s`'s card counts in levels: an ability modifier its level; a v0.5 item 1; an M-list card
+## 1, a rare one (the trinkets, the ability merges) 2, a legendary one (the boss's tier) 3; a wand card
 ## (CardLevels) one more per level past the first.
 static func power_level(w: World, s: int) -> int:
 	var code := w.mod_slots[s]
@@ -104,7 +104,7 @@ static func power_level(w: World, s: int) -> int:
 	if t.kind != ItemTable.Kind.MODIFIER and t.kind != ItemTable.Kind.WAND:
 		return 1
 	match t.rarity:
-		ItemTable.RARE, ItemTable.EPIC:  # v0.8.0 RR: an epic card counts as a rare one
+		ItemTable.RARE, ItemTable.EPIC:  # An epic card counts as a rare one
 			return 2 + up
 		ItemTable.LEGENDARY:
 			return 3 + up
@@ -158,7 +158,7 @@ static func start_floor(w: World) -> void:
 	s.expected = CatchUpTable.at_floor(t.expected_permille, w.floor_index)
 	s.cap = cap_at(t.cap_permille, t, w.floor_index, Curses.threat(w)) + w.loop_cap_permille  # v0.7.5 AP
 	s.enemy = multiplier(s.power, s.expected, s.cap)
-	s.boss_read = 0  # v0.9.5 BH1: the floor's boss is read again at its door
+	s.boss_read = 0  # The floor's boss is read again at its door
 
 
 ## Enemy i just arrived (its tier, floor and Overrun scaling already applied): max HP × m, damage × sqrt(m).
@@ -173,7 +173,7 @@ static func on_enemy(w: World, i: int) -> void:
 	a.power[i] = maxi(1, a.power[i]) * damage_permille(m) / 1000
 
 
-## v0.9.5 BH1 (H2, Q2): reads the boss's own m now: P now, the expected power at the floor's end, the boss cap (the
+## Reads the boss's own m now: P now, the expected power at the floor's end, the boss cap (the
 ## floor's entry of boss_cap_permille + threat_cap × T now + the loops'), then the boss's spread (BOSS_SPREAD_STREAM:
 ## one draw per boss fight, uniform in ±BOSS_SPREAD_PERMILLE per mille, applied after the cap). BossFlow.interact calls
 ## it as the boss door starts to open; on_boss reads it at the spawn when none was stored. No-op without a table.
@@ -186,7 +186,7 @@ static func read_boss(w: World) -> void:
 	s.boss_expected = CatchUpTable.at_floor(t.boss_expected_permille, w.floor_index)
 	s.boss_cap = (
 		cap_at(t.boss_cap_permille, t, w.floor_index, Curses.threat(w)) + w.loop_cap_permille
-	)  # v0.7.5 AP: each loop past the first raises the caps
+	)  # Each loop past the first raises the caps
 	var m := multiplier(s.boss_power, s.boss_expected, s.boss_cap)
 	s.boss = maxi(1, m * spread_permille(w) / 1000)
 	s.boss_read = 1
@@ -243,7 +243,7 @@ static func on_boss(w: World, i: int) -> void:
 		read_boss(w)
 	s.boss_read = 0
 	var a := w.actors
-	var hp := maxi(1, a.max_hp[i] * boss_hp_permille(w) / 1000)  # v0.10.5 O2b: paced
+	var hp := maxi(1, a.max_hp[i] * boss_hp_permille(w) / 1000)  # Paced
 	a.max_hp[i] = hp
 	a.hp[i] = hp
 	a.power[i] = damage_permille(s.boss)

@@ -1,6 +1,6 @@
 class_name FinalArenaStage
 extends Node3D
-## v0.8.0 FB1 (owner, F1/F2: "rounded big room like a gladiator arena, but cosmic like"; FINAL_BOSS.md F2): the final
+## The final
 ## arena's look, built in code from the sim's round room (WorldReader: the floor's walls, its gate) and the arena's
 ## palette, so the owner's pieces can replace it piece by piece (docs/art/requests/v0.8.0_ART_LIST.md §7, by id):
 ## - `ground_arena`: a disc of worn circular paving in dark violet stone, faint rings and radial joints, red crystal
@@ -22,7 +22,7 @@ extends Node3D
 ## and solid materials (its own texture), so the occlusion still fades it; the far pillars are his (their floating
 ## crystal turns and bobs as the code shard did; the near ones stay low code stumps so they never hide the fight);
 ## the braziers are his (his flames; the light stays code); the gate is his; on the approach his stair flights replace
-## the code treads; his ground_arena texture paves the floor. The code pieces stay the fallback (L15).
+## the code treads; his ground_arena texture paves the floor. The code pieces stay the fallback.
 ## Presentation only: the sim's walls are the ring whatever is drawn. The cosmetic stream (seeded from the floor)
 ## places the broken bits; nothing here reads or writes the sim.
 ## v0.9.0 FA (owner C §3: "a separate, quieter environment … stairs and a clear path leading toward a large altar";
@@ -44,7 +44,7 @@ const PIECES := {
 	&"arena_brazier": Vector3(0.934, 1.4, 0.937),
 	&"approach_stairs": Vector3(3.0, 0.5, 6.0),
 }
-## v0.9.0 MI2: the owner's stair flights sit this far down (m), so the flat sim's hero walks over their middle.
+## The owner's stair flights sit this far down (m), so the flat sim's hero walks over their middle.
 const FLIGHT_SINK := 0.25
 const WALL_H := 1.5
 const SEAT_TIERS := 4
@@ -60,9 +60,11 @@ const STONE_DARK := Color("#251E33")
 const VEIN := Color("#FF2E4A")
 const STAR_FIRE := Color("#B46BFF")
 const SEAL := Color("#FF3050")
-## v0.9.0 FA: the causeway's treads, and how wide (radians) the gap is kept clear of pillars and braziers.
+## The causeway's treads, and how wide (radians) the gap is kept clear of pillars and braziers.
 const CAUSEWAY_STEPS := 14
 const GAP_CLEAR := 0.42
+## How wide (radians) the heart room's doorway is kept clear (its pillars would stand on its walls).
+const HEART_CLEAR := 0.4
 
 const GROUND_SHADER := """
 shader_type spatial;
@@ -116,13 +118,15 @@ var brazier_count := 0
 var seat_count := 0
 var gate: Node3D
 var ground: MeshInstance3D
-## v0.9.0 FA: the causeway's treads (empty off the approach), and the gap's angle (radians, the 3D floor's x-z
+## The causeway's treads (empty off the approach), and the gap's angle (radians, the 3D floor's x-z
 ## plane; NAN off the approach).
 var treads: Array[MeshInstance3D] = []
-## v0.9.0 MI2: the owner's stair flights on the causeway (empty without his model), and the owner models drawn (ids).
+## The owner's stair flights on the causeway (empty without his model), and the owner models drawn (ids).
 var flights: Array[Node3D] = []
 var models_used: Array[StringName] = []
 var _gap_a := NAN
+## The heart room's doorway's angle (NAN without the room), kept clear as the gap is.
+var _heart_a := NAN
 var _flames: Array[MeshInstance3D] = []
 var _shards: Array[Node3D] = []
 ## Each shard's resting height (its node's frame), for the bob.
@@ -141,6 +145,9 @@ func build(reader: WorldReader, palette: Dictionary, radius: float, seed_value: 
 		var top := SimPlane.to_3d(reader.approach_causeway_top())
 		_gap_a = atan2(top.z, top.x)
 		_build_causeway(reader, rng)
+	if reader.heart_room():  # No pillar or brazier stands before the heart room's cracked wall
+		var door := SimPlane.to_3d(reader.crack_door_center())
+		_heart_a = atan2(door.z, door.x)
 	var gate_at := reader.portal_pos()
 	var gate_dir := SimPlane.to_3d(gate_at).normalized()
 	_build_seating(radius, gate_dir, rng)
@@ -198,7 +205,7 @@ func _build_ground(palette: Dictionary, radius: float) -> void:
 	ground.mesh = disc
 	ground.position = Vector3(0, -0.1, 0)
 	if ResourceLoader.exists(GROUND_TEXTURE):
-		# v0.9.0 MI2: the owner's paving in its own colours (a light tint of the palette's stone).
+		# The owner's paving in its own colours (a light tint of the palette's stone).
 		var m := _mat(Color.WHITE.lerp(palette["ground"], 0.25))
 		m.albedo_texture = load(GROUND_TEXTURE)
 		m.uv1_triplanar = true
@@ -231,7 +238,7 @@ func _build_ground(palette: Dictionary, radius: float) -> void:
 	add_child(under)
 
 
-## The ring: one stone block per sim wall segment (the sim's own boxes), a red vein along each top; v0.9.0 MI2: or the
+## The ring: one stone block per sim wall segment (the sim's own boxes), a red vein along each top; or the
 ## owner's wall segment on each (tiled along the longer walls), in the same faded / solid materials (his texture).
 func _build_walls(reader: WorldReader) -> void:
 	var seg := _piece_surface(&"arena_wall_segment")
@@ -254,7 +261,7 @@ func _build_walls(reader: WorldReader) -> void:
 		)
 		node.name = "Wall%d" % i
 		wall_nodes.append(node)
-		var along_x := w.half.x > w.half.y  # v0.9.0 FA: the causeway's long walls run along their x
+		var along_x := w.half.x > w.half.y  # The causeway's long walls run along their x
 		if not seg.is_empty():
 			# A ring segment's arena face (the model's -X) toward the centre: the node turned so its +X points out.
 			var out := Vector3(at.x, 0.0, at.z).normalized()
@@ -276,7 +283,7 @@ func _build_walls(reader: WorldReader) -> void:
 		strip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
-## v0.9.0 MI2: the owner's wall segment (`seg`, ModelLibrary.first_surface) as one mesh `length` m long along the
+## The owner's wall segment (`seg`, ModelLibrary.first_surface) as one mesh `length` m long along the
 ## node's z (its x when `along_x`): as many copies as fit his segment's own length, stretched a little to fill it, its
 ## base at the node's foot (the node stands at half the wall's height).
 static func _wall_mesh(seg: Dictionary, length: float, along_x: bool) -> ArrayMesh:
@@ -364,7 +371,7 @@ func _build_pillars(radius: float, gate_dir: Vector3, rng: RandomNumberGenerator
 			var inst := _scaled(model, PIECES[&"arena_pillar"])
 			root.add_child(inst)
 			var crystal_part := inst.find_child("shard", true, false) as Node3D
-			if crystal_part != null:  # v0.9.0 MI2: his floating crystal turns and bobs
+			if crystal_part != null:  # His floating crystal turns and bobs
 				_shards.append(crystal_part)
 				_shard_y.append(crystal_part.position.y)
 			continue
@@ -413,7 +420,7 @@ func _build_braziers(radius: float) -> void:
 		light.shadow_enabled = false
 		light.position = Vector3(0, 1.4, 0)
 		root.add_child(light)
-		if model != null:  # v0.9.0 MI2: his brazier holds his own violet flames
+		if model != null:  # His brazier holds his own violet flames
 			root.add_child(_scaled(model, PIECES[&"arena_brazier"]))
 			continue
 		var bowl := CylinderMesh.new()
@@ -441,12 +448,15 @@ func _build_braziers(radius: float) -> void:
 		_flames.append(flame)
 
 
-## v0.9.0 FA: angle `a` (radians on the 3D floor) falls in the approach's gap.
+## Angle `a` (radians on the 3D floor) falls in the approach's gap.
 func _in_gap(a: float) -> bool:
-	return not is_nan(_gap_a) and absf(wrapf(a - _gap_a, -PI, PI)) <= GAP_CLEAR
+	return (
+		not is_nan(_gap_a) and absf(wrapf(a - _gap_a, -PI, PI)) <= GAP_CLEAR
+		or (not is_nan(_heart_a) and absf(wrapf(a - _heart_a, -PI, PI)) <= HEART_CLEAR)
+	)
 
 
-## v0.9.0 FA: the stair causeway from the ring's gap down to the foot: worn treads with lit edges over a rock spine.
+## The stair causeway from the ring's gap down to the foot: worn treads with lit edges over a rock spine.
 func _build_causeway(reader: WorldReader, rng: RandomNumberGenerator) -> void:
 	var top := SimPlane.to_3d(reader.approach_causeway_top())
 	var foot := SimPlane.to_3d(reader.approach_causeway_foot())
@@ -462,7 +472,7 @@ func _build_causeway(reader: WorldReader, rng: RandomNumberGenerator) -> void:
 	var edge := _mat(STONE_DARK, STAR_FIRE, 1.4)
 	var stairs := _owner_piece(&"approach_stairs")
 	if stairs != null:
-		# v0.9.0 MI2: the owner's stair flights down the causeway, each climbing toward the ring, low (the sim is
+		# The owner's stair flights down the causeway, each climbing toward the ring, low (the sim is
 		# flat: they sit FLIGHT_SINK down, the hero walks over their middle), as wide as the causeway.
 		models_used.append(&"approach_stairs")
 		var size: Vector3 = PIECES[&"approach_stairs"]
@@ -598,7 +608,7 @@ static func _owner_piece(id: StringName) -> PackedScene:
 	return null
 
 
-## v0.9.0 MI2: an owner piece's first surface (ModelLibrary.first_surface) or {} while none is listed and delivered.
+## An owner piece's first surface (ModelLibrary.first_surface) or {} while none is listed and delivered.
 static func _piece_surface(id: StringName) -> Dictionary:
 	var scene := _owner_piece(id)
 	return ModelLibrary.first_surface(scene) if scene != null else {}

@@ -1,6 +1,6 @@
 class_name EnemyModels
 extends RefCounted
-## v0.8.0 MI: the owner's enemy models (owner 2026-10-18: "enemies are not animated and will need to be animated if
+## The owner's enemy models (owner 2026-10-18: "enemies are not animated and will need to be animated if
 ## needed"): assets/models/enemies/<id>.glb, prepared offline by scripts/assets/mi_prep.py: turned to our facing
 ## frame (+X the front, Y up, metres, feet on the ground), cut into the parts that move (one node each, its origin
 ## at the part's pivot: the Shield Bearer's shield and legs, the Splitter's halves, arms and legs, the Mender's
@@ -8,7 +8,7 @@ extends RefCounted
 ## texture shows there: `base` (the charcoal frame and bone, coloured as delivered), `role` (the plates, greyscale in
 ## the texture, so the avatar tints them in the kind's role colour, EnemyPalettes) and `glow` (eyes, seam, crystals:
 ## the avatar's glowing accent). No rig: HordeAvatar and LensDroneAvatar pose the parts in code. Read once per kind
-## and cached; a missing file gives {} and the avatar keeps its code-made body (L15).
+## and cached; a missing file gives {} and the avatar keeps its code-made body.
 
 const DIR := "res://assets/models/enemies/"
 ## Per kind: the model file's id and the height (m) the avatar scales it to (the code bodies' heights, HordeAvatar
@@ -18,11 +18,25 @@ const SPECS := {
 	&"shield_bearer": {"height": 1.25},
 	&"splitter": {"height": 0.95},
 	&"lens_drone": {"height": 0.5},
-	# v0.9.0 EL: the owner's elites (prepared by scripts/assets/mi2_prep.py: parts, `base` and `glow`), at the art
+	# The owner's elites (prepared by scripts/assets/mi2_prep.py: parts, `base` and `glow`), at the art
 	# list's heights (EliteAvatar poses them).
 	&"elite_breaker": {"height": 2.6},
 	&"elite_rift_hunter": {"height": 2.1},
 	&"elite_conduit": {"height": 2.3},
+	# The Scrap Hound (scripts/assets/o17_prep_scrap_hound.py: chest, hips, head, tail, two-part legs;
+	# ScrapHoundAvatar poses them), at the request row's 0.7 m.
+	&"scrap_hound": {"height": 0.7},
+	# The Rock Lurker (scripts/assets/o17_prep_rock_lurker.py; RockLurkerAvatar poses it)
+	&"rock_lurker": {"height": RockLurkerAvatar.HEIGHT},
+	# The owner's Stone Thrower (scripts/assets/o17_prep_stone_thrower.py: its parts and its rock),
+	# posed by StoneThrowerAvatar.
+	&"stone_thrower": {"height": 1.6},
+	# The owner's Cinder Priest (scripts/assets/o17_prep_cinder_priest.py: parts, `base`, `role`, `glow`),
+	# its height with the staff (CinderPriestAvatar poses it).
+	&"cinder_priest": {"height": 1.75},
+	# The Kiln Beetle (scripts/assets/o17_prep_kiln_beetle.py: shell, body, head, eight two-part legs;
+	# KilnBeetleAvatar poses them), at the request row's 0.7 m.
+	&"kiln_beetle": {"height": 0.7},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

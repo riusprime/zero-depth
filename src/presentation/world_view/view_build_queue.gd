@@ -15,8 +15,8 @@ extends RefCounted
 ##   is the view built in one call.
 ## Any view builder can join the queue (StageView's parts, a wall-mesh builder): it only adds jobs.
 
-## v0.8.0 MI (the load probe's frame breakdown): the frame the last step() ran on, how long it took and which jobs
-## ran in it (a tool reads them; nothing in the game does). v0.8.0 LD: kept only while `probe` is on (the load probe
+## The load probe's frame breakdown: the frame the last step() ran on, how long it took and which jobs
+## ran in it (a tool reads them; nothing in the game does). kept only while `probe` is on (the load probe
 ## turns it on; off in the game).
 static var probe := false
 static var probe_frame := -1
@@ -117,7 +117,7 @@ func run_all() -> void:
 	_release()
 
 
-## v0.10.5 W3-O14: the jobs that ran are dropped. A job is a Callable that may bind this queue (WorldViewRoot's
+## The jobs that ran are dropped. A job is a Callable that may bind this queue (WorldViewRoot's
 ## pack warm-up, StageKit's kit) and the view's reader: kept, they made a cycle (queue -> job -> queue) that held the
 ## reader, and so the floor's whole World, after its view was freed.
 func _release() -> void:

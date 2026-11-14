@@ -1,6 +1,6 @@
 class_name Elites
 extends RefCounted
-## v0.9.0 EL (owner Q24, Q25, Q26; G1 docs/roadmap/v0.9.0/ELITES.md, "ok go for those"): where elites come from and
+## Where elites come from and
 ## what a kill gives. The archetypes' behaviour is EliteAi's; World.elites holds the state (EliteState; null on a
 ## floor that never had one), World.elite_rules the numbers (EliteRules).
 ## - Elite rooms (Q24: "15 % / 25 %", floors 4-5 only): when a floor is built (FloorPlan.add_secrets, last: after the

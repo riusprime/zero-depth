@@ -25,6 +25,8 @@ const SEED := 4404
 ## probe's --heavy cards, god mode, fire held, the aim circling, N enemies kept 7-12 m round the hero; FIGHT_TICKS sim
 ## ticks, then the sim paused and the same census on that one frame.
 const FIGHT_TICKS := 300
+## --cards=<id[:level],...> with --fight grants exactly those cards (the frame probe's option).
+const ProbeBuild := preload("res://scripts/checks/probe_build.gd")
 const BUILD_KEYS: Array[StringName] = [
 	&"ITEM_GUN_GLAIVE", &"ITEM_GUN_RING", &"ITEM_SPLIT_SHOT", &"ITEM_EMBER_CORE", &"ITEM_STORM_CORE"
 ]
@@ -43,6 +45,7 @@ var _tag := ""
 var _shot := false
 var _shadows := ""
 var _fight := -1
+var _build := ProbeBuild.new()  # --cards (with --fight): exactly these cards instead of the probe's heavy build
 var _main: Main
 var _frame := 0
 var _phase := 0
@@ -77,6 +80,8 @@ func _initialize() -> void:
 			_shadows = s.trim_prefix("enemy-shadows=")
 		elif s.begins_with("fight="):
 			_fight = int(s.trim_prefix("fight="))
+		elif s.begins_with("cards="):
+			_build.parse(s)
 	var profile := ProfileStore.new("")
 	if not _shadows.is_empty():
 		profile.section("settings")["enemy_shadows"] = _shadows
@@ -142,11 +147,19 @@ func _process(_delta: float) -> bool:
 func _setup_fight() -> void:
 	var api: PlaygroundApi = _main.playground.api
 	api.god = true
-	for e: Dictionary in api.catalog():
-		if BUILD_KEYS.has(e["name_key"]):
-			api.grant_now(e["code"], 3)
-		elif HEAVY_KEYS.has(e["name_key"]):
-			api.grant_now(e["code"], 5)
+	if _build.exact:
+		var errors := _build.grant(api)
+		if not errors.is_empty():
+			push_error("draw_census: " + "; ".join(errors))
+			quit(2)
+			return
+		print("draw_census: " + _build.describe())
+	else:
+		for e: Dictionary in api.catalog():
+			if BUILD_KEYS.has(e["name_key"]):
+				api.grant_now(e["code"], 3)
+			elif HEAVY_KEYS.has(e["name_key"]):
+				api.grant_now(e["code"], 5)
 	_rooms.append(-1)
 	_placed_at = _main.driver.world.tick
 	_top_up()
@@ -378,6 +391,11 @@ func _make_groups() -> Array:
 	g.append(["fx: the other views (%d)" % fx.size(), _vis_setter(fx)])
 	for c: Node3D in fx:  # and each of them alone
 		g.append(["  view: %s" % _label(c), _vis_setter([c])])
+	g.append_array(_pack_groups(v))
+	g.append(
+		["fx: element rings (VfxLayer.ring)", func(on: bool) -> void: VfxLayer.rings_drawn = on]
+	)
+	g.append(["fx: element rings' light", func(on: bool) -> void: VfxLayer.ring_lights = on])
 	# The 2D on top: each of the HUD's parts, the UI layer's other children, the view's own canvas layers.
 	var hud: Node = _main._hud
 	for c in _main.ui.get_children():
@@ -391,6 +409,24 @@ func _make_groups() -> Array:
 		var layer := c as CanvasLayer
 		g.append(["view canvas layer: %s" % layer.name, _layer_setter(layer)])
 	return g
+
+
+## The pack's live effects, one source per effect id (the pack is the largest effect view in a fight).
+static func _pack_groups(v: WorldViewRoot) -> Array:
+	var pack: PackFx = v.pack_fx
+	if pack == null:
+		return []
+	var by_id := {}
+	for e: Dictionary in pack._live:
+		if is_instance_valid(e["node"]):
+			if not by_id.has(e["id"]):
+				by_id[e["id"]] = []
+			by_id[e["id"]].append(e["node"])
+	var out: Array = []
+	for id: StringName in by_id:
+		var nodes: Array = by_id[id]
+		out.append(["    pack: %s x%d" % [id, nodes.size()], _vis_setter(nodes)])
+	return out
 
 
 static func _label(n: Node) -> String:
@@ -422,7 +458,7 @@ func _kit_lights(kit: StageKit, whole: bool) -> Callable:
 				l.shadow_enabled = shd[l] if on else false
 
 
-func _vis_setter(nodes: Array) -> Callable:
+static func _vis_setter(nodes: Array) -> Callable:
 	var was := {}
 	for n in nodes:
 		was[n] = n.visible

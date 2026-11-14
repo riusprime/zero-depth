@@ -3,7 +3,7 @@ extends Control
 ## The low-HP screen-edge warning (PLAN v0.3.0 L24): while `active`, a subtle red glow hugs the screen's edges and
 ## pulses with the HP bar (steady in calm mode, HudStyle.reduced_motion). Drawn as four gradient strips (no
 ## shader); it never takes mouse input.
-## v0.10.5 W3-O6 (owner F9: "the red border ... appears to cause performance drops"): the strips are drawn once, at
+## The strips are drawn once, at
 ## full alpha, and the pulse is the node's self_modulate alpha (the same colours: the strips' alpha times the
 ## modulate is the old edge alpha), so the glow is no longer redrawn every frame; it redraws only when its size
 ## changes. It does no work while it is off.

@@ -1,6 +1,6 @@
 class_name LanceMods
 extends RefCounted
-## v0.9.5 FC4 (docs/roadmap/v0.9.5/FORM_COMBOS.md N1-N9): what nine cards do to the Lance form. One handler per card.
+## What nine cards do to the Lance form. One handler per card.
 ## A lance ignores these cards' generic ops (WandCompile.run: it only notes the id in modifier_ids), and this file reads
 ## them from there: mask(spec).
 ## - The charge (GunForms.hold, Lance.orb): Big Shot needs 0.3 s more to fill, Rapid Fire fills 40 % faster

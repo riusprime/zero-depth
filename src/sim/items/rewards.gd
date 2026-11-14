@@ -2,12 +2,12 @@ class_name Rewards
 extends RefCounted
 ## The economy and rewards (v0.3.0 PLAN, E; owner lines L6, L7, L9).
 ## - Shards: every enemy kill pays its kind's shards × (1 + bonus × danger tier), rounded half up; a kind marked
-##   shards_by_floor (a boss) pays shards × the floor number instead. v0.5.5 EC (owner S4): every kill's shards are
+##   shards_by_floor (a boss) pays shards × the floor number instead. every kill's shards are
 ##   then × shard_permille (−30 % in the data), rounded half up.
 ## - Altars (free) and chests (cost shards) stand on the layout's item spots, one per room while rooms last, never
-##   in the start hall. Their counts and order come from the loot stream. v0.4.0 TU (D4): the first spot filled is
-##   in a room next to the start hall (start_first) and always holds an altar. v0.5.5 EC (owner S1): at most
-##   altars_cap altars; the altars rolled past it become chests (the same draws, the same spots). v0.5.5 AR (X1):
+##   in the start hall. Their counts and order come from the loot stream. the first spot filled is
+##   in a room next to the start hall (start_first) and always holds an altar. at most
+##   altars_cap altars; the altars rolled past it become chests (the same draws, the same spots).
 ##   the spots in the floor's sealed arenas (FloorLayout.arena_rooms) are filled first, the arena nearest the start
 ##   hall first (so the first altar sits in the nearest arena), then the rest as before; a reward in an arena that
 ##   isn't cleared is locked (Arenas.locked: nearest never offers it).
@@ -37,7 +37,7 @@ static func shards_for_kill(w: World, kind: int) -> int:
 		return 0
 	if t.shards_by_floor:
 		return _scaled(w, t.shards * maxi(1, w.floor_index))
-	# v0.4.0 TU (owner D7): the floor's plain 30 s tier, not the curve's. v0.10.5 O7a (P6, owner 2026-11-01): capped at
+	# The floor's plain 30 s tier, not the curve's. capped at
 	# the tier of the floor's peak phase start, so staying longer stops paying more.
 	var tier := 0
 	if w.spawner != null:
@@ -55,13 +55,13 @@ static func shards_for_kill(w: World, kind: int) -> int:
 	)
 
 
-## v0.5.5 EC (owner S4): a kill's shards × the table's shard_permille, rounded half up.
+## A kill's shards × the table's shard_permille, rounded half up.
 static func _scaled(w: World, amount: int) -> int:
 	var m := w.reward_table.shard_permille
 	return amount if m == 1000 else (amount * m + 500) / 1000
 
 
-## v0.10.5 O7b (P6): a kill of `kind` lays its shards on the floor (ShardDrops) rather than paying at once: a normal
+## A kill of `kind` lays its shards on the floor (ShardDrops) rather than paying at once: a normal
 ## enemy, not a boss nor a shards_by_floor kind.
 static func lies_on_floor(w: World, kind: int) -> bool:
 	if BossAi.is_boss_kind(kind) or not EnemyAi.is_enemy_kind(kind):
@@ -70,17 +70,17 @@ static func lies_on_floor(w: World, kind: int) -> bool:
 	return t == null or not t.shards_by_floor
 
 
-## Tick phase 9: actor i died. Pays its shards and emits SHARDS (amount = shards, at the body); v0.10.5 O7b: a normal
+## Tick phase 9: actor i died. Pays its shards and emits SHARDS (amount = shards, at the body); a normal
 ## enemy's shards lie at the body instead (ShardDrops), paid and announced when the hero takes them.
 static func on_kill(w: World, i: int) -> void:
 	var amount := Gamble.shard_gain(w, shards_for_kill(w, w.actors.kinds[i]))  # the shrine's shard gain
-	amount = Stats.shards(w, amount)  # v0.4.0 BS: the shard gain stat
-	Overrun.on_kill(w, i, amount)  # v0.4.0 AB: an Overrun kill counts toward the clear
-	HealOrbs.on_kill(w, i)  # v0.4.0 TU (D8): maybe a heal orb
-	amount = Affinities.shards(w, amount)  # v0.9.0 RB: A5 Guardian picks up fewer
+	amount = Stats.shards(w, amount)  # The shard gain stat
+	Overrun.on_kill(w, i, amount)  # An Overrun kill counts toward the clear
+	HealOrbs.on_kill(w, i)  # Maybe a heal orb
+	amount = Affinities.shards(w, amount)  # A5 Guardian picks up fewer
 	if amount <= 0:
 		return
-	if lies_on_floor(w, w.actors.kinds[i]):  # v0.10.5 O7b (P6): a normal kill's shards lie at the body
+	if lies_on_floor(w, w.actors.kinds[i]):  # A normal kill's shards lie at the body
 		ShardDrops.drop(w, w.actors.pos(i), amount)
 		return
 	w.shards += amount
@@ -101,7 +101,7 @@ static func place(w: World, layout: FloorLayout) -> void:
 		kinds.append(RewardStore.Kind.ALTAR)
 	for k in w.rng_loot.range_int(counts[2], counts[3]):
 		kinds.append(RewardStore.Kind.CHEST)
-	if t.altars_cap > 0:  # v0.5.5 EC (S1): the altars past the cap become chests
+	if t.altars_cap > 0:  # The altars past the cap become chests
 		for k in range(t.altars_cap, kinds.size()):
 			kinds[k] = RewardStore.Kind.CHEST
 	for k in range(kinds.size() - 1, 0, -1):
@@ -109,7 +109,7 @@ static func place(w: World, layout: FloorLayout) -> void:
 		var swap := kinds[k]
 		kinds[k] = kinds[j]
 		kinds[j] = swap
-	var altar := kinds.find(RewardStore.Kind.ALTAR)  # v0.4.0 TU (D4): the first spot takes an altar
+	var altar := kinds.find(RewardStore.Kind.ALTAR)  # The first spot takes an altar
 	if altar > 0:
 		kinds[altar] = kinds[0]
 		kinds[0] = RewardStore.Kind.ALTAR
@@ -119,12 +119,12 @@ static func place(w: World, layout: FloorLayout) -> void:
 		if kinds[k] == RewardStore.Kind.CHEST:
 			price = t.chest_price(chests, w.floor_index)
 			chests += 1
-		var spot := w.solids.clear_of_doors(layout, layout.item_spots[order[k]])  # v0.9.5 SB: off the doorways
+		var spot := w.solids.clear_of_doors(layout, layout.item_spots[order[k]])  # Off the doorways
 		w.add_reward(kinds[k], spot, price)
 	_place_extras(w, layout, order, kinds, chests)
 
 
-## v0.10.5 S7 (owner 2026-11-01, "10 to 15% more loot"; a starting value): after the floor's usual placement, about
+## After the floor's usual placement, about
 ## extra_chest_permille / extra_altar_permille per mille more chests and altars: n x permille / 1000 whole extras, plus
 ## one more with the remainder's chance (one loot-stream draw per kind, only when there is a remainder). An extra takes
 ## the next unused item spot (none left: none placed) and an extra altar is not held by altars_cap. Drawn last, so
@@ -159,7 +159,7 @@ static func _place_extras(
 			used += 1
 
 
-## v0.5.5 AR: `order` with the spots in arena rooms first (start_first among them), then the others (start_first
+## `order` with the spots in arena rooms first (start_first among them), then the others (start_first
 ## among them); without arenas, start_first(order) as before.
 static func arena_first(layout: FloorLayout, order: PackedInt32Array) -> PackedInt32Array:
 	if layout.arena_rooms.is_empty():
@@ -178,7 +178,7 @@ static func arena_first(layout: FloorLayout, order: PackedInt32Array) -> PackedI
 	return out
 
 
-## v0.4.0 TU (owner D4): `order` with the first spot of the room nearest the start hall (fewest hops; the first
+## `order` with the first spot of the room nearest the start hall (fewest hops; the first
 ## such in `order`) moved to the front, so the floor's first reward, an altar, is next to the start.
 static func start_first(layout: FloorLayout, order: PackedInt32Array) -> PackedInt32Array:
 	var best := -1
@@ -205,12 +205,12 @@ static func spot_order(layout: FloorLayout) -> PackedInt32Array:
 ## The reward within interact reach nearest the player (lowest index on a tie), or -1.
 static func nearest(w: World) -> int:
 	var best := -1
-	var best_d := Stats.reach(w, w.reward_table.interact_radius_m)  # v0.4.0 BS: pickup range
+	var best_d := Stats.reach(w, w.reward_table.interact_radius_m)  # Pickup range
 	var p := w.player_pos()
 	for i in w.rewards.size():
-		if Arenas.locked(w, i):  # v0.5.5 AR: locked until its arena clears
+		if Arenas.locked(w, i):  # Locked until its arena clears
 			continue
-		# v0.9.5 SB: measured to the footprint's surface, not its centre (the hero cannot stand on it)
+		# Measured to the footprint's surface, not its centre (the hero cannot stand on it)
 		var d := (
 			Kin.length(w.rewards.pos(i) - p)
 			- Solids.reach_bonus(w, Solids.Kind.REWARD, w.rewards.ids[i])
@@ -225,7 +225,7 @@ static func can_afford(w: World, i: int) -> bool:
 	return w.shards >= price_of(w, i)
 
 
-## Reward i's price now: its placed price under the prices curse (v0.5.0 EV).
+## Reward i's price now: its placed price under the prices curse.
 static func price_of(w: World, i: int) -> int:
 	return w.rewards.price[i]
 
@@ -242,8 +242,8 @@ static func interact(w: World) -> bool:
 		_deny(w, i)
 		return false
 	if w.rewards.rolled[i] == 0:
-		w.rewards.set_offer(i, Offers.roll(w, i))  # v0.4.0 BS: abilities, stat cards and mods
-		Curses.on_offer_rolled(w, i)  # v0.5.0 EV: a chest may turn cursed
+		w.rewards.set_offer(i, Offers.roll(w, i))  # Abilities, stat cards and mods
+		Curses.on_offer_rolled(w, i)  # A chest may turn cursed
 	if w.rewards.offer_of(i).is_empty():
 		w.rewards.rolled[i] = 0  # an empty roll isn't kept: a later press rolls again (audit G-1)
 		_deny(w, i)
@@ -254,7 +254,7 @@ static func interact(w: World) -> bool:
 	return true
 
 
-## v0.8.0 N7: reward i is a chest that deals its card (no choice): a chest not cursed (a cursed one still asks).
+## Reward i is a chest that deals its card (no choice): a chest not cursed (a cursed one still asks).
 static func deals(w: World, i: int) -> bool:
 	return (
 		w.rewards.kind[i] == RewardStore.Kind.CHEST
@@ -263,14 +263,14 @@ static func deals(w: World, i: int) -> bool:
 	)
 
 
-## v0.8.0 N7 (D48): deals chest i's card: its first card (an older save's three-card offer keeps only it); the chest
+## Deals chest i's card: its first card (an older save's three-card offer keeps only it); the chest
 ## is DEALT: the next pick input of any value takes it (Rewards.choose).
 static func deal(w: World, i: int) -> void:
 	w.rewards.set_offer(i, PackedInt32Array([w.rewards.offer_of(i)[0]]))
 	w.rewards.rolled[i] = RewardStore.DEALT
 
 
-## While choosing: a pick takes that card, a cancel closes the choice; anything else waits. v0.6.0 MX2 (owner B7):
+## While choosing: a pick takes that card, a cancel closes the choice; anything else waits.
 ## picking a new modifier with the six slots full opens the swap (BuildSlots): the next answer names the held
 ## modifier it replaces (then the card is taken as a pick), or skips back to the cards.
 static func choose(w: World, frame: InputFrame) -> void:
@@ -291,11 +291,11 @@ static func choose(w: World, frame: InputFrame) -> void:
 		if s < 0:
 			return  # skipped: back to the cards
 		replace = s
-	elif w.rewards.rolled[i] == RewardStore.DEALT:  # v0.8.0 N7: any other answer takes the dealt card
+	elif w.rewards.rolled[i] == RewardStore.DEALT:  # Any other answer takes the dealt card
 		if frame.pick == InputFrame.PICK_NONE:
 			return
 		if frame.pick == InputFrame.PICK_CANCEL:
-			_resume(w)  # v0.9.5 CD (owner: "you should be able to reject it"): the chest stays shut, unpaid, card kept
+			_resume(w)  # The chest stays shut, unpaid, card kept
 			return
 		k = 0
 	elif frame.pick == InputFrame.PICK_CANCEL:
@@ -307,14 +307,14 @@ static func choose(w: World, frame: InputFrame) -> void:
 		BuildSlots.open_swap(w, offer[k], BuildSlots.Source.REWARD, k)
 		return
 	_take(w, i, k, replace)
-	if not BossReward.another_pick(w, i):  # v0.8.0 RR: a later loop's boss altar gives more picks
-		w.solids.remove(w, Solids.Kind.REWARD, w.rewards.ids[i])  # v0.9.5 SB: its footprint goes with it
+	if not BossReward.another_pick(w, i):  # A later loop's boss altar gives more picks
+		w.solids.remove(w, Solids.Kind.REWARD, w.rewards.ids[i])  # Its footprint goes with it
 		w.rewards.remove_at(i)
 	_resume(w)
 
 
 ## Card k of reward i's offer is taken: the price paid, the PICKUP event, the card applied (into wand slot `replace`
-## when the swap named one) and the cursed card's curse (v0.8.0 FL: no legendary level-5 rule any more).
+## when the swap named one) and the cursed card's curse (no legendary level-5 rule any more).
 static func _take(w: World, i: int, k: int, replace: int) -> void:
 	w.shards -= price_of(w, i)
 	var idx := w.rewards.offer_of(i)[k]
@@ -323,8 +323,8 @@ static func _take(w: World, i: int, k: int, replace: int) -> void:
 		SimEvent.Kind.PICKUP, w.rewards.ids[i], w.actors.ids[0], w.actors.ids[0], at
 	)
 	e.amount = idx
-	Offers.apply(w, idx, replace)  # v0.4.0 BS: an item (mod), an ability or a stat card
-	Curses.on_pick(w, w.rewards.ids[i], k)  # v0.5.0 EV: the cursed card brings its curse
+	Offers.apply(w, idx, replace)  # An item (mod), an ability or a stat card
+	Curses.on_pick(w, w.rewards.ids[i], k)  # The cursed card brings its curse
 
 
 ## Back to play: no choice open, and nothing pressed during the choice fires afterwards.

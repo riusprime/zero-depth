@@ -15,9 +15,13 @@ pruned = Array[StringName]([&"gun_ricochet"])
 script = ExtResource("2_row")
 id = &"laser"
 card = &"gun_laser"
-allowed = Array[StringName]([&"gun_twin", &"gun_pierce", &"halo_shot", &"gun_ring", &"gun_backfire", &"gun_ricochet", &"gun_homing", &"gun_echo", &"gun_big_shot", &"gun_rapid_fire", &"split_shot", &"gun_mine", &"gun_spiral", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
+allowed = Array[StringName]([&"gun_twin", &"halo_shot", &"gun_ring", &"gun_backfire", &"gun_ricochet", &"gun_homing", &"gun_echo", &"gun_big_shot", &"gun_rapid_fire", &"split_shot", &"gun_spiral", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
 ruled = Array[StringName]([])
 params = {
+"lance_ticks": 19,
+"lance_feed": 3,
+"pierce_falloff_permille": 850,
+"pierce_floor_permille": 400,
 "halo_len_mm": 3000,
 "halo_turn_deg": 30,
 "halo_share": 400,
@@ -25,20 +29,20 @@ params = {
 "ring_share": 500,
 "back_mm": 4500,
 "back_share": 1000,
-"home_repick_ms": 200,
-"home_step_mm": 750,
-"home_bend_deg": 12,
-"home_chain": 5,
+"home_step_mm": 450,
+"home_bend_deg": 6,
+"home_arc_deg": 160,
+"home_len_permille": 3000,
+"home_chain": 8,
+"home_bow_deg": 30,
+"home_lens_permille": 1100,
+"home_turn_mm": 1500,
 "echo_delay_ms": 400,
 "echo_share": 500,
 "big_width": 2000,
 "big_damage": 1600,
-"big_turn": 700,
-"follow_dps": 720,
-"rapid_period_ms": 50,
-"rapid_ramp_ms": 2000,
-"rapid_width": 500,
-"rapid_damage_permille": 650,
+"rapid_cd": 700,
+"rapid_damage_permille": 800,
 "split_mm": 4000,
 "split_deg": 25,
 "split_share": 500,

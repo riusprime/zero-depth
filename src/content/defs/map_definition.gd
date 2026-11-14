@@ -21,14 +21,17 @@ const MAX_ROOMS := 19
 ## Random placements tried for each room after the hall before the floor settles for fewer rooms (never below
 ## rooms_min).
 @export var place_attempts := 600
-## v0.9.0 TD (owner W §2, Q20 "Allow local timers"): the share of floors (per mille) with a timed door to a secret room
+## The share of floors (per mille) with a timed door to a secret room
 ## (starting value 35 %), and the door's timer in ticks from the second switch (15 s at 60 Hz; owner W17 "12–18 s").
 @export var timed_door_permille := 350
 @export var timed_door_ticks := 1200
-## v0.9.5 TS (owner Q7): the switches sit 1..timed_switch_steps_max rooms from the door's host, and the lever inside
+## The switches sit 1..timed_switch_steps_max rooms from the door's host, and the lever inside
 ## opens the shut door for timed_lever_ticks.
 @export var timed_switch_steps_max := 2
 @export var timed_lever_ticks := 300
+## PLAN P1, owner Q-O15a/b: the share of large combat rooms (3 x 3 and up, no other kind) that take a
+## purpose (camp, collapsed hall, quarry; data/rooms/purposes), per mille; the rest keep their designed layouts.
+@export var purpose_permille := 750
 
 
 func category() -> StringName:
@@ -76,4 +79,6 @@ func validate() -> Array[ValidationIssue]:
 		)
 	if timed_lever_ticks < 60 or timed_lever_ticks > 600:
 		issues.append(ValidationIssue.new(&"range", resource_path, "timed_lever_ticks is 1..10 s"))
+	if purpose_permille < 0 or purpose_permille > 1000:
+		issues.append(ValidationIssue.new(&"range", resource_path, "purpose_permille is 0..1000"))
 	return issues

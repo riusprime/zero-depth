@@ -8,25 +8,37 @@ extends GutTest
 ## the start hall on the floor's open ground and keeps clear of every wall; it is a big room (2 x 2 cells or more)
 ## whenever the floor has a big room that fits, and it is placed on (nearly) every floor, so floor 3's warranty holds.
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
 
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 var _repo: ContentRepository
+var _maps := {}
+var _arenas: ArenaTable
 
 
 func before_all() -> void:
-	_repo = ContentRepository.load_all()
+	_repo = SharedContent.repo()
+	_arenas = RunContentCompiler.compile_arena(_repo.get_def(&"arena", &"arena"))
+
+
+## v0.11.1 Step 3: the floor's map (the room layouts in) is compiled once per floor index and the arena table once
+## per file, not once per seed; FloorGenerator and the room markers only read them.
+func _map(floor_index: int) -> FloorParams:
+	if not _maps.has(floor_index):
+		var map := RunContentCompiler.compile_map(_repo.get_def(&"map", &"floor"))
+		map.room_layouts = SharedContent.room_layouts()
+		_maps[floor_index] = map
+	return _maps[floor_index]
 
 
 func _layout(seed_value: int, run: RunState, floor_index: int) -> FloorLayout:
-	var map := RunContentCompiler.compile_map(_repo.get_def(&"map", &"floor"))
-	map.room_layouts = RunContentCompiler.compile_room_layouts(_repo)
-	var arenas := RunContentCompiler.compile_arena(_repo.get_def(&"arena", &"arena"))
+	var map := _map(floor_index)
 	var secrets: SecretsDefinition = _repo.get_def(&"secrets", &"secrets")
 	var p := FloorShape.size_floor(run, map, floor_index)
 	var f := FloorGenerator.generate(seed_value, p)
 	BossRoomBuilder.attach(f, BossArenaSpec.make(Vector2i(4, 4), FloorLayout.Template.OPEN))
 	OverrunRooms.mark(f)
-	ArenaRooms.mark(f, arenas.share_permille)
+	ArenaRooms.mark(f, _arenas.share_permille)
 	Routes.place_deep_gate(f)
 	var speed := PlayerTable.starting_values().move_speed
 	var none := PackedInt32Array()
@@ -61,7 +73,7 @@ func test_the_purple_room_is_big_off_the_main_path_and_always_reached() -> void:
 	var could_be_big := 0
 	var bad := 0
 	var tried := 0
-	for s in SEEDS:
+	for s in _seeds:
 		var floor_index := 2 + s % 2
 		var seed_value := 9001 + s * 7919
 		var f := _layout(seed_value, run, floor_index)
@@ -109,7 +121,9 @@ func test_the_purple_room_is_big_off_the_main_path_and_always_reached() -> void:
 		)
 	)
 	assert_eq(bad, 0, "never a special room, off the main path, its dais reached and clear")
-	assert_gte(placed, SEEDS * 99 / 100, "placed on (nearly) every floor: floor 3's warranty holds")
+	assert_gte(
+		placed, _seeds * 99 / 100, "placed on (nearly) every floor: floor 3's warranty holds"
+	)
 	assert_gte(
 		big,
 		could_be_big * 9 / 10,

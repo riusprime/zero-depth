@@ -42,7 +42,7 @@ func test_the_weak_point_glows_on_the_model_by_energy_only() -> void:
 		GatekeeperAvatar.new(), BroodMotherAvatar.new(), SiegeEngineAvatar.new()
 	]:
 		add_child_autofree(avatar)
-		avatar.setup(Color.BLACK)
+		avatar.setup()
 		var mat := avatar.weak_material
 		assert_true(mat.emission_enabled, "emission on from the start")
 		avatar.apply_state(
@@ -117,6 +117,7 @@ func test_the_band_the_vortex_and_the_dissolve_are_drawn() -> void:
 	assert_eq(view.dissolved_count(), 2, "both enemies dissolve on screen")
 	var b := BossAi.entry_of(w, i)
 	var t := BossAi.table_of(w, i)
+	t.close_step_m = 1.0  # v0.11.0 F4: no shipped boss closes, so the rule is switched on here (as it shipped)
 	w.bosses.arena = Rect2(-15, -15, 30, 30)
 	w.bosses.close_t[b] = t.close_step_ticks * 2 - t.close_warn_ticks / 2
 	view.sync(reader)

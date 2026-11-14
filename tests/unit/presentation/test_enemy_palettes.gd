@@ -92,10 +92,29 @@ static func _identity_slot(palette: StringName) -> StringName:
 
 func test_the_table_covers_every_normal_kind_and_slot_in_every_palette() -> void:
 	var ids := {}
+	var signatures := {}  # v0.11.0 O13b: the biomes' signature enemies wear their own colours (RuinsRocksAvatar)
+	for b: BiomeDefinition in ContentRepository.load_all().all_of(&"biomes"):
+		for s: StringName in b.signature_ids:
+			signatures[s] = true
 	for f in DirAccess.get_files_at("res://data/enemies"):
-		if f.ends_with(".tres"):
+		# v0.11.0 O9: the five horde critters wear their biome's colours (CritterBodies), not a role's
+		var critter: bool = (
+			BehaviourSchemas.SCHEMAS.get(StringName(f.get_basename())) == BehaviourSchemas.CRITTER
+		)
+		# v0.11.0 O13a: the five biome variants wear their base's colours under their biome's cast (VariantLooks)
+		var variant := BehaviourSchemas.VARIANT_OF.has(StringName(f.get_basename()))
+		if (
+			f.ends_with(".tres")
+			and not critter
+			and not variant
+			and not signatures.has(StringName(f.get_basename()))
+		):
 			ids[StringName(f.get_basename())] = true
-	assert_eq(ids.size(), 14, "14 normal kinds in data/enemies")
+	assert_eq(
+		ids.size(),
+		14,
+		"14 normal kinds in data/enemies (and the critters, the variants and the signatures)"
+	)
 	assert_eq(EnemyPalettes.ROLES.size(), 14)
 	assert_eq(EnemyPalettes.KIND_IDS.size(), 14)
 	for id: StringName in ids:
@@ -271,6 +290,13 @@ func test_the_avatars_build_from_the_active_palette() -> void:
 		for k in KINDS.size():
 			var node := views.actor_node(w.actors.ids[k + 1])
 			var got := _colours(node)
+			if KINDS[k] == WorldReader.KIND_ARC_CASTER:  # v0.11.0 F6: the Priest's model in its own palette
+				var role: Color = CinderPriestAvatar.LOOKS[KINDS[k]]["role"]
+				assert_true(
+					got.has(role.to_html(false)),
+					"%s: the Arc Caster draws its model's role colour" % p
+				)
+				continue
 			for slot in EnemyPalettes.SLOTS:
 				if slot == &"eye" and not EnemyPalettes.eyes_on_all() and NO_EYE.has(KINDS[k]):
 					continue  # today's Splitter glows at its seam, the Mender at its crystal
@@ -292,7 +318,7 @@ func test_the_splitter_and_mender_get_an_eye_only_in_the_candidates() -> void:
 				assert_true(EnemyModels.has_model(HordeAvatar.model_id(kind)), "kind %d" % kind)
 				continue
 			var a := HordeAvatar.new()
-			a.setup(kind, Color.BLACK)
+			a.setup(kind)
 			var eyes := a.find_children("Eye", "MeshInstance3D", true, false)
 			if p == EnemyPalettes.CURRENT:
 				assert_eq(eyes.size(), 0, "kind %d: today's model" % kind)
@@ -323,6 +349,8 @@ func test_a_colour_blind_mode_still_recolours_the_ring_not_the_palette() -> void
 			if mi.mesh is TorusMesh and mi.get_parent() == node and mo != null:
 				ring_ok = ring_ok or mo.albedo_color == team
 		assert_true(ring_ok, "kind %d: the team ring takes the mode's enemy colour" % KINDS[k])
+		if KINDS[k] == WorldReader.KIND_ARC_CASTER:  # v0.11.0 F6: its own model palette
+			continue
 		var got := _colours(node)
 		var body := EnemyPalettes.color(KINDS[k], &"body").to_html(false)
 		assert_true(got.has(body), "kind %d: the palette body is unchanged" % KINDS[k])

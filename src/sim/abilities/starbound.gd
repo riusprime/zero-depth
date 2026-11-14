@@ -1,12 +1,12 @@
 class_name Starbound
 extends RefCounted
-## v0.10.5 W3-P10b (owner W7, docs/roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md §B; SIM_CONTRACTS §8n): the Starbound cards,
+## The Starbound cards,
 ## a card kind offered from loop 2 only, with both weapons, no level cap (each pick adds a stack; World.starbound,
 ## run-long, saved and hashed) and never in the shop. Their numbers are content (StarboundTable, per stack):
-## - the offer (B0): a regular altar's offer gets one Starbound card with RewardTable.starbound_permille's chance for
+## - the offer: a regular altar's offer gets one Starbound card with RewardTable.starbound_permille's chance for
 ##   the loop (20 % at loop 2, 30 % from loop 3), in place of one of its cards; drawn from a named stream of its own
 ##   per altar ("loot:starbound:<loop>:<floor>:<reward id>", derived from the floor's seed), so the loop-1 loot
-##   stream and every loop-1 offer stay as they were (T3). Taking it is the normal pick (Rewards.choose).
+##   stream and every loop-1 offer stay as they were. Taking it is the normal pick (Rewards.choose).
 ## - B1 Arc Jump: the first direct hit of a root of yours (a weapon hit: no effect id, proc 100, melee or projectile;
 ##   one chain a root, World.starbound_jump_roots) jumps to the nearest living enemy within reach_m of the one just hit
 ##   that this chain hasn't hit (ties: the lower index), amount jumps a stack, each at share_permille of the jump before
@@ -73,7 +73,7 @@ static func picks(w: World, k: int) -> int:
 	return w.starbound[k] if k >= 0 and k < w.starbound.size() else 0
 
 
-## Card k's stacks in play: its picks, twice with Supernova (C6). Every rule reads this.
+## Card k's stacks in play: its picks, twice with Supernova. Every rule reads this.
 static func stacks(w: World, k: int) -> int:
 	var n := picks(w, k)
 	if n > 0 and Constellations.has(w, Constellations.SUPERNOVA):
@@ -90,7 +90,7 @@ static func take(w: World, k: int) -> void:
 	w.starbound[k] += 1
 
 
-# --- The offer (B0) -----------------------------------------------------------------------------------------------
+# --- The offer -----------------------------------------------------------------------------------------------
 ## The chance per mille that a regular altar's offer holds a Starbound card now (0 before loop 2).
 static func offer_permille(w: World) -> int:
 	if w.loop < FROM_LOOP or not enabled(w):
@@ -177,7 +177,7 @@ static func _first_of_root(w: World, root: int) -> bool:
 	return true
 
 
-## B1: up to amount x stacks jumps from actor i, each at share_permille of the one before.
+## Up to amount x stacks jumps from actor i, each at share_permille of the one before.
 static func _arc_jump(w: World, i: int, dealt: int, root: int) -> void:
 	var t := table(w, ARC_JUMP)
 	if t == null:
@@ -245,7 +245,7 @@ static func on_kill(w: World, i: int, root: int) -> void:
 	w.sb_draining = false
 
 
-## B5: one burst at `at` for `dmg` (bosses and elites share_permille of it), within the tick's cap.
+## One burst at `at` for `dmg` (bosses and elites share_permille of it), within the tick's cap.
 static func _burst(w: World, t: StarboundTable, at: Vector2, dmg: int, root: int) -> void:
 	if w.starbound_burst_tick != w.tick:
 		w.starbound_burst_tick = w.tick

@@ -24,16 +24,6 @@ const STRIKE_EVERY := 3
 const STRIKE_WINDOW_TICKS := 60
 const EFFECT_VENT_MEND := &"vent_mend"
 const EFFECT_SCAVENGER := &"scavenger"
-## AbilityState's O9 fields: a save from before O9 has none of them, and keeps their defaults (WorldSnapshot).
-const SNAPSHOT_FIELDS: Array[StringName] = [
-	&"rc_rush_until",
-	&"rc_strike_n",
-	&"rc_strike_last",
-	&"rc_strike_root",
-	&"rc_bonus_root",
-	&"rc_reflex_root",
-	&"rc_mend_tick",
-]
 
 
 static func _on(w: World, s: int) -> bool:
@@ -122,7 +112,7 @@ static func on_kill(w: World, target: int, tags: int, root: int) -> void:
 		var bonus := (base * _capped(w, Stats.Stat.SCAVENGER) + 500) / 1000
 		bonus = Affinities.shards(w, Stats.shards(w, bonus))
 		if bonus > 0 and Rewards.lies_on_floor(w, a.kinds[target]):
-			ShardDrops.drop(w, a.pos(target), bonus)  # v0.10.5 O7b: joins the kill's drop, paid when taken
+			ShardDrops.drop(w, a.pos(target), bonus)  # Joins the kill's drop, paid when taken
 		elif bonus > 0:
 			w.shards += bonus
 			var me := a.ids[0]

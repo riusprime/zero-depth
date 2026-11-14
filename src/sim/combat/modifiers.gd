@@ -1,12 +1,12 @@
 class_name Modifiers
 extends RefCounted
-## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md §2, §7; SIM_CONTRACTS §5b): compiles the build into attack specs.
+## docs/design/MODIFIER_ENGINE.md §2, §7; SIM_CONTRACTS §5b: compiles the build into attack specs.
 ## compile(w) runs when the build changes (an item picked, an ability's level, a save restored: World invalidates
 ## the cache) and the first time a spec is read after that, never every tick; the result is cached on
 ## World.attack_book and its digest is hashed.
 ##
 ## The build's modifiers are the modifier slots' (World.mod_slots, v0.6.0 MX2: an item's ItemTable.modifiers, an
-## ability's AbilityTable.modifiers), in slot order (v0.6.5 WN1: the wand's order, which the player rearranges). Each
+## ability's AbilityTable.modifiers), in slot order (the wand's order, which the player rearranges). Each
 ## base spec (the Blade's combo steps, the Gun's bolt, the Skill, MX2 each held ability modifier's attack) is
 ## rewritten by the cards left to right (WandCompile: each card changes the spell built so far, a trigger card ends it
 ## and the cards to its right build the child spell it casts); v0.6.0's fixed stage sort across cards is gone (inside
@@ -23,7 +23,7 @@ extends RefCounted
 ## Rules (design §2): numeric ops change one field (SET, ADD, MAX, MIN, MUL_PERMILLE); SET_FORM changes the form (a
 ## later form op layers); STATUS sets a status the spec's hits feed; ELEMENT adds an element the view draws
 ## (stacking, no repeats); HOOK adds a child attack at depth + 1, compiled by its own card and the cards to its right
-## (v0.6.5 WN1; none below MAX_DEPTH, so compiling always ends; v0.10.5 W3-P10a: the loop's WandCompile.max_depth).
+## (v0.6.5 WN1; none below MAX_DEPTH, so compiling always ends; the loop's WandCompile.max_depth).
 ##
 ## Riders (the v0.5 rules kept exact): a Blade step's hits burn whenever the burn engine runs (Wildfire or Flame
 ## Trail with no Ember Edge did that before MX1), and the bolt's hits slow whenever the slow runs (Glacial Edge or
@@ -38,7 +38,7 @@ const TAG_PROJECTILE := "projectile"
 const TAG_SKILL := "skill"
 const TAG_HOOK := "hook"
 const TAG_ABILITY := "ability"
-## v0.6.0 MX4: the moments that launch from specs (the dash, walking, a blink, the body's rules; Vent's blast is an
+## The moments that launch from specs (the dash, walking, a blink, the body's rules; Vent's blast is an
 ## attack). A moment's spec is rewritten only by a modifier whose target names its tag (an empty target means every
 ## attack, not every moment).
 const TAG_MOMENT := "moment"
@@ -47,12 +47,12 @@ const VENT := &"vent"
 const MOVE := &"move"
 const BLINK := &"blink"
 const BODY := &"body"
-## v0.6.0 MX4: walking this far (not dashing) launches the move spec's ON_LAUNCH hooks (Ember Trail; a starting
+## Walking this far (not dashing) launches the move spec's ON_LAUNCH hooks (Ember Trail; a starting
 ## value).
 const MOVE_STEP_M := 1.4
-## v0.6.0 MX2: Frost Nova's ring grows to its radius over this many ticks (a starting value).
+## Frost Nova's ring grows to its radius over this many ticks (a starting value).
 const RING_TICKS := 18
-## v0.6.0 MX2: a hook's lingering child when its op names no time: a lob's flight, a zone's life and its hit gap.
+## A hook's lingering child when its op names no time: a lob's flight, a zone's life and its hit gap.
 const HOOK_LOB_TICKS := 30
 const HOOK_ZONE_TICKS := 90
 const HOOK_ZONE_GAP := 30
@@ -88,26 +88,26 @@ static func skill(w: World) -> AttackSpec:
 	return book(w).spec(SKILL)
 
 
-## The build's modifiers in slot order (v0.6.0 MX2: World.mod_slots; each slot's card's modifiers in its order).
-## v0.9.0 LZ: a Form card's (the Laser) come first, wherever it sits, so it makes the Gun's shot itself, never a
+## The build's modifiers in slot order (World.mod_slots; each slot's card's modifiers in its order).
+## A Form card's (the Laser) come first, wherever it sits, so it makes the Gun's shot itself, never a
 ## trigger's cast, and every Pattern, Secondary and Element card shapes the form.
 static func build_modifiers(w: World) -> Array[ModifierTable]:
 	return build_modifiers_of(w, w.mod_slots)
 
 
-## v0.10.5 O13: build_modifiers for the card codes `codes` in this order (a wand the player hasn't made yet: the Build
+## build_modifiers for the card codes `codes` in this order (a wand the player hasn't made yet: the Build
 ## page's reorder, the Swap's answer; WandForecast). build_modifiers is this on the held wand, so the two can't differ.
 static func build_modifiers_of(w: World, codes: PackedInt32Array) -> Array[ModifierTable]:
 	var out: Array[ModifierTable] = []
-	var form: Array[ModifierTable] = []  # v0.9.0 LZ: the Form card shapes the root shot wherever it sits
+	var form: Array[ModifierTable] = []  # The Form card shapes the root shot wherever it sits
 	for code in codes:
 		if Offers.type_of(code) == Offers.ABILITY:
 			var idx := Offers.ability_of(code)
 			if idx < w.ability_tables.size():
 				out.append_array(w.ability_tables[idx].modifiers)
-		elif code < w.item_tables.size() and AttackSlots.compiles(w, code):  # v0.9.0 AS: the form's table
-			var lvl := CardLevels.base_level(w, code)  # v0.6.5 WN3: a wand card at its level (W3-P3: at most its max)
-			# v0.10.5 W3-P3: its overlevels grow its main number; an element's grows in ElementStack.level_permille
+		elif code < w.item_tables.size() and AttackSlots.compiles(w, code):  # The form's table
+			var lvl := CardLevels.base_level(w, code)  # A wand card at its level (W3-P3: at most its max)
+			# Its overlevels grow its main number; an element's grows in ElementStack.level_permille
 			var over := 1000
 			if LootPacing.category(w, code) != LootPacing.Category.ELEMENT:
 				over = CardLevels.overlevel_now(w, code)
@@ -118,7 +118,7 @@ static func build_modifiers_of(w: World, codes: PackedInt32Array) -> Array[Modif
 	return form
 
 
-## v0.6.0 MX4: the moments' specs (never null once compiled: every book has them) and Vent's (null without heat).
+## The moments' specs (never null once compiled: every book has them) and Vent's (null without heat).
 static func dash(w: World) -> AttackSpec:
 	return book(w).spec(DASH)
 
@@ -139,7 +139,7 @@ static func vent(w: World) -> AttackSpec:
 	return book(w).spec(VENT)
 
 
-## v0.6.0 MX4: the weapon's last attack, which a WEAPON hook child copies (Long Shadow, Meltdown Edge): the Blade's
+## The weapon's last attack, which a WEAPON hook child copies (Long Shadow, Meltdown Edge): the Blade's
 ## current combo step on a run with the Blade, else the Gun's shot.
 static func weapon_attack(w: World) -> AttackSpec:
 	var n := w.player.combo.size()
@@ -148,7 +148,7 @@ static func weapon_attack(w: World) -> AttackSpec:
 	return bolt(w)
 
 
-## v0.6.0 MX4: that attack's damage under the build's weapon factor (rounded down, no remainder carried: a copy
+## That attack's damage under the build's weapon factor (rounded down, no remainder carried: a copy
 ## never shifts the weapon's own numbers).
 static func weapon_damage(w: World) -> int:
 	var s := weapon_attack(w)
@@ -162,14 +162,14 @@ static func weapon_damage(w: World) -> int:
 	return maxi(1, Attacks.bolt_base_damage(s) * pm / 1000)
 
 
-## v0.6.0 MX2: an owned ability modifier's compiled spec (by its ability id), or null.
+## An owned ability modifier's compiled spec (by its ability id), or null.
 static func ability(w: World, t: AbilityTable) -> AttackSpec:
 	return book(w).spec(t.id) if t != null else null
 
 
 static func compile(w: World) -> AttackBook:
 	var b := compile_for(w, build_modifiers(w))
-	ElementPairs.refresh(w)  # v0.9.5 EE3: the element pairs follow the cards' levels
+	ElementPairs.refresh(w)  # The element pairs follow the cards' levels
 	return b
 
 
@@ -178,16 +178,16 @@ static func compile_for(w: World, mods: Array[ModifierTable]) -> AttackBook:
 	var b := AttackBook.new()
 	for m in mods:
 		b.modifier_ids.append(String(m.id))
-	var wand := WandCompile.for_world(w, mods)  # v0.6.5 WN1: slot order, triggers cut the wand
+	var wand := WandCompile.for_world(w, mods)  # Slot order, triggers cut the wand
 	for k in w.player.combo.size():
-		b.add(BladeForms.settle(wand.spec(base_step(w, k)), wand.max_depth))  # v0.6.5 WN4: Finisher+'s carry
+		b.add(BladeForms.settle(wand.spec(base_step(w, k)), wand.max_depth))  # Finisher+'s carry
 	b.add(wand.spec(base_bolt(w)))
 	var sk := _base_skill(w)
 	if sk != null:
 		b.add(wand.spec(sk))
-	for id: StringName in [DASH, MOVE, BLINK, BODY]:  # v0.6.0 MX4: the moments
+	for id: StringName in [DASH, MOVE, BLINK, BODY]:  # The moments
 		b.add(wand.spec(_base_moment(id)))
-	if w.heat != null:  # v0.6.0 MX4: Vent's blast
+	if w.heat != null:  # Vent's blast
 		b.add(wand.spec(_base_vent(w)))
 	_riders(w, b)
 	b.register()
@@ -195,9 +195,9 @@ static func compile_for(w: World, mods: Array[ModifierTable]) -> AttackBook:
 	return b
 
 
-## v0.6.0 MX2: `s` takes `root`'s statuses (not its riders; a status `s` already has stays), elements and ON_HIT /
+## `s` takes `root`'s statuses (not its riders; a status `s` already has stays), elements and ON_HIT /
 ## ON_KILL hooks (shared, as compiled for the weapon); with `copy`, a bolt root's pattern and behaviour too.
-## v0.10.5 W3-P10a: the hooks only while `s` is shallower than `max_depth` (the compile's: WandCompile.max_depth).
+## The hooks only while `s` is shallower than `max_depth` (the compile's: WandCompile.max_depth).
 static func inherit(s: AttackSpec, root: AttackSpec, copy: bool, max_depth := MAX_DEPTH) -> void:
 	if root == null:
 		return
@@ -231,10 +231,10 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	if b.modifier_ids.is_empty():
 		return
 	h.add_string(b.digest)
-	ModifierRuntime.hash_into(w, h)  # v0.6.0 MX4: the queue, the counters, poison, projectile behaviours
+	ModifierRuntime.hash_into(w, h)  # The queue, the counters, poison, projectile behaviours
 
 
-## v0.6.0 MX4: a moment's spec (the dash, walking, a blink, the body): no damage of its own, only hooks and rules.
+## A moment's spec (the dash, walking, a blink, the body): no damage of its own, only hooks and rules.
 static func _base_moment(id: StringName) -> AttackSpec:
 	var s := AttackSpec.new()
 	s.id = id
@@ -243,7 +243,7 @@ static func _base_moment(id: StringName) -> AttackSpec:
 	return s
 
 
-## v0.6.0 MX4: Vent's blast (Heat.vent): a burst of the heat table's radius; its damage is the heat vented.
+## Vent's blast (Heat.vent): a burst of the heat table's radius; its damage is the heat vented.
 static func _base_vent(w: World) -> AttackSpec:
 	var s := AttackSpec.new()
 	s.id = VENT
@@ -255,10 +255,10 @@ static func _base_vent(w: World) -> AttackSpec:
 
 ## One numeric op on `s` (SET, ADD, MAX, MIN, MUL_PERMILLE on an AttackSpec field, or the virtual `range`).
 static func numeric(s: AttackSpec, op: ModifierOp) -> void:
-	if op.field == &"halo_homing_permille":  # v0.10.5 W3-S18: spent at the end of the compile (SpecForms)
+	if op.field == &"halo_homing_permille":  # Spent at the end of the compile (SpecForms)
 		s.halo_homing_permille = int(op.value)
 		return
-	if op.field == &"range":  # v0.6.0 MX4: the form's own range field (SpecForms.range_of)
+	if op.field == &"range":  # The form's own range field (SpecForms.range_of)
 		if op.op == ModifierOp.Op.MUL_PERMILLE:
 			SpecForms.scale_range(s, op.value)
 		return
@@ -280,7 +280,7 @@ static func numeric(s: AttackSpec, op: ModifierOp) -> void:
 		return
 	var c: int = s.get(op.field)
 	var iv := int(op.value)
-	if op.field == &"share_permille":  # v0.8.0 MR (O91): shares multiply down the wand (0 = whole)
+	if op.field == &"share_permille":  # Shares multiply down the wand (0 = whole)
 		c = c if c > 0 else 1000
 		if op.op == ModifierOp.Op.MUL_PERMILLE:
 			s.damage_mul_permille = s.damage_mul_permille * iv / 1000  # the view's weight is each bolt's
@@ -295,13 +295,13 @@ static func numeric(s: AttackSpec, op: ModifierOp) -> void:
 			c = mini(c, iv)
 		ModifierOp.Op.MUL_PERMILLE:
 			c = c * iv / 1000
-			if op.field == &"damage":  # v0.6.0 MX4: the weight the view draws
+			if op.field == &"damage":  # The weight the view draws
 				s.damage_mul_permille = s.damage_mul_permille * iv / 1000
 	s.set(op.field, c)
 
 
 ## The v0.5 riders (see the class doc), after every modifier: statuses the engines already running bring.
-## v0.6.5 WN5a: a rider rides only on an engine something outside the wand runs (a v0.5 item, an ability's borrow):
+## A rider rides only on an engine something outside the wand runs (a v0.5 item, an ability's borrow):
 ## a wand card's own status (Fire's burn, Frost's slow) goes where the card sits, so Fire right of a trigger burns
 ## the child and not the slash.
 static func _riders(w: World, b: AttackBook) -> void:
@@ -318,7 +318,7 @@ static func _riders(w: World, b: AttackBook) -> void:
 			s.set_status(&"slow", 1, 0, true)
 
 
-## v0.6.5 WN5a: the burn (`burn`) or the slow engine runs from something other than a wand card (CardLevels.is_card):
+## The burn (`burn`) or the slow engine runs from something other than a wand card (CardLevels.is_card):
 ## an owned item that isn't one brings its numbers, or no owned item does (an ability borrows it).
 static func _engine_outside_wand(w: World, burn: bool) -> bool:
 	var from_item := false
@@ -332,7 +332,7 @@ static func _engine_outside_wand(w: World, burn: bool) -> bool:
 	return not from_item
 
 
-## Combo step `k` as the player table has it (v0.6.5 WN1: public, the wand's child spell copies it).
+## Combo step `k` as the player table has it (public, the wand's child spell copies it).
 static func base_step(w: World, k: int) -> AttackSpec:
 	var st: SwingStep = w.player.combo[k]
 	var s := AttackSpec.new()
@@ -340,7 +340,7 @@ static func base_step(w: World, k: int) -> AttackSpec:
 	s.form = AttackSpec.Form.ARC
 	s.tags = PackedStringArray([TAG_WEAPON, TAG_MELEE])
 	if k == w.player.combo.size() - 1:
-		s.tags.append("finisher")  # v0.6.5 WN4: the combo's last step (Finisher+ targets it)
+		s.tags.append("finisher")  # The combo's last step (Finisher+ targets it)
 	s.half_arc = st.half_arc
 	s.reach_m = st.reach_m
 	s.damage = st.damage

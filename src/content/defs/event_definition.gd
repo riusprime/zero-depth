@@ -19,11 +19,10 @@ const MAX_CHOICES := 2
 ## The first floor it can appear on.
 @export var min_floor := 1
 @export var requires: StringName = &""
-## v0.5.5 DS (S5): only on Deep floors, and a Deep floor's first pedestal holds one (Events.draw_event).
+## Only on Deep floors, and a Deep floor's first pedestal holds one (Events.draw_event).
 @export var deep_only := false
-## v0.8.0 N17 (owner O75): a curse event: drawn only for the floor's curse room (its dark room and altar), never for a
-## common event room (Events.draw_event). A floor saved before N17 draws it as before. v0.8.0 N19 (O80): Whispering
-## Deep (deep_only) is one too; on a floor built under N17's rules a deep_only event stays a common one.
+## A curse event: drawn only for the floor's curse room (its dark room and altar), never for a
+## common event room (Events.draw_event). Whispering Deep (deep_only) is one too.
 @export var curse_room := false
 @export var choices: Array[EventChoiceDefinition] = []
 

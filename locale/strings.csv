@@ -2,6 +2,8 @@ keys,en,es
 UI_TITLE,Zero Depth,Zero Depth
 UI_PLAY,Play,Jugar
 UI_CONTINUE,Continue,Continuar
+UI_SAVE_REFUSED_OLDER,Your saved run came from an older version and can't be resumed.,Tu partida guardada es de una versión anterior y no se puede reanudar.
+UI_SAVE_REFUSED_UNREADABLE,Your saved run couldn't be read and can't be resumed.,Tu partida guardada no se pudo leer y no se puede reanudar.
 UI_OPTIONS,Options,Opciones
 UI_CREDITS,Credits,Créditos
 UI_GALLERIES,Galleries,Galerías
@@ -11,9 +13,7 @@ UI_RESUME,Resume,Continuar
 UI_MAIN_MENU,Main menu,Menú principal
 UI_BACK,Back,Volver
 UI_LANGUAGE,Language,Idioma
-UI_VOLUME_MASTER,Master volume,Volumen general
 UI_VOLUME_MUSIC,Music,Música
-UI_VOLUME_EFFECTS,Effects,Efectos
 UI_VSYNC,VSync,Sincronización vertical
 UI_FRAME_CAP,Frame cap,Límite de fotogramas
 UI_OPT_EN,English,English
@@ -32,7 +32,6 @@ UI_DEV_PAUSE,Pause / resume,Pausar / seguir
 UI_DEV_STEP,Step one tick,Avanzar un tick
 UI_DEV_HASH,Hash now,Hash ahora
 UI_DEV_RESEED,Reseed and restart,Nueva semilla y reiniciar
-UI_CHOOSE_UTILITY,Choose your utility,Elige tu habilidad
 UTIL_GUARD,Guard,Guardia
 UTIL_GUARD_DESC,Hold to block hits from the front.,Mantén para bloquear los golpes de frente.
 UTIL_BLINK,Blink,Destello
@@ -42,9 +41,6 @@ ENEMY_WARDEN,Warden,Guardián
 ENEMY_NEEDLE,Needle,Aguja
 HUD_HP,HP %d / %d,PV %d / %d
 HUD_DANGER_TIER,×%d,×%d
-HUD_DEPTHS_ANSWER,The depths answer ×%s,Las profundidades responden ×%s
-HUD_DASH,Dash,Esprint
-HUD_UTILITY,Utility,Habilidad
 HUD_WAVE,Wave %d / %d,Oleada %d / %d
 HUD_ENEMIES,Enemies left: %d,Enemigos restantes: %d
 UI_YOU_DIED,You died,Has muerto
@@ -55,6 +51,9 @@ CAUSE_WARDEN,A Warden's slam crushed you.,El golpe de un Guardián te aplastó.
 CAUSE_NEEDLE,A Needle's bolts got you.,Los proyectiles de una Aguja te alcanzaron.
 CAUSE_UNKNOWN,Something got you.,Algo te alcanzó.
 UI_SHAKE,Screen shake,Vibración de pantalla
+UI_SHOW_FPS,Show FPS,Mostrar FPS
+UI_AIM_ASSIST,Aim assist,Ayuda de puntería
+UI_FPS_VALUE,%d FPS,%d FPS
 UI_OUTLINE,Outline style,Estilo de contorno
 UI_OPT_INK,Ink,Tinta
 UI_OPT_SKETCH,Sketch,Boceto
@@ -79,22 +78,19 @@ ITEM_PHASE_STRIKE,Phase Strike,Golpe de Fase
 ITEM_PHASE_STRIKE_DESC,Blinking or blocking hurts enemies around you.,Teletransportarte o bloquear daña a tu alrededor.
 HUD_TIME,%02d:%02d,%02d:%02d
 HUD_KILLS,Kills: %d,Bajas: %d
-HUD_PICKED,Picked up %s: %s,Has cogido %s: %s
 HUD_PICKED_UP,Picked up,Recogido
 ENEMY_HATCHLING,Hatchling,Cría
 BOSS_GATEKEEPER,The Gatekeeper,The Gatekeeper
 BOSS_BROOD_MOTHER,The Brood Mother,The Brood Mother
 BOSS_SIEGE_ENGINE,The Siege Engine,The Siege Engine
-HUD_BOSS_STAGGER,Stagger,Aturdimiento
-HUD_BOSS_STAGGERED,STAGGERED,ATURDIDO
 HUD_BOSS_PHASE_SHIFT,PHASE SHIFT,CAMBIO DE FASE
+HUD_BOSS_STUNNED,STUNNED · VULNERABLE,ATURDIDO · VULNERABLE
 CAUSE_HATCHLING,A Hatchling ran you down.,Una Cría te arrolló.
 CAUSE_GATEKEEPER_SLAM,The Gatekeeper's fist slam crushed you.,El puñetazo de The Gatekeeper te aplastó.
 CAUSE_GATEKEEPER_RINGS,The Gatekeeper's rock rings buried you.,Los anillos de roca de The Gatekeeper te sepultaron.
-CAUSE_GATEKEEPER_QUAKE,The Gatekeeper's cross quake caught you.,El temblor en cruz de The Gatekeeper te alcanzó.
 CAUSE_GATEKEEPER_LANES,The Gatekeeper's shockwave knocked you down.,La onda de choque de The Gatekeeper te derribó.
 CAUSE_GATEKEEPER_SWEEP,The Gatekeeper's sweep smashed you.,El barrido de The Gatekeeper te destrozó.
-CAUSE_GATEKEEPER_CHARGE,The Gatekeeper's charge flattened you.,La embestida de The Gatekeeper te aplastó.
+CAUSE_GATEKEEPER_PILLAR,The Gatekeeper's quake pillar shook you down.,El pilar sísmico de The Gatekeeper te derribó.
 CAUSE_BROOD_LEAP,The Brood Mother landed on you.,The Brood Mother cayó sobre ti.
 CAUSE_BROOD_BURROW,The Brood Mother burst up beneath you.,The Brood Mother surgió bajo tus pies.
 CAUSE_BROOD_BROOD,The Brood Mother's eggs crushed you.,Los huevos de The Brood Mother te aplastaron.
@@ -111,7 +107,6 @@ UI_DEV_SPAWN_BOSS,Spawn boss,Invocar jefe
 UI_DEV_NEXT_BOSS,Next boss,Siguiente jefe
 REWARD_OPEN_ALTAR,Open,Abrir
 REWARD_OPEN_CHEST,Open · %d ◆,Abrir · %d ◆
-REWARD_TOO_POOR,Not enough shards · %d / %d,No tienes fragmentos suficientes · %d / %d
 PICK_TITLE_ALTAR,Altar · choose one,Altar · elige uno
 PICK_TITLE_CHEST,Chest · choose one for %d,Cofre · elige uno por %d
 PICK_HINT,"←/→ or 1-3 to choose · Enter or A to take · Esc or B to leave it for later","←/→ o 1-3 para elegir · Intro o A para cogerlo · Esc o B para dejarlo para luego"
@@ -158,7 +153,6 @@ BUILD_GUN_DESC,Shoot enemies from afar.,Dispara a los enemigos desde lejos.
 BUILD_DAMAGE,Damage %s,Daño %s
 BUILD_TAKEN,Damage taken %s,Daño recibido %s
 BUILD_HINT,Left / Right to choose · Enter or A to start · Esc or B to go back,Izquierda / Derecha para elegir · Intro o A para empezar · Esc o B para volver
-UI_VOLUME_AMBIENCE,Ambience,Ambiente
 CAPTION_PLAYER_DEATH,[Your core shuts down],[Tu núcleo se apaga]
 CAPTION_COMBO_UNLOCK,[Combo chime],[Campanilla de combo]
 CAPTION_OVERHEAT,[Overheat alarm],[Alarma de sobrecalentamiento]
@@ -195,8 +189,6 @@ UI_GAMBLE_USE,Gamble · %d ◆,Apostar · %d ◆
 UI_GAMBLE_SPENT,Spent,Agotado
 UI_GAMBLE_BLOCKED,Spent,Agotado
 UI_GAMBLE_SPENT_TAG,Spent,Agotado
-UI_GAMBLE_FAILED,It failed,Falló
-UI_GAMBLE_CARD,Fortune Shrine,Santuario de la Fortuna
 UI_GAMBLE_STATS,Fortune Shrine stats,Estadísticas del Santuario de la Fortuna
 UI_GAMBLE_STATS_NONE,No Fortune Shrine stats yet,Aún no tienes estadísticas del Santuario de la Fortuna
 UI_GAMBLE_MAX_HP,+%d max HP,+%d PV máximos
@@ -364,7 +356,7 @@ STAT_HOARDER_DESC,"+%s%% damage per 100 shards, +%s%% shards","+%s %% de daño p
 STAT_FAST_HANDS,Fast Hands,Manos rápidas
 STAT_FAST_HANDS_DESC,-%s%% ability cooldowns,-%s %% de recarga de habilidades
 STAT_LIFESPROUT,Lifesprout,Brote vital
-STAT_LIFESPROUT_DESC,Kills may drop a heal orb: %s%% (+%s%% per extra card),Las bajas pueden soltar un orbe de curación: %s %% (+%s %% por carta extra)
+STAT_LIFESPROUT_DESC,Disabled for now. It gave kills a %s%% chance of a heal orb (+%s%% per extra card),Desactivada por ahora. Daba a las bajas un %s %% de orbes de curación (+%s %% por carta extra)
 STAT_VENT_MEND,Vent Mend,Purga sanadora
 STAT_VENT_MEND_DESC,A Vent that hits an enemy heals %s%% max HP,Una purga que alcanza a un enemigo cura un %s %% de vida máxima
 STAT_HEAT_SHIELD,Heat Shield,Escudo térmico
@@ -383,7 +375,6 @@ RARITY_EPIC,Epic,Épico
 UI_CARD_ABILITY_NEW,New ability,Habilidad nueva
 UI_CARD_ABILITY_LEVEL,Level %d,Nivel %d
 UI_CARD_MOD,Mod,Modificador
-UI_ABILITY_AUTO,AUTO,AUTO
 UI_DEV_NEXT_ABILITY,Next ability,Siguiente habilidad
 UI_DEV_GRANT_ABILITY,Grant / level ability,Dar / subir habilidad
 ENEMY_SWARMER,Swarmer,Enjambre
@@ -412,12 +403,10 @@ CAUSE_LENS_DRONE,A Lens Drone's ring of orbs got you.,El anillo de orbes de un D
 CAUSE_WARLORD_BASH,The Warlord's shield bash knocked you flat.,El golpe de escudo de The Warlord te derribó.
 CAUSE_WARLORD_SPEARS,The Warlord's spear lines ran you through.,Las líneas de lanzas de The Warlord te atravesaron.
 CAUSE_WARLORD_DASH,The Warlord's lunge ran you down.,La embestida de The Warlord te arrolló.
-CAUSE_WARLORD_JAVELINS,The Warlord's javelins rained down on you.,Las jabalinas de The Warlord llovieron sobre ti.
 CAUSE_WARLORD_WALL,The Warlord's shield wall swept over you.,El muro de escudos de The Warlord te arrolló.
 CAUSE_WARLORD_FAN,The Warlord's javelin fan struck you down.,El abanico de jabalinas de The Warlord te abatió.
 CAUSE_WARLORD_RECALL,The Warlord's javelins flew back through you.,Las jabalinas de The Warlord volvieron atravesándote.
-CAUSE_HIVE_SWEEP,The Hive Lens's beam swept through you.,El rayo de The Hive Lens te barrió.
-CAUSE_HIVE_PRISM,The Hive Lens's prism bolts cut you down.,Los proyectiles de prisma de The Hive Lens te abatieron.
+CAUSE_WARLORD_GREAT,The Warlord's great javelin struck you down.,La gran jabalina de The Warlord te abatió.
 CAUSE_HIVE_GLARE,The Hive Lens's glare burned you.,El destello de The Hive Lens te quemó.
 CAUSE_HIVE_DIVE,The Hive Lens dived onto you.,The Hive Lens se lanzó sobre ti.
 CAUSE_HIVE_SPLIT,A drone splitting off the Hive Lens crushed you.,Un dron al separarse de The Hive Lens te aplastó.
@@ -425,7 +414,6 @@ CAUSE_HIVE_FOCUS,The Hive Lens's focused beam found you far away.,El rayo concen
 CAUSE_HIVE_SPIRAL,The Hive Lens's prism spiral cut you down.,La espiral de prismas de The Hive Lens te abatió.
 CAUSE_HIVE_BLOOM,The Hive Lens's petal bloom closed around you.,La flor de pétalos de The Hive Lens se cerró sobre ti.
 CAUSE_FOUNDRY_FLOOD,The Foundry's molten floor burned you.,El suelo fundido de The Foundry te quemó.
-CAUSE_FOUNDRY_SLAG,The Foundry's slag shells blew you apart.,Los proyectiles de escoria de The Foundry te destrozaron.
 CAUSE_FOUNDRY_VENT,The Foundry's vent blast scorched you.,La explosión del respiradero de The Foundry te abrasó.
 CAUSE_FOUNDRY_LAUNCH,A Foundry Bomb Drone crushed you.,Un Dron Bombardero de The Foundry te aplastó.
 CAUSE_FOUNDRY_FIRESTORM,The Foundry flooded the room with fire.,The Foundry inundó la sala de fuego.
@@ -436,6 +424,9 @@ CAUSE_HIVE_GAZE_ORBS,The Hive Lens's orbs caught you.,Los orbes de The Hive Lens
 CAUSE_SIEGE_RICOCHET,A Siege Engine shell bounced into you.,Un proyectil rebotado de The Siege Engine te alcanzó.
 CAUSE_SIEGE_TURRET_RICOCHET,A turret's bouncing shot hit you.,El disparo rebotado de una torreta te alcanzó.
 CAUSE_FOUNDRY_LAVA,You stood in the Foundry's lava.,Pisaste la lava de The Foundry.
+CAUSE_FOUNDRY_POOL,The Foundry's molten pool burned you down.,La poza de lava de The Foundry te consumió.
+CAUSE_BROOD_VENOM,You stood in the Brood Mother's venom.,Pisaste el veneno de The Brood Mother.
+CAUSE_SIEGE_ROCK,A rock dropped by the Siege Engine crushed you.,Una roca lanzada por The Siege Engine te aplastó.
 CAUSE_FOUNDRY_MELT,The Foundry melted the floor out from under you.,The Foundry fundió el suelo bajo tus pies.
 CAPTION_TELEGRAPH_WARLORD,[Warning: the Warlord's armour clanks],[Aviso: la armadura de The Warlord resuena]
 CAPTION_TELEGRAPH_HIVE_LENS,[Warning: the Hive Lens hums as it focuses],[Aviso: The Hive Lens zumba al enfocar]
@@ -454,6 +445,17 @@ CAUSE_TWIN_CROSSFIRE,The Twin Wardens' crossfire caught you between them.,El fue
 CAUSE_TWIN_SWEEP,The Twin Wardens' chain lashed you down.,La cadena de The Twin Wardens te derribó de un latigazo.
 CAUSE_TWIN_CHAIN,The Twin Wardens' burning chain seared you.,La cadena ardiente de The Twin Wardens te abrasó.
 CAUSE_TWIN_BASH,A Twin Warden's shield crushed you.,El escudo de un Twin Warden te aplastó.
+CAUSE_TWIN_CHARGE,The amber Warden's charge ran you down.,La carga del Twin Warden ámbar te arrolló.
+CAUSE_TWIN_SLAM,The amber Warden's ground slam crushed you.,El golpe al suelo del Twin Warden ámbar te aplastó.
+CAUSE_TWIN_ORBS,The violet Warden's orb volley struck you.,La salva de orbes del Twin Warden violeta te alcanzó.
+CAUSE_TWIN_RUNES,The violet Warden's rune ring burned you.,El anillo de runas del Twin Warden violeta te quemó.
+CAUSE_TWIN_BLINK,The violet Warden blinked onto you.,El Twin Warden violeta apareció sobre ti.
+CAUSE_TWIN_BOLT,A Twin Warden's bolt hit you from afar.,Un rayo de un Twin Warden te alcanzó de lejos.
+HUD_TWIN_LEADS_AMBER,The amber Warden fights,Lucha el Twin Warden ámbar
+HUD_TWIN_LEADS_VIOLET,The violet Warden fights,Lucha el Twin Warden violeta
+HUD_TWIN_LEADS_BOTH,Both Wardens fight,Luchan los dos Twin Wardens
+HUD_TWIN_EXPOSED_AMBER,AMBER EXPOSED,ÁMBAR EXPUESTO
+HUD_TWIN_EXPOSED_VIOLET,VIOLET EXPOSED,VIOLETA EXPUESTO
 CAPTION_TELEGRAPH_TWIN_WARDENS,[Warning: the Wardens' chain rattles],[Aviso: la cadena de The Twin Wardens resuena]
 CAPTION_TWIN_CHAIN_BURN,[Chain sizzles],[La cadena chisporrotea]
 BOSS_CLOCKWORK_JUDGE,The Clockwork Judge,The Clockwork Judge
@@ -465,7 +467,7 @@ CAUSE_JUDGE_GAVEL,The Clockwork Judge's gavel came down on you.,El mazo de The C
 CAPTION_TELEGRAPH_CLOCKWORK_JUDGE,[Warning: the Judge's clock ticks],[Aviso: el reloj de The Clockwork Judge marca el tiempo]
 CAPTION_JUDGE_ECHO,[Your echo strikes],[Tu eco golpea]
 BOSS_LANTERN_SHADE,The Lantern Shade,The Lantern Shade
-BOSS_LANTERN_SHADE_DESC,"A hooded wraith that snuffs the light. Keep the lanterns burning: it can only be hurt in the light.","Un espectro encapuchado que apaga la luz. Mantén los faroles encendidos: solo se le puede herir en la luz."
+BOSS_LANTERN_SHADE_DESC,"A hooded wraith that snuffs the light. Step on the lanterns to light them: it takes far less damage in the dark and more in a lantern's light.","Un espectro encapuchado que apaga la luz. Pisa los faroles para encenderlos: recibe mucho menos daño en la oscuridad y más bajo la luz de un farol."
 CAUSE_SHADE_DARK,The Lantern Shade found you in the dark.,The Lantern Shade te encontró en la oscuridad.
 CAUSE_SHADE_BLOOM,The Lantern Shade's wisps bloomed around you.,Los fuegos fatuos de The Lantern Shade florecieron a tu alrededor.
 CAUSE_SHADE_SNUFF,The Lantern Shade snuffed you out.,The Lantern Shade te apagó como a una vela.
@@ -523,7 +525,6 @@ CURSE_TUNNEL_VISION_UP,More shards,Más fragmentos
 CURSE_BRITTLE,Brittle,Quebradizo
 CURSE_BRITTLE_DESC,Getting hit stuns you,Los golpes te aturden
 CURSE_BRITTLE_UP,Move faster,Te mueves más rápido
-UI_CURSE_UPSIDE,Trade-off,Compensación
 UI_CARD_CURSE,Curse,Maldición
 HUD_DODGE,DODGE,ESQUIVA
 STATUS_STACK_COUNT,x%d,x%d
@@ -617,7 +618,6 @@ HUD_ARENA_CLEARED,Arena cleared,Arena superada
 MAP_LEGEND_ARENA,Arena,Arena
 UI_DEV_GO_ARENA,Go to an arena door,Ir a la puerta de una arena
 UI_DEV_CLEAR_WAVE,Clear the arena wave,Despejar la oleada de la arena
-PICK_TITLE_LEGENDARY,Pick a legendary card,Elige una carta legendaria
 RARITY_LEGENDARY,Legendary,Legendaria
 UI_CARD_MODIFIER,Modifier,Modificador
 UI_CARD_MODIFIER_NEW,New modifier,Modificador nuevo
@@ -625,10 +625,8 @@ UI_SWAP_TITLE,Your %d modifier slots are full: swap one?,Tus %d huecos de modifi
 UI_SWAP_HINT,1–8 / ←→ choose · Enter swap · Esc skip,1–8 / ←→ elegir · Intro cambiar · Esc saltar
 UI_SWAP_SKIP,Skip,Saltar
 UI_SWAP_SKIP_KEY,Esc,Esc
-UI_SWAP_LEVEL,Level %d,Nivel %d
 UI_DEV_GRANT_MOD,Grant attack mod,Dar mod de ataque
 UI_PAUSE_RUN,Floor %d · %02d:%02d · %d kills · %d shards,Piso %d · %02d:%02d · %d bajas · %d fragmentos
-UI_PAUSE_DEPTHS,"The depths answer ×%s: your build is strong, so this floor's enemies have more HP and hit harder.","Las profundidades responden ×%s: tu construcción es fuerte, así que los enemigos de este piso tienen más vida y pegan más fuerte."
 UI_PAUSE_HINT,Enter / A to choose · Esc / B to resume,Intro / A para elegir · Esc / B para continuar
 UI_MENU_HINT,Enter / A to choose,Intro / A para elegir
 HUD_KEY_MOUSE_LEFT,LMB,Clic izq.
@@ -694,7 +692,7 @@ ITEM_GUN_TWIN_DESC,"Fire twice, side by side.","Disparas dos veces, lado a lado.
 ITEM_GUN_RING,Ring,Anillo
 ITEM_GUN_RING_DESC,Your shot becomes a lightning ring.,Tu disparo se vuelve un anillo de rayos.
 ITEM_GUN_LASER,Laser,Láser
-ITEM_GUN_LASER_DESC,Hold to burn a beam.,Mantén para quemar con un rayo.
+ITEM_GUN_LASER_DESC,Hold: fires a lance every 3 s through every enemy.,Mantén: una lanza cada 3 s que atraviesa a todos.
 ITEM_GUN_VOID,Void,Vacío
 ITEM_GUN_VOID_DESC,Throw black holes that tug at foes.,Lanza agujeros negros que atraen.
 ITEM_GUN_LANCE,Lance,Lanza
@@ -774,7 +772,6 @@ WAND_READ_BURST,a burst,un estallido
 UI_BUILD,Build,Construcción
 UI_BUILD_TITLE,BUILD,CONSTRUCCIÓN
 UI_BUILD_SLOTS,%d of %d slots,%d de %d huecos
-UI_BUILD_HINT,←→ choose · Enter pick up / put down · mouse: drag or click twice · pad: A pick up · d-pad move · A drop · Esc / B back,←→ elegir · Intro coger / soltar · ratón: arrastra o haz dos clics · mando: A coger · cruceta mover · A soltar · Esc / B volver
 UI_WAND_LEVEL,Lv %d,Nv %d
 UI_WAND_LEVEL_OF,Lv %d/%d,Nv %d/%d
 UI_WAND_NEW,New,Nueva
@@ -791,6 +788,7 @@ UI_WAND_CUT_ON_CRIT,cast on a crit →,se lanza en un crítico →
 UI_WAND_CUT_UNUSED,too deep to cast,demasiado profundo para lanzarse
 UI_WAND_DEAD_TRIGGER,Does nothing after a trigger,No hace nada tras un disparador
 UI_WAND_DEAD_DEEP,Too deep to cast,Demasiado profundo para lanzarse
+UI_WAND_DEAD_FORM,Does nothing with this form,No hace nada con esta forma
 UI_SWAP_PLACE,Insert the new card: where does it go?,Insertar la carta nueva: ¿dónde va?
 UI_SWAP_LEAVE,Which card leaves the wand?,¿Qué carta sale de la varita?
 UI_SWAP_CARRY,Move the card: ←→ then R or Enter,Mueve la carta: ←→ y luego R o Intro
@@ -818,8 +816,6 @@ UI_DEVM_HINT_SPAWN,"Applies when you close the panel; HP and shards change for t
 UI_DEVM_HINT_RESTART,Applies on Restart floor or the next floor.,Se aplica al reiniciar el piso o en el siguiente piso.
 UI_DEVM_MARK,DEV (tweaked balance: this run is not saved),DEV (balance modificado: esta partida no se guarda)
 UI_DEVM_G_SIM,"Timings, AI and caps","Tiempos, IA y límites"
-ITEM_TRIGGER_ON_CRIT,On Crit,Al Crítico
-ITEM_TRIGGER_ON_CRIT_DESC,Cards to its right cast on a critical hit.,Las cartas a su derecha se lanzan con un crítico.
 ITEM_SHARED_BLEED,Bleed,Sangrado
 ITEM_SHARED_BLEED_DESC,Bleed. Lv2: hurts more on the move. Lv3: bursts.,Sangrado. Nv2: más daño si se mueve. Nv3: estalla.
 UI_CODEX,Codex,Códice
@@ -855,6 +851,8 @@ MATCHUP_GUN_GLAIVE,Glaive,Disco
 MATCHUP_EMBER,Fire,Fuego
 MATCHUP_STORM,Lightning,Rayo
 MATCHUP_VENOM,Venom,Veneno
+MATCHUP_FROST,Frost,Hielo
+MATCHUP_GUN_VOID,Void,Vacío
 UI_CODEX_HINT,Arrows / stick move · Q E / LB RB page · Esc / B back,Flechas / stick mover · Q E / LB RB página · Esc / B volver
 ENEMY_CHARGER_DESC,Runs at you and charges.,Corre hacia ti y embiste.
 ENEMY_WARDEN_DESC,A slow rock golem.,Un gólem de roca lento.
@@ -1069,6 +1067,8 @@ HUD_BOSS_INVULNERABLE,Invulnerable,Invulnerable
 HUD_BOSS_SHIELD_ONE,1 shield left,1 escudo restante
 HUD_BOSS_SHIELDS,%d shields left,%d escudos restantes
 HUD_BOSS_PHASE,Phase %d / %d,Fase %d / %d
+HUD_SHADE_DARK,In the dark · %d %% damage,En la oscuridad · %d %% de daño
+HUD_SHADE_LIT,In the light · %d %% damage,En la luz · %d %% de daño
 UI_PG_FINAL,Final boss,Jefe final
 UI_PG_FINAL_PHASE,Phase %d,Fase %d
 UI_PG_FINAL_HINT,Summons the Hollow Crown at the room's centre; a phase button jumps to that body.,Invoca a Hollow Crown en el centro de la sala; un botón de fase salta a ese cuerpo.
@@ -1135,8 +1135,6 @@ HUB_PROGRESSION,Progression Station,Estación de Progreso
 HUB_PROMPT_PROGRESSION,Use,Usar
 HUB_RUNIC_STONE,Runic Stone,Piedra rúnica
 HUB_PROMPT_RUNIC_READ,Read,Leer
-HUB_WARDROBE_SOON,Robes and rune affinities will hang here. Nothing to wear yet.,Aquí colgarán las túnicas y las afinidades rúnicas. Aún no hay nada que ponerse.
-HUB_PROGRESSION_SOON,Rune Fragments will be spent here. The console is still dark.,Aquí se gastarán los Fragmentos de Runa. La consola sigue apagada.
 ELITE_BREAKER,The Breaker,El Quebrantador
 ELITE_BREAKER_DESC,"A slow armoured brute. Step out of its slam, then hit it while its fist is stuck.","Un bruto acorazado y lento. Sal de su golpe al suelo y pégale mientras tiene el puño atascado."
 ELITE_RIFT_HUNTER,The Rift Hunter,El Cazador de Grietas
@@ -1244,10 +1242,8 @@ PROGRESSION_REVEALED,Revealed: %s. Wear it at the Wardrobe.,Revelada: %s. Pónte
 CAPTION_STRESS_BREAK,[weak point],[punto débil]
 RUN_SUMMARY_LOOPED,Looped ×%d,Bucles ×%d
 UI_PAIR_ON,Element pair!,¡Par elemental!
-UI_PAIR_LEVEL,Element pair · Lv %d,Par elemental · Nv %d
 UI_PAIR_PREVIEW_ON,Pair: %s,Par: %s
 UI_PAIR_PREVIEW_UP,%s → Lv %d,%s → Nv %d
-UI_PAIR_BIG,Element pair! %s,¡Par elemental! %s
 PAIR_THERMAL_SHOCK,Thermal Shock,Choque Térmico
 PAIR_THERMAL_SHOCK_DESC,A foe burning and frozen bursts when hit (up to x3).,Un enemigo ardiendo y helado estalla al golpe (hasta x3).
 PAIR_TOXIC_FUMES,Toxic Fumes,Humos Tóxicos
@@ -1272,19 +1268,19 @@ ACH_SWORD_UNBOUND_NAME,Sword Unbound,Espada liberada
 ACH_SWORD_UNBOUND_DESC,Beat the Hollow Crown with the Gun.,Vence a la Corona Hueca con la Pistola.
 BUILD_BLADE_LOCKED,Beat the Hollow Crown with the Gun to unlock,Vence a la Corona Hueca con la Pistola para desbloquear
 FORMCARD_OFF,Does nothing on this form,No hace nada con esta forma
-FORMCARD_LASER_TWIN,Two beams burn side by side,Dos rayos arden lado a lado
-FORMCARD_LASER_PIERCE,The beam burns through every enemy,El rayo atraviesa a todos los enemigos
-FORMCARD_LASER_HALO,"The beam's end fans 3 short beams (3 m, 40 %)","El final del rayo abre 3 rayos cortos (3 m, 40 %)"
-FORMCARD_LASER_RING,A 1.4 m lightning ring rides the beam's tip (50 %),"Un anillo de rayos de 1,4 m viaja en la punta (50 %)"
-FORMCARD_LASER_BACKFIRE,A 4.5 m beam also burns behind you,"Un rayo de 4,5 m también arde a tu espalda"
-FORMCARD_LASER_RICOCHET,The beam reflects off the first wall and keeps its reach,El rayo se refleja en la primera pared y sigue
-FORMCARD_LASER_HOMING,"The beam bends to the nearest enemy; with Pierce, up to 5","El rayo se curva al enemigo más cercano; con Perforación, hasta 5"
-FORMCARD_LASER_ECHO,Where the beam swept strikes again 0.4 s later (50 %),"Donde pasó el rayo golpea otra vez 0,4 s después (50 %)"
-FORMCARD_LASER_BIG_SHOT,"A beam twice as wide, +60 % damage, slower to turn","Un rayo el doble de ancho, +60 % de daño, gira más lento"
-FORMCARD_LASER_RAPID_FIRE,"Ticks faster over 2 s held; thinner beam, -35 % damage","Golpea más rápido en 2 s; rayo fino, -35 % de daño"
-FORMCARD_LASER_SPLIT,"The first enemy hit forks the beam in 2 (4 m, 50 %)","El primer enemigo golpeado bifurca el rayo en 2 (4 m, 50 %)"
+FORMCARD_LASER_TWIN,Two lances fire side by side,Dos lanzas se disparan lado a lado
+FORMCARD_LASER_PIERCE,The lance already pierces every enemy,La lanza ya atraviesa a todos los enemigos
+FORMCARD_LASER_HALO,"The lance's end fans 3 short lances (3 m, 40 %)","El final de la lanza abre 3 lanzas cortas (3 m, 40 %)"
+FORMCARD_LASER_RING,A 1.4 m lightning ring bursts at the lance's tip (50 %),"Un anillo de rayos de 1,4 m estalla en la punta de la lanza (50 %)"
+FORMCARD_LASER_BACKFIRE,A 4.5 m lance also fires behind you,"Una lanza de 4,5 m también se dispara a tu espalda"
+FORMCARD_LASER_RICOCHET,The lance reflects off the first wall and keeps its reach,La lanza se refleja en la primera pared y sigue su alcance
+FORMCARD_LASER_HOMING,"The lance curves through the nearest enemies, up to 8","La lanza se curva a través de los enemigos más cercanos, hasta 8"
+FORMCARD_LASER_ECHO,The lance strikes its path again 0.4 s later (50 %),"La lanza golpea su recorrido otra vez 0,4 s después (50 %)"
+FORMCARD_LASER_BIG_SHOT,"A lance twice as wide, +60 % damage","Una lanza el doble de ancha, +60 % de daño"
+FORMCARD_LASER_RAPID_FIRE,"Fires 30 % more often, -20 % damage a shot","Dispara un 30 % más a menudo, -20 % de daño por disparo"
+FORMCARD_LASER_SPLIT,"The first enemy hit forks the lance in 2 (4 m, 50 %)","El primer enemigo golpeado bifurca la lanza en 2 (4 m, 50 %)"
 FORMCARD_LASER_MINE,"The tip drops a mine every 1.0 s (1.5 m burst, up to 4)","La punta suelta una mina cada 1,0 s (1,5 m, hasta 4)"
-FORMCARD_LASER_SPIRAL,"The beam wiggles side to side (12 degrees, twice a second)","El rayo ondula de lado a lado (12 grados, 2 veces por segundo)"
+FORMCARD_LASER_SPIRAL,"Each lance swings a little side to side (12 degrees)","Cada lanza oscila un poco de lado a lado (12 grados)"
 FORMCARD_VOID_TWIN,Two voids per cast,Dos vacíos por lanzamiento
 FORMCARD_VOID_RING,"When it ends, it collapses in a 3 m lightning ring (60 %)","Al terminar, colapsa en un anillo de rayos de 3 m (60 %)"
 FORMCARD_VOID_BACKFIRE,A second void opens straight behind you,Un segundo vacío se abre justo a tu espalda
@@ -1412,7 +1408,7 @@ HUD_LOOP_NEW_RULE,New rule: %s,Nueva regla: %s
 LOOP_RULE_SWIFT_NAME,Quickened,Acelerados
 LOOP_RULE_SWIFT_DESC,Enemies move and charge faster.,Los enemigos se mueven y cargan más rápido.
 LOOP_RULE_LEAN_MENDING_NAME,Lean Mending,Curación escasa
-LOOP_RULE_LEAN_MENDING_DESC,"Heal orbs drop half as often, but heal twice as much.","Los orbes de curación caen la mitad de veces, pero curan el doble."
+LOOP_RULE_LEAN_MENDING_DESC,"Heal orbs take twice the kills to earn, but heal twice as much.","Los orbes de curación cuestan el doble de bajas, pero curan el doble."
 LOOP_RULE_ELITE_HUNT_NAME,Elite Hunt,Caza de élites
 LOOP_RULE_ELITE_HUNT_DESC,Elite rooms appear on every floor.,Las salas de élite aparecen en todos los pisos.
 LOOP_RULE_SHIELDED_NAME,Shielded,Escudados
@@ -1453,8 +1449,6 @@ UI_TRAINING_CARD_ADDED,Added: %s,Añadida: %s
 UI_TRAINING_WAND_FULL,The wand is full: remove a card first.,La varita está llena: quita una carta primero.
 UI_TRAINING_CARD_REMOVED,Card removed.,Carta quitada.
 UI_TRAINING_NO_CARD,No wand card to remove.,No hay carta de varita que quitar.
-UI_FORECAST_TITLE,FORECAST,PREVISIÓN
-UI_FORECAST_AFTER,AFTER THE SWAP,TRAS EL CAMBIO
 UI_FORECAST_LINE,%s,%s
 UI_FORECAST_THEN,%s → %s,%s → %s
 UI_FORECAST_AND,"%s, %s","%s, %s"
@@ -1568,3 +1562,184 @@ CONST_SUPERNOVA,Supernova,Supernova
 CONST_SUPERNOVA_DESC,Starbound cards count twice.,Las cartas Estelares cuentan doble.
 CONST_HUNTERS_SKY,Hunter's Sky,Cielo del cazador
 CONST_HUNTERS_SKY_DESC,+50 % damage to elites and bosses.,+50 % de daño a élites y jefes.
+UI_BOSS_HINTS,Boss hints,Pistas de jefe
+HINT_SHADE_LANTERN,Step on a lantern to light it,Pisa un farol para encenderlo
+HINT_TWINS_ACTIVE,Hit the glowing twin,Golpea al gemelo que brilla
+ENEMY_DUST_MITE,Dust Mite,Ácaro de Polvo
+ENEMY_DUST_MITE_DESC,"A fist-sized stone tick. Harmless alone; a surge of them swarms you.","Una garrapata de piedra del tamaño de un puño. Inofensiva sola; en oleada, te rodean."
+ENEMY_CAVE_BAT,Cave Bat,Murciélago de Cueva
+ENEMY_CAVE_BAT_DESC,"A small bat with stone wings. It flies low, over the floor's traps.","Un murciélago pequeño de alas de piedra. Vuela bajo, por encima de las trampas del suelo."
+ENEMY_EMBER_FLEA,Ember Flea,Pulga de Brasa
+ENEMY_EMBER_FLEA_DESC,"A glowing flea that hops in short arcs. It leaves a spark when it dies.","Una pulga ardiente que salta en arcos cortos. Deja una chispa al morir."
+ENEMY_ICE_CRAB,Ice Crab,Cangrejo de Hielo
+ENEMY_ICE_CRAB_DESC,"A flat crab with an ice shell. It slides a little when it stops.","Un cangrejo plano de caparazón de hielo. Resbala un poco al pararse."
+ENEMY_STAR_MOTE,Star Mote,Mota Estelar
+ENEMY_STAR_MOTE_DESC,"A tiny floating star with a tail. They come in drifts.","Una estrella diminuta que flota con su cola. Llegan a bandadas."
+CAUSE_DUST_MITE,Dust Mites swarmed you.,Los Ácaros de Polvo te rodearon.
+CAUSE_CAVE_BAT,Cave Bats swarmed you.,Los Murciélagos de Cueva te rodearon.
+CAUSE_EMBER_FLEA,Ember Fleas swarmed you.,Las Pulgas de Brasa te rodearon.
+CAUSE_ICE_CRAB,Ice Crabs swarmed you.,Los Cangrejos de Hielo te rodearon.
+CAUSE_STAR_MOTE,Star Motes swarmed you.,Las Motas Estelares te rodearon.
+HUD_SURGE,A horde is coming!,¡Se acerca una horda!
+UI_CARD_SPELL_LEVEL,Spell · Lv %d,Hechizo · Nv %d
+SPELL_FROST_NOVA,Frost Nova,Nova de escarcha
+SPELL_FROST_NOVA_DESC,"Every 12 s, by itself: every enemy within 3.5 m freezes for 1 s and is pushed 1 m away.","Cada 12 s, por sí sola: todo enemigo a 3,5 m se congela 1 s y sale empujado 1 m."
+SPELL_FROST_NOVA_LV1,"Freezes within 3.5 m for 1 s, pushes 1 m.","Congela a 3,5 m durante 1 s, empuja 1 m."
+SPELL_FROST_NOVA_LV2,"Radius 4 m, freeze 1.25 s.","Radio 4 m, congela 1,25 s."
+SPELL_FROST_NOVA_LV3,Radius 4.5 m.,"Radio 4,5 m."
+SPELL_FROST_NOVA_LV4,"Radius 5 m, freeze 1.5 s.","Radio 5 m, congela 1,5 s."
+SPELL_FROST_NOVA_LV5,A frozen enemy you hit shatters for bonus damage.,Un enemigo congelado que golpeas se rompe con daño extra.
+SPELL_FIREBALL,Fireball,Bola de fuego
+SPELL_FIREBALL_DESC,"Every 12 s, by itself: a slow fireball flies at the densest pack and bursts 3 m, setting everything on fire.","Cada 12 s, por sí sola: una bola de fuego lenta vuela al grupo más denso y estalla en 3 m, prendiendo fuego a todo."
+SPELL_FIREBALL_LV1,"One ball, a 3 m burst that burns.","Una bola, un estallido de 3 m que quema."
+SPELL_FIREBALL_LV2,Burst 3.5 m.,"Estallido de 3,5 m."
+SPELL_FIREBALL_LV3,Two balls at two packs.,Dos bolas a dos grupos.
+SPELL_FIREBALL_LV4,Burst 4 m.,Estallido de 4 m.
+SPELL_FIREBALL_LV5,The burst leaves Burning Ground for 3 s.,El estallido deja Suelo ardiente durante 3 s.
+SPELL_SKY_STRIKE,Sky Strike,Rayo celeste
+SPELL_SKY_STRIKE_DESC,"Every 12 s, by itself: 3 bolts strike random enemies within 10 m, each jumping to 1 more.","Cada 12 s, por sí solo: 3 rayos caen sobre enemigos al azar a 10 m y cada uno salta a 1 más."
+SPELL_SKY_STRIKE_LV1,"3 bolts, each jumps once.","3 rayos, cada uno salta una vez."
+SPELL_SKY_STRIKE_LV2,4 bolts.,4 rayos.
+SPELL_SKY_STRIKE_LV3,More damage.,Más daño.
+SPELL_SKY_STRIKE_LV4,5 bolts.,5 rayos.
+SPELL_SKY_STRIKE_LV5,"6 bolts, more damage; each stuns for 0.3 s.","6 rayos, más daño; cada uno aturde 0,3 s."
+SPELL_BLIZZARD,Blizzard,Ventisca
+SPELL_BLIZZARD_DESC,"Every 12 s, by itself: a 4 m storm settles on the densest pack for 4 s, hitting every 0.5 s and chilling everything inside.","Cada 12 s, por sí sola: una tormenta de 4 m cae sobre el grupo más denso durante 4 s, golpea cada 0,5 s y enfría todo lo que hay dentro."
+SPELL_BLIZZARD_LV1,A 4 m storm for 4 s that chills.,Una tormenta de 4 m durante 4 s que enfría.
+SPELL_BLIZZARD_LV2,"Radius 4.5 m, 4.5 s.","Radio 4,5 m, 4,5 s."
+SPELL_BLIZZARD_LV3,"Radius 5 m, 5 s.","Radio 5 m, 5 s."
+SPELL_BLIZZARD_LV4,"Radius 5.5 m, 6 s.","Radio 5,5 m, 6 s."
+SPELL_BLIZZARD_LV5,Enemies still inside at the end freeze for 1 s.,Los enemigos que siguen dentro al final se congelan 1 s.
+SPELL_ICE_LANCES,Ice Lances,Lanzas de hielo
+SPELL_ICE_LANCES_DESC,"Every 12 s, by itself: 3 ice shards fly at the 3 nearest enemies, each passing through up to 2 more.","Cada 12 s, por sí solas: 3 esquirlas de hielo vuelan a los 3 enemigos más cercanos y cada una atraviesa hasta 2 más."
+SPELL_ICE_LANCES_LV1,"3 shards, each passes through 2.","3 esquirlas, cada una atraviesa 2."
+SPELL_ICE_LANCES_LV2,4 shards.,4 esquirlas.
+SPELL_ICE_LANCES_LV3,5 shards.,5 esquirlas.
+SPELL_ICE_LANCES_LV4,"6 shards, more damage.","6 esquirlas, más daño."
+SPELL_ICE_LANCES_LV5,A shard that kills splits into 2 more.,Una esquirla que mata se parte en 2 más.
+SPELL_BURNING_GROUND,Burning Ground,Suelo ardiente
+SPELL_BURNING_GROUND_DESC,"Every 10 s, by itself: a 3 m fire patch burns under you for 5 s; enemies standing in it burn.","Cada 10 s, por sí solo: una mancha de fuego de 3 m arde bajo ti durante 5 s; los enemigos que la pisan arden."
+SPELL_BURNING_GROUND_LV1,A 3 m patch for 5 s.,Una mancha de 3 m durante 5 s.
+SPELL_BURNING_GROUND_LV2,Radius 3.5 m.,"Radio 3,5 m."
+SPELL_BURNING_GROUND_LV3,Lasts 6.5 s.,"Dura 6,5 s."
+SPELL_BURNING_GROUND_LV4,"Radius 4 m, 8 s.","Radio 4 m, 8 s."
+SPELL_BURNING_GROUND_LV5,The patch follows you at half speed.,La mancha te sigue a media velocidad.
+SPELL_METEOR,Meteor,Meteoro
+SPELL_METEOR_DESC,"Every 16 s, by itself: a mark appears on the densest pack; 1.2 s later a huge strike hits 5 m and knocks enemies down for 0.5 s. Enemies can walk out of the mark.","Cada 16 s, por sí solo: aparece una marca sobre el grupo más denso; 1,2 s después un golpe enorme impacta en 5 m y derriba a los enemigos 0,5 s. Los enemigos pueden salir de la marca."
+SPELL_METEOR_LV1,A 5 m strike after 1.2 s.,"Un impacto de 5 m tras 1,2 s."
+SPELL_METEOR_LV2,"Radius 5.5 m, more damage.","Radio 5,5 m, más daño."
+SPELL_METEOR_LV3,"Radius 6 m, more damage.","Radio 6 m, más daño."
+SPELL_METEOR_LV4,"Radius 6.5 m, more damage.","Radio 6,5 m, más daño."
+SPELL_METEOR_LV5,The crater burns for 4 s.,El cráter arde durante 4 s.
+SPELL_BALL_LIGHTNING,Ball Lightning,Bola de rayos
+SPELL_BALL_LIGHTNING_DESC,"Every 12 s, by itself: a slow orb rolls out ahead of you for 4 s, zapping the nearest enemy within 2.5 m every 0.3 s.","Cada 12 s, por sí sola: un orbe lento rueda delante de ti durante 4 s y electrocuta al enemigo más cercano a 2,5 m cada 0,3 s."
+SPELL_BALL_LIGHTNING_LV1,Zaps 1 enemy within 2.5 m.,"Electrocuta a 1 enemigo a 2,5 m."
+SPELL_BALL_LIGHTNING_LV2,Zap range 3 m.,Alcance 3 m.
+SPELL_BALL_LIGHTNING_LV3,Zaps 2 enemies.,Electrocuta a 2 enemigos.
+SPELL_BALL_LIGHTNING_LV4,Zap range 3.5 m.,"Alcance 3,5 m."
+SPELL_BALL_LIGHTNING_LV5,It bursts at the end.,Estalla al final.
+SPELL_STATIC_FIELD,Static Field,Campo estático
+SPELL_STATIC_FIELD_DESC,"Every 12 s, by itself: a 2.5 m ring around you for 4 s; every enemy touching it is shocked every 0.5 s.","Cada 12 s, por sí solo: un anillo de 2,5 m a tu alrededor durante 4 s; todo enemigo que lo toque recibe una descarga cada 0,5 s."
+SPELL_STATIC_FIELD_LV1,A 2.5 m ring for 4 s.,"Un anillo de 2,5 m durante 4 s."
+SPELL_STATIC_FIELD_LV2,Radius 3 m.,Radio 3 m.
+SPELL_STATIC_FIELD_LV3,Lasts 5 s.,Dura 5 s.
+SPELL_STATIC_FIELD_LV4,"Radius 3.5 m, 6 s.","Radio 3,5 m, 6 s."
+SPELL_STATIC_FIELD_LV5,Your dash discharges it in a 4 m burst.,Tu esquiva lo descarga en un estallido de 4 m.
+SPELL_VENOM_ORB,Venom Orb,Orbe venenoso
+SPELL_VENOM_ORB_DESC,"Every 12 s, by itself: an orb lobbed at the densest pack lands as a 3 m pool for 5 s; each enemy in it gains a venom stack every 0.5 s.","Cada 12 s, por sí solo: un orbe lanzado al grupo más denso cae como un charco de 3 m durante 5 s; cada enemigo dentro gana una carga de veneno cada 0,5 s."
+SPELL_VENOM_ORB_LV1,A 3 m pool for 5 s.,Un charco de 3 m durante 5 s.
+SPELL_VENOM_ORB_LV2,Radius 3.5 m.,"Radio 3,5 m."
+SPELL_VENOM_ORB_LV3,Lasts 6 s.,Dura 6 s.
+SPELL_VENOM_ORB_LV4,"Radius 4 m, 7 s.","Radio 4 m, 7 s."
+SPELL_VENOM_ORB_LV5,Enemies that die in it leave a small pool.,Los enemigos que mueren dentro dejan un charco pequeño.
+SPELL_TOXIC_CLOUD,Toxic Cloud,Nube tóxica
+SPELL_TOXIC_CLOUD_DESC,"Every 12 s, by itself: a cloud trails behind you for 6 s, a 2 m puff every 0.5 s that lasts 2 s; enemies chasing you walk through it.","Cada 12 s, por sí sola: una nube te sigue durante 6 s, una bocanada de 2 m cada 0,5 s que dura 2 s; los enemigos que te persiguen la atraviesan."
+SPELL_TOXIC_CLOUD_LV1,2 m puffs for 6 s.,Bocanadas de 2 m durante 6 s.
+SPELL_TOXIC_CLOUD_LV2,Puffs 2.2 m.,"Bocanadas de 2,2 m."
+SPELL_TOXIC_CLOUD_LV3,"Puffs 2.4 m, more damage.","Bocanadas de 2,4 m, más daño."
+SPELL_TOXIC_CLOUD_LV4,Puffs 2.6 m.,"Bocanadas de 2,6 m."
+SPELL_TOXIC_CLOUD_LV5,The cloud also slows.,La nube también ralentiza.
+SPELL_SPITTER_VINE,Spitter Vine,Enredadera escupidora
+SPELL_SPITTER_VINE_DESC,"Every 12 s, by itself: a vine grows where you stand for 8 s and spits venom at enemies within 7 m, one shot every 0.6 s.","Cada 12 s, por sí sola: una enredadera crece donde estás durante 8 s y escupe veneno a los enemigos a 7 m, un disparo cada 0,6 s."
+SPELL_SPITTER_VINE_LV1,"One head, 8 s.","Una cabeza, 8 s."
+SPELL_SPITTER_VINE_LV2,Lasts 10 s.,Dura 10 s.
+SPELL_SPITTER_VINE_LV3,Two heads.,Dos cabezas.
+SPELL_SPITTER_VINE_LV4,Lasts 12 s.,Dura 12 s.
+SPELL_SPITTER_VINE_LV5,Its shots pass through.,Sus disparos atraviesan.
+SPELL_BLOOD_THORNS,Blood Thorns,Espinas de sangre
+SPELL_BLOOD_THORNS_DESC,"Every 12 s, by itself: thorns burst out of the ground in a ring from 2 m to 4 m around you; every enemy hit bleeds.","Cada 12 s, por sí solas: brotan espinas del suelo en un anillo de 2 m a 4 m a tu alrededor; todo enemigo alcanzado sangra."
+SPELL_BLOOD_THORNS_LV1,A ring from 2 m to 4 m.,Un anillo de 2 m a 4 m.
+SPELL_BLOOD_THORNS_LV2,More damage.,Más daño.
+SPELL_BLOOD_THORNS_LV3,A second ring a beat later.,Un segundo anillo un instante después.
+SPELL_BLOOD_THORNS_LV4,More damage.,Más daño.
+SPELL_BLOOD_THORNS_LV5,The thorns stay 2 s as a wall.,Las espinas se quedan 2 s como un muro.
+SPELL_HEMORRHAGE,Hemorrhage,Hemorragia
+SPELL_HEMORRHAGE_DESC,"Every 12 s, by itself: marks the enemy with the most HP within 10 m. After 3 s, all its bleed deals its damage at once and spreads to enemies within 3 m.","Cada 12 s, por sí sola: marca al enemigo con más vida a 10 m. A los 3 s, todo su sangrado hace su daño de golpe y se extiende a los enemigos a 3 m."
+SPELL_HEMORRHAGE_LV1,"One mark, spreads 3 m.","Una marca, se extiende 3 m."
+SPELL_HEMORRHAGE_LV2,Spreads 3.5 m.,"Se extiende 3,5 m."
+SPELL_HEMORRHAGE_LV3,Spreads 4 m.,Se extiende 4 m.
+SPELL_HEMORRHAGE_LV4,Spreads 4.5 m.,"Se extiende 4,5 m."
+SPELL_HEMORRHAGE_LV5,Marks 2 enemies.,Marca a 2 enemigos.
+SPELL_LEECH,Leech,Sanguijuela
+SPELL_LEECH_DESC,"Every 12 s, by itself: for 4 s, every bleeding enemy within 6 m is drained; you heal 1 HP for each 25 damage it deals, at most 10 HP a cast.","Cada 12 s, por sí sola: durante 4 s, todo enemigo que sangra a 6 m es drenado; te curas 1 PV por cada 25 de daño, como mucho 10 PV por lanzamiento."
+SPELL_LEECH_LV1,"Drains for 4 s, heals up to 10 HP.","Drena 4 s, cura hasta 10 PV."
+SPELL_LEECH_LV2,Heals up to 13 HP.,Cura hasta 13 PV.
+SPELL_LEECH_LV3,"Heals up to 16 HP, more damage.","Cura hasta 16 PV, más daño."
+SPELL_LEECH_LV4,Heals up to 20 HP.,Cura hasta 20 PV.
+SPELL_LEECH_LV5,Also drains enemies that are not bleeding (at half).,También drena a los enemigos que no sangran (a la mitad).
+ENEMY_RUBBLE_WARDEN,Rubble Warden,Guardián de Escombros
+ENEMY_RUBBLE_WARDEN_DESC,"A Warden in a crust of rubble. At half health the crust falls off and leaves a patch of rubble that slows you for a few seconds.","Un Guardián con una costra de escombros. A media vida la costra cae y deja un montón de escombros que te ralentiza unos segundos."
+ENEMY_DIM_NEEDLE,Dim Needle,Aguja Tenue
+ENEMY_DIM_NEEDLE_DESC,"A Needle of the dark. Its shots stay dark until they are close, then light up.","Una Aguja de la oscuridad. Sus disparos siguen oscuros hasta que están cerca y entonces se encienden."
+ENEMY_EMBER_CHARGER,Ember Charger,Embestidor de Ascuas
+ENEMY_EMBER_CHARGER_DESC,"A Charger full of embers. Its charge leaves a trail of fire for a moment.","Un Embestidor lleno de ascuas. Su embestida deja un rastro de fuego un momento."
+ENEMY_FROST_CHARGER,Frost Charger,Embestidor de Escarcha
+ENEMY_FROST_CHARGER_DESC,"A Charger of the ice. Its charge leaves a slick where you slide.","Un Embestidor del hielo. Su embestida deja una placa donde resbalas."
+ENEMY_SPLIT_SNIPER,Split Sniper,Francotirador Bífido
+ENEMY_SPLIT_SNIPER_DESC,"A Sniper of the stars. Halfway, its shot splits into three.","Un Francotirador de las estrellas. A medio camino, su disparo se divide en tres."
+CAUSE_RUBBLE_WARDEN,A Rubble Warden's slam crushed you.,El golpe de un Guardián de Escombros te aplastó.
+CAUSE_DIM_NEEDLE,A Dim Needle's dark bolts got you.,Los proyectiles oscuros de una Aguja Tenue te alcanzaron.
+CAUSE_EMBER_CHARGER,An Ember Charger ran you down.,Un Embestidor de Ascuas te arrolló.
+CAUSE_FROST_CHARGER,A Frost Charger ran you down.,Un Embestidor de Escarcha te arrolló.
+CAUSE_SPLIT_SNIPER,A Split Sniper's shot took you down.,El disparo de un Francotirador Bífido te abatió.
+CAUSE_EMBER_TRAIL,An Ember Charger's fire burned you.,El fuego de un Embestidor de Ascuas te quemó.
+ENEMY_WIRE_WEAVER,Wire Weaver,Tejedor de Cables
+ENEMY_WIRE_WEAVER_DESC,"Plants two posts and strings a live cable between them that hurts and blocks your way. Break a post to drop its cable, or kill the Weaver.","Clava dos postes y tiende entre ellos un cable vivo que hiere y te corta el paso. Rompe un poste para tirar su cable, o mata al Tejedor."
+ENEMY_WIRE_POST,Cable Post,Poste de Cable
+ENEMY_SCRAP_HOUND,Scrap Hound,Sabueso de Chatarra
+ENEMY_SCRAP_HOUND_DESC,"Circles you and darts in from behind while you attack something else. Its eyes flash as it turns in: turn and hit it, and it stops.","Te rodea y se lanza por la espalda mientras atacas a otro. Sus ojos destellan al girarse: date la vuelta y golpéalo, y se detiene."
+ENEMY_ROCK_LURKER,Rock Lurker,Acechador de Roca
+ENEMY_ROCK_LURKER_DESC,"Waits disguised as a boulder, cover for both sides. A faint glow in its cracks and a rumble give it away: shoot glowing boulders before you walk past.","Espera disfrazado de roca, cobertura para ambos bandos. Un leve brillo en sus grietas y un retumbo lo delatan: dispara a las rocas que brillan antes de pasar."
+ENEMY_STONE_THROWER,Stone Thrower,Lanzapiedras
+ENEMY_STONE_THROWER_DESC,"Lifts a rock and throws it where you stand; a ring marks the landing. The rock stays as cover for a while.","Levanta una roca y la lanza donde estás; un anillo marca dónde cae. La roca queda un rato como cobertura."
+CAUSE_WIRE_WEAVER,A Wire Weaver's cable shocked you.,El cable de un Tejedor de Cables te electrocutó.
+CAUSE_WIRE_CABLE,A Wire Weaver's live cable shocked you.,El cable vivo de un Tejedor de Cables te electrocutó.
+CAUSE_SCRAP_HOUND,A Scrap Hound bit you from behind.,Un Sabueso de Chatarra te mordió por la espalda.
+CAUSE_ROCK_LURKER,A Rock Lurker burst out and crushed you.,Un Acechador de Roca salió de golpe y te aplastó.
+CAUSE_STONE_THROWER,A Stone Thrower's rock crushed you.,La roca de un Lanzapiedras te aplastó.
+ENEMY_KILN_BEETLE,Kiln Beetle,Escarabajo Horno
+ENEMY_KILN_BEETLE_DESC,"A slow armoured beetle full of fire. It glows brighter as it weakens, and bursts a second after it dies. Kill it away from you, or among its friends.","Un escarabajo acorazado y lento, lleno de fuego. Brilla más cuanto más débil está y estalla un segundo después de morir. Mátalo lejos de ti, o entre los suyos."
+ENEMY_CINDER_PRIEST,Cinder Priest,Sacerdote de Ceniza
+ENEMY_CINDER_PRIEST_DESC,"It never fights. It stands by a lava vent and makes it erupt every few seconds, the vent pulsing with its staff. Kill it first, or pass between eruptions.","Nunca lucha. Se queda junto a una grieta de lava y la hace estallar cada pocos segundos; la grieta late con su báculo. Mátalo primero, o pasa entre erupciones."
+ENEMY_FROST_SPITTER,Frost Spitter,Escupidor de Escarcha
+ENEMY_FROST_SPITTER_DESC,"It lobs ice blobs; a blue arc marks where each lands. They leave slick ice where you slide. Keep off the patches, or dash across them.","Lanza bolas de hielo; un arco azul marca dónde cae cada una. Dejan hielo resbaladizo donde patinas. No pises las placas, o crúzalas con un esquive."
+ENEMY_GLACIER_TURTLE,Glacier Turtle,Tortuga Glaciar
+ENEMY_GLACIER_TURTLE_DESC,"Its ice shell blocks every hit from the front, and it turns slowly to face you. Go round it, or break the shell: its chunks slide away and hurt the enemies they hit.","Su caparazón de hielo para todo golpe de frente, y se gira despacio hacia ti. Rodéala, o rompe el caparazón: sus trozos salen despedidos y hieren a los enemigos que tocan."
+CAUSE_KILN_BEETLE,A Kiln Beetle crushed you.,Un Escarabajo Horno te aplastó.
+CAUSE_CINDER_PRIEST,A Cinder Priest's vent burned you.,La grieta de un Sacerdote de Ceniza te quemó.
+CAUSE_FROST_SPITTER,A Frost Spitter froze you.,Un Escupidor de Escarcha te congeló.
+CAUSE_GLACIER_TURTLE,A Glacier Turtle crushed you.,Una Tortuga Glaciar te aplastó.
+CAUSE_KILN_BURST,A Kiln Beetle burst on you.,Un Escarabajo Horno estalló sobre ti.
+CAUSE_CINDER_VENT,A lava vent erupted under you.,Una grieta de lava estalló bajo tus pies.
+CAUSE_ICE_CHUNK,A chunk of a Glacier Turtle's shell hit you.,Un trozo del caparazón de una Tortuga Glaciar te golpeó.
+ENEMY_STAR_WARPER,Star Warper,Saltaestrellas
+ENEMY_STAR_WARPER_DESC,"Marks a star beside you, then blinks onto it and strikes a second later. Step off the star's ring to dodge, or stand on the star to stop the blink and stun it.","Marca una estrella a tu lado y un segundo después salta sobre ella y golpea. Sal de su anillo para esquivarlo, o pisa la estrella para frenar el salto y aturdirlo."
+ENEMY_GRAVITY_NODE,Gravity Node,Nodo Gravitatorio
+ENEMY_GRAVITY_NODE_DESC,"A floating orb that bends every shot near it toward itself, yours and theirs. Kill it to straighten your aim, or let it pull their shots away from you.","Un orbe flotante que curva hacia sí cada disparo cercano, los tuyos y los suyos. Destrúyelo para enderezar tu puntería, o deja que desvíe los suyos lejos de ti."
+CAUSE_STAR_WARPER,A Star Warper's blink took you down.,El salto de un Saltaestrellas te abatió.
+CAUSE_GRAVITY_NODE,A Gravity Node took you down.,Un Nodo Gravitatorio te abatió.
+RELIC_CITY_HEART,The City's Heart,El Corazón de la Ciudad
+RELIC_CITY_HEART_DESC,"Once a run, a blow that would kill you leaves you at 1 HP instead, and a shock ring bursts from you (4 m).","Una vez por partida, un golpe que te mataría te deja a 1 PV y un anillo de choque estalla a tu alrededor (4 m)."
+HEART_PEDESTAL_PROMPT,Take,Tomar
+HEART_DOOR_PROMPT,Enter,Entrar
+UI_CODEX_SECTION_RELICS,Relics,Reliquias

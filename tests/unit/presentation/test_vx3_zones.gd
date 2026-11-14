@@ -397,7 +397,7 @@ func test_status_visuals_hide_their_own_orbs_the_pack_draws() -> void:
 
 # --- Toxic Fumes (R24) ------------------------------------------------------------------------------------------
 func _world() -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var w := FloorScenario.build(
 		4,
 		PlayerTable.starting_values(),

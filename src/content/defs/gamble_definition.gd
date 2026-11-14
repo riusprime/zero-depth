@@ -22,11 +22,11 @@ extends ContentDef
 ## spot, at the hall's nearest clear spawn point, then at the nearest clear spawn point of a room next to the hall.
 @export var spot_distance_m := 2.6
 @export var clear_radius_m := 0.9
-## v0.8.0 N14 (O72): the chance a floor has a shrine, in per mille (400: 40 % of floors).
+## The chance a floor has a shrine, in per mille (400: 40 % of floors).
 @export var floor_chance_permille := 400
-## v0.8.0 N14 (O72): the stats one shrine grants before it is spent (a failed use doesn't count).
+## The stats one shrine grants before it is spent (a failed use doesn't count).
 @export var max_wins := 3
-## v0.8.0 N14 (O72): the chance a paid use fails, in per mille (300: 30 %): paid, no stat, the price still rises.
+## The chance a paid use fails, in per mille (300: 30 %): paid, no stat, the price still rises.
 @export var fail_permille := 300
 @export var stats: Array[GambleStatEntry] = []
 

@@ -1,7 +1,7 @@
 class_name EventChoiceDefinition
 extends Resource
 ## One choice of an event room (v0.5.0 EV, PLAN R3; CONTENT_SCHEMA §9): a cost and a reward, and optionally a curse
-## (R4). The panel shows all three before you take it (BLUEPRINT §H). "Leave" is never data: every panel ends with it.
+## . The panel shows all three before you take it (BLUEPRINT §H). "Leave" is never data: every panel ends with it.
 
 ## What the choice costs (Events.Cost mirrors the order; appended, never renumbered):
 ## none; hp (lose `cost_amount` % of max HP now, never below 1 HP); max_hp (the max HP stat falls by `cost_amount` %
@@ -25,8 +25,6 @@ const REWARDS: Array[StringName] = [
 	&"shards",
 	&"cleanse",
 ]
-## The rewards that wait for their cost to finish (a fight, a defence).
-const DEFERRED: Array[StringName] = [&"chest", &"shards"]
 
 @export var label_key: StringName
 @export var cost: StringName = &"none"
@@ -51,7 +49,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 		issues.append(ValidationIssue.new(&"range", path, "an HP cost is below 100 %"))
 	if reward in [&"overclock", &"shards"] and reward_amount <= 0.0:
 		issues.append(ValidationIssue.new(&"range", path, "reward %s needs an amount" % reward))
-	if cost == &"fight":  # v0.9.0 EL (owner Q25): retired with the Ambush Cache
+	if cost == &"fight":  # Retired with the Ambush Cache
 		issues.append(ValidationIssue.new(&"unknown", path, "cost fight is retired"))
 	if reward == &"chest" and cost != &"fight":
 		issues.append(ValidationIssue.new(&"range", path, "a chest reward follows a fight"))

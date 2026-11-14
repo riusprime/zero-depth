@@ -36,16 +36,11 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func _grant(e: E2e, main: Main, id: StringName) -> void:
 	var w := e.world()
 	while w.ability_tables[main.driver.debug.ability_choice].id != id:
-		await _click(e, main, "NextAbility")
-	await _click(e, main, "GrantAbility")
+		await e.click_dev("NextAbility")
+	await e.click_dev("GrantAbility")
 	await e.frames(2)
 
 
@@ -65,7 +60,7 @@ func test_open_altars_until_a_new_card_is_offered_and_take_it() -> void:
 	var w := e.world()
 	var hud: Hud = main.get_node("UI/Hud")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	for id in [&"blink"]:
 		await _grant(e, main, id)
 	await e.tap(KEY_QUOTELEFT)

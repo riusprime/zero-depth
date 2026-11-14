@@ -6,7 +6,7 @@ extends ContentDef
 ## floor generator reads). Every number is a starting value the owner tunes after playing.
 
 @export var name_key: StringName
-## v0.7.5 CX: the Codex's line about this boss (a locale key; empty shows no line).
+## The Codex's line about this boss (a locale key; empty shows no line).
 @export var desc_key: StringName
 @export var hp := 1000
 @export var radius_m := 1.2
@@ -32,9 +32,6 @@ extends ContentDef
 @export var arena_cells := Vector2i(2, 2)
 @export_enum("open", "scatter", "pillars", "centre", "cross", "lines", "bunkers")
 var arena_template := 0
-## v0.7.5 BF1 (owner N18): the room size before every boss moved to the big room; a floor resumed from a save made
-## before then (RunState.legacy_boss_room) is rebuilt with it, so it is the floor it was saved on. (0, 0) = arena_cells.
-@export var legacy_arena_cells := Vector2i.ZERO
 ## Boss challenge (v0.3.0 BX, PLAN L17 and L26). Distances are from the boss's edge to the player.
 ## Ranged armour: the player's hits deal full damage up to ranged_full_m away, falling linearly to
 ## ranged_far_permille at ranged_far_m and beyond (1000 = no ranged armour).
@@ -51,7 +48,7 @@ var arena_template := 0
 @export var weak_point_range_m := 2.5
 @export var weak_point_mult_permille := 1000
 @export var weak_point_stagger_permille := 1000
-## v0.4.0 BO (the Warlord): while the weak point is open the front armour is down (the shield is lifted).
+## The Warlord: while the weak point is open the front armour is down (the shield is lifted).
 @export var weak_point_drops_armour := false
 ## Closing arena: from phase arena_close_phase (-1 = not by phase) or after arena_close_after_seconds of fighting
 ## (0 = not by time), a band creeps in from the room's walls: arena_close_step_m every arena_close_step_seconds
@@ -69,7 +66,7 @@ var arena_template := 0
 ## lead_seconds of their current velocity.
 @export var recovery_permille := 1000
 @export var lead_seconds := 0.0
-## v0.3.5 AI (owner F3): aimed windups track the player until their last track_commit_seconds (0 = lock at the start);
+## Aimed windups track the player until their last track_commit_seconds (0 = lock at the start);
 ## for dash_read_seconds after a dash, aimed attacks go at its landing point (0 = off); beyond gap_close_distance_m
 ## (from the boss's edge) for gap_close_seconds, it performs gap_close_attack (empty = none).
 @export var track_commit_seconds := 0.0
@@ -77,19 +74,19 @@ var arena_template := 0
 @export var gap_close_attack: StringName
 @export var gap_close_distance_m := 5.0
 @export var gap_close_seconds := 2.0
-## v0.10.5 W3-O2 (owner F19): true keeps the boss's floor lines (flood / row_flood lanes, their lava) and its shots
+## True keeps the boss's floor lines (flood / row_flood lanes, their lava) and its shots
 ## apart in time (BossLava.closes_escape): no line attack while its shots fly, no pattern volley while its lines or lava
 ## are down. The Foundry's.
 @export var lines_clear_shots := false
-## v0.9.0 NB1 (BOSSES_4_5.md N1, "every 9 s"; BossTide): > 0 makes the boss perform its phase's signature (the phase's
+## BOSSES_4_5.md N1, "every 9 s"; BossTide: > 0 makes the boss perform its phase's signature (the phase's
 ## first `tide` attack) every signature_every_seconds from one start to the next, the first signature_first_seconds
 ## after it rises, and never by the weighted pick (0 = none). Every phase then holds a `tide` attack.
 @export var signature_every_seconds := 0.0
 @export var signature_first_seconds := 3.0
-## v0.9.0 NB1: where the boss compiles among the floor bosses (BossOrder): 0 for the six before v0.9.0 (by id), 1 and
+## Where the boss compiles among the floor bosses (BossOrder): 0 for the six before v0.9.0 (by id), 1 and
 ## on for the bosses added since, after them, so a saved boss index never moves.
 @export var save_order := 0
-## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): a boss with a twin_kind_id (BossSchemas.TWIN_KINDS) rises as two bodies,
+## BOSSES_4_5.md N2; BossTwin: a boss with a twin_kind_id (BossSchemas.TWIN_KINDS) rises as two bodies,
 ## twin_distance_m apart, sharing one HP; their chain is held between chain_min_m and chain_max_m (within the
 ## approved 3..9 m) and burns a player touching it (chain_width_m wide) chain_burn every chain_burn_seconds; the twin
 ## keeps flank_m from the player; a hit on one body speeds the other to anger_speed_permille for anger_seconds.
@@ -103,6 +100,22 @@ var arena_template := 0
 @export var flank_m := 4.5
 @export var anger_speed_permille := 1400
 @export var anger_seconds := 3.0
+## The twin's own moveset (the boss's is every other attack), the bolt the body
+## standing back casts every twin_bolt_seconds (an attack in no phase), and phase 3's swap: every twin_expose_seconds
+## one body is exposed (takes twin_expose_permille) and the other guarded (twin_guard_permille).
+@export var twin_attack_ids := PackedStringArray()
+@export var twin_bolt_attack: StringName
+@export var twin_bolt_seconds := 4.0
+@export var twin_expose_seconds := 10.0
+@export var twin_expose_permille := 1500
+@export var twin_guard_permille := 500
+## The quake pillars this boss raises from a phase on (empty
+## = none), and the recap line of a pulse that kills.
+@export var quake := {}
+@export var quake_cause_key: StringName
+## The hazards this boss leaves on its floor (empty: none).
+@export var hazard := {}
+@export var hazard_cause_key: StringName
 
 
 func category() -> StringName:
@@ -134,7 +147,9 @@ func validate() -> Array[ValidationIssue]:
 	_check_challenge(issues)
 	_check_cadence(issues)
 	_check_twin(issues)
-	HardRules.validate_streams(self, issues)  # v0.9.5 BH4: the ring stream and the waves
+	HardRules.validate_streams(self, issues)  # The ring stream and the waves
+	QuakeRules.validate(self, issues)  # The quake pillars
+	HazardRules.validate(self, issues)  # The arena hazards
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1
@@ -153,9 +168,9 @@ func validate() -> Array[ValidationIssue]:
 	return issues
 
 
-## v0.9.0 NB1: a cadence needs a `tide` attack in every phase, a first one at least the intro away, and a period
-## longer than each phase's tide (its windup, pull and push). v0.9.0 NB3: or an `echo` (the Clockwork Judge's), the
-## period longer than its windup and its replay (as long as its recording). v0.9.0 NB4: or a Lights Out (the Lantern
+## A cadence needs a `tide` attack in every phase, a first one at least the intro away, and a period
+## longer than each phase's tide (its windup, pull and push). or an `echo` (the Clockwork Judge's), the
+## period longer than its windup and its replay (as long as its recording). or a Lights Out (the Lantern
 ## Shade's), the period longer than its windup and its time to the dark.
 func _check_cadence(issues: Array[ValidationIssue]) -> void:
 	if signature_every_seconds == 0.0:
@@ -164,7 +179,7 @@ func _check_cadence(issues: Array[ValidationIssue]) -> void:
 	if signature_every_seconds < 0.0 or signature_first_seconds < 0.0:
 		issues.append(ValidationIssue.new(&"negative", p, "the signature's cadence is >= 0"))
 	for a in attacks:
-		ShadeRules.check_cadence(a, signature_every_seconds, issues, p)  # v0.9.0 NB4b: the dark lifts in time
+		ShadeRules.check_cadence(a, signature_every_seconds, issues, p)  # The dark lifts in time
 	for ph in phases:
 		var tide: BossAttackDefinition = null
 		for aid in ph.attack_ids:
@@ -186,14 +201,14 @@ func _check_cadence(issues: Array[ValidationIssue]) -> void:
 			+ float(tide.shape_params.get("push_seconds", 0.0))
 			+ float(tide.shape_params.get("record_seconds", 0.0))
 			+ float(tide.shape_params.get("dark_seconds", 0.0))
-		)  # v0.9.0 NB4: Lights Out to its dark
+		)  # Lights Out to its dark
 		if signature_every_seconds <= span:
 			issues.append(
 				ValidationIssue.new(&"duration", p, "signature_every_seconds must exceed its tide")
 			)
 
 
-## v0.9.0 NB2 (BOSSES_4_5.md N2): a twin's kind is known; its chain stays within 3..9 m (min below max, the twin rising
+## BOSSES_4_5.md N2: a twin's kind is known; its chain stays within 3..9 m (min below max, the twin rising
 ## within them), burns a real amount on a real clock along a strip; its anger speeds a body (1000..2000 per mille) for
 ## a real time; and it has a Chain Sweep whose late cause names the burn. Crossfire and Chain Sweep need a twin.
 func _check_twin(issues: Array[ValidationIssue]) -> void:
@@ -235,6 +250,22 @@ func _check_twin(issues: Array[ValidationIssue]) -> void:
 		issues.append(
 			ValidationIssue.new(&"missing", p, "a twin needs a Chain Sweep with a late_cause_key")
 		)
+	_check_twin_roles(issues)
+
+
+## The twin's moveset and its bolt name real attacks, and the clocks and
+## multipliers are real (exposed takes more, guarded less).
+func _check_twin_roles(issues: Array[ValidationIssue]) -> void:
+	var p := resource_path
+	for id in twin_attack_ids:
+		if attack(StringName(id)) == null:
+			issues.append(ValidationIssue.new(&"unknown_attack", p, "no twin attack %s" % id))
+	if twin_bolt_attack == &"" or attack(twin_bolt_attack) == null:
+		issues.append(ValidationIssue.new(&"missing", p, "a twin needs its standing-back bolt"))
+	if twin_bolt_seconds <= 0.0 or twin_expose_seconds <= 0.0:
+		issues.append(ValidationIssue.new(&"not_positive", p, "the twins' clocks are > 0 s"))
+	if twin_expose_permille <= 1000 or twin_guard_permille >= 1000 or twin_guard_permille <= 0:
+		issues.append(ValidationIssue.new(&"range", p, "exposed > 1000 > guarded > 0 per mille"))
 
 
 ## The attack with this id, or null.
@@ -314,7 +345,7 @@ func _check_armour(issues: Array[ValidationIssue]) -> void:
 		issues.append(ValidationIssue.new(&"armour", p, "rear_mult_permille must be 1000..3000"))
 
 
-## Boss challenge (v0.3.0 BX): ranged armour, the punish move, the weak point, the closing arena, the harder AI.
+## Boss challenge: ranged armour, the punish move, the weak point, the closing arena, the harder AI.
 func _check_challenge(issues: Array[ValidationIssue]) -> void:
 	var p := resource_path
 	if ranged_full_m < 0.0 or ranged_far_m <= ranged_full_m:
@@ -375,7 +406,7 @@ func _check_challenge(issues: Array[ValidationIssue]) -> void:
 			issues.append(
 				ValidationIssue.new(&"challenge", p, "gap-close distance and time must be > 0")
 			)
-	for a in attacks:  # v0.8.0 BP (owner O27): a big attack's punish window, after recovery_permille
+	for a in attacks:  # A big attack's punish window, after recovery_permille
 		if a == null or a.hit_class != &"big":
 			continue
 		var rec := int(round(a.recovery_seconds * 60.0)) * recovery_permille / 1000

@@ -1,6 +1,6 @@
 class_name BiomeBackdrop
 extends Node3D
-## v0.9.5 BG: every biome has a deep, slowly drifting background under its floor.
+## Every biome has a deep, slowly drifting background under its floor.
 ##
 ## Owner (2026-10-25, line 8): "We are missing something for the background of the different biomes, for example in
 ## the astral one a universe starts or something that gives a little bit more ambience." Q5: layered parallax planes,
@@ -35,7 +35,7 @@ const MID_DRIFT := 0.020
 const MID_DRIFT_DIR := Vector2(-0.6, 1.0)
 const MID_ALPHA := 0.8
 const MID_ALPHA_BY_BIOME := {&"frozen_shore": 0.5}
-## v0.9.5 (owner, 2026-10-25: "just a bit dimmer so they don't take up as much protagonism"): about 25 % down.
+## About 25 % down.
 const MID_BRIGHTNESS := {
 	&"frozen_shore": 0.35,
 	&"night_rocks": 0.3,

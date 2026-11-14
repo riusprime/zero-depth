@@ -1,6 +1,6 @@
 class_name BladeCompiler
 extends RefCounted
-## v0.6.5 WN4 (docs/design/WAND.md, the Blade pool; CONTENT_SCHEMA "The wand"): BladeFormsDefinition → BladeTable.
+## docs/design/WAND.md, the Blade pool; CONTENT_SCHEMA "The wand": BladeFormsDefinition → BladeTable.
 ## Its own file (content_compiler.gd is near the lint's line limit).
 
 

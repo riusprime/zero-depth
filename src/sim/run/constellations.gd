@@ -1,11 +1,11 @@
 class_name Constellations
 extends RefCounted
-## v0.10.5 W3-P10 (owner W7, docs/roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md §C): the Constellations a run holds. A loop's
+## The Constellations a run holds. A loop's
 ## arrival offers 1 of 3, free and permanent (never rerolled); a run never holds one twice, except Prism (twice at
 ## most: a Gun's third and fourth Element slot). World.constellations lists the held ids in pick order.
 ## This file is the shared contract the W3-P10 steps code against: the ids and the reads. The pick, its offer, the
 ## save and the hash belong to the Constellation step (W3-P10c).
-## v0.10.5 W3-P10c (owner W7; SIM_CONTRACTS §8n): the pick. When the run enters a new loop (RunState.finish_floor,
+## The pick. When the run enters a new loop (RunState.finish_floor,
 ## the Loop device), offer() draws up to OFFER_SIZE ids the run may still take on the named stream
 ## `constellation_<loop>` of the run seed; the carry hands them to the loop's floor 1 (World.constellation_offer).
 ## While an offer is open (and the hero has landed) the world runs only the pick (choose): a pick 1..n takes that

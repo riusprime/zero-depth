@@ -16,7 +16,7 @@ extends ContentDef
 @export var boss_expected_power_permille := PackedInt32Array([2000, 4000, 7000])
 ## The bosses' cap per floor, per mille; entry f − 1 (v0.9.5 BH1, Q2: 2.5 / 3.0 / 3.5 / 4.0 / 4.5 for floors 1-5).
 @export var boss_cap_permille := PackedInt32Array([2500, 3000, 3500, 4000, 4500])
-## v0.9.5 BH1 (owner Q2): each boss draws its HP spread in +- this per mille (80 = +-8 %), applied after the cap.
+## Each boss draws its HP spread in +- this per mille (80 = +-8 %), applied after the cap.
 @export var boss_spread_permille := 80
 ## v0.10.5 O2b (owner D38 (a): "fights should last 1-2 minutes"): a floor boss's HP multiplier when your power equals
 ## the boss's expected power, per floor (entry f − 1, the last repeats). Its HP multiplier is this × your power ÷ the
@@ -25,10 +25,10 @@ extends ContentDef
 ## (90 s ÷ the before fight at the expected power, then × 90 s ÷ the first paced mean): starting value (owner D38,
 ## 2026-11-01).
 @export var boss_pace_permille := PackedInt32Array()
-## v0.10.5 O2b: past this power (per mille of the expected power) the boss's HP stops growing, so a far stronger build
+## Past this power (per mille of the expected power) the boss's HP stops growing, so a far stronger build
 ## is quicker: deleting a phase stays possible, very rarely. 3000: starting value (owner D38, 2026-11-01).
 @export var boss_pace_cap_permille := 3000
-## v0.10.5 O2b: the paced HP multiplier's floor, per mille (a weak build never meets less than the boss's own HP).
+## The paced HP multiplier's floor, per mille (a weak build never meets less than the boss's own HP).
 ## 1000: starting value (owner D38, 2026-11-01).
 @export var boss_pace_min_permille := 1000
 ## Added to both caps per point of threat T (Curses.threat: curses held and Deep floors taken), per mille.
@@ -50,7 +50,7 @@ func validate() -> Array[ValidationIssue]:
 	_check_table(issues, "cap_permille", cap_permille, 1000)
 	_check_table(issues, "boss_expected_power_permille", boss_expected_power_permille, 1)
 	_check_table(issues, "boss_cap_permille", boss_cap_permille, 1000)
-	for k in boss_pace_permille.size():  # v0.10.5 O2b: optional (empty = off), any order
+	for k in boss_pace_permille.size():  # Optional (empty = off), any order
 		if boss_pace_permille[k] < 1 or boss_pace_permille[k] > 100000 or k >= 64:
 			issues.append(
 				ValidationIssue.new(

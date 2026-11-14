@@ -18,7 +18,7 @@ const KINDS := [
 
 func _avatar(kind: int) -> HordeAvatar:
 	var a := HordeAvatar.new()
-	a.setup(kind, Color.BLACK, &"outline")
+	a.setup(kind)
 	add_child_autofree(a)
 	a.set_process(false)
 	return a
@@ -33,11 +33,11 @@ func _run(a: HordeAvatar, t0: int, state: int, ticks: int, healing := false) -> 
 
 
 ## v0.8.0 HR: the body plates are EnemyLooks' shared materials: dark at rest (no role glow outside ActorViews), the
-## flash an instance uniform; the code bodies outlined, every plate carrying the X-ray pass (no twin nodes).
+## flash an instance uniform; no outline pass (v0.9.5 PF4) and no twin nodes.
 func test_every_kind_is_built_flashable_and_outlined() -> void:
 	for kind: int in KINDS:
 		var a := HordeAvatar.new()
-		a.setup(kind, Color.BLACK, &"outline")
+		a.setup(kind)
 		# v0.8.0 MI: an owner's model has two body materials (its frame, its role plates); a code body more.
 		var looks := a.body_looks()
 		assert_gt(looks.size(), 1 if a.has_model() else 2, "kind %d has a model" % kind)
@@ -46,11 +46,7 @@ func test_every_kind_is_built_flashable_and_outlined() -> void:
 		assert_eq(a.hit_look(), EnemyLooks.HIT_OFF, "kind %d: dark until flashed" % kind)
 		for m: ShaderMaterial in looks:
 			assert_eq(m.get_shader_parameter("emission_energy"), 0.0, "kind %d: no glow" % kind)
-			assert_eq(
-				m.next_pass != null,
-				ActorLooks.OUTLINES and not a.has_model(),
-				"kind %d: code bodies outlined only while ActorLooks.OUTLINES" % kind
-			)
+			assert_null(m.next_pass, "kind %d: no outline pass" % kind)
 		assert_eq(
 			a.find_children("XrayTwin", "MeshInstance3D", true, false).size(), 0, "no twin nodes"
 		)
@@ -242,7 +238,7 @@ func test_the_splitter_model_raises_its_claws_and_splits_on_death() -> void:
 ## v0.8.0 MI: the Shield Bearer's legs swing while it walks (its pace read from how fast its node moves).
 func test_the_shield_bearer_model_walks_on_its_legs() -> void:
 	var a := HordeAvatar.new()
-	a.setup(WorldReader.KIND_SHIELD_BEARER, Color.BLACK, &"outline")
+	a.setup(WorldReader.KIND_SHIELD_BEARER)
 	var holder := Node3D.new()
 	add_child_autofree(holder)
 	holder.add_child(a)
@@ -275,7 +271,7 @@ func test_the_mender_model_raises_its_crystals_while_it_heals() -> void:
 ## v0.8.0 MI: the Lens Drone is the owner's model: its ring of feet spins and its eye flares through a windup.
 func test_the_lens_drone_model() -> void:
 	var a := LensDroneAvatar.new()
-	a.setup(Color.BLACK)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	if not a.has_model:

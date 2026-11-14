@@ -1,14 +1,14 @@
 class_name ElementVisuals
 extends Node3D
-## Arc Field, Frost Nova, Flame Trail and the ability combos' looks in the world (v0.4.0 AB). Reads
+## Arc Field, Frost Nova, Flame Trail and the ability combos' looks in the world. Reads
 ## WorldReader.element_fx() and ability_fx() only (EI-07); every size is the sim's own number (nova radius, patch
 ## radius, bolt ends). Materials are unshaded and transparent, made once; nothing toggles emission at runtime.
 ## - Arc Field: a jagged pale-blue bolt from the hero to each enemy struck (Superconductor: cyan-white and thicker).
 ## - Frost Nova: a frost ring and a pale disc out to the nova's radius.
-## - Fire patches: flat orange discs that shrink as they burn out. v0.6.0 MX2: Arc Field's
+## - Fire patches: flat orange discs that shrink as they burn out. Arc Field's
 ##   shock field is a pale-blue disc, another spec's zone a pale-white one; a growing ring (the RING form: Frost Nova)
 ##   is a frost torus at its radius now.
-## v0.10.5 O1 (owner P1): the ability combos' looks (Storm Bombs, Ember Ward, Blink Charge, Wingman) went with them.
+## The ability combos' looks (Storm Bombs, Ember Ward, Blink Charge, Wingman) went with them.
 
 const ARC_COLOR := Color("#9FC8FF")
 const SUPER_COLOR := Color("#7CF6FF")
@@ -20,14 +20,14 @@ const MAX_CLOUDS := 16
 const FX_FRAMES := 16
 const FIRE_Y := 0.025
 const BOLT_SEGMENTS := 4
-## v0.10.0 VX3 (VFX_PACK R24, R26): Toxic Fumes' clouds, Frost Nova's ring and Ember Ward's ring are the pack's effects
+## VFX_PACK R24, R26: Toxic Fumes' clouds, Frost Nova's ring and Ember Ward's ring are the pack's effects
 ## (PackFx); false keeps the flat quad and the torus (the before shots). Each also falls back when the pack has no
 ## room in the effect's family (clouds: cap 4).
 const PACK_ELEMENTS := true
 ## The cloud scene's scale per metre of the sim's gas radius, the rings' per metre of the sim's radius.
 const FUMES_PER_M := 0.7
 const RING_PER_M := {&"ring_frost": 0.5, &"ring_fire": 0.55}
-## v0.10.0 VX6 (VFX_PACK N1): Arc Field and Storm Bombs bolts, and Arc Field shock field, are the pack lightning (the
+## VFX_PACK N1: Arc Field and Storm Bombs bolts, and Arc Field shock field, are the pack lightning (the
 ## ZdBolt, the vx6_field ripple, the VX1 storm spark); false keeps the box bolts and the pale disc, which also draw when
 ## the pack has no room.
 const PACK_STORM := true
@@ -36,13 +36,13 @@ const ARC_STRIKE_S := 0.4
 const BOLT_LIFE_S := 0.2
 const BOLT_SPARK_SCALE := 0.09
 
-## v0.6.0 MX3: AttackFormView draws the RING form's rings and every patch that names a spec (WorldViewRoot sets
+## AttackFormView draws the RING form's rings and every patch that names a spec (WorldViewRoot sets
 ## it); this view keeps the patches without one (Napalm Drone's).
 var forms_drawn := false
 ## The pack effects (WorldViewRoot sets it); none: the old quads and rings.
 var pack_fx: PackFx = null
 var _holds := PackHold.new()
-var _field_holds := PackHold.new()  # the shock fields (VX6)
+var _field_holds := PackHold.new()  # the shock fields
 var _clock := 0.0  # real seconds, for the fields' re-strikes (cosmetic)
 var _fires: Array[MeshInstance3D] = []
 var _fx := FxFade.new()
@@ -53,7 +53,7 @@ var _zone_mat := _template.duplicate() as StandardMaterial3D
 var _rings: Array[MeshInstance3D] = []
 var _ring_mat := _template.duplicate() as StandardMaterial3D
 var _disc_mesh := CylinderMesh.new()
-## v0.9.5 EE3: Toxic Fumes' clouds (one flat quad each, a soft round alpha).
+## Toxic Fumes' clouds (one flat quad each, a soft round alpha).
 var _clouds: Array[MeshInstance3D] = []
 var _quad := QuadMesh.new()
 var _gas_mat := _template.duplicate() as StandardMaterial3D
@@ -107,10 +107,6 @@ func sync(reader: WorldReader) -> void:
 
 
 # --- Reads (tests) ------------------------------------------------------------------------------------------------
-func fire_count() -> int:
-	return _fires.filter(func(f: MeshInstance3D) -> bool: return f.visible).size()
-
-
 func fx_count_of(kind: StringName) -> int:
 	return _fx.count_of(kind)
 
@@ -157,7 +153,7 @@ func _sync_fires(fx: Dictionary) -> void:
 	_field_holds.end()
 
 
-## v0.10.0 VX6 (N1): Arc Field's shock field of radius `r` at `at` as the pack's storm ripple,
+## Arc Field's shock field of radius `r` at `at` as the pack's storm ripple,
 ## held while the field lasts, with a short bolt striking inside it about every ARC_STRIKE_S. False: no pack room.
 func _pack_shock_field(at: Vector2, r: float) -> bool:
 	if not PACK_STORM or pack_fx == null:
@@ -184,7 +180,7 @@ func _pack_shock_field(at: Vector2, r: float) -> bool:
 	return true
 
 
-## v0.6.0 MX2: each growing ring as a thin torus at its radius now (the sim's number).
+## Each growing ring as a thin torus at its radius now (the sim's number).
 func _sync_rings(rings: Array) -> void:
 	while _rings.size() < rings.size():
 		var m := MeshInstance3D.new()
@@ -205,10 +201,6 @@ func _sync_rings(rings: Array) -> void:
 		var r := maxf(0.05, float(rings[k][1]))
 		m.position = SimPlane.to_3d(rings[k][0], FIRE_Y + 0.04)
 		m.scale = Vector3(r, 0.08, r)
-
-
-func ring_count() -> int:
-	return _rings.filter(func(m: MeshInstance3D) -> bool: return m.visible).size()
 
 
 # --- Flashes ------------------------------------------------------------------------------------------------------
@@ -239,7 +231,7 @@ func _bolt(from: Vector2, to: Vector2, c: Color, thick: float, kind: StringName)
 		_add(n, c, 0.95, kind)
 
 
-## v0.10.0 VX6 (N1): the pack bolt from `from` to `to` (a bolt for BOLT_LIFE_S, fading, the storm spark at its
+## The pack bolt from `from` to `to` (a bolt for BOLT_LIFE_S, fading, the storm spark at its
 ## end), `thick` the old box thickness. False: no PackFx or no room in the bolt family (the boxes draw).
 func _pack_bolt(from: Vector2, to: Vector2, thick: float) -> bool:
 	if not PACK_STORM or pack_fx == null or not pack_fx.has_room(&"bolt"):
@@ -281,7 +273,7 @@ func _disc(
 	_add(n, c, alpha, kind)
 
 
-## v0.10.0 VX3 (R26): the pack's ring `id` out to the sim's radius `r` at `at`, in the hero's `kind` colours, once
+## The pack's ring `id` out to the sim's radius `r` at `at`, in the hero's `kind` colours, once
 ## (Frost Nova: pulse_area_02, Ember Ward: rim_area_04). False: no PackFx or no room, the torus and disc draw.
 func _pack_ring(at: Vector2, r: float, id: StringName, kind: StringName) -> bool:
 	if not PACK_ELEMENTS or pack_fx == null or not pack_fx.has_room(&"area"):
@@ -305,7 +297,7 @@ func _process(delta: float) -> void:
 	_fx.step(1)
 
 
-# --- Toxic Fumes (v0.9.5 EE3) --------------------------------------------------------------------------------------
+# --- Toxic Fumes --------------------------------------------------------------------------------------
 ## Each gas cloud is one flat quad with a soft round alpha (a radial gradient), at the sim's radius, fading through its
 ## last second. A pool of MAX_CLOUDS made once; nothing is spawned per cloud.
 func _sync_clouds(reader: WorldReader) -> void:
@@ -329,7 +321,7 @@ func _sync_clouds(reader: WorldReader) -> void:
 		if not q.visible:
 			continue
 		var fade := clampf(left[k] / 60.0, 0.0, 1.0)
-		# v0.10.0 VX3 (R24): the pack's cloud (cap 4), held while the sim's cloud lasts; past the cap the flat quad
+		# The pack's cloud (cap 4), held while the sim's cloud lasts; past the cap the flat quad
 		if PACK_ELEMENTS and pack_fx != null:
 			var node := _holds.touch(
 				_cloud_key(pos[k]),

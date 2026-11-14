@@ -1,6 +1,6 @@
 class_name EnemyLooks
 extends RefCounted
-## v0.8.0 HR (owner O89: "lag mostly comes from shooting hordes with multiple modifiers"): the horde enemies' materials,
+## The horde enemies' materials,
 ## made once and shared by every enemy of a look, so the renderer draws a crowd's identical pieces as one instanced draw
 ## instead of one draw per piece per enemy (docs/roadmap/v0.4.0/evidence/HORDES.md: ~7,000 draws at 120 enemies).
 ## - body(): a body plate. The shading is StandardMaterial3D's as the horde built it (BaseMaterial3D's generated code
@@ -8,9 +8,7 @@ extends RefCounted
 ##   for the owner's models), reduced to the same arithmetic (the default textures it sampled are constants). The
 ##   rest glow (ActorViews N1 role glow, or none) is the material's; the hit flash and the status tints are an
 ##   `instance uniform` (HIT) each enemy sets on its own pieces (GeometryInstance3D.set_instance_shader_parameter), so
-##   a flash changes no material and no shader. The stencil outline (STENCIL_MODE_OUTLINE's pass: unshaded, alpha,
-##   grown by the thickness, drawn where the stencil is not 1) is a shared next pass; the owner's models draw none
-##   (v0.7.5 on his models: no stroke) and write the stencil only (AvatarBase.write_stencil).
+##   a flash changes no material and no shader. A body plate has no stencil and no outline pass.
 ## - accent(): the glowing eye, seam, crystal, scope or muzzle: the same shading, its energy an `instance uniform`
 ##   (GLOW; < 0: the material's), never flashed.
 ## Presentation only (EI-07).
@@ -21,8 +19,6 @@ extends RefCounted
 const HIT := &"zd_hit"
 const GLOW := &"zd_glow"
 const HIT_OFF := Vector4(0, 0, 0, 0)
-## The stencil passes draw after the body (StandardMaterial3D gives its stencil pass the body's priority + 1).
-const PASS_PRIORITY := 1
 
 const _LIT_HEAD := """shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx;
@@ -46,55 +42,29 @@ void fragment() {
 """
 const _BODY_EMISSION := "mix(emission.rgb * emission_energy, zd_hit.rgb, zd_hit.a)"
 const _ACCENT_EMISSION := "emission.rgb * (zd_glow < 0.0 ? emission_energy : zd_glow)"
-const _OUTLINE := """shader_type spatial;
-render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx, unshaded;
-stencil_mode read, compare_not_equal, 1;
-
-uniform vec4 albedo : source_color;
-uniform float grow;
-
-void vertex() {
-	VERTEX += NORMAL * grow;
-}
-
-void fragment() {
-	ALBEDO = albedo.rgb;
-	ALPHA = albedo.a;
-}
-"""
 static var _shaders := {}
 static var _mats := {}
 
 
-## A shared body plate: `albedo` (times `tex` when given), resting at `rest` x `rest_energy` emission, outlined in
-## `outline` `outline_m` thick (0: no outline pass, the stencil only), `two_sided`:
-## drawn from both sides (the Charger's cull_disabled shell; its stencil passes still cull the back, as before).
+## A shared body plate: `albedo` (times `tex` when given), resting at `rest` x `rest_energy` emission, `two_sided`:
+## drawn from both sides (the Charger's cull_disabled shell).
 static func body(
-	albedo: Color,
-	tex: Texture2D,
-	rest: Color,
-	rest_energy: float,
-	outline: Color,
-	outline_m: float,
-	two_sided := false
+	albedo: Color, tex: Texture2D, rest: Color, rest_energy: float, two_sided := false
 ) -> ShaderMaterial:
 	var key := (
-		"b/%s/%d/%s/%.4f/%s/%.4f/%d"
+		"b/%s/%d/%s/%.4f/%d"
 		% [
 			albedo.to_html(),
 			tex.get_instance_id() if tex != null else 0,
 			rest.to_html(false),
 			rest_energy,
-			outline.to_html(),
-			outline_m,
 			int(two_sided),
 		]
 	)
 	if not _mats.has(key):
 		var textured := tex != null
 		var head := _LIT_HEAD.replace("cull_back", "cull_disabled") if two_sided else _LIT_HEAD
-		if not ActorLooks.OUTLINES:
-			head = head.replace("stencil_mode write, compare_always, 1;\n", "")
+		head = head.replace("stencil_mode write, compare_always, 1;\n", "")
 		var code := (
 			head
 			+ (_TEX if textured else "")
@@ -107,22 +77,7 @@ static func body(
 			m.set_shader_parameter("texture_albedo", tex)
 		m.set_shader_parameter("emission", rest)
 		m.set_shader_parameter("emission_energy", rest_energy)
-		m.next_pass = (
-			_outline_pass(outline, outline_m) if ActorLooks.OUTLINES and outline_m > 0.0 else null
-		)
 		_mats[key] = m
-	return _mats[key]
-
-
-## The shared stencil outline pass (STENCIL_MODE_OUTLINE's).
-static func _outline_pass(outline: Color, outline_m: float) -> ShaderMaterial:
-	var key := "o/%s/%.4f" % [outline.to_html(), outline_m]
-	if not _mats.has(key):
-		var o := _material(&"outline", _OUTLINE)
-		o.render_priority = PASS_PRIORITY
-		o.set_shader_parameter("albedo", outline)
-		o.set_shader_parameter("grow", outline_m)
-		_mats[key] = o
 	return _mats[key]
 
 

@@ -14,11 +14,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## Takes card `id` at the nearest altar (its offer forced: TEST HELPER). True when taken.
 func _take_at_altar(e: E2e, main: Main, id: StringName, others: Array) -> bool:
 	var w := e.world()
@@ -50,9 +45,9 @@ func _grant(e: E2e, main: Main, w: World, id: StringName) -> void:
 	var k := W.item(w, id)
 	var guard := 0
 	while main.driver.debug.mod_choice != k and guard < 300:
-		await _click(e, main, "NextMod")
+		await e.click_dev("NextMod")
 		guard += 1
-	await _click(e, main, "GrantMod")
+	await e.click_dev("GrantMod")
 	await e.frames(3)
 
 
@@ -64,13 +59,62 @@ func _free(w: World, p: Vector2) -> bool:
 	return true
 
 
+## The first of 16 directions from `hero` whose three dummy spots (4.6 m out, and 3 m from it at plus and minus 30
+## degrees) are clear of walls; Vector2.ZERO when none is (the bursts and shards pass through walls in the sim).
+## `slack` (m): the spots must also be clear with the hero that far off `hero` along either axis (a walk stops near
+## its goal, not on it).
+func _dummy_dir(w: World, hero: Vector2, slack: float = 0.0) -> Vector2:
+	var offs := [Vector2.ZERO]
+	if slack > 0.0:
+		offs.append_array(
+			[Vector2(slack, 0), Vector2(-slack, 0), Vector2(0, slack), Vector2(0, -slack)]
+		)
+	for k in 16:
+		var d := Vector2.from_angle(TAU * k / 16.0)
+		var ok := true
+		for o: Vector2 in offs:
+			var f: Vector2 = hero + o + d * 4.6
+			for q: Vector2 in [f, f + d.rotated(0.5236) * 3.0, f + d.rotated(-0.5236) * 3.0]:
+				ok = ok and _free(w, q)
+		if ok:
+			return d
+	return Vector2.ZERO
+
+
+## The hero's own spot when it has a clear dummy direction, else the nearest free point of the hero's room (a 1 m
+## grid) that has one; Vector2.INF when none does.
+func _stand_spot(w: World) -> Vector2:
+	var hero := w.player_pos()
+	if _dummy_dir(w, hero) != Vector2.ZERO:
+		return hero
+	var room := w.floor_layout.room_of(hero) if w.floor_layout != null else -1
+	if room < 0:
+		return Vector2.INF
+	var rect: Rect2 = w.floor_layout.rooms[room]
+	var best := Vector2.INF
+	var y := rect.position.y + 1.0
+	while y < rect.end.y - 1.0:
+		var x := rect.position.x + 1.0
+		while x < rect.end.x - 1.0:
+			var q := Vector2(x, y)
+			if (
+				q.distance_to(hero) < best.distance_to(hero)
+				and _free(w, q)
+				and _dummy_dir(w, q, 0.5) != Vector2.ZERO
+			):
+				best = q
+			x += 1.0
+		y += 1.0
+	return best
+
+
 func test_big_shot_and_split_reach_a_dummy_past_the_plain_burst_and_two_off_the_line() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu(&"gun")
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)
 	assert_true(
@@ -88,21 +132,21 @@ func test_big_shot_and_split_reach_a_dummy_past_the_plain_burst_and_two_off_the_
 	assert_true(
 		mask & RuneMods.BIG != 0 and mask & RuneMods.SPLIT != 0, "the burst reads both cards"
 	)
+	# The altar may stand where walls and props crowd every direction; then the hero walks (the stick) to the nearest
+	# spot of its room with a clear place for the dummies.
+	var stand := _stand_spot(w)
+	gut.p("FC5 e2e: the hero walks %.2f m to a clear place" % stand.distance_to(w.player_pos()))
+	assert_ne(stand, Vector2.INF, "a clear place for the three dummies")
+	if stand == Vector2.INF:
+		return
+	assert_true(await e.walk_to(stand, 0.3), "walked to the clear place")
+	await e.frames(10)
 	# TEST HELPER (labelled): the floor's own enemies are cleared (they would shove the hero and take the hits).
 	for i in range(1, w.actors.size()):
 		if w.actors.teams[i] == ActorStore.TEAM_ENEMY:
 			w.actors.dead[i] = 1
 	var hero := w.player_pos()
-	var dir := Vector2.ZERO
-	for k in 16:  # the first direction whose three dummy spots are clear
-		var d := Vector2.from_angle(TAU * k / 16.0)
-		var f := hero + d * 4.6
-		var ok := true
-		for q: Vector2 in [f, f + d.rotated(0.5236) * 3.0, f + d.rotated(-0.5236) * 3.0]:
-			ok = ok and _free(w, q)  # (the bursts and shards pass through walls in the sim)
-		if ok:
-			dir = d
-			break
+	var dir := _dummy_dir(w, hero)
 	assert_ne(dir, Vector2.ZERO, "a clear place for the three dummies")
 	if dir == Vector2.ZERO:
 		return

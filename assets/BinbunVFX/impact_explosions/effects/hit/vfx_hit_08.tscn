@@ -46,8 +46,8 @@ alpha_curve = SubResource("CurveTexture_6d4th")
 
 [sub_resource type="QuadMesh" id="QuadMesh_shtac"]
 size = Vector2(1.2, 2)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ghyif"]
 render_priority = 0
@@ -89,8 +89,8 @@ alpha_curve = SubResource("CurveTexture_746na")
 
 [sub_resource type="QuadMesh" id="QuadMesh_ba0na"]
 size = Vector2(3, 2)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="Animation" id="Animation_ghyif"]
 length = 0.001

@@ -1,6 +1,6 @@
 class_name RobeDefinition
 extends ContentDef
-## v0.9.0 RB (owner, PLAN "Owner decisions" RB; docs/roadmap/v0.9.0/AFFINITIES.md R1-R6): one robe colour for the
+## One robe colour for the
 ## hero's cloak and hood, picked at the hub's Wardrobe. Cosmetic only: no run reads it. Category `robe`, in
 ## data/wardrobe/. The hero's blue core stays the same on every robe; no robe uses the enemy red (#E25A4C) or the
 ## hostile yellow (#FBD07A) (tests/content/test_wardrobe_content.gd).
@@ -13,20 +13,20 @@ extends ContentDef
 @export var cloak := Color("#EBDCCB")
 @export var underside := Color("#C9B8A6")
 @export var free := false
-## v0.9.0 MP: what a robe that isn't free costs in Rune Fragments at the Progression Station (a starting value).
+## What a robe that isn't free costs in Rune Fragments at the Progression Station (a starting value).
 ## MP2 (owner, PLAN "Owner decisions" MP2: "ascending cost starting from 75 and 25 more each one"): the ladder's first
 ## price; MetaProgress.price_of adds `price_step` for each ladder robe already bought.
 @export var price := 0
-## MP2: the ladder's step (the four robes: 25); 0 for a robe outside the ladder (the epic robes' flat 250).
+## The ladder's step (the four robes: 25); 0 for a robe outside the ladder (the epic robes' flat 250).
 @export var price_step := 0
-## MP2: an epic robe (PLAN MP2: "then 250 the epic robe"): it changes the hero's shape, not only the colour (`style`,
+## An epic robe (PLAN MP2: "then 250 the epic robe"): it changes the hero's shape, not only the colour (`style`,
 ## built by EpicRobeView). Cosmetic only (PD-06).
 @export var epic := false
-## MP2: listed as "???" (ROBE_HIDDEN) with a silhouette at the station and the Wardrobe until it is bought.
+## Listed as "???" (ROBE_HIDDEN) with a silhouette at the station and the Wardrobe until it is bought.
 @export var hidden := false
-## MP2: the epic robe's build in the avatar (EpicRobeView: &"fallen", &"divine"); empty for a colour robe.
+## The epic robe's build in the avatar (EpicRobeView: &"fallen", &"divine"); empty for a colour robe.
 @export var style := &""
-## v0.9.5 RS2: a robe earned in the game, not bought (the Runic robe, S6): the hint shown while it is locked.
+## A robe earned in the game, not bought (the Runic robe, S6): the hint shown while it is locked.
 ## Such a robe is not on sale at the Progression Station and needs no price.
 @export var unlock_hint_key := &""
 

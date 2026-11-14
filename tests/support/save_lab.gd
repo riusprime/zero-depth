@@ -10,13 +10,12 @@ const RUN_ID := RunSaver.RUN_ID
 
 ## v0.9.0 FV: the run's floors (5).
 static func floors() -> int:
-	return ContentCompiler.compile_run(ContentRepository.load_all().get_def(&"run", RUN_ID)).floors
+	return ContentCompiler.compile_run(SharedContent.repo().get_def(&"run", RUN_ID)).floors
 
 
-## v0.9.0 FV: the run of a saved payload, compiled from the definition it names (RunSaver.saved_run_id; a v0.8.0 or
-## older payload: the 3-floor shape), as FloorPlan's Continue.
+## The run of a saved payload, compiled from the definition it names (RunSaver.saved_run_id), as FloorPlan's Continue.
 static func run_from(payload: Dictionary) -> RunState:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var def := repo.get_def(&"run", RunSaver.saved_run_id(payload))
 	return RunSaver.run_from(payload, ContentCompiler.compile_run(def))
 
@@ -30,7 +29,7 @@ static func run_state(
 	route: int = 0,
 	content: ContentRepository = null
 ) -> RunState:
-	var repo := content if content != null else ContentRepository.load_all()
+	var repo := content if content != null else SharedContent.repo()
 	var run := RunState.start(
 		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", RUN_ID)), build
 	)
@@ -47,20 +46,23 @@ static func floor_world(run_seed: int, floor_index: int, build: StringName = &"b
 
 ## `biome` (v0.8.0 SR, shots only): the shop room's biome when not the run's own (&"": the run's, as Main).
 ## `content` (v0.9.0 RG): as run_state's.
+## The flow fields are built once, at the end, as FloorPlan builds them (World.defer_nav, build_nav); `eager_nav`
+## builds them at every wall change instead, the reference the deferred build is checked against.
 static func build_floor(
-	run: RunState, biome_id: StringName = &"", content: ContentRepository = null
+	run: RunState,
+	biome_id: StringName = &"",
+	content: ContentRepository = null,
+	eager_nav: bool = false
 ) -> World:
-	var repo := content if content != null else ContentRepository.load_all()
+	var repo := content if content != null else SharedContent.repo()
 	var table := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))
 	var enemies := ContentCompiler.compile_enemies(repo)
 	run.scale_enemies(enemies)
 	var bosses := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(bosses)
-	var boss := FloorShape.boss(
-		run, RunContentCompiler.compile_boss_pools(repo, run.table.floors), run.floor_index
-	)
-	var arena := RunSaver.boss_arena(run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
+	var boss := FloorShape.boss(run, _boss_pools(repo, run.table.floors), run.floor_index)
+	var arena := RunSaver.boss_arena(bosses, boss)
 	var rules := RunSaver.floor_tables(run, repo)  # v0.7.5 MG, as Main
 	var w := FloorScenario.build(
 		run.floor_seed(),
@@ -77,14 +79,17 @@ static func build_floor(
 		rules[&"arena"],  # v0.5.5 AR, as Main
 		rules[&"map"],  # v0.7.5 MG, as Main
 		rules[&"overrun"],  # v0.9.0 CF, as Main
-		rules[&"lockdown_first"]  # v0.9.0 CF2, as Main
+		rules[&"lockdown_first"],  # v0.9.0 CF2, as Main
+		not eager_nav
 	)
 	var biome: BiomeDefinition = repo.get_def(
 		&"biomes", (repo.get_def(&"run", run.table.id) as RunDefinition).biomes[run.biome_of()]
 	)
 	var shop_biome := biome.id if biome_id == &"" else biome_id
 	FloorScenario.add_shop(w, rules[&"shop"], shop_biome, rules[&"map"])  # v0.5.0 SH, v0.8.0 SR, as Main
+	FloorScenario.add_purposes(w, rules[&"purposes"], shop_biome, rules[&"map"])  # v0.11.0 O15, as Main
 	IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2, as Main: ice or starglow
+	w.roster_kinds = VariantCompiler.roster_kinds(repo, biome)  # v0.11.0 O13a, as FloorPlan
 	w.set_boss_tables(bosses)
 	w.locked_items = MetaProgress.locked_items(run.locked_cards, w.item_tables)  # v0.9.0 MP, as Main
 	w.wand_table = WandCompiler.for_run(repo, run.table)  # v0.6.5 WN1, v0.9.0 FV, as Main
@@ -94,6 +99,9 @@ static func build_floor(
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
 	w.starbound_tables = ContentCompiler.compile_starbound(repo)  # v0.10.5 W3-P10b, as FloorPlan
+	w.spell_tables = SpellCompiler.compile(repo, w.item_tables)  # v0.11.0 O10, as FloorPlan
+	w.spell_rules = SpellCompiler.compile_rules(repo)
+	w.relic_tables = ContentCompiler.compile_relics(repo)  # v0.11.0 O14b, as FloorPlan
 	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB, as Main
 	w.legendary_table = RunContentCompiler.compile_legendary(
 		repo.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables  # v0.5.5 AR (X1b), as Main
@@ -104,20 +112,20 @@ static func build_floor(
 	if w.boss_flow != null:  # v0.8.0 N11: floor 1's arrival left out here (Main lands on it; test_arrival covers it)
 		w.boss_flow.set_transit(false, run.floor_index > 1)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))
-	# v0.5.0 EV, as Main: event rooms and curses after the heat (v0.8.0 N17: an older save's floor keeps its rooms;
-	# v0.9.0 EL: and the retired event's weight)
-	EventCompiler.setup(
-		w,
-		repo,
-		FloorScenario.curse_room_rules_of(run),
-		FloorScenario.retired_events_of(run),
-		FloorScenario.rare_events_of(run)
-	)
+	EventCompiler.setup(w, repo)  # As Main: event rooms and curses after the heat
 	FloorPlan.add_secrets(w, repo, run, table.move_speed)  # v0.9.0 TD, RA, DX, as Main
 	CollectibleBook.arm(w, run, CollectibleBook.defs(repo), biome.id)  # v0.9.0 CL, as Main
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))  # v0.5.5 DS
 	CatchUp.start_floor(w)
+	w.build_nav()
 	return w
+
+
+## The run's boss pools: the shared ones (SharedContent) for the shared repository, else compiled from `repo`.
+static func _boss_pools(repo: ContentRepository, floors: int) -> Array[PackedInt32Array]:
+	if repo == SharedContent.repo():
+		return SharedContent.boss_pools(floors)
+	return RunContentCompiler.compile_boss_pools(repo, floors)
 
 
 ## Grants the ability of each kind in `kinds` (AbilityTable.Kind), levelled to `level`.

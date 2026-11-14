@@ -190,14 +190,6 @@ func test_saves_on_the_approach_and_at_the_fight_resume_exactly() -> void:
 	assert_eq(base2.state_hash(), w.state_hash(), "the same fight after it")
 	assert_true(FloorPlan.approach_of({}), "a fresh arrival: the approach")
 	assert_true(FloorPlan.approach_of({"world": snap}), "a save on the approach")
-	var bare := FinalLab.arena(FinalLab.run_state(SEED))
-	var old := WorldSnapshot.take(bare)
-	(old["world"] as Dictionary).erase(&"approach")  # a save from before FA
-	(old["world"] as Dictionary).erase("approach")
-	assert_false(FloorPlan.approach_of({"world": old}), "an older save: the ring arena bare")
-	var base3 := FinalLab.arena(FinalLab.run_state(SEED), false)
-	assert_eq(WorldSnapshot.apply(base3, old), "", "it still resumes")
-	assert_null(base3.approach)
 
 
 func test_the_direct_path_is_unchanged() -> void:

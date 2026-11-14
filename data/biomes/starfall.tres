@@ -149,6 +149,10 @@ palette = {
 }
 hazard_flavour = &"starglow"
 template_tags = PackedStringArray("starfall")
+critter_id = &"star_mote"
+core_ids = Array[StringName]([&"charger", &"needle", &"swarmer", &"warden"])
+signature_ids = Array[StringName]([&"star_warper", &"gravity_node"])
+variant_id = &"split_sniper"
 id = &"starfall"
 mood = SubResource("Resource_mood")
 surface = SubResource("Resource_surface")

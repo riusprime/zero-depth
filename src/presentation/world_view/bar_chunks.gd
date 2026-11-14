@@ -14,7 +14,13 @@ const CHUNK_BIG := Color(1, 1, 0.94, 0.9)
 const GROW := 128
 const HEIGHT := 0.07
 
-## Trails by actor id, and the bar pivot each scales.
+## Where a bar fed with no pivot (a batched enemy's, EnemyBatch.bar_point) is drawn now: id -> Vector3, or
+## Vector3.INF while it is hidden. Its fill is read from its trail by EnemyBatch.
+var locate: Callable
+## Told each batched enemy's bar fill whenever its trail's changes (id, fill), and 1 when its trail goes: the native
+## furniture writer reads the fills as a column (EnemyBatch.set_fill) instead of each trail every frame.
+var fill_to: Callable
+## Trails by actor id, and the bar pivot each scales (null: a batched enemy's bar, placed by `locate`).
 var _trails := {}
 var _pivots := {}
 var _width := 0.55
@@ -57,13 +63,19 @@ func feed(id: int, pivot: Node3D, f: float, snap: bool = false) -> void:
 		if snap:
 			t.snap(f)
 	t.set_target(f)
+	if pivot == null:
+		if fill_to.is_valid():
+			fill_to.call(id, t.fill)
+		return
 	var sx := maxf(t.fill, 0.001)
-	if pivot.scale.x != sx:  # v0.10.5 W3-Q6: a bar at rest is not written again every sync
+	if pivot.scale.x != sx:  # A bar at rest is not written again every sync
 		pivot.scale = Vector3(sx, 1, 1)
 
 
 ## Actor `id`'s bar is gone (its actor, or hidden): its trail goes.
 func forget(id: int) -> void:
+	if _trails.has(id) and _pivots[id] == null and fill_to.is_valid():
+		fill_to.call(id, 1.0)
 	_trails.erase(id)
 	_pivots.erase(id)
 
@@ -109,21 +121,31 @@ func advance(delta: float) -> void:
 		if not t.moving():
 			continue
 		t.advance(delta)
-		var pivot: Node3D = _pivots[id]
-		if not is_instance_valid(pivot):
-			continue
-		pivot.scale = Vector3(maxf(t.fill, 0.001), 1, 1)
-		var size := t.chunk_size()
-		if size <= 0.0 or not pivot.visible:
-			continue
+		var pivot_v: Variant = _pivots[id]
+		var at := Vector3.INF
+		if pivot_v == null:  # A batched enemy's bar
+			if fill_to.is_valid():
+				fill_to.call(id, t.fill)
+			if t.chunk_size() <= 0.0 or not locate.is_valid():
+				continue
+			at = locate.call(id)
+			if at == Vector3.INF:
+				continue
+		else:
+			if not is_instance_valid(pivot_v):
+				continue
+			var pivot := pivot_v as Node3D
+			pivot.scale = Vector3(maxf(t.fill, 0.001), 1, 1)
+			if t.chunk_size() <= 0.0 or not pivot.visible:
+				continue
+			at = (
+				pivot.get_global_transform_interpolated().origin
+				if pivot.is_inside_tree()
+				else pivot.position
+			)
 		var hf := t.fill * _width * 0.5
 		var hc := t.chunk * _width * 0.5
 		var w := hc - hf
-		var at := (
-			pivot.get_global_transform_interpolated().origin
-			if pivot.is_inside_tree()
-			else pivot.position
-		)
 		var c := CHUNK_BIG if t.big > 0.0 else CHUNK
 		var b := Basis(basis.x * w, basis.y, basis.z)
 		var mid := (hf + hc) * 0.5

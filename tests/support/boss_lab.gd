@@ -4,7 +4,7 @@ extends RefCounted
 
 
 static func tables() -> Array[BossTable]:
-	return ContentCompiler.compile_bosses(ContentRepository.load_all())
+	return ContentCompiler.compile_bosses(SharedContent.repo())
 
 
 static func world(seed_value: int = 11) -> World:
@@ -72,7 +72,7 @@ static func until_open(w: World, aid: int, limit: int = 900) -> void:
 ## a move no shipped boss uses any more (the Gatekeeper's old vortex) build it here.
 static func with_attack(w: World, id: StringName, def: BossAttackDefinition) -> int:
 	var t := w.boss_tables[table_index(w, id)]
-	var atk := ContentCompiler.compile_boss_attack(def, ContentRepository.load_all())
+	var atk := ContentCompiler.compile_boss_attack(def, SharedContent.repo())
 	atk.opens_weak = def.opens_weak_point
 	atk.recover_ticks = atk.recover_ticks * 600 / 1000
 	t.attacks.append(atk)

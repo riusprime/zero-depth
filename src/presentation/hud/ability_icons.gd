@@ -1,6 +1,6 @@
 class_name AbilityIcons
 extends RefCounted
-## The symbols of the abilities and the stat cards (v0.4.0 BS), in the item icons' style (ItemIcons: shapes in a
+## The symbols of the abilities and the stat cards, in the item icons' style (ItemIcons: shapes in a
 ## unit box, y down, drawn with CanvasItem calls, no external art). ItemIcons.shapes falls through to these, so an
 ## ItemIconView / ItemCard shows any card. Stats the gamble shrine shares reuse its symbols (GambleIcons).
 
@@ -49,7 +49,7 @@ static func color(id: StringName) -> Color:
 
 static func shapes(id: StringName) -> Array:
 	if CardPoolIcons.STAT_COLORS.has(id):
-		return CardPoolIcons.shapes(id)  # v0.5.0 CP: the rule stat cards
+		return CardPoolIcons.shapes(id)  # The rule stat cards
 	if GAMBLE_SHAPES.has(id):
 		return GambleIcons.shapes(GAMBLE_SHAPES[id])
 	match id:

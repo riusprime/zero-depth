@@ -22,26 +22,21 @@ const DIRS := [
 ]
 
 
-func _click(e: E2e, main: Main, button_name: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button_name, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## `close` false leaves the panel open: closing it drops its DebugApi, and God with it (Main.toggle_dev_panel).
 func _summon(e: E2e, main: Main, id: StringName, close: bool = true) -> int:
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.is_dev_panel_open())
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	var choice := main.get_node("UI/DevPanel").find_child("BossChoice", true, false) as Label
 	var w := e.world()
 	var name := tr(w.boss_tables[BossLab.table_index(w, id)].name_key)
 	for k in 8:
 		if choice.text == name:
 			break
-		await _click(e, main, "NextBoss")
+		await e.click_dev("NextBoss")
 		await e.frames(1)
 	assert_eq(choice.text, name)
-	await _click(e, main, "SpawnBoss")
+	await e.click_dev("SpawnBoss")
 	await e.frames(2)
 	if close:
 		await e.tap(KEY_QUOTELEFT)
@@ -87,6 +82,40 @@ func test_the_warlords_javelins_stand_in_the_floor_then_fly_back() -> void:
 	e.stick_toward(Vector2.ZERO)
 	assert_gt(stood, 0, "javelins stood in the floor")
 	assert_true(back, "and flew back")
+
+
+## v0.11.0 F9 (owner): the real game: the Warlord's own attack sequence throws the great javelin; it is drawn embedded
+## with its quake ring, the recall line shows, and it flies back and is gone.
+func test_the_warlords_great_javelin_embeds_quakes_and_flies_back() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu()
+	var bid := await _summon(e, main, &"warlord", false)  # God stays on while the hero walks
+	var w := e.world()
+	var reader := main.driver.reader
+	var embedded := false
+	var ringed := false
+	var recall := false
+	for k in 18000:
+		var bi := w.actors.index_of(bid)
+		if bi < 0:
+			break
+		var me := reader.player_pos()
+		var boss := reader.actor_pos(bi)
+		e.stick_toward(_way_out(w, me, boss) if me.distance_to(boss) < KEEP_M else Vector2.ZERO)
+		await e.frames(1)
+		var gj := reader.boss_great_javelin(bi)
+		if not embedded:
+			embedded = not gj.is_empty() and int(gj["phase"]) == BossGreatJavelin.EMBEDDED
+		ringed = ringed or (embedded and main.view.spikes.quake_count() > 0)
+		recall = recall or not reader.boss_javelin_recall_line(bi).is_empty()
+		if recall and gj.is_empty():
+			break
+	e.stick_toward(Vector2.ZERO)
+	assert_true(embedded, "the great javelin stood in the floor")
+	assert_true(ringed, "with its quake ring drawn")
+	assert_true(recall, "its recall line showed")
+	assert_false(main.view.great_javelin.shown(), "and it flew back")
 
 
 func test_the_brood_mothers_eggs_sit_on_the_floor() -> void:

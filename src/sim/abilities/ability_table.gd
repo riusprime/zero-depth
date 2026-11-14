@@ -26,10 +26,10 @@ var kind := Kind.BOMB_LOBBER
 var auto := true
 var button := Binding.NONE
 var rare := false
-## v0.6.5 WN5b: a retired ability modifier (WAND.md: the six old abilities map onto wand cards or retire): never
-## offered (Abilities.can_take); a held one maps on load (WandMigration). The dev panel can still grant it.
+## A retired ability modifier (WAND.md: the six old abilities map onto wand cards or retire): never
+## offered (Abilities.can_take). The dev panel can still grant it.
 var retired := false
-## v0.9.5 CLV: false = never offered, not even as a level-up (Abilities.can_take; the Pulse Gun).
+## False = never offered, not even as a level-up (Abilities.can_take; the Pulse Gun).
 var offered := true
 var name_key := &""
 var desc_key := &""
@@ -51,9 +51,9 @@ var level_radius := PackedInt32Array([1000, 1000, 1000, 1000, 1000])
 var level_rate := PackedInt32Array([1000, 1000, 1000, 1000, 1000])
 var level_cooldown := PackedInt32Array([0, 0, 0, 0, 0])
 var level_extra := PackedInt32Array([0, 0, 0, 0, 0])
-## v0.4.0 AB: the compiled engine item whose status numbers the ability borrows (null for none).
+## The compiled engine item whose status numbers the ability borrows (null for none).
 var engine: ItemTable
-## v0.6.0 MX2 (BuildSlots, ModifierAbilities): Bomb Lobber's every Nth weapon attack, Frost Nova's kill streak (kills,
+## BuildSlots, ModifierAbilities: Bomb Lobber's every Nth weapon attack, Frost Nova's kill streak (kills,
 ## and the most ticks between two of them), and the modifiers the ability adds to the build while held.
 var every_attacks := 0
 var streak_kills := 0
@@ -94,6 +94,6 @@ func is_utility() -> bool:
 	return button == Binding.UTILITY
 
 
-## v0.6.0 MX2: a weapon modifier (one of the six slots): neither the starting weapon nor the utility pick.
+## A weapon modifier (one of the six slots): neither the starting weapon nor the utility pick.
 func is_modifier() -> bool:
 	return start_weapon == 0 and not is_utility()

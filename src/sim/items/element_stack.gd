@@ -58,12 +58,21 @@ static func carries(w: World, i: int, e: int) -> bool:
 	return false
 
 
-## How many elements other than `e` enemy `i` carries.
+## How many elements other than `e` enemy `i` carries (each of the five as carries() reads it, written out: every
+## element hit of the hero asks).
 static func others(w: World, i: int, e: int) -> int:
+	var a := w.actors
 	var n := 0
-	for x in 5:
-		if x != e and carries(w, i, x):
-			n += 1
+	if e != FIRE and a.burn_stacks[i] > 0:
+		n += 1
+	if e != STORM and (a.shock_stacks[i] > 0 or a.charged_t[i] > 0):
+		n += 1
+	if e != FROST and (a.frost_stacks[i] > 0 or a.frozen_t[i] > 0):
+		n += 1
+	if e != VENOM and a.poison_stacks[i] > 0:
+		n += 1
+	if e != BLEED and a.bleed_stacks[i] > 0:
+		n += 1
 	return n
 
 
@@ -73,7 +82,7 @@ static func falloff_permille(w: World, i: int, e: int) -> int:
 	if t == null or t.stack_falloff_permille.is_empty():
 		return 1000
 	var n := others(w, i, e)
-	# v0.10.5 W3-P10c: C1 Prism on a run without an Element limit (the Blade's): prism_falloff_steps steps softer each
+	# C1 Prism on a run without an Element limit (the Blade's): prism_falloff_steps steps softer each
 	var prisms := Constellations.count(w, Constellations.PRISM) if n > 0 else 0
 	if prisms > 0 and AttackSlots.limit(w, AttackSlots.ELEMENT) < 0:
 		n = maxi(0, n - t.prism_falloff_steps * prisms)
@@ -85,17 +94,33 @@ static func falloff_permille(w: World, i: int, e: int) -> int:
 static func level_permille(w: World, e: int) -> int:
 	if w.pair_table == null:
 		return 1000
+	var idx := _card_of(w, e)
+	if idx < 0:
+		return 1000
+	var over := CardLevels.overlevel_now(w, idx)  # Each overlevel past Lv 3 adds to the share
+	var row := w.item_tables[idx].el_level_permille
+	if row.is_empty():
+		return over
+	return row[clampi(CardLevels.base_level(w, idx), 1, row.size()) - 1] * over / 1000
+
+
+## The first held item that is element `e`'s card, or -1. Every element hit asks, so the answer is kept until the
+## items held change (ElementCards).
+static func _card_of(w: World, e: int) -> int:
+	var cacheable := e >= 0 and e < ElementPairs.CARDS.size()
+	var slot := ElementCards.STACK_BASE + e
+	var idx := ElementCards.cached(w, slot) if cacheable else ElementCards.UNKNOWN
+	if idx != ElementCards.UNKNOWN:
+		return idx
+	idx = -1
 	var id := ElementPairs.CARDS[e]
-	for idx in w.items_owned:
-		var t := w.item_tables[idx]
-		if t.id != id or not CardLevels.is_card(w, idx):
-			continue
-		var over := CardLevels.overlevel_now(w, idx)  # v0.10.5 W3-P3: each overlevel past Lv 3 adds to the share
-		var row := t.el_level_permille
-		if row.is_empty():
-			return over
-		return row[clampi(CardLevels.base_level(w, idx), 1, row.size()) - 1] * over / 1000
-	return 1000
+	for k in w.items_owned:
+		if w.item_tables[k].id == id and CardLevels.is_card(w, k):
+			idx = k
+			break
+	if cacheable:
+		ElementCards.keep(w, slot, idx)
+	return idx
 
 
 ## Both, for element `e`'s damage on enemy `i` (1000 = unchanged).
@@ -113,7 +138,7 @@ static func scale(amount: int, permille: int) -> int:
 
 
 ## Element `e`'s bonus multiplier `bonus_mult` (per mille, e.g. Heat sync's 1150) on enemy `i`, its bonus part fallen
-## off (P1); the level shift is not applied to a level's own bonus.
+## off; the level shift is not applied to a level's own bonus.
 static func bonus(w: World, i: int, e: int, bonus_mult: int) -> int:
 	if bonus_mult == 1000 or w.pair_table == null:
 		return bonus_mult

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SpellDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/spell_definition.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+name_key = &"SPELL_SKY_STRIKE"
+desc_key = &"SPELL_SKY_STRIKE_DESC"
+level_keys = Array[StringName]([&"SPELL_SKY_STRIKE_LV1", &"SPELL_SKY_STRIKE_LV2", &"SPELL_SKY_STRIKE_LV3", &"SPELL_SKY_STRIKE_LV4", &"SPELL_SKY_STRIKE_LV5"])
+element = &"lightning"
+element_card = &"storm_core"
+affinity = &"storm"
+weight = 10
+cooldown_s = 12.0
+reach_m = 10.0
+damage = PackedInt32Array(10, 10, 11, 11, 12)
+radius_m = PackedFloat32Array(0.5, 0.5, 0.5, 0.5, 0.5)
+count = PackedInt32Array(3, 4, 4, 5, 6)
+jump_m = 4.0
+bonus_seconds = 0.3
+stacks = 1
+id = &"spell_sky_strike"

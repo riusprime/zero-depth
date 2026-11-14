@@ -9,7 +9,7 @@ const KIND := ActorStore.Kind
 func _world() -> World:
 	var w := CombatLab.world()
 	w.reward_table = ContentCompiler.compile_rewards(
-		ContentRepository.load_all().get_def(&"rewards", &"floor")
+		SharedContent.repo().get_def(&"rewards", &"floor")
 	)
 	return w
 
@@ -62,7 +62,7 @@ func test_walking_into_pickup_range_takes_it() -> void:
 
 func test_the_pickup_range_stat_widens_the_reach() -> void:
 	var w := _world()
-	w.stat_tables = ContentCompiler.compile_stat_cards(ContentRepository.load_all())
+	w.stat_tables = ContentCompiler.compile_stat_cards(SharedContent.repo())
 	var at := w.player_pos() + Vector2(6, 0)
 	_kill(w, at)
 	w.actors.set_pos(0, at + Vector2(ShardDrops.REACH_M + 0.05, 0))
@@ -153,13 +153,3 @@ func test_a_save_keeps_the_drops() -> void:
 	assert_eq(restored.shard_drops.seqs, w.shard_drops.seqs)
 	assert_eq(restored.shard_drops.next_seq, w.shard_drops.next_seq)
 	assert_eq(restored.state_hash(), w.state_hash(), "hash equal")
-
-
-func test_an_older_save_starts_with_none_lying() -> void:
-	var w := SaveLab.floor_world(77, 1)
-	var snap := WorldSnapshot.take(w)
-	(snap["world"] as Dictionary).erase(&"shard_drops")
-	var base := SaveLab.floor_world(77, 1)
-	assert_eq(WorldSnapshot.apply(base, snap), "", "an old snapshot fits")
-	assert_eq(base.shard_drops.size(), 0, "none lying")
-	assert_eq(base.state_hash(), w.state_hash(), "same state")

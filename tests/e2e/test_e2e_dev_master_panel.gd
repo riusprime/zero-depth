@@ -110,6 +110,35 @@ func test_resume_from_pause_keeps_the_master_panel_paused() -> void:
 	assert_false(main.driver.paused, "closing the panel resumes the run")
 
 
+## The game runs the native core, the only sim: the world it starts has its native side, and F10's Tools page has no
+## switch for it (there is nothing to switch to).
+func test_the_game_runs_the_native_core_and_the_tools_page_has_no_switch_for_it() -> void:
+	_e = E2e.new(self)
+	var main := await _e.boot()
+	main.tuning.save_path = SAVE
+	await _e.start_from_menu()
+	assert_not_null(_e.world().native, "the world the game started has its native side")
+	var panel := await _tools_page(main)
+	assert_null(panel.find_child("Switch_native", true, false), "no native-core switch")
+	assert_null(panel.find_child("NativeCore", true, false), "no native-core readout")
+
+
+## F10, then a click on the list's Tools row; the open panel.
+func _tools_page(main: Main) -> DevMasterPanel:
+	await _e.tap(KEY_F10)
+	var panel := main.get_node_or_null("UI/DevMasterPanel") as DevMasterPanel
+	assert_not_null(panel, "F10 opens the panel")
+	var t: Tree = null
+	for n in panel.find_children("*", "Tree", true, false):
+		t = n
+	var item := _find(t.get_root(), tr("UI_DEVM_G_TOOLS"))
+	t.scroll_to_item(item)
+	await _e.frames(2)
+	await _e.click_at(t.get_global_rect().position + t.get_item_area_rect(item).get_center())
+	await _e.frames(2)
+	return panel
+
+
 ## Types `text` as key presses that carry their characters (a text field reads the unicode, not the key).
 func _type(text: String) -> void:
 	for ch in text:

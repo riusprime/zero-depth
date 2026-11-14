@@ -1,6 +1,6 @@
 class_name VatCrowd
 extends Node3D
-## v0.10.5 W3-V1 (owner, 2026-11-06: the enemy VAT pilot, ViewPrefs.enemy_vat): draws every VAT enemy of a kind and
+## Draws every VAT enemy of a kind and
 ## look as one MultiMesh (VatBake's merged body, VatLooks' material), instead of a node per piece. Each enemy keeps its
 ## actor node, facing node and avatar (HordeAvatar with `vat` on: no pieces): ActorViews, HitFeel and HitStop drive
 ## them as before (the sync, the flinch, the hold, the hit flash and tints through show_hit, the culling's
@@ -14,16 +14,19 @@ extends Node3D
 ## A hidden actor (an egg, a vanished one) or a freed one draws nothing. Its shadow (ViewPrefs.enemy_shadows "proxy")
 ## is one more MultiMesh per kind of the same rest-pose stand-in EnemyShadows gives a node enemy (SHADOWS_ONLY), at the
 ## avatar's transform (no lift), as the stand-in followed the avatar; "blob" keeps the blob node on the actor.
-## v0.10.5 W3-V4a (owner, 2026-11-06: VAT for every regular enemy): any avatar with a VatBake rig (a HordeAvatar's, or
+## Any avatar with a VatBake rig (a HordeAvatar's, or
 ## its own vat_rig(): the Charger and the Hatchling). The drives are VatBake.drives_of (the avatar's vat_drives(), or a
 ## horde avatar's four); a rig with more than four sends the rest in a per-look drive texture, one row per instance
 ## (written with the buffer, in the same order), and its lift is the avatar's vat_lift().
+## A batched enemy (EnemyBatch: its root, facing and avatar outside the tree) is drawn the same way at the place the
+## batch reckons for it (EnemyBatch.body_at), its visibility its own nodes' flags.
 ## Presentation only (EI-07): it reads the avatars, never the sim.
 
-## The kinds a VAT crowd can draw (the pilot: the Swarmer, the most numerous horde kind: a pack of 8; v0.10.5 W3-V4a:
+## The kinds a VAT crowd can draw (the pilot: the Swarmer, the most numerous horde kind: a pack of 8;
 ## the Charger and the Brood Mother's Hatchling).
-## v0.10.5 W3-V4b: the other horde kinds (HordeVat).
-## v0.10.5 W3-V4c: the Needle, Warden, Arc Caster and Bomb Drone (SoloVat.KINDS).
+## The other horde kinds (HordeVat).
+## The Needle, Warden, Arc Caster and Bomb Drone (SoloVat.KINDS).
+## The Hive Lens's Lens Drone.
 const KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_CHARGER,
@@ -38,6 +41,17 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_WARDEN,
 	WorldReader.KIND_ARC_CASTER,
 	WorldReader.KIND_BOMB_DRONE,
+	WorldReader.KIND_LENS_DRONE,
+	WorldReader.KIND_SCRAP_HOUND,  # The owner's model (SoloVat)
+	WorldReader.KIND_ROCK_LURKER,  # The owner's model (SoloVat)
+	WorldReader.KIND_STONE_THROWER,  # The owner's model (SoloVat)
+	WorldReader.KIND_KILN_BEETLE,  # The owner's model (SoloVat)
+	WorldReader.KIND_DUST_MITE,  # The horde critters (CritterBodies, on HordeVat's path)
+	WorldReader.KIND_CAVE_BAT,
+	WorldReader.KIND_EMBER_FLEA,
+	WorldReader.KIND_ICE_CRAB,
+	WorldReader.KIND_STAR_MOTE,
+	WorldReader.KIND_CINDER_PRIEST,  # v0.11.0 O17d (SoloVat)
 ]
 ## After every node's _process (the avatars' frame-time animation runs at 0).
 const PROCESS_PRIORITY := 1000
@@ -51,13 +65,16 @@ const BOX_M := 500.0
 ## The instances drawn by the last frame (bodies, shadows; tests, probes).
 var drawn := 0
 var shadows_drawn := 0
+## The batch placing the batched enemies (ActorViews sets it).
+var batch: EnemyBatch
 ## The body sets by look key and the shadow sets by kind: {mmi, mm, entries [[root, facing, avatar]], buf, stride,
 ## pose, drawn; a rig with more than four drives: dbuf, dtex, mat (its drive texture's floats, the texture)}.
 var _looks := {}
 var _shadows := {}
+var _next_index := 0
 
 
-## v0.10.5 W3-V4b: a horde kind drawn by the owner's model is baked from that model; without its file (EnemyModels)
+## A horde kind drawn by the owner's model is baked from that model; without its file (EnemyModels)
 ## the code-built stand-in stays on the old path.
 static func supports(kind: int) -> bool:
 	if not KINDS.has(kind):
@@ -73,30 +90,44 @@ func _init() -> void:
 
 
 ## Draws `avatar` (built with `vat` on, under `facing` under the actor `root`) in the look it was built with; with
-## `shadow`, its proxy shadow too.
-func add(root: Node3D, facing: Node3D, avatar: AvatarBase, outline: Color, shadow: bool) -> void:
+## `shadow`, its proxy shadow too. `id` >= 0: a batched enemy (placed by `batch`).
+func add(
+	root: Node3D, facing: Node3D, avatar: AvatarBase, outline: Color, shadow: bool, id := -1
+) -> void:
 	var kind: int = avatar.get(&"kind")
 	var key := VatBake.look_key(kind, avatar.enemy_tint, avatar.role_glow, outline)
 	if not _looks.has(key):
 		var mesh := VatBake.mesh_for(kind, avatar.enemy_tint, avatar.role_glow, outline)
 		var pose := VatBake.pose_for(kind)
-		var mat := VatLooks.material(
-			pose, outline, pose["outline_m"], bool(mesh.get_meta(&"two_sided", false))
-		)
+		var mat := VatLooks.material(pose, bool(mesh.get_meta(&"two_sided", false)))
 		_looks[key] = _new_set(mesh, mat, true, pose)
-	(_looks[key]["entries"] as Array).append([root, facing, avatar])
+	var entry := [root, facing, avatar] if id < 0 else [root, facing, avatar, id]
+	var sets := Vector2i(_looks[key]["index"], -1)
+	_note_entry(_looks[key], entry)
 	if shadow:
 		if not _shadows.has(kind):
 			var proxy := shadow_mesh(kind)
-			if proxy == null:
-				return
-			_shadows[kind] = _new_set(proxy, null, false)
-		(_shadows[kind]["entries"] as Array).append([root, facing, avatar])
+			if proxy != null:
+				_shadows[kind] = _new_set(proxy, null, false)
+		if _shadows.has(kind):
+			sets.y = _shadows[kind]["index"]
+			_note_entry(_shadows[kind], entry)
+	if id >= 0:  # The batch draws it from its slot's columns (write_bodies), by these sets' indices
+		root.set_meta(&"vat_sets", sets)
 
 
-## The rest-pose shadow stand-in of `kind` (EnemyShadows': the same mesh a node enemy casts with).
+func _note_entry(s: Dictionary, entry: Array) -> void:
+	(s["entries"] as Array).append(entry)
+	if entry.size() <= 3:
+		s["nodes"] = int(s["nodes"]) + 1
+
+
+## The rest-pose shadow stand-in of `kind` (EnemyShadows': the same mesh a node enemy casts with). Once made it is
+## shared, and no reference avatar is built again: that build (a whole model, posed) stalled a kind's first spawn.
 static func shadow_mesh(kind: int) -> ArrayMesh:
-	var ref := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	if EnemyShadows.has_proxy(kind):
+		return EnemyShadows.proxy_mesh(kind, null)
+	var ref := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0)
 	var mesh := EnemyShadows.proxy_mesh(kind, ref)
 	ref.free()
 	return mesh
@@ -133,7 +164,7 @@ func instance_of(avatar: Node3D) -> Dictionary:
 		var buf: PackedFloat32Array = s["buf"]
 		var k := 0
 		for e: Array in s["entries"]:
-			if not _drawable(e):
+			if not _alive(e) or not _drawable(e):  # (a test may look after a free, before the next write)
 				continue
 			if e[2] == avatar:
 				if k >= int(s["drawn"]):
@@ -165,21 +196,93 @@ func instance_of(avatar: Node3D) -> Dictionary:
 func _process(_delta: float) -> void:
 	drawn = 0
 	shadows_drawn = 0
+	var native := _write_native()
 	for s: Dictionary in _looks.values():
-		drawn += _write(s, true)
+		if not native.has(s["index"]):
+			drawn += _write(s, true)
 	for s: Dictionary in _shadows.values():
-		shadows_drawn += _write(s, false)
+		if not native.has(s["index"]):
+			shadows_drawn += _write(s, false)
 
 
-## v0.10.5 W3-V1: one instance per drawable enemy of set `s`; returns how many.
-func _write(s: Dictionary, body: bool) -> int:
+## The sets of batched enemies only, written by the batch's native avatars in one call (EnemyBatch.write_bodies),
+## each then handed to its MultiMesh; returns their indices ({} when the batch's avatars run in GDScript). A set's
+## dead entries are dropped only when the batch lost a slot (its entries die with their slots).
+func _write_native() -> Dictionary:
+	var done := {}
+	if batch == null:
+		return done
+	var want: Array = []
+	var sets: Array[Dictionary] = []
+	for group: Dictionary in [_looks, _shadows]:
+		for s: Dictionary in group.values():
+			if int(s["seen"]) != batch.removed:
+				_compact(s)
+				s["seen"] = batch.removed
+			if int(s["nodes"]) > 0 or (s["entries"] as Array).is_empty():
+				continue
+			var body: bool = s["stride"] == BODY_STRIDE
+			var pose: Dictionary = s["pose"]
+			want.append(
+				[
+					s["index"],
+					body,
+					float(pose.get("period", 0.0)),
+					int(pose.get("drive_texels", 0)) * 4 if body else 0,
+					(s["mm"] as MultiMesh).instance_count
+				]
+			)
+			sets.append(s)
+	if want.is_empty():
+		return done
+	var got := batch.write_bodies(want)
+	if got.is_empty():  # (the avatars run in GDScript)
+		return done
+	for j in sets.size():
+		var s := sets[j]
+		var r: Array = got[j]
+		var n: int = r[0]
+		var mm: MultiMesh = s["mm"]
+		if int(r[1]) != mm.instance_count:
+			mm.instance_count = r[1]
+		var dn: int = want[j][3]
+		if n > 0:
+			mm.buffer = r[2]
+			if dn > 0:
+				_upload_drives(s, r[3], dn / 4, mm.instance_count)
+		mm.visible_instance_count = n
+		s["buf"] = r[2]
+		if dn > 0:
+			s["dbuf"] = r[3]
+		s["drawn"] = n
+		if want[j][1]:
+			drawn += n
+		else:
+			shadows_drawn += n
+		done[s["index"]] = true
+	return done
+
+
+## Drops set `s`'s dead entries (kept in their order) and counts its node ones.
+func _compact(s: Dictionary) -> int:
 	var entries: Array = s["entries"]
 	var keep := 0
+	var nodes := 0
 	for e: Array in entries:
 		if _alive(e):
 			entries[keep] = e
 			keep += 1
+			if e.size() <= 3:
+				nodes += 1
 	entries.resize(keep)
+	s["nodes"] = nodes
+	return keep
+
+
+## One instance per drawable enemy of set `s`; returns how many.
+func _write(s: Dictionary, body: bool) -> int:
+	var entries: Array = s["entries"]
+	var keep := _compact(s)
 	var mm: MultiMesh = s["mm"]
 	var stride: int = s["stride"]
 	var buf: PackedFloat32Array = s["buf"]
@@ -199,17 +302,20 @@ func _write(s: Dictionary, body: bool) -> int:
 			dbuf.resize(mm.instance_count * dn)
 	var n := 0
 	for e: Array in entries:
-		if not _drawable(e):
+		if e.size() <= 3 and not _drawable(e):  # (a batched one: body_at below says)
 			continue
 		var avatar: AvatarBase = e[2]
 		var root: Node3D = e[0]
-		var xf: Transform3D = (
-			inv
-			* root.get_global_transform_interpolated()
-			* (e[1] as Node3D).transform
-			* avatar.transform
-		)
-		if body and avatar is HordeAvatar:  # v0.10.5 W3-V4b: the body's own moves (the Swarmer's: its lift)
+		var at: Transform3D
+		if e.size() > 3:  # A batched enemy: outside the tree, at the place the batch reckons
+			var bo := batch.body_at(e[3])
+			if bo.x == INF:  # hidden (an egg, a vanished one)
+				continue
+			at = Transform3D(Basis.IDENTITY, bo)
+		else:
+			at = inv * root.get_global_transform_interpolated()
+		var xf: Transform3D = at * (e[1] as Node3D).transform * avatar.transform
+		if body and avatar is HordeAvatar:  # The body's own moves (the Swarmer's: its lift)
 			xf = xf * (avatar as HordeAvatar).vat_offset()
 		elif body:
 			xf = xf.translated_local(Vector3(0, float(avatar.call(&"vat_lift")), 0))
@@ -251,7 +357,7 @@ func _write(s: Dictionary, body: bool) -> int:
 	return n
 
 
-## v0.10.5 W3-V4a: the drive texture of set `s` (`texels` wide, a row per instance of its capacity) from `dbuf`; a new
+## The drive texture of set `s` (`texels` wide, a row per instance of its capacity) from `dbuf`; a new
 ## texture (given to the material) when the capacity grew.
 func _upload_drives(s: Dictionary, dbuf: PackedFloat32Array, texels: int, rows: int) -> void:
 	var img := Image.create_from_data(
@@ -276,6 +382,8 @@ static func _alive(e: Array) -> bool:
 
 
 static func _drawable(e: Array) -> bool:
+	if e.size() > 3:  # Outside the tree: its own nodes' flags (the avatar sits right under the facing)
+		return (e[0] as Node3D).visible and (e[1] as Node3D).visible and (e[2] as Node3D).visible
 	return (e[2] as Node3D).is_visible_in_tree()
 
 
@@ -304,8 +412,18 @@ func _new_set(mesh: Mesh, mat: Material, body: bool, pose := {}) -> Dictionary:
 	var stride := BODY_STRIDE if body else SHADOW_STRIDE
 	buf.resize(START_CAPACITY * stride)
 	var out := {
-		"mmi": mmi, "mm": mm, "entries": [], "buf": buf, "stride": stride, "pose": pose, "drawn": 0
+		"mmi": mmi,
+		"mm": mm,
+		"entries": [],
+		"buf": buf,
+		"stride": stride,
+		"pose": pose,
+		"drawn": 0,
+		"index": _next_index,  # (a batched slot names its sets by it)
+		"nodes": 0,  # its live entries that are nodes (not batched)
+		"seen": -1,  # the batch's removals when its dead entries were last dropped
 	}
+	_next_index += 1
 	if body and int(pose.get("drive_texels", 0)) > 0:
 		out["dbuf"] = PackedFloat32Array()
 		out["mat"] = mat
@@ -313,7 +431,7 @@ func _new_set(mesh: Mesh, mat: Material, body: bool, pose := {}) -> Dictionary:
 	return out
 
 
-## v0.10.5 W3-V4a: a drive texture of one still instance (every drive 0).
+## A drive texture of one still instance (every drive 0).
 static func _zero_drives(texels: int) -> ImageTexture:
 	var data := PackedFloat32Array()
 	data.resize(texels * 4)
@@ -322,11 +440,13 @@ static func _zero_drives(texels: int) -> ImageTexture:
 	)
 
 
-## v0.10.5 W3-V1 (ShaderWarmup): one still instance of `kind` in this look, so its shader variant compiles behind the
-## loading cover (and its bake is made there).
+## ShaderWarmup: one still instance of `kind` in this look, so its shader variant compiles behind the
+## loading cover (and its bake and its proxy shadow's mesh are made there).
 static func warm_proxy(
 	kind: int, tint: Color, role_glow: float, outline: Color
 ) -> MultiMeshInstance3D:
+	if ViewPrefs.enemy_shadows == "proxy":
+		shadow_mesh(kind)
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
@@ -342,9 +462,7 @@ static func warm_proxy(
 	mmi.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # set outside the physics step, like the crowd's
 	mmi.multimesh = mm
 	var pose := VatBake.pose_for(kind)
-	var mat := VatLooks.material(
-		pose, outline, pose["outline_m"], bool(mesh.get_meta(&"two_sided", false))
-	)
+	var mat := VatLooks.material(pose, bool(mesh.get_meta(&"two_sided", false)))
 	if int(pose["drive_texels"]) > 0:
 		VatLooks.set_drives(mat, _zero_drives(int(pose["drive_texels"])))
 	mmi.material_override = mat

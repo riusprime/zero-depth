@@ -1,6 +1,6 @@
 class_name EliteViews
 extends Node3D
-## v0.9.0 EL (ELITES.md E0-E3; W67: "a short spawn effect … Avoid lengthy cinematic introductions"): what the elites
+## ELITES.md E0-E3; W67: "a short spawn effect … Avoid lengthy cinematic introductions": what the elites
 ## add on the ground and in the air, read from the sim each tick (WorldReader; EI-07), beside TelegraphViews (which
 ## draws each ability's hit area from the same function the hit resolves: the slam's filling circle, the rift mark,
 ## the beam's line):
@@ -11,7 +11,7 @@ extends Node3D
 ## - the Breaker's slam: a dust ring opening to the circle's edge, and a thud of the camera (WorldViewRoot: IsoRig.thud,
 ##   none with reduced motion or the shake off) only when the hero stands within THUD_M.
 ## Reduced motion: the same marks, nothing turns or pulses.
-## v0.10.5 (owner PERF_PLAYLOG_1: view.elite_fx 56.2 ms, the first elite): the rings and the arrival sigil are pooled
+## The rings and the arrival sigil are pooled
 ## and made at the floor's load (prepare), the Conduit's pack beams too (WorldViewRoot); same marks, same look.
 
 const ARRIVE_S := 0.7
@@ -24,12 +24,12 @@ const GOLD := Color("#F2C14E")
 const RIFT := Color("#9B5CFF")
 const BEAM := Color("#B8FFF4")
 const DUST := Color("#C9B79A")
-## v0.10.0 VX5: the arrival sigil is a MagicArea (R13) and the Conduit's beam the pack's (R27); false: the old ones.
+## The arrival sigil is a MagicArea and the Conduit's beam the pack's; false: the old ones.
 const PACK_SIGILS := true
 const PACK_BEAMS := true
 const SIGIL_R := 1.6
 
-## v0.10.5 (owner PERF_PLAYLOG_1: view.elite_fx 56.2 ms on f4, the first elite's arrival): the rings by use (inner and
+## The rings by use (inner and
 ## outer radius, colour), pooled: prepare() makes PREFILL of each at the floor's load, a ring that ends goes back to
 ## its pool hidden, and the rings of one use share one mesh.
 const RINGS := {
@@ -38,11 +38,11 @@ const RINGS := {
 	&"rift": [0.35, 1.0, RIFT],
 }
 const PREFILL := {&"arrive": 1, &"dust": 2, &"rift": 2}
-## v0.10.5: idle pack beams (the Conduit's, pack_ids) made at the floor's load (WorldViewRoot).
+## Idle pack beams (the Conduit's, pack_ids) made at the floor's load (WorldViewRoot).
 const PACK_PREFILL := 2
 
 
-## v0.10.5: the arrival sigil, kept and played again (prepare): a MagicArea that hides when its fade ends instead of
+## The arrival sigil, kept and played again (prepare): a MagicArea that hides when its fade ends instead of
 ## freeing itself (a new one loads and compiles its shaders and builds its meshes, materials and particles).
 class PooledSigil:
 	extends MagicArea
@@ -53,7 +53,7 @@ class PooledSigil:
 			return
 		super(delta)
 
-	## Hidden and still until play() (its sparks off); v0.10.5 PC: out of the tree (EliteViews keeps it).
+	## Hidden and still until play() (its sparks off); out of the tree (EliteViews keeps it).
 	func park() -> void:
 		_phase = IDLE
 		if _sparks != null:
@@ -66,7 +66,7 @@ class PooledSigil:
 
 ## Nodes alive, each [node, seconds left, seconds total, kind &"arrive" | &"beam" | &"dust"].
 var _fx: Array = []
-## v0.10.5: idle rings by use (RINGS), and their shared meshes. v0.10.5 PC (owner PERF_PLAYLOG_2: idle pool nodes in
+## Idle rings by use (RINGS), and their shared meshes. v0.10.5 PC (owner PERF_PLAYLOG_2: idle pool nodes in
 ## the tree cost every frame): the idle rings and the parked sigil wait outside the tree, kept here (freed with the
 ## view).
 var _idle := {}
@@ -92,7 +92,7 @@ func fx_count() -> int:
 	return _fx.size()
 
 
-## v0.10.5: the floor's elite effects made now (WorldViewRoot, at the floor's load behind the cover): PREFILL rings of
+## The floor's elite effects made now (WorldViewRoot, at the floor's load behind the cover): PREFILL rings of
 ## each use and the arrival sigil, all hidden. The view is marked ShaderWarmup.WARM_META, so the warm-up draws each
 ## piece once (their shaders and pipelines compile on the cover, not at the first elite).
 func prepare() -> void:
@@ -203,13 +203,13 @@ func _process(delta: float) -> void:
 
 func _arrival(at: Vector2) -> void:
 	if PACK_SIGILS and MagicArea.kinds().has("circle"):
-		# R13: the sigil is a magic circle in the shadow element (it forms, fades and frees itself in about ARRIVE_S;
-		# v0.10.5: the pooled one hides instead, and the next arrival plays it again)
+		# The sigil is a magic circle in the shadow element (it forms, fades and frees itself in about ARRIVE_S;
+		# The pooled one hides instead, and the next arrival plays it again)
 		if _sigil != null and not _sigil.visible:
 			_sigil.seed = randf() * 10.0  # (as MagicArea.add gives each new one)
 			_sigil.position = SimPlane.to_3d(at, Y)
 			if _sigil.get_parent() == null:
-				add_child(_sigil)  # (v0.10.5 PC: parked outside the tree)
+				add_child(_sigil)  # (parked outside the tree)
 			_sigil.visible = true
 			_sigil.set_process(true)
 			_sigil.play()
@@ -227,7 +227,7 @@ func _arrival(at: Vector2) -> void:
 	_fx.append([ring, ARRIVE_S, ARRIVE_S, &"dust"])
 
 
-## The arrival sigil's MagicArea options (R13), its position aside.
+## The arrival sigil's MagicArea options, its position aside.
 static func _sigil_options() -> Dictionary:
 	return {
 		&"radius": SIGIL_R,
@@ -252,7 +252,7 @@ func _rift(id: int, tg: Dictionary) -> void:
 
 func _beam(o: Obb) -> void:
 	var pack := BossPackHold.find(self) if PACK_BEAMS else null
-	if pack != null and pack.has_room(&"beam"):  # R27: the pack's beam along the Conduit's line for BEAM_S
+	if pack != null and pack.has_room(&"beam"):  # The pack's beam along the Conduit's line for BEAM_S
 		var from := SimPlane.to_3d(o.center - o.axis_u * o.half.x, 0.9)
 		var to := SimPlane.to_3d(o.center + o.axis_u * o.half.x, 0.9)
 		var pn := pack.spawn(BossPackHold.beam_id(BEAM), from, 1.0, {}, BEAM_S)
@@ -294,7 +294,7 @@ func _disc(r: float, c: Color, a: float) -> Node3D:
 	return n
 
 
-## v0.10.5: a ring of `use` (RINGS) shown, in the view: an idle one from its pool (as new: no turn, no scale, its
+## A ring of `use` (RINGS) shown, in the view: an idle one from its pool (as new: no turn, no scale, its
 ## colour at 0.7), else a new one.
 func _ring_for(use: StringName) -> Node3D:
 	var idle: Array = _idle.get(use, [])
@@ -302,7 +302,7 @@ func _ring_for(use: StringName) -> Node3D:
 		return _new_ring(use)
 	var n: Node3D = idle.pop_back()
 	if n.get_parent() == null:
-		add_child(n)  # (v0.10.5 PC: idle outside the tree)
+		add_child(n)  # (idle outside the tree)
 	n.transform = Transform3D.IDENTITY
 	var m := (n.get_child(0) as GeometryInstance3D).material_override as StandardMaterial3D
 	m.albedo_color = Color(RINGS[use][2] as Color, 0.7)
@@ -318,7 +318,7 @@ func _new_ring(use: StringName) -> Node3D:
 	return n
 
 
-## Back to its pool, hidden and out of the tree (v0.10.5 PC).
+## Back to its pool, hidden and out of the tree.
 func _park(n: Node3D) -> void:
 	n.visible = false
 	(_idle.get_or_add(n.get_meta(&"ring_use"), []) as Array).append(n)
@@ -326,7 +326,7 @@ func _park(n: Node3D) -> void:
 		remove_child(n)
 
 
-## v0.10.5 PC: the idle pieces outside the tree (ShaderWarmup draws them once at the load).
+## The idle pieces outside the tree (ShaderWarmup draws them once at the load).
 func idle_pieces() -> Array[Node]:
 	var out: Array[Node] = []
 	for use: StringName in _idle:
@@ -338,7 +338,7 @@ func idle_pieces() -> Array[Node]:
 	return out
 
 
-## v0.10.5 PC: how many idle pieces wait outside the tree (tests, scripts/checks/pool_node_count.gd).
+## How many idle pieces wait outside the tree (tests, scripts/checks/pool_node_count.gd).
 func idle_outside() -> int:
 	return idle_pieces().size()
 

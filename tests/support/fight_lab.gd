@@ -6,11 +6,16 @@ extends RefCounted
 
 
 ## Floor `floor_index` of the run with seed `run_seed`, with utility `utility` (&"guard" or &"blink"). `items`:
-## indices into the compiled items the player starts with (engines and combos follow).
+## indices into the compiled items the player starts with (engines and combos follow). `boss_id`: this boss's room
+## and fight instead of the floor's own (v0.11.0 F8: the arena hazards' real rooms).
 static func floor_world(
-	run_seed: int, floor_index: int, utility: StringName = &"guard", items: Array = []
+	run_seed: int,
+	floor_index: int,
+	utility: StringName = &"guard",
+	items: Array = [],
+	boss_id: StringName = &""
 ) -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var run := RunState.start(
 		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", RunSaver.RUN_ID))
 	)
@@ -26,6 +31,10 @@ static func floor_world(
 	var boss := FloorShape.boss(
 		run, RunContentCompiler.compile_boss_pools(repo, run.table.floors), run.floor_index
 	)
+	if boss_id != &"":
+		for k in bosses.size():
+			if bosses[k].id == boss_id:
+				boss = k
 	var arena := (
 		BossArenaSpec.make(bosses[boss].arena_cells, bosses[boss].arena_template, boss)
 		if boss >= 0

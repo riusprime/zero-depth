@@ -1,6 +1,6 @@
 class_name CodexRecorder
 extends RefCounted
-## v0.7.5 CX (owner N6): turns what the sim reports into Codex unlocks and counters (CodexStore, in the profile).
+## Turns what the sim reports into Codex unlocks and counters (CodexStore, in the profile).
 ## Main calls `observe` after every tick of a floor (SimDriver.ticked) and `enter_biome` when a floor starts. It reads
 ## the sim only through WorldReader and its SimEvents (EI-07) and writes only the profile; nothing here reaches a run,
 ## a save or a hash. Recording is off in a run with the dev panel's balance tweaks (`enabled`, owner: tweaked runs
@@ -26,6 +26,10 @@ var _last_seq := 0
 var _kinds := {}
 ## Boss actor ids already counted as a fight on this floor.
 var _fought := {}
+## A surge: 120 critters of one kind scanned every tick: the normal enemy kinds whose entry is already
+## unlocked in `_known_store` (an unlock is never taken back), so their scan stops after the id-to-kind note.
+var _known := {}
+var _known_store: CodexStore
 var _offer := PackedInt32Array()
 var _shop := PackedInt32Array()
 var _event := PackedInt32Array()
@@ -77,10 +81,15 @@ func observe(reader: WorldReader) -> void:
 
 
 func _scan_actors(reader: WorldReader) -> void:
+	if _known_store != store:
+		_known.clear()
+		_known_store = store
 	var me := reader.player_pos()
 	for i in range(1, reader.actor_count()):
 		var kind := reader.actor_kind(i)
 		_kinds[reader.actor_id(i)] = kind
+		if _known.has(kind):
+			continue
 		if not enabled or reader.actor_dead(i) or reader.actor_spawning(i):
 			continue
 		if reader.actor_team(i) == reader.actor_team(0):
@@ -97,9 +106,11 @@ func _scan_actors(reader: WorldReader) -> void:
 			var enemy := catalog.enemy_of_kind(kind)
 			if enemy != &"" and not store.is_unlocked(&"enemies", enemy):
 				store.unlock(&"enemies", enemy)
+			if enemy != &"":
+				_known[kind] = true
 
 
-## v0.10.5 O18: the Lore entries that unlock when their system is first met: a curse held, the Deep gate within sight,
+## The Lore entries that unlock when their system is first met: a curse held, the Deep gate within sight,
 ## a rune puzzle solved or a boss down (the Rune Fragments' sources; there is no fragment event, see `_events`), the
 ## final arena entered, the Ascension portal within sight.
 func _lore(reader: WorldReader) -> void:
@@ -122,12 +133,16 @@ func _lore(reader: WorldReader) -> void:
 		and reader.portal_pos().distance_to(me) <= SEEN_M
 	):
 		store.unlock(&"lore", &"ascension")
-	for id in reader.loop_rules():  # v0.10.5 O5b: a loop rule met
+	for id in reader.loop_rules():  # A loop rule met
 		store.unlock(&"lore", LoopRules.lore_id(id))
 	_constellations(reader)
+	for k in reader.relic_count():  # A relic held unlocks its Codex entry
+		var relic := reader.relic_id(k)
+		if reader.relic_held(k) and catalog.has(&"cards", relic):
+			store.unlock(&"cards", relic)
 
 
-## v0.10.5 W3-P10g: a Constellation picked unlocks its Codex entry; Meteor when Starfall's star turns into it.
+## A Constellation picked unlocks its Codex entry; Meteor when Starfall's star turns into it.
 func _constellations(reader: WorldReader) -> void:
 	for id in reader.constellations():
 		var card := WorldReader.constellation_card_id(id)
@@ -156,7 +171,7 @@ func _events(reader: WorldReader) -> bool:
 				var boss := catalog.boss_of_kind(_kinds.get(e.target_id, -1))
 				if boss != &"":
 					store.add(&"bosses", boss, &"kills")
-				store.unlock(&"lore", &"runes")  # v0.10.5 O18: the first boss down earns the first Rune Fragments
+				store.unlock(&"lore", &"runes")  # The first boss down earns the first Rune Fragments
 			SimEvent.Kind.PICKUP:
 				var id := _card_id(reader, e.amount)
 				if id != &"":

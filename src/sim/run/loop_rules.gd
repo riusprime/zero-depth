@@ -6,7 +6,7 @@ extends RefCounted
 ## (RunState.finish_floor -> draw). The rules held so far are RunState.loop_rules (saved; a run saved before O5b has
 ## none) and, on each floor, World.loop_rules (their indices into POOL, set by RunState.prepare). What each does:
 ## - SWIFT: normal enemies' move and charge speed × RunTable.loop_swift_permille (RunState.scale_enemies);
-## - LEAN_MENDING: heal orbs drop × loop_heal_chance_permille, heal × loop_heal_amount_permille (RunState.prepare);
+## - LEAN_MENDING: the heal-orb meter ÷ loop_heal_chance_permille, heal × loop_heal_amount_permille (RunState.prepare);
 ## - ELITE_HUNT: every floor marks its elite rooms at the loop's last floor's rate (elite_floor);
 ## - SHIELDED: every normal enemy guards its front: a hit from within World.loop_shield_half_arc of its facing deals
 ##   World.loop_shield_permille, tagged ARMOURED (Damage.target_mult);

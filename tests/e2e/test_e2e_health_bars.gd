@@ -12,11 +12,6 @@ func after_each() -> void:
 	Input.action_release(&"shoot")
 
 
-func _click(e: E2e, main: Main, button_name: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button_name, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## The right stick toward a sim-plane direction (the inverse of InputLatch.screen_to_sim).
 func _aim(e: E2e, dir: Vector2) -> void:
 	var c := InputLatch.C45
@@ -36,8 +31,8 @@ func test_a_hit_boss_shows_a_chunk_that_holds_then_drains() -> void:
 	await e.start_from_menu(&"gun")
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.is_dev_panel_open())
-	await _click(e, main, "God")
-	await _click(e, main, "SpawnBoss")
+	await e.click_dev("God")
+	await e.click_dev("SpawnBoss")
 	await e.frames(2)
 	var reader := main.driver.reader
 	assert_true(reader.boss_alive(), "a boss came")

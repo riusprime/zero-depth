@@ -1,6 +1,6 @@
 class_name AttackView
 extends RefCounted
-## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md §4; PRESENTATION_CONTRACTS §4): the weapon attacks' looks composed
+## docs/design/MODIFIER_ENGINE.md §4; PRESENTATION_CONTRACTS §4: the weapon attacks' looks composed
 ## from their final specs (WorldReader.attack_spec), never from which cards are held. Presentation only (EI-07).
 ##
 ## The layers, as far as MX1 draws them (the look is the v0.5 look; the 8-form / 5-element art is MX stage 3):

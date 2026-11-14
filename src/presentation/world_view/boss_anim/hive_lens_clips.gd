@@ -1,6 +1,6 @@
 class_name HiveLensClips
 extends RefCounted
-## v0.8.0 BA: the Hive Lens's clips (the owner's rigged floating eye, 23 Tripo joints posed through BonePoser; its
+## The Hive Lens's clips (the owner's rigged floating eye, 23 Tripo joints posed through BonePoser; its
 ## BODY turns about its sphere's centre, HiveLensAvatar). Parameters the avatar maps: tail_curl, tail_splay and
 ## tail_sweep (its three cable tails curled up under it, flung out, streamed back; on top of their own lagging sway),
 ## spin (how fast the crown turns). A hovering eye, so it moves in swells and lurches rather than steps: a bob and a
@@ -43,7 +43,7 @@ static func library() -> Dictionary:
 			_slam_ring(),
 			_leap(),
 			_deploy(),
-			_gaze(),  # v0.8.0 BS2 (S4)
+			_gaze(),  # v0.8.0 BS2
 			_shielded(),
 			_flinch(),
 			_stagger(),
@@ -52,6 +52,7 @@ static func library() -> Dictionary:
 			_death(),
 		]:
 			_lib[c.name] = c
+		BossClip.loosen(_lib, 0.0, 1.25)  # The wind-up, the recoil, the idle sway
 	return _lib
 
 
@@ -216,7 +217,7 @@ static func _deploy() -> BossClip:
 	return c
 
 
-## v0.8.0 BS2 (owner O5, S4): the Gaze. Its windup (0..0.2, the 0.8 s the eye brightens): it draws back and up,
+## The Gaze. Its windup (0..0.2, the 0.8 s the eye brightens): it draws back and up,
 ## the crown thrown open wide round the eye, trembling harder as the charge builds; on the strike the beam kicks it
 ## back a little and it then stares, steady, its body leaning against the beam's push, the crown spinning slowly and
 ## the tails streaming back while the beam turns (0.2..0.9: the long active part); then it blinks and settles.

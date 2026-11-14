@@ -80,7 +80,7 @@ const CRYSTAL_RED := Color("#E0365A")
 
 var shroud: MeshInstance3D
 var cold := OmniLight3D.new()
-## v0.10.5 S5: the key light over the altar.
+## The key light over the altar.
 var altar_light := OmniLight3D.new()
 ## Every sigil drawn: the big floor one first, the ring's, then the wall ones.
 var sigils: Array[MeshInstance3D] = []
@@ -120,7 +120,7 @@ func setup(reader: WorldReader) -> void:
 	cold.light_energy = COLD_ENERGY
 	cold.omni_range = maxf(room.size.x, room.size.y) * 0.7
 	cold.shadow_enabled = false
-	cold.distance_fade_enabled = true  # BIOME_PERF_AND_LIGHT (O30): off-screen lights fade out
+	cold.distance_fade_enabled = true  # BIOME_PERF_AND_LIGHT: off-screen lights fade out
 	cold.distance_fade_begin = 30.0
 	cold.distance_fade_length = 8.0
 	cold.position = SimPlane.to_3d(room.get_center(), COLD_HEIGHT)
@@ -193,7 +193,7 @@ static func wall_points(room: Rect2, doors: Array = []) -> PackedVector2Array:
 	return out
 
 
-## v0.8.0 N19: the room dresser's placements (StageDresser.dress) without its loose decoration and wall lights inside
+## The room dresser's placements (StageDresser.dress) without its loose decoration and wall lights inside
 ## `room` (the pact room has its own fixed look; the walls, the doorways and every other room are untouched).
 static func strip(placements: Array, room: Rect2) -> Array:
 	if room.size == Vector2.ZERO:
@@ -318,7 +318,7 @@ func _build_crystals(reader: WorldReader) -> void:
 			mat_glow.emission_enabled = true
 			mat_glow.emission = c
 			mat_glow.roughness = 0.15
-			mat_glow.metallic = ShardMesh.CRYSTAL_METALLIC  # v0.8.0 GX: the glint
+			mat_glow.metallic = ShardMesh.CRYSTAL_METALLIC  # The glint
 			glow_mats.append(mat_glow)
 		for j in count:
 			var u := float(j) / count

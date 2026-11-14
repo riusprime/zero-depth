@@ -13,34 +13,34 @@ extends AttackDefinition
 @export var cooldown_seconds := 1.0
 ## Locale key of the death recap line ("The Gatekeeper's fist slam crushed you.").
 @export var cause_key: StringName
-## Boss challenge (v0.3.0 BX): its recovery opens the boss's weak point; and a follow-up attack (an id of the same
+## Boss challenge: its recovery opens the boss's weak point; and a follow-up attack (an id of the same
 ## boss, empty = none) that starts at once instead of the recovery, follow_up_permille of the time (when the player
 ## is in the follow-up's range band; a follow-up never chains again).
 @export var opens_weak_point := false
 @export var follow_up: StringName
 @export var follow_up_permille := 0
-## v0.7.5 BF1 (owner N15, "Track, then lock 0.8 s"): > 0 makes the attack's marker follow the player's exact
+## > 0 makes the attack's marker follow the player's exact
 ## position for the windup's first (telegraph_seconds - lock_seconds), then lock in place and flash for its last
 ## lock_seconds before it strikes (a dodge window: at least the telegraph minimum). 0 = as before (the boss's
 ## track_commit rule).
 @export var lock_seconds := 0.0
-## v0.7.5 BF1 (owner N15, "Shielded during big patterns"): the boss is shielded while it winds up and performs this
+## The boss is shielded while it winds up and performs this
 ## attack (its signature pattern): hits spark off and deal nothing; it opens between patterns.
 @export var shielded := false
-## v0.10.5 O2a (owner L3: "invulnerable for too long, almost unhittable"): with `shielded`, >= 0 holds the shield
+## With `shielded`, >= 0 holds the shield
 ## only through the windup and the first shield_seconds of the active time (then hits land while the pattern plays
 ## out); -1 (the default) through the whole active time.
 @export var shield_seconds := -1.0
-## v0.8.0 BS1 (owner O5; BOSS_SIGNATURES.md S2, S3): the death recap line for the attack's late part: the javelins
+## The death recap line for the attack's late part: the javelins
 ## coming back (a pattern with recall_seconds), an egg bursting (marks with egg_seconds and a pattern). Required
 ## with them; empty otherwise.
 @export var late_cause_key: StringName
-## v0.8.0 BP (owner O27): how big a hit the attack is (BossSchemas.HIT_CLASSES: &"small", &"medium", &"big"), which
+## How big a hit the attack is (BossSchemas.HIT_CLASSES: &"small", &"medium", &"big"), which
 ## sets how many of its hits kill the hero; empty for what is not a hit of its own (the meltdown's burning ground, the
 ## Nemesis's hits made from the build). A big attack ends in its punish window: it never chains into a follow-up
 ## (BossDefinition checks its recovery).
 @export var hit_class: StringName
-## v0.8.0 BP: each orb or shot its bullet pattern fires deals this (a small hit) when the attack's own hit is bigger (a
+## Each orb or shot its bullet pattern fires deals this (a small hit) when the attack's own hit is bigger (a
 ## leap's quake ring, a burrow's eruption ring, an egg's burst, the gaze's and the Cross's orbs); 0 = `damage`.
 @export var orb_damage := 0
 
@@ -60,7 +60,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	for k: String in schema["params"]:
 		if not shape_params.has(k):
 			issues.append(ValidationIssue.new(&"param_missing", path, where + "%s is missing" % k))
-	var optional: Array = schema.get("optional", [])  # v0.7.5 BF2: params a move may take
+	var optional: Array = schema.get("optional", [])  # Params a move may take
 	for k in shape_params:
 		if not (schema["params"] as Array).has(k) and not optional.has(k):
 			issues.append(ValidationIssue.new(&"param_unknown", path, where + "%s is unknown" % k))
@@ -113,7 +113,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 			issues.append(ValidationIssue.new(&"not_positive", path, where + "%s must be >= 1" % k))
 	if shape_params.has("count") and int(shape_params["count"]) > 8:
 		issues.append(ValidationIssue.new(&"too_many", path, where + "count must be <= 8"))
-	# v0.4.0 BO: a flood's lanes need room between them and a burn period of at least a tick.
+	# A flood's lanes need room between them and a burn period of at least a tick.
 	if shape_params.has("gap_m") and float(shape_params["gap_m"]) <= 0.0:
 		issues.append(ValidationIssue.new(&"not_positive", path, where + "gap_m must be > 0"))
 	if (
@@ -126,7 +126,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	for k: String in BossSchemas.ENEMY_PARAMS + BossSchemas.PATTERN_PARAMS:
 		if shape_params.has(k) and String(shape_params[k]).is_empty():
 			issues.append(ValidationIssue.new(&"missing", path, where + "%s is empty" % k))
-	if shape_params.has("aim_degrees"):  # v0.8.0 PR (O84): a pattern's fixed aim
+	if shape_params.has("aim_degrees"):  # A pattern's fixed aim
 		var deg := float(shape_params["aim_degrees"])
 		if move != &"pattern" or deg < 0.0 or deg >= 360.0:
 			issues.append(
@@ -141,12 +141,13 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	_validate_tide(issues, path, where)
 	_validate_twin(issues, path, where)
 	_validate_judge(issues, path, where)
-	ShadeRules.validate(self, issues, path, where)  # v0.9.0 NB4: Lights Out, the Snuff
-	HardRules.validate(self, issues, path, where)  # v0.9.5 BH2: the five harder spells
-	PrismRules.validate(self, issues, path, where)  # v0.10.5 O3: the Prism's last phase
+	ShadeRules.validate(self, issues, path, where)  # Lights Out, the Snuff
+	HardRules.validate(self, issues, path, where)  # The five harder spells
+	PrismRules.validate(self, issues, path, where)  # The Prism's last phase
+	GreatJavelinRules.validate(self, issues, path, where)  # The Warlord's great javelin
 
 
-## v0.8.0 BP (owner O27): a known hit class; a big attack never chains (its punish window follows it); orb_damage only
+## A known hit class; a big attack never chains (its punish window follows it); orb_damage only
 ## for an attack with a pattern.
 func _validate_hit_class(issues: Array[ValidationIssue], path: String, where: String) -> void:
 	if not String(hit_class).is_empty() and not BossSchemas.HIT_CLASSES.has(hit_class):
@@ -163,9 +164,9 @@ func _validate_hit_class(issues: Array[ValidationIssue], path: String, where: St
 		)
 
 
-## v0.8.0 FB2 (FINAL_BOSS.md F5, F7): a Cross has 2..8 arms, real lengths and times, speeds up (its fast quarter no
+## FINAL_BOSS.md F5, F7: a Cross has 2..8 arms, real lengths and times, speeds up (its fast quarter no
 ## slower than its quarter), spins and opens a window of at least the telegraph minimum each, fits both in its active
-## time, is shielded (its window is the only opening), and fires its bolts no faster than a tick. v0.8.0 PR (O84): it
+## time, is shielded (its window is the only opening), and fires its bolts no faster than a tick. it
 ## fires no orbs.
 func _validate_cross(issues: Array[ValidationIssue], path: String, where: String) -> void:
 	if move != &"cross":
@@ -210,7 +211,7 @@ func _validate_cross(issues: Array[ValidationIssue], path: String, where: String
 				&"missing", path, where + "a cross is shielded (its window opens it)"
 			)
 		)
-	# v0.8.0 PR (owner O84: "never make small balls and lasers at the same time"): a Cross fires no orbs; the orbs
+	# A Cross fires no orbs; the orbs
 	# are spells of their own (`pattern` attacks), cast between the Crosses.
 	if sp.has("pattern_id") or sp.has("orb_every_seconds"):
 		issues.append(
@@ -228,7 +229,7 @@ func _validate_cross(issues: Array[ValidationIssue], path: String, where: String
 		issues.append(ValidationIssue.new(&"missing", path, where + "bolt_attack is empty"))
 
 
-## v0.8.0 FB1 (FINAL_BOSS.md F4): the Colossus's moves. A combo's strikes stand apart more than the lock (each follows
+## FINAL_BOSS.md F4: the Colossus's moves. A combo's strikes stand apart more than the lock (each follows
 ## the player a little before it locks); spikes come in 1..MAX_STEPS steps a real distance apart; a chase has at most
 ## two lines and each line's spike erupts before its point is laid again (BossColossus keeps MAX_PTS / count a line).
 func _validate_colossus(issues: Array[ValidationIssue], path: String, where: String) -> void:
@@ -264,7 +265,7 @@ func _validate_colossus(issues: Array[ValidationIssue], path: String, where: Str
 			)
 
 
-## v0.8.0 BS1 (owner O5): the signature params. Pillars need a size and a step that leaves a gap between them; a
+## The signature params. Pillars need a size and a step that leaves a gap between them; a
 ## recall and an egg give at least the telegraph minimum before the javelins come back or the egg hatches or bursts;
 ## an egg names its enemy and HP; the late part of a recall or a bursting egg names its death line.
 func _validate_signature(issues: Array[ValidationIssue], path: String, where: String) -> void:
@@ -300,16 +301,16 @@ func _validate_signature(issues: Array[ValidationIssue], path: String, where: St
 	var late := (
 		sp.has("recall_seconds")
 		or (sp.has("egg_seconds") and sp.has("pattern_id"))
-		or sp.has("bounces")  # v0.8.0 BS2 (S5): a ricochet's death line
+		or sp.has("bounces")  # A ricochet's death line
 		or sp.has("bounce_phase")
-		or sp.has("lava_seconds")  # v0.8.0 BS2 (S6): the lava's
+		or sp.has("lava_seconds")  # The lava's
 		or (move == &"gaze" and sp.has("pattern_id"))
-	)  # v0.8.0 BS2 (S4): the gaze's orbs
+	)  # The gaze's orbs
 	if late and String(late_cause_key).is_empty():
 		issues.append(ValidationIssue.new(&"missing", path, where + "late_cause_key is required"))
 
 
-## v0.8.0 BS2 (owner O5; BOSS_SIGNATURES.md S4-S6): the gaze turns (a quarter turn and a reversal of at least a
+## The gaze turns (a quarter turn and a reversal of at least a
 ## tick each, a beam with a length and a width), a ricochet bounces once and from a real phase, lava lasts at least
 ## the telegraph minimum with damage and a ford wider than the hero, and a melt shrinks from its radius to a smaller
 ## minimum in real steps, each warned for at least the telegraph minimum and shorter than the step.
@@ -365,7 +366,7 @@ func _validate_signature_2(issues: Array[ValidationIssue], path: String, where: 
 			)
 
 
-## v0.7.5 BF1: a lock leaves tracking time before it and a dodge window of at least the telegraph minimum; marks and
+## A lock leaves tracking time before it and a dodge window of at least the telegraph minimum; marks and
 ## row lanes must lock; their markers' spacing is at least a tick when there are several.
 func _validate_lock(issues: Array[ValidationIssue], path: String, where: String) -> void:
 	var lock := int(round(lock_seconds * 60.0))
@@ -388,7 +389,7 @@ func _validate_lock(issues: Array[ValidationIssue], path: String, where: String)
 		issues.append(ValidationIssue.new(&"range", path, where + "a grid's count must be odd"))
 	if (
 		move == &"grid"
-		and not shape_params.has("safe_cells")  # v0.9.5 BH2: HardRules checks that board
+		and not shape_params.has("safe_cells")  # HardRules checks that board
 		and float(shape_params.get("cell_m", 0.0)) < 2.0 * float(shape_params.get("radius_m", 0.0))
 	):
 		issues.append(ValidationIssue.new(&"no_gap", path, where + "a grid's circles overlap"))
@@ -402,7 +403,7 @@ func _validate_lock(issues: Array[ValidationIssue], path: String, where: String)
 		)
 
 
-## v0.8.0 FB3 (FINAL_BOSS.md F6): a Nemesis attack's weapon is a run's, a card cast's card one of the strongest
+## FINAL_BOSS.md F6: a Nemesis attack's weapon is a run's, a card cast's card one of the strongest
 ## MAX_CARD_CASTS, and every swing or volley at least a tick apart (none of them is a shielded signature).
 func _validate_nemesis(issues: Array[ValidationIssue], path: String, where: String) -> void:
 	var sp := shape_params
@@ -428,13 +429,13 @@ func _validate_nemesis(issues: Array[ValidationIssue], path: String, where: Stri
 		issues.append(ValidationIssue.new(&"range", path, where + "the Nemesis is never shielded"))
 
 
-## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): a tide pulls and pushes at real speeds no faster than the fair cap, each
+## BOSSES_4_5.md N1; BossTide: a tide pulls and pushes at real speeds no faster than the fair cap, each
 ## part at least the telegraph minimum long, its rings bending by a non-negative rate; it is the shielded signature. An
 ## Undertow's drag is a real distance (at most 2 m) from a reach that holds its circle.
 func _validate_tide(issues: Array[ValidationIssue], path: String, where: String) -> void:
 	var sp := shape_params
 	if move == &"tide":
-		var cap := float(sp.get("max_mps", BossSchemas.TIDE_MAX_MPS))  # v0.9.5 BH4: the drift cap is data
+		var cap := float(sp.get("max_mps", BossSchemas.TIDE_MAX_MPS))  # The drift cap is data
 		if cap <= 0.0 or cap > BossSchemas.TIDE_MAX_MPS:
 			issues.append(
 				ValidationIssue.new(
@@ -470,8 +471,9 @@ func _validate_tide(issues: Array[ValidationIssue], path: String, where: String)
 			)
 
 
-## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): Crossfire is the shielded signature, its safe spot a real distance off the
-## chain and its gap a real width; a Chain Sweep's lane has a width and reaches on past the player (>= 0).
+## BOSSES_4_5.md N2; BossTwin: Crossfire's safe spot is a real distance off the chain and its gap a real
+## width (v0.11.0 O5, owner L3: no longer shielded: the violet twin casting it is the one to hit); a Chain Sweep's
+## lane has a width and reaches on past the player (>= 0).
 func _validate_twin(issues: Array[ValidationIssue], path: String, where: String) -> void:
 	var sp := shape_params
 	if move == &"crossfire":
@@ -479,8 +481,6 @@ func _validate_twin(issues: Array[ValidationIssue], path: String, where: String)
 			issues.append(
 				ValidationIssue.new(&"not_positive", path, where + "distance_m must be > 0")
 			)
-		if not shielded:
-			issues.append(ValidationIssue.new(&"missing", path, where + "a Crossfire is shielded"))
 	if move == &"chain_sweep":
 		if float(sp.get("width_m", 0.0)) <= 0.0:
 			issues.append(ValidationIssue.new(&"not_positive", path, where + "width_m must be > 0"))
@@ -488,7 +488,7 @@ func _validate_twin(issues: Array[ValidationIssue], path: String, where: String)
 			issues.append(ValidationIssue.new(&"range", path, where + "reach_m must be >= 0"))
 
 
-## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): an echo is shielded (the signature) and records a real path: a step of at
+## BOSSES_4_5.md N3; BossJudge: an echo is shielded (the signature) and records a real path: a step of at
 ## least a tick, at most ECHO_MAX_POINTS points, a real strike and a safe spot >= 0; a Verdict's square is real.
 func _validate_judge(issues: Array[ValidationIssue], path: String, where: String) -> void:
 	var sp := shape_params

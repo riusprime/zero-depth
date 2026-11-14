@@ -7,7 +7,7 @@ extends GutTest
 
 
 func _world() -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var biome: BiomeDefinition = repo.get_def(&"biomes", &"ruins")
 	var w := PlaygroundScenario.build(repo, &"gun", biome, Vector2i(2, 2), false)
 	w.step(InputFrame.new())
@@ -15,7 +15,7 @@ func _world() -> World:
 
 
 func _view() -> WorldViewRoot:
-	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", &"ruins")
+	var biome: BiomeDefinition = SharedContent.repo().get_def(&"biomes", &"ruins")
 	var v := WorldViewRoot.new()
 	v.stage.prop_style = biome.id
 	v.stage.mood = biome.mood
@@ -35,7 +35,7 @@ func test_a_world_is_freed_with_its_view_built_in_one_call() -> void:
 	var w := _world()
 	var wr: WeakRef = weakref(w)
 	var v := _view()
-	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", &"ruins")
+	var biome: BiomeDefinition = SharedContent.repo().get_def(&"biomes", &"ruins")
 	v.setup(WorldReader.new(w), biome.palette, 12.0)
 	v.sync()
 	w = null
@@ -47,7 +47,7 @@ func test_a_world_is_freed_with_its_view_built_in_slices() -> void:
 	var w := _world()
 	var wr: WeakRef = weakref(w)
 	var v := _view()
-	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", &"ruins")
+	var biome: BiomeDefinition = SharedContent.repo().get_def(&"biomes", &"ruins")
 	var q := ViewBuildQueue.new()
 	v.queue_setup(q, WorldReader.new(w), biome.palette, 12.0)
 	var frames := 0

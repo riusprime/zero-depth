@@ -99,7 +99,7 @@ func test_the_warlord_pulls_while_its_javelins_stand() -> void:
 	var reader := WorldReader.new(w)
 	var avatar := WarlordAvatar.new()
 	add_child_autofree(avatar)
-	avatar.setup(Color.BLACK)
+	avatar.setup()
 	BossLab.start(w, w.actors.index_of(aid), &"javelin_fan")
 	var seen := -1
 	var pulled := false
@@ -189,3 +189,90 @@ func test_the_brood_mother_lays_before_she_flings() -> void:
 		if c.targets[k] == &"sac" and c.channels[k] == BossClip.SHIFT:
 			dips = c.value(k, 0.08, false) < -0.05
 	assert_true(dips, "the sac dips to lay before the fling")
+
+
+## v0.11.0 O3 (owner L5, Q9 a): the Gatekeeper's quake pillars stand as spike clusters where the sim has them, their
+## ring shows over its warning (a growing band and its outline) and flashes on the pulse, and a pillar the sim removes
+## bursts (a strike without lanes).
+func test_the_quake_pillars_stand_ring_before_each_pulse_and_burst_when_gone() -> void:
+	var s := _fight(&"gatekeeper", Vector2(7, 2))
+	var w: World = s[0]
+	var aid: int = s[1]
+	var i := w.actors.index_of(aid)
+	var reader := WorldReader.new(w)
+	var spikes := StoneSpikeViews.new()
+	add_child_autofree(spikes)
+	w.actors.hp[i] = w.actors.max_hp[i] * 650 / 1000
+	w.step(InputFrame.new())
+	w.actors.state[w.actors.index_of(aid)] = BossAi.STAGGERED  # the tests' hold: it stands still
+	w.bosses.stagger_t[BossAi.entry_of(w, w.actors.index_of(aid))] = LONG
+	w.bosses.attack[BossAi.entry_of(w, w.actors.index_of(aid))] = -1
+	spikes.sync(reader)
+	assert_eq(spikes.quake_count(), 3, "three quake pillars drawn")
+	assert_eq(spikes.pillar_count(), 0, "not as Shock Lanes' sinking pillars")
+	assert_eq(spikes.ring_bands(), 0, "no ring before its warning")
+	var q := BossAi.table_of(w, w.actors.index_of(aid)).quake
+	var k := BossQuake.pillars_of(w, aid)[0]
+	CombatLab.idle(w, w.bosses.pillar_from[k] + q.pulse_ticks - q.warn_ticks / 2 - w.tick)
+	spikes.sync(reader)
+	assert_eq(spikes.ring_bands(), 6, "each ring grows over its outline (three pillars)")
+	CombatLab.idle(w, q.warn_ticks / 2 + 3)
+	spikes.sync(reader)
+	assert_eq(spikes.ring_bands(), 3, "each ring flashes after its pulse")
+	var bases := spikes.spike_positions()
+	var o := BossSignatures.pillar_obb(w.bosses, k)
+	var near := 0
+	for b in bases:
+		if Collide.circle_vs_obb(SimPlane.to_sim(b), 0.05, o) != Vector2.ZERO:
+			near += 1
+	assert_eq(near, StoneSpikeViews.QUAKE_SATELLITES + 1, "its spikes stand on it")
+	var strikes := spikes.strike_count()
+	var gone: Array[Obb] = [o]
+	w.bosses.remove_pillar(k)
+	w.remove_barriers(gone)
+	spikes.sync(reader)
+	assert_eq(spikes.quake_count(), 2)
+	assert_eq(spikes.strike_count(), strikes + 1, "the gone pillar bursts")
+
+
+## v0.11.0 VX (owner PD-13: new effects use the premade packs): with the pack, the quake rings are pack rims in the
+## telegraph's orange (the growing ring and the radius it hits, held while the warning runs) and the flat bands are not
+## built; the pulse plays a shock pulse and a gone pillar a rock impact, once each.
+func test_vx_the_quake_rings_and_shatter_are_pack_effects() -> void:
+	var s := _fight(&"gatekeeper", Vector2(7, 2))
+	var w: World = s[0]
+	var aid: int = s[1]
+	var i := w.actors.index_of(aid)
+	var reader := WorldReader.new(w)
+	var spikes := StoneSpikeViews.new()
+	add_child_autofree(spikes)
+	var layer: VfxLayer = add_child_autofree(VfxLayer.new())
+	layer.pack_fx = add_child_autofree(PackFx.new())
+	w.actors.hp[i] = w.actors.max_hp[i] * 650 / 1000
+	w.step(InputFrame.new())
+	w.actors.state[i] = BossAi.STAGGERED
+	w.bosses.stagger_t[BossAi.entry_of(w, i)] = LONG
+	w.bosses.attack[BossAi.entry_of(w, i)] = -1
+	var q := BossAi.table_of(w, i).quake
+	var k := BossQuake.pillars_of(w, aid)[0]
+	CombatLab.idle(w, w.bosses.pillar_from[k] + q.pulse_ticks - q.warn_ticks / 2 - w.tick)
+	spikes.sync(reader)
+	layer.begin(float(w.tick))
+	spikes.draw_fx(layer)
+	layer.finish()
+	assert_true(spikes.quake_pack_on, "the pack draws the rings")
+	assert_eq(spikes.quake_holds.held, 6, "a rim growing and the rim it hits, three pillars")
+	assert_eq(spikes.ring_bands(), 6, "the telegraph's pieces (counted)")
+	var impacts := layer.pack_fx.live_count(&"impact")
+	var o := BossSignatures.pillar_obb(w.bosses, k)
+	var gone: Array[Obb] = [o]
+	w.bosses.remove_pillar(k)
+	w.remove_barriers(gone)
+	spikes.sync(reader)
+	layer.begin(float(w.tick))
+	spikes.draw_fx(layer)
+	spikes.draw_fx(layer)  # (once: a second frame starts nothing more)
+	layer.finish()
+	assert_eq(
+		layer.pack_fx.live_count(&"impact"), impacts + 1, "the gone pillar's rock impact, once"
+	)

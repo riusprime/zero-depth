@@ -463,21 +463,6 @@ func test_a_plain_wisps_hash_has_no_wisp_block() -> void:
 	assert_ne(h.finish_hex(), h2.finish_hex(), "the rows are hashed while set")
 
 
-func test_an_older_save_without_the_rows_loads_empty() -> void:
-	var w := _world([&"gun_ring"], [Vector2(4.0, 0.0)])
-	W.run(w, 100, 0, 0)
-	assert_true(w.mx.pm_touched())
-	var snap := w.to_snapshot()
-	var mx: Dictionary = (snap["world"] as Dictionary)[&"mx"]
-	for f: StringName in WispMods.SNAPSHOT_FIELDS:
-		assert_true(mx.has(f), "%s is saved" % f)
-		mx.erase(f)
-	var base := _world([&"gun_ring"], [Vector2(4.0, 0.0)])
-	assert_eq(WorldSnapshot.apply(base, snap), "", "an older snapshot restores")
-	assert_false(base.mx.pm_touched(), "with no Wisps rows")
-	W.run(base, 10, 0, 0)
-
-
 func test_rows_are_dropped_when_the_shot_is_no_wisps_any_more() -> void:
 	var w := _world([&"gun_ring"], [Vector2(4.0, 0.0)])
 	W.run(w, 100, 0, 0)
@@ -519,7 +504,7 @@ func test_fc9b_halo_six_wisps_deal_about_one_point_two_times_three_plain_wisps()
 	assert_between(float(b) / float(a), 1.1, 1.3, "Halo reads about x1.2 (%d vs %d)" % [b, a])
 
 
-func test_fc9b_the_carry_is_saved_hashed_and_an_older_save_loads_with_none() -> void:
+func test_fc9b_the_carry_is_saved_and_hashed() -> void:
 	var w := _world([&"halo_shot"], [Vector2(4.0, 0.0)])
 	W.run(w, 100, 0, 0)
 	assert_ne(w.mx.pm_carry, 0, "a carry is waiting")
@@ -535,7 +520,3 @@ func test_fc9b_the_carry_is_saved_hashed_and_an_older_save_loads_with_none() -> 
 	assert_eq(WorldSnapshot.apply(c, snap), "")
 	assert_eq(c.mx.pm_carry, w.mx.pm_carry, "it round-trips")
 	assert_eq(c.state_hash(), w.state_hash())
-	mx.erase(&"pm_carry")
-	var old := _world([&"halo_shot"], [Vector2(4.0, 0.0)])
-	assert_eq(WorldSnapshot.apply(old, snap), "", "an older save without it loads")
-	assert_eq(old.mx.pm_carry, 0)

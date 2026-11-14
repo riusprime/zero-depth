@@ -24,7 +24,7 @@ const BUILDER := {
 ## The shader's blurred sample: this many mip levels coarser than the sharp one.
 const SOFT_BIAS := 2.5
 ## The walls' shader (ProceduralWall.material): the face or top texture by the vertex colour's alpha, times its
-## colour (grime, tint); flat, rough stone; v0.8.0 N15: each texture's fine detail blended toward a sample SOFT_BIAS
+## colour (grime, tint); flat, rough stone; each texture's fine detail blended toward a sample SOFT_BIAS
 ## mips coarser (detail: 1 none of it, 0 all) and its contrast squashed toward its mean colour (its last mip; 1: as
 ## installed).
 const SHADER := """shader_type spatial;

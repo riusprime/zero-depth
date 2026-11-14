@@ -31,7 +31,7 @@ extends RefCounted
 ## the rings that fit and leaves one LIMIT event (EFFECT_RING_CAP, amount: the cap); a bolt child of a ring at most
 ## RING_CHILD_ALIVE_MAX alive. Starting values.
 
-## A ring's start size and growth (N3): START_PERMILLE of its radius, the whole after GROW_TICKS.
+## A ring's start size and growth: START_PERMILLE of its radius, the whole after GROW_TICKS.
 const START_PERMILLE := 450
 const GROW_TICKS := 10
 ## Swirl left of the Ring: the ring wobbles round its line this far out (ring radii, per mille); the spin (1/4096
@@ -55,7 +55,7 @@ static func stream(w: World) -> RngStream:
 	return RngStream.derive(w.seed_value, "%s:%d:%d" % [STREAM, w.tick, w.launch_count])
 
 
-## Fires `spec`'s ring shots for the launch `ctx` (class doc). v0.9.0 AS: within the Gun's per-second shot budget
+## Fires `spec`'s ring shots for the launch `ctx` (class doc). within the Gun's per-second shot budget
 ## (ShotCap.room: rings that don't fit merge into the ones that do, their damage kept).
 static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var r := Attacks.area_radius(w, spec)
@@ -64,13 +64,13 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var own := ctx.depth == 0 and not ctx.repeat and not ctx.back  # the player's own shot (ShotCap)
 	var fit := ShotCap.room(w, n, own)
 	if fit <= 0:
-		if ctx.echo_cast:  # v0.10.5 W3-P10k: an Echo Cast repeat's rings merge into the next own launch
+		if ctx.echo_cast:  # An Echo Cast repeat's rings merge into the next own launch
 			Starbound.carry_echo(w, ring_damage(spec, ctx.damage) * n)
 		return
 	var dmg := ring_damage(spec, ctx.damage)
 	if fit < n:
 		dmg = maxi(1, (dmg * n + fit / 2) / fit)
-	if own and w.starbound_echo_carry > 0:  # v0.10.5 W3-P10k: shared by the rings that fly
+	if own and w.starbound_echo_carry > 0:  # Shared by the rings that fly
 		dmg += (Starbound.take_echo(w) + fit / 2) / fit
 	var speed := spec.speed if spec.speed > 0.0 else SpecForms.BOLT_SPEED
 	var flight := spec.ring_flight if spec.ring_flight > 0 else SpecForms.BOLT_TICKS
@@ -96,7 +96,7 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 		var dir := Kin.dir(ang)
 		var from := ctx.origin + dir * edge
 		var ticks := _clear_ticks(w, from, dir, speed, flight)
-		if ctx.on_ring.is_valid():  # v0.10.5 W3-O1: the Skill's ring reaches the cracked wall where it flies
+		if ctx.on_ring.is_valid():  # The Skill's ring reaches the cracked wall where it flies
 			var end_r := ModifierAbilities.travel_radius(r, 1, ticks, ticks)
 			ctx.on_ring.call(from, from + dir * (speed * ticks), r * START_PERMILLE / 1000.0, end_r)
 		ModifierAbilities.add_ring(w, from, r, spec, c, 0, [dir * speed, orb, a0, 1, ticks, j])

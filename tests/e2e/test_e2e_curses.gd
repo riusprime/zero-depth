@@ -22,14 +22,9 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
-func _dev(e: E2e, main: Main, button: String) -> void:
+func _dev(e: E2e, button: String) -> void:
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, button)
+	await e.click_dev(button)
 	await e.tap(KEY_QUOTELEFT)
 
 
@@ -52,8 +47,8 @@ func test_take_a_cursed_chest_card_and_feel_its_trade_off() -> void:
 	await e.start_from_menu()
 	var w := e.world()
 	var hud: Hud = main.get_node("UI/Hud")
-	await _dev(e, main, "God")
-	await _dev(e, main, "CurseChest")
+	await _dev(e, "God")
+	await _dev(e, "CurseChest")
 	var chest := E2e.nearest_reward(w, RewardStore.Kind.CHEST)
 	assert_gte(chest, 0, "a chest on the floor")
 	if chest < 0:
@@ -124,11 +119,11 @@ func test_steal_a_core_from_an_elite() -> void:
 	var w := e.world()
 	var r := WorldReader.new(w)
 	var hud: Hud = main.get_node("UI/Hud")
-	await _dev(e, main, "God")
+	await _dev(e, "God")
 	if w.elite_rules == null:
 		w.elite_rules = EliteRules.new()
 	w.elite_rules.core_drop_permille = 1000  # test setup: the 30 % made certain
-	await _dev(e, main, "SpawnElite")  # TEST HELPER: an elite with a core, 6 m away
+	await _dev(e, "SpawnElite")  # TEST HELPER: an elite with a core, 6 m away
 	await e.frames(2)
 	assert_eq(Elites.alive(w), 1, "an elite arrived")
 	var id := w.elites.ids[0]

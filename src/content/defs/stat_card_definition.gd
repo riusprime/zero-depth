@@ -5,14 +5,14 @@ extends ContentDef
 ## max HP per second for regen), compiled to per mille. Cards stack multiplicatively (two +10 % = x1.21) unless the
 ## card is `additive` (v0.8.0 SG, owner O91: damage, attack speed and Glass Cannon; two +10 % = x1.20); `cap` is the
 ## most (or for a cut, the least) the stat may reach, as a multiplier or a total in points (0 = none).
-## v0.5.0 CP: five rule cards that trade or condition their gain (Stats has each rule): glass_cannon (+damage, and
+## Five rule cards that trade or condition their gain (Stats has each rule): glass_cannon (+damage, and
 ## `side` cuts max HP down to `limit` x), onrush (+damage while moving), overkill (a kill's excess damage splashes
 ## to the nearest enemy within `limit` m), hoarder (+damage per 100 shards held, counting at most `limit` shards;
 ## `side` raises shard gain) and fast_hands (auto abilities' cooldowns only).
-## v0.5.5 D9 (owner: heal orbs "as a card, so it is not perma enables only if you get it"): lifesprout, the only
+## Lifesprout, the only
 ## source of heal orbs: the first card gives kills its amount as a drop chance, every further card adds its `side`,
-## up to `cap` (percent points).
-## v0.10.5 O9 (theory audit P2, owner "let's use the pending cards as this"): seven rule cards, Trigger -> Condition ->
+## up to `cap` (percent points). disabled, weight 0 (see Stats): every run earns orbs.
+## Theory audit P2, owner "let's use the pending cards as this": seven rule cards, Trigger -> Condition ->
 ## Payoff (RuleCards), replace eight flat stats; the flat cards stay in the data with weight 0 (retired: never offered,
 ## an old save's cards keep their effect).
 
@@ -36,7 +36,7 @@ const STATS: Array[StringName] = [
 	&"hoarder",
 	&"fast_hands",
 	&"lifesprout",
-	# v0.10.5 O9 (theory audit P2): the rule cards that replace the flat stats (RuleCards)
+	# Theory audit P2: the rule cards that replace the flat stats (RuleCards)
 	&"vent_mend",
 	&"heat_shield",
 	&"adrenaline",
@@ -45,15 +45,15 @@ const STATS: Array[StringName] = [
 	&"reflex",
 	&"scavenger",
 ]
-## The rule cards with a second number per rarity (`side`) and a `limit`. v0.5.5 D9: Lifesprout's side is what each
+## The rule cards with a second number per rarity (`side`) and a `limit`. Lifesprout's side is what each
 ## further card adds to the heal-orb chance (its amount is the first card's chance).
 const SIDED: Array[StringName] = [&"glass_cannon", &"hoarder", &"lifesprout"]
-## v0.10.5 O9: Adrenaline's and Close Quarters' limit is their reach in metres.
+## Adrenaline's and Close Quarters' limit is their reach in metres.
 const LIMITED: Array[StringName] = [
 	&"glass_cannon", &"overkill", &"hoarder", &"adrenaline", &"close_quarters"
 ]
 const RARITIES := 3
-## v0.8.0 SG: the multiplier stats a card may make additive (the points and cut stats already add or cut).
+## The multiplier stats a card may make additive (the points and cut stats already add or cut).
 const ADDITIVE_OK: Array[StringName] = [
 	&"max_hp",
 	&"damage",
@@ -75,13 +75,13 @@ const ADDITIVE_OK: Array[StringName] = [
 @export var cap := 0.0
 ## Draw weight against the other stat cards.
 @export var weight := 10
-## v0.5.0 CP: the card's second number per rarity, in percent (SIDED cards only: Glass Cannon's max HP cut,
+## The card's second number per rarity, in percent (SIDED cards only: Glass Cannon's max HP cut,
 ## Hoarder's shard gain).
 @export var side := PackedFloat32Array()
-## v0.5.0 CP: the rule's limit (LIMITED cards only): Glass Cannon's lowest max HP multiplier (0..1), Overkill's
+## The rule's limit (LIMITED cards only): Glass Cannon's lowest max HP multiplier (0..1), Overkill's
 ## splash reach in metres, Hoarder's most shards that count.
 @export var limit := 0.0
-## v0.8.0 SG (owner O91: "Ordinary damage pickups should add bonuses rather than compound multiplicatively"): a
+## A
 ## multiplier stat's cards (and gamble wins) add their amounts instead of compounding (ADDITIVE_OK stats only).
 @export var additive := false
 
@@ -121,7 +121,7 @@ func validate() -> Array[ValidationIssue]:
 	return issues
 
 
-## v0.5.0 CP: a SIDED card has 3 positive side numbers; a LIMITED card a positive limit (Glass Cannon's below 1).
+## A SIDED card has 3 positive side numbers; a LIMITED card a positive limit (Glass Cannon's below 1).
 func _validate_rule(issues: Array[ValidationIssue]) -> void:
 	if SIDED.has(stat):
 		var ok := side.size() == RARITIES

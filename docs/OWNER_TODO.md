@@ -4,8 +4,46 @@ Only what is **still open**: tests, decisions and art. Anything you answered or 
 answers live in [`roadmap/v0.8.0/PLAN.md`](roadmap/v0.8.0/PLAN.md) (owner lines O39–O50 and "Owner decisions"). Last
 rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
 
-- [ ] **The v0.10.5 playtest (2026-11-06):** the build, what to try and the questions are in
-  [`roadmap/v0.10.5/PLAYTEST.md`](roadmap/v0.10.5/PLAYTEST.md) (branch `claude/v0100-cleanup`, then its PR into `main`).
+- [ ] **v0.11.1, playtest the native core when it flips (step 54; `OWNER ONLY`):** do fights feel the same? You said
+  "Yes, port the rest" on 2026-11-10; nothing changes in your game until the flip, and I will tell you when.
+- [ ] **v0.11.1, the sim on its own thread: keep it? (step 48, measured 2026-11-10).** On a quiet machine, with the
+  switch on the average frame is 4 % shorter at 20 enemies, 9 % at 60 with a heavy build and 15 % at 120 swarmers
+  (25.2 → 21.5 ms); the 1 % lows do not change
+  ([`roadmap/v0.11.1/evidence/PERF_AFTER.md`](roadmap/v0.11.1/evidence/PERF_AFTER.md)). The cost: the picture shows
+  each tick one rendered frame later (+6.9 ms at 144 fps, +16.7 ms at 60 fps). It is on the branch `v0111-s48`, off by
+  default, not merged. Yours to judge: whether the delay is felt when aiming (`OWNER ONLY`). The lead's view: a real
+  but modest gain; not worth a default until the views' cost is down too.
+- [ ] **v0.11.1, the CPU levers after the thread (2026-11-10).** Where a 120-enemy frame goes now: the views' sync
+  6.0 ms, the sim 4.9 ms, the draw 4.2 ms, the effects layer's drawers 2.0 ms. Each lever is measured before it is
+  built; say which you want:
+  1. **Every enemy on the crowd renderer** (step 39): the per-enemy view update is 2.4 ms of the sync, and each
+     enemy is 8–9 draws.
+  2. **Native code (C# or C++) for enemy AI and movement:** cuts the tick with no delay; it changes the toolchain.
+  3. **Enemies think less often, staggered:** changes outcomes slightly; small.
+- [ ] **v0.11.1, the 144 fps target is still far (2026-11-10):** after Wave 3 the three scenes run at 98, 36 and 42 fps
+  (they were 67, 27 and 34). Say what you want held instead, if anything (for example: never under 60 in a horde).
+- [ ] **v0.11.1, the HUD's draw calls (2026-11-10):** the HUD is a flat 389 draw calls a frame (43 % of all draws
+  with 20 enemies) because its icons are drawn in code. Turning them into textures would cut that and slightly
+  change their edges. Not planned unless you ask.
+- [ ] **v0.11.1, small:** the hub station stand-in panel can no longer be opened in the game (only a test builds it):
+  delete it?
+- [ ] **v0.11.1, feel the aim assist (step 33, built 2026-11-10; `OWNER ONLY`):** the aim turns 10 % of the way toward
+  the enemy nearest your aim, if one is within 12° of it and within 12 m. Mouse and gamepad, on by default; Options →
+  Controls → "Aim assist" turns it off. To tune it while playing: F10 → Sim → `aim_assist` (`strength_percent`,
+  `cone_degrees`, `range_m`). Known choices to judge: it does not check walls (it can bend toward an enemy behind
+  one); the mouse cursor stays where you point (the hero and the shot show the bent aim); a just-spawned enemy does
+  not pull until its 0.6 s rise-in ends.
+- [ ] **v0.11.1 "Clean and fast" (2026-11-10), one answer:** aim assist on mouse and gamepad, or gamepad only
+  (default being planned: both, on, with an Options switch; [`roadmap/v0.11.1/PLAN.md`](roadmap/v0.11.1/PLAN.md)
+  "Open items"). The golden reset is answered (yes, once). Later, yours to feel: aim assist once built, and each batch of enemies moved to the crowd.
+- [ ] **v0.11.0, still yours (2026-11-08):** the **boss brief** (the bosses besides the Gatekeeper, Lantern Shade and
+  Twins, and the "remembered" Hollow Crown behind the hidden room), the **Laser sketch**, and the overnight questions
+  **N1–N9** in [`roadmap/v0.11.0/OWNER_QUESTIONS.md`](roadmap/v0.11.0/OWNER_QUESTIONS.md) §J (each has a default
+  being built). Q1–Q30 and every G1/G2 are answered.
+- [x] **The v0.10.5 playtest (2026-11-06):** closed per your Q27 ("treat as unmentioned"): every
+  [`roadmap/v0.10.5/PLAYTEST.md`](roadmap/v0.10.5/PLAYTEST.md) row the v0.11 brief didn't mention (hub gaps,
+  see-through fade, pools, Lance charge, Foundry and Hive Lens fixes, loops, Astral UI, performance, enemy shadows)
+  counts as OK; the rows the brief did raise became v0.11.0 steps. Confirm or reopen in §J N8.
 
 **How to deliver art:** drop the `.glb` (with its textures) or `.png` into `unprocessed_images/` (or the repo root),
 named by the **id** below, and say so in chat. The lead installs, sizes, lists and tests it. Every item has a
@@ -94,7 +132,7 @@ their prompts there after their G1 lists.
 `approach_pylon`; the containers `container_crate`, `container_urn`, `container_barrel`; `explosive_barrel`;
 `timed_door` (a stone door; your bar gate became `lockdown_seal`); the hazards `hazard_cable`, `hazard_rock`, `hazard_vent`, `hazard_ice`, `hazard_star`; the four
 floor 4-5 bosses and the 16 collectibles (after their G1 lists); all the sounds and the optional effect textures; and
-from v0.8.0 the `swarmer`, `mine_layer` and `sniper` enemies.
+the eight enemy models in §3.2.
 
 - [ ] **Your key:** you wrote "F on keyboard", but F is already Vent, so the door uses the existing interact key, E
   (pad X is the same as you asked). Say if you want something else.
@@ -109,14 +147,62 @@ from v0.8.0 the `swarmer`, `mine_layer` and `sniper` enemies.
 | ☐ | (rig) the hero | For the same scene: if your hero model can be rigged with an `open_chest` clip (kneel, lift the lid, look in), the lead builds the menu around it. Otherwise the lead animates the existing hero in code | — | — |
 
 ### 3.2 Enemy models (P1)
-Three kinds still have the lead's code-made body. Each takes its **role colour** where the prompts say
-[COLOUR] (the game fine-tunes the shade). Greys stay neutral, because each biome tints them.
+Your answer Q21 (2026-11-07): the eight kinds the lead still draws in code get your `.glb` models, in the Charger's
+style but not red, each in its role colour. The game animates them through VAT, so a rig is a bonus and never needed;
+legs and limbs as separate parts help. Each takes its **role colour** where the prompts say [COLOUR] (the game
+fine-tunes the shade). Greys stay neutral, because each biome tints them.
+
+**The style every prompt starts from:** the Charger's family. A faceted, ridged shell or hood on top, a dark
+shield-shaped face under it with one glowing gem visor in the role colour, a charcoal body, and grey segmented limbs
+with bone-coloured tips. Only the body plan changes, to fit what the enemy does.
 
 | ✓ | id | Role colour | In-game size | Prompt (after the character prefix, then the 3D step) |
 |---|---|---|---|---|
-| ☐ | `swarmer` | melee red-orange `#D8562A` | 0.5 m long | a small fast armoured beetle, a low wedge-shaped faceted shell with a ridge down its back, a charcoal head with one glowing slit eye, two pale bone mandibles that open wide, six thin segmented charcoal legs splayed low; about 3k triangles |
-| ☐ | `mine_layer` | bomber yellow `#D8A824` | 0.9 m long | a low armoured crawler on two short charcoal tank treads, a faceted hull with chevron plates, a charcoal dome with one glowing eye, an open hopper at the back holding a dark round spiked mine with a small blinking light (the mine as a separate object is a bonus); about 5k triangles |
-| ☐ | `sniper` | ranged blue-violet `#5A62D8` | 1.1 m tall | a lean walking gun platform on a tripod of three long thin charcoal legs, a narrow faceted body, a very long charcoal rifle barrel pointing forward, a big round glowing scope lens on top, cooling fins along the barrel; about 5k triangles |
+| ☐ | `hatchling` | melee red-orange `#C93A1E` | radius 0.28 m | a small young crawler, the Charger's family at two thirds of its size: a short faceted ridged hood in [COLOUR] over a dark shield-shaped face with one glowing [COLOUR] gem visor, a small back flap, a charcoal body, four stubby grey segmented legs with small bone talons, the front pair a little bigger; about 3k triangles |
+| ☐ | `needle` | ranged blue `#3A6BD4` | radius 0.35 m | a walking turret: a faceted ridged cube-shaped shell in [COLOUR], a dark shield-shaped face on its front with one glowing [COLOUR] gem visor, a charcoal body, two grey octagonal pods on its flanks, a square grey cannon barrel pointing forward, four grey segmented legs with bone-coloured feet splayed to the corners; about 5k triangles |
+| ☐ | `warden` | tank bronze `#9A6232` | radius 0.55 m | a hulking armoured tank: a long faceted ridged shell in [COLOUR] over its head and back (cracks across the back of the shell), a dark shield-shaped face with one glowing [COLOUR] gem visor, a heavy charcoal chest, big grey boulder shoulders with heavy segmented forearms and fists hanging to the ground, two short stumpy grey legs with bone-coloured toes; about 5k triangles |
+| ☐ | `arc_caster` | ranged violet `#8A50D8` | radius 0.38 m | a tall caster: a faceted ridged hood and long robe-like shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body under it, grey segmented arms holding a grey staff with a bright arc crystal at its tip, three small floating [COLOUR] rune shards around the hood, no legs showing, a hem of grey segmented spikes with bone tips; about 5k triangles |
+| ☐ | `bomb_drone` | bomber yellow `#E8C22E` | radius 0.40 m; hovers about 1.8 m up | a hovering quad-copter: a faceted ridged shell in [COLOUR], a dark shield-shaped face at the front with one glowing [COLOUR] gem visor, a charcoal body, four grey segmented arms with bone-coloured tips that carry flat rotor blades (blades as separate parts), a dark round bomb slung under its belly with a glowing fuse (the bomb as a separate object is a bonus); about 5k triangles |
+| ☐ | `swarmer` | melee crimson `#B82A48` | radius 0.24 m (about 0.5 m long) | a small fast armoured beetle: a low wedge-shaped faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, two pale bone mandibles that open wide, six thin grey segmented legs with bone tips splayed low; about 3k triangles |
+| ☐ | `mine_layer` | bomber dark yellow `#C29A14` | radius 0.42 m (about 0.9 m long) | a low armoured crawler: a faceted ridged hull in [COLOUR] with chevron plates, a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, carried on grey segmented legs with bone tips (two short tank treads in grey are also fine), an open hopper at the back holding a dark round spiked mine with a small blinking light (the mine as a separate object is a bonus); about 5k triangles |
+| ☐ | `sniper` | ranged blue `#3A55C0` | radius 0.35 m (about 1.1 m tall) | a lean walking gun platform: a narrow faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor shaped like a big round scope lens, a charcoal body, a very long grey rifle barrel pointing forward with cooling fins, three long thin grey segmented legs in a tripod with bone-coloured feet; about 5k triangles |
+
+**Horde critters (one per biome, Q14).** Many are on screen at once, so each is small, one simple silhouette, about
+1.5k triangles. They keep the family features (faceted shell, one glowing gem eye) scaled down. All are melee, so they
+take the Swarmer's crimson.
+
+| ✓ | id | Role colour | In-game size | Prompt (after the character prefix, then the 3D step) |
+|---|---|---|---|---|
+| ☐ | `dust_mite` | melee crimson `#B82A48` | about 0.3 m | a fist-sized stone tick: a low round faceted ridged shell in [COLOUR], a tiny dark shield-shaped face with one glowing [COLOUR] gem eye, a charcoal underside, six thin grey segmented legs with bone tips splayed low; about 1.5k triangles |
+| ☐ | `cave_bat` | melee crimson `#B82A48` | about 0.4 m across the wings | a small flying bat: a compact faceted ridged shell in [COLOUR] on the back, a tiny dark shield-shaped face with one glowing [COLOUR] gem eye, a charcoal body, two broad grey stone wings spread wide with bone-coloured tips (wings as separate parts), two tiny grey feet tucked under; about 1.5k triangles |
+| ☐ | `ember_flea` | melee crimson `#B82A48` | about 0.3 m | a small hopping flea: a tall curved faceted ridged shell in [COLOUR], a tiny dark shield-shaped face with one glowing [COLOUR] gem eye, a charcoal body, two big grey segmented back legs folded like springs with bone tips, four short front legs, a few small glowing [COLOUR] cracks on the shell; about 1.5k triangles |
+| ☐ | `ice_crab` | melee crimson `#B82A48` | about 0.4 m wide | a flat sliding crab: a wide flat faceted ridged shell in [COLOUR] with pale ice-blue facets at the edges, a tiny dark shield-shaped face on the front with one glowing [COLOUR] gem eye, a charcoal underside, two small grey segmented claws with bone tips, six short flat grey legs held out sideways; about 1.5k triangles |
+| ☐ | `star_mote` | melee crimson `#B82A48` | about 0.3 m | a tiny floating star with a tail: a five-pointed faceted ridged body in [COLOUR], a small dark shield-shaped face in the middle with one glowing [COLOUR] gem eye, a charcoal core, a short tapering grey tail of three segments with a bone tip, no legs; about 1.5k triangles |
+
+**New enemies (Q22).** Same family, about 5k triangles each, plus the one thing that makes each readable in play.
+**Use the detailed, ready-to-paste prompts in [`art/requests/v0.11.0_enemy_models.md`](art/requests/v0.11.0_enemy_models.md)**
+(owner 2026-11-08: "these need to be detailed prompts"; sizes, separate parts and a check for each). The rows below are
+the short summary.
+
+| ✓ | id | Role colour | In-game size | Prompt (after the character prefix, then the 3D step) |
+|---|---|---|---|---|
+| ☐ | `wire_weaver` | bomber yellow `#E8C22E` | — | a spindly cable-laying walker: a faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, four long grey segmented arms with bone tips holding two short grey cable posts with sparking tops (the two posts as separate objects), a coil of cable on its back, four thin grey segmented legs; about 5k triangles |
+| ✓ | `scrap_hound` | melee red-orange `#C93A1E` | — | a lean fast four-legged hound: a low faceted ridged shell in [COLOUR] along the back, a dark shield-shaped face on a long snout with one glowing [COLOUR] gem visor, a charcoal body, four long thin grey segmented legs with bone-coloured claws, a short grey segmented tail, a few scrap plates bolted on its flanks; about 5k triangles |
+| ✓ | `rock_lurker` | melee red-orange `#C93A1E` | — | a crouched creature disguised as a boulder: a round rough faceted ridged grey rock shell covering its whole back, thin glowing [COLOUR] cracks across the rock, a dark shield-shaped face half hidden under the rock edge with one glowing [COLOUR] gem visor, a charcoal body, four thick short grey segmented legs with bone-coloured claws tucked in; about 5k triangles |
+| ✓ | `stone_thrower` | tank bronze `#9A6232` | — | a hunched brute with huge arms: a faceted ridged shell in [COLOUR] on its back, a small dark shield-shaped face with one glowing [COLOUR] gem visor, a heavy charcoal chest, two huge grey segmented arms with big bone-tipped hands raised overhead holding a rough grey rock (the rock as a separate object), two short stumpy grey legs; about 5k triangles |
+| ✓ | `kiln_beetle` | bomber yellow `#E8C22E` | — | a slow, heavy armoured beetle: a round faceted ridged shell in [COLOUR] with vent slits, a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, a big glowing [COLOUR] kiln belly showing through a gap under the shell, six thick grey segmented legs with bone tips; about 5k triangles |
+| ✓ | `cinder_priest` | ranged violet `#8A50D8` | — | a robed priest: a faceted ridged hood and long robe-like shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body under it, grey segmented arms holding a tall grey staff topped with a glowing [COLOUR] ember crystal, a hem of grey segmented spikes with bone tips, no legs showing; about 5k triangles |
+| ☐ | `frost_spitter` | ranged blue `#3A6BD4` | — | a lean four-legged spitter: a faceted ridged shell in [COLOUR], a dark shield-shaped face on a short wide mouth with one glowing [COLOUR] gem visor, a charcoal body, a big pale ice-blue sac swelling on its throat, four grey segmented legs with bone tips; about 5k triangles |
+| ☐ | `glacier_turtle` | tank bronze `#9A6232` | — | a squat turtle: a charcoal body, a dark shield-shaped face with one glowing [COLOUR] gem visor on a short grey neck, four thick grey segmented legs with bone tips, a big domed ice shell of pale blue faceted slabs held in front (the shell as a separate object), a small faceted ridged cap in [COLOUR] on its back; about 5k triangles |
+| ☐ | `star_warper` | ranged violet `#8A50D8` | — | a slim floating caster: a five-pointed star-shaped faceted ridged head in [COLOUR], a dark shield-shaped face in the middle of the star with one glowing [COLOUR] gem visor, a narrow charcoal body, two thin grey segmented arms with bone tips, a tapering grey tail instead of legs, a few small [COLOUR] star shards around it; about 5k triangles |
+| ☐ | `gravity_node` | bomber yellow `#E8C22E` | — | a floating orb, no legs: a round faceted ridged shell in [COLOUR] split in two halves around a charcoal core, a dark shield-shaped face plate on the front with one glowing [COLOUR] gem visor, two or three thin grey rings circling it at different tilts (the rings as separate parts), small bone-coloured studs on the rings; about 5k triangles |
+
+Role colours for kinds that don't match the eight above one to one: the Weaver, Kiln Beetle and Gravity Node
+(area control, bomber) take the bomber yellow; the Scrap Hound and Rock Lurker (flanker, ambush) take the melee
+red-orange; the Stone Thrower (brute) and Glacier Turtle (tank) take the tank bronze; the Cinder Priest (support) and
+Star Warper (teleporter) take the Arc Caster's violet; the Frost Spitter (ranged) takes the Needle's blue.
+
+The biome variants (Rubble Warden, Dim Needle, Ember Charger, Frost Charger, Split Sniper) reuse their base models with biome effects drawn by the game.
 
 ### 3.3 The final boss (P1–P2)
 
@@ -154,6 +240,24 @@ Still to come (the rest of the list arrived 2026-10-18, §3.0). All after the ki
 | Ruins | `cable_spool` | 0.9 × 0.9 × 0.7 | a big wooden cable spool lying on its side |
 | Ruins | `sign_frame` | 1.2 × 0.2 × 1.6 | a blank fallen billboard frame on two posts, no text |
 | Frozen Shore | `ice_floe` | 2 × 1.6 × 0.12 | a flat cracked slab of floating sea ice, seen from above (the file you sent under this name is a frozen boat; it went in as `boat_wreck`) |
+
+**v0.11.0 purpose rooms (owner, 2026-11-07: "Add to my list"; G2_ROOMS.md).** The camp, collapsed hall and quarry
+rooms use stand-ins until these arrive. All after the kit prefix; sizes are targets, not measurements.
+
+| ✓ | Room | id | Size (W×D×H m) | Prompt |
+|---|---|---|---|---|
+| ☐ | Camp | `camp_tent` | 2.4 × 2.0 × 1.8 | a patched canvas lean-to tent on bent metal poles, one side open, a rolled blanket inside |
+| ☐ | Camp | `log_seat` | 1.4 × 0.4 × 0.4 | a short log split lengthwise as a bench, worn smooth on top |
+| ☐ | Camp | `cook_pot` | 0.7 × 0.7 × 0.9 | a dented iron cooking pot hanging from a tripod of three metal rods over cold ashes |
+| ☐ | Hall | `statue_whole` | 1.2 × 1.2 × 3.2 | a weathered stone statue of a hooded figure holding a staff, on a square plinth |
+| ☐ | Hall | `statue_broken` | 1.4 × 1.2 × 1.8 | the same hooded statue broken at the waist, its upper half lying beside the plinth |
+| ☐ | Hall | `column_round` | 0.8 × 0.8 × 3.6 | a tall round fluted stone column with a simple capital, chipped |
+| ☐ | Hall | `column_drum` | 0.8 × 1.6 × 0.8 | a fallen round column drum lying on its side, cracked |
+| ☐ | Quarry | `quarry_crane` | 2.0 × 1.6 × 4.0 | a wooden quarry hoist: a timber frame with a jib arm, a pulley, a rope and a hanging stone block |
+| ☐ | Quarry | `mine_cart` | 1.4 × 0.9 × 1.0 | a small rusty mine cart full of rubble on a short length of rail |
+| ☐ | Quarry | `stone_block` | 1.2 × 1.2 × 0.8 | a roughly cut rectangular stone block with chisel marks (tinted per biome by the game) |
+| ☐ | Quarry | `tool_rack` | 1.4 × 0.4 × 1.6 | a wooden rack with pickaxes, a sledgehammer and shovels leaning in it |
+| ☐ | All | bigger focal pieces | — | larger versions of the biome focal pieces (the Ruins arch, the Starfall observatory and monoliths) so they read across a 3x3 room; or say if the game may scale the existing ones |
 
 ### 3.7 Boss animation clips (P3: you're not sure yet)
 Any boss: clips named like the code ones (`idle`, `walk`, `marks`, `pattern`, `lanes`, `leap`, `death`…, listed per

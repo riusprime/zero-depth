@@ -3,8 +3,9 @@ extends GutTest
 ## AR, owner S8) the sealed room: its 3-5 waves of 4 / 8 / 12 spawning inside with x1.5 HP and damage, the horde
 ## paused, the doors and the ability-card altar and the doubled shards after the last wave.
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
 
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 var _repo: ContentRepository
 var _items: Array[ItemTable] = []
 var _enemies: Array[EnemyTable] = []
@@ -42,7 +43,7 @@ func _enter(w: World) -> void:
 func test_every_floor_has_one_overrun_room_off_the_boss_path() -> void:
 	var none := 0
 	var dead_ends := 0
-	for s in range(1, SEEDS + 1):
+	for s in range(1, _seeds + 1):
 		var f := FloorGenerator.generate(s)
 		BossRoomBuilder.attach(f)
 		var room := OverrunRooms.mark(f)
@@ -78,8 +79,8 @@ func test_every_floor_has_one_overrun_room_off_the_boss_path() -> void:
 		for d in f.overrun_doors:
 			assert_true(f.door_rooms[d].x == room or f.door_rooms[d].y == room)
 		dead_ends += 1 if f.neighbours(room).size() == 1 else 0
-	gut.p("overrun over %d seeds: %d floors without one, %d dead ends" % [SEEDS, none, dead_ends])
-	assert_lt(none, SEEDS / 100, "exactly one per floor where possible (nearly always)")
+	gut.p("overrun over %d seeds: %d floors without one, %d dead ends" % [_seeds, none, dead_ends])
+	assert_lt(none, _seeds / 100, "exactly one per floor where possible (nearly always)")
 
 
 func test_the_pick_is_deterministic_and_leaves_the_layout_alone() -> void:

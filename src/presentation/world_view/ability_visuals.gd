@@ -1,12 +1,12 @@
 class_name AbilityVisuals
 extends Node3D
-## The abilities in the world (v0.4.0 BS). Reads WorldReader.ability_fx() only (EI-07); nothing here changes an
+## The abilities in the world. Reads WorldReader.ability_fx() only (EI-07); nothing here changes an
 ## outcome. Every shape is the sim's own number (bomb radius, blade points, shock radius).
 ## - Bombs: each bomb in flight arcs from where it left to where it lands, and its landing circle shows on the
 ##   ground from the throw (a ring with a fill that grows until it lands: the readable telegraph); a landing flashes
 ##   an orange disc.
 ## - Blink's landing shock and Combo Sword's finisher wave: a ring that flashes out to the shock's radius.
-## v0.10.5 O1 (owner L23): Drone Buddy's bots and Orbit Blades' steel went with those abilities.
+## Drone Buddy's bots and Orbit Blades' steel went with those abilities.
 
 const BOMB_COLOR := Color("#FF8A3A")
 const BLINK_COLOR := Color("#B48CFF")
@@ -14,7 +14,7 @@ const FX_FRAMES := 18
 const RING_Y := 0.03
 const BOMB_ARC_M := 2.4
 
-## v0.6.0 MX3: AttackFormView draws the bombs that name a spec (the LOB form) and every landing (WorldViewRoot sets
+## AttackFormView draws the bombs that name a spec (the LOB form) and every landing (WorldViewRoot sets
 ## it); this view keeps the drones, the orbit blades' steel and the rest.
 var forms_drawn := false
 var _bombs: Array[Node3D] = []
@@ -69,10 +69,6 @@ func _sync_echo(fx: Dictionary) -> void:
 
 
 # --- Reads (tests) ------------------------------------------------------------------------------------------
-
-
-func bomb_count() -> int:
-	return _bombs.filter(func(b: Node3D) -> bool: return b.visible).size()
 
 
 func fx_count_of(kind: StringName) -> int:

@@ -1,6 +1,6 @@
 class_name RewardsDefinition
 extends ContentDef
-## A floor's rewards (v0.3.0 PLAN, L6, L7, L9): how many free altars and shard chests it has, what the chests
+## A floor's rewards: how many free altars and shard chests it has, what the chests
 ## cost, how much chests favour rare items, and how kills pay shards. Starting values the owner tunes.
 
 ## Altars and chests per floor, inclusive ranges (drawn from the loot stream).
@@ -8,14 +8,14 @@ extends ContentDef
 @export var altars_max := 3
 @export var chests_min := 2
 @export var chests_max := 3
-## v0.5.5 EC (owner S1, "max 2 per floor and the rest should be chests"): at most this many of the floor's placed
+## At most this many of the floor's placed
 ## altars (0 = no cap); the altars rolled past it become chests, so the floor keeps its reward spots.
 @export var altars_cap := 2
-## v0.10.5 S7 (owner 2026-11-01, "10 to 15% more loot"; a starting value): per mille more chests / free altars a floor
+## Per mille more chests / free altars a floor
 ## holds than it rolls (120 = +12 %). Whole extras plus a remainder chance; needs a free item spot.
 @export_range(0, 1000) var extra_chest_permille := 0
 @export_range(0, 1000) var extra_altar_permille := 0
-## v0.9.0 FV (owner Q24, "Scale with floor size"): smaller floors place fewer. Band k holds the floors of at most
+## Smaller floors place fewer. Band k holds the floors of at most
 ## count_rooms[k] rooms (the start hall included, the boss room not; ascending) and draws altars and chests from its
 ## own inclusive ranges; a floor with more rooms than the last band draws from altars_min..chests_max above. Empty:
 ## every floor draws from those.
@@ -31,7 +31,7 @@ extends ContentDef
 ## Draw weight of a rare item against a common one's 1, in a chest and at an altar.
 @export var rare_weight_chest := 3
 @export var rare_weight_altar := 1
-## v0.8.0 RR (owner O33; docs/roadmap/v0.8.0/evidence/RARITY.md): the draw weight of an epic and of a legendary mod
+## The draw weight of an epic and of a legendary mod
 ## against a common one's 1, in a chest (and the shop, which draws as a chest) and at an altar. A Legendary card is
 ## the boss's (LegendaryDefinition.card_permille); these keep it rare everywhere else (0: never). Starting values
 ## set by the odds script (scripts/checks/rarity_odds.gd), not by the bots.
@@ -39,40 +39,45 @@ extends ContentDef
 @export var epic_weight_altar := 0.5
 @export var legendary_weight_chest := 0.0
 @export var legendary_weight_altar := 0.0
-## v0.8.0 BL (docs/roadmap/v0.8.0/BLADE_AUDIT.md B5): a wand card of the run's own weapon (requires_weapon) weighs this
+## A wand card of the run's own weapon (requires_weapon) weighs this
 ## per mille against a shared card's 1000 in a mod draw (1500: ×1.5). A starting value.
 @export var own_weapon_card_permille := 1500
 ## Cards an altar offers (v0.8.0 N7, owner O61: a chest deals one card, Offers.CHEST_CARDS).
 @export var offer_size := 3
-## v0.10.5 W3-P10b (owner W7, Q1: "normal picks, but a lower chance"): the chance per mille that a regular altar's
+## The chance per mille that a regular altar's
 ## offer holds a Starbound card, from loop 2: one entry a loop (loop 2, loop 3 ..), the last for every later loop.
 @export var starbound_permille := PackedInt32Array([200, 300])
 ## The interact button opens an altar or chest within this distance of the player.
 @export var interact_radius_m := 1.6
 ## A kill's shards × (1 + shard_tier_bonus × danger tier).
 @export var shard_tier_bonus := 0.25
-## v0.10.5 O7a (theory audit P6, owner 2026-11-01): a kill's shard tier stops growing at the floor's peak phase, so
+## A kill's shard tier stops growing at the floor's peak phase, so
 ## staying longer no longer pays more. Starting value.
 @export var shard_tier_caps_at_peak := true
-## v0.10.5 O7a: ...but never before this many seconds of floor time (every floor's shards grow at least this long).
+## ...but never before this many seconds of floor time (every floor's shards grow at least this long).
 @export var shard_cap_min_seconds := 180.0
-## v0.5.5 EC (owner S4): every kill's shards × this (0.7: −30 %), rounded half up.
+## Every kill's shards × this (0.7: −30 %), rounded half up.
 @export var shard_scale := 0.7
 ## A boss kill pays boss_shards × the floor number (PLAN v0.3.0: 60 × floor).
 @export var boss_shards := 60
-## v0.4.0 BS (owner F8, F9): what a card is, by weight: [ability, stat, mod] at an altar and in a chest, and a stat
+## What a card is, by weight: [ability, stat, mod] at an altar and in a chest, and a stat
 ## card's rarity [common, rare, epic] by source. A free altar also always offers one new ability while a slot is free.
 @export var altar_card_weights := PackedInt32Array([15, 75, 10])
 @export var chest_card_weights := PackedInt32Array([15, 55, 30])
 @export var altar_rarity_weights := PackedInt32Array([70, 25, 5])
 @export var chest_rarity_weights := PackedInt32Array([40, 40, 20])
-## v0.4.0 TU (owner D8): a normal enemy's kill drops a heal orb with this chance; walking over it (within
-## heal_orb_reach_m, × pickup range) heals heal_orb_heal of max HP. v0.5.5 EC (owner D9): heal_orb_chance is only a
-## base under the Lifesprout stat card's chance; v0.9.5 EP3 (owner 2026-10-31, "a bit of healing from
-## the beginning"): the shipped base is 3 % a kill; Lifesprout adds to it.
-@export var heal_orb_chance := 0.0
-@export var heal_orb_heal := 0.25
+## Walking over a heal orb (within heal_orb_reach_m, × pickup range) heals heal_orb_heal of max
+## HP.
+## Kills earn orbs, for every run. A pickup starts heal_orb_cooldown_seconds
+## with no orb and no progress; then each kill adds its kind's base max HP × heal_orb_points_per_hp points, clamped to
+## heal_orb_points_min..heal_orb_points_max, and heal_orb_meter points drop an orb where the filling kill fell.
+@export var heal_orb_heal := 0.2
 @export var heal_orb_reach_m := 0.9
+@export var heal_orb_cooldown_seconds := 30.0
+@export var heal_orb_meter := 500
+@export var heal_orb_points_per_hp := 1.0
+@export var heal_orb_points_min := 8
+@export var heal_orb_points_max := 100
 
 
 func category() -> StringName:
@@ -151,15 +156,23 @@ func validate() -> Array[ValidationIssue]:
 					&"range", resource_path, "%s: 3 weights >= 0, not all 0" % pair[0]
 				)
 			)
-	if heal_orb_chance < 0.0 or heal_orb_chance > 1.0 or heal_orb_heal < 0.0 or heal_orb_heal > 1.0:
-		issues.append(
-			ValidationIssue.new(&"range", resource_path, "heal_orb_chance and heal_orb_heal: 0..1")
-		)
+	if heal_orb_heal < 0.0 or heal_orb_heal > 1.0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "heal_orb_heal: 0..1"))
 	check_positive(issues, "heal_orb_reach_m", heal_orb_reach_m)
+	check_positive(issues, "heal_orb_cooldown_seconds", heal_orb_cooldown_seconds)  # v0.11.0 F3
+	check_positive(issues, "heal_orb_meter", heal_orb_meter)
+	check_positive(issues, "heal_orb_points_per_hp", heal_orb_points_per_hp)
+	check_positive(issues, "heal_orb_points_min", heal_orb_points_min)
+	if heal_orb_points_max < heal_orb_points_min:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "heal_orb_points_max must be >= heal_orb_points_min"
+			)
+		)
 	return issues
 
 
-## v0.9.0 FV: the room bands pair up, ascend, and each holds valid ranges.
+## The room bands pair up, ascend, and each holds valid ranges.
 func _check_bands(issues: Array[ValidationIssue]) -> void:
 	var n := count_rooms.size()
 	for a in [altars_min_by_rooms, altars_max_by_rooms, chests_min_by_rooms, chests_max_by_rooms]:

@@ -86,7 +86,7 @@ func test_the_hero_leans_into_a_lunge_step() -> void:
 	var w := WandLab.fight(&"blade", [&"lunge_step"])
 	var r := WorldReader.new(w)
 	var hero := PlayerAvatar.new()
-	hero.setup(Color("#1A1A22"))
+	hero.setup()
 	add_child_autofree(hero)
 	var most := 0.0
 	for t in 12:

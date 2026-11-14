@@ -29,7 +29,7 @@ var visor: MeshInstance3D
 var sac := Node3D.new()
 var eggs: Array[MeshInstance3D] = []
 var legs: Array[Node3D] = []
-# v0.8.0 BA: the model's legs, measured once (_measure_legs).
+# The model's legs, measured once (_measure_legs).
 var _leg_names: Array[StringName] = []
 var _leg_axis := PackedVector3Array()
 var _leg_side := PackedInt32Array()
@@ -38,7 +38,7 @@ var _leg_front := PackedFloat32Array()
 var _leg_back := PackedFloat32Array()
 
 
-## v0.7.5 BF2: its dodge-first moves (the Egg Storm's tracked circles and the Web Spiral) pose as its brood: the egg
+## Its dodge-first moves (the Egg Storm's tracked circles and the Web Spiral) pose as its brood: the egg
 ## sac swells for the windup and pulses while the eggs and the acid fly.
 func apply_state(s: Dictionary) -> void:
 	super(s)
@@ -226,7 +226,7 @@ func _pose(dt: float) -> void:
 		(leg.get_meta(&"knee") as Node3D).rotation = Vector3(tuck * 0.8 - crouch * 0.2, 0, 0)
 
 
-## v0.8.0 BA: the owner's model plays its keyframed clips (BroodMotherClips); the legs follow the clips' leg
+## The owner's model plays its keyframed clips (BroodMotherClips); the legs follow the clips' leg
 ## parameters, mapped onto each leg by where it sits round the body.
 func _clip_library() -> Dictionary:
 	return BroodMotherClips.library()

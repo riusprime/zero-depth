@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SpellDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/spell_definition.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+name_key = &"SPELL_TOXIC_CLOUD"
+desc_key = &"SPELL_TOXIC_CLOUD_DESC"
+level_keys = Array[StringName]([&"SPELL_TOXIC_CLOUD_LV1", &"SPELL_TOXIC_CLOUD_LV2", &"SPELL_TOXIC_CLOUD_LV3", &"SPELL_TOXIC_CLOUD_LV4", &"SPELL_TOXIC_CLOUD_LV5"])
+element = &"venom"
+element_card = &"venom_core"
+affinity = &"venom"
+weight = 10
+cooldown_s = 12.0
+reach_m = 8.0
+damage = PackedInt32Array(3, 3, 4, 4, 4)
+radius_m = PackedFloat32Array(2, 2.2, 2.4, 2.6, 2.6)
+seconds = PackedFloat32Array(6, 6, 6, 6, 6)
+period_s = 0.5
+bonus_seconds = 2.0
+slow_permille = 600
+stacks = 1
+id = &"spell_toxic_cloud"

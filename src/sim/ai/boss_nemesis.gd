@@ -39,7 +39,7 @@ const MUZZLE_M := 0.05
 const ARRIVE_M := 0.3
 ## BossStore point of a card cast's blast (tracked, then locked).
 const BLAST_PT := 0
-## v0.9.5 BH6: the draws a dash's spot gets, and how far the line stays from the hero's edge (m).
+## The draws a dash's spot gets, and how far the line stays from the hero's edge (m).
 const RD_TRIES := 12
 const RD_HERO_M := 1.0
 
@@ -61,7 +61,7 @@ static func fan_angle(aim: int, k: int, n: int, full: int) -> int:
 	return (aim - half + 2 * half * k / (n - 1)) & 4095
 
 
-## Body i's attack may be picked now: its weapon is the run's, and a card cast's card is held. v0.8.0 N2 (owner O52):
+## Body i's attack may be picked now: its weapon is the run's, and a card cast's card is held.
 ## with mimic windows, outside a window it fights with its own kit (every attack but the card casts, whatever the
 ## run's weapon, and its own: weapon "own"); in a window only the run's weapon's and the cards, never its own.
 static func allowed(w: World, atk: BossAttackTable) -> bool:
@@ -108,9 +108,9 @@ static func think(w: World, i: int, t: BossTable) -> void:
 	if f.dash_due >= 0 and w.tick >= f.dash_due:
 		f.dash_due = -1
 		if free and f.dash_t == 0 and f.rd_t == 0 and not w.player_dead() and FinalPace.copies(w):
-			_dash(w, i)  # N2: in a window
+			_dash(w, i)  # In a window
 	if t.interphase != null:
-		_reposition(w, i, t)  # v0.9.5 BH6 (HC6): the dash to a new spot between two moves
+		_reposition(w, i, t)  # The dash to a new spot between two moves
 	if a.state[i] == S.MOVE and f.dash_t == 0:
 		f.stance_t -= 1
 		if f.stance_t <= 0:
@@ -122,7 +122,7 @@ static func dashing(w: World, i: int) -> bool:
 	return is_mimic(w, i) and (w.final_fight.dash_t > 0 or w.final_fight.rd_t > 0)
 
 
-## v0.9.5 BH6 (HC6; owner: "the fight should be more dynamic"): between every two moves it dashes to a new spot. After a
+## HC6; owner: "the fight should be more dynamic": between every two moves it dashes to a new spot. After a
 ## move (after_attack) one is due; once it is free (moving) it picks its spot (RD_TRIES draws from the ai stream: 6-9 m
 ## away, a clear run, the end at least dash_wall_m from every wall, the line never through the hero), shows the line for
 ## dash_telegraph_ticks (0.4 s) standing still, then dashes along it in dash_ticks (the Nemesis's dash movement).
@@ -201,7 +201,7 @@ static func _dash(w: World, i: int) -> void:
 	e.amount = ticks
 
 
-## v0.8.0 N2: outside a mimic window it neither echoes nor mirrors the player (its own kit: close in or back off).
+## Outside a mimic window it neither echoes nor mirrors the player (its own kit: close in or back off).
 static func _next_stance(w: World, t: BossTable) -> void:
 	var f := w.final_fight
 	var weights := t.stance_weights
@@ -218,14 +218,14 @@ static func _next_stance(w: World, t: BossTable) -> void:
 ## BossAi.think, as body i's attack ends (back to moving): after a combo it backs off.
 static func after_attack(w: World, i: int, atk: BossAttackTable) -> void:
 	if is_mimic(w, i) and BossAi.table_of(w, i).interphase != null:
-		w.final_fight.rd_pending = 1  # v0.9.5 BH6 (HC6): a dash to a new spot before the next move
+		w.final_fight.rd_pending = 1  # A dash to a new spot before the next move
 	if atk.move == M.MIMIC_COMBO and is_mimic(w, i):
 		w.final_fight.stance = BossTable.STANCE_BACK
 		w.final_fight.stance_t = maxi(1, BossAi.table_of(w, i).stance_ticks)
 
 
 ## BossAi._lock: aimed at the player, from where it stands; a card's blast on the player.
-## v0.8.0 N2: the attack copies the build when it begins in a mimic window (FinalFight.copying, kept to its end).
+## The attack copies the build when it begins in a mimic window (FinalFight.copying, kept to its end).
 static func lock(w: World, i: int, b: int, _atk: BossAttackTable) -> void:
 	if w.final_fight != null:
 		w.final_fight.copying = FinalPace.copies(w)
@@ -270,7 +270,7 @@ static func moves(w: World, i: int, slow: float) -> bool:
 		f.dash_t = 0
 		return true
 	if s == BossInterphase.STATE:
-		return true  # v0.9.5 BH6: vanished
+		return true  # Vanished
 	if f.dash_t > 0:
 		f.dash_t -= 1
 		var v := f.dash_vel
@@ -280,7 +280,7 @@ static func moves(w: World, i: int, slow: float) -> bool:
 			a.set_pos(i, a.pos(i) + v * (clampf(run, 0.0, len) / len))
 		return true
 	if f.rd_t > 0:
-		return true  # v0.9.5 BH6: it stands still while its dash line shows
+		return true  # It stands still while its dash line shows
 	match s:
 		S.MOVE:
 			_walk(w, i, stance_point(w, i), slow)
@@ -370,7 +370,7 @@ static func combo_arc(w: World, i: int, k: int) -> Array:
 	var f := w.final_fight
 	var half := atk.half_arc
 	var reach := atk.reach_m
-	if f != null and f.copying and not f.combo_half.is_empty():  # v0.8.0 N2: your combo in a window
+	if f != null and f.copying and not f.combo_half.is_empty():  # Your combo in a window
 		var n := f.combo_half.size()
 		half = f.combo_half[k % n]
 		reach = f.combo_reach[k % n]
@@ -384,7 +384,7 @@ static func combo_arc(w: World, i: int, k: int) -> Array:
 ## (`count`, `spread` between two of them, CRESCENT_SPEED unless the attack sets speed_mps).
 static func shot_cast(w: World, i: int, atk: BossAttackTable) -> NemesisCast:
 	var f := w.final_fight
-	if f != null and f.copying and f.shot != null and f.shot.has_volley():  # v0.8.0 N2: in a window
+	if f != null and f.copying and f.shot != null and f.shot.has_volley():  # In a window
 		return f.shot
 	var t := BossAi.table_of(w, i)
 	var c := NemesisCast.new()
@@ -411,17 +411,8 @@ static func card_of(w: World, atk: BossAttackTable) -> NemesisCast:
 	if f == null or atk.card < 0 or atk.card >= f.casts.size():
 		return null
 	if not f.copying and FinalPace.table(w) != null and FinalPace.table(w).window_ticks > 0:
-		return null  # v0.8.0 N2: a card is cast only in a window
+		return null  # A card is cast only in a window
 	return f.casts[atk.card]
-
-
-## The cast attack `atk` makes now (a card's, or the run's shot), or null.
-static func cast_of(w: World, i: int, atk: BossAttackTable) -> NemesisCast:
-	if atk.move == M.CARD_CAST:
-		return card_of(w, atk)
-	if atk.move == M.MIMIC_SHOTS:
-		return shot_cast(w, i, atk)
-	return null
 
 
 ## The lines a volley of `c` aimed where body i locked would fly down: one per shot, from its muzzle, as long as its

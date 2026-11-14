@@ -7,11 +7,11 @@ extends RefCounted
 ## floats over the game. Every line draws over a soft dark halo (SHADOW) and every room over a faint dark wash, so
 ## the map reads over light and dark floors alike; four small ember corner ticks mark the window's extent. The
 ## full map (held) keeps its dimmed backdrop and panel.
-## v0.10.5 W3-O17 (UI style Astral; owner: "and what about the rest of the UI? it should match the new style"): the
+## UI style Astral; owner: "and what about the rest of the UI? it should match the new style": the
 ## colours and the frame only (the map's content is unchanged): lilac-tinted silver rooms, the current room in the
 ## moon-blue accent, the hero near-white, the unexplored stubs moon-blue, the chest pale gold (no orange or brown); the
 ## full map's panel is Astral's ink with a contour line; the corner window's ticks are 1 px silver L's with an inner
-## tick, a small diamond at each corner and a four-point star under its foot (MinimapView._draw_corner_ticks).
+## tick, a small diamond at each corner and a four-point star under its foot (MinimapView.draw_astral_ticks).
 
 const PANEL := Color("#0D1120", 0.93)
 const PANEL_EDGE := Color("#6E76A0", 0.7)
@@ -23,24 +23,24 @@ const CURRENT_EDGE := Color("#E4E6FF", 1.0)
 const UNEXPLORED := Color("#B5BDF0")
 const PLAYER := Color("#F4F5FF")
 const ALTAR := Color("#F2D16B")
-## The gamble shrine (v0.3.0 L19).
+## The gamble shrine.
 const SHRINE := Color("#D46BFF")
-## v0.5.0 EV: an event pedestal (dim once spent), green so it reads apart from the shop.
+## An event pedestal (dim once spent), green so it reads apart from the shop.
 const EVENT := Color("#9EE37D")
-## The shop terminal (v0.5.0 SH), in the shards' violet.
+## The shop terminal, in the shards' violet.
 const SHOP := Color("#B48CFF")
 const CHEST := Color("#E2CB8E")
 const CHEST_POOR := Color(0.56, 0.58, 0.70, 0.85)
 const BOSS := Color("#FF4A3D")
-## v0.5.0 PB: the boss door once the boss is dead (open both ways): the same red, dimmed.
+## The boss door once the boss is dead (open both ways): the same red, dimmed.
 const BOSS_OPEN := Color(1.0, 0.29, 0.24, 0.38)
-## v0.4.0 AB: the Overrun room (its doorways and its mark): a hotter, pinker red than the boss door.
+## The Overrun room (its doorways and its mark): a hotter, pinker red than the boss door.
 const OVERRUN := Color("#FF2E6A")
-## v0.5.5 AR: a sealed arena (its doorways and its mark): amber, like its frames in the world.
+## A sealed arena (its doorways and its mark): amber, like its frames in the world.
 const ARENA := Color("#FFB020")
 const PORTAL_OPEN := Color("#4DA3FF")
 const PORTAL_SEALED := Color(0.55, 0.60, 0.70, 0.8)
-## v0.5.0 RT: the Deep portal, violet in a red ring (the gate's own colours).
+## The Deep portal, violet in a red ring (the gate's own colours).
 const PORTAL_DEEP := Color("#8B3DFF")
 const PORTAL_DEEP_RIM := Color("#FF2A3D")
 const TEXT := Color("#ECEEFA", 0.95)
@@ -88,7 +88,7 @@ const ICON := 6.0
 const PLAYER_ICON := 11.0
 
 
-## Draws a line three times: a dark halo (v0.5.5 A5), a wide faint glow, then the line.
+## Draws a line three times: a dark halo, a wide faint glow, then the line.
 static func glow_line(
 	ci: CanvasItem, a: Vector2, b: Vector2, color: Color, width: float = LINE
 ) -> void:

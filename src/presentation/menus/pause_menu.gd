@@ -1,10 +1,10 @@
 class_name PauseMenu
 extends MenuPanel
-## Resume, restart the run, Options (v0.3.0 O), or return to the main menu (v0.3.0 B). Shown over the stage; the
+## Resume, restart the run, Options, or return to the main menu. Shown over the stage; the
 ## sim is paused (no ticks) while it's open. Keyboard, mouse and pad all work through the focus (MenuPanel).
-## v0.8.0 MU (Ember stone, MenuStyle): the game blurred behind, the list on a stone slab on the left, the run's line and
-## the key hint under it; no build cards beside it (owner: not needed). v0.6.5 WN2: a Build row under Resume opens the
-## Build page (BuildPage: the wand's order, rearranged here). v0.7.5 CX: a Codex row after Options opens the Codex
+## Ember stone: the game blurred behind, the list on a stone slab on the left, the run's line and
+## the key hint under it; no build cards beside it (owner: not needed). a Build row under Resume opens the
+## Build page (BuildPage: the wand's order, rearranged here). a Codex row after Options opens the Codex
 ## (CodexView) over the paused game.
 ## v0.9.0 HB (owner 2026-10-23, "To the hub (Recommended)"): in a run the last row leaves to the Rune Ring hub, the run
 ## saved for Continue (the end panel's words, UI_TO_HUB); the dev Playground keeps Main menu.
@@ -15,23 +15,22 @@ signal options_pressed
 signal codex_pressed
 signal restart_pressed
 signal main_menu_pressed
-signal hub_pressed  # v0.9.0 HB: the in-run exit
+signal hub_pressed  # The in-run exit
 
 var run_line: Label
-## v0.10.5 O6 (owner P4): one sentence on the depths' answer (the floor's catch-up), shown only above ×1.
-var depths_line: Label
-## v0.10.5 O5b: the loop rules' line under the run's (hidden on loop 1).
+## The depths' answer (the HUD's skull and multiplier, no sentence), shown only above ×1.
+var depths_line: DepthsTag
+## The loop rules' line under the run's (hidden on loop 1).
 var rules_line: Label
-## The run line's numbers, so a language switch (Options opened from here) words it again (v0.6.0 UP).
+## The run line's numbers, so a language switch (Options opened from here) words it again.
 var _run := []
 var _loop := 1  # v0.7.5 AP
-var _depths := 1000
-## v0.10.5 O5b: the loop rules' name keys.
+## The loop rules' name keys.
 var _rules := PackedStringArray()
 
 
 func _init(to_hub: bool = true) -> void:
-	super(true)  # v0.10.5 W3-O18: in Astral
+	super()  # In Astral (MenuPanel)
 	name = "PauseMenu"
 	add_backdrop()
 	add_title("UI_PAUSED")
@@ -47,12 +46,9 @@ func _init(to_hub: bool = true) -> void:
 	run_line = add_note("")
 	run_line.name = "RunLine"
 	run_line.visible = false
-	depths_line = add_note("")
+	depths_line = DepthsTag.new()
 	depths_line.name = "DepthsLine"
-	depths_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	depths_line.custom_minimum_size = Vector2(420, 0)
-	depths_line.add_theme_color_override("font_color", AstralMenu.HEAT)  # W3-O18: Astral's amber
-	depths_line.visible = false
+	footer.add_child(depths_line)
 	rules_line = add_note("")
 	rules_line.name = "RulesLine"
 	rules_line.visible = false
@@ -60,7 +56,7 @@ func _init(to_hub: bool = true) -> void:
 
 
 ## The run so far under the list: "Floor 1 · 03:42 · 87 kills · 146 shards" (Main passes the recap's numbers).
-## v0.7.5 AP: `loop` > 1 puts "Loop N · " first.
+## `loop` > 1 puts "Loop N · " first.
 func show_run(floor_index: int, seconds: float, kills: int, shards: int, loop: int = 1) -> void:
 	var secs := int(seconds)
 	_run = [floor_index, secs / 60, secs % 60, kills, shards]
@@ -70,7 +66,7 @@ func show_run(floor_index: int, seconds: float, kills: int, shards: int, loop: i
 
 
 ## Main's recap (Main.run_recap: floor, seconds, kills, shards, loop, v0.10.5 O5b rules; empty: no run line) and,
-## on a floor, the depths' answer from `reader` (v0.10.5 O6).
+## on a floor, the depths' answer from `reader`.
 func show_recap(recap: Dictionary, reader: WorldReader = null) -> void:
 	if not recap.is_empty():
 		show_run(
@@ -85,18 +81,12 @@ func show_recap(recap: Dictionary, reader: WorldReader = null) -> void:
 		show_depths(reader.catch_up_permille())
 
 
-## v0.10.5 O6: "The depths answer ×1.41: your build is strong, so …" when the floor's m is above ×1; hidden otherwise.
+## The skull and "×1.41" when the floor's m is above ×1; hidden otherwise.
 func show_depths(m_permille: int) -> void:
-	_depths = m_permille
-	depths_line.visible = DepthsTag.shows(m_permille)
-	depths_line.text = depths_text() if depths_line.visible else ""
+	depths_line.set_multiplier(m_permille)
 
 
-func depths_text() -> String:
-	return tr("UI_PAUSE_DEPTHS") % DepthsTag.multiplier_text(_depths)
-
-
-## v0.10.5 O5b: "Loop rules: Quickened · Shielded" (name keys; none: the line hides).
+## "Loop rules: Quickened · Shielded" (name keys; none: the line hides).
 func show_rules(keys: PackedStringArray) -> void:
 	_rules = keys
 	rules_line.visible = not keys.is_empty()
@@ -116,5 +106,3 @@ func _notification(what: int) -> void:
 	_word_rules()
 	if not _run.is_empty():
 		run_line.text = Hud.loop_prefix(self, _loop) + tr("UI_PAUSE_RUN") % _run
-	if depths_line != null and depths_line.visible:
-		depths_line.text = depths_text()

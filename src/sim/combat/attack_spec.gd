@@ -1,22 +1,22 @@
 class_name AttackSpec
 extends RefCounted
-## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md §1; SIM_CONTRACTS §5b): one attack the player makes, as data. The
+## docs/design/MODIFIER_ENGINE.md §1; SIM_CONTRACTS §5b: one attack the player makes, as data. The
 ## base spec comes from the player table (a combo step, the bolt, the Skill); Modifiers.compile rewrites it with the
 ## build's modifiers in the fixed stage order and caches the result (World.attack_book); Attacks.launch runs it and
 ## the view draws it (WorldReader.attack_spec). Sim units: ticks, metres, metres per tick, 1/4096 turns, per mille.
 ## A spec is rebuilt by every compile and never written in play, so a launch can't change the next one.
 
-## ModifierOpDefinition.Form, same numbers. v0.6.0 MX4: WEAPON, a hook child that launches a copy of the weapon's
+## ModifierOpDefinition.Form, same numbers. WEAPON, a hook child that launches a copy of the weapon's
 ## last attack (Attacks.launch resolves it).
 enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }
 ## ModifierOpDefinition.Trigger, same numbers. ON_END: where an attack ends (an arc's tip, a burst, a bolt's end, a
 ## bomb's blast, a ring at its radius, the dash's end); the form-layering rule makes them too (Modifiers: a second
-## form fires where the first one ends). v0.6.0 MX4: ON_LAUNCH as the attack launches (and the dash's start, a walk
+## form fires where the first one ends). ON_LAUNCH as the attack launches (and the dash's start, a walk
 ## step, a blink, a vent), EVERY_NTH: every Nth launch of the spec launches the child instead.
-## v0.6.5 WN1 (the wand's triggers): ON_CRIT, a landed critical hit (Attacks); ON_FINISHER is compile-time only
+## The wand's triggers: ON_CRIT, a landed critical hit (Attacks); ON_FINISHER is compile-time only
 ## (WandCompile turns it into the combo's last step's ON_HIT).
-## v0.8.0 RM: ON_REMNANT, a remnant hook that no moment fires (Remnants finds it: a link, a path, a consumer).
-## v0.9.5 FC9: ON_WISP, the Wisps' Mine card's mine, which no moment fires (WispMods drops it from each wisp).
+## ON_REMNANT, a remnant hook that no moment fires (Remnants finds it: a link, a path, a consumer).
+## ON_WISP, the Wisps' Mine card's mine, which no moment fires (WispMods drops it from each wisp).
 enum Trigger {
 	ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER, ON_REMNANT, ON_WISP
 }
@@ -56,7 +56,7 @@ const INT_FIELDS: Array[StringName] = [
 	&"resonance_permille",
 	&"heat_rate_permille",
 	&"damage_mul_permille",
-	# v0.6.5 WN3 (the Gun pool; appended: the hash order): GunForms reads them
+	# The Gun pool; appended: the hash order: GunForms reads them
 	&"twin",
 	&"spiral",
 	&"mine_ticks",
@@ -70,7 +70,7 @@ const INT_FIELDS: Array[StringName] = [
 	&"carry",
 	&"echo_mirror",
 ]
-## v0.8.0 BL (BLADE_AUDIT B1): int fields added after the hash order closed. Hashed only when not 0 (each with its
+## BLADE_AUDIT B1: int fields added after the hash order closed. Hashed only when not 0 (each with its
 ## name), so a spec that doesn't use them hashes exactly as before (no golden moves for a build without them).
 const LATE_INT_FIELDS: Array[StringName] = [
 	&"repeats",
@@ -80,7 +80,7 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	&"ring_share_permille",
 	&"swirl",
 	&"swirl_group",
-	# v0.9.5 FC0 (owner: Rune Explosion; RuneExplosion): the burst's radius (mm) and growth (ticks)
+	# The burst's radius (mm) and growth (ticks)
 	&"rune_mm",
 	&"rune_ticks",
 	&"ring_flight",  # v0.8.0 N3 (owner O47: the travelling ring's flight, ticks)
@@ -129,14 +129,14 @@ const FLOAT_FIELDS: Array[StringName] = [
 	&"line_m",
 	&"step_m",
 ]
-## v0.6.0 MX4: directions (the pattern's way): forward along the aim, or a full circle (count spread evenly).
+## Directions (the pattern's way): forward along the aim, or a full circle (count spread evenly).
 const DIR_FORWARD := 0
 const DIR_CIRCLE := 1
 
 ## Which attack this is (Modifiers' ids: blade_step_<n>, gun_bolt, skill, MX2 the ability modifiers' ids; a hook's
 ## child: its hook id).
 var id := &""
-## v0.6.0 MX2: where the book files it (AttackBook.register: a root's id, a hook child's "<parent key>/<n>"), so a
+## Where the book files it (AttackBook.register: a root's id, a hook child's "<parent key>/<n>"), so a
 ## projectile, a bomb or a patch names the spec it runs. Not copied, not hashed (derived from the book).
 var key := ""
 var form: int = Form.ARC
@@ -145,7 +145,7 @@ var tags := PackedStringArray()
 ## The modifier ids that rewrote it, in the order they applied (for the view and the tests).
 var modifier_ids := PackedStringArray()
 ## Hook depth: 0 for a root attack, 1 for an attack a hook of a root spawns, 2 for one below that (loop 1's deepest;
-## v0.10.5 W3-P10a: one level more a loop, Attacks.hook_depth).
+## One level more a loop, Attacks.hook_depth).
 var depth := 0
 ## Form ops taken so far: the first sets `form`, each later one layers (an ON_END hook in its form).
 var form_layers := 0
@@ -157,17 +157,17 @@ var spread := 0
 ## Again after this many ticks (0 = no repeat) at this share of the first's damage (Twin Arc's echo).
 var repeat_delay_ticks := 0
 var repeat_damage_permille := 0
-## v0.8.0 BL (B1, Double Slash's level): how many repeats (0 = the one repeat above), the first repeat_delay_ticks
+## B1, Double Slash's level: how many repeats (0 = the one repeat above), the first repeat_delay_ticks
 ## after the attack and each next one ItemEffects.REPEAT_GAP_TICKS after the one before.
 var repeats := 0
-## v0.8.0 PF2 (owner O9; Blade Storm's blades): a bolt form's projectiles of this attack (its id, every key) alive and
+## A bolt form's projectiles of this attack (its id, every key) alive and
 ## queued at once, at most (0 = no cap of its own; SimTuning.player_shots_max still holds). Attacks._bolts doesn't
 ## launch a bolt past it, and a launch cut short leaves one LIMIT event (Attacks.EFFECT_ALIVE_CAP).
 var alive_max := 0
 
-## v0.8.0 AO (owner O37; docs/roadmap/v0.8.0/evidence/ATTACK_ORDER.md): the order rule's ring. ring_layout 1: a
-## ring a SHAPE card made (Ring), run by WandRings. v0.8.0 N3 (owner O47): the shot itself, a ring that flies: `count`
-## ring shots laid as bolts are (v0.9.0 AS: one in a legal wand), each dealing ring_share_permille of the hit (0 =
+## The order rule's ring. ring_layout 1: a
+## ring a SHAPE card made (Ring), run by WandRings. the shot itself, a ring that flies: `count`
+## ring shots laid as bolts are (one in a legal wand), each dealing ring_share_permille of the hit (0 =
 ## whole). swirl 1 (Swirl, a MOTION card): every ring flies off in its own
 ## random direction (a bolt: each leaves at a random angle); swirl_group 1 (a Swirl left of the Ring, taken in by it):
 ## the group flies the aim as one, its rings spinning round its centre. Randomness: WandRings' named stream.
@@ -175,7 +175,7 @@ var ring_layout := 0
 var ring_share_permille := 0
 var swirl := 0
 var swirl_group := 0
-## v0.8.0 N3 (owner O47: "the circle should substitute the fireball"): an order-rule ring's flight in ticks, the bolt's
+## An order-rule ring's flight in ticks, the bolt's
 ## life it took in (WandCompile.take_in); it flies at the bolt's `speed` (WandRings). 0 = SpecForms' hook bolt's.
 var ring_flight := 0
 
@@ -190,7 +190,7 @@ var speed := 0.0
 var life_ticks := 0
 var period_ticks := 0
 var rate_bonus_permille := 0
-## v0.8.0 MR (owner O91; FireRhythm): the rhythm cards' extra rate, counted into the attack's raw rate bonus when it
+## The rhythm cards' extra rate, counted into the attack's raw rate bonus when it
 ## fires. Rapid Fire (sustained fire): each consecutive shot adds ramp_permille more, up to ramp_cap_permille, and the
 ## ramp starts over after ramp_reset_ticks without a shot. Flurry (a burst): the first burst_swings swings after
 ## burst_pause_ticks without swinging come burst_permille faster, the rest at the base rate. 0 = none.
@@ -200,11 +200,11 @@ var ramp_reset_ticks := 0
 var burst_permille := 0
 var burst_swings := 0
 var burst_pause_ticks := 0
-## v0.8.0 RM (owner O91, Dodge Imprint; a dash spec's): for imprint_ticks after a dash starts, the next weapon attack is
+## For imprint_ticks after a dash starts, the next weapon attack is
 ## cast from where the dash began at × imprint_permille (0 = none; Remnants.imprint).
 var imprint_ticks := 0
 var imprint_permille := 0
-## v0.9.0 LZ (owner Q8; Laser): beam_hold 1, the beam is the Laser form: held, it deals a damage tick every
+## beam_hold 1, the beam is the Laser form: held, it deals a damage tick every
 ## period_ticks to what it touches along reach_m (the first enemy, or pierce + 1 of them; a wall stops it), each tick
 ## beam_permille of the shot's damage. rate_scale_permille: attack speed counts at this share of its bonus on the
 ## period (500: half, the Laser's and the Bomb's; 0 = whole). move_permille: the hero moves at this share of the speed
@@ -213,10 +213,10 @@ var beam_hold := 0
 var beam_permille := 0
 var rate_scale_permille := 0
 var move_permille := 0
-## v0.9.0 BM (owner Q9; Bomb): blast_mm, the bolt is a bomb: its touch deals nothing, and where it ends (the first
+## blast_mm, the bolt is a bomb: its touch deals nothing, and where it ends (the first
 ## enemy, a wall, the end of its flight) it bursts with this radius (mm; the area stat scales it) at its damage.
 var blast_mm := 0
-## v0.9.0 VP (owner Q10; VoidShots): void_mm, the bolt is a Void shot: it passes through enemies (only a wall or the end
+## void_mm, the bolt is a Void shot: it passes through enemies (only a wall or the end
 ## of its flight ends it); every enemy within void_mm (its aura, mm; the area stat scales it) takes the shot's damage
 ## when it comes in and every void_tick_ticks while it stays in; enemies within void_pull_mm are drawn toward its path
 ## at most void_pull_mmps (mm a second; never stacking across voids).
@@ -224,24 +224,24 @@ var void_mm := 0
 var void_tick_ticks := 0
 var void_pull_mm := 0
 var void_pull_mmps := 0
-## v0.9.0 AF1 (owner Q7, ATTACK_FORMS F5; Lance): lance, the shot is the Lance: the Gun charges it while SHOOT is held
+## Lance, the shot is the Lance: the Gun charges it while SHOOT is held
 ## (hold_ticks, × hold_permille at full; GunForms) and its release is one line along the aim, reach_m long and
 ## radius_m wide, stopped only by a wall, hitting every enemy on it once (no projectile).
 var lance := 0
-## v0.9.0 AF1 (owner Q7, F6; Scatter): pellets, the bolts are the Scatter's pellets (the view draws them as a cone of
+## Pellets, the bolts are the Scatter's pellets (the view draws them as a cone of
 ## pellets); their numbers are the plain bolt fields (count, spread, life, speed, share_permille).
 var pellets := 0
-## v0.9.0 AF2 (owner Q7, F7; Glaive): glaive, the bolt is the Glaive's spinning disc (the view draws it as one); it
+## Glaive, the bolt is the Glaive's spinning disc (the view draws it as one); it
 ## flies out and comes back through the return rule (returns, ProjectileMoves), hitting every enemy on both passes.
 var glaive := 0
-## v0.9.0 AF2 (owner Q7, F8; Seekers): seekers, the bolts are the Seekers' darts: each homes on its own one of the
+## Seekers, the bolts are the Seekers' darts: each homes on its own one of the
 ## nearest enemies (Seekers.target) at the homing rate; the rest are the plain bolt fields.
 var seekers := 0
-## v0.9.0 AF3 (owner Q7, ATTACK_FORMS F9; WaveShots): wave_mm, the bolt is the Wave: a band wave_mm wide (the area stat
+## wave_mm, the bolt is the Wave: a band wave_mm wide (the area stat
 ## scales it) that passes through enemies (only a wall or the end of its flight ends it), hitting each enemy it rolls
 ## over once.
 var wave_mm := 0
-## v0.9.0 AF3 (owner Q7, F10; Wisps): wisps, that many wisps circle the hero; each fires one orb of the Gun's shot at
+## Wisps, that many wisps circle the hero; each fires one orb of the Gun's shot at
 ## wisp_permille of its damage at the nearest enemy every wisp_ticks, on its own, while the hero shoots as before.
 var wisps := 0
 var wisp_ticks := 0
@@ -257,12 +257,12 @@ var rune_ticks := 0
 ## 1); every nth_every-th step of the combo (0 = none) deals × nth_damage_permille / 1000 and runs its ON_NTH hooks.
 var damage := 0
 var damage_permille := 1000
-## v0.8.0 MR (owner O91: "Extra projectiles must not each duplicate full damage"): each projectile (or hit) of this
+## Each projectile (or hit) of this
 ## attack deals this share of the launch's damage (Twin's lanes, Spread's and Halo's bolts; the cards' shares
 ## multiply down the wand; 0 = whole). A spec with a share marks its bolts past the first secondary (Attacks._bolts:
 ## WandTable.secondary_proc_permille of their statuses and their hooks' proc; SecondaryProc).
 var share_permille := 0
-## v0.8.0 MR (O91: "Prevent repeats repeating themselves"): 1 on a trigger's later cast (a ×2 trigger's second, a
+## "Prevent repeats repeating themselves": 1 on a trigger's later cast (a ×2 trigger's second, a
 ## slash hit's second) and on every spec built from one: it casts each of its own triggers once, and a repeat's hit
 ## (an Echo, a Double Slash echo) never launches a hook whose child is one (Attacks.run_hook).
 var recast := 0
@@ -297,7 +297,7 @@ var aim_offset := 0
 ## bodies untouchable (Phase Dash, 1).
 var chains := 0
 var homing := 0
-## v0.10.5 W3-S18: Halo's extra reach (per mille of its halved range) once this spec also homes. Compile-time only
+## Halo's extra reach (per mille of its halved range) once this spec also homes. Compile-time only
 ## (SpecForms.halo_homing_reach spends it, so it is never hashed or copied: life_ticks carries the result).
 var halo_homing_permille := 0
 var returns := 0
@@ -306,7 +306,7 @@ var intangible := 0
 ## Ability merges (Modifiers.mirror): 1 the spec copies the weapon's form, pattern and every hook (Mirror Drone); 2
 ## it takes every hook of the weapon (Blade Orbit).
 var mirror := 0
-## Payload: a burst pulls the enemies it touches this far toward its centre (v0.6.0 MX4's Gravity Well; v0.8.0 P2:
+## Payload: a burst pulls the enemies it touches this far toward its centre (v0.6.0 MX4's Gravity Well;
 ## retired with Void's pull, no card sets it; kept for the hash order).
 var pull_m := 0.0
 ## The body spec's rules (never launched): out of combat this long, a barrier absorbs one hit (Aether Shell); after
@@ -318,9 +318,9 @@ var charge_permille := 1000
 var resonance_permille := 0
 ## The drone's fire rate + this per mille per heat point held (Overclocked Drone).
 var heat_rate_permille := 0
-## v0.6.0 MX4: the product of the MUL_PERMILLE ops on `damage` (the view's weight: Short Fuse ×1.4; 1000 = none).
+## The product of the MUL_PERMILLE ops on `damage` (the view's weight: Short Fuse ×1.4; 1000 = none).
 var damage_mul_permille := 1000
-## v0.6.0 MX4: the modifier ids whose hooks made this spec (a hook child's parents'): a modifier never adds its hook
+## The modifier ids whose hooks made this spec (a hook child's parents'): a modifier never adds its hook
 ## to a spec its own hook made (Split Shot's shards never split again; the ancestry guard, at compile time).
 var lineage := PackedStringArray()
 
@@ -359,7 +359,7 @@ var hooks: Array[AttackHook] = []
 var effect_id := &""
 
 
-## v0.8.0 BL: whether `field` is a whole-number field (INT_FIELDS or LATE_INT_FIELDS).
+## Whether `field` is a whole-number field (INT_FIELDS or LATE_INT_FIELDS).
 static func is_int_field(field: StringName) -> bool:
 	return field in INT_FIELDS or field in LATE_INT_FIELDS
 
@@ -452,7 +452,7 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(get(f))
 	for f in FLOAT_FIELDS:
 		h.add_f32(get(f))
-	for f in LATE_INT_FIELDS:  # v0.8.0 BL: only when used (class doc)
+	for f in LATE_INT_FIELDS:  # Only when used (class doc)
 		if get(f) != 0:
 			h.add_string(String(f))
 			h.add_int(get(f))
@@ -526,7 +526,7 @@ func read() -> Dictionary:
 		"intangible": intangible,
 		"mirror": mirror,
 		"pull_m": pull_m,
-		# v0.8.0 AO: the order rule's ring and Swirl (the views' lightning circles, shock arcs and storm)
+		# The order rule's ring and Swirl (the views' lightning circles, shock arcs and storm)
 		"ring_layout": ring_layout,
 		"ring_share_permille": ring_share_permille,
 		"swirl": swirl,

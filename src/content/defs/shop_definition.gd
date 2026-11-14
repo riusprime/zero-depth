@@ -12,10 +12,10 @@ extends ContentDef
 @export var rarity_prices := PackedInt32Array([30, 55, 90])
 ## Each floor after the first raises every price but the reroll by this share of the floor-1 price (x 1, 1.5, 2).
 @export var floor_price_step := 0.5
-## v0.5.5 EC (owner S4): floors 2 and later multiply every price the floor step raises by this too (1.5: x 1, 2.25,
+## Floors 2 and later multiply every price the floor step raises by this too (1.5: x 1, 2.25,
 ## 3).
 @export var late_floor_price := 1.5
-## v0.5.5 EC (owner S3, "only 4 max per floor"): the most cards bought at this floor's shop (the heal and rerolls
+## The most cards bought at this floor's shop (the heal and rerolls
 ## don't count; 0 = no limit).
 @export var max_buys := 4
 ## The heal: this share of max HP, once per shop, for heal_price x the floor step.
@@ -27,7 +27,7 @@ extends ContentDef
 @export var reroll_step := 0.5
 ## The interact button opens the shop within this distance of the terminal.
 @export var interact_radius_m := 1.8
-## v0.7.5 MG (owner N12, "the shop is also gonna be there every two … floors"): the floors with a shop are
+## The floors with a shop are
 ## first_floor, then every every_floors floors (1, 3, 5 ... as shipped; every_floors 1 = every floor). The floor count
 ## keeps going past the run's last floor, so an endless loop keeps the rhythm.
 @export var first_floor := 1
@@ -43,7 +43,7 @@ func validate() -> Array[ValidationIssue]:
 	check_positive(issues, "offer_size", offer_size)
 	if offer_size > 9:
 		issues.append(ValidationIssue.new(&"range", resource_path, "offer_size is at most 9"))
-	if rarity_prices.size() < 3 or rarity_prices.size() > 4:  # v0.8.0 RR: + legendary
+	if rarity_prices.size() < 3 or rarity_prices.size() > 4:  # + legendary
 		issues.append(
 			ValidationIssue.new(
 				&"range", resource_path, "rarity_prices has common, rare, epic (and legendary)"

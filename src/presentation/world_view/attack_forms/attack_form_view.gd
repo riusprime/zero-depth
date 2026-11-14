@@ -1,6 +1,6 @@
 class_name AttackFormView
 extends AttackFormCanvas
-## v0.6.0 MX3 (docs/design/MODIFIER_ENGINE.md §4): the eight attack forms drawn from their final specs, in MultiMesh
+## docs/design/MODIFIER_ENGINE.md §4: the eight attack forms drawn from their final specs, in MultiMesh
 ## pools per form layer and per particle kind, under one per-frame budget. Presentation only (EI-07): it reads the
 ## sim through WorldReader and never writes; an effect's timing is sim ticks (its start tick and life), drawn at the
 ## frame's tick plus the physics interpolation fraction, so no Timer or tween decides anything.
@@ -32,19 +32,19 @@ extends AttackFormCanvas
 ## AbilityVisuals leave those to this view (forms_drawn) and keep drawing what has no spec (Napalm Drone's patches,
 ## the steel of the orbit blades, the drones).
 
-## v0.8.0 AO: the order rule's lightning (_sync_ring_arcs): at most this many arcs and strikes a frame, and a thrown
+## The order rule's lightning (_sync_ring_arcs): at most this many arcs and strikes a frame, and a thrown
 ## ring's strike from the hero lasts this long (ticks).
 const RING_ARCS_MAX := 12
 const RING_THROW_TICKS := 6.0
 
-## v0.9.0 VX: a muzzle spark's and a Halo ring's life (ticks), and the Seekers' fan between darts (radians).
+## A muzzle spark's and a Halo ring's life (ticks), and the Seekers' fan between darts (radians).
 const MUZZLE_TICKS := 6.0
 const HALO_TICKS := 8.0
 const SEEKER_FAN := 0.55
 ## A muzzle spark this far out along the aim (m); a Halo volley's ground ring this wide (radius, m).
 const MUZZLE_M := 0.55
 const HALO_RING_M := 0.8
-## v0.10.5 W3-S4 (owner F5, 2026-11-04: fire pools "appear frequently ... visually overwhelming"): at most PATCH_MAX of
+## At most PATCH_MAX of
 ## the hero's spec patches (fire, bleed ...) draw at once, the newest; past the newest PATCH_FULL the older ones fade to
 ## PATCH_DIM (VfxLayer draws a faded patch smaller and dimmer). Scaled by the Effects density (PATCH_DENSITY), never
 ## below one. The sim's patches (their radius, damage, life) are unchanged.
@@ -53,30 +53,31 @@ const PATCH_MAX := 8
 const PATCH_DIM := 0.4
 const PATCH_DENSITY := {"low": 0.5, "medium": 0.75, "high": 1.0}
 
-## v0.10.5 W3-P10b (owner W7, "don't get crazy with visuals for explosions"): at most this many Detonation bursts (V2)
-## and Arc Jump lines (V3) are drawn a frame; a line lasts SB_JUMP_TICKS (0.15 s). The rest deal their damage undrawn.
+## At most this many Detonation bursts
+## and Arc Jump lines are drawn a frame; a line lasts StarboundFx.JUMP_TICKS (0.15 s). The rest deal their damage
+## undrawn.
 const SB_BURSTS_MAX := 8
 const SB_JUMPS_MAX := 16
-const SB_JUMP_TICKS := 9.0
 
-## v0.8.0 AO: the shock arcs and storm strikes laid since the view began, one per arc per sync (for the tests).
+## The shock arcs and storm strikes laid since the view began, one per arc per sync (for the tests).
 var ring_arcs_drawn := 0
-## v0.10.5 W3-P10b: the Starbound bursts and lines drawn since the view began (the tests).
+## The Starbound bursts and lines drawn since the view began (the tests).
 var sb_bursts_drawn := 0
 var sb_jumps_drawn := 0
-## v0.9.0 VX: the volley cues (muzzle sparks, Halo rings) started since the view began (the tests).
+## The volley cues (muzzle sparks, Halo rings) started since the view began (the tests).
 var volley_cues := 0
-## v0.10.5 W3-S4 (owner F8): the hook blasts' size by their damage and their per-second budget (BlastLook).
+## The hook blasts' size by their damage and their per-second budget (BlastLook).
 var blasts := BlastLook.new()
 ## v0.9.0 VX V48: the Gun shot's look, read once per build.
 var _form := FormLook.new()
 var _sb_tick := -1
 var _sb_n := 0
 var _sb_pool: StarboundFx
+var _spell_pool: SpellFx  # The spells' looks (SpellFx), made once a spell is held
 
 
 # --- Live wiring ----------------------------------------------------------------------------------------------
-## W3-S4 (F5): [full, max] patches drawn at the Effects density `density`.
+## W3-S4: [full, max] patches drawn at the Effects density `density`.
 static func patch_caps(density: String) -> Array:
 	var k: float = PATCH_DENSITY.get(density, 1.0)
 	return [maxi(1, roundi(PATCH_FULL * k)), maxi(1, roundi(PATCH_MAX * k))]
@@ -90,16 +91,18 @@ func sync(reader: WorldReader) -> void:
 	set_density(ViewPrefs.effects_density)
 	_sync_swing(reader)
 	_sync_bolts(reader)
-	_sync_charge(reader)  # v0.6.5 WN3: G13 Charge's orb
+	_sync_charge(reader)  # G13 Charge's orb
 	_sync_burst(reader)
 	_sync_chain(reader)
 	_sync_crits(reader)
 	_sync_mx2_forms(reader)
-	_sync_casts(reader)  # v0.6.5 WN5a: the wand's small spells where they are cast
+	_sync_casts(reader)  # The wand's small spells where they are cast
 	_sync_volley(reader)  # v0.9.0 VX V3, V27, V33, V35
-	_sync_starbound(reader)  # v0.10.5 W3-P10b: Detonation's bursts and Arc Jump's lines (V1-V3)
+	_sync_starbound(reader)  # Detonation's bursts and Arc Jump's lines (V1-V3)
 	if _sb_pool != null:
 		_sb_pool.sync(_tick)
+	if _spell_pool != null or reader.spell_count() > 0:
+		_spell_fx().sync(reader)  # v0.11.0 O10, O11: every spell
 
 
 ## A look adds something over the v0.5 blade or dart only with an element, a cue or a damage weight.
@@ -143,7 +146,7 @@ func _sync_swing(reader: WorldReader) -> void:
 
 
 ## The look of the spec a key names, cached per build digest and heat tier ({} for "" or an unknown key).
-## v0.8.0 PF: the cache is keyed by the spec key alone and emptied when the digest or the tier changes (checked once a
+## The cache is keyed by the spec key alone and emptied when the digest or the tier changes (checked once a
 ## sync), so a crowd of bolts costs a lookup each, not a formatted string each.
 func _look_of(reader: WorldReader, key: String) -> Dictionary:
 	if key == "":
@@ -169,7 +172,7 @@ func _projectile_look(reader: WorldReader, i: int) -> Dictionary:
 	return look if not look.is_empty() else _look_of(reader, String(WorldReader.ATTACK_BOLT))
 
 
-## v0.10.0 VX2: the look of live player projectile `i` (HeroPulseViews reads its elements for the pack's shot).
+## The look of live player projectile `i` (HeroPulseViews reads its elements for the pack's shot).
 func look_of_projectile(reader: WorldReader, i: int) -> Dictionary:
 	return _projectile_look(reader, i)
 
@@ -179,20 +182,20 @@ func _sync_bolts(reader: WorldReader) -> void:
 	var seen := {}
 	for i in reader.projectile_count():
 		if _live.size() >= live_bolts_cap():
-			break  # v0.8.0 PF: the rest fly as their plain darts (draw_at's budget); their trails start when drawn
+			break  # The rest fly as their plain darts (draw_at's budget); their trails start when drawn
 		if (
 			reader.projectile_team(i) != 0
-			or reader.projectile_is_wave(i)  # v0.9.0 AF3: WaveView draws the Wave shots
+			or reader.projectile_is_wave(i)  # WaveView draws the Wave shots
 			or reader.projectile_is_shard(i)
 			or reader.projectile_is_bomb(i)
 			or reader.projectile_is_void(i)
 			or reader.projectile_is_pellet(i)
-			or reader.projectile_is_disc(i)  # v0.9.0 AF2: GlaiveView the discs, SeekersView the darts
+			or reader.projectile_is_disc(i)  # GlaiveView the discs, SeekersView the darts
 			or reader.projectile_is_dart(i)
-		):  # v0.9.0 VP: VoidView draws the Void shots; v0.9.0 AF1: ScatterView the pellets
+		):  # VoidView draws the Void shots; ScatterView the pellets
 			continue
 		var look := _projectile_look(reader, i)
-		# v0.8.0 (owner bug 2026-10-17): a shot still flying when Ring is picked has a spec whose look is now a ring;
+		# A shot still flying when Ring is picked has a spec whose look is now a ring;
 		# it keeps its plain dart (ActorViews) instead of a bolt layer it has no length for.
 		if look.is_empty() or int(look["form"]) != AttackFormLooks.BOLT or not adds_layer(look):
 			continue
@@ -206,7 +209,7 @@ func _sync_bolts(reader: WorldReader) -> void:
 			trail.remove_at(0)
 		_trails[id] = trail
 		var b := {"id": id, "pos": p, "vel": reader.projectile_vel(i), "look": look, "trail": trail}
-		b["scale"] = live_scale(look, reader.projectile_radius(i))  # v0.6.5 WN3: a charged shot
+		b["scale"] = live_scale(look, reader.projectile_radius(i))  # A charged shot
 		_live.append(b)
 		var bt := reader.projectile_bounce_tick(i)
 		if bt >= 0 and _bounce_ticks.get(id, -1) != bt:
@@ -218,17 +221,17 @@ func _sync_bolts(reader: WorldReader) -> void:
 				d.erase(id)
 
 
-## v0.6.5 WN3: a live bolt drawn bigger than its spec's look by its own radius (a charged shot, G13), 0.5–4×.
+## A live bolt drawn bigger than its spec's look by its own radius (a charged shot, G13), 0.5–4×.
 static func live_scale(look: Dictionary, radius: float) -> float:
 	var r := float(look.get("radius", 0.0))
 	return clampf(radius / r, 0.5, 4.0) if r > 0.0 else 1.0
 
 
-## v0.6.5 WN3 (G13 Charge, WAND.md "it swells in the barrel"): while the Gun's shot charges, an orb at the muzzle
+## G13 Charge, WAND.md "it swells in the barrel": while the Gun's shot charges, an orb at the muzzle
 ## grows from the bolt's size to its full charge (the sim's GunForms numbers, read; nothing decided here).
 func _sync_charge(reader: WorldReader) -> void:
 	var frac := reader.gun_charge()
-	if frac <= 0.0 or reader.player_dead() or reader.lance_active():  # v0.9.0 AF1: LanceView's glow
+	if frac <= 0.0 or reader.player_dead() or reader.lance_active():  # LanceView's glow
 		return
 	var spec := reader.attack_spec(WorldReader.ATTACK_BOLT)
 	var look := _look_of(reader, String(WorldReader.ATTACK_BOLT))
@@ -260,7 +263,9 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 		var f := r.duplicate()
 		f["kind"] = &"ring"
 		f["look"] = look
-		f["seed"] = _seed_at(r["from"], int(r["start"]))  # v0.8.0 N3: where it left (a ring may travel)
+		# Where it left and its heading: the rings of one launch that leave one point stay apart (FormRing.draw holds a
+		# travelling ring's effects by this seed)
+		f["seed"] = _seed_at(r["from"], int(r["start"])) + _seed_at(r["vel"] * 50.0, 0)
 		_live_forms.append(f)
 		if int(look.get("ring_layout", 0)) > 0:
 			order_rings.append(f)
@@ -272,7 +277,7 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 	var fire_left: PackedInt32Array = el["fire_left"]
 	var caps := patch_caps(ViewPrefs.effects_density)
 	for k in fire_pos.size():
-		var rank := fire_pos.size() - 1 - k  # W3-S4 (F5): 0 the newest (the sim appends its patches)
+		var rank := fire_pos.size() - 1 - k  # W3-S4: 0 the newest (the sim appends its patches)
 		if rank >= caps[1]:
 			continue
 		var look := _look_of(reader, fire_keys[k])
@@ -322,7 +327,7 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 	_sync_blasts(ab)
 
 
-## v0.8.0 AO (owner O37: the triple circle "shocks and hits with lighting", the swirl's "storm"): the order rule's rings
+## The order rule's rings
 ## (WandRings) get lightning between them, read from the sim's rings (their spec's look, their centres and start
 ## ticks; nothing decided here). The rings of one launch that started together (Ring · Spread's three) are joined by
 ## shock arcs round the group while they grow; a thrown ring (Swirl) gets a strike from the hero to where it lands as it
@@ -368,7 +373,7 @@ func _sync_ring_arcs(rings: Array[Dictionary]) -> void:
 			)
 
 
-## v0.8.0 AO: the arcs _sync_ring_arcs adds are drawn here; every other live form as the canvas draws it.
+## The arcs _sync_ring_arcs adds are drawn here; every other live form as the canvas draws it.
 func _draw_live_form(f: Dictionary, now: float) -> void:
 	if f["kind"] != &"arc":
 		super(f, now)
@@ -479,7 +484,7 @@ func _sync_crits(reader: WorldReader) -> void:
 		_last_seq = e.seq
 		if e.kind != SimEvent.Kind.DAMAGE or e.owner_id != player_id or e.target_id == player_id:
 			continue
-		if not e.tags & SimEvent.TAG_DOT:  # W3-S4 (F8): the hits a blast's weight is read from
+		if not e.tags & SimEvent.TAG_DOT:  # W3-S4: the hits a blast's weight is read from
 			blasts.note(e.tick, e.amount, e.pos, (e.tags & SimEvent.TAG_AREA) != 0)
 		if e.tags & SimEvent.TAG_DOT or (e.tags & SimEvent.TAG_CRIT) == 0 or n >= 8:
 			continue
@@ -499,8 +504,8 @@ static func hook_child(spec: Dictionary, trigger: int, form: int) -> Dictionary:
 # --- v0.9.0 VX: the volley cues -------------------------------------------------------------------------------
 ## Each Gun volley (WorldReader.shot_fired: the sim fired one this tick) gets its launch cue, drawn by the effects
 ## layer (HeroFx), one per volley, never one per copy: a muzzle spark in the element's colours at the hero's aim (V3:
-## the Orbs), fanned three ways for the Seekers' three darts (V27), and at the back too when Backfire mirrors the shot
-## (V35); a Halo volley (copies evenly all round) gets a quick ground ring instead, in a ground-safe colour (V33, V49).
+## the Orbs), fanned three ways for the Seekers' three darts, and at the back too when Backfire mirrors the shot
+## a Halo volley (copies evenly all round) gets a quick ground ring instead, in a ground-safe colour.
 ## The other forms draw their own launch (the Lance's burst, the Scatter's cone, the Laser's muzzle, the Bomb, the Void,
 ## the Wave, the Glaive). None at Low (HeroFx.LOW).
 func _sync_volley(reader: WorldReader) -> void:
@@ -509,7 +514,7 @@ func _sync_volley(reader: WorldReader) -> void:
 	if (
 		reader.lance_active()
 		or reader.scatter_active()
-		or reader.rune_active()  # v0.9.5 FC0: RuneExplosionView draws the burst
+		or reader.rune_active()  # RuneExplosionView draws the burst
 		or reader.glaive_active()
 		or reader.bomb_active()
 		or reader.void_active()
@@ -587,7 +592,7 @@ func _sync_casts(reader: WorldReader) -> void:
 
 
 func _draw_cast(reader: WorldReader, m: Dictionary) -> void:
-	# v0.8.0 PF: the spec's look from the per-key cache (_look_of), not composed again for every blast.
+	# The spec's look from the per-key cache (_look_of), not composed again for every blast.
 	var look := _look_of(reader, String(m["key"]))
 	if look.is_empty():
 		return
@@ -618,7 +623,7 @@ func _draw_cast(reader: WorldReader, m: Dictionary) -> void:
 		)
 
 
-## v0.10.5 W3-S4 (owner F8): a hook blast's look drawn at its damage's weight (its radius MIN_R..1 of the sim's, its
+## A hook blast's look drawn at its damage's weight (its radius MIN_R..1 of the sim's, its
 ## light and pieces dimmed: "w"), a small pop past the second's budget, {} when the budget leaves it out (BlastLook).
 func _blast_look(look: Dictionary, pos: Vector2, tick: int) -> Dictionary:
 	var r: float = look["radius"]
@@ -632,9 +637,9 @@ func _blast_look(look: Dictionary, pos: Vector2, tick: int) -> Dictionary:
 	return out
 
 
-## v0.10.5 W3-P10b (V1-V3): the sim's new Detonation bursts, as the hook blast Chain Blast draws (its W3 size by the
+## V1-V3: the sim's new Detonation bursts, as the hook blast Chain Blast draws (its W3 size by the
 ## blast budget, BlastLook) tinted moon-blue, no particles, no flash, no shake: at most SB_BURSTS_MAX a frame; and its
-## new Arc Jump jumps, each a thin moon-blue line for SB_JUMP_TICKS, at most SB_JUMPS_MAX a frame. Reads only.
+## new Arc Jump jumps, each a thin moon-blue line for StarboundFx.JUMP_TICKS, at most SB_JUMPS_MAX a frame. Reads only.
 func _sync_starbound(reader: WorldReader) -> void:
 	var fx := reader.starbound_fx()
 	var kinds: PackedInt32Array = fx["kind"]
@@ -694,3 +699,24 @@ func _sb_fx() -> StarboundFx:
 		_sb_pool = StarboundFx.new()
 		add_child(_sb_pool)
 	return _sb_pool
+
+
+## The spells' looks (SpellFx), made on first use.
+func _spell_fx() -> SpellFx:
+	if _spell_pool == null:
+		_spell_pool = SpellFx.new()
+		add_child(_spell_pool)
+		if vfx != null and vfx.pack_fx != null:  # PD-13: the new spells draw as pack effects
+			vfx.hero_drawers.append(_spell_pool.draw_fx)
+			_spell_pool.vfx_on = true
+	return _spell_pool
+
+
+## The spell casts drawn so far by kind (tests; {} before any).
+func spell_drawn() -> Dictionary:
+	return _spell_pool.drawn if _spell_pool != null else {}
+
+
+## The spells seen drawn so far (a cast or a lasting look; tests; {} before any).
+func spell_seen() -> Dictionary:
+	return _spell_pool.seen if _spell_pool != null else {}

@@ -1,12 +1,12 @@
 class_name Offers
 extends RefCounted
-## What an altar or chest offers (v0.4.0 BS, owner F8, F9, F13). A card is one int code, so the reward store, the
+## What an altar or chest offers. A card is one int code, so the reward store, the
 ## PICKUP event and the hash need no new shape:
 ## - 0..ABILITY_BASE-1: a mod (the v0.3.0 items; the item index, as before);
 ## - ABILITY_BASE + i: ability i (a new one into a free slot, or a level-up of one you own);
 ## - STAT_BASE + stat x 10 + rarity: a stat card;
-## - CURSE_BASE + c (v0.6.0 CU, owner S6): trade-off curse c, a cursed chest's cursed card (Curses.on_offer_rolled).
-## - STARBOUND_BASE + k (v0.10.5 W3-P10b, owner W7): Starbound card k, in a regular altar's offer from loop 2 only
+## - CURSE_BASE + c: trade-off curse c, a cursed chest's cursed card (Curses.on_offer_rolled).
+## - STARBOUND_BASE + k: Starbound card k, in a regular altar's offer from loop 2 only
 ##   (Starbound.into_offer, its own named stream; never in a chest or the shop).
 ## Rolling (once per reward, on its first open, from the loot stream only): a free altar's first card is a new
 ## ability while a slot is free and one can be offered; every other card picks its type by the source's weights
@@ -20,18 +20,21 @@ extends RefCounted
 const ABILITY_BASE := 1000
 const STAT_BASE := 2000
 const CURSE_BASE := 3000
-## v0.10.5 W3-P10b (owner W7): STARBOUND_BASE + k, Starbound card k (Starbound: offered from loop 2 only).
+## STARBOUND_BASE + k, Starbound card k (Starbound: offered from loop 2 only).
 const STARBOUND_BASE := 4000
+## SPELL_BASE + k, spell k (Spells: offered while its element card is held).
+const SPELL_BASE := 5000
 const MOD := 0
 const ABILITY := 1
 const STAT := 2
 const CURSE := 3
 const STARBOUND := 4
+const SPELL := 5
 ## A stat card's rarity: epic (v0.5.0 RT's epic altar offers only these).
 const EPIC := 2
-## v0.5.5 AR (X1b): the boss-only legendary rarity (BossReward's altar offers only legendary cards).
+## The boss-only legendary rarity (BossReward's altar offers only legendary cards).
 const LEGENDARY := 3
-## v0.8.0 N7 (owner O61): a chest rolls this many cards (one, dealt with no choice: Rewards.deal); altars keep the
+## A chest rolls this many cards (one, dealt with no choice: Rewards.deal); altars keep the
 ## data's offer_size.
 const CHEST_CARDS := 1
 
@@ -41,6 +44,8 @@ static func enabled(w: World) -> bool:
 
 
 static func type_of(code: int) -> int:
+	if code >= SPELL_BASE:
+		return SPELL
 	if code >= STARBOUND_BASE:
 		return STARBOUND
 	if code >= CURSE_BASE:
@@ -60,7 +65,7 @@ static func stat_code(stat: int, rarity: int) -> int:
 	return STAT_BASE + stat * 10 + rarity
 
 
-## v0.6.0 CU: the card for trade-off curse c.
+## The card for trade-off curse c.
 static func curse_code(c: int) -> int:
 	return CURSE_BASE + c
 
@@ -69,13 +74,22 @@ static func curse_of(code: int) -> int:
 	return code - CURSE_BASE
 
 
-## v0.10.5 W3-P10b: the card for Starbound card k, and back.
+## The card for Starbound card k, and back.
 static func starbound_code(k: int) -> int:
 	return STARBOUND_BASE + k
 
 
 static func starbound_of(code: int) -> int:
 	return code - STARBOUND_BASE
+
+
+## The card for spell k, and back.
+static func spell_code(k: int) -> int:
+	return SPELL_BASE + k
+
+
+static func spell_of(code: int) -> int:
+	return code - SPELL_BASE
 
 
 static func ability_of(code: int) -> int:
@@ -90,11 +104,11 @@ static func rarity_of(code: int) -> int:
 	return (code - STAT_BASE) % 10
 
 
-## Rolls reward i's offer (Rewards.interact, on its first open). v0.8.0 FL (LootPacing): a regular altar's offer
+## Rolls reward i's offer (Rewards.interact, on its first open). LootPacing: a regular altar's offer
 ## keeps the floor's compatible-card guarantee, then a regular altar's or chest's offer draws its jackpot.
 static func roll(w: World, i: int) -> PackedInt32Array:
 	if Routes.is_epic_altar(w, i) or TimedDoor.is_epic(w, i):
-		return roll_epic(w)  # v0.5.0 RT; v0.9.0 TD: the secret room's epic altar
+		return roll_epic(w)  # The secret room's epic altar
 	if BossReward.is_legendary(w, i):
 		return roll_legendary(w)  # v0.5.5 AR
 	var out: PackedInt32Array
@@ -103,17 +117,18 @@ static func roll(w: World, i: int) -> PackedInt32Array:
 	else:
 		out = LootPacing.guarantee(w, draw(w, false, w.reward_table.offer_size))
 		out = LootPacing.jackpot(w, i, out)
-		return Starbound.into_offer(w, i, out)  # v0.10.5 W3-P10b: loop 2+ only, its own stream
+		out = Starbound.into_offer(w, i, out)  # Loop 2+ only, its own stream
+		return Spells.into_offer(w, i, out)  # Its element card held, its own stream
 	return LootPacing.jackpot(w, i, out)
 
 
-## Up to `size` cards by an altar's (`chest` false) or a chest's rules (v0.5.0 SH: the shop's stock draws as a chest).
+## Up to `size` cards by an altar's (`chest` false) or a chest's rules (the shop's stock draws as a chest).
 static func draw(w: World, chest: bool, size: int) -> PackedInt32Array:
 	var t := w.reward_table
 	var rare := t.rare_weight_chest if chest else t.rare_weight_altar
 	if not enabled(w):
 		return ItemPool.draw_weighted(w, size, rare)
-	var weights := LootPacing.card_type_weights(w, chest)  # v0.9.5 EP2: per stage
+	var weights := LootPacing.card_type_weights(w, chest)  # Per stage
 	var rarity := t.chest_rarity_weights if chest else t.altar_rarity_weights
 	var epic := t.epic_permille_chest if chest else t.epic_permille_altar  # v0.8.0 RR
 	var legend := t.legendary_permille_chest if chest else t.legendary_permille_altar
@@ -139,20 +154,20 @@ static func draw(w: World, chest: bool, size: int) -> PackedInt32Array:
 			ABILITY:
 				out.append(ability_code(pool[w.rng_loot.range_int(0, pool.size() - 1)]))
 			STAT:
-				var sw := PackedInt32Array()  # v0.5.0 CP: by the cards' weights
+				var sw := PackedInt32Array()  # By the cards' weights
 				for st in pool:
 					sw.append(w.stat_tables[st].weight)
 				var s := pool[w.rng_loot.pick_weighted(sw)]
 				out.append(stat_code(s, pick(w.rng_loot, rarity)))
 			MOD:
 				var mw := PackedInt32Array()
-				for idx in pool:  # v0.8.0 BL (B5): the weapon's own ×1.5; v0.8.0 RR: by tier
+				for idx in pool:  # The weapon's own ×1.5; by tier
 					mw.append(ItemPool.card_weight(w, idx, rare, epic, legend))
 				out.append(pool[w.rng_loot.pick_weighted(mw)])
 	return out
 
 
-## v0.5.0 RT: a Deep floor's epic altar: up to offer_size cards, each an epic stat card (a stat under its cap, by
+## A Deep floor's epic altar: up to offer_size cards, each an epic stat card (a stat under its cap, by
 ## its card weight) or a level-up of an ability you own, never a curse; drawn from the loot stream, no repeats. The
 ## type is picked by the altar's [ability, stat] weights among the pools left. A world without abilities and stat
 ## cards offers rare-weighted mods.
@@ -188,11 +203,11 @@ static func roll_epic(w: World) -> PackedInt32Array:
 	return out
 
 
-## v0.5.5 AR (X1b): the boss's legendary altar: up to the tier's offer_size cards from its own pool (LegendaryTable),
-## drawn from the loot stream, no repeats. v0.8.0 RR (owner O33; docs/roadmap/v0.8.0/evidence/RARITY.md): first one
+## The boss's legendary altar: up to the tier's offer_size cards from its own pool (LegendaryTable),
+## drawn from the loot stream, no repeats. first one
 ## draw (range 0..999) against the tier's Legendary chance for this loop (LegendaryTable.chance): under it, the first
 ## card is a Legendary card (rarity LEGENDARY, uniform among those still in the pool; one more draw). v0.8.0 FL (owner
-## O91: "boss offers an upgrade or advanced choice; remove automatic level-5 grants"): then, with the tier's
+## "boss offers an upgrade or advanced choice; remove automatic level-5 grants"): then, with the tier's
 ## `upgrade`, one held wand card one level up (uniform among those below the next floor's ceiling,
 ## LootPacing.next_ceiling); then, with its card_categories and no Legendary card, one card of those categories (by
 ## its card weight × the floor's multiplier; never a Legendary card nor a mutation); the rest are legendary stat cards
@@ -230,8 +245,8 @@ static func roll_legendary(w: World) -> PackedInt32Array:
 			if t.stats.has(s) and w.stat_tables[s].amounts.size() > LEGENDARY:
 				stats.append(s)
 		var mods := PackedInt32Array()
-		for idx in ItemPool.available(w, true):  # v0.6.0 MX4: the tier's legendary modifiers too
-			var rare_legend := w.item_tables[idx].rarity == ItemTable.LEGENDARY  # v0.8.0 RR: by the chance only
+		for idx in ItemPool.available(w, true):  # The tier's legendary modifiers too
+			var rare_legend := w.item_tables[idx].rarity == ItemTable.LEGENDARY  # By the chance only
 			if t.mods.has(idx) and not rare_legend and not out.has(idx):
 				mods.append(idx)
 		var wts := PackedInt32Array(
@@ -253,23 +268,23 @@ static func roll_legendary(w: World) -> PackedInt32Array:
 	return out
 
 
-## v0.8.0 FL: the boss altar's upgrade choices, ascending: held wand cards below the next floor's level ceiling
+## The boss altar's upgrade choices, ascending: held wand cards below the next floor's level ceiling
 ## (LootPacing.next_ceiling), usable and in no other offer, not already in `out`.
 static func boss_upgrades(w: World, out: PackedInt32Array) -> PackedInt32Array:
 	var ups := PackedInt32Array()
-	var el := LootPacing.element_ceiling(w, 1)  # v0.10.5 W3-P2: an element up to the next floor's own ceiling
+	var el := LootPacing.element_ceiling(w, 1)  # An element up to the next floor's own ceiling
 	for idx in ItemPool.available(w, true, LootPacing.next_ceiling(w), el):
 		if w.items_owned.has(idx) and CardLevels.is_card(w, idx) and not out.has(idx):
 			ups.append(idx)
 	return ups
 
 
-## v0.8.0 RR: the Legendary cards (ItemTable.LEGENDARY) still in the item pool, ascending (the boss's chance slot).
+## The Legendary cards (ItemTable.LEGENDARY) still in the item pool, ascending (the boss's chance slot).
 static func legendary_cards(w: World) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for idx in ItemPool.available(w, true):
 		var t := w.item_tables[idx]
-		if t.rarity == ItemTable.LEGENDARY and t.offer_weight_permille >= 1000:  # v0.8.0 RM: no mutation
+		if t.rarity == ItemTable.LEGENDARY and t.offer_weight_permille >= 1000:  # No mutation
 			out.append(idx)
 	return out
 
@@ -315,7 +330,7 @@ static func _stats(w: World, out: PackedInt32Array) -> PackedInt32Array:
 	return left
 
 
-## Mods still in the item pool (ItemPool.available), not already in `out`. v0.8.0 RR: with the source's weights, a
+## Mods still in the item pool (ItemPool.available), not already in `out`. with the source's weights, a
 ## legendary one too while its weight is above 0, and never a card whose weight is 0 (pick_weighted refuses it).
 static func _mods(
 	w: World, out: PackedInt32Array, rare: int = 1, epic: int = -1, legend: int = 0
@@ -328,7 +343,7 @@ static func _mods(
 
 
 ## Takes card `code` (Rewards.choose, Shop.buy, an event's card, v0.6.0 CU a stolen core or a curse card).
-## v0.6.0 MX2: through BuildSlots.take; a new
+## Through BuildSlots.take; a new
 ## modifier with the six slots full replaces slot `replace`, and without one it opens the swap choice by itself
 ## (BuildSlots.Source.GRANT: the world waits for the answer; a skip leaves the card).
 static func apply(w: World, code: int, replace: int = -1) -> void:
@@ -354,9 +369,9 @@ static func info(w: World, code: int) -> Dictionary:
 				"name_key": t.name_key,
 				"desc_key": t.desc_key,
 				"rarity": 1 if t.rare else 0,
-				"level": Abilities.level_after(w, idx),  # v0.8.0 N8: grant's own step
+				"level": Abilities.level_after(w, idx),  # Grant's own step
 				"amount": 0,
-				"modifier": t.is_modifier(),  # v0.6.0 MX2: it takes a modifier slot
+				"modifier": t.is_modifier(),  # It takes a modifier slot
 			}
 		STAT:
 			var st := w.stat_tables[stat_of(code)]
@@ -368,11 +383,11 @@ static func info(w: World, code: int) -> Dictionary:
 				"desc_key": st.desc_key,
 				"rarity": rarity_of(code),
 				"level": 0,
-				"amount": CardForecast.gain(w, code),  # v0.8.0 SG: attack speed's real gain after the curve
-				# v0.5.0 CP: a rule card's second number
+				"amount": CardForecast.gain(w, code),  # Attack speed's real gain after the curve
+				# A rule card's second number
 				"side": st.side[rarity_of(code)] if rarity_of(code) < st.side.size() else 0,
 			}
-		STARBOUND:  # v0.10.5 W3-P10b: a Starbound card: its stacks so far and after the pick (`level`)
+		STARBOUND:  # A Starbound card: its stacks so far and after the pick (`level`)
 			var k := starbound_of(code)
 			var sb := Starbound.table(w, k)
 			return {
@@ -386,7 +401,29 @@ static func info(w: World, code: int) -> Dictionary:
 				"amount": sb.amount if sb != null else 0,
 				"stacks": Starbound.picks(w, k),
 			}
-		CURSE:  # v0.6.0 CU: a trade-off curse card, rare-level: its face is the upside (the panel adds the drawback)
+		SPELL:  # A spell card: its level after the pick, the spell it replaces when the slots are full
+			var k := spell_of(code)
+			var sp := Spells.table(w, k)
+			var lv := Spells.level_after(w, k)
+			var r := Spells.replaces(w, k)
+			return {
+				"type": SPELL,
+				"id": sp.id if sp != null else &"",
+				"kind": k,
+				"name_key": sp.name_key if sp != null else &"",
+				"desc_key": sp.desc_key if sp != null else &"",
+				"level_key":
+				sp.level_keys[lv - 1] if sp != null and lv - 1 < sp.level_keys.size() else &"",
+				"rarity": 1,
+				"level": lv,
+				"held_level": Spells.level(w, k),
+				"max_level": Spells.cap(w),
+				"element": sp.element if sp != null else 0,
+				"amount": 0,
+				"replaces": spell_code(w.spell_slots[r]) if r >= 0 else -1,
+				"replaces_name": _spell_name(w, w.spell_slots[r]) if r >= 0 else &"",
+			}
+		CURSE:  # A trade-off curse card, rare-level: its face is the upside (the panel adds the drawback)
 			var ct := w.ev.curses[curse_of(code)]
 			return {
 				"type": CURSE,
@@ -400,10 +437,10 @@ static func info(w: World, code: int) -> Dictionary:
 				"curse": curse_of(code),
 			}
 	var it := w.item_tables[code]
-	var rarity := it.tier()  # v0.6.0 MX4: a legendary modifier; v0.8.0 RR: the four tiers in order
-	var face := item_keys(w, it)  # v0.6.5 WN5a: T4's face per weapon
+	var rarity := it.tier()  # A legendary modifier; the four tiers in order
+	var face := item_keys(w, it)  # T4's face per weapon
 	return {
-		"modifier": BuildSlots.is_slot_item(it),  # v0.6.0 MX2: it takes a modifier slot
+		"modifier": BuildSlots.is_slot_item(it),  # It takes a modifier slot
 		"type": MOD,
 		"id": it.id,
 		"kind": it.kind,
@@ -412,22 +449,28 @@ static func info(w: World, code: int) -> Dictionary:
 		"rarity": rarity,
 		"level": 0,
 		"amount": 0,
-		"wand": CardLevels.is_card(w, code) and CardLevels.cap(w, code) > 1,  # v0.9.5 CLV: a card with levels
-		# v0.10.5 W3-P3: its cap now (overlevels included) and its own max_level (past it: overlevels)
+		"wand": CardLevels.is_card(w, code) and CardLevels.cap(w, code) > 1,  # A card with levels
+		# Its cap now (overlevels included) and its own max_level (past it: overlevels)
 		"max_level": CardLevels.cap(w, code) if CardLevels.is_card(w, code) else 1,
 		"base_max": CardLevels.max_level(w, code) if CardLevels.is_card(w, code) else 1,
-		# v0.9.0 AS (owner Q5, Q14): its slot tag on this run (AttackSlots: 0 none) and, when its slot is full, the
+		# Its slot tag on this run (AttackSlots: 0 none) and, when its slot is full, the
 		# card taking it replaces (its code, -1 for none; AttackSlots.replaces)
 		"slot": AttackSlots.tag(w, code),
 		"replaces": AttackSlots.replaced_code(w, code),
-		# v0.9.0 AS2 (owner "Let me choose"): its Secondary or Element slot is full: taking it asks which card goes
+		# Its Secondary or Element slot is full: taking it asks which card goes
 		"chooses": AttackSlots.choice_category(w, code) != AttackSlots.FREE,
 	}
 
 
-## v0.6.5 WN5a (WAND.md T4): item `it`'s name and description keys for this run: its Gun face on a Gun run when it
+## WAND.md T4: item `it`'s name and description keys for this run: its Gun face on a Gun run when it
 ## has one (On Crit), else its own (On Finisher). Pure.
 static func item_keys(w: World, it: ItemTable) -> Array[StringName]:
 	if it.name_key_gun != &"" and PlayerBuild.has_gun(w) and not PlayerBuild.has_blade(w):
 		return [it.name_key_gun, it.desc_key_gun]
 	return [it.name_key, it.desc_key]
+
+
+## Spell k's name key (&"" for none).
+static func _spell_name(w: World, k: int) -> StringName:
+	var t := Spells.table(w, k)
+	return t.name_key if t != null else &""

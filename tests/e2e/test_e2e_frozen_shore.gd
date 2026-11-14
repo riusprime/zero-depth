@@ -24,6 +24,20 @@ func _restart(e: E2e) -> void:
 	await e.frames(3)
 
 
+## Waits until the world has run `n` ticks that were not hit-stop (SIM_CONTRACTS: a hit-stop holds everything, the
+## hero's easing too). Since v0.11.0 O13a's biome rosters (feb0a076: five new mix rows, so a new spawn draw) a Swarmer
+## reaches the hero on this floor and its touch's 4 hurt hit-stop ticks fell inside the push (fix1, 2026-11-08).
+func _live_ticks(e: E2e, w: World, n: int) -> void:
+	var ran := 0
+	for guard in n + 120:
+		if ran >= n:
+			return
+		var stopped := w.freeze_ticks > 0
+		await e.frames(1)
+		if not stopped:
+			ran += 1
+
+
 func test_frozen_shore_is_reached_drawn_and_its_ice_slides() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
@@ -70,11 +84,11 @@ func test_frozen_shore_is_reached_drawn_and_its_ice_slides() -> void:
 	var w := e.world()
 	var dir := Vector2.RIGHT if best.size.x >= best.size.y else Vector2.UP
 	e.stick_toward(-dir)
-	await e.frames(8)
+	await _live_ticks(e, w, 8)
 	e.stick_toward(dir)
-	await e.frames(10)
+	await _live_ticks(e, w, 10)
 	e.stick_toward(Vector2.ZERO)
-	await e.frames(8)  # dry ground stops under 10 % of top speed in 5 ticks (test_movement_feel)
+	await _live_ticks(e, w, 8)  # dry ground stops under 10 % of top speed in 5 ticks (test_movement_feel)
 	assert_gt(
 		w.vel.length(), w.player.move_speed * 0.2, "eight ticks after letting go it still slides"
 	)

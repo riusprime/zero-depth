@@ -49,7 +49,7 @@ var lamp_m := 3.0
 var lamp_ticks := 480
 var relight_m := 1.5
 var lamp_inset_m := 1.5
-## HC6: the dash between moves.
+## The dash between moves.
 var dash_telegraph_ticks := 24
 var dash_ticks := 12
 var dash_min_m := 6.0

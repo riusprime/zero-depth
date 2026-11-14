@@ -1,6 +1,6 @@
 class_name BladeForms
 extends RefCounted
-## v0.6.5 WN4 (docs/design/WAND.md, the Blade pool B1–B16; owner W5: "the slash becomes a spell"): what the Blade's
+## docs/design/WAND.md, the Blade pool B1–B16; owner W5: "the slash becomes a spell": what the Blade's
 ## cards need from the runner beyond the shared forms, read from the compiled specs (AttackSpec's WN4 fields) and kept
 ## in World.blade (BladeState). Every function draws no randomness (EI-05), uses no trig and runs on the one clock.
 ##
@@ -73,13 +73,13 @@ static func step(w: World, k: int) -> SwingStep:
 	return step_of(w, k, Modifiers.step(w, k))
 
 
-## v0.10.5 O13: step for combo step `k` compiled as `s` (WandForecast reads a wand not held yet with it).
+## Step for combo step `k` compiled as `s` (WandForecast reads a wand not held yet with it).
 static func step_of(w: World, k: int, s: AttackSpec) -> SwingStep:
 	var base: SwingStep = w.player.combo[k]
-	# v0.8.0 MR (O91): Flurry's burst is part of the step's raw wand bonus (FireRhythm), so the curve covers it
+	# Flurry's burst is part of the step's raw wand bonus (FireRhythm), so the curve covers it
 	var wand := s.rate_bonus_permille + FireRhythm.swing_bonus(w, s) if s != null else 0
 	var t := table(w)
-	# v0.8.0 SG (owner O91): one rate for the whole swing, the attack speed stat plus the step's wand bonus through
+	# One rate for the whole swing, the attack speed stat plus the step's wand bonus through
 	# the curve, then Heavy Hands (AttackRate.rate), never under the table's rate_min.
 	var rate := maxi(t.rate_min, AttackRate.rate(w, wand))
 	if rate == 1000 and (s == null or (s.motion < 0 and s.step_m <= 0.0)):
@@ -136,7 +136,7 @@ static func on_arc_hit(w: World, spec: AttackSpec, ctx: AttackContext, i: int) -
 		_knock(w, i, ctx.origin, spec.knockback_m)
 
 
-## v0.10.5 O11 (F1): the hero's own swing (not an echo, a skill or a child slash) pushes the enemy it hit back a little:
+## The hero's own swing (not an echo, a skill or a child slash) pushes the enemy it hit back a little:
 ## PlayerTable.hit_push_m, the finisher's finisher_push_m. Same slide as Heavy's (a boss never; an elite half).
 static func hit_push_arc(w: World, spec: AttackSpec, ctx: AttackContext, i: int) -> void:
 	if spec.depth > 0 or ctx.step < 0 or ctx.effect_id != &"" or ctx.repeat or ctx.back:
@@ -146,7 +146,7 @@ static func hit_push_arc(w: World, spec: AttackSpec, ctx: AttackContext, i: int)
 	hit_push(w, i, ctx.origin, m)
 
 
-## v0.10.5 O11 (F1): the hero's bolt (projectile `pi`) that landed `got` damage on enemy `i` pushes it back, more on a
+## The hero's bolt (projectile `pi`) that landed `got` damage on enemy `i` pushes it back, more on a
 ## crit. Not a skill's, an ability's, a burst's or a chain's.
 static func hit_push_bolt(w: World, i: int, pi: int, got: int, from: Vector2, crit: bool) -> void:
 	var p := w.projectiles
@@ -165,7 +165,7 @@ static func hit_push_bolt(w: World, i: int, pi: int, got: int, from: Vector2, cr
 	hit_push(w, i, from, t.bolt_crit_push_m if crit else t.bolt_push_m)
 
 
-## v0.10.5 O11 (F1): push actor `i` away from `from` by `metres` (half for an elite; none for a boss, a dead actor or
+## Push actor `i` away from `from` by `metres` (half for an elite; none for a boss, a dead actor or
 ## one already sliding).
 static func hit_push(w: World, i: int, from: Vector2, metres: float) -> void:
 	if metres <= 0.0 or i <= 0:

@@ -1,5 +1,6 @@
 extends GutTest
-## The Arc Caster's and the Bomb Drone's models (v0.3.5 AI): code-built low-poly in the enemy style, flashable
+## The Bomb Drone's model (v0.3.5 AI; the Arc Caster is the Cinder Priest's model since v0.11.0 F6): code-built
+## low-poly in the enemy style, flashable
 ## without a shader change, the drone hovering with a ground shadow and losing its bomb as it lobs it, the caster's
 ## crystal charging through the windup; ActorViews builds them, and the telegraph view draws their spells.
 
@@ -13,22 +14,22 @@ func _run(a: Node3D, t0: int, state: int, ticks: int) -> void:
 		a.advance(DT)
 
 
-func test_both_are_built_flashable_and_outlined() -> void:
-	var avatars: Array[Node3D] = [ArcCasterAvatar.new(), BombDroneAvatar.new()]
+func test_the_drone_is_built_flashable_and_outlined() -> void:
+	var avatars: Array[Node3D] = [BombDroneAvatar.new()]
 	for avatar in avatars:
 		var name: String = avatar.get_script().get_global_name()
-		avatar.setup(Color.BLACK, &"outline")
+		avatar.setup()
 		assert_gt(avatar.body_materials.size(), 5, name)
 		for m: StandardMaterial3D in avatar.body_materials:
 			assert_true(m.emission_enabled, "%s: a hit flash changes energy only" % name)
 			assert_eq(m.emission_energy_multiplier, 0.0, "%s: dark until flashed" % name)
-			assert_eq(m.stencil_mode, ActorLooks.outline_mode(), "%s: outlined" % name)
+			assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_DISABLED, "%s: no stencil" % name)
 		avatar.free()
 
 
 func test_the_drone_hovers_with_a_shadow_on_the_ground() -> void:
 	var a := BombDroneAvatar.new()
-	a.setup(Color.BLACK)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	_run(a, 0, STATE.MOVE, 120)
@@ -43,7 +44,7 @@ func test_the_drone_hovers_with_a_shadow_on_the_ground() -> void:
 
 func test_the_drone_lobs_its_bomb_and_slings_a_new_one() -> void:
 	var a := BombDroneAvatar.new()
-	a.setup(Color.BLACK)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	_run(a, 0, STATE.MOVE, 30)
@@ -56,15 +57,18 @@ func test_the_drone_lobs_its_bomb_and_slings_a_new_one() -> void:
 
 
 func test_the_caster_charges_its_crystal_through_the_windup() -> void:
-	var a := ArcCasterAvatar.new()
-	a.setup(Color.BLACK)
+	var a := CinderPriestAvatar.new()
+	a.kind = WorldReader.KIND_ARC_CASTER
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	_run(a, 0, STATE.MOVE, 30)
-	var rest := a.crystal_energy()
-	_run(a, 30, STATE.WINDUP, 28)
-	assert_gt(a.crystal_energy(), rest + 2.0, "it glows as the spell builds")
-	assert_gt(a.staff_raise(), 0.3, "the staff comes up")
+	var rest := a.glow_energy()
+	for k in 28:  # the sim gives the windup's progress (0..1000)
+		a.apply_state({"tick": 30 + k, "state": STATE.WINDUP, "pulse": (k + 1) * 1000 / 28})
+		a.advance(DT)
+	assert_gt(a.glow_energy(), rest + 2.0, "it glows as the spell builds")
+	assert_gt(a._vd[CinderPriestAvatar.STAFF_F], 0.5, "the staff comes up")
 
 
 func test_actor_views_build_the_new_models() -> void:
@@ -77,7 +81,7 @@ func test_actor_views_build_the_new_models() -> void:
 	views.sync(reader)
 	var caster := views.actor_node(w.actors.ids[1])
 	var drone := views.actor_node(w.actors.ids[2])
-	assert_true(caster.get_meta(&"enemy_avatar") is ArcCasterAvatar)
+	assert_true(caster.get_meta(&"enemy_avatar") is CinderPriestAvatar)
 	assert_true(drone.get_meta(&"enemy_avatar") is BombDroneAvatar)
 	var bar: Node3D = drone.get_meta(&"bar")
 	assert_gt(

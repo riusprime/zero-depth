@@ -55,6 +55,11 @@ Superseded rules are listed in ROADMAP §3.
   - `sin`/`cos`/`atan2`/`pow`/`exp`/`log`.
 
   The arch lint enforces this.
+- **The sim's hot loops are C++** (`native/`, LOCKED_DECISIONS 2026-11-11): enemy thinking, steering and strikes, the
+  collision passes, the projectile sweep and the path flood. Both languages obey the purity rules above; the C++ draws
+  no random number, keeps no state between calls, and its results must stay deterministic and identical across the
+  Windows (MSVC) and Linux (gcc) builds. Read [`docs/architecture/NATIVE_CORE.md`](docs/architecture/NATIVE_CORE.md)
+  before touching `native/` or a kernel's GDScript bridge (`src/sim/world/native_*.gd`).
 - **One clock** (EI-03). `World.tick` at 60 Hz is the only gameplay time. No `Timer`, tween or animation decides
   an outcome.
 - **Input is an `InputFrame` per tick** (EI-04). Randomness comes only from named streams (EI-05).
@@ -68,6 +73,15 @@ Superseded rules are listed in ROADMAP §3.
 - **Every player-facing feature is reachable from the real game,** proved by an e2e test that drives `main.tscn`
   through `Input.parse_input_event` only.
 - **Decisions go into docs the same day** (PLAN, PROGRESS, LOCKED_DECISIONS). Never leave them only in chat.
+- **Comments say what and why, not when** (owner, 2026-11-10). No version, step id, owner-line id or date in a code
+  comment (`# v0.9.0 P3 (owner O32): …`): git and the PLAN hold the history. A decision's reason belongs in the
+  sentence itself.
+- **No lambda in a static var** (found twice in v0.11.1). An inline function kept in a `static var` (or in a static
+  table such as `DebugApi.view_switches`) until the engine quits can crash the engine on exit, depending on which
+  script loaded first. Store a named static function. And check a test run's exit code, not only its pass count.
+- **The 1,000-line file cap is not dodged** (owner, 2026-11-10: the lead decides the cap; it stays 1,000). Split a
+  file by responsibility, never just to fit, and never into a helper that only holds the overflow. An exemption
+  (`# gdlint: disable=max-file-lines`) needs a row with its reason in `tests/arch/test_line_cap.gd`.
 
 ## Evidence honesty
 
@@ -91,15 +105,25 @@ Deathventory once shipped an agent-written "human playtest" and a smoke test wit
 |---|---|
 | Only docs, or scripts that write only under `docs/` | Nothing local; CI covers it |
 | Installed assets or manifests (`assets/`) | The asset tests |
-| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead, after merging agents' branches: `bash scripts/ci/seams.sh` (the seams, about 10 min: 260 tests in 619 s on 2026-10-13), then push. **No local full suite** |
+| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead, after merging agents' branches: `bash scripts/ci/seams.sh` (the seams: 674 tests in 1,396 s, 27 min with import and lint, on 2026-11-10, owner's PC; it was 3,185 s before v0.11.1), then push. **No local full suite** |
+
+**The native library is required** (the sim runs only in C++, `native/README.md`): `verify.sh`, `seams.sh` and
+`gut_shard.sh` build it first (`scripts/native/ensure.sh`); a GUT run without it stops before its first test with
+one error that says how to build it.
 
 **The full suite runs once per version, on GitHub** (owner, 2026-10-13: "does the full run suite make sense for every
 change? … just testing what the changes need to be tested right?"; then "make those changes statement so every
 session on this proyect gets them"):
 - **Agents** test what they changed: lint, the test folders they touched, and the e2e that reach their change.
+- **Seed loops** (`Seeds.count(1000)`, `tests/support/seeds.gd`) run 200 seeds on a developer machine and in seams,
+  and the full 1,000 in the GitHub full suite (`ZD_FULL_SEEDS=1`; owner, 2026-11-10: "if 200 is enough go for it").
+- **e2e tests start a run directly** (`Main.quick_start`, set by `E2e.boot`; owner, 2026-11-10: "yes skip them"). A
+  test about the hub, the portal, the arrival or the run flow sets `e.real_start = true` before `boot()`.
+- **Batch e2e files into one Godot process:** the first run start in a process costs about 30 s, later ones about
+  6 s (`docs/roadmap/v0.11.1/evidence/E2E_FIXED_COST.md`).
 - **The lead**, after merging branches, runs `scripts/ci/seams.sh` from a clean worktree, fixes what breaks, and
   pushes. The seams are the tests where separate changes meet: content, arch, goldens, application, debug (the dev
-  panel's folder list), old saves, the every-card soak, and the run/save/menu/dev-panel e2e. When a cross-step bug
+  panel's folder list), the every-card soak, and the run/save/menu/dev-panel e2e. When a cross-step bug
   gets past the seams, add the test that caught it to `seams.sh`.
 - **The PR into `main`** runs the full suite once on GitHub, as parallel shards (`scripts/ci/gut_shard.sh`; every
   test file is in exactly one shard, and the `verify` job sums them against `tests/MIN_TEST_COUNT`). A red shard is
@@ -136,6 +160,7 @@ they are taking way too long". Cloud machines have 4 CPUs and Godot runs at half
 ## Commands
 
 ```bash
+bash scripts/native/ensure.sh                                         # the native library, REQUIRED: build (debug) + import twice (native/README.md)
 godot --headless --path . --editor --import --quit                     # import (after clone / new class_name)
 bash scripts/verify.sh                                                 # import + full suite + CI guards
 bash scripts/ci/seams.sh                                               # the lead's check after a merge (no full suite locally)
@@ -144,8 +169,10 @@ godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://
 godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit/sim -ginclude_subdirs -gexit   # one folder
 godot --headless --path . -s scripts/checks/hitch_probe.gd             # real-time hitch rule
 godot --headless --path . -s scripts/bench/sim_bench.gd                # bench → paste into evidence
-godot --path . -s scripts/shots/tour.gd                                # screenshot tour (needs a renderer, not --headless) → build/shots/<version>/<lang>/
+godot --path . --position -10000,-10000 -s scripts/shots/tour.gd -- lang=en   # screenshot tour (renderer, off screen; lang=es too) → build/shots/<config/version>/<lang>/
 gdformat --check src scripts tests && gdlint src scripts tests         # lint (pip install -r requirements-dev.txt)
+bash scripts/native/build.sh [debug|release|all]                       # build the native library only (release: what an export ships)
+bash scripts/native/check_release.sh                                   # the release library gives the recorded native fixtures
 godot --path . -- --perf-log[=light]; python scripts/perf/summarize_perf.py <csv>   # log normal play, F9 marks (docs/process/PERF_LOG.md)
 ```
 
@@ -198,6 +225,10 @@ The owner also runs Claude Code on their own PC (i7-10700K, RTX 3060), from the 
 | Versions, exit gates, release checklist | [`docs/roadmap/ROADMAP.md`](docs/roadmap/ROADMAP.md) |
 | Layers, folders, loop, input, save, Deathventory reuse | [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) |
 | Tick, `InputFrame`, events, damage, procs, caps, hashing | [`docs/architecture/SIM_CONTRACTS.md`](docs/architecture/SIM_CONTRACTS.md) |
+| The native (C++) core: its kernels, intents, data model, determinism rules, how to add a kernel or an enemy kind | [`docs/architecture/NATIVE_CORE.md`](docs/architecture/NATIVE_CORE.md); the build: [`native/README.md`](native/README.md) |
+| The batched display: enemies, cubes, shards, bolts and the HUD drawn as instances, and how the look is proven | [`docs/architecture/PRESENTATION_CONTRACTS.md`](docs/architecture/PRESENTATION_CONTRACTS.md) §11 |
+| Measuring performance: every tool, the quiet-machine protocol, the misreadings to avoid, the evidence index | [`docs/process/PERF_TOOLS.md`](docs/process/PERF_TOOLS.md) |
+| The native core's and the batched display's tests | [`docs/architecture/TEST_MATRIX.md`](docs/architecture/TEST_MATRIX.md) §7 |
 | Balance metrics, bots, sim rules, gap-analysis reports | [`docs/balance/SCORECARD.md`](docs/balance/SCORECARD.md) |
 | The five design pillars (the audit framework) | [`docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md`](docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md) |
 | Palettes, shapes, lighting, art requests | [`docs/art/ART_DIRECTION.md`](docs/art/ART_DIRECTION.md) |

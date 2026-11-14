@@ -49,7 +49,7 @@ var _ui_quiet_until := -1.0
 var _caption_until := 0.0
 var _caption_layer := CanvasLayer.new()
 var _caption_label := Label.new()
-## v0.9.0 LZ: the held sounds playing now (cue id -> its looping player; hold()).
+## The held sounds playing now (cue id -> its looping player; hold()).
 var _held := {}
 
 
@@ -94,7 +94,7 @@ func detach() -> void:
 		hold(id, false)
 
 
-## v0.9.0 LZ (the Laser's `laser_loop`): a held sound, one looping voice of cue `id` while `on`; it starts once (logged
+## The Laser's `laser_loop`: a held sound, one looping voice of cue `id` while `on`; it starts once (logged
 ## in played_log) and stops when `on` goes false. A missing file plays nothing.
 func hold(id: StringName, on: bool) -> void:
 	var p: AudioStreamPlayer = _held.get(id)
@@ -122,7 +122,7 @@ func hold(id: StringName, on: bool) -> void:
 			p.play()
 
 
-## v0.9.0 LZ: whether held sound `id` is on now (tests).
+## Whether held sound `id` is on now (tests).
 func holding(id: StringName) -> bool:
 	return _held.has(id)
 
@@ -133,7 +133,7 @@ func sync(reader: WorldReader = null) -> void:
 		return
 	for req: Array in events.collect(_reader):
 		play(req[0], req[1], req[2])
-	hold(&"laser_loop", _reader.beam_firing())  # v0.9.0 LZ: the beam's hum while it fires
+	hold(&"laser_loop", _reader.beam_firing())  # The beam's hum while it fires
 
 
 func _process(delta: float) -> void:

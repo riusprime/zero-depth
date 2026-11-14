@@ -1,6 +1,6 @@
 class_name RuneGlyphs
 extends RefCounted
-## v0.9.0 RA (owner Q22: "a carving on the wall shows the 3 symbols"; W3 understood in under 5 s): the rune puzzle's
+## The rune puzzle's
 ## four symbols, simple and angular, each told apart at a glance by its outline alone: 0 a chevron (Λ), 1 a cross (X),
 ## 2 a square ring, 3 three bars (≡). Built from thin boxes in the local XY plane, facing +Z, `size` m across. The
 ## pillars' faces and the carving's sockets draw the same ones. Presentation only.

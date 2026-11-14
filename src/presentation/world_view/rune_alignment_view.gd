@@ -14,7 +14,7 @@ extends Node3D
 ##   show it.
 ## - Solved: all three faces and the carving flare (FLARE_S), the slab sinks into the floor (SINK_S) and the hidden
 ##   room (StageView.reveal_hidden) comes into sight with a warm light inside.
-## - v0.9.0 BV (W71): per biome (InteractionLooks, the stage's prop_style): the matched face's colour (`rune_color`)
+## - v0.9.0 BV: per biome (InteractionLooks, the stage's prop_style): the matched face's colour (`rune_color`)
 ##   and the shown face's (`glyph_color`), the room's light, the owner's pillar and carving tinted, and the biome's
 ##   accent at each pillar's foot. The pillars' own colours (red, green, blue: the clue) are the same everywhere.
 
@@ -42,7 +42,7 @@ var uses_model := false
 var shown := PackedInt32Array()
 var glow := PackedFloat32Array()
 var flare := 0.0
-## v0.9.0 BV: the biome whose look is drawn, its matched and shown glyph colours.
+## The biome whose look is drawn, its matched and shown glyph colours.
 var biome := &""
 var rune_color := AMBER
 var glyph_color := GLYPH
@@ -83,7 +83,7 @@ func setup(reader: WorldReader, stage: StageView, cover: Color) -> void:
 	_room_light.omni_range = 9.0
 	_room_light.light_energy = 1.6
 	_room_light.shadow_enabled = false
-	if reader.rune_room() >= 0:  # v0.10.5 S14: an old save's dropped room has none
+	if reader.rune_room() >= 0:  # A floor without the puzzle has none
 		_room_light.position = SimPlane.to_3d(
 			reader.floor_room(reader.rune_room()).get_center(), 2.6
 		)

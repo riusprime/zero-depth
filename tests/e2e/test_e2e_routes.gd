@@ -34,12 +34,6 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_floor_one_opens_the_gate_alone() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
@@ -51,7 +45,7 @@ func test_floor_one_opens_the_gate_alone() -> void:
 	assert_null(w.purple, "and no purple runes to earn one")
 	assert_null(main.view.deep_gate, "none is built")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
@@ -62,7 +56,7 @@ func test_floor_one_opens_the_gate_alone() -> void:
 	if not sealed:
 		return
 	await e.frames(30)
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(3)
 	assert_true(reader.gate_open(WorldReader.ROUTE_NORMAL), "the gate is open")
 	assert_false(reader.gate_open(WorldReader.ROUTE_DEEP), "alone")

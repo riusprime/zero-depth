@@ -1,11 +1,11 @@
 class_name ScatterView
 extends Node3D
-## v0.9.0 AF1 (owner Q7; ATTACK_FORMS.md F6): the Scatter's look. Each pellet in flight
+## The Scatter's look. Each pellet in flight
 ## (WorldReader.projectile_is_pellet) is a short hot slug stretched along its flight, camera-facing, in the element's
 ## colours (BeamLooks: default energy, Fire, Lightning, Frost, Venom, Bleed); each volley (a pellet that wasn't there
 ## last sync) opens a muzzle cone at the hero, a fan as wide as the shot's spread that flares and fades in CONE_TICKS,
 ## so the short reach reads at a glance.
-## v0.9.0 VX (VFX_AUDIT.md): V2 the colours of the first element's centre and the second's edge; V22 the element's
+## VFX_AUDIT.md: V2 the colours of the first element's centre and the second's edge; V22 the element's
 ## accent on the cone (HeroFx.spray: an ember spray, a crackle across the fan, frost shards, droplets; 5 sprites a
 ## volley, none at Low); V48 the look read once per build and the buffers reused.
 ## Presentation only (EI-07): it reads the reader, never writes; a cone's life is sim ticks.

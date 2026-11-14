@@ -20,9 +20,9 @@ func after_each() -> void:
 	BossModels.dir = BossModels.DIR
 
 
-func _avatar(cls: Variant, technique: StringName = &"outline") -> BossAvatar:
+func _avatar(cls: Variant) -> BossAvatar:
 	var a: BossAvatar = cls.new()
-	a.setup(Color("#1A1A22"), technique)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	return a
@@ -50,7 +50,7 @@ func test_each_model_builds_flashable_outlined_pieces() -> void:
 		for m in a.body_materials:
 			assert_true(m.emission_enabled, "%s: flashable (emission on, energy only)" % name)
 			assert_eq(m.emission_energy_multiplier, 0.0, "%s: dark until a hit" % name)
-			assert_eq(m.stencil_mode, ActorLooks.outline_mode(), "%s: outlined" % name)
+			assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_DISABLED, "%s: no stencil" % name)
 		assert_eq(
 			_count_meshes(a),
 			_count_meshes(_avatar(cls)),
@@ -60,7 +60,7 @@ func test_each_model_builds_flashable_outlined_pieces() -> void:
 
 func test_the_lens_drone_builds_flashable_and_hovers() -> void:
 	var d := LensDroneAvatar.new()
-	d.setup(Color.BLACK)
+	d.setup()
 	add_child_autofree(d)
 	d.set_process(false)
 	# v0.8.0 MI: the owner's model has two body materials (its frame and its plates); the code pod three.

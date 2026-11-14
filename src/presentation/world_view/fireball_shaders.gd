@@ -1,6 +1,6 @@
 class_name FireballShaders
 extends RefCounted
-## v0.8.0 AV (owner O8): the shaders of the hostile fireballs (FireballViews), shared by every look. Per look only
+## The shaders of the hostile fireballs (FireballViews), shared by every look. Per look only
 ## the uniforms change, so each look is still three MultiMeshes (one draw each).
 ## - core: a lit 3D body (faceted stone, gem, plasma, a glob) with a noise swirl and flicker inside, glowing veins
 ##   (`crack`), a hot centre that falls off to the look's dark edge colour at the rim (fresnel: a bright core and a

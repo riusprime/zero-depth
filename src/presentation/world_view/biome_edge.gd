@@ -1,6 +1,6 @@
 class_name BiomeEdge
 extends Node3D
-## v0.7.5 NB1: what lies beyond a floor's edge, by BiomeLook.edge. One builder per style, so the next biome adds its
+## What lies beyond a floor's edge, by BiomeLook.edge. One builder per style, so the next biome adds its
 ## own (NB2's cosmic biome: a star field) beside these without touching the others:
 ## - &"water" (Frozen Shore): a dark frozen sea under the void, the floor standing on a snow bank whose lip shows at
 ##   every edge, and white ice floes drifting on the water (cosmetic stream). The sea shimmers slowly (frame time;
@@ -15,11 +15,11 @@ extends Node3D
 ## - v0.8.0 MI &"islands" (Night Rocks, owner O78: "the moss island goes in Night Rocks"): the mood's own void, with
 ##   the biome's floating islands (BiomeLook pool void_island: the owner's moss island) drifting below the floor's
 ##   level around it, as Starfall's do; nothing else.
-## v0.8.0 MI: `pieces` names the owner's void models a style draws ({&"void_island": id, &"void_spike": id}; Starfall:
+## `pieces` names the owner's void models a style draws ({&"void_island": id, &"void_spike": id}; Starfall:
 ## floating_island_starfall and void_spike); a missing one keeps the code-made piece. An island model carries its own
 ## crystals, so the code-made crystal clusters are left off with it.
 const STYLES: Array[StringName] = [&"water", &"stars", &"islands"]
-## v0.9.5 BG: the starry void's own nebula clouds are off now that bg_starfall_deep carries the nebulae (true puts
+## The starry void's own nebula clouds are off now that bg_starfall_deep carries the nebulae (true puts
 ## them back; they are still drawn from the rng, so the islands keep their places).
 const NEBULA_CLOUDS := false
 ## The sea's surface below the ground, the snow bank's foot, and how far the sea reaches past the floor (m).
@@ -80,7 +80,7 @@ var floe_count := 0
 var water: MeshInstance3D
 var bank: MeshInstance3D
 var floes: MultiMeshInstance3D
-## v0.7.5 NB2 (&"stars"): the rock under the floor, its hanging spikes, the stars, the nebula clouds, the floating
+## &"stars": the rock under the floor, its hanging spikes, the stars, the nebula clouds, the floating
 ## islands and the crystals on some of them, and their counts.
 var underside: MeshInstance3D
 var spikes: MultiMeshInstance3D
@@ -118,7 +118,7 @@ func build(
 		_build_islands(ground, bounds, edge_color, seed_value, pieces)
 
 
-## v0.8.0 MI: Night Rocks' void: only the drifting islands (the owner's moss island; the code-made rock without it).
+## Night Rocks' void: only the drifting islands (the owner's moss island; the code-made rock without it).
 func _build_islands(
 	ground: Array, bounds: Rect2, edge_color: Color, seed_value: int, pieces: Dictionary
 ) -> void:
@@ -135,7 +135,7 @@ func _build_islands(
 		islands = _multi("Islands", model["mesh"], isles[0], model["material"])
 
 
-## v0.7.5 NB2: Starfall's starry void (StarVoid's rules and meshes).
+## Starfall's starry void (StarVoid's rules and meshes).
 func _build_stars(
 	ground: Array, bounds: Rect2, edge_color: Color, seed_value: int, pieces: Dictionary = {}
 ) -> void:

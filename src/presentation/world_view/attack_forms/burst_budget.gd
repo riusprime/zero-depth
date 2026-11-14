@@ -1,6 +1,6 @@
 class_name BurstBudget
 extends RefCounted
-## v0.8.0 PF (owner O9: Spread + Split + Explosive "goes two FPS … maybe we can stop applying some effects"): how
+## How
 ## many VfxLayer bursts (explosions, bomb landings) AttackFormCanvas keeps alive. Below BURST_CROWD every burst is
 ## kept, as before. With BURST_CROWD or more alive, a new one within MERGE_M of a live burst that started within
 ## MERGE_TICKS of it is merged into that one (not added); with MAX_LIVE alive, the oldest goes to make room. Starting

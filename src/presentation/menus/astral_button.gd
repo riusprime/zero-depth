@@ -1,6 +1,6 @@
 class_name AstralButton
 extends Button
-## v0.10.5 W3-O18: a menu button in the Astral style (AstralMenu), drawn in code; it stays a Button (focus, keys, pad,
+## A menu button in the Astral style (AstralMenu), drawn in code; it stays a Button (focus, keys, pad,
 ## mouse, the disabled state and the press work as for any button), only its look is its own:
 ## - ROW (a menu list's row): the label in letter-spaced Cinzel capitals, dim with a small diamond before it; lit
 ##   (focused, or hovered: a hover takes the focus, so the mouse, the keys and the pad move one focus) it turns bright
@@ -10,11 +10,15 @@ extends Button
 ## - PLATE (Back, the resets): a slim lozenge plate (AstralChrome.plate) with the label centred; focus and hover alike
 ##   brighten its contour, add a second contour outside and light its tip stars.
 ## The Button's own text is hidden (transparent colours); `text` stays the translation key. Presentation only.
+## v0.11.1 Step 13: a ROW with an `icon` (the Progression Station's robe swatches) draws it after its marker, the label
+## after the icon; the Button's own icon is hidden like its text.
 
 enum Kind { ROW, TAB, PLATE }
 
 ## The room before a row's label (its marker) and a tab's.
 const ROW_PAD := 44.0
+## The room between a row's icon and its label.
+const ICON_GAP := 12.0
 const TAB_PAD := 28.0
 const FLASH_RATE := 5.0
 
@@ -50,6 +54,15 @@ func _init(p_kind: int = Kind.ROW, p_min_w: float = 0.0) -> void:
 		"font_hover_pressed_color",
 		"font_disabled_color",
 		"font_outline_color"
+	]:
+		add_theme_color_override(c, Color(0, 0, 0, 0))
+	for c in [
+		"icon_normal_color",
+		"icon_hover_color",
+		"icon_pressed_color",
+		"icon_focus_color",
+		"icon_hover_pressed_color",
+		"icon_disabled_color"
 	]:
 		add_theme_color_override(c, Color(0, 0, 0, 0))
 	add_theme_constant_override("outline_size", 0)
@@ -121,7 +134,7 @@ func _toggled(_on: bool) -> void:
 func _fit() -> void:
 	var f := AstralMenu.serif(font_px, 700, 0.33)
 	var w := f.get_string_size(shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, font_px).x
-	var pad := ROW_PAD + 16.0
+	var pad := ROW_PAD + 16.0 + _icon_room()
 	match kind:
 		Kind.TAB:
 			pad = TAB_PAD + 12.0
@@ -154,8 +167,14 @@ func _draw() -> void:
 			_text(font, label, roundf((size.x - tw) * 0.5), base, col)
 
 
+## The room a row's icon takes before its label (none without one).
+func _icon_room() -> float:
+	return icon.get_width() + ICON_GAP if kind == Kind.ROW and icon != null else 0.0
+
+
 func _draw_row(lit: bool, cy: float, base: float, tw: float, font: Font, label: String) -> void:
 	var m := Vector2(18.5, cy + 0.5)
+	var x := ROW_PAD + _icon_room()
 	var col := AstralCardArt.DIM
 	if disabled:
 		col = Color(AstralCardArt.DIM, 0.38)
@@ -166,7 +185,7 @@ func _draw_row(lit: bool, cy: float, base: float, tw: float, font: Font, label: 
 		AstralChrome.star4(self, m, 11.0, AstralCardArt.LINE_HI, 0.16)
 		# The tapered streak: bright under the label's start, fading out past its end.
 		var x0 := ROW_PAD - 14.0
-		var x1 := ROW_PAD + tw + 56.0
+		var x1 := x + tw + 56.0
 		var y := base + 9.0
 		var hi := Color(AstralCardArt.LINE_HI, 0.85)
 		var lo := Color(AstralCardArt.LINE_HI, 0.0)
@@ -187,7 +206,10 @@ func _draw_row(lit: bool, cy: float, base: float, tw: float, font: Font, label: 
 	else:
 		var c := Color(AstralCardArt.LINE, 0.8)
 		AstralChrome.dia(self, m, 2.5, c, c)
-	_text(font, label, ROW_PAD, base, col)
+	if icon != null:
+		var at := Vector2(ROW_PAD, roundf(cy - icon.get_height() * 0.5))
+		draw_texture(icon, at, Color(1, 1, 1, 0.5 if disabled else 1.0))
+	_text(font, label, x, base, col)
 
 
 func _draw_tab(lit: bool, cy: float, base: float, tw: float, font: Font, label: String) -> void:

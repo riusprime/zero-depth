@@ -1,30 +1,27 @@
 class_name GambleHud
 extends Control
-## The gamble shrine on the HUD (v0.3.0 L19): the interact prompt by the shrine (its price, red when you can't
-## afford it, or a note when every stat is capped), the result card when a use lands (GambleCard), and the stats
+## The gamble shrine on the HUD: the interact prompt by the shrine (its price, red when you can't
+## afford it, or a note when every stat is capped), the reward rolled above the shrine when a use lands
+## (GambleRoll, v0.11.0 F13: it replaced the big centre card and the "It failed" line) and the stats
 ## won this run (GambleStatsPanel) while you stand at the shrine or just after a win. Reads only; never takes the
-## mouse. v0.8.0 N14 (owner O72): a spent shrine says so; a failed use shows a short "It failed" line. v0.8.0 N18
+## mouse. a spent shrine says so; a failed use shows a short "It failed" line. v0.8.0 N18
 ## (owner O76: the game stops explaining): N14's odds line under the prompt (wins and chance to fail) is gone, and a
 ## spent shrine's prompt is the one word "Spent".
-## v0.10.5 W3-O20 (UI style Astral): in HudStyle.ASTRAL the "It failed" line is letter-spaced Cinzel in Astral's rose;
+## UI style Astral: the "It failed" line is letter-spaced Cinzel in Astral's rose;
 ## the card and the stats panel draw their own Astral look.
 
 const POOR := Color("#FF5A4D")
 ## The stats panel stays this long (s) after a win, even once you walk away.
 const STATS_AFTER_WIN_S := 4.0
-## v0.8.0 N14: the "It failed" line shows this long (s).
-const FAIL_S := 1.6
-const FAIL_COLOR := Color("#FF7A5C")
 
-var card := GambleCard.new()
+var roll := GambleRoll.new()
 var stats := GambleStatsPanel.new()
 var _prompt := InteractPrompt.new()
-var _fail := Label.new()
 var _seen_tick := -1
 var _fail_tick := -1
-var _fail_left := 0.0
 var _stats_left := 0.0
 var _near := false
+var _arrived := 0
 
 
 func _init() -> void:
@@ -32,27 +29,11 @@ func _init() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_prompt)
-	_fail.name = "GambleFailed"  # v0.8.0 N14: a failed use's short line, over the shrine
-	_fail.set_anchors_preset(Control.PRESET_CENTER)
-	_fail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_fail.custom_minimum_size = Vector2(600, 0)
-	_fail.position = Vector2(-300, -200)
-	_fail.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	_fail.add_theme_font_size_override("font_size", 34)
-	_fail.add_theme_constant_override("outline_size", 8)
-	_fail.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
-	HudStyle.font_color(_fail, FAIL_COLOR)
-	if HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O20: letter-spaced Cinzel in Astral's rose
-		HudStyle.serif_label(_fail, 32, 6, AstralCardArt.POOR)
-	_fail.visible = false
-	add_child(_fail)
-	# The card rises above the player (the screen's centre): over the shrine, where you stand to use it.
-	card.set_anchors_preset(Control.PRESET_CENTER)
-	card.position = Vector2(-GambleCard.WIDTH * 0.5, -280)  # v0.6.1 R1: the wider plaque, centred
-	add_child(card)
 	stats.place_top_right(84)
 	stats.visible = false
 	add_child(stats)
+	roll.panel = stats
+	add_child(roll)  # last: the symbol flies over the panel
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 
@@ -60,7 +41,9 @@ func _init() -> void:
 func sync(reader: WorldReader) -> void:
 	if not reader.has_gamble():
 		_prompt.hide_prompt()
-		_fail.visible = false
+		roll.clear()
+		stats.release_all()
+		_stats_left = 0.0
 		stats.visible = false
 		return
 	_near = reader.gamble_in_reach() and not reader.choosing()
@@ -70,39 +53,38 @@ func sync(reader: WorldReader) -> void:
 		var ok := reader.gamble_affordable() and not reader.gamble_exhausted() and not spent
 		var line := ""
 		var no_press := false
-		if spent:  # v0.8.0 N14 (O72): blocked after its wins
+		if spent:  # Blocked after its wins
 			line = tr("UI_GAMBLE_BLOCKED")
 			no_press = true
 		elif reader.gamble_exhausted():
 			line = tr("UI_GAMBLE_SPENT")
 			no_press = true
 		else:
-			line = tr("UI_GAMBLE_USE") % price  # v0.9.5 PR: short; too poor shows it red
+			line = tr("UI_GAMBLE_USE") % price  # Short; too poor shows it red
 		_prompt.show_prompt(reader, line, not ok, Color.WHITE, not no_press)
 	else:
 		_prompt.hide_prompt()
+	stats.sync(reader)  # first: a win below holds its row until the symbol arrives
 	var f := reader.gamble_fail_tick()
 	if f != _fail_tick:
 		_fail_tick = f
 		if f >= 0:
-			_fail.text = tr("UI_GAMBLE_FAILED")
-			_fail.visible = true
-			_fail_left = FAIL_S
+			roll.start(reader, -1)
 	var t := reader.gamble_tick()
 	if t != _seen_tick:
 		_seen_tick = t
 		if t >= 0:
-			_play(reader)
-	stats.sync(reader)
-	stats.visible = _near or _stats_left > 0.0
+			roll.start(reader, reader.gamble_last_stat())
+			stats.sync(reader)
+			_stats_left = STATS_AFTER_WIN_S if ViewPrefs.reduced_motion else 0.0
+	stats.visible = _near or _stats_left > 0.0 or roll.holding()
 
 
 func _process(delta: float) -> void:
-	if _fail_left > 0.0:
-		_fail_left = maxf(0.0, _fail_left - delta)
-		_fail.modulate.a = minf(1.0, _fail_left / (FAIL_S * 0.4))
-		if _fail_left == 0.0:
-			_fail.visible = false
+	if roll.arrived != _arrived:  # a symbol landed: the panel stays up from now
+		_arrived = roll.arrived
+		_stats_left = STATS_AFTER_WIN_S
+		stats.visible = true
 	if _stats_left > 0.0:
 		_stats_left = maxf(0.0, _stats_left - delta)
 		if _stats_left == 0.0 and not _near:
@@ -114,22 +96,5 @@ func prompt_text() -> String:
 	return _prompt.text()
 
 
-## v0.8.0 N14: the failed use's line ("" when none).
-func fail_text() -> String:
-	return _fail.text if _fail.visible else ""
-
-
 func prompt_poor() -> bool:
 	return _prompt.is_poor()
-
-
-func _play(reader: WorldReader) -> void:
-	var stat := reader.gamble_last_stat()
-	var id := reader.gamble_stat_id(stat)
-	var reel: Array[StringName] = []
-	for s in reader.gamble_stat_count():
-		if s != stat:
-			reel.append(reader.gamble_stat_id(s))
-	reel.append(id)
-	card.play(reel, id, GambleIcons.line(self, id, reader.gamble_amount(stat)))
-	_stats_left = STATS_AFTER_WIN_S

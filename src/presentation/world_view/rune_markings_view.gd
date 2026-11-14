@@ -6,11 +6,11 @@ extends Node3D
 ## from, that an attentive player notices. Presentation only, placed from the sim's positions: AWAY_M out from the
 ## wall face and SIDE_M past the doorway's edge. The owner's PNG (TEXTURE) is drawn as a decal when it is installed;
 ## until then a RuneGlyphs symbol, flat on the floor, nearly transparent (ALPHA).
-## v0.9.0 BV (W71): the scratch takes the biome's colour (InteractionLooks "marking"; set `biome` before setup): pale
+## The scratch takes the biome's colour (InteractionLooks "marking"; set `biome` before setup): pale
 ## on Ruins' sand, a faint mint glow on Night Rocks, soot on Red Canyon, dark blue on Frozen Shore's snow (where a pale
 ## one vanished), a faint violet glow on Starfall. Still faint: the same ALPHA.
 
-# v0.9.0: MI2 installed the owner's texture in kit/ (the old decals/ path never existed, so it never drew).
+# MI2 installed the owner's texture in kit/ (the old decals/ path never existed, so it never drew).
 const TEXTURE := "res://assets/textures/kit/rune_marking.png"
 const AWAY_M := 1.0
 const SIDE_M := 0.7
@@ -19,7 +19,7 @@ const ALPHA := 0.22
 
 ## Each marking's spot on the sim plane (tests read them).
 var spots := PackedVector2Array()
-## v0.9.0 BV: the floor's biome (WorldViewRoot sets it), and the scratch colour drawn.
+## The floor's biome (WorldViewRoot sets it), and the scratch colour drawn.
 var biome := &""
 var tint := Color(0.92, 0.95, 1.0)
 

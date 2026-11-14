@@ -17,11 +17,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## (as test_e2e_void.gd's) Takes card `id` at the nearest altar (its offer forced: TEST HELPER), checking its slot tag.
 ## True when taken.
 func _take_at_altar(e: E2e, main: Main, id: StringName, others: Array) -> bool:
@@ -68,7 +63,7 @@ func _boot_with(e: E2e, id: StringName) -> Main:
 	var main: Main = await e.boot()
 	await e.start_from_menu(&"gun")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)
 	assert_true(await _take_at_altar(e, main, id, [&"gun_twin", &"ember_core"]), "took %s" % id)
@@ -116,12 +111,16 @@ func test_the_lance_charges_while_held_and_its_release_pierces_the_row() -> void
 	var bursts := 0
 	var burst_charge := 0
 	var balls := 0
+	var back := 0.0
 	for k in 60:  # the ball flies the row (7 m)
 		await e.frames(1)
 		bursts = maxi(bursts, main.view.lances.bursts)
 		burst_charge = maxi(burst_charge, main.view.lances.last_burst_charge)
 		balls = maxi(balls, w.projectiles.size())
-	var back := (before - w.player_pos()).dot(dir)
+		# The push back is read once it is spent (Lance.RECOIL_TICKS), before the floor's own spawns (a Swarmer
+		# reaching the hero later in the second) can shove the hero.
+		if k == Lance.RECOIL_TICKS:
+			back = (before - w.player_pos()).dot(dir)
 	var hurt := []
 	for id in row:
 		var j := a.index_of(id)

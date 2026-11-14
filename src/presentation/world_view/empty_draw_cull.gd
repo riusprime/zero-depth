@@ -1,6 +1,6 @@
 class_name EmptyDrawCull
 extends Node
-## v0.10.5 (the owner's logged run, PERF_PLAYLOG_1; docs/roadmap/v0.10.5/evidence/DRAW_CALLS.md): the effect pools'
+## The effect pools'
 ## MultiMeshes with nothing in them leave the renderer. A pool (a MultiMeshInstance3D whose MultiMesh shows only its
 ## first visible_instance_count instances: VfxCore's sprites, the boss strikes, spikes, signatures, tides, twins,
 ## judges, shades, the final boss's marks) stays shown with 0 instances between uses, and the renderer still issues

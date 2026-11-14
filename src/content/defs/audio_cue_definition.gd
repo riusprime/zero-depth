@@ -16,7 +16,7 @@ const BUSES: Array[StringName] = [&"sfx", &"ui", &"ambience"]
 @export var pitch_jitter := 0.04
 ## How many copies may sound at once; a play beyond that is dropped.
 @export var max_voices := 3
-## Cues sharing a group share max_voices (v0.3.5 F17: every blade swing is in &"blade_swing", so at most two swing
+## Cues sharing a group share max_voices (every blade swing is in &"blade_swing", so at most two swing
 ## sounds overlap whichever swings they are); empty = the cue counts on its own.
 @export var voice_group: StringName = &""
 ## The shortest gap between two plays of this cue, in seconds (quick repeats are dropped).

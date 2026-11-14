@@ -1,14 +1,14 @@
 class_name WarlordClips
 extends RefCounted
-## v0.8.0 BA: the Warlord's clips (the owner's rigged knight, 41 Tripo joints posed through BonePoser in the model
-## frame). A drilled soldier, so its moves are sharp and committed: a guarded breath with the tower shield carried
-## across its front, a marching walk, the spear raised and thrust forward to loose each wave of the Javelin Fan (and
-## for the Shield Wall, braced behind its shield on bent knees: the shielded hold), the shield drawn back and rammed
-## forward with a step for the bash, the spear hoisted overhead and driven into the floor on one knee for the Spear
-## Lines, the spear couched low for the lunge and thrust at full stretch, the spear drawn back over its shoulder and
-## hurled for the Javelin Rain; a flinch, a reel, a roar with spear and shield raised high, rising from one knee,
-## and a fall onto its back. The shield's lift while the weak point is open stays a procedural layer
-## (WarlordAvatar._pose_rig). The carry pose of the shield arm is in both idle and walk, so it is always there.
+## The Warlord's code clips (the owner's rigged knight, its Tripo joints posed through BonePoser in the model
+## frame). Its file plays its own animations for the idle, the walk, the Javelin Fan, the Great Javelin, the shield
+## bash, the Spear Lines and the lunge (WarlordAvatar.OWNER_PLAYS): of those clips here only the parameters still
+## play with the model (the bash's and the plant's tremble), and their bone tracks pose nothing unless the file is
+## without its animations. The clips that stay code are laid over the file's idle: the spear drawn back over its
+## shoulder and hurled for the Javelin Rain, the recall's reach and pull, the shielded hold on bent knees, a flinch,
+## a reel, a roar with spear and shield raised high, rising from one knee, and a fall onto its back. The shield's
+## lift while the weak point is open stays a procedural layer (WarlordAvatar._pose_rig), which also holds the
+## shoulder plates back from following a code-made swing of the arm in full.
 
 const Z := Vector3(0, 0, 1)
 const X := Vector3(1, 0, 0)
@@ -38,7 +38,8 @@ static func library() -> Dictionary:
 			_flood(),
 			_charge(),
 			_barrage(),
-			_recall(),  # v0.8.0 BS1 (S2)
+			_hurl(&"great_javelin"),  # The Great Javelin's throw (the Rain's whip)
+			_recall(),  # v0.8.0 BS1
 			_shielded(),
 			_flinch(),
 			_stagger(),
@@ -47,6 +48,7 @@ static func library() -> Dictionary:
 			_death(),
 		]:
 			_lib[c.name] = c
+		BossClip.loosen(_lib, 0.02)  # The wind-up, the recoil, the idle sway
 	return _lib
 
 
@@ -249,7 +251,12 @@ static func _charge() -> BossClip:
 ## The Javelin Rain: it draws the spear back over its shoulder, leaning and twisting away, and hurls it with a whip
 ## of the whole body, the arm following through low.
 static func _barrage() -> BossClip:
-	var c := BossClip.new(&"barrage")
+	return _hurl(&"barrage")
+
+
+## The whip-throw clip, named for the move that plays it.
+static func _hurl(clip_name: StringName) -> BossClip:
+	var c := BossClip.new(clip_name)
 	c.turn(
 		&"R_Upperarm",
 		Z,
@@ -287,7 +294,7 @@ static func _barrage() -> BossClip:
 	return c
 
 
-## v0.8.0 BS1 (owner O5, S2): the recall, timed 0..1 from its first javelin sticking to their flight back
+## The recall, timed 0..1 from its first javelin sticking to their flight back
 ## (BossAvatar._recall): planted on braced legs behind its shield, it reaches its empty spear hand out toward the
 ## javelins in the floor, straining harder (the tremble) as the recall nears, then yanks the arm back to its chest
 ## with a twist of the whole body on the tick they fly (1.0), and holds the pull while they come home.

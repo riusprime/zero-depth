@@ -12,7 +12,7 @@ extends Node3D
 ##   at: IsoRig.vibrate_to) and lands in a thud once the last one is lit (`thudded`, one frame: IsoRig.thud); the
 ##   `purple_runes` sound is AudioEvents'. A floor resumed with the runes already awake shows them lit, with no
 ##   vibration. Then they glow slowly for good.
-## - v0.9.0 BV (W71): per biome (InteractionLooks; set `biome` before setup): the owner's dais tinted and the biome's
+## - v0.9.0 BV: per biome (InteractionLooks; set `biome` before setup): the owner's dais tinted and the biome's
 ##   accent round its foot. The runes, the crystal and the light keep their violet in every biome (the Deep gate's).
 
 const SIGIL := Color("#A86BFF")
@@ -52,7 +52,7 @@ var vibration := 0.0
 var thudded := false
 var crystal: MeshInstance3D
 var light := OmniLight3D.new()
-## v0.9.0 BV: the floor's biome (WorldViewRoot sets it).
+## The floor's biome (WorldViewRoot sets it).
 var biome := &""
 var _crystal_mat := StandardMaterial3D.new()
 var _stone := StandardMaterial3D.new()

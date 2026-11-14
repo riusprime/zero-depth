@@ -14,11 +14,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## Takes card `id` at the nearest altar (its offer forced: TEST HELPER). True when taken.
 func _take_at_altar(e: E2e, main: Main, id: StringName, others: Array) -> bool:
 	var w := e.world()
@@ -50,9 +45,9 @@ func _grant(e: E2e, main: Main, w: World, id: StringName) -> void:
 	var k := W.item(w, id)
 	var guard := 0
 	while main.driver.debug.mod_choice != k and guard < 300:
-		await _click(e, main, "NextMod")
+		await e.click_dev("NextMod")
 		guard += 1
-	await _click(e, main, "GrantMod")
+	await e.click_dev("GrantMod")
 	await e.frames(3)
 
 
@@ -89,7 +84,7 @@ func test_halo_and_echo_hurt_enemies_all_around_the_hero() -> void:
 	var w := e.world()
 	var start := w.player_pos()  # the floor's open start
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)
 	assert_true(await _take_at_altar(e, main, &"gun_glaive", [&"gun_twin"]), "took the Glaive")

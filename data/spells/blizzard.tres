@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SpellDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/spell_definition.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+name_key = &"SPELL_BLIZZARD"
+desc_key = &"SPELL_BLIZZARD_DESC"
+level_keys = Array[StringName]([&"SPELL_BLIZZARD_LV1", &"SPELL_BLIZZARD_LV2", &"SPELL_BLIZZARD_LV3", &"SPELL_BLIZZARD_LV4", &"SPELL_BLIZZARD_LV5"])
+element = &"frost"
+element_card = &"frost_core"
+affinity = &""
+weight = 10
+cooldown_s = 12.0
+reach_m = 10.0
+damage = PackedInt32Array(2, 2, 2, 3, 3)
+radius_m = PackedFloat32Array(4, 4.5, 5, 5.5, 5.5)
+seconds = PackedFloat32Array(4, 4.5, 5, 6, 6)
+period_s = 0.5
+bonus_seconds = 1.0
+stacks = 1
+id = &"spell_blizzard"

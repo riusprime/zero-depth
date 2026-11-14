@@ -31,9 +31,9 @@ extends RefCounted
 ## offer is first rolled, `loot:event` rolls rules.cursed_chest_permille; a cursed offer's first card becomes a
 ## trade-off curse card (Offers.curse_code) for a trade-off curse you don't hold. Taking it takes the curse, upside
 ## and drawback; the other cards are clean. The epic stat card it used to carry is gone. Event choices' random curses
-## draw plain curses only (Pool.PLAIN). v0.8.0 N7 (D49): a chest rolls one card now, so the curse card goes before
+## draw plain curses only (Pool.PLAIN). a chest rolls one card now, so the curse card goes before
 ## it (a two-card choice: the curse or the chest's card); a cursed chest is the one chest that still asks.
-## v0.7.5 MG (owner N10, "one every two floors"): the roll above counts only on a curse floor (EventRules.curse_floor:
+## The roll above counts only on a curse floor (EventRules.curse_floor:
 ## floors 1, 3, 5 ... as shipped) and while the floor's cursed offers are under rules.cursed_chests_per_floor (1):
 ## at most one cursed chest every two floors. The dev route (force_curse) skips both.
 
@@ -78,8 +78,8 @@ static func owned(w: World, c: int) -> bool:
 
 ## Threat T now: the held curses' threat.
 static func threat(w: World) -> int:
-	var t := w.deep_threat  # v0.5.0 RT: each Deep floor taken adds 1
-	t += w.loop_threat  # v0.7.5 AP: each loop past the first adds RunTable.loop_threat
+	var t := w.deep_threat  # Each Deep floor taken adds 1
+	t += w.loop_threat  # Each loop past the first adds RunTable.loop_threat
 	for c in w.curses_owned:
 		t += w.ev.curses[c].threat if c < w.ev.curses.size() else 1
 	return t
@@ -127,7 +127,7 @@ static func has(w: World, effect: int) -> bool:
 	return total(w, effect) > 0
 
 
-## Takes curse c (no-op when already held). T and its peak follow; a max HP cut moves max HP (v0.6.0 CU).
+## Takes curse c (no-op when already held). T and its peak follow; a max HP cut moves max HP.
 static func add(w: World, c: int) -> bool:
 	if c < 0 or c >= w.ev.curses.size() or owned(w, c):
 		return false
@@ -142,7 +142,7 @@ static func add(w: World, c: int) -> bool:
 
 
 ## Lifts a held curse: `c`, or the latest taken when c < 0. False when there is none to lift. The Cleansing Font
-## uses it (the shop did until v0.10.5 W3-O9). T falls; its peak stays (M-THREAT counts what was chosen). v0.6.0 CU:
+## uses it (the shop did until v0.10.5 W3-O9). T falls; its peak stays (M-THREAT counts what was chosen).
 ## a trade-off curse goes whole (its upside too); lifting Glass Heart gives the max HP back, not the HP.
 static func cleanse(w: World, c: int = -1) -> bool:
 	if w.curses_owned.is_empty():
@@ -159,7 +159,7 @@ static func cleanse(w: World, c: int = -1) -> bool:
 	return true
 
 
-## v0.6.0 CU: the player's max HP moves by what Stats.max_hp moved (Glass Heart taken or lifted); HP stays within.
+## The player's max HP moves by what Stats.max_hp moved (Glass Heart taken or lifted); HP stays within.
 static func _follow_max_hp(w: World, before: int) -> void:
 	var gain := Stats.max_hp(w) - before
 	if gain == 0:
@@ -193,24 +193,10 @@ static func roll(
 
 
 # --- Hooks ------------------------------------------------------------------------------------------------------
-## Overclock heat's decay per tick: Fevered (v0.6.0 CU) slows it down.
+## Overclock heat's decay per tick: Fevered slows it down.
 static func heat_decay(w: World, per_tick: int) -> int:
 	var linger := mini(total(w, Effect.HEAT_LINGER), 1000)
 	return per_tick if linger == 0 else per_tick * (1000 - linger) / 1000
-
-
-## v0.9.0 EL (owner Q25: "Remove it"): the curses whose ids are retired (their content deleted). Their places in
-## World.ev.curses are kept by EventCompiler (a retired table, never drawn) so a save's curse indices still name the
-## same curses; a retired curse a save still holds is dropped on load (drop_retired).
-static func drop_retired(w: World) -> void:
-	if w.curses_owned.is_empty():
-		return
-	var kept := PackedInt32Array()
-	for c in w.curses_owned:
-		if c >= w.ev.curses.size() or not w.ev.curses[c].retired:
-			kept.append(c)
-	if kept.size() != w.curses_owned.size():
-		w.curses_owned = kept
 
 
 # --- Cursed chest offers ----------------------------------------------------------------------------------------
@@ -224,7 +210,7 @@ static func on_offer_rolled(w: World, i: int) -> void:
 	var forced := s.force_curse
 	if not forced and not s.rng.chance_permille(s.rules.cursed_chest_permille):
 		return
-	# v0.7.5 MG (N10): only on a curse floor, and at most cursed_chests_per_floor a floor. The chance above is drawn
+	# Only on a curse floor, and at most cursed_chests_per_floor a floor. The chance above is drawn
 	# first on every floor, so `loot:event` moves as before up to the first chest this refuses.
 	if not forced and not curse_floor_open(w):
 		return
@@ -234,7 +220,7 @@ static func on_offer_rolled(w: World, i: int) -> void:
 	s.force_curse = false
 	var offer := w.rewards.offer_of(i)
 	var card := Offers.curse_code(curse)
-	if offer.size() < RewardStore.OFFER_SLOTS:  # v0.8.0 N7 (D49): a chest's one card stays beside its curse
+	if offer.size() < RewardStore.OFFER_SLOTS:  # A chest's one card stays beside its curse
 		offer.insert(CURSED_SLOT, card)
 	else:
 		offer[CURSED_SLOT] = card
@@ -245,7 +231,7 @@ static func on_offer_rolled(w: World, i: int) -> void:
 	s.cursed_rolled += 1
 
 
-## v0.7.5 MG (N10): whether this floor may still turn a chest cursed (a curse floor under its cap). v0.7.5 AP: by the
+## Whether this floor may still turn a chest cursed (a curse floor under its cap). by the
 ## run's floor across loops (World.run_floor_index), so the rhythm holds where loops meet.
 static func curse_floor_open(w: World) -> bool:
 	var r := w.ev.rules

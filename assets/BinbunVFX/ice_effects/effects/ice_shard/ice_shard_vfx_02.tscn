@@ -44,8 +44,8 @@ color_initial_ramp = SubResource("GradientTexture1D_o4cq2")
 alpha_curve = SubResource("CurveTexture_q74dy")
 
 [sub_resource type="QuadMesh" id="QuadMesh_alqvv"]
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="Curve" id="Curve_fncb3"]
 _data = [Vector2(0, 0), 0.0, 11.3079, 0, 0, Vector2(0.279412, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -3.66742, 0.0, 0, 0]
@@ -69,8 +69,8 @@ color_initial_ramp = SubResource("GradientTexture1D_1wo7l")
 alpha_curve = SubResource("CurveTexture_rvsd0")
 
 [sub_resource type="QuadMesh" id="QuadMesh_fjfdn"]
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="Animation" id="Animation_whs2f"]
 length = 0.001

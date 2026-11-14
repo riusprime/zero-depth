@@ -7,7 +7,7 @@ extends BossAvatar
 ## the grate flares and it tips forward to pour (the flood: molten lanes), the chimneys kick (the slag mortar), it
 ## crouches and blows its vents (the vent ring), and the launcher tilts and kicks (launching Bomb Drones). While its
 ## weak point is open the grate's door hangs open on a gold core; staggered, it lurches and its fire dims.
-## v0.7.5 BM: the owner's model (assets/models/bosses/foundry.glb, one static mesh) replaces the code-built body,
+## The owner's model (assets/models/bosses/foundry.glb, one static mesh) replaces the code-built body,
 ## which stays as the fallback when the file is missing. Its legs are cut from the mesh in code (BossRig: four legs
 ## and the body; owner N14) and it is posed from those bones, one function per layer (_pose_rig): the legs step in
 ## diagonal pairs from its speed and the body bobs and rolls; it tips forward to pour, squats and kicks for the
@@ -26,7 +26,7 @@ const FRAME := Color("#2B2C31")
 const RED := Color("#D23E35")
 const HOT := Color("#FF5A26")
 const GLOW := Color("#FF3A26")
-## v0.7.5 BM: points on the owner's model at rest (metres, model frame; evidence/BOSS_MODELS.md): the grate behind
+## Points on the owner's model at rest (metres, model frame; evidence/BOSS_MODELS.md): the grate behind
 ## the door (the weak point's core), the two chimney tops and the launcher's mouth.
 const MODEL_DOOR := Vector3(0.95, 0.9, 0)
 const MODEL_CHIMNEYS := [Vector3(-0.55, 2.55, -0.27), Vector3(-0.58, 2.5, 0.26)]
@@ -39,20 +39,20 @@ var door := Node3D.new()
 var chimneys: Array[Node3D] = []
 var launcher := Node3D.new()
 var legs: Array[Node3D] = []
-## v0.7.5 BM: the light in the model's grate (the code body's grate glows by emission instead).
+## The light in the model's grate (the code body's grate glows by emission instead).
 var grate_light: OmniLight3D
 var _chimney_glow: Array[MeshInstance3D] = []
 var _launcher_glow: MeshInstance3D
 var _door_open := 0.0
 
 
-## v0.7.5 BF3: its dodge-first moves pose as the old ones: the Molten Flood's tracked rows as its pour, the Slag
+## Its dodge-first moves pose as the old ones: the Molten Flood's tracked rows as its pour, the Slag
 ## Fountain and the Furnace Waves as its chimneys' mortar glow and kick (the fountain's shut door is the shielded
 ## pose, from WorldReader.boss_shielded).
 func apply_state(s: Dictionary) -> void:
 	super(s)
 	match _move:
-		WorldReader.MOVE_ROW_FLOOD, WorldReader.MOVE_MELT:  # v0.8.0 BS2: the meltdown pours too
+		WorldReader.MOVE_ROW_FLOOD, WorldReader.MOVE_MELT:  # The meltdown pours too
 			_move = WorldReader.MOVE_FLOOD
 		WorldReader.MOVE_PATTERN:
 			_move = WorldReader.MOVE_BARRAGE
@@ -260,12 +260,12 @@ func _pose(dt: float) -> void:
 		legs[j].position.y = BODY_Y - 0.75 + lift - crouch * 0.15
 
 
-# --- The owner's model (v0.7.5 BM), posed from the bones cut in code (BossRig) --------------------------------
+# --- The owner's model, posed from the bones cut in code (BossRig) --------------------------------
 # Turns are in the model frame: +Z swings a leg's foot forward (and tips the body back), +X swings a foot out to the
 # left (-Z).
 
 
-## v0.8.0 BA: the owner's model plays its keyframed clips (FoundryClips); the legs follow the clips' leg parameters,
+## The owner's model plays its keyframed clips (FoundryClips); the legs follow the clips' leg parameters,
 ## and the grate's light follows their heat and the open door.
 func _clip_library() -> Dictionary:
 	return FoundryClips.library()

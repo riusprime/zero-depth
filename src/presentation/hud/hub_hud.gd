@@ -1,9 +1,9 @@
 class_name HubHud
 extends Control
-## v0.9.0 HB: the hub's HUD, the shared interact prompt's look (InteractPromptHud): the station the hero stands at,
+## The hub's HUD, the shared interact prompt's look (InteractPromptHud): the station the hero stands at,
 ## its name above, the short prompt below ("[E / X] Start a run"), and nothing else (no health, no map: the hub has no
 ## fight). The key hint for the pause sits small in a corner. Reads only; the press is the hub's (HubSession).
-## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): the station's name in letter-spaced Cinzel over
+## The station's name in letter-spaced Cinzel over
 ## a fading hairline with a star (AstralChrome.Rule), the corner hint in Atkinson's cool grey.
 
 var _name := Label.new()

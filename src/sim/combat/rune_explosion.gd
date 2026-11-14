@@ -14,7 +14,7 @@ extends RefCounted
 ##   Tags are area (no heat, Heat.NOT_ATTACK) and projectile (the Damage stat and crit apply as for the Bomb).
 ## - The shove: a hit enemy slides PUSH_M outward along the hero-to-enemy line over PUSH_TICKS (bosses ignore it, as
 ##   they do the Blade's and Scatter Blast's); the next collision pass keeps it out of walls.
-## - Twin (R1): `twin` more bursts follow the first, every TWIN_GAP_TICKS (0.2 s), each TWIN_SIZE_PERMILLE (70 %) of
+## - Twin: `twin` more bursts follow the first, every TWIN_GAP_TICKS (0.2 s), each TWIN_SIZE_PERMILLE (70 %) of
 ##   the radius and share_permille (Twin's 70 %) of the damage: Lv 1-2 one extra burst, Lv 3 two.
 ## - Caps: at most LIVE_MAX bursts alive per hero (a burst past it is dropped). A burst is no projectile, so it never
 ##   counts in ShotCap's 40 a second (the Laser's rule; one burst a 1.1 s is far under it).
@@ -43,7 +43,7 @@ static func active(w: World) -> bool:
 
 ## The full radius of `s` now (m): rune_mm, the area stat on it.
 static func radius_m(w: World, s: AttackSpec) -> float:
-	return Stats.area(w, RuneMods.radius_mm(w, s) / 1000.0)  # v0.9.5 FC5: Big Shot, Rapid Fire
+	return Stats.area(w, RuneMods.radius_mm(w, s) / 1000.0)  # Big Shot, Rapid Fire
 
 
 ## The edge radius (m) of a burst of full radius `radius` at `age` ticks of its `grow` growth ticks: linear, in whole
@@ -58,8 +58,8 @@ static func fire(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var s := w.mx
 	var r := radius_m(w, spec)
 	var extra_share := spec.share_permille if spec.share_permille > 0 else TWIN_SIZE_PERMILLE
-	var base := RuneMods.damage(w, spec, ctx.damage)  # v0.9.5 FC5: Big Shot's x1.6, Rapid Fire's x0.7
-	var aim := RuneMods.target(w, spec, w.player_pos())  # v0.9.5 FC5: Homing's centre
+	var base := RuneMods.damage(w, spec, ctx.damage)  # Big Shot's x1.6, Rapid Fire's x0.7
+	var aim := RuneMods.target(w, spec, w.player_pos())  # Homing's centre
 	var fixed: bool = aim["fixed"]
 	var at: Vector2 = aim["at"]
 	var queued := false
@@ -108,7 +108,7 @@ static func advance(w: World) -> void:
 			_drop(s, k)
 			continue
 		if age >= 0 and age <= spec.rune_ticks:
-			var centre := RuneMods.centre_of(s, s.rune_uid[k], hero)  # v0.9.5 FC5: Homing, Echo, Mine fix it
+			var centre := RuneMods.centre_of(s, s.rune_uid[k], hero)  # Homing, Echo, Mine fix it
 			_hit(w, spec, k, centre, edge_m(s.rune_radius[k], age, spec.rune_ticks))
 			if age == spec.rune_ticks:
 				RuneMods.on_full(w, spec, s.rune_uid[k], centre, s.rune_radius[k], s.rune_damage[k])
@@ -131,7 +131,7 @@ static func _hit(w: World, spec: AttackSpec, k: int, centre: Vector2, edge: floa
 		var pos := w.actors.pos(i)
 		if Attacks.land(w, spec, ctx, i, centre, pos) > 0:
 			_shove(w, i, centre)
-			RuneMods.on_hit(w, spec, uid, s.rune_damage[k], i, centre, pos)  # v0.9.5 FC5: Split
+			RuneMods.on_hit(w, spec, uid, s.rune_damage[k], i, centre, pos)  # Split
 
 
 static func _hit_before(s: ModifierState, uid: int, aid: int) -> bool:

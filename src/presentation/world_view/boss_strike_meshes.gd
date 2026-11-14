@@ -3,7 +3,7 @@ extends RefCounted
 ## v0.8.0 AV part 2: the code-made meshes and shaders of BossStrikeViews' pools (procedural: nothing downloaded, the
 ## noise is ProjectileMeshes.noise()). Each pool is one MultiMesh (one draw): rock chunks and blades (lit), rings and
 ## beams (glowing, or mixed for dust and steam), and ground quads (craters, splats, skids, molten metal, shadows).
-## v0.8.0 TX2: the ground quads draw the owner's textures (GROUND_TEX) where they are installed, the code look kept as
+## The ground quads draw the owner's textures (GROUND_TEX) where they are installed, the code look kept as
 ## the fallback.
 
 ## Ground quad patterns (the GROUND shader's INSTANCE_CUSTOM.r).
@@ -12,11 +12,11 @@ const G_SCORCH := 1.0
 const G_SPLAT := 2.0
 const G_MOLTEN := 3.0
 const G_SHADOW := 4.0
-## v0.8.0 TX2: the owner's dust ring (a slam's shockwave), light ring (the lens flare) and skid marks (the lunge).
+## The owner's dust ring (a slam's shockwave), light ring (the lens flare) and skid marks (the lunge).
 const G_DUST_RING := 5.0
 const G_LIGHT_RING := 6.0
 const G_SKID := 7.0
-## v0.8.0 TX2: the owner's textures the ground quads draw with (sampler -> [texture id, the flag that turns it on]);
+## The owner's textures the ground quads draw with (sampler -> [texture id, the flag that turns it on]);
 ## the code look stays the fallback while a texture is missing.
 const GROUND_TEX := {
 	"cracks_tex": ["fx_ground_cracks", "cracks_on"],
@@ -160,11 +160,11 @@ void fragment() {
 }
 """
 
-## A flat quad on the floor: a crater, a scorch line, an acid splat, molten metal, a shadow; v0.8.0 TX2: a dust ring,
+## A flat quad on the floor: a crater, a scorch line, an acid splat, molten metal, a shadow; a dust ring,
 ## a light ring, a skid. Unshaded; the noise is in world space so a stretched quad isn't stretched. INSTANCE_CUSTOM:
 ## r pattern (G_*) plus sub / 16 (sub: the atlas cell of a 2 x 2 sheet, or a skid's repeats down its length), g heat
 ## 0..1, b the glow (pack), a alpha.
-## v0.8.0 TX2: the owner's textures: the crater's cracks (fx_ground_cracks, tinted by the glow), the acid splat
+## The owner's textures: the crater's cracks (fx_ground_cracks, tinted by the glow), the acid splat
 ## (fx_acid_splat), molten metal (fx_lava_flow crusting over into tex_lava_crust as it cools), the skid
 ## (fx_skid_marks), the dust and light rings; each falls back to the code look while its `*_on` is 0.
 const GROUND := """
@@ -315,7 +315,7 @@ static func pack(c: Color) -> float:
 	return float(r * 4096 + g * 64 + b)
 
 
-## v0.8.0 TX2: an owner texture by id (VfxCore.DIR for the fx_ ones, KIT_DIR for the surfaces), or null.
+## An owner texture by id (VfxCore.DIR for the fx_ ones, KIT_DIR for the surfaces), or null.
 static func texture(id: String) -> Texture2D:
 	var path := tex_path(id)
 	return load(path) if ResourceLoader.exists(path) else null
@@ -325,12 +325,12 @@ static func tex_path(id: String) -> String:
 	return (VfxCore.DIR if id.begins_with("fx_") else KIT_DIR) + id + ".png"
 
 
-## v0.8.0 TX2: true when the owner's texture `id` is installed (the shapes pick their geometry by it).
+## True when the owner's texture `id` is installed (the shapes pick their geometry by it).
 static func textured(id: String) -> bool:
 	return ResourceLoader.exists(tex_path(id))
 
 
-## v0.8.0 TX2: gives a GROUND material the owner's textures, turning on each one that is installed.
+## Gives a GROUND material the owner's textures, turning on each one that is installed.
 ## `slots` limits it to those samplers (the Foundry's lava and meltdown take only the lava and the crust).
 static func set_ground_textures(m: ShaderMaterial, slots: Array = GROUND_TEX.keys()) -> void:
 	for slot: String in slots:

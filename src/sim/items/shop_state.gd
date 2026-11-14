@@ -4,10 +4,10 @@ extends RefCounted
 ## while it is), the stock (card codes, Offers; SOLD for a bought slot), the heal and reroll counters, and the last
 ## action and refusal for the views. A new floor starts it fresh. Hashed once the floor has a shop.
 
-## v0.10.5 W3-O9: SELL, SALVAGE_ABILITY and CLEANSE are retired (the shop no longer sells cards back or lifts a
+## SELL, SALVAGE_ABILITY and CLEANSE are retired (the shop no longer sells cards back or lifts a
 ## curse) but keep their numbers, so the actions after them and an old save's last_action read as they did.
 enum Action { NONE, BUY, HEAL, REROLL, SELL, SALVAGE_ABILITY, OPEN, CLOSE, CLEANSE }
-## v0.5.5 EC: why the last refusal happened (the view's message): anything else, or the floor's buy limit.
+## Why the last refusal happened (the view's message): anything else, or the floor's buy limit.
 enum Deny { OTHER, LIMIT }
 
 const SOLD := -1
@@ -22,7 +22,7 @@ var rolled := false
 var offer := PackedInt32Array()
 var heal_used := false
 var rerolls := 0
-## v0.5.5 EC (owner S3): cards bought at this floor's shop (ShopTable.max_buys caps it).
+## Cards bought at this floor's shop (ShopTable.max_buys caps it).
 var bought := 0
 ## The last action (Action), its tick and its subject (a card code, the HP healed, the refund).
 var last_action := 0

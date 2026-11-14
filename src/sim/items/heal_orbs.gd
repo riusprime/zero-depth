@@ -1,42 +1,66 @@
 class_name HealOrbs
 extends RefCounted
-## Heal orbs (v0.4.0 TU, owner D8: "healing orb heals more, but is more rare maybe 10% rate appearence but heals 25%
-## … I know this healing orb is coming sooner or later"). Starting values in RewardTable (data/rewards/floor.tres):
-## - Drop: a normal enemy's kill (not a boss) drops an orb where it fell with heal_orb_chance_permille, one roll on
-##   the loot stream per kill (tick phase 9, Rewards.on_kill). At most MAX_ON_FLOOR lie on the floor: a new one
-##   pushes out the oldest.
-## - Pick-up: walking within heal_orb_reach_m (× the pickup-range stat, Stats.reach) of an orb takes it, nearest
-##   first, one a tick, and heals heal_orb_heal_permille of max HP (never past it), with a HEAL event (effect
-##   heal_orb; amount the heal asked for, amount_applied what it gave). An orb at full HP stays on the floor.
-## Orbs never expire on their own: the floor ends with them.
-## v0.5.5 EC (owner D9, "Too common, we should add them as a card"): the drop chance is the reward table's base
-## plus the Lifesprout stat's (Stats.heal_orb_chance). v0.9.5 EP3 (owner 2026-10-31, "a bit of healing from
-## the beginning"): the shipped base is 3 % a kill; Lifesprout adds to it. The loot
-## stream is drawn only when the chance is above 0.
+## Heal orbs. every run earns
+## them through kills, with no card (Lifesprout is disabled). Starting values in RewardTable (data/rewards/floor.tres):
+## - At most heal_orbs_max (1) lie on the floor. A new orb never pushes out the old one: none appears while one lies.
+## - A pickup starts heal_orb_cooldown_ticks (30 s, on World.tick). During it no orb may appear and kills earn nothing.
+## - Earning: a normal enemy's kill (not a boss) adds points to the meter (tick phase 9, Rewards.on_kill): its kind's
+##   base max HP (EnemyTable.base_hp, never scaled) × heal_orb_points_per_hp_permille / 1000, clamped to
+##   heal_orb_points_min..max, so a horde of critters and a few big enemies earn about alike. When the meter reaches
+##   heal_orb_meter, an orb drops where that kill fell and the meter resets. No points while an orb lies or during the
+##   cooldown, so a hero at full HP keeps the one orb and nothing more. No loot draw: no randomness at all.
+## - Pick-up: walking within heal_orb_reach_m (× the pickup-range stat, Stats.reach) of the orb takes it, only if hurt,
+##   and heals heal_orb_heal_permille of max HP (never past it), with a HEAL event (effect heal_orb; amount the heal
+##   asked for, amount_applied what it gave).
+## So the fastest rate, by construction, is one pickup per cooldown: 2 a minute × 20 % = 40 % of max HP a minute.
+## Orbs never expire on their own. The state is the floor's World's (HealOrbStore): the floor ends with it.
 
-const MAX_ON_FLOOR := 16
+const MAX_ON_FLOOR := 1
 const EFFECT := &"heal_orb"
 
 
-## Tick phase 9: actor i (an enemy) died. Maybe drops an orb.
+## Whether an orb may appear now, from a kill or a broken prop: none lies at the limit and the cooldown is over.
+static func may_appear(w: World) -> bool:
+	return w.orbs.size() < w.tuning.heal_orbs_max and w.tick >= w.orbs.ready_tick
+
+
+## An orb appears at `at` (callers ask may_appear first).
+static func drop(w: World, at: Vector2) -> void:
+	var id := w.take_id()
+	w.orbs.add(id, at)
+	w.emit_event(SimEvent.Kind.SPAWN, id, id, id, at)
+
+
+## The points a kill of `kind` earns (class doc); 0 for a kind with no table.
+static func points(w: World, kind: int) -> int:
+	var e := w.enemy_table(kind)
+	if e == null:
+		return 0
+	var t := w.reward_table
+	return clampi(
+		e.base_hp * t.heal_orb_points_per_hp_permille / 1000,
+		t.heal_orb_points_min,
+		t.heal_orb_points_max
+	)
+
+
+## Tick phase 9: actor i (an enemy) died. Earns points; a full meter drops an orb where it fell.
 static func on_kill(w: World, i: int) -> void:
 	var t := w.reward_table
 	var kind := w.actors.kinds[i]
-	if t == null or BossAi.is_boss_kind(kind) or not EnemyAi.is_enemy_kind(kind):
+	if t == null or t.heal_orb_meter <= 0:
 		return
-	var chance := mini(1000, t.heal_orb_chance_permille + Stats.heal_orb_chance(w))
-	if chance <= 0:
+	if BossAi.is_boss_kind(kind) or not EnemyAi.is_enemy_kind(kind) or not may_appear(w):
 		return
-	if not w.rng_loot.chance_permille(chance):
-		return
-	if w.orbs.size() >= w.tuning.heal_orbs_max:
-		w.orbs.remove_at(0)
-	var id := w.take_id()
-	w.orbs.add(id, w.actors.pos(i))
-	w.emit_event(SimEvent.Kind.SPAWN, id, id, id, w.actors.pos(i))
+	var s := w.orbs
+	s.touched = true
+	s.meter += points(w, kind)
+	if s.meter >= t.heal_orb_meter:
+		s.meter = 0
+		drop(w, w.actors.pos(i))
 
 
-## Tick phase 9 (after the pickups): the player takes the nearest orb in reach, if hurt.
+## Tick phase 9 (after the pickups): the player takes the nearest orb in reach, if hurt, and the cooldown starts.
 static func advance(w: World) -> void:
 	if w.orbs.size() == 0 or w.player_dead():
 		return
@@ -65,3 +89,4 @@ static func advance(w: World) -> void:
 	e.amount_applied = applied
 	e.effect_id = EFFECT
 	w.orbs.remove_at(best)
+	w.orbs.ready_tick = w.tick + t.heal_orb_cooldown_ticks

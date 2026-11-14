@@ -11,7 +11,7 @@ extends Node3D
 ## torches were a quiet floor's biggest shadow source, 104 draws): 4 → 2. The two torches nearest the view still
 ## throw the moving shadows round the hero; the rest light without one (RenderSwitches, switch 7: 4 is the old look).
 const SHADOW_LIGHTS := 2
-## v0.8.0 P3 (owner O30, "Lighting sometimes changes abruptly … appearing to switch on and off"): a light joining or
+## A light joining or
 ## leaving the SHADOW_LIGHTS fades its shadow in or out over this long (s) instead of switching it (the joining one
 ## once the leaving one is out, so never more than SHADOW_LIGHTS cast), and one keeps its shadow until another is
 ## nearer the focus by SHADOW_SWAP_M (no swapping back and forth on a border).
@@ -21,7 +21,7 @@ const SHADOW_LIGHTS := 2
 const SHADOW_FADE_S := 0.45
 const SHADOW_SWAP_M := 2.5
 const SHADOW_SWAP_FRAC := 0.2
-## v0.8.0 P3 (O30, O32): a light whose reach can't touch the view (farther from the focus than the view's half
+## A light whose reach can't touch the view (farther from the focus than the view's half
 ## diagonal on the ground, VIEW_REACH x the camera's size, plus its range) fades out over LIGHT_FADE_S and is
 ## hidden, and fades back in on the way in; hidden lights skip the flicker's per-frame work.
 const VIEW_REACH := 1.3
@@ -31,7 +31,7 @@ const PICK_EVERY := 15
 ## v0.8.0 Step FS: how often (frames) the shadow casters are re-picked (was every PICK_EVERY); sooner when a caster
 ## leaves the view's reach, so its slot doesn't sit empty.
 const SHADOW_PICK_EVERY := 60
-## v0.8.0 P3 (owner O31): the flame teardrop's HDR colour factor and emission (were 1.6 and 2.0).
+## The flame teardrop's HDR colour factor and emission (were 1.6 and 2.0).
 const FLAME_HDR := 1.2
 const FLAME_EMISSION := 1.1
 ## Where the light sits above a prop's base, by piece (m).
@@ -39,30 +39,30 @@ const LIGHT_HEIGHT := {&"fire_barrel": 1.15, &"brazier_pole": 2.2}
 const FADED_ALPHA := 0.3
 ## How strongly walls and cover take the biome's cover hue (0: the model's own colours).
 const TINT_AMOUNT := 0.55
-## v0.8.0 P3 (owner O29, "Red, Blue, and Original biomes experience lag"): decoration is drawn as one MultiMesh per
+## Decoration is drawn as one MultiMesh per
 ## piece kind per DECOR_CHUNK_M square of the floor, not one per kind over the whole floor. A floor-wide MultiMesh is
 ## never culled (its bounds are always on screen and in every shadow pass's reach), so all of the floor's kit grass,
 ## rubble and debris (10-13k triangles each, ~20 million a floor) was drawn every frame; a chunk is culled off screen
 ## and out of a light's reach, and each piece is drawn from its coarsest level of detail (KitModels.decor_mesh: 2.2-4x
 ## fewer triangles, for pieces a few dozen pixels tall). The pieces, their places and their look are kept.
 const DECOR_CHUNK_M := 16.0
-## v0.8.0 N12 (O70): a load adds the kit's pieces this many at a time (one job each, ~5-10 ms headless).
+## A load adds the kit's pieces this many at a time (one job each, ~5-10 ms headless).
 const PIECES_PER_JOB := 48
-## v0.8.0 N12: and the procedural walls' meshes this many walls at a time.
+## And the procedural walls' meshes this many walls at a time.
 const PROC_WALLS_PER_JOB := 8
 
 var lights: Array[OmniLight3D] = []
-## v0.8.0 N10: the procedural walls' meshes built (one per sim wall it draws) and their triangles.
+## The procedural walls' meshes built (one per sim wall it draws) and their triangles.
 var proc_nodes := 0
 var proc_tris := 0
 ## Per dressed wall index: its pieces.
 var wall_pieces: Array = []
-## v0.8.0 P3: the decoration MultiMeshes built (one per piece kind per chunk).
+## The decoration MultiMeshes built (one per piece kind per chunk).
 var decor_nodes := 0
 var shadows := true
 var _light_energy: Array[float] = []
 var _phase: Array[float] = []
-## v0.8.0 P3: per light, its shadow's fade (0..1) and target, its view fade (0..1) and target.
+## Per light, its shadow's fade (0..1) and target, its view fade (0..1) and target.
 var _shadow_k := PackedFloat32Array()
 var _shadow_want := PackedByteArray()
 var _view_k := PackedFloat32Array()
@@ -75,8 +75,8 @@ var _frame := 0
 
 
 ## Builds the nodes. `wall_count`: how many walls the stage dresses (the wall_specs size). `cover_hue`: the biome's
-## cover colour, tinting walls and cover. v0.8.0 N10: `proc`, ProceduralWall.build's result (empty: none), drawn
-## with `wall_tex` {"face": Texture2D, "top": Texture2D} (the owner's per-biome wall textures, untinted; v0.8.0 N15:
+## cover colour, tinting walls and cover. `proc`, ProceduralWall.build's result (empty: none), drawn
+## with `wall_tex` {"face": Texture2D, "top": Texture2D} (the owner's per-biome wall textures, untinted;
 ## and WallCalm.look_of's shader values).
 func build(
 	placements: Array,
@@ -91,7 +91,7 @@ func build(
 	q.run_all()
 
 
-## v0.8.0 N12 (owner O70): build() as jobs right after the running one on `q` (ViewBuildQueue.add_next): the
+## build() as jobs right after the running one on `q` (ViewBuildQueue.add_next): the
 ## procedural walls' meshes PROC_WALLS_PER_JOB walls at a time, the pieces PIECES_PER_JOB at a time, then each
 ## decoration kind; a load runs them over frames behind the loading cover.
 func queue_build(
@@ -140,7 +140,7 @@ func _add_pieces(pieces: Array, wall_count: int, tint: Color, mood: BiomeMood) -
 	for p: Dictionary in pieces:
 		var piece := piece_of(p["piece"])
 		var tinted: bool = p["kind"] == &"wall" or p["kind"] == &"cover"
-		# v0.8.0 MI: a biome's own piece keeps its colours (KitModels "tint": its share of the hue).
+		# A biome's own piece keeps its colours (KitModels "tint": its share of the hue).
 		var share := float((KitModels.SPECS.get(p["piece"], {}) as Dictionary).get("tint", 1.0))
 		var node := MeshInstance3D.new()
 		node.mesh = piece["mesh"]
@@ -158,7 +158,7 @@ func _add_pieces(pieces: Array, wall_count: int, tint: Color, mood: BiomeMood) -
 
 func _add_decor(id: StringName, xforms: Array) -> void:
 	var piece := piece_of(id)
-	var chunks := {}  # v0.8.0 P3: grid cell -> this piece's transforms in it
+	var chunks := {}  # Grid cell -> this piece's transforms in it
 	for xf: Transform3D in xforms:
 		var cell := Vector2i(
 			floori(xf.origin.x / DECOR_CHUNK_M), floori(xf.origin.z / DECOR_CHUNK_M)
@@ -173,7 +173,7 @@ func _add_decor(id: StringName, xforms: Array) -> void:
 		var xfs: Array = chunks[cell]
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.mesh = KitModels.decor_mesh(piece["mesh"])  # v0.8.0 P3: its decoration detail
+		mm.mesh = KitModels.decor_mesh(piece["mesh"])  # Its decoration detail
 		mm.instance_count = xfs.size()
 		for k in xfs.size():
 			mm.set_instance_transform(k, xfs[k])
@@ -181,14 +181,14 @@ func _add_decor(id: StringName, xforms: Array) -> void:
 		mmi.name = "Chunk_%d_%d" % [cell.x, cell.y]
 		mmi.multimesh = mm
 		mmi.material_override = piece["material"]
-		# v0.8.0 HR (O89; RenderSwitches.SCATTER_NO_SHADOW): small floor scatter casts no shadow.
+		# O89; RenderSwitches.SCATTER_NO_SHADOW: small floor scatter casts no shadow.
 		if RenderSwitches.SCATTER_NO_SHADOW and _tallest(xfs) < RenderSwitches.SCATTER_SHADOW_MAX_M:
 			mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		group.add_child(mmi)
 		decor_nodes += 1
 
 
-## v0.8.0 HR: the tallest of a decoration chunk's pieces (m): its transforms' height scale (the decoration meshes are
+## The tallest of a decoration chunk's pieces (m): its transforms' height scale (the decoration meshes are
 ## one unit tall, KitModels / CodeProps).
 static func _tallest(xfs: Array) -> float:
 	var top := 0.0
@@ -197,23 +197,23 @@ static func _tallest(xfs: Array) -> float:
 	return top
 
 
-## A kit piece, or (v0.7.5 NB1) a code-made one the kit lacks (CodeProps); {} when neither has it.
+## A kit piece, or a code-made one the kit lacks (CodeProps); {} when neither has it.
 static func piece_of(id: StringName) -> Dictionary:
 	var piece := KitModels.get_piece(id)
 	return piece if not piece.is_empty() else CodeProps.get_piece(id)
 
 
-## v0.8.0 MI: whether piece_of(id) would draw something, without reading the model (a file check): the dresser's
-## pools drop a piece that is not installed (L15).
+## Whether piece_of(id) would draw something, without reading the model (a file check): the dresser's
+## pools drop a piece that is not installed.
 static func has_piece(id: StringName) -> bool:
 	if CodeProps.has(id):
 		return true
 	return KitModels.SPECS.has(id) and ResourceLoader.exists(KitModels.dir + String(id) + ".glb")
 
 
-## v0.8.0 N10 (option A): one mesh per sim wall the procedural wall draws, one surface, one material for the floor
+## Option A: one mesh per sim wall the procedural wall draws, one surface, one material for the floor
 ## (ProceduralWall.material: the face and top textures in one shader); faded with the wall as its pieces are.
-## v0.8.0 N12: the material made once (_proc_material), the meshes `owners` at a time (one job each).
+## The material made once (_proc_material), the meshes `owners` at a time (one job each).
 func _proc_material(wall_tex: Dictionary) -> Material:
 	var face: Texture2D = wall_tex.get("face", null)
 	var top: Texture2D = wall_tex.get("top", null)
@@ -273,7 +273,7 @@ func _add_light(id: StringName, base: Vector3, mood: BiomeMood) -> void:
 	light.omni_range = mood.warm_light_range
 	light.omni_attenuation = 1.1
 	light.shadow_enabled = false
-	if RenderSwitches.TORCH_DUAL_PARABOLOID:  # v0.8.0 HR (O89): 2 shadow renders, not the cube's 6
+	if RenderSwitches.TORCH_DUAL_PARABOLOID:  # 2 shadow renders, not the cube's 6
 		light.omni_shadow_mode = OmniLight3D.SHADOW_DUAL_PARABOLOID
 	add_child(light)
 	lights.append(light)
@@ -306,7 +306,7 @@ func _add_light(id: StringName, base: Vector3, mood: BiomeMood) -> void:
 	add_child(flame)
 
 
-## The hero's light (owner Q3): a small warm omni light at chest height, carried by the hero's node. No shadow,
+## The hero's light: a small warm omni light at chest height, carried by the hero's node. No shadow,
 ## so it costs little; enemies still carry no light (PRESENTATION_CONTRACTS §7).
 static func hero_light(mood: BiomeMood) -> OmniLight3D:
 	if mood == null or mood.hero_light_energy <= 0.0:
@@ -339,7 +339,7 @@ func set_faded(indices: PackedInt32Array) -> void:
 
 func _apply(i: int, faded: bool) -> void:
 	for node: MeshInstance3D in wall_pieces[i]:
-		if node.material_override == null:  # v0.8.0 N10: a procedural wall, one material per surface
+		if node.material_override == null:  # A procedural wall, one material per surface
 			for k in node.get_surface_override_material_count():
 				var m := node.get_surface_override_material(k)
 				if faded:

@@ -112,7 +112,7 @@ static func is_attack(tags: int, effect_id: StringName) -> bool:
 	return (tags & (SimEvent.TAG_MELEE | SimEvent.TAG_PROJECTILE)) != 0
 
 
-## v0.9.5 (owner Q12: heat for every form): a hit Overclock raises: an attack (is_attack), or a Gun form's own area
+## A hit Overclock raises: an attack (is_attack), or a Gun form's own area
 ## hit (Bomb, Void, Rune Explosion: TAG_AREA | TAG_PROJECTILE, no effect), never a status tick, chain or shrapnel.
 static func overclock_counts(tags: int, effect_id: StringName) -> bool:
 	if is_attack(tags, effect_id):
@@ -165,13 +165,13 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 			s.table.gain_finisher if PlayerKit.is_finisher(w, w.combo_step) else s.table.gain_swing
 		)
 	if tags & SimEvent.TAG_SKILL and w.player.skill != null:
-		g = w.player.skill.heat_gain  # Kit (v0.3.5 K): a skill adds its own heat, once per use.
+		g = w.player.skill.heat_gain  # Kit: a skill adds its own heat, once per use.
 	elif not (tags & SimEvent.TAG_MELEE) and PlayerBuild.has_gun(w):
-		return  # v0.9.5 HT: a Gun's shots add nothing per hit; its heat fills by firing time (fire_tick)
+		return  # A Gun's shots add nothing per hit; its heat fills by firing time (fire_tick)
 	add(w, g, root)
 
 
-## v0.9.5 HT: a tick of the Gun's primary attack held and armed (PlayerKit.advance), whatever the form: heat rises
+## A tick of the Gun's primary attack held and armed (PlayerKit.advance), whatever the form: heat rises
 ## by max / gun_fill_ticks, the remainder carried so gun_fill_ticks of firing fill the meter exactly. Attack speed,
 ## hits, pierce and projectile count do not matter.
 static func fire_tick(w: World) -> void:
@@ -193,7 +193,7 @@ static func fire_ticks(w: World, n: int) -> void:
 		fire_tick(w)
 
 
-## v0.10.5 W3-O3: a tick a charging Gun's charge grows: no heat (it comes with the release, fire_ticks), and the
+## A tick a charging Gun's charge grows: no heat (it comes with the release, fire_ticks), and the
 ## meter doesn't cool while the attack is being charged (a charge that fires counts as firing the whole time). A full
 ## charge waiting adds nothing and cools as idle.
 static func charge_tick(w: World) -> void:
@@ -207,7 +207,7 @@ static func add(w: World, milli: int, root: int = 0) -> void:
 	var s := w.heat
 	if s == null or s.stall > 0:
 		return
-	# Gamble shrine (v0.3.0 L19): more heat capacity = each attack fills the same meter by less.
+	# Gamble shrine: more heat capacity = each attack fills the same meter by less.
 	var cap := 1000 + (Gamble.heat_capacity_bonus_permille(w) if w.gamble_table != null else 0)
 	milli = milli * 1000 / maxi(1000, cap)
 	s.milli = mini(s.milli + milli, s.table.max_milli())
@@ -292,12 +292,12 @@ static func vent(w: World) -> bool:
 	if s == null or not vent_ready(w):
 		return false
 	var heat := s.milli / HeatTable.MILLI
-	var mend := RuleCards.vent_hits(w, w.player_pos(), vent_radius_m(w))  # v0.10.5 O9: Vent Mend's condition
+	var mend := RuleCards.vent_hits(w, w.player_pos(), vent_radius_m(w))  # Vent Mend's condition
 	_blast(w, heat, 1000, w.take_root(), EFFECT_VENT)
 	if mend:
 		RuleCards.vent_mend(w)
 	w.kit.vent_cd = s.table.vent_cooldown_ticks  # v0.9.5 HT
-	if s.milli >= s.table.perfect_vent_milli:  # v0.10.5 S12: a perfect Vent readies the dash
+	if s.milli >= s.table.perfect_vent_milli:  # A perfect Vent readies the dash
 		w.dash_cooldown_left = 0
 		var pid: int = w.actors.ids[0]
 		w.emit_event(SimEvent.Kind.DASH_REFUND, pid, pid, pid, w.player_pos()).amount = heat
@@ -307,7 +307,7 @@ static func vent(w: World) -> bool:
 	return true
 
 
-## Venting now would blast (the meter's VENT prompt): v0.9.5 HT: at least vent_min_heat, not overheated, alive and
+## Venting now would blast (the meter's VENT prompt): at least vent_min_heat, not overheated, alive and
 ## the 6 s cooldown over.
 static func vent_ready(w: World) -> bool:
 	var s := w.heat
@@ -316,13 +316,13 @@ static func vent_ready(w: World) -> bool:
 	return s.milli >= s.table.vent_min_milli
 
 
-## The blast's radius: the vent spec's (v0.6.0 MX4: the table's, as the build's modifiers left it), with Heat Sink's
+## The blast's radius: the vent spec's (the table's, as the build's modifiers left it), with Heat Sink's
 ## bonus.
 static func vent_radius_m(w: World) -> float:
 	var spec := Modifiers.vent(w)
 	var base := spec.radius_m if spec != null else w.heat.table.vent_radius_m
 	var r := base * (1000 + w.item_mods.vent_radius_bonus_permille) / 1000.0
-	return Stats.area(w, r)  # v0.4.0 BS: area
+	return Stats.area(w, r)  # Area
 
 
 ## The blast's damage for `heat` points at `share` per mille: heat x vent_damage, with Heat Sink's bonus.
@@ -347,7 +347,7 @@ static func _blast(w: World, heat: int, share: int, root: int, effect: StringNam
 	s.vent_radius = radius
 	var dmg := vent_damage(w, heat, share)
 	var spec := Modifiers.vent(w)
-	if spec != null:  # v0.6.0 MX4: the blast launches from the vent spec (its hooks: Meltdown Edge)
+	if spec != null:  # The blast launches from the vent spec (its hooks: Meltdown Edge)
 		var ctx := AttackContext.make(center, w.aim_angle, dmg, root, SimEvent.TAG_AREA, effect)
 		ctx.radius_m = radius
 		Attacks.launch(w, spec, ctx)

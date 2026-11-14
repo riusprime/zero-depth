@@ -1,13 +1,13 @@
 class_name StarVoid
 extends RefCounted
-## v0.7.5 NB2: the pieces of Starfall's starry void (BiomeEdge's &"stars" style): where they go and what they are
+## The pieces of Starfall's starry void (BiomeEdge's &"stars" style): where they go and what they are
 ## made of. The floor is a floating island of dark star stone with faceted spikes hanging from its rim; twinkling
 ## stars (white, pale teal, lavender, pink) fill the void below; soft nebula clouds (violet, teal, magenta) glow under
 ## them; small rock islands, some carrying a crystal cluster, drift around the floor. Every placement comes from the
 ## cosmetic stream BiomeEdge hands in; the twinkle and the drift are frame time, still with reduced motion. All of it
 ## stays below the ground (y < 0) and clear of the floor, so nothing stands where you walk or hides a fight. No
 ## collision. Presentation only.
-## v0.8.0 TX3: with the owner's `fx_star_motes` installed (MOTES_TEX, 2 x 2: a four-point twinkle, a soft round star,
+## With the owner's `fx_star_motes` installed (MOTES_TEX, 2 x 2: a four-point twinkle, a soft round star,
 ## a tiny comet, a sparkle cluster) each star is one of those sprites on a camera-facing quad (still one MultiMesh,
 ## one draw), added over the void; without it the code-made octahedron stays.
 
@@ -76,7 +76,7 @@ void fragment() {
 }
 """
 
-## v0.8.0 TX3: the owner's star motes, and a sprite quad's size against the old octahedron's (the motes' glow round a
+## The owner's star motes, and a sprite quad's size against the old octahedron's (the motes' glow round a
 ## small core; starting value).
 const MOTES_TEX := "res://assets/textures/vfx/fx_star_motes.png"
 const SPRITE_SCALE := 2.8
@@ -199,7 +199,7 @@ static func star_material() -> ShaderMaterial:
 	return m
 
 
-## v0.8.0 TX3: the owner's star motes (null: not installed; the code-made stars stay).
+## The owner's star motes (null: not installed; the code-made stars stay).
 static func motes() -> Texture2D:
 	return load(MOTES_TEX) as Texture2D if ResourceLoader.exists(MOTES_TEX) else null
 
@@ -223,13 +223,13 @@ static func drift_material(edge_color: Color, crystal: bool) -> ShaderMaterial:
 		m.set_shader_parameter("glow_energy", 0.9)
 		m.set_shader_parameter("rough", 0.15)
 		m.set_shader_parameter("spec", 0.8)
-		m.set_shader_parameter("metal", ShardMesh.CRYSTAL_METALLIC)  # v0.8.0 GX: the glint
+		m.set_shader_parameter("metal", ShardMesh.CRYSTAL_METALLIC)  # The glint
 	else:
 		m.set_shader_parameter("albedo", ROCK.lerp(edge_color, 0.3))
 	return m
 
 
-## v0.8.0 MI: an owner's void piece (KitModels role &"void": a floating island, a hanging spike) in the frame the
+## An owner's void piece (KitModels role &"void": a floating island, a hanging spike) in the frame the
 ## code-made ones use (unit footprint, its top at y = 0 and its bottom at y = -1), with its material: for an island
 ## the drifting shader on its colour map (`drift` true), else its own textured material. {} when the model is
 ## missing (the code-made piece stays; L15).

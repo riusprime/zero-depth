@@ -29,7 +29,7 @@ const SPECS := {
 	# v0.6.0 Step SR: the gamble shrine (GambleShrineView), its front (the slot window) on +Z. 1.7 m tall puts its
 	# footprint at 1.58 x 1.12 m, the old obelisk's plinth width over the sim's 1 m square (Gamble.collider).
 	&"gamble_shrine": {"yaw": 0.0, "height": 1.7, "role": &"shrine"},
-	# v0.8.0 MI: the owner's v0.8.0 pieces (scripts/assets/mi_prep.py: turned long side onto +X, sized, simplified and
+	# The owner's v0.8.0 pieces (scripts/assets/mi_prep.py: turned long side onto +X, sized, simplified and
 	# re-textured offline, so yaw 0). Role &"biome": a biome's own piece, drawn only where its BiomeLook pools name it
 	# (owner O78: every piece only in the biome it fits); a missing one drops out of the pools (has_structure ignores
 	# it). "foot": its footprint from the request row (W x D, m), for decoration and props placed at natural size.
@@ -157,13 +157,13 @@ const CHEST_LID_CUT := 0.56
 ## Level-of-detail generation (ImporterMesh.generate_lods): normals merge below / split above these angles.
 const LOD_NORMAL_MERGE_DEG := 25.0
 const LOD_NORMAL_SPLIT_DEG := 60.0
-## v0.8.0 P3 (owner O29, "the Red, Blue, and Original biomes experience lag"): a scattered decoration piece (grass,
+## A scattered decoration piece (grass,
 ## rubble, debris: 0.2-0.4 m, a few dozen pixels on screen, hundreds per floor) is drawn from its coarsest generated
 ## level of detail (the kit's are 9.8-12.8k triangles each: ~20 million triangles a floor in the first three biomes,
 ## against ~0.5 million in Frozen Shore and Starfall, whose decoration is code-made). A piece of DECOR_TRIS triangles
 ## or fewer is drawn as it is.
 const DECOR_TRIS := 1000
-## v0.8.0 GX (owner O86, graphics feedback §5): the owner's crystal pieces glint (the .glb untouched; the material
+## The owner's crystal pieces glint (the.glb untouched; the material
 ## changed at load): per piece, its roughness and metallic. Stone stays matte.
 const GLOSS := {&"star_crystal": [0.25, 0.2], &"ice_shard": [0.25, 0.15]}
 
@@ -189,7 +189,7 @@ static func get_piece(id: StringName) -> Dictionary:
 	return out
 
 
-## v0.8.0 GX: a copy of `mat` with this roughness and metallic (its roughness and metallic maps dropped, so the
+## A copy of `mat` with this roughness and metallic (its roughness and metallic maps dropped, so the
 ## values hold); any other material is returned as it is.
 static func glossed(mat: Material, roughness: float, metallic: float) -> Material:
 	var base := mat as BaseMaterial3D
@@ -274,7 +274,7 @@ static func _with_lods(arrays: Array) -> ArrayMesh:
 	return im.get_mesh()
 
 
-## v0.8.0 P3: `mesh` as a scattered decoration piece draws it: its coarsest generated level of detail (the same
+## `mesh` as a scattered decoration piece draws it: its coarsest generated level of detail (the same
 ## vertices, normals, UVs and material; the generator keeps UV seams, so the kit's pieces stop at 3.2-4.7k triangles)
 ## when it has more than DECOR_TRIS triangles and one surface; otherwise `mesh` itself. Cached per mesh.
 static func decor_mesh(mesh: Mesh) -> Mesh:

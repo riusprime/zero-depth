@@ -1,6 +1,6 @@
 class_name WaveMods
 extends RefCounted
-## v0.9.5 FC8 (docs/roadmap/v0.9.5/FORM_COMBOS.md W1-W8): what eight cards do to the Wave form. One handler per card.
+## What eight cards do to the Wave form. One handler per card.
 ## A wave ignores these cards' generic ops (WandCompile.run: it only notes the id in modifier_ids), and this file reads
 ## them from there: mask(spec). Twin and Backfire are the Wave's own (GunForms, Attacks) and are not touched here.
 ## - At the throw (Attacks._bolts): Big Shot's and Rapid Fire's damage and speed (damage_permille(), speed()),
@@ -73,23 +73,6 @@ const DEFAULTS := {
 	"spiral_ms": 1000,
 	"live_max": 8,
 }
-## The ModifierState fields an older save lacks (WorldSnapshot._apply_object reads this list; that file is at its cap).
-const SNAPSHOT_FIELDS: Array[StringName] = [
-	&"wm_next",
-	&"wm_id",
-	&"wm_kind",
-	&"wm_pid",
-	&"wm_at",
-	&"wm_due",
-	&"wm_born",
-	&"wm_ang",
-	&"wm_dmg",
-	&"wm_r",
-	&"wm_w",
-	&"wm_aux",
-	&"wm_aux2",
-	&"wm_root",
-]
 
 
 # --- Cards and numbers --------------------------------------------------------------------------------------------

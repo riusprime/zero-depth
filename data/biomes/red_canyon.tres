@@ -114,6 +114,10 @@ palette = {
 "outline": Color(0.10196078, 0.10196078, 0.13333333, 1)
 }
 template_tags = PackedStringArray("red_canyon")
+critter_id = &"ember_flea"
+core_ids = Array[StringName]([&"charger", &"needle", &"swarmer", &"warden"])
+signature_ids = Array[StringName]([&"kiln_beetle", &"cinder_priest"])
+variant_id = &"ember_charger"
 id = &"red_canyon"
 mood = SubResource("Resource_mood")
 look = SubResource("Resource_look")

@@ -102,32 +102,6 @@ func test_a_held_pruned_card_still_compiles() -> void:
 	assert_false(ItemPool.usable(w, W.item(w, &"gun_echo")), "it is just not offered again")
 
 
-func test_an_old_void_save_holding_a_pruned_card_loads_and_plays_on() -> void:
-	# The save: a Void run on floor 2 holding Rapid Fire and Chain Blast, taken before W3-P7 pruned them (TEST HELPER:
-	# added through the one equip, as that build took them), snapshotted mid-fight.
-	var old := SaveLab.floor_world(7, 2, &"gun")
-	for id: StringName in [&"gun_void", &"gun_rapid_fire", &"chain_blast"]:
-		assert_true(BuildSlots.take(old, W.item(old, id)), "took %s" % id)
-	for t in 30:
-		old.step(AttackScenario.frame(t))
-	var snap := WorldSnapshot.take(old)
-	var w := SaveLab.floor_world(7, 2, &"gun")
-	assert_eq(WorldSnapshot.apply(w, snap), "", "the save restores")
-	WandMigration.run(w)
-	assert_eq(AttackSlots.trim(w), 0, "a legal wand: nothing trimmed")
-	assert_eq(
-		_ids(w),
-		[&"gun_void", &"gun_rapid_fire", &"chain_blast"],
-		"the pruned cards stay in the wand"
-	)
-	var ids := _compiled(w)
-	assert_true(ids.has(&"gun_rapid_fire") and ids.has(&"chain_blast"), "and still compile")
-	assert_false(ItemPool.usable(w, W.item(w, &"gun_rapid_fire")), "not offered again")
-	for t in 120:
-		w.step(AttackScenario.frame(t))
-	assert_false(w.player_dead(), "the run plays on")
-
-
 func _ids(w: World) -> Array:
 	var out := []
 	for c in w.mod_slots:

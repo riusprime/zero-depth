@@ -4,7 +4,7 @@ extends RefCounted
 ## sparks, flames from the owner's atlases), its light (merged, into the 10-light pool), its floor marks (the decal
 ## cap) and its explosions and acid splats (VfxLayer.burst: the frame's burst budget). Thinned with the layer's
 ## density. Presentation only.
-## v0.10.0 VX5 (VFX_PACK R27, R36-R39): the strikes' decoration is the pack's (BossPackHold: each effect starts once per
+## VFX_PACK R27, R36-R39: the strikes' decoration is the pack's (BossPackHold: each effect starts once per
 ## strike, the held ones follow the strike while it lasts); a full family keeps that instance's old sprites. The
 ## strikes' shapes, rocks, floor marks, lights and hit areas are untouched. A const to switch the old look back on.
 
@@ -36,7 +36,7 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					var c := SimPlane.to_3d(d[0])
 					var r := float(d[1])
 					var smoke := true
-					if hold != null:  # R36: the pack's burst and dust (the rocks and the debris stay)
+					if hold != null:  # The pack's burst and dust (the rocks and the debris stay)
 						var hit := (
 							&"bx_impact_b" if s["kind"] == &"crack_impact" else &"bx_impact_a"
 						)
@@ -66,7 +66,10 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					var d: Array = s["discs"][k]
 					if fx != null and d.size() > 2 and bool(d[2]):
 						var kind := &"fire" if s["kind"] == &"shell" else &"venom"
+						# The Mortar Grid's shells explode without the pack's Smoke
+						fx.burst_hide = ["Smoke"] if s["look"] == &"se_mortar" else []
 						fx.burst(kind, SimPlane.to_3d(d[0]), float(d[1]), u, sd + k)
+						fx.burst_hide = []
 			&"javelins":
 				for k in (s["discs"] as Array).size():
 					var d: Array = s["discs"][k]
@@ -83,7 +86,7 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					)
 			&"light_burst", &"light_ring":
 				var c := SimPlane.to_3d(s["discs"][0][0] if s.has("discs") else s["ring"][0])
-				if hold != null:  # R37: a pillar of light for the burst, a pulse for the ring
+				if hold != null:  # A pillar of light for the burst, a pulse for the ring
 					var reach := float(s["discs"][0][1]) if s.has("discs") else float(s["ring"][2])
 					var burst: bool = s["kind"] == &"light_burst"
 					hold.once(
@@ -105,7 +108,7 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					clampf(age / (10.0 if steam else 24.0), 0.0, 1.0)
 				)
 				var puffs := true
-				if hold != null:  # R38: a pulse of rings (and thin smoke for steam) in place of the puff ring
+				if hold != null:  # A pulse of rings (and thin smoke for steam) in place of the puff ring
 					var reach := clampf(minf(float(g[2]), float(g[1]) + 16.0) * 2.0 / 4.5, 0.5, 6.0)
 					puffs = not hold.once(
 						_key(s, 0, 3),
@@ -166,7 +169,7 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					var far := SimPlane.to_3d(lane.center + lane.axis_u * lane.half.x, 0.7)
 					var near := SimPlane.to_3d(lane.center - lane.axis_u * lane.half.x, 0.7)
 					li += 1
-					if on and hold != null and s["kind"] == &"rail":  # R27: the rail's blast along its lane
+					if on and hold != null and s["kind"] == &"rail":  # The rail's blast along its lane
 						var bn := hold.hold(_key(s, li, 6), &"bx_rail", near, 1.0, {}, false)
 						if bn != null:
 							BossPackHold.beam_place(
@@ -205,7 +208,7 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					var p := SimPlane.to_3d(s["to"])
 					_sparks(layer, p, age, sd, 8, Color(1.0, 0.75, 0.4))
 					layer.light_merged(p + Vector3.UP * 0.4, glow, 1.6, 4.0, 2.0)
-					if hold != null:  # R38: a small puff of dust every so often along the skid
+					if hold != null:  # A small puff of dust every so often along the skid
 						hold.once(
 							_key(s, int(age / 14.0), 7),
 							&"bx_smoke_dust",
@@ -295,12 +298,12 @@ static func _dust_ring(
 			)
 
 
-## v0.8.0 TX2: the cracks a crater or a javelin leaves (the owner's fx_ground_cracks; the code's scorch without it).
+## The cracks a crater or a javelin leaves (the owner's fx_ground_cracks; the code's scorch without it).
 static func crack_mark() -> StringName:
 	return &"cracks" if VfxCore.has_tex("fx_ground_cracks") else &"scorch"
 
 
-## v0.8.0 TX2: the owner's rock burst (fx_rock_burst, seen from the side) blasting up out of a crater `r` round: it
+## The owner's rock burst (fx_rock_burst, seen from the side) blasting up out of a crater `r` round: it
 ## grows over its first ticks and fades by 26. Thinned with the layer's density like the rest.
 static func _rock_burst(layer: VfxCore, c: Vector3, r: float, age: float, sd: int) -> void:
 	var t := clampf(age / 26.0, 0.0, 1.0)

@@ -48,6 +48,14 @@ func _open_kinds(t: SpawnTable, ticks: int) -> Array:
 	return out
 
 
+## The kinds every biome shares, sorted. A biome's own kinds (its variants and signature enemies) are rows of every
+## floor's table and spawn only on that biome's floors (`SpawnDirector.in_roster`), so the floor rules skip them.
+func _shared(kinds: Array) -> Array:
+	var out := kinds.filter(func(k: int) -> bool: return k < KIND.RUBBLE_WARDEN)
+	out.sort()
+	return out
+
+
 func test_phase_lookup_and_the_ramp() -> void:
 	var c := CurveTable.new()
 	c.starts = PackedInt32Array([0, 600, 1200])
@@ -86,13 +94,19 @@ func test_floor_1_is_calm_for_30_s_then_ramps_faster() -> void:
 	assert_eq(c.holds[0], 1, "floor 1 opens with a calm phase that holds")
 	assert_eq(c.name_keys[0], &"PHASE_CALM")
 	assert_eq(c.starts[1], CALM_S * 60, "D1: the calm phase is the first 30 s")
+	var calm_behaviours := CALM.map(func(k: int) -> int: return EnemyAi.behaviour_of(k))
 	for ticks in [0, 900, CALM_S * 60 - 1]:
 		assert_eq(t.danger_tier(ticks), 0, "no tier growth in the calm phase")
 		assert_eq(t.power_now(ticks), t.power_now(0), "the calm phase's damage holds")
 		assert_eq(t.hp_now(100, ticks), t.hp_now(100, 0), "the calm phase's HP holds")
-		assert_eq(_open_kinds(t, ticks).size(), CALM.size())
-		for k: int in _open_kinds(t, ticks):
-			assert_has(CALM, k, "only the calm kinds")
+		var open := _open_kinds(t, ticks)
+		assert_eq(_shared(open), Array(CALM), "only the calm kinds")
+		for k: int in open:
+			assert_has(
+				calm_behaviours,
+				EnemyAi.behaviour_of(k),
+				"a biome kind opens only with its calm base"
+			)
 		assert_eq(t.pack_cap_now(ticks), 1, "calm kinds come one at a time (no Swarmer pack)")
 	assert_lte(t.power_now(0), 1000, "calm enemies hit no harder than SC's tier 0")
 	assert_gt(t.interval_now(0), t.interval(0), "calm spawns come slower than SC's tier 0")
@@ -194,7 +208,7 @@ func test_kinds_are_introduced_across_the_three_floors() -> void:
 		for k: int in NEW_BY_FLOOR[f]:
 			assert_has(all, k, "floor %d brings kind %d" % [f, k])
 			seen[k] = true
-		for k: int in all:
+		for k: int in _shared(all):
 			assert_true(
 				seen.has(k), "floor %d: kind %d comes from this floor or one before" % [f, k]
 			)

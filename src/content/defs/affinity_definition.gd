@@ -1,6 +1,6 @@
 class_name AffinityDefinition
 extends ContentDef
-## v0.9.0 RB (owner, PLAN "Owner decisions" RB; docs/roadmap/v0.9.0/AFFINITIES.md A0-A5): one rune affinity, picked at
+## One rune affinity, picked at
 ## the hub's Wardrobe between runs and locked once a run starts (RunState.affinity). A sidegrade, never a stat
 ## (PD-06): every gain is conditional and comes with its trade-off. Category `affinity`, in data/wardrobe/; compiled
 ## into AffinityTable (RunContentCompiler.compile_affinity). Every number is a starting value (a tuning default, not a

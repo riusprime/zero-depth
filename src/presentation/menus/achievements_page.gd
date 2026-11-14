@@ -1,10 +1,10 @@
 class_name AchievementsPage
 extends ScrollContainer
-## v0.7.5 AC (owner N7): the Codex's Achievements page: every achievement (AchievementBook) in its group, two rows
+## The Codex's Achievements page: every achievement (AchievementBook) in its group, two rows
 ## to a line (AchievementRow). Unlocked ones are lit in gold; locked ones are dimmed and keep their sentence and how
 ## far along they are, so you know what to aim for; a hidden one (`hidden` in its data, today the Ascension pair)
 ## stays "???" until it unlocks. Reads the book only; it changes nothing.
-## v0.10.5 O5a (O5_LOOPS.md D3): a Records block first: the deepest loop and the fastest true ending per weapon
+## O5_LOOPS.md D3: a Records block first: the deepest loop and the fastest true ending per weapon
 ## (RunRecords, from the book's profile).
 
 const GROUP_KEYS := {
@@ -81,7 +81,7 @@ func refresh() -> void:
 		head.name = "Head_%s" % g
 		head.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		head.text = "%s   %d / %d" % [tr(GROUP_KEYS.get(g, "UI_ACH_TAB")), have, list.size()]
-		AstralUi.caps(head, 15, AstralCardArt.METAL)  # v0.10.5 W3-O19: Cinzel small caps
+		AstralUi.caps(head, 15, AstralCardArt.METAL)  # Cinzel small caps
 		_list.add_child(head)
 		var grid := GridContainer.new()
 		grid.name = "Grid_%s" % g
@@ -101,14 +101,14 @@ func refresh() -> void:
 		first_line = false
 
 
-## v0.10.5 O5a: the Records head and its lines (RecordLine0, RecordLine1).
+## The Records head and its lines (RecordLine0, RecordLine1).
 func _add_records() -> void:
 	if book.store == null or book.store.profile == null:
 		return
 	var head := Label.new()
 	head.name = "Head_records"
 	head.text = "UI_RECORDS_HEAD"
-	AstralUi.caps(head, 15, AstralCardArt.METAL)  # v0.10.5 W3-O19: Cinzel small caps
+	AstralUi.caps(head, 15, AstralCardArt.METAL)  # Cinzel small caps
 	_list.add_child(head)
 	var k := 0
 	for line in RunRecords.lines(self, book.store.profile):
@@ -137,7 +137,7 @@ func _show_head(head: Label) -> void:
 func focus_first() -> void:
 	if not rows.is_empty():
 		rows[0].grab_focus()
-		set_deferred(&"scroll_vertical", 0)  # v0.10.5 O5a: the Records block above the first row stays in view
+		set_deferred(&"scroll_vertical", 0)  # The Records block above the first row stays in view
 
 
 ## The row of achievement `id` (null when there's none).

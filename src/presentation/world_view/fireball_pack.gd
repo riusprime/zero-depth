@@ -1,12 +1,12 @@
 class_name FireballPack
 extends RefCounted
-## v0.10.0 VX4: how FireballViews holds a hostile shot's pack effect (PackFx, family enemy_shot), and (v0.10.5, owner
+## How FireballViews holds a hostile shot's pack effect (PackFx, family enemy_shot), and (v0.10.5, owner
 ## PERF_PLAYLOG_1: view.fireballs 53.1 ms on f1 and 47.3 ms on f2, a look's first volley instancing its scenes) the
 ## shots' pools filled at the floor's load (WorldViewRoot, behind the cover). Looks only (EI-07).
 
 ## The least a pack flame's particle lifetime shrinks to for a small shot (its share of the scene's own).
 const FLAME_LIFE_MIN := 0.4
-## v0.10.5: idle pack shots made per look at the floor's load (prefill; a starting value: a first volley's size).
+## Idle pack shots made per look at the floor's load (prefill; a starting value: a first volley's size).
 ## Shots past it instance their scene as before.
 const PREFILL := 8
 
@@ -16,11 +16,11 @@ static func ids() -> Array[StringName]:
 	var out: Array[StringName] = []
 	for key: StringName in FireballViews.LOOKS:
 		if not FireballViews.PACK_SKIP.has(key):
-			out.append(CandidateLooks.bolt_id(key))  # v0.10.5 W3-O7: "shot_<key>", or a G2 candidate's
+			out.append(CandidateLooks.bolt_id(key))  # "shot_<key>", or a G2 candidate's
 	return out
 
 
-## v0.10.5: `pack`'s pool for the shot id `id` filled to PREFILL idle instances, each with its own particle materials
+## `pack`'s pool for the shot id `id` filled to PREFILL idle instances, each with its own particle materials
 ## already (own_particles): the floor's first volley of a look takes them.
 static func prefill(pack: PackFx, id: StringName) -> void:
 	if pack == null or not FireballViews.PACK_SHOTS or not pack.has_id(id):
@@ -29,7 +29,7 @@ static func prefill(pack: PackFx, id: StringName) -> void:
 		own_particles(node)
 
 
-## v0.10.5 PC (owner PERF_PLAYLOG_2: idle pool nodes in the tree cost every frame): FireballViews.prepare's sets wait
+## FireballViews.prepare's sets wait
 ## outside the tree until their look first draws. The set nodes outside it (`sets`: FireballViews._sets).
 static func detached(sets: Dictionary) -> Array[Node]:
 	var out: Array[Node] = []

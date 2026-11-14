@@ -1,6 +1,6 @@
 class_name PerfRecorder
 extends Node
-## v0.10.5 (owner: "play a normal game, log it and then you can measure what takes the most frames"): records every
+## Records every
 ## rendered frame of normal play to a CSV under user://perf/ (docs/process/PERF_LOG.md). Launched with `-- --perf-log`
 ## (full: the frame probe's breakdown too, PerfBreakdown) or `-- --perf-log=light` (the frame time and the load only).
 ## Off by default: Main makes no recorder without the flag, and PerfMarks stays off (one bool check per call site).

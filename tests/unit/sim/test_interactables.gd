@@ -58,7 +58,7 @@ func test_the_pylons_run_on_the_registry() -> void:
 	assert_eq(reader.interact_prompt_key(), &"", "no prompt by a lit pylon")
 
 
-func test_the_registry_rides_the_snapshot_and_an_old_save_resyncs() -> void:
+func test_the_registry_rides_the_snapshot() -> void:
 	var w := FinalLab.approach(FinalLab.run_state(SEED))
 	w.actors.invuln[0] = 1 << 24
 	w.actors.set_pos(0, w.floor_layout.pylons[0] + Vector2(0.5, 0))
@@ -69,10 +69,3 @@ func test_the_registry_rides_the_snapshot_and_an_old_save_resyncs() -> void:
 	var base := FinalLab.approach(FinalLab.run_state(SEED))
 	assert_eq(WorldSnapshot.apply(base, snap), "", "fits")
 	assert_eq(base.state_hash(), w.state_hash(), "resumes exactly")
-	var old := WorldSnapshot.take(w)
-	(old["world"] as Dictionary).erase(&"interactables")  # a save from before IX
-	var base2 := FinalLab.approach(FinalLab.run_state(SEED))
-	assert_eq(WorldSnapshot.apply(base2, old), "", "an old save still resumes")
-	var k := base2.interactables.find(Interactables.Kind.PYLON, 0)
-	assert_eq(base2.interactables.enabled[k], 0, "its lit pylon takes no press")
-	assert_eq(base2.interactables.enabled[1 - k], 1, "the other still does")

@@ -1,10 +1,10 @@
 class_name RunicStone
 extends RefCounted
-## v0.9.5 RS1 (RUNIC_STONE.md): the hub's Runic Stone, application side. The profile's `runes` section holds the ids of
+## RUNIC_STONE.md: the hub's Runic Stone, application side. The profile's `runes` section holds the ids of
 ## the lines it has learned ({"learned": ["r1", ...]}, in the order learned; created on the first write, so an old
 ## profile without it loads and saves as it was). The stone is awake once it knows r1. Never part of a run, a save or
 ## a sim hash. Adding an easter egg later is data (RunicLinesDefinition) plus one trigger here.
-## - r1 (S3): a purple-rune room was activated in a run (the achievement stat PURPLE_STAT, AchievementTracker).
+## - r1: a purple-rune room was activated in a run (the achievement stat PURPLE_STAT, AchievementTracker).
 ## - r2: the Codex counts DEATHS (times an enemy or a boss killed the hero).
 ## - r3: the woken stone pressed PRESSES times in a row, each within WINDOW_TICKS of the last, without walking away.
 ## - v0.9.5 RS2, r4-r10 (each learned once, also on load when the stored stats already meet it): r4 a floor boss beaten
@@ -12,15 +12,19 @@ extends RefCounted
 ##   profile's `collectibles` section); r7 the Hollow Crown beaten (stat `final:won`); r8 three Ascension loops in one
 ##   run (the Codex's best loop reaches LOOP_BEST); r9 a cracked wall broken on CRACK_RUNS different runs (stat
 ##   CRACK_STAT); r10 the language switched in the hub with the stone awake (HubRunic).
-## - S6: with every line learned the runes ring the stone and the Runic robe unlocks (Wardrobe.unlock_robe).
+## - v0.11.0 O14a: the lines are a chain of clues (each decoded line points at the next feat; RUNIC_CLUES.md).
+##   r11 (FINAL) is learned once r1-r10 are all known (also on load) and points at the hidden room.
+## - S6: with r1-r10 learned the runes ring the stone and the Runic robe unlocks (Wardrobe.unlock_robe).
 
 const SECTION := "runes"
 const PURPLE_STAT := &"runes:purple"
-## v0.9.5 RS2: the stats and counters the other lines read (see the header).
+## The stats and counters the other lines read (see the header).
 const NO_HIT_STAT := &"bosses:no_hit"
 const CRACK_STAT := &"secrets:crack_runs"
 const WON_STAT := &"final:won"
 const ROBE := &"runic"
+## The last line, learned by itself once the other ten are known.
+const FINAL := &"r11"
 const COLLECTIBLES := 8
 const LOOP_BEST := 4
 const CRACK_RUNS := 5
@@ -61,6 +65,12 @@ func knows(id: StringName) -> bool:
 	return learned().has(id)
 
 
+## Whether `profile` learned the last line (r11: all ten known), so a new run's final approach holds the
+## hidden room under the throne (FloorPlan.of_profile; RunState.heart_room).
+static func knows_final(profile: ProfileStore) -> bool:
+	return profile != null and RunicStone.new(profile, null).knows(FINAL)
+
+
 ## The learned ids, the newest first (the stone speaks its newest line first).
 func newest_first() -> Array[StringName]:
 	var out := learned()
@@ -81,20 +91,28 @@ func learn(id: StringName) -> bool:
 	pending_pulse = true
 	_cursor = -1
 	ensure_robe()
+	ensure_final()
 	return true
 
 
-## S6: every line the content lists is learned.
+## The ten feat lines (every line but FINAL) are learned.
 func is_full() -> bool:
 	if lines == null or lines.lines.is_empty():
 		return false
 	for l: RunicLineEntry in lines.lines:
-		if not knows(l.id):
+		if l.id != FINAL and not knows(l.id):
 			return false
 	return true
 
 
-## S6: the Runic robe is in the profile's unlocks once the stone is full; true when it unlocked now.
+## r11 is learned once the ten are; true when it was learned now.
+func ensure_final() -> bool:
+	if not is_full() or lines == null or lines.line(FINAL) == null:
+		return false
+	return learn(FINAL)
+
+
+## The Runic robe is in the profile's unlocks once the stone is full; true when it unlocked now.
 func ensure_robe() -> bool:
 	if not is_full():
 		return false
@@ -127,8 +145,11 @@ func sync(purple: int, deaths: int, more: Dictionary = {}) -> Array[StringName]:
 	for r: Array in rules:
 		if r[1] and learn(r[0]):
 			got.append(r[0])
-	if got.is_empty() and ensure_robe():  # an older profile already full: the caller saves the robe
-		got.append(ROBE)
+	if got.is_empty():  # an older profile already full: the caller saves r11 or the robe
+		if ensure_final():
+			got.append(FINAL)
+		elif ensure_robe():
+			got.append(ROBE)
 	return got
 
 

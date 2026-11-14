@@ -113,7 +113,7 @@ func test_the_echo_flash_uses_the_echoed_steps_shape() -> void:
 # --- The wanderer's body ------------------------------------------------------------------------------------
 func _avatar() -> PlayerAvatar:
 	var a := PlayerAvatar.new()
-	a.setup(Color("#1A1A22"))
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	return a

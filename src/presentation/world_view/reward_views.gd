@@ -1,6 +1,6 @@
 class_name RewardViews
 extends Node3D
-## Altars and chests (v0.3.0 E). Low-poly, faceted stone like the gate:
+## Altars and chests. Low-poly, faceted stone like the gate:
 ## - an altar (v0.6.1 SW, the shard look): a stone base with a cluster of outlined faceted crystals in its tier's
 ##   card-frame colour, a soft glow, small fragments floating over it, and a light (ShardMesh builds the pieces);
 ## - a chest: a stone chest with iron bands and a red-glowing lock; its price floats above it while you are near,
@@ -9,11 +9,11 @@ extends Node3D
 ## materials have emission on from creation; only energies change at runtime (flash-safe).
 
 const ALTAR_LIGHT := Color("#9CC8FF")
-## v0.5.0 RT: a Deep floor's epic altar glows the Deep gate's violet.
+## A Deep floor's epic altar glows the Deep gate's violet.
 const EPIC_LIGHT := Color("#8B3DFF")
-## v0.5.5 AR (X1b): the boss's legendary altar glows bright gold.
+## The boss's legendary altar glows bright gold.
 const LEGENDARY_LIGHT := Color("#FFC233")
-## v0.5.5 AR: a reward locked in an arena that isn't cleared wears an amber seal ring until the clear.
+## A reward locked in an arena that isn't cleared wears an amber seal ring until the clear.
 const SEAL := Color("#FFB020")
 const LOCK_RED := Color("#FF3B30")
 const STONE := Color("#77706A")
@@ -31,7 +31,7 @@ const LID_OPEN_S := 0.35
 const LID_OPEN_RAD := 1.9
 const OPENED_S := 1.1
 const FLARE := Color("#FFB45A")
-## v0.6.1 SW: the shard altar. Its tier wears a card frame's colour (CardFrames.TINT; one table, the owner may remap):
+## The shard altar. Its tier wears a card frame's colour (CardFrames.TINT; one table, the owner may remap):
 ## a plain altar the blue frame (the old rune's cold blue), the Deep floor's epic altar the purple frame (the Deep
 ## gate's violet, PickSlot.EPIC), the boss's legendary altar the gold frame (the legendary cards' gold).
 const ALTAR_FRAME := {&"normal": &"blue", &"epic": &"purple", &"legendary": &"gold"}
@@ -82,9 +82,9 @@ func sync(reader: WorldReader) -> void:
 		var n: Node3D = _nodes.get(id)
 		if n == null:
 			var kind := reader.reward_kind(i)
-			if kind == WorldReader.REWARD_LEGENDARY:  # v0.5.5 AR (X1b)
+			if kind == WorldReader.REWARD_LEGENDARY:  # v0.5.5 AR
 				n = make_altar(false, true)
-			elif kind == WorldReader.REWARD_DROP:  # v0.6.0 CU: a stolen core, Marked's card
+			elif kind == WorldReader.REWARD_DROP:  # A stolen core, Marked's card
 				n = make_drop(CoreViews.card_color(reader, reader.reward_drop_card(i)))
 			elif kind == WorldReader.REWARD_ALTAR:
 				n = make_altar(reader.reward_is_epic(i))
@@ -95,7 +95,7 @@ func sync(reader: WorldReader) -> void:
 			add_child(n)
 			n.reset_physics_interpolation()
 			_nodes[id] = n
-		n.visible = not reader.reward_hidden(i)  # v0.9.0 TD (Q23): unseen in the hidden room until it opens
+		n.visible = not reader.reward_hidden(i)  # Unseen in the hidden room until it opens
 		(n.get_meta(&"seal") as Node3D).visible = reader.reward_locked(i)  # v0.5.5 AR
 		var label: Label3D = n.get_meta(&"price") if n.has_meta(&"price") else null
 		if label != null:
@@ -121,13 +121,13 @@ func count() -> int:
 	return _nodes.size()
 
 
-## v0.5.5 AR: whether reward `id` shows its arena seal (tests).
+## Whether reward `id` shows its arena seal (tests).
 func is_sealed(id: int) -> bool:
 	var n: Node3D = _nodes.get(id)
 	return n != null and (n.get_meta(&"seal") as Node3D).visible
 
 
-## v0.5.5 AR: an amber ring around the reward's foot and two crossed bars over it, shown while it's locked.
+## An amber ring around the reward's foot and two crossed bars over it, shown while it's locked.
 func _add_seal(root: Node3D) -> void:
 	var seal := Node3D.new()
 	seal.name = "ArenaSeal"
@@ -191,11 +191,11 @@ func _process(delta: float) -> void:
 			spin.position.y = y0 + sin(_t * 2.0 + n.position.x) * 0.07
 			spin.rotation.y = _t * (1.6 if hot else 0.9)
 			for frag: Node3D in spin.get_children():
-				if frag.has_meta(&"bob"):  # v0.6.1 SW: each fragment bobs on its own beat
+				if frag.has_meta(&"bob"):  # Each fragment bobs on its own beat
 					frag.position.y = (
 						frag.get_meta(&"bob") + sin(_t * 2.6 + frag.get_index() * 1.7) * 0.05
 					)
-		if n.has_meta(&"crystal_mat"):  # v0.6.1 SW: the shard altar brightens in reach
+		if n.has_meta(&"crystal_mat"):  # The shard altar brightens in reach
 			_glow_toward(n, hot, delta)
 		var body: Node3D = n.get_meta(&"body")
 		var left: float = _shake.get(id, 0.0)
@@ -207,7 +207,7 @@ func _process(delta: float) -> void:
 			body.position.x = 0.0
 
 
-## v0.6.1 SW: eases the shard altar's crystal emission and glow toward their in-reach (hot) or idle strength. Only
+## Eases the shard altar's crystal emission and glow toward their in-reach (hot) or idle strength. Only
 ## energies and the glow's alpha change (flash-safe).
 func _glow_toward(n: Node3D, hot: bool, delta: float) -> void:
 	var mat: StandardMaterial3D = n.get_meta(&"crystal_mat")
@@ -219,7 +219,7 @@ func _glow_toward(n: Node3D, hot: bool, delta: float) -> void:
 	glow_mat.albedo_color = c
 
 
-## v0.6.1 SW (owner R3): the altar in the crystal-shard look of the owner's card art. On the same hexagonal footprint
+## The altar in the crystal-shard look of the owner's card art. On the same hexagonal footprint
 ## as before (radius ALTAR_RADIUS): a two-step stone base, a cluster of outlined faceted shards growing from it in
 ## the tier's card-frame colour (ALTAR_FRAME), a soft additive inner glow, and a few small fragments floating and
 ## bobbing over the cluster. The crystals are lit by the scene (the v0.5.9 moods) with a little emission of their
@@ -275,12 +275,12 @@ func make_altar(epic: bool = false, legendary: bool = false) -> Node3D:
 	return root
 
 
-## v0.6.1 SW: the colour of an altar of `tier` (&"normal", &"epic", &"legendary"): its card frame's tint.
+## The colour of an altar of `tier` (&"normal", &"epic", &"legendary"): its card frame's tint.
 static func altar_color(tier: StringName) -> Color:
 	return CardFrames.tint(ALTAR_FRAME.get(tier, ALTAR_FRAME[&"normal"]))
 
 
-## v0.6.0 CU: a free card drop (a stolen core, Marked's rare card): the core's crystal floating low over the floor,
+## A free card drop (a stolen core, Marked's rare card): the core's crystal floating low over the floor,
 ## glowing its card family's frame colour, turning, with a small light. No plinth: it fell from the body.
 func make_drop(color: Color) -> Node3D:
 	var root := Node3D.new()
@@ -290,7 +290,7 @@ func make_drop(color: Color) -> Node3D:
 	var spin := Node3D.new()
 	spin.position.y = DROP_SPIN_Y
 	root.add_child(spin)
-	# v0.6.1 SW: the core is a lit, outlined shard (ShardMesh) with a soft glow and two chips floating by it.
+	# The core is a lit, outlined shard (ShardMesh) with a soft glow and two chips floating by it.
 	var shard_mat := ShardMesh.crystal_material(color, 1.1)
 	var gem := ShardMesh.outlined(
 		ShardMesh.shard(6, 0.2, 0.36, 0.3, 31), shard_mat, Vector3.ZERO, 0.16

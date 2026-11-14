@@ -8,21 +8,21 @@ const DASH := 4
 const INTERACT := 8
 ## Shooting (held), separate from the melee PRIMARY (owner, 2026-10-07).
 const SHOOT := 16
-## v0.3.5 K: the Vent button (owner F1) and the Skill button (owner F18).
+## The Vent button and the Skill button.
 const VENT := 32
 const SKILL := 64
-## `pick` values (v0.3.0 E): no pick this tick, or cancel the open altar/chest choice. 1..3 take that card.
+## `pick` values: no pick this tick, or cancel the open altar/chest choice. 1..3 take that card.
 const PICK_NONE := 0
 const PICK_CANCEL := -1
 ## v0.5.0 SH, while the shop is open: 1..4 buy that card, the heal or the reroll; PICK_CANCEL closes the shop.
-## v0.10.5 W3-O9: 22 (the curse lift) and 100 and up (selling) are retired; the shop refuses them.
+## 22 (the curse lift) and 100 and up (selling) are retired; the shop refuses them.
 const PICK_SHOP_HEAL := 20
 const PICK_SHOP_REROLL := 21
-## v0.6.0 MX2 (BuildSlots): while a swap choice is open (a modifier offered with every slot full), replace held
-## modifier slot n (PICK_SWAP_BASE + n; v0.6.5 WN1: n = 0..7, the wand grows to 8), or skip it.
+## BuildSlots: while a swap choice is open (a modifier offered with every slot full), replace held
+## modifier slot n (PICK_SWAP_BASE + n; n = 0..7, the wand grows to 8), or skip it.
 const PICK_SWAP_BASE := 30
 const PICK_SWAP_SKIP := 39
-## v0.6.5 WN1 (Wand): move the wand's card in slot `from` to slot `to` (the cards between shift by one), at any tick:
+## Wand: move the wand's card in slot `from` to slot `to` (the cards between shift by one), at any tick:
 ## PICK_WAND_MOVE_BASE + from × WAND_MOVE_STRIDE + to, from and to in 0..WAND_MOVE_STRIDE − 1 (wand_move()).
 const PICK_WAND_MOVE_BASE := 1000
 const WAND_MOVE_STRIDE := 16
@@ -37,11 +37,11 @@ var aim_dist_cm := 0
 var held := 0
 ## Buttons pressed since the previous tick (each delivered once).
 var pressed := 0
-## The 3-card pick (v0.3.0 E): PICK_NONE, 1..3 (take that card), or PICK_CANCEL. Delivered once, like a press.
+## The 3-card pick: PICK_NONE, 1..3 (take that card), or PICK_CANCEL. Delivered once, like a press.
 var pick := PICK_NONE
 
 
-## v0.6.5 WN1: the pick value that moves the wand's card in slot `from` to slot `to`.
+## The pick value that moves the wand's card in slot `from` to slot `to`.
 static func wand_move(from: int, to: int) -> int:
 	return PICK_WAND_MOVE_BASE + from * WAND_MOVE_STRIDE + to
 

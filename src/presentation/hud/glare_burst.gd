@@ -1,6 +1,6 @@
 class_name GlareBurst
 extends Node2D
-## v0.10.5 W3-O15 (owner 2026-11-04: "a glare kind of particle effect more than a burn"): the sparkles and streaks of
+## The sparkles and streaks of
 ## light that fly off a card as it dissolves (CardFx.set_burn). A small particle system drawn by hand and driven by the
 ## dissolve's own progress (`progress` 0..1, set from the pick panel's outro clock), not by a clock of its own: the
 ## same progress always draws the same frame, and it never decides anything (EI-07). Additive, moon-blue and silver;

@@ -23,7 +23,7 @@ const OPEN: Array[StringName] = [&"depths", &"heat", &"wand", &"shards"]
 
 
 func _catalog() -> CodexCatalog:
-	return CodexCatalog.build(ContentRepository.load_all())
+	return CodexCatalog.build(SharedContent.repo())
 
 
 func test_the_lore_page_lists_nine_entries_in_order() -> void:

@@ -1,6 +1,6 @@
 class_name CardFlights
 extends Control
-## v0.8.0 N8 (owner O62, "when it's picked, its icon flies to its slot on the HUD"): the layer the picked cards'
+## The layer the picked cards'
 ## icons fly over (CardFly), and where each lands: the HUD slot the card went to, read from the sim after the take
 ## (EI-07: it only reads):
 ## - an ability card: its ability square when it has one (Blink, Aegis; AbilitySquares), else the HP plate;

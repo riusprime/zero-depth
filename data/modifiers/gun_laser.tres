@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=11 format=3]
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
 [ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
@@ -35,7 +35,7 @@ script = ExtResource("2_op")
 op = 0
 stage = 5
 field = &"period_seconds"
-value = 0.1
+value = 3.0
 
 [sub_resource type="Resource" id="Op_6"]
 script = ExtResource("2_op")
@@ -52,18 +52,11 @@ stage = 5
 field = &"rate_scale_permille"
 value = 500.0
 
-[sub_resource type="Resource" id="Op_8"]
-script = ExtResource("2_op")
-op = 0
-stage = 3
-field = &"move_permille"
-value = 750.0
-
 [resource]
 script = ExtResource("1_mod")
 family = &"projectile"
 rarity = 1
 target = PackedStringArray("weapon", "projectile")
 stage = 0
-ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2"), SubResource("Op_3"), SubResource("Op_4"), SubResource("Op_5"), SubResource("Op_6"), SubResource("Op_7"), SubResource("Op_8")])
+ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2"), SubResource("Op_3"), SubResource("Op_4"), SubResource("Op_5"), SubResource("Op_6"), SubResource("Op_7")])
 id = &"gun_laser"

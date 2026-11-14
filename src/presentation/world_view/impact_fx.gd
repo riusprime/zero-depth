@@ -17,15 +17,15 @@ extends RefCounted
 ## THIN of it; every piece goes through VfxCore's pools and its frame cap (MAX_SPRITES). The Options "Effects
 ## density" scales the pieces (VfxCore.density, set by the attack forms' canvas every frame: low 0.25). Starting
 ## values.
-## v0.8.0 GF3 (owner O22: the Blade gets the Gun's treatment): a slash's impact is its own: a cut flash drawn along the
+## A slash's impact is its own: a cut flash drawn along the
 ## slash (the swing's tangent where it struck: the blade's way across the body; a thrust's along its aim) and sparks
 ## thrown along that tangent, not the bolt's spray; at SLASH strength (at least a bolt's: the 0.6 share is gone), the
 ## finisher's FINISHER_MULT bigger; the same budget, merging and pools. Its flinch (on_hit's return) is stronger than
 ## a bolt's (FLINCH_SLASH) and knocks the pose away from the swing (HitFeel, AvatarBase.flinch's knock).
 
-## v0.10.0 VX1: a bolt's and a slash's impact are the pack's scenes (false: the old sprites, for before/after shots).
+## A bolt's and a slash's impact are the pack's scenes (false: the old sprites, for before/after shots).
 const PACK_HITS := true
-## v0.10.5 W3-S4 (owner F10: "approximately 0.2 seconds"; was 18): an impact's sprites are gone this many ticks after
+## An impact's sprites are gone this many ticks after
 ## its hit (the pack's scenes: PackFx.SHORT).
 const LIFE_TICKS := 13.0
 const MAX_LIVE := 32
@@ -38,20 +38,20 @@ const BOLT := 0
 const SLASH := 1
 const OTHER := 2
 const STRENGTH := [1.0, 1.1, 0.45]
-## v0.8.0 GF3: the finisher's slash impact is this much bigger; a slash's flinch strength and knock (a bolt's: 1, 0).
+## The finisher's slash impact is this much bigger; a slash's flinch strength and knock (a bolt's: 1, 0).
 const FINISHER_MULT := 1.3
 const FLINCH_SLASH := 1.35
 const KNOCK_SLASH := 0.8
 const KNOCK_FINISHER := 1.0
-## v0.8.0 GF3: a slash's sparks along its tangent at strength 1 and full density, and the cut's half-length (m).
+## A slash's sparks along its tangent at strength 1 and full density, and the cut's half-length (m).
 const SLASH_SPARKS := 13
 const CUT_HALF_M := 0.9
-## v0.8.0 GF3: the fixed iso camera's direction on the sim plane (IsoRig: yaw 45 degrees). A slash's cut is drawn on
+## The fixed iso camera's direction on the sim plane (IsoRig: yaw 45 degrees). A slash's cut is drawn on
 ## the struck body's side between the blade's way in and the camera (CAM_SIDE of the way to the camera), so the body
 ## doesn't hide it.
 const CAM := Vector2(0.70710678, -0.70710678)
 const CAM_SIDE := 0.65
-## v0.8.0 GF3: how far out (in body radii) the cut is drawn: the models stand a little outside their sim radius.
+## How far out (in body radii) the cut is drawn: the models stand a little outside their sim radius.
 const CAM_OUT := 1.35
 ## A crit's impact is this much bigger.
 const CRIT_MULT := 1.25
@@ -89,7 +89,7 @@ func live() -> int:
 
 
 ## The impact of DAMAGE event `e` (the player's, on an enemy): records it and returns [direction on the sim plane
-## (away from the hit), strength, knock (0..1)] for the flinch. v0.8.0 GF3: a slash's direction leans along the
+## (away from the hit), strength, knock (0..1)] for the flinch. a slash's direction leans along the
 ## swing (away from the blade's way), its strength FLINCH_SLASH and its knock KNOCK_SLASH (the finisher's more).
 func on_hit(reader: WorldReader, e: SimEvent) -> Array:
 	_check_build(reader)
@@ -118,7 +118,7 @@ func on_hit(reader: WorldReader, e: SimEvent) -> Array:
 		fx = _key_kind(String(bolt[1]))
 	elif kind == SLASH:
 		c = _key_color(reader, "#melee", reader.step_attack_id())
-		fx = _key_kind("#melee:" + String(reader.step_attack_id()))  # VX1: the cut's pack scene is the element's
+		fx = _key_kind("#melee:" + String(reader.step_attack_id()))  # The cut's pack scene is the element's
 	var crit := CRIT_MULT if e.tags & SimEvent.TAG_CRIT else 1.0
 	var s: float = STRENGTH[kind] * crit
 	var y := BOLT_Y if kind == BOLT else SLASH_Y
@@ -140,7 +140,7 @@ func on_hit(reader: WorldReader, e: SimEvent) -> Array:
 	return [away, FLINCH_SLASH * crit, KNOCK_FINISHER if fin else KNOCK_SLASH]
 
 
-## v0.8.0 GF3: the way the blade crosses a body at `radial` (unit, hero -> body) for a swing's motion: a slash's
+## The way the blade crosses a body at `radial` (unit, hero -> body) for a swing's motion: a slash's
 ## tangent (right-to-left turns the sim angle up, left-to-right down; the spin turns up), a thrust's along its aim.
 static func slash_tangent(motion: int, radial: Vector2) -> Vector2:
 	match motion:
@@ -261,7 +261,7 @@ func _draw_one(layer: VfxCore, imp: Array, u: float, dn: float) -> int:
 	if kind == SLASH:
 		return _draw_slash(layer, imp, u, dn)
 	var fx: StringName = imp[8] if imp.size() > 8 else &""
-	# v0.10.0 VX1 (R14, R15): a bolt's flash, element extra and puff are the pack's hit (heavy: impact) scene.
+	# A bolt's flash, element extra and puff are the pack's hit (heavy: impact) scene.
 	var packed := PACK_HITS and kind == BOLT and HitPack.hit(layer, fx, at, u, sd, s)
 	# The flash where it hit.
 	if u < 0.35 and not packed:
@@ -336,7 +336,7 @@ static func spray_at(imp: Array, j: int, u: float) -> Vector3:
 	return far + v * reach * t + Vector3(0, -0.7 * u * u, 0)
 
 
-## v0.8.0 GF3: one slash impact at u (0..1), `dn` its density: a cut flash along the slash (a bright streak drawn out
+## One slash impact at u (0..1), `dn` its density: a cut flash along the slash (a bright streak drawn out
 ## across the body from the hit, then fading, over a hot spark), and sparks thrown on along the tangent (spread a
 ## little, lifted, falling), a couple of chips back off the body. The pieces it drew.
 func _draw_slash(layer: VfxCore, imp: Array, u: float, dn: float) -> int:
@@ -348,7 +348,7 @@ func _draw_slash(layer: VfxCore, imp: Array, u: float, dn: float) -> int:
 	var hot := Color(c.lerp(Color.WHITE, 0.5) * 2.6, 1.0)
 	var n := 0
 	var fx: StringName = imp[8] if imp.size() > 8 else &""
-	# v0.10.0 VX1 (R16): the cut and its flash are the pack's slash scene, turned to the slash.
+	# The cut and its flash are the pack's slash scene, turned to the slash.
 	var packed := PACK_HITS and HitPack.slash(layer, fx, at, tan, u, sd, s)
 	# The cut: drawn out along the slash in its first moment, then fading where it lies.
 	if u < 0.5 and not packed:
@@ -383,7 +383,7 @@ func _draw_slash(layer: VfxCore, imp: Array, u: float, dn: float) -> int:
 	return n
 
 
-## v0.8.0 GF3: where slash spark j of impact `imp` is at u (0..1): out of the hit point along the slash's tangent,
+## Where slash spark j of impact `imp` is at u (0..1): out of the hit point along the slash's tangent,
 ## spread a little to the sides and up, dropping as it slows.
 static func slash_spark_at(imp: Array, j: int, u: float) -> Vector3:
 	var at: Vector3 = imp[0]

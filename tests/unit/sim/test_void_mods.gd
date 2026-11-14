@@ -429,27 +429,115 @@ func test_no_hero_has_more_than_ten_live_voids_the_oldest_ending_first() -> void
 	assert_lte(rows, VoidMods.ROWS_MAX)
 
 
-func test_the_cap_ends_the_oldest_first() -> void:
+## v0.11.0 S1 (B1): the minis and echoes go first (oldest first), then the oldest thrown voids.
+func test_the_cap_ends_the_minis_first_then_the_oldest() -> void:
 	var w := _world(
 		[&"gun_rapid_fire", &"gun_backfire", &"split_shot", &"gun_echo", &"gun_ring", &"gun_twin"]
 	)
-	var prev := {}  # id -> its life left a tick ago
+	var prev := {}  # id -> [its life left a tick ago, a mini or echo]
 	var cut := 0
 	for k in 300:
 		W.run(w, 1, 0, W.S)
 		var now := {}
 		for i in _voids(w):
-			now[w.projectiles.ids[i]] = w.projectiles.life[i]
+			now[w.projectiles.ids[i]] = [w.projectiles.life[i], _is_mini(w, i)]
 		for id: int in prev:
-			if not now.has(id) and prev[id] > 1:  # gone with life left: the cap ended it
-				cut += 1
-				for older: int in prev:
-					if older < id:
-						assert_false(
-							now.has(older), "tick %d: older void %d went first" % [w.tick, older]
-						)
+			if now.has(id) or prev[id][0] <= 1:
+				continue
+			cut += 1  # gone with life left: the cap ended it
+			for other: int in prev:
+				if not now.has(other):
+					continue
+				assert_false(
+					prev[other][1] and not prev[id][1], "tick %d: a mini outlived a main" % w.tick
+				)
+				if prev[other][1] == prev[id][1]:
+					assert_gt(other, id, "tick %d: older void %d went first" % [w.tick, other])
 		prev = now
 	assert_gt(cut, 0, "the cap did end some")
+
+
+## A void from Echo or Split (its row starts no follow-ups).
+func _is_mini(w: World, i: int) -> bool:
+	var k := VoidMods.row_of(w.mx, w.projectiles.ids[i])
+	return k >= 0 and w.mx.vm_kind[k] & VoidMods.F_NOFOLLOW != 0
+
+
+## v0.11.0 S1 (B1): Twin Lv 5 + Split Lv 4 held 6 s at the cap: no void jumps, no thrown void ends early, each
+## natural end opens mini_count minis unless the cap is full, and a cap end opens none.
+func test_s1_twin_and_split_at_the_cap_never_jump_or_cut_a_thrown_void() -> void:
+	var w := _world([&"gun_twin", &"split_shot"])
+	CardLevels.set_level(w, W.item(w, &"gun_twin"), 5)
+	CardLevels.set_level(w, W.item(w, &"split_shot"), 4)
+	var n := VoidMods.mini_count(Modifiers.bolt(w))
+	var sp := VoidMods.speed(w, Modifiers.bolt(w))
+	var prev := {}  # id -> [pos, life left, a mini]
+	var ends := 0
+	var minis := 0
+	var full := 0
+	for k in 360:
+		W.run(w, 1, 0, W.S)
+		var now := {}
+		var fresh := 0
+		for i in _voids(w):
+			var id := w.projectiles.ids[i]
+			var at := Vector2(w.projectiles.pos_x[i], w.projectiles.pos_y[i])
+			now[id] = [at, w.projectiles.life[i], _is_mini(w, i)]
+			if prev.has(id):
+				assert_lte(
+					at.distance_to(prev[id][0]),
+					sp + 0.001,
+					"tick %d: void %d jumped" % [w.tick, id]
+				)
+			elif now[id][2]:
+				fresh += 1
+		var ended := 0
+		for id: int in prev:
+			if now.has(id) or prev[id][2]:
+				continue
+			assert_lte(prev[id][1], 1, "tick %d: thrown void %d ended early" % [w.tick, id])
+			ended += 1
+		assert_lte(now.size(), 10, "tick %d: live voids" % w.tick)
+		if now.size() >= 10:
+			full += 1
+		else:
+			assert_eq(fresh, n * ended, "tick %d: minis = mini_count x natural ends" % w.tick)
+		assert_lte(fresh, n * ended, "tick %d: no minis without a natural end" % w.tick)
+		ends += ended
+		minis += fresh
+		prev = now
+	assert_gt(ends, 10, "thrown voids ended over 6 s")
+	assert_gt(minis, 0, "minis opened")
+	gut.p(
+		(
+			"S1: %d natural ends, %d minis opened (of %d), cap full on %d ticks"
+			% [ends, minis, n * ends, full]
+		)
+	)
+
+
+## v0.11.0 S1 (B1): with Twin, each Mine lane stops on its own line, as far out as the aim point.
+func test_s1_twin_mine_stops_each_lane_on_its_own_line() -> void:
+	var w := _world([&"gun_mine", &"gun_twin"])
+	W.run(w, 1, 0, W.S)
+	var ids := []
+	var side := {}
+	for i in _voids(w):
+		ids.append(w.projectiles.ids[i])
+		side[w.projectiles.ids[i]] = w.projectiles.pos_y[i]
+	assert_eq(ids.size(), 2, "two lanes")
+	if ids.size() < 2:
+		return
+	assert_gt(absf(side[ids[0]] - side[ids[1]]), 0.1, "the lanes are side by side")
+	for k in 30:
+		W.run(w, 1, 0, 0)
+		for id: int in ids:
+			var i := _index_of(w, id)
+			assert_almost_eq(w.projectiles.pos_y[i], side[id], 0.001, "tick %d: on its lane" % k)
+	for id: int in ids:
+		var i := _index_of(w, id)
+		assert_eq(w.projectiles.vel_x[i], 0.0, "held")
+		assert_almost_eq(w.projectiles.pos_x[i], 3.0, 0.001, "the aim point's distance")
 
 
 func test_a_card_void_is_deterministic_and_its_rows_round_trip_a_snapshot() -> void:

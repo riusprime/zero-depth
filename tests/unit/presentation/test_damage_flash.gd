@@ -95,13 +95,13 @@ func test_kill_shards_reuse_their_material() -> void:
 	feel.sync(reader)
 	var mats := {}
 	for c in feel.get_children():
-		mats[(c as MeshInstance3D).material_override] = true
+		mats[(c as GeometryInstance3D).material_override] = true
 	assert_eq(mats.size(), 1, "one burst, one material")
 	Damage.hit(w, 2, 9999, 2, 2, 2, 0, Vector2.ZERO, Vector2(-1.2, 0))
 	feel.sync(reader)
-	assert_gt(feel.get_child_count(), HitFeel.SHARDS, "a second burst")
+	assert_eq(feel.spark_count(), HitFeel.SHARDS * 2, "a second burst")
 	for c in feel.get_children():
-		mats[(c as MeshInstance3D).material_override] = true
+		mats[(c as GeometryInstance3D).material_override] = true
 	assert_eq(mats.size(), 1, "a second burst of the same colour shares it")
 
 
@@ -109,7 +109,7 @@ func test_enemy_models_are_built_flashable() -> void:
 	var avatars: Array[Node3D] = [ChargerAvatar.new(), NeedleAvatar.new(), WardenAvatar.new()]
 	for avatar in avatars:
 		var name: String = avatar.get_script().get_global_name()
-		avatar.setup(Color.BLACK, &"outline")
+		avatar.setup()
 		if avatar is ChargerAvatar:  # v0.8.0 HR: shared materials, the flash an instance uniform per piece
 			assert_gt((avatar as ChargerAvatar).hit_pieces().size(), 0, name)
 			assert_eq((avatar as ChargerAvatar).hit_look(), EnemyLooks.HIT_OFF, name)

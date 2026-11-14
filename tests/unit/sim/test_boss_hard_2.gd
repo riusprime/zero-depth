@@ -35,15 +35,15 @@ func _step_at(w: World, at: Vector2) -> void:
 ## B4 ---------------------------------------------------------------------------------------------------------------
 
 
-func test_the_focus_beam_burns_for_1_2_s_and_turns_at_40_degrees_a_second() -> void:
+func test_the_focus_beam_burns_for_1_2_s_and_never_turns() -> void:
+	# v0.11.0 F4 (owner: the beams follow too aggressively): turn_dps 0, a 1.5 s telegraph (0.7 s tracking, 0.8 s locked)
 	var t := _table(&"hive_lens")
 	for id: StringName in [&"focus_beam", &"focus_beam_3"]:
 		var atk := _atk(t, id)
 		assert_eq(atk.active_ticks, 72, "%s: burns 1.2 s (was one 0.3 s sweep)" % id)
-		assert_eq(
-			atk.beam_turn_milli, 7585, "%s: 40 degrees a second, in 1/4096 turns x 1000 a tick" % id
-		)
-		assert_eq(atk.windup_ticks, 66, "%s: the 1.1 s telegraph" % id)
+		assert_true(atk.beam_burns, "%s: it burns its whole active time" % id)
+		assert_eq(atk.beam_turn_milli, 0, "%s: and holds still while it does" % id)
+		assert_eq(atk.windup_ticks, 90, "%s: the 1.5 s telegraph" % id)
 		assert_eq(atk.lock_ticks, 48, "%s: and its 0.8 s lock stay" % id)
 	assert_eq(_atk(t, &"focus_beam").damage, 50)
 	assert_eq(_atk(t, &"focus_beam_3").damage, 34)
@@ -70,41 +70,27 @@ func _beam(from: Vector2, path: Callable, id: StringName = &"focus_beam") -> Arr
 	return [angles, LONG - w.actors.hp[0], w, aid]
 
 
-func test_the_beam_turns_toward_the_hero_never_faster_than_the_rate() -> void:
+func test_the_beam_holds_still_once_it_locks() -> void:
+	# v0.11.0 F4: whatever the hero does after the lock, the beam stays on the angle it locked at.
 	var r := _beam(Vector2(6, 0), func(_t: int) -> Vector2: return Vector2(0, 6))
 	var angles: Array = r[0]
 	assert_gte(angles.size(), 60, "it burns")
-	var a0: int = angles[0]
-	assert_lte(Kin.angle_diff(a0, 0), 8, "it starts where it locked (at the hero)")
-	var worst := 0
 	for k in range(1, angles.size()):
-		worst = maxi(worst, Kin.angle_diff(angles[k], angles[k - 1]))
-	assert_lte(worst, 8, "at most 8 units (45 degrees a second at a tick's rounding) a tick")
-	var total := Kin.angle_diff(angles[angles.size() - 1], a0)
-	assert_between(total, 400, 560, "about 40 degrees a second over its 1.2 s: 0.89 x 546")
-	assert_eq(
-		(angles[angles.size() - 1] - a0 + 4096) & 4095 < 2048,
-		true,
-		"turning toward +y, where the hero is"
-	)
+		assert_eq(angles[k], angles[0], "tick %d: not turned" % k)
+	assert_lte(Kin.angle_diff(angles[0], 0), 8, "it fired where it locked (at the hero)")
 
 
-func test_stepping_aside_is_not_enough_but_circling_close_is() -> void:
+func test_stepping_aside_after_the_lock_dodges_it() -> void:
 	var stepped := _beam(Vector2(6, 0), func(_t: int) -> Vector2: return Vector2(6, 2.0))
-	assert_gt(stepped[1], 0, "2 m to the side and standing there: the beam turns onto the hero")
+	assert_eq(stepped[1], 0, "2 m to the side after the lock: never hit")
 	var circler := func(t: int) -> Vector2:
-		# 6 m/s round the boss at 4 m (86 degrees a second): twice the beam's turn
 		var a := 6.0 / 4.0 / 60.0 * t
 		return Vector2(cos(a), sin(a)) * 4.0
-	var circled := _beam(Vector2(4, 0), circler)
-	assert_eq(circled[1], 0, "circling it at 4 m is never hit")
+	assert_eq(_beam(Vector2(4, 0), circler)[1], 0, "circling it at 4 m is never hit")
 	var far := func(t: int) -> Vector2:
-		var a := 3.0 / 11.0 / 60.0 * t  # 3 m/s round it at 11 m: 16 degrees a second, a stroll
+		var a := 3.0 / 11.0 / 60.0 * t
 		return Vector2(cos(a), sin(a)) * 11.0
-	var far_run := _beam(Vector2(11, 0), far)
-	assert_gt(
-		far_run[1], 0, "a stroll round it is caught: the beam turns faster than a slow walker"
-	)
+	assert_eq(_beam(Vector2(11, 0), far)[1], 0, "a stroll round it at 11 m is never hit")
 
 
 func test_a_burning_beam_hits_each_attack_once_for_its_damage() -> void:
@@ -112,7 +98,7 @@ func test_a_burning_beam_hits_each_attack_once_for_its_damage() -> void:
 	assert_eq(r[1], 50, "standing in it costs one hit of 50, as before")
 
 
-func test_the_three_beams_of_phase_3_turn_together() -> void:
+func test_the_three_beams_of_phase_3_hold_together() -> void:
 	var r := _beam(Vector2(6, 0), func(_t: int) -> Vector2: return Vector2(0, 6), &"focus_beam_3")
 	var w: World = r[2]
 	var i := w.actors.index_of(r[3])
@@ -132,12 +118,38 @@ func test_the_mortar_grid_leaves_two_safe_cells_and_warns_the_swap_0_6_s() -> vo
 	for id: StringName in [&"mortar_grid", &"mortar_grid_3"]:
 		var atk := _atk(t, id)
 		assert_eq(atk.safe_cells, 2, "%s: two safe cells" % id)
-		assert_eq(atk.lock_ticks, 36, "%s: the later volley (the swap) shows 0.6 s ahead" % id)
+		assert_eq(atk.lock_ticks, 36, "%s: the lock (first volley) is 0.6 s" % id)
 		assert_gte(atk.lock_ticks, MIN_TICKS)
 		assert_eq(atk.damage, 30, "%s: damage unchanged" % id)
 		assert_lt(atk.lock_ticks, atk.mark_gap_ticks, "%s: shown after the last volley struck" % id)
 	assert_eq(_atk(t, &"mortar_grid").volleys, 2)
 	assert_eq(_atk(t, &"mortar_grid_3").volleys, 3)
+
+
+func test_the_second_volley_stays_hidden_until_the_first_lands_then_shows_1_2_s() -> void:
+	# v0.11.0 S3 (owner Q3): a later volley is hidden until the volley before it strikes, then locked for one gap.
+	var t := _table(&"siege_engine")
+	for id: StringName in [&"mortar_grid", &"mortar_grid_3"]:
+		var atk := _atk(t, id)
+		assert_eq(atk.mark_gap_ticks, 72, "%s: 1.2 s between volleys" % id)
+		var first := atk.windup_ticks
+		for k in range(1, atk.volleys):
+			var strike := k * atk.mark_gap_ticks + atk.windup_ticks
+			for tick in range(0, strike - atk.mark_gap_ticks):
+				assert_eq(
+					BossDodge.grid_state(atk, k, tick), -1, "%s v%d hidden at %d" % [id, k, tick]
+				)
+			for tick in range(strike - atk.mark_gap_ticks, strike):
+				assert_gte(
+					BossDodge.grid_state(atk, k, tick), 1, "%s v%d shown at %d" % [id, k, tick]
+				)
+			assert_eq(BossDodge.grid_state(atk, k, strike), 2, "%s v%d strikes" % [id, k])
+		assert_eq(
+			BossDodge.grid_state(atk, 1, first - 1),
+			-1,
+			"%s: v1 hidden the tick before v0 lands" % id
+		)
+		assert_eq(BossDodge.grid_state(atk, 1, first), 1, "%s: v1 shows the tick v0 lands" % id)
 
 
 func _grid(seed_value := 11, player_at := Vector2(7, 0), id := &"mortar_grid") -> Array:
@@ -350,8 +362,11 @@ func test_a_hard_spells_telegraph_and_lock_are_at_least_0_55_s() -> void:
 
 func test_the_hard_params_are_checked() -> void:
 	var h := _def("hive_lens")
-	h.attack(&"focus_beam").shape_params["turn_dps"] = 0.0
+	h.attack(&"focus_beam").shape_params["turn_dps"] = -1.0
 	assert_has(_codes(h), &"range")
+	h = _def("hive_lens")  # v0.11.0 F4: 0 is allowed, a burning beam that never turns
+	h.attack(&"focus_beam").shape_params["turn_dps"] = 0.0
+	assert_does_not_have(_codes(h), &"range", "turn_dps 0 is a beam that holds still")
 	h = _def("hive_lens")
 	h.attack(&"focus_beam").active_seconds = 0.3
 	assert_has(_codes(h), &"duration", "a turning beam burns")

@@ -19,7 +19,7 @@ static func has_gun(w: World) -> bool:
 	return (w.player.weapons & PlayerTable.WEAPON_GUN) != 0
 
 
-## v0.8.0 N1 (owner O43, D39): the damage the hero takes, per mille, from the held weapon: a Blade run holds the
+## The damage the hero takes, per mille, from the held weapon: a Blade run holds the
 ## Blade the whole run and takes its build's damage_taken_permille (750); a one-weapon run takes its build's value
 ## (the Gun's 1000), a kernel world with both weapons 1000.
 static func taken_permille(w: World) -> int:
@@ -46,10 +46,10 @@ static func melee_damage(w: World, base: int) -> int:
 	return _exact_share(w, base, melee_permille(w), &"melee_residue")
 
 
-## v0.10.5 O13: the swing's damage factor (per mille; v0.4.0: Combo Sword level), read only (WandForecast).
+## The swing's damage factor (per mille; Combo Sword level), read only (WandForecast).
 static func melee_permille(w: World) -> int:
 	var pm := w.player.melee_damage_permille * Abilities.weapon_permille(w) / 1000
-	return pm * CardLevels.weapon_overlevel_permille(w) / 1000  # v0.10.5 W3-P3: overlevels
+	return pm * CardLevels.weapon_overlevel_permille(w) / 1000  # Overlevels
 
 
 ## A shot's damage per bolt under the build (the bolt remainder carries over, once per shot).
@@ -57,10 +57,10 @@ static func bolt_damage(w: World, base: int) -> int:
 	return _exact_share(w, base, bolt_permille(w), &"bolt_residue")
 
 
-## v0.10.5 O13: the shot's damage factor (per mille; v0.4.0: Pulse Gun level), read only (WandForecast).
+## The shot's damage factor (per mille; Pulse Gun level), read only (WandForecast).
 static func bolt_permille(w: World) -> int:
 	var pm := w.player.bolt_damage_permille * Abilities.weapon_permille(w) / 1000
-	return pm * CardLevels.weapon_overlevel_permille(w) / 1000  # v0.10.5 W3-P3: overlevels
+	return pm * CardLevels.weapon_overlevel_permille(w) / 1000  # Overlevels
 
 
 ## `base` x `pm` per mille, exact on average: the remainder in build_state field `residue` carries to the next
@@ -96,7 +96,7 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	for v in [s.melee_residue, s.bolt_residue, s.combat_tick, s.regen_acc, s.regen_tick]:
 		h.add_int(v)
 	h.add_int(w.regen_bonus_permille)
-	if t.damage_taken_permille != 1000:  # v0.8.0 N1 (D39): only a build that changes it hashes it
+	if t.damage_taken_permille != 1000:  # Only a build that changes it hashes it
 		h.add_int(t.damage_taken_permille)
 
 

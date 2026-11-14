@@ -1,6 +1,6 @@
 class_name CollectibleBook
 extends RefCounted
-## v0.9.0 CL (owner: "collectibles are fine", COLLECTIBLES.md as drafted; PLAN W38-W40, W43, W47): the Rune Archive's
+## The Rune Archive's
 ## collectibles (CollectibleDefinition, data/collectibles/) and the profile's record of them, the `collectibles`
 ## section of user://profile.json (ProfileStore version 3): one key per collectible found, its id, holding the run
 ## seed it was found in (0 for the hub's). HubFlags' `count:collectibles:N` counts the keys (the floor runes, the north
@@ -40,14 +40,6 @@ static func colors() -> Dictionary:
 		for d in defs(ContentRepository.load_all()):
 			_colors[d.id] = d.color
 	return _colors
-
-
-## The collectible whose source is `source` (the first in shelf order), or null.
-static func of_source(repo: ContentRepository, source: StringName) -> CollectibleDefinition:
-	for d in defs(repo):
-		if d.source == source:
-			return d
-	return null
 
 
 # --- The profile ---------------------------------------------------------------------------------------------------

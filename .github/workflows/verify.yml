@@ -14,9 +14,13 @@ on:
 
 env:
   GODOT_VERSION: "4.7.2"
+  # v0.11.1 Step 4 (owner L8): the full suite runs every seed loop at its full 1,000 (tests/support/seeds.gd)
+  ZD_FULL_SEEDS: "1"
 
 jobs:
-  checks:
+  # v0.11.1 Step 9: lint runs first, so a format error stops the run before any shard starts. The assets are
+  # imported once here and cached; the checks job and the six shards restore them instead of importing cold.
+  prepare:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,13 +48,106 @@ jobs:
           godot --version
           godot --version | grep -q "^${GODOT_VERSION}.stable"
 
-      - name: Import (fails on import errors)
+      - name: Cache the imported assets
+        uses: actions/cache@v4
+        with:
+          path: |
+            .godot/imported
+            .godot/uid_cache.bin
+          key: godot-import-${{ env.GODOT_VERSION }}-${{ hashFiles('assets/**', '**/*.import', 'project.godot') }}
+          restore-keys: godot-import-${{ env.GODOT_VERSION }}-
+
+      # The native library (native/README.md), built once here for the checks job and the gut shards. It is required
+      # (the sim runs only there): a failed build or load fails this step, with its log uploaded, before any shard
+      # starts. Saved only when it built and loaded.
+      - name: Restore the native library built from these exact sources
+        id: native-bin
+        uses: actions/cache@v4
+        with:
+          path: |
+            native/bin
+            native/zd_native.gdextension
+          key: native-linux-${{ hashFiles('native/GODOT_CPP_COMMIT', 'native/api/extension_api.json', 'native/SConstruct', 'native/zd_native.gdextension.in', 'native/src/**', 'scripts/native/*.sh') }}
+
+      - name: Cache the compiled bindings (SCONS_CACHE)
+        if: steps.native-bin.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/zero-depth/scons
+          key: native-scons-linux-${{ hashFiles('native/GODOT_CPP_COMMIT', 'native/api/extension_api.json') }}-${{ hashFiles('native/src/**', 'native/SConstruct') }}
+          restore-keys: native-scons-linux-${{ hashFiles('native/GODOT_CPP_COMMIT', 'native/api/extension_api.json') }}-
+
+      - name: Build the native library (Linux, gcc, debug and release) and check that it loads
+        id: native
+        if: steps.native-bin.outputs.cache-hit != 'true'
+        run: |
+          pip install -r native/requirements.txt
+          bash scripts/ci/native_lib.sh all
+
+      - name: Import (fails on import errors; twice, the first registers the library)
         run: |
           mkdir -p build
+          godot --headless --path . --editor --import --quit > build/import_1.log 2>&1 || true
           godot --headless --path . --editor --import --quit 2>&1 | tee build/import.log || true
           if sed -E 's/\x1B\[[0-9;]*[mK]//g' build/import.log | grep -E -q "^(ERROR|SCRIPT ERROR)"; then
             echo "Import reported errors"; exit 1
           fi
+
+      - name: Upload the native build log on failure
+        if: failure() && steps.native.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 14
+          name: native-build-logs
+          path: |
+            build/native_build.log
+            build/native_import.log
+
+  # The checks job needs the native library like the shards (the sim runs only there): it restores the prepare
+  # job's build, debug and release, and fails at once when it is missing.
+  checks:
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+
+      - name: Restore the imported assets (saved by the prepare job)
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .godot/imported
+            .godot/uid_cache.bin
+          key: godot-import-${{ env.GODOT_VERSION }}-${{ hashFiles('assets/**', '**/*.import', 'project.godot') }}
+          restore-keys: godot-import-${{ env.GODOT_VERSION }}-
+
+      - name: Restore the native library (saved by the prepare job; required)
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: |
+            native/bin
+            native/zd_native.gdextension
+          key: native-linux-${{ hashFiles('native/GODOT_CPP_COMMIT', 'native/api/extension_api.json', 'native/SConstruct', 'native/zd_native.gdextension.in', 'native/src/**', 'scripts/native/*.sh') }}
+
+      - name: Register the library and import (fails on import errors)
+        env:
+          ZD_NATIVE_PREBUILT: "1"
+        run: |
+          bash scripts/native/ensure.sh debug
+          if sed -E 's/\x1B\[[0-9;]*[mK]//g' build/import.log | grep -E -q "^(ERROR|SCRIPT ERROR)"; then
+            echo "Import reported errors"; exit 1
+          fi
+
+      - name: Native fixtures (gcc, debug and release library against the recorded MSVC values)
+        run: |
+          godot --headless --path . -s scripts/checks/native_fixtures.gd
+          bash scripts/native/check_release.sh
 
       - name: Hitch probe (real time, no --fixed-fps)
         run: godot --headless --path . -s scripts/checks/hitch_probe.gd
@@ -82,6 +179,7 @@ jobs:
 
   gut:
     runs-on: ubuntu-latest
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
@@ -95,15 +193,38 @@ jobs:
           version: ${{ env.GODOT_VERSION }}
           use-dotnet: false
 
-      - name: Import (fails on import errors)
+      - name: Restore the imported assets (saved by the prepare job)
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .godot/imported
+            .godot/uid_cache.bin
+          key: godot-import-${{ env.GODOT_VERSION }}-${{ hashFiles('assets/**', '**/*.import', 'project.godot') }}
+          restore-keys: godot-import-${{ env.GODOT_VERSION }}-
+
+      - name: Restore the native library (saved by the prepare job; required)
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: |
+            native/bin
+            native/zd_native.gdextension
+          key: native-linux-${{ hashFiles('native/GODOT_CPP_COMMIT', 'native/api/extension_api.json', 'native/SConstruct', 'native/zd_native.gdextension.in', 'native/src/**', 'scripts/native/*.sh') }}
+
+      - name: Register the library and import (fails on import errors)
+        env:
+          ZD_NATIVE_PREBUILT: "1"
         run: |
-          mkdir -p build
-          godot --headless --path . --editor --import --quit 2>&1 | tee build/import.log || true
+          bash scripts/native/ensure.sh debug
           if sed -E 's/\x1B\[[0-9;]*[mK]//g' build/import.log | grep -E -q "^(ERROR|SCRIPT ERROR)"; then
             echo "Import reported errors"; exit 1
           fi
 
       - name: GUT shard ${{ matrix.shard }}
+        # The run stops before its first test, with the one error, if the library did not load
+        # (tests/support/native_required_hook.gd, res://.gutconfig.json)
+        env:
+          ZD_NATIVE_PREBUILT: "1"
         run: bash scripts/ci/gut_shard.sh ${{ matrix.shard }}
 
       - name: Upload the shard's log
@@ -118,15 +239,17 @@ jobs:
 
   verify:
     runs-on: ubuntu-latest
-    needs: [ checks, gut ]
+    needs: [ prepare, checks, gut ]
     if: always()
     steps:
       - uses: actions/checkout@v4
 
       - name: Every job passed
         run: |
-          echo "checks: ${{ needs.checks.result }}, gut: ${{ needs.gut.result }}"
-          [ "${{ needs.checks.result }}" = "success" ] && [ "${{ needs.gut.result }}" = "success" ]
+          echo "prepare: ${{ needs.prepare.result }}, checks: ${{ needs.checks.result }}, gut: ${{ needs.gut.result }}"
+          [ "${{ needs.prepare.result }}" = "success" ]
+          [ "${{ needs.checks.result }}" = "success" ]
+          [ "${{ needs.gut.result }}" = "success" ]
 
       - name: Download the shard logs
         uses: actions/download-artifact@v4

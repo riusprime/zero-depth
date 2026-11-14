@@ -17,7 +17,7 @@ const PHASE := Color(0.72, 0.5, 1.0, 0.3)
 const VENOM := Color(0.45, 0.95, 0.35, 0.95)
 const QUEUED := Color(0.72, 0.5, 1.0, 0.35)
 const POOL := 24
-## v0.10.0 VX5 (R40): the Aether Shell's barrier is the pack's forcefield (the sphere where its family is full); false:
+## The Aether Shell's barrier is the pack's forcefield (the sphere where its family is full); false:
 ## the sphere. The pack's scene is 2 m across; the shell's sphere is SHELL_R * 2.
 const PACK_SHELL := true
 const PACK_SHELL_SCALE := 1.1
@@ -97,7 +97,7 @@ func sync(reader: WorldReader) -> void:
 	shell.position = hero + Vector3(0, 0.9, 0)
 	_shell_mat.albedo_color = Color(SHELL, 0.6) if flash else SHELL
 	_hold = BossPackHold.of(self, _hold) if PACK_SHELL else null
-	if _hold != null:  # R40: the barrier is the pack's forcefield while it is up (the sphere still flashes on a hit)
+	if _hold != null:  # The barrier is the pack's forcefield while it is up (the sphere still flashes on a hit)
 		_hold.begin()
 		var field: Node3D = null
 		if bool(m["shell"]):

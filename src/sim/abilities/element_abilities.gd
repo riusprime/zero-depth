@@ -1,11 +1,11 @@
 class_name ElementAbilities
 extends RefCounted
-## The patches (v0.4.0 AB; v0.6.0 MX2: the ZONE form's runner): add_zone lights one for a spec; advance_fire puts
+## The patches (the ZONE form's runner): add_zone lights one for a spec; advance_fire puts
 ## them out and burns what stands in them. An enemy in a patch is hit at most once every period_ticks of that
 ## patch's spec (FIRE_HIT_TICKS without one), per patch kind, whatever patch of that kind it stands in; a field hits
 ## at most its spec's `count` enemies a tick. Each patch hit is its own root, the player's, and runs its spec
 ## (statuses, hooks: Attacks.land). fold_engines folds an owned ability's borrowed engine numbers into
-## World.item_mods (AbilityTable.engine). v0.10.5 O1 (owner L23): Arc Field, Frost Nova, Flame Trail and the
+## World.item_mods (AbilityTable.engine). Arc Field, Frost Nova, Flame Trail and the
 ## Napalm Drone and Superconductor combos are gone; their patch kinds keep their numbers (AbilityState.fire_kind).
 
 ## Fire patch kinds (AbilityState.fire_kind): Flame Trail's, Napalm Drone's, v0.6.0 MX2 Arc Field's shock field and
@@ -41,7 +41,7 @@ static func kind_of(spec: AttackSpec) -> int:
 
 ## v0.6.0 MX2, the ZONE runner (Attacks): a patch of `spec` at `at` (radius `r`, `life` ticks) dealing ctx.damage a
 ## hit, at ctx's hook level.
-## v0.9.0 XP (owner Q11: Fire's kill blast becomes burning ground; the PF budgets): a spec with an alive_max keeps at
+## A spec with an alive_max keeps at
 ## most that many of its patches alive. A new one within `r` of one already burning merges into it (that patch burns
 ## on, its life renewed to the new one's end); one past the cap with none near is not lit (one LIMIT event).
 static func add_zone(
@@ -58,7 +58,7 @@ static func add_zone(
 	s.fire_cap[k] = spec.count if spec.has_tag(&"field") else 0
 
 
-## v0.9.0 XP: whether a new patch of `spec` (an alive_max) may be lit at `at`: false when it merged into a patch of
+## Whether a new patch of `spec` (an alive_max) may be lit at `at`: false when it merged into a patch of
 ## the spec within `r` (renewed to `end`) or the spec's patches are at the cap (one LIMIT event).
 static func _zone_room(w: World, at: Vector2, r: float, end: int, spec: AttackSpec) -> bool:
 	var s := w.ab
@@ -89,7 +89,7 @@ static func add_fire(
 	s.fire_dmg.append(dmg)
 	s.fire_stacks.append(stacks)
 	s.fire_kind.append(kind)
-	s.fire_spec.append("")  # v0.6.0 MX2: add_zone names the spec
+	s.fire_spec.append("")  # add_zone names the spec
 	s.fire_depth.append(0)
 	s.fire_proc.append(100)
 	s.fire_cap.append(0)
@@ -102,11 +102,10 @@ static func _remove_fire(s: AbilityState, k: int) -> void:
 	s.fire_dmg.remove_at(k)
 	s.fire_stacks.remove_at(k)
 	s.fire_kind.remove_at(k)
-	if k < s.fire_spec.size():
-		s.fire_spec.remove_at(k)
-		s.fire_depth.remove_at(k)
-		s.fire_proc.remove_at(k)
-		s.fire_cap.remove_at(k)
+	s.fire_spec.remove_at(k)
+	s.fire_depth.remove_at(k)
+	s.fire_proc.remove_at(k)
+	s.fire_cap.remove_at(k)
 
 
 ## Tick phase 6: patches go out, then each hits the enemies standing in it (oldest patch first; an enemy is hit once
@@ -127,13 +126,13 @@ static func advance_fire(w: World) -> void:
 	var fire_gap := fire_hit_ticks(w)  # one value for every patch this tick (audit G-16)
 	for k in s.fire_pos.size():
 		var at := s.fire_pos[k]
-		var key := s.fire_spec[k] if k < s.fire_spec.size() else ""
+		var key := s.fire_spec[k]
 		var spec := book.find(key) if key != "" else null
 		var kind := s.fire_kind[k]
 		var gap := fire_gap
 		if spec != null and spec.period_ticks > 0:
 			gap = spec.period_ticks
-		var cap := s.fire_cap[k] if k < s.fire_cap.size() else 0
+		var cap := s.fire_cap[k]
 		var hit := 0
 		for i in w.enemies_near(at, s.fire_r[k]):
 			var mark := a.ids[i] * 4 + kind
@@ -145,7 +144,7 @@ static func advance_fire(w: World) -> void:
 			s.fire_ids.append(mark)
 			s.fire_next.append(w.tick + gap)
 			var root := w.take_root()
-			if spec == null:  # v0.10.5 O1: only Napalm Drone (gone) lit a patch without a spec
+			if spec == null:  # Only Napalm Drone (gone) lit a patch without a spec
 				continue
 			var ctx := AttackContext.make(
 				at, 0, s.fire_dmg[k], root, Attacks.lingering_tags(spec), spec.effect_id
@@ -180,14 +179,14 @@ static func fx(w: World) -> Dictionary:
 		"fire_r": s.fire_r,
 		"fire_kind": s.fire_kind,
 		"fire_left": left,
-		"rings": ModifierAbilities.rings_now(w),  # v0.6.0 MX2: [centre, radius now] per ring
+		"rings": ModifierAbilities.rings_now(w),  # [centre, radius now] per ring
 	}
 
 
 ## A patch's full life (for the fade): its spec's.
 static func _fire_life(w: World, k: int) -> int:
-	var key := w.ab.fire_spec[k] if k < w.ab.fire_spec.size() else ""
+	var key := w.ab.fire_spec[k]
 	var spec := Modifiers.book(w).find(key) if key != "" else null
 	if spec != null and spec.life_ticks > 0:
-		return spec.life_ticks + ElementLevelsFsf.patch_extra_ticks(w, spec)  # v0.9.5 EE2: Wildfire's longer life
+		return spec.life_ticks + ElementLevelsFsf.patch_extra_ticks(w, spec)  # Wildfire's longer life
 	return Modifiers.HOOK_ZONE_TICKS

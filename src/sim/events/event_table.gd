@@ -12,9 +12,9 @@ var weight := 0
 var min_floor := 1
 ## Events.Need.
 var requires := 0
-## v0.5.5 DS (S5): only on Deep floors (and first there).
+## Only on Deep floors (and first there).
 var deep_only := false
-## v0.8.0 N17 (O75): only in the floor's curse room.
+## Only in the floor's curse room.
 var curse_room := false
 var labels: Array[StringName] = []
 var cost := PackedInt32Array()
@@ -22,11 +22,8 @@ var cost_amount := PackedInt32Array()
 var reward := PackedInt32Array()
 var reward_amount := PackedInt32Array()
 var curse := PackedInt32Array()
-## v0.9.0 EL: a retired event's place (its content deleted: Ambush Cache, owner Q25), never drawn on a floor built
-## today. `legacy_weight`: its old weight, drawn only when a floor saved before EL is rebuilt (so the rebuilt floor's
-## draws are the ones it was saved with; its pedestal is then closed on load: Events.drop_retired).
+## A retired event's place (its content deleted: Ambush Cache, owner Q25): never drawn (weight 0).
 var retired := false
-var legacy_weight := 0
 
 
 func choice_count() -> int:

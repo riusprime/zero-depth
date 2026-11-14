@@ -39,13 +39,13 @@ func _sync(s: RunicStone, ach: AchievementStore, codex: CodexStore) -> Array[Str
 
 func test_the_ten_lines_are_the_specs() -> void:
 	var want := {
-		&"r4": "UNTOUCHED BY THE DEEP",
-		&"r5": "THE STILL ONE SEES",
-		&"r6": "THE PIECES CALL TO ONE ANOTHER",
-		&"r7": "THE CROWN WAS ALWAYS HOLLOW",
-		&"r8": "THE WHEEL TURNS FOR THE PATIENT",
-		&"r9": "THE WALLS HIDE WHAT THEY FEAR",
-		&"r10": "EVERY TONGUE ONE RUNE",
+		&"r4": "UNTOUCHED STAND STILL HERE AND LISTEN",
+		&"r5": "I SPEAK GATHER THE PIECES I DROPPED",
+		&"r6": "MY PIECES THE CROWN WENT DOWN FIRST END IT",
+		&"r7": "IT IS ENDED NOW TURN THE TOP TO THE BOTTOM THRICE",
+		&"r8": "I TURN MY CRACKED WALLS HIDE ROOMS OPEN THEM RUN AFTER RUN",
+		&"r9": "I HIDE NO MORE SPEAK TO ME IN THE OTHER TONGUE",
+		&"r10": "EVERY TONGUE MY HEART LIES UNDER THE THRONE",
 	}
 	assert_eq(_lines.validate().size(), 0)
 	for id: StringName in want:
@@ -223,7 +223,7 @@ func test_r10_the_language_switched_with_the_stone_awake() -> void:
 	h.bubble.show_line(RuneCipher.encode("A"))
 	h._notification(Node.NOTIFICATION_TRANSLATION_CHANGED)
 	assert_true(h.stone.knows(&"r10"))
-	var want := RuneCipher.encode("EVERY TONGUE ONE RUNE").filter(
+	var want := RuneCipher.encode("EVERY TONGUE MY HEART LIES UNDER THE THRONE").filter(
 		func(g: int) -> bool: return g != RuneCipher.GAP
 	)
 	assert_eq(h.bubble.glyph_count(), want.size(), "the open bubble shows it at once")
@@ -252,12 +252,13 @@ func test_the_full_stone_unlocks_the_robe_and_the_profile_keeps_it() -> void:
 	var p := ProfileStore.new(SAVED)
 	var s := _stone(p)
 	var def: RobeDefinition = _repo.get_def(&"robe", &"runic")
-	for l: RunicLineEntry in _lines.lines:
+	for i in range(1, 11):
 		assert_false(s.is_full())
 		assert_false(Wardrobe.robe_unlocked(p, def), "not before the last line")
-		s.learn(l.id)
+		s.learn(StringName("r%d" % i))
 	assert_true(s.is_full())
 	assert_true(Wardrobe.robe_unlocked(p, def), "the tenth line unlocks it")
+	assert_true(s.knows(RunicStone.FINAL), "and r11 is not needed for it but follows")
 	assert_true(p.save_file())
 	var loaded := ProfileStore.open(SAVED)
 	assert_true(Wardrobe.robe_unlocked(loaded, def), "kept across save and load")
@@ -270,8 +271,8 @@ func test_a_profile_already_full_gets_the_robe_on_load() -> void:
 	var p := ProfileStore.new("")
 	var sec := p.section("runes")
 	var ids := []
-	for l: RunicLineEntry in _lines.lines:
-		ids.append(String(l.id))
+	for i in range(1, 11):
+		ids.append("r%d" % i)
 	sec["learned"] = ids
 	var def: RobeDefinition = _repo.get_def(&"robe", &"runic")
 	assert_false(Wardrobe.robe_unlocked(p, def))

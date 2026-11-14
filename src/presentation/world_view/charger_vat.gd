@@ -1,6 +1,6 @@
 class_name ChargerVat
 extends RefCounted
-## v0.10.5 W3-V4a (owner, 2026-11-06: "can we apply it to the rest of the enemies and test it?"): the Charger's and the
+## The Charger's and the
 ## Hatchling's VAT rig (VatBake's rig, see its class notes): the drives a VAT ChargerAvatar is drawn from, the grids
 ## they are baked on, and the joints. Its own file only to keep ChargerAvatar under the line limit; it reads the
 ## avatar's own pose code (ChargerAvatar.leg_angles, body_x, body_basis and the leg terms), never a copy of it.
@@ -104,7 +104,6 @@ static func rig(c: ChargerAvatar) -> Dictionary:
 		"joints": joints,
 		"row": func(g: int, d: PackedFloat64Array) -> Array: return row(c, g, d),
 		"scaled": true,
-		"outline_m": ChargerAvatar.OUTLINE_M,
 	}
 
 
@@ -215,7 +214,7 @@ static func _leg_joint(
 	return Transform3D.IDENTITY
 
 
-## VatBake.pose_error: poses Charger `c` in a random state, every drive anywhere in its range and mixed freely
+## VatVerify.pose_error: poses Charger `c` in a random state, every drive anywhere in its range and mixed freely
 ## (reachable or not), and returns it (apply poses another Charger the same).
 static func sample(c: ChargerAvatar, rng: RandomNumberGenerator) -> Dictionary:
 	var s := {

@@ -1,6 +1,6 @@
 class_name Wardrobe
 extends RefCounted
-## v0.9.0 RB (owner, PLAN "Owner decisions" RB; docs/roadmap/v0.9.0/AFFINITIES.md): the hub Wardrobe's choices in the
+## The hub Wardrobe's choices in the
 ## profile, and the run's affinity built from content. The profile's `loadout` section holds the robe (`robe`, a
 ## RobeDefinition id) and the affinity (`affinity`, an AffinityDefinition id); a profile from before RB has neither and
 ## reads as Cream and None (no profile version change: missing keys fall back here). The robe is cosmetic; the
@@ -12,7 +12,7 @@ extends RefCounted
 
 const NONE := &"none"
 const DEFAULT_ROBE := &"cream"
-## MP2: a hidden robe's name until it is bought.
+## A hidden robe's name until it is bought.
 const HIDDEN_NAME := &"ROBE_HIDDEN"
 
 
@@ -21,7 +21,7 @@ static func has_affinity(id: StringName) -> bool:
 	return id != &"" and id != NONE
 
 
-## The build last picked at the Portal Machine (the same `loadout` section; Blade on a fresh profile). v0.9.5 SL: the
+## The build last picked at the Portal Machine (the same `loadout` section; Blade on a fresh profile). the
 ## Gun while the Blade is locked (SwordLock).
 static func build_of(profile: ProfileStore) -> StringName:
 	return SwordLock.usable(
@@ -87,7 +87,7 @@ static func unlock_robe(profile: ProfileStore, id: StringName) -> void:
 	u["robes"] = list
 
 
-## MP2: robe `def`'s name as shown: "???" (ROBE_HIDDEN) for a hidden robe not bought yet, else its own name key.
+## Robe `def`'s name as shown: "???" (ROBE_HIDDEN) for a hidden robe not bought yet, else its own name key.
 static func shown_name(profile: ProfileStore, def: RobeDefinition) -> StringName:
 	if def != null and def.hidden and not robe_unlocked(profile, def):
 		return HIDDEN_NAME

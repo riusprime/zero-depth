@@ -14,9 +14,12 @@ extends SceneTree
 ## in its own states (KIND_PLANS: the walk, the death, the heal, the mine dropped, the muzzle) into
 ## vat_sheet_<name>.png and vat_diff_<name>.txt; `--version-dir=<v>` writes under build/shots/<v>/vat/. Every horde
 ## sheet also gives each state's largest vertex error (the shader's arithmetic on the CPU).
-## v0.10.5 W3-V4c: `-- --kind=<name>` (needle, warden, arc_caster, bomb_drone) draws that stand-alone kind in
-## SOLO_PLAN's states (its walk, wind-up, attack, recovery) into vat_sheet_<name>.png and vat_diff_<name>.txt, with
-## the vertex error.
+## v0.10.5 W3-V4c: `-- --kind=<name>` (needle, warden, arc_caster, bomb_drone; v0.11.0 O17c: stone_thrower) draws
+## that stand-alone kind in SOLO_PLAN's states (its walk, wind-up, attack, recovery) into vat_sheet_<name>.png and
+## vat_diff_<name>.txt, with the vertex error.
+## v0.11.0 O17d: `-- --kind=cinder_priest` draws the Cinder Priest in PRIEST_PLAN's states (its chant, glide, the vent's
+## cycle: the raise, the slam on the eruption tick, the recoil; the flinch, the death, the rise-in) into
+## vat_sheet_cinder_priest.png and vat_diff_cinder_priest.txt.
 
 const CELL := Vector2i(220, 220)
 const COLS := 4
@@ -150,12 +153,22 @@ const SOLO := {
 	"warden": WorldReader.KIND_WARDEN,
 	"arc_caster": WorldReader.KIND_ARC_CASTER,
 	"bomb_drone": WorldReader.KIND_BOMB_DRONE,
+	"scrap_hound": WorldReader.KIND_SCRAP_HOUND,  # v0.11.0 O17a
+	"rock_lurker": WorldReader.KIND_ROCK_LURKER,  # v0.11.0 O17b
+	"stone_thrower": WorldReader.KIND_STONE_THROWER,  # v0.11.0 O17c
+	"cinder_priest": WorldReader.KIND_CINDER_PRIEST,  # v0.11.0 O17d
+	"kiln_beetle": WorldReader.KIND_KILN_BEETLE,  # v0.11.0 O17e
 }
 const SOLO_FRAME := {
 	WorldReader.KIND_NEEDLE: [1.5, 0.4],
 	WorldReader.KIND_WARDEN: [2.6, 0.75],
 	WorldReader.KIND_ARC_CASTER: [1.9, 0.65],
 	WorldReader.KIND_BOMB_DRONE: [2.8, 1.1],
+	WorldReader.KIND_SCRAP_HOUND: [1.6, 0.3],
+	WorldReader.KIND_ROCK_LURKER: [2.0, 0.45],
+	WorldReader.KIND_STONE_THROWER: [3.0, 1.0],
+	WorldReader.KIND_CINDER_PRIEST: [2.6, 0.85],
+	WorldReader.KIND_KILN_BEETLE: [1.9, 0.3],
 }
 const SOLO_PLAN := [
 	["idle (t 1.5 s)", {}, "idle"],
@@ -172,6 +185,24 @@ const SOLO_PLAN := [
 	["rise-in, half way", {}, "spawn"],
 	["biome cast + role glow", CAST, "walk"],
 	["reduced motion + windup", {}, "calm"],
+]
+
+## v0.11.0 O17d: the Cinder Priest's states (its own calls: the vent's pulse and eruption, no windup).
+const PRIEST_PLAN := [
+	["chant (t 1.5 s)", {}, "idle"],
+	["glide 2.4 m/s", {}, "walk"],
+	["vent warning 45 %", {}, "gather_mid"],
+	["vent warning 88 % (raised)", {}, "gather_top"],
+	["eruption tick (slam)", {}, "slam"],
+	["recoil (0.3 s after)", {}, "recoil"],
+	["flinch at its peak", {}, "flinch"],
+	["Blade knock", {}, "knock"],
+	["hit flash", {}, "flash"],
+	["status tint (burn)", {}, "tint"],
+	["rise-in, half way", {}, "spawn"],
+	["death, 60 %", {}, "death"],
+	["biome cast + role glow", CAST, "walk"],
+	["reduced motion + raised", {}, "calm"],
 ]
 
 var _dir := ""
@@ -202,6 +233,10 @@ func _initialize() -> void:
 			_kind = SOLO[arg.trim_prefix("--kind=")]
 			_suffix = "_" + arg.trim_prefix("--kind=")
 			plan = SOLO_PLAN
+			if _kind == WorldReader.KIND_ROCK_LURKER:  # v0.11.0 O17b: its disguise and rumble too
+				plan = SOLO_PLAN + [["disguised", {}, "hidden"], ["rumbling", {}, "rumble"]]
+			elif _kind == WorldReader.KIND_CINDER_PRIEST:  # v0.11.0 O17d
+				plan = PRIEST_PLAN
 		elif arg.begins_with("--version-dir="):
 			_dir = "res://build/shots/%s/vat/" % arg.trim_prefix("--version-dir=")
 		elif arg.begins_with("--out="):
@@ -335,9 +370,9 @@ func _avatar(vat: bool, build: Dictionary) -> AvatarBase:
 	var tint: Color = build.get("tint", Color(0, 0, 0, 0))
 	var role := float(build.get("role", 0.0))
 	if SoloVat.is_solo(_kind):  # v0.10.5 W3-V4c: as ActorViews builds one (its cast on its own materials after)
-		var s: AvatarBase = VatBake.vat_avatar_of(_kind, Color("#1A1A22")) if vat else null
+		var s: AvatarBase = VatBake.vat_avatar_of(_kind) if vat else null
 		if s == null:
-			s = VatBake.reference_of(_kind, tint, role, Color("#1A1A22"))
+			s = VatBake.reference_of(_kind, tint, role)
 			s.set_process(true)
 		s.enemy_tint = tint
 		s.role_glow = role
@@ -348,11 +383,7 @@ func _avatar(vat: bool, build: Dictionary) -> AvatarBase:
 		c.role_glow = role
 		c.vat = vat
 		var hatch := bool(build.get("hatchling", false))
-		c.setup(
-			Color("#1A1A22"),
-			&"outline",
-			WorldReader.KIND_HATCHLING if hatch else WorldReader.KIND_CHARGER
-		)
+		c.setup(WorldReader.KIND_HATCHLING if hatch else WorldReader.KIND_CHARGER)
 		if hatch:
 			c.scale = Vector3.ONE * 0.66
 		return c
@@ -360,7 +391,7 @@ func _avatar(vat: bool, build: Dictionary) -> AvatarBase:
 	a.enemy_tint = tint
 	a.role_glow = role
 	a.vat = vat
-	a.setup(_kind, Color("#1A1A22"))
+	a.setup(_kind)
 	return a
 
 
@@ -498,6 +529,9 @@ func _drive_charger(a: ChargerAvatar, steps: String) -> void:
 ## one a tick, as ActorViews.sync gives them; the flash and the tint as ActorViews._set_flash makes them (the old path
 ## on its own materials, VAT through show_hit).
 func _drive_solo(a: AvatarBase, steps: String) -> void:
+	if a is CinderPriestAvatar:  # v0.11.0 O17d
+		_drive_priest(a as CinderPriestAvatar, steps)
+		return
 	var tick := 0
 	var x := 0.0
 	var speed: float = (
@@ -506,6 +540,10 @@ func _drive_solo(a: AvatarBase, steps: String) -> void:
 			WorldReader.KIND_WARDEN: 1.6,
 			WorldReader.KIND_ARC_CASTER: 2.0,
 			WorldReader.KIND_BOMB_DRONE: 2.5,
+			WorldReader.KIND_SCRAP_HOUND: 6.5,
+			WorldReader.KIND_ROCK_LURKER: 2.2,
+			WorldReader.KIND_STONE_THROWER: 1.8,
+			WorldReader.KIND_KILN_BEETLE: 1.2,
 		}[_kind]
 		/ 60.0
 	)
@@ -515,6 +553,15 @@ func _drive_solo(a: AvatarBase, steps: String) -> void:
 		for k in 12:
 			tick += 1
 			a.call(&"apply_state", _solo_state(tick, x, WorldReader.STATE_MOVE, 0.0))
+			_run(a, 1)
+		return
+	if steps == "hidden" or steps == "rumble":  # v0.11.0 O17b: the Rock Lurker waiting as a boulder
+		for k in 40:
+			tick += 1
+			var hs := _solo_state(tick, x, WorldReader.STATE_MOVE, 0.0)
+			hs["hidden"] = true
+			hs["rumbling"] = steps == "rumble"
+			a.call(&"apply_state", hs)
 			_run(a, 1)
 		return
 	if steps == "calm":
@@ -560,6 +607,54 @@ func _drive_solo(a: AvatarBase, steps: String) -> void:
 	ViewPrefs.reduced_motion = false
 
 
+## v0.11.0 O17d: the Cinder Priest's calls (both avatars of a pair get the same ones): a second and a half of its
+## chant (or glide), then the vent's warning ramp (45 ticks to 1000), its eruption (its last eruption's age counting
+## from 0), the flinch, the death.
+func _drive_priest(a: CinderPriestAvatar, steps: String) -> void:
+	var tick := 0
+	var x := 0.0
+	var st := WorldReader.STATE_SPAWN if steps == "spawn" else WorldReader.STATE_MOVE
+	if steps == "calm":
+		ViewPrefs.reduced_motion = true
+	for k in 90 if steps != "spawn" else 18:
+		tick += 1
+		if steps == "walk":
+			x += 2.4 / 60.0
+		if steps == "spawn" and k == 1:
+			st = WorldReader.STATE_MOVE
+		a.apply_state({"tick": tick, "state": st, "pos": Vector2(x, 0), "vent_yaw": 0.5})
+		_run(a, 1)
+	var ramp := {"gather_mid": 20, "gather_top": 40, "calm": 40, "slam": 45, "recoil": 45}
+	for k in int(ramp.get(steps, 0)):
+		tick += 1
+		var pulse := clampi(roundi(float(k + 1) * 1000.0 / 45.0), 1, 1000)
+		a.apply_state(
+			{"tick": tick, "state": st, "pos": Vector2(x, 0), "pulse": pulse, "vent_yaw": 0.5}
+		)
+		_run(a, 1)
+	for k in {"slam": 1, "recoil": 19}.get(steps, 0):
+		tick += 1
+		a.apply_state(
+			{"tick": tick, "state": st, "pos": Vector2(x, 0), "erupt_age": k, "vent_yaw": 0.5}
+		)
+		_run(a, 1)
+	match steps:
+		"flinch":
+			a.flinch(Vector2(1.0, 0.4), 1.0)
+			_run(a, 3)
+		"knock":
+			a.flinch(Vector2(1.0, 0.4), 1.0, 1.0)
+			_run(a, 3)
+		"flash":
+			_solo_flash(a, Color.WHITE, 1.6)
+		"tint":
+			_solo_flash(a, Color(1.0, 0.45, 0.1), 1.2)
+		"death":
+			a.die()
+			_run(a, roundi(0.6 * CinderPriestAvatar.DEATH_SECONDS / DT))
+	ViewPrefs.reduced_motion = false
+
+
 static func _solo_state(tick: int, x: float, state: int, windup: float) -> Dictionary:
 	return {"tick": tick, "pos": Vector2(x, 0), "state": state, "windup": windup, "radius": 2.4}
 
@@ -581,8 +676,10 @@ func _solo_error(live_vp: SubViewport, vat_vp: SubViewport) -> float:
 	var vat := vat_vp.find_child("Avatar", true, false) as AvatarBase
 	var pose := VatBake.pose_for(_kind)
 	var mesh := VatBake.mesh_for(_kind, vat.enemy_tint, vat.role_glow, Color("#1A1A22"))
-	var a := VatBake.live_vertices(live)
-	var b := VatBake.eval_vertices(pose, mesh, VatBake.drives_of(vat, pose), vat.call(&"vat_lift"))
+	var a := VatVerify.live_vertices(live)
+	var b := VatVerify.eval_vertices(
+		pose, mesh, VatBake.drives_of(vat, pose), vat.call(&"vat_lift")
+	)
 	var worst := 0.0
 	for k in mini(a.size(), b.size()):
 		worst = maxf(worst, a[k].distance_to(b[k]))
@@ -596,7 +693,7 @@ func _run(a: AvatarBase, frames: int) -> void:
 
 
 ## v0.10.5 W3-V4b: the largest distance (m) between the old avatar's posed vertices and the VAT one's, the shader's
-## arithmetic run on the CPU (VatBake.eval_vertices_at) at the drives it was drawn with; a hidden piece is skipped.
+## arithmetic run on the CPU (VatVerify.eval_vertices_at) at the drives it was drawn with; a hidden piece is skipped.
 func _vertex_error(live_vp: SubViewport, vat_vp: SubViewport) -> float:
 	if SoloVat.is_solo(_kind):  # v0.10.5 W3-V4c
 		return _solo_error(live_vp, vat_vp)
@@ -607,8 +704,8 @@ func _vertex_error(live_vp: SubViewport, vat_vp: SubViewport) -> float:
 	var vat := vat_vp.find_children("*", "HordeAvatar", true, false)[0] as HordeAvatar
 	var pose := VatBake.pose_for(_kind)
 	var mesh := VatBake.mesh_for(_kind, vat.enemy_tint, vat.role_glow, Color("#1A1A22"))
-	var a := VatBake.live_vertices(live)
-	var b := VatBake.eval_vertices_at(pose, mesh, VatBake.drives_of(vat, pose), vat.vat_offset())
+	var a := VatVerify.live_vertices(live)
+	var b := VatVerify.eval_vertices_at(pose, mesh, VatBake.drives_of(vat, pose), vat.vat_offset())
 	var worst := 0.0
 	var k0 := 0
 	for p: Dictionary in VatBake.pieces(live, VatBake.joints(live)):

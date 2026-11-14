@@ -1,21 +1,21 @@
 class_name AttackSlotsDefinition
 extends ContentDef
-## v0.9.0 AS (owner Q2–Q5, Q13; PLAN C37–C45, C60–C67; docs/roadmap/v0.9.0/ATTACK_FORMS.md): the wand's slot
+## The wand's slot
 ## categories' limits, the per-attack projectile caps and the one form × card compatibility table. One `.tres` in
 ## data/wand/ (attack_slots.tres; its own file so data/wand/wand.tres stays the wand's), compiled by WandCompiler into
 ## SlotTable (World.slot_table); every check reads it: the offers (ItemPool.usable), the equip (BuildSlots.take through
-## AttackSlots), the compile (Modifiers.build_modifiers) and an old save's trim (AttackSlots.trim).
+## AttackSlots), and the compile (Modifiers.build_modifiers).
 ## - gun_limits / blade_limits: per category in AttackSlots' order (Form, Pattern, Secondary, Element) the most cards
 ##   of it the wand holds on a Gun / Blade run (-1: no limit; Free cards never have one). Q4: Form 1, Pattern 1,
 ##   Secondary 2, Elements 2 on the Gun; Q6: the Blade gets only the one-pattern rule.
-## - shots_per_attack_max (Q13): the most projectiles one attack launches (pattern × Twin × Split children); extra
+## - shots_per_attack_max: the most projectiles one attack launches (pattern × Twin × Split children); extra
 ##   copies merge into bigger shots that keep the damage (ShotCap). shots_per_second_max: the most player projectiles
 ##   launched in any second on a Gun run; past it a volley merges into the shots that fit (Q13's "40 a second"
 ##   line, kept as a budget so the worst legal build holds it at any attack speed). merge_radius_max_permille: a
 ##   merged shot's radius grows with the copies it took in, at most this much (per mille of its own).
 ## - forms: one AttackFormRow per Gun form (Q7: ten approved, built in later steps). Exactly one row has no card: the
-##   default form, Orbs (the Gun's own shot, data/player/runner.tres). Every cell not on is off (C62).
-## Every number is a starting value, editable without code (C45).
+##   default form, Orbs (the Gun's own shot, data/player/runner.tres). Every cell not on is off.
+## Every number is a starting value, editable without code.
 
 const CATEGORY_COUNT := 4
 const LIMIT_MAX := 8
@@ -96,7 +96,7 @@ func validate() -> Array[ValidationIssue]:
 	return issues
 
 
-## v0.9.5 FC1: a form row's params are whole numbers above 0 named for something the form reads; the Laser row has
+## A form row's params are whole numbers above 0 named for something the form reads; the Laser row has
 ## every number LaserMods reads.
 func _check_params(r: AttackFormRow) -> Array[ValidationIssue]:
 	var issues: Array[ValidationIssue] = []
@@ -140,7 +140,7 @@ func _keys_of(id: StringName) -> Array[String]:
 	return keys
 
 
-## v0.9.0 AS: every live card (an item the migration table doesn't retire) that takes a wand slot (it names modifiers)
+## Every live card (an item the migration table doesn't retire) that takes a wand slot (it names modifiers)
 ## names its slot category; a form row's card is a live Form card; every cell names a live Pattern, Secondary or
 ## Element card (C60: every table id is real).
 static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
@@ -177,7 +177,7 @@ static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 						"%s: no live form card %s" % [r.id, r.card]
 					)
 				)
-			for c in r.pruned:  # v0.10.5 W3-P7: any live card but a Form card
+			for c in r.pruned:  # Any live card but a Form card
 				if not live.get(c, &"") in [&"pattern", &"secondary", &"element", &"free"]:
 					issues.append(
 						ValidationIssue.new(

@@ -8,18 +8,16 @@ extends GutTest
 
 ## Run seeds whose floor 2 holds a Blood shrine (BLOOD_SEED) and a fountain (FOUNTAIN_SEED), found with ShrineLab (as
 ## Main builds floors; asserted below).
-const BLOOD_SEED := 5
+## v0.11.0 O13b: seed 5's floor 2 (Ruins) now has a Wire Weaver string its cable across the walk; the stick pushed
+## into it until the hero died (the dev panel's God lasts only while the panel is open). Seed 27's floor 2 (Frozen
+## Shore) holds a Blood shrine and the Blood Coin with a clear walk.
+const BLOOD_SEED := 27
 const FOUNTAIN_SEED := 1
 const FLOOR := 2
 
 
 func after_each() -> void:
 	E2e.center_sticks()
-
-
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
 
 
 ## Boots main.tscn on a save of run `seed_value`'s floor 2 (the hero at `hp`, -1: as built), continues it from the
@@ -39,7 +37,7 @@ func _continue(e: E2e, seed_value: int, hp: int = -1) -> Main:
 	await main.loads.finished
 	assert_eq(main.run.floor_index, FLOOR, "floor 2 continues")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	return main
 

@@ -1,6 +1,6 @@
 class_name ShopHud
 extends Control
-## The shop on the HUD (v0.5.0 SH): the interact prompt by the terminal, and the shop panel (ShopPanel) while the
+## The shop on the HUD: the interact prompt by the terminal, and the shop panel (ShopPanel) while the
 ## shop is open. Reads only; the panel's choices go out as input.
 
 var panel := ShopPanel.new()

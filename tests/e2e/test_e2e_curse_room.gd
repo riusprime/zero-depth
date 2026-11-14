@@ -16,11 +16,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_walk_into_the_curse_room_open_the_altar_and_take_a_curse() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot(null, null, SEED)
@@ -46,7 +41,7 @@ func test_walk_into_the_curse_room_open_the_altar_and_take_a_curse() -> void:
 	assert_gt(events.curse_room.crystals.size(), 0, "crystals round its walls")
 	assert_true(events.curse_room.uses_sheet, "the ritual sigils")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	var at := w.ev.pos(k)
 	var up := at + (CurseRoom.front(layout, room, at) - at).normalized() * 1.25  # the walk-up, in reach

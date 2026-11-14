@@ -20,7 +20,7 @@ extends RefCounted
 ##    height: height_at(x, y) at the stone (BASE_H, lowered in slumps (4 m noise) and collapsed stretches (7 m noise,
 ##    down to MIN_H), notched (1.5 m lattice: breaks through the top), a few tall remnants (3 m lattice)), jittered
 ##    per stone, STONE_MISSING of the stones gone from the top course; never below MIN_H (walls still read as walls),
-##    never above MAX_H. v0.8.0 N13 (the N10 note: a thick wall's top read from above as a laid-stone platform): only
+##    never above MAX_H. the N10 note: a thick wall's top read from above as a laid-stone platform: only
 ##    the rim is laid stones, the cells within RIM of the union's edge (each face's skin); deeper in, a thick wall's
 ##    top is its rubble fill: FILL_LUMP lumps (bigger than the rim's stones) sunk FILL_DROP below the top there, down
 ##    to FILL_MIN, darker (FILL_COL), so from above a thick wall reads as two ruined skins with broken fill between,
@@ -31,7 +31,7 @@ extends RefCounted
 ##    missing (the core shows behind, darker); its front corners jittered; some with a chipped top corner; the upper
 ##    courses a little further back (a lean); never above the top. Pilasters every PILASTER_STEP on long runs; quoin
 ##    stones at outer corners (missing ones read as chipped corners); bent rebar out of the top on some stretches.
-## 3b. v0.8.0 N13 (owner O71, "100% new": no kit pieces on the exterior walls): pillars, WallPillars' rules, where
+## 3b. pillars, WallPillars' rules, where
 ##    N10's kit pillar accents stood: piers through a long thin wall's depth, flush with its faces, standing over its
 ##    top, in the same textures. The faces' courses, pilasters and rebar stop at them.
 ## 4. Fallen chunks: a few low stones (CHUNK_MAX_H, the decoration limit's rule) on the floor at a face's base, only
@@ -42,7 +42,7 @@ extends RefCounted
 ##    anisotropic (no shimmer); the face offset and flipped per SEGMENT_M stretch, the tops per stone, a
 ##    low-frequency brightness over stones and blocks (no visible tiling); vertex colour darkens the base (grime)
 ##    and the recesses; flat-shaded facets.
-## 6. v0.8.0 N15 (owner O73, "Night biome textures look busy … less busy keeping this model?"): each biome calms its
+## 6. each biome calms its
 ##    walls without changing the model (WallCalm: its BiomeMood's wall_* values; the defaults are N13's look, the
 ##    stream's draws the same whatever the values, so a biome at the defaults builds exactly N13's walls).
 
@@ -80,13 +80,13 @@ const REBAR_PER_M := 0.12
 const CHUNK_PER_M := 0.3
 const CHUNK_MAX_H := 0.25
 const DOOR_CLEAR := 1.0
-## v0.8.0 N13: the top's rim and fill (rule 2).
+## The top's rim and fill (rule 2).
 const RIM := 0.75
 const FILL_LUMP := 1.2
 const FILL_DROP := Vector2(0.36, 0.6)
 const FILL_MIN := 0.25
 const FILL_COL := Color(0.66, 0.64, 0.62)
-## v0.8.0 N10 (owner O68, "too grained … make it bigger"): one tile of the face texture (3:2, the owner's
+## One tile of the face texture (3:2, the owner's
 ## tex_wall_<biome>) covers FACE_M_DEFAULT metres along the wall (its height follows the aspect), its top at
 ## FACE_TOP_Y; one tile of the top texture (tex_wall_top_<biome>) TOP_M_DEFAULT metres. Each biome sets its own
 ## (BiomeMood.wall_texture_m, wall_top_texture_m; build()'s "face_m", "top_m").
@@ -106,9 +106,6 @@ const FADED_ALPHA := 0.3
 const STEP_FACE := Color(0.86, 0.84, 0.82)
 const TOP_COL := Color(0.97, 0.96, 0.94)
 const RECESS := Color(0.7, 0.68, 0.66)
-## Evidence only (scripts/shots/walls_n10.gd grain=old): the look before O68's fix, to compare: 2.4 m and 3 m tiles,
-## no mipmaps (the textures were first installed without them), no offsets, no variation.
-static var legacy_look := false
 
 
 ## True for a wall this builder draws: structural (kind 0) and axis-aligned.
@@ -160,8 +157,8 @@ static func build(f: Dictionary) -> Dictionary:
 		"doors": f.get("doors", []),
 		"blocks": 0,
 		"stones": {},
-		"face_m": float(f.get("face_m", FACE_M_DEFAULT)) if not legacy_look else 2.4,
-		"top_m": float(f.get("top_m", TOP_M_DEFAULT)) if not legacy_look else 3.0,
+		"face_m": float(f.get("face_m", FACE_M_DEFAULT)),
+		"top_m": float(f.get("top_m", TOP_M_DEFAULT)),
 		"fill": {},
 		"pillars": [],
 		"top_rim": Vector2.ZERO,
@@ -221,7 +218,7 @@ static func _core(ctx: Dictionary) -> void:
 	for j in g.ny:
 		for i in g.nx:
 			if g.cells[j * g.nx + i] >= 0:
-				var deep := depth[j * g.nx + i] >= RIM and not legacy_look
+				var deep := depth[j * g.nx + i] >= RIM
 				fill[j * g.nx + i] = 1 if deep else 0
 				g.cell_h[j * g.nx + i] = _fill_h(ctx, i, j) if deep else _stone_h(ctx, i, j)
 				var area := (g.xs[i + 1] - g.xs[i]) * (g.ys[j + 1] - g.ys[j])
@@ -237,7 +234,7 @@ static func _core(ctx: Dictionary) -> void:
 			var b := _buf(ctx, owner)
 			var h := g.cell_h[j * g.nx + i]
 			var k := g.cell_off[j * g.nx + i]
-			b.top_off = Vector2(k, fposmod(k * 7.31, 1.0)) if not legacy_look else Vector2.ZERO
+			b.top_off = Vector2(k, fposmod(k * 7.31, 1.0))
 			b.u_off = 0.0
 			b.u_flip = 1.0
 			var x0 := (g.xs[i] + g.xs[i + 1]) * 0.5
@@ -320,7 +317,7 @@ static func _stone_h(ctx: Dictionary, i: int, j: int) -> float:
 	return h
 
 
-## v0.8.0 N13: a thick wall's fill cell (rule 2): the lump (FILL_LUMP square) it lies in, sunk FILL_DROP under the
+## A thick wall's fill cell (rule 2): the lump (FILL_LUMP square) it lies in, sunk FILL_DROP under the
 ## top there, a few lumps fallen further; within FILL_MIN..MAX_H, snapped to STONE_STEP.
 static func _fill_h(ctx: Dictionary, i: int, j: int) -> float:
 	var g: WallGrid = ctx["g"]
@@ -498,7 +495,7 @@ static func _face(ctx: Dictionary, run: Dictionary) -> void:
 				b -= GAP * 0.5
 	if b - a < 0.15:
 		return
-	# v0.8.0 N13: the pillars on this face, then the pilasters clear of them, then the courses between them.
+	# The pillars on this face, then the pilasters clear of them, then the courses between them.
 	var spans := WallPillars.spans(ctx, run, a, b)
 	var pillars := spans.duplicate()
 	if b - a >= PILASTER_MIN_RUN:
@@ -529,8 +526,6 @@ static func _face(ctx: Dictionary, run: Dictionary) -> void:
 
 ## The face texture's offset and flip for what is drawn at s on a run: one per stretch of the run's seg_len metres.
 static func _segment(ctx: Dictionary, run: Dictionary, b: Buf, s: float) -> void:
-	if legacy_look:
-		return
 	var seg := floori((s - float(run["a"])) / float(run.get("seg_len", SEGMENT_M.x)))
 	var key: int = run.get("seg_key", 0)
 	var salt: int = ctx["salt"]
@@ -540,8 +535,6 @@ static func _segment(ctx: Dictionary, run: Dictionary, b: Buf, s: float) -> void
 
 ## The low-frequency brightness at a point (VARIATION_LO..1).
 static func _variation(ctx: Dictionary, x: float, y: float) -> float:
-	if legacy_look:
-		return 1.0
 	var lo := 1.0 - (1.0 - VARIATION_LO) * float(ctx.get("calm", WallCalm.BUILDER)["tint"])
 	return lerpf(lo, 1.0, _value(x, y, VARIATION_M, int(ctx["salt"]) + 91))
 
@@ -934,8 +927,6 @@ static func material(
 ) -> ShaderMaterial:
 	var sh := Shader.new()
 	var code := WallCalm.SHADER.replace("//BIAS", str(WallCalm.SOFT_BIAS))
-	if legacy_look:
-		code = code.replace("filter_linear_mipmap_anisotropic", "filter_linear")
 	# W3-S5: the see-through copy blends smoothly (alpha hash was grain) and writes depth, so it sorts with itself.
 	if faded:
 		code = code.replace("render_mode cull_back,", "render_mode cull_back, depth_draw_always,")

@@ -1,6 +1,6 @@
 class_name SlotGlyph
 extends Control
-## v0.9.0 AS (owner Q5: "reads 'Replaces <card>' with its slot icon"; Q14): a wand slot category's small mark, drawn in
+## A wand slot category's small mark, drawn in
 ## code beside the slot tag: Form a full orb (the shot), Pattern three dots in a fan (copies), Secondary a diamond (what
 ## rides on the shot), Element a drop. Presentation only (EI-07).
 

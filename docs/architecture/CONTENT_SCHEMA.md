@@ -933,6 +933,23 @@ the dressing. `RunContentCompiler.compile_shop_rooms` → `ShopRoomTable` per bi
 `RunSaver.floor_tables` adds them unless the floor was saved before SR (`RunState.shop_rooms`, floor rules < 5), whose
 shop is the terminal. The F10 dev panel does not list the folder (geometry, not balance).
 
+### Purpose rooms (`data/rooms/purposes/<id>.tres`, v0.11.0 O15)
+
+`RoomPurposeDefinition` (category `room_purpose`; PLAN P1, owner Q-O15a/b: authored templates with seeded variation;
+`docs/roadmap/v0.11.0/G2_ROOMS.md`): a large room's purpose (`camp`, `hall`, `quarry`), written by
+`scripts/content/room_purposes.gd`. Authored in a frame of the room's half-size (x the long side, the centre 0):
+`groups: Array[RoomPurposeGroup]` (`anchor` a fraction -1..1 of the half-size plus `offset` metres, `yaw` turning its
+parts, `focal`, a `choice` and the `options` that keep it, `chance_permille`, `parts: Array[RoomPurposePart]`:
+`token`, `at` m, `yaw`, `height_scale`/`height_spread`, `side` 0/1/2, `chance_permille`), `choices:
+Array[RoomPurposeChoice]` (`id`, one weight per option), `min_cells` (3 x 3 and up), `weight`, `biomes`, `far_wall`
+(the focal wall prefers a far side from the camera), `shift_m` (< 1 m) and `turn_deg` (< 15), and one
+`RoomPurposePalette` per biome mapping each token to a `RoomPurposePiece` (`piece` from `PIECES`, `size`, `height`,
+`solid`; a drawn piece is low decoration (`DECOR`) or rests on its group's solids at `lift` m: a lintel). The pieces
+are kit stand-ins until the purpose-room models arrive (OWNER_TODO §3.6): a new model swaps in by its palette row.
+`RunContentCompiler.compile_room_purposes` → `RoomPurposeTable`; `RunSaver.floor_tables` passes them to
+`FloorScenario.add_purposes` (after the shop), which lays `MapDefinition.purpose_permille` (750) of the large rooms of
+no other kind (`RoomPurposes`). The dev panel does not list the folder (geometry).
+
 ### Special rooms (`data/special_rooms/<kind>.tres`, v0.9.0 RG)
 
 `SpecialRoomDefinition` (category `special_rooms`, PLAN W73/W74): one file per special room kind the floor places,
@@ -1387,6 +1404,37 @@ repeats; Fervour +2 % haste a kill, at most +60 %; Detonation 20 % of max HP, 2 
 0..1000 each, else `range`; data [200, 300]): a regular altar's chance per mille of a Starbound card, one entry a
 loop from loop 2, the last for every later loop.
 
+`RelicDefinition` (v0.11.0 O14b, owner Q-O14b "Both"; OWNER_QUESTIONS §J N1; `data/relics/`, category `relic`): a
+relic, a run-long passive held outside the wand that no altar, chest or shop offers (it lies on one pedestal). The `id`
+names the relic and its rule, one of `city_heart` (else `unknown`; `ContentCompiler.compile_relics` indexes them in
+that order and compiles none unless all are there). `name_key`, `desc_key` (required), `uses` (≥ 1, times a run),
+`saved_hp` (≥ 1, the HP a saved killing blow leaves), `ring_radius_m` (> 0), `ring_damage` (≥ 0, each enemy in the
+ring) and `placeholder` (true while the owner has not approved it). Shipped: The City's Heart, 1 use, 1 HP, 4 m,
+60, placeholder (the lead's idea, N1). Rules: `Relics` (src/sim/items), `HeartRoom` (src/sim/world).
+`RunicLinesDefinition.heart_lines` and `sealed_line` (v0.11.0 O14b; A-Z and single spaces, else `runic_text`): the
+heart room's rune slab and its sealed door's line.
+
+`SpellDefinition` (v0.11.0 O10, owner Q17-Q20; `data/spells/`, category `spells`): an elemental spell
+([`SPELLS.md`](../roadmap/v0.11.0/SPELLS.md)), a card that sits in a spell slot beside the wand and casts by itself.
+The `id` names the spell and its rule (`SpellDefinition.SPELLS`, the 15 rows in order, all built since O11; any other
+id is `unknown`). `name_key`, `desc_key`,
+`level_keys` (5, the pick card's level line), `element` (`frost`, `fire`, `lightning`, `venom`, `bleed`),
+`element_card` (the item id whose holding puts it in the offers), `affinity` (the wardrobe affinity id that raises its
+weight, or empty), `weight` (> 0), `cooldown_s` (> 0), `reach_m` (> 0), and per level (5 entries, Lv 1 first):
+`damage` (> 0), `radius_m` (> 0), `seconds` (Frost Nova's freeze), `count` (Fireball's balls, Sky Strike's bolts);
+`push_m` (Frost Nova), `jump_m` (Sky Strike), `speed_mps` (Fireball), `stacks` (the element status a hit applies).
+v0.11.0 O11: `seconds` is how long a lasting spell lasts (Meteor's knock-down), `count` also Ice Lances' shards, Ball
+Lightning's zap targets, Spitter Vine's heads and Hemorrhage's marks; `jump_m` Ice Lances' split reach; `speed_mps`
+also Venom Orb's flight, Ball Lightning's roll and Burning Ground's Lv 5 follow; and `period_s` (a pulse), `delay_s`
+(Meteor's mark, Hemorrhage's wait, Blood Thorns' second ring), `inner_m` (Blood Thorns), `pierce` (Ice Lances, Spitter
+Vine Lv 5), `bonus_damage`, `bonus_seconds`, `bonus_radius_m` (the Lv 5 extra), `heal_cap` (per level) and
+`heal_per_damage` (Leech), `slow_permille` (Toxic Cloud Lv 5). Which spell needs which is `SpellDefinition.NEEDS`
+(each > 0; per-level lists 5 entries); SIM_CONTRACTS §8p says what each does.
+`SpellRulesDefinition` (id `spell_rules`, category `spell_rules`): `slots` (1..8; 4), `offer_permille` (0..1000; a
+regular altar's chance of a spell card while the run's pool has one; 350), `affinity_permille` (1000..10000; the
+weight of a spell whose affinity is the run's rune affinity; 2000), `loop1_max_level` (1..5; 3), `pack_radius_m`
+(> 0; "the densest pack"'s circle; 3). Compiled by `SpellCompiler`; rules: `Spells` (SIM_CONTRACTS §8p).
+
 `RewardsDefinition` (v0.4.0 BS) gains `altar_card_weights` and `chest_card_weights` ([ability, stat, mod]) and
 `altar_rarity_weights` and `chest_rarity_weights` ([common, rare, epic]): 3 weights ≥ 0, not all 0.
 
@@ -1431,6 +1479,12 @@ Flame Trail spacing, the shortest field throw, and (v0.8.0 SG) the attack-speed 
 turns it into `SimTuning` on `World.tuning`. The shipped file equals the old constants (a test checks), which stay
 as `SimTuning`'s defaults. A value that must be positive and isn't, or `gate_adds_max < gate_adds_min`, is a
 `range` `ERROR`. Map generation (`FloorParams`) is not in it yet.
+
+### Aim assist (`data/tuning/aim_assist.tres`)
+
+`AimAssistDefinition` (category `tuning`, id `aim_assist`), read by `AimAssist` on the app side only (the sim gets the
+bent aim in its frame): `strength_percent` (10, 0..100), `cone_degrees` (12, 0..90) and `range_m` (12, > 0). Starting
+values. Out of range is a `range` `ERROR`.
 
 ### Achievements (`data/achievements/*.tres`, v0.7.5 AC)
 

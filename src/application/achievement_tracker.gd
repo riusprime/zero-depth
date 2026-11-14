@@ -1,6 +1,6 @@
 class_name AchievementTracker
 extends RefCounted
-## v0.7.5 AC (owner N7): unlocks achievements (AchievementBook) as the profile meets them. Main calls `observe` after
+## Unlocks achievements (AchievementBook) as the profile meets them. Main calls `observe` after
 ## every tick of a floor, like the Codex's recorder; it reads the sim only through WorldReader and its SimEvents
 ## (EI-07) and writes only the profile (AchievementStore). The Codex's counters are read as CodexStore writes them
 ## (its `changed` / `unlocked` signals), and this records the run counters the Codex doesn't keep
@@ -16,7 +16,7 @@ extends RefCounted
 ## - curses:chest_card: a cursed chest's card taken (a PICKUP of a curse card);
 ## - cores:stolen: a Core stolen (the steal tick moved);
 ## - shards:spent: the shards each SHOP_BUY cost.
-## - runs:ascended: reported by the Ascension portal (v0.7.5 AP) through `report(&"runs:ascended")`; nothing here
+## - runs:ascended: reported by the Ascension portal through `report(&"runs:ascended")`; nothing here
 ##   records it.
 ## - v0.8.0 FB1 (FINAL_BOSS.md F8), in the final arena: final:won (the last body fell: the run won), final:won_looped
 ##   (won on a loop past the first), final:no_hit_phase (a body's whole segment, from its rise to its fall, without the
@@ -43,16 +43,16 @@ var _ended := false
 var _sealed_room := -1
 var _hurt := false
 var _cleared_seen := 0
-var _lk_cleared_seen := 0  # v0.9.5 DR: the locked rooms (lockdowns, and the old arena rooms) count too
+var _lk_cleared_seen := 0  # The locked rooms (lockdowns, and the old arena rooms) count too
 var _overrun_done := false
 var _steal_tick := -1
 var _wand_due := 0
-## v0.8.0 FB1: the final fight's body being watched, and whether the hero lost HP since it rose.
+## The final fight's body being watched, and whether the hero lost HP since it rose.
 var _final_phase := -1
 var _final_hurt := false
-## v0.9.5 RS1: the floor's purple runes were awake when last read (RunicStone.PURPLE_STAT).
+## The floor's purple runes were awake when last read (RunicStone.PURPLE_STAT).
 var _purple_seen := false
-## v0.9.5 RS2: a floor boss fight (the door shut) and whether the hero lost HP in it (RunicStone.NO_HIT_STAT); the
+## A floor boss fight (the door shut) and whether the hero lost HP in it (RunicStone.NO_HIT_STAT); the
 ## cracked wall seen broken; this run already counted for RunicStone.CRACK_STAT; the run floor last attached (a lower
 ## one: a new run).
 var _boss_fight := false
@@ -87,10 +87,10 @@ func attach(reader: WorldReader) -> void:
 	_overrun_done = bool(reader.overrun().get("cleared", false))
 	_steal_tick = reader.steal_tick()
 	_wand_due = 0
-	_final_phase = reader.final_phase()  # v0.8.0 FB1: saves are taken at a body's start, so it starts clean
+	_final_phase = reader.final_phase()  # Saves are taken at a body's start, so it starts clean
 	_final_hurt = false
-	_purple_seen = reader.purple_lit()  # v0.9.5 RS1: a floor resumed with the runes awake counted already
-	_boss_fight = false  # v0.9.5 RS2: a boss fight resumed from a save is not a clean one
+	_purple_seen = reader.purple_lit()  # A floor resumed with the runes awake counted already
+	_boss_fight = false  # A boss fight resumed from a save is not a clean one
 	_boss_hurt = false
 	_boss_done = reader.boss_door_sealed()
 	_crack_seen = reader.crack_broken()
@@ -105,7 +105,7 @@ func detach() -> void:
 	_reader = null
 
 
-## The hook for counters other steps report (v0.7.5 AP: `report(&"runs:ascended")` each time the hero Ascends).
+## The hook for counters other steps report (`report(&"runs:ascended")` each time the hero Ascends).
 ## Ignored while recording is off (a tweaked run).
 func report(key: StringName, by: int = 1) -> void:
 	if not enabled:
@@ -114,7 +114,7 @@ func report(key: StringName, by: int = 1) -> void:
 	_check(book.reading_stat(key))
 
 
-## v0.10.5 O5a: raises a run counter kept as a highest value (RunRecords.LOOP_STAT: the deepest loop reached).
+## Raises a run counter kept as a highest value (RunRecords.LOOP_STAT: the deepest loop reached).
 func raise(key: StringName, value: int) -> void:
 	if not enabled:
 		return
@@ -137,7 +137,7 @@ func observe(reader: WorldReader) -> void:
 		and reader.boss_door_sealed()
 		and not reader.final_arena()
 	):
-		_boss_fight = true  # v0.9.5 RS2: the door shut behind the hero: the fight begins clean
+		_boss_fight = true  # The door shut behind the hero: the fight begins clean
 		_boss_hurt = false
 	var took := _events(reader, events)
 	_rooms(reader)
@@ -153,17 +153,17 @@ func observe(reader: WorldReader) -> void:
 			store.raise_stat(&"wand:cards_max", n)
 			_check(book.reading_stat(&"wand:cards_max"))
 	_final(reader)
-	if not _crack_seen and reader.crack_broken():  # v0.9.5 RS2: a cracked wall broken: once per run
+	if not _crack_seen and reader.crack_broken():  # A cracked wall broken: once per run
 		_crack_seen = true
 		if not _crack_counted:
 			_crack_counted = true
 			report(RunicStone.CRACK_STAT)
-	if not _purple_seen and reader.purple_lit():  # v0.9.5 RS1: a purple-rune room activated (the Runic Stone)
+	if not _purple_seen and reader.purple_lit():  # A purple-rune room activated (the Runic Stone)
 		_purple_seen = true
 		report(RunicStone.PURPLE_STAT)
 	if not _ended and reader.outcome() in [1, 3]:
 		_ended = true
-		if not reader.final_arena():  # v0.8.0 FB1: End the run counted the floor
+		if not reader.final_arena():  # End the run counted the floor
 			report(StringName("floors:cleared_%d" % reader.floor_index()))
 		if reader.outcome() == 1:
 			report(&"runs:won")
@@ -190,7 +190,7 @@ func _events(reader: WorldReader, events: Array[SimEvent]) -> bool:
 				if e.target_id == me and e.amount_applied > 0 and _boss_fight:
 					_boss_hurt = true  # v0.9.5 RS2
 			SimEvent.Kind.BOSS_DEFEATED:
-				if _boss_fight and not reader.boss_alive():  # v0.9.5 RS2: the last boss of the room fell
+				if _boss_fight and not reader.boss_alive():  # The last boss of the room fell
 					_boss_fight = false
 					_boss_done = true
 					if not _boss_hurt:
@@ -213,7 +213,7 @@ func _events(reader: WorldReader, events: Array[SimEvent]) -> bool:
 	return took
 
 
-## v0.8.0 FB1: the final fight's achievements: a body beaten clean when the next rises (or the last falls), and the
+## The final fight's achievements: a body beaten clean when the next rises (or the last falls), and the
 ## win (a loop past the first too).
 func _final(reader: WorldReader) -> void:
 	if not reader.final_arena():
@@ -227,15 +227,15 @@ func _final(reader: WorldReader) -> void:
 		_final_hurt = false
 	if won and not _ended:
 		report(&"final:won")
-		if reader.wand().get("weapon", &"blade") == &"gun":  # v0.9.5 SL: Sword Unbound unlocks the Blade
+		if reader.wand().get("weapon", &"blade") == &"gun":  # Sword Unbound unlocks the Blade
 			report(&"final:won_gun")
 		if reader.loop() > 1:
 			report(&"final:won_looped")
 
 
 ## Sealed rooms: one sealing starts clean; a hit that costs HP spoils it; its clear counts (and counts clean).
-## v0.9.5 DR: the locked rooms (lockdowns; on floor rules 20 the arena rooms too) count like the arenas.
-## the locked rooms (lockdowns; on floor rules 20 the arena rooms too) count like the arenas.
+## The locked rooms (lockdowns and the arena rooms) count like the arenas.
+## the locked rooms (lockdowns and the arena rooms) count like the arenas.
 func _rooms(reader: WorldReader) -> void:
 	_cleared_seen = _sealed_source(reader.arenas(), _cleared_seen)
 	_lk_cleared_seen = _sealed_source(reader.lockdown(), _lk_cleared_seen)

@@ -1,6 +1,6 @@
 class_name FormPack
 extends RefCounted
-## v0.10.0 VX2 (VFX_PACK R9, R12, R13): what AttackFormCanvas draws with the pack instead of meshes, split out so the
+## VFX_PACK R9, R12, R13: what AttackFormCanvas draws with the pack instead of meshes, split out so the
 ## canvas stays under the file-length rule: the zones, rings, orbiters and the bomb in flight (held effects named by a
 ## key, kept on the form each frame: FormPackHold), the crit and bounce flashes (vfx_hit_04 / vfx_hit_02, once) and the
 ## trigger cast's sigil (a MagicArea holy circle). Every method returns false when the pack is off or has no room, and

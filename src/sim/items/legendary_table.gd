@@ -13,15 +13,15 @@ var weights := PackedInt32Array([60, 40])
 var offer_size := 3
 ## The legendary stat amount: the epic amount x this per mille.
 var stat_permille := 1600
-## v0.8.0 FL (owner O91; replaces v0.6.5 WN5b's level-5 grant): the altar's first choices (Offers.roll_legendary):
+## The altar's first choices (Offers.roll_legendary):
 ## a held wand card one level up to the next floor's ceiling, and a card of these LootPacing.Category values.
 var upgrade := false
 var card_categories := PackedInt32Array()
-## v0.8.0 RR (owner O33; docs/roadmap/v0.8.0/evidence/RARITY.md): the chance, per mille, that a boss altar's offer
+## The chance, per mille, that a boss altar's offer
 ## holds a Legendary card (Offers.roll_legendary), and what each loop past the first adds; 0: never.
 var card_permille := 0
 var card_loop_permille := 0
-## v0.8.0 RR: the picks a boss altar gives past the first, per loop past the first, and at most (BossReward): loop 1
+## The picks a boss altar gives past the first, per loop past the first, and at most (BossReward): loop 1
 ## one pick, loop 2 two, ... each pick rolls a fresh offer with its own Legendary chance.
 var extra_picks_per_loop := 0
 var extra_picks_max := 0

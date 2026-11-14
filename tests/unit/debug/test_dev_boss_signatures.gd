@@ -25,7 +25,7 @@ func test_the_new_signature_numbers_are_f10_rows() -> void:
 			"res://data/bosses/hive_lens.tres",
 			&"gaze",
 			{
-				"quarter_seconds": 2.0,
+				"quarter_seconds": 3.0,
 				"reverse_seconds": 8.0,
 				"orb_every_seconds": 3.0,
 				"burn_seconds": 0.5

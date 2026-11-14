@@ -1,14 +1,14 @@
 class_name AbilityMods
 extends RefCounted
 ## The ability mods (v0.5.0 CP, owner F13: "more objects or upgrades and combos"): items that change an ability
-## rather than a weapon, offered only while you own that ability (ItemTable.requires_ability). v0.6.0 MX2: each is a
-## modifier card that takes one of the six slots (BuildSlots.is_slot_item). v0.6.0 MX4: all four are modifiers built
+## rather than a weapon, offered only while you own that ability (ItemTable.requires_ability). each is a
+## modifier card that takes one of the six slots (BuildSlots.is_slot_item). all four are modifiers built
 ## from ops (data/modifiers/), so each carries the rest of the build:
 ## - A blink spec's waiting ON_LAUNCH hook (its delay; Afterimage's, v0.5.0 CP): the blink leaves an echo where it
 ##   started that bursts that much later (the hook's burst, the area stat applied), drawn as before (World.ab.echo_*).
 ##   A blink while an echo waits bursts that one first.
 ## - A bomb's ON_END bomblets carry EFFECT_CLUSTER (Abilities._land_bombs).
-## v0.10.5 O1 (owner L23): the four ability mods' cards (Cluster Payload, Overclocked Drone, Razor Orbit,
+## The four ability mods' cards (Cluster Payload, Overclocked Drone, Razor Orbit,
 ## Afterimage) are gone with the abilities they changed; the hooks above are the generic ones that stay.
 
 const EFFECT_CLUSTER := &"cluster_payload"

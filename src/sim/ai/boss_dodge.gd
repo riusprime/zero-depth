@@ -1,6 +1,6 @@
 class_name BossDodge
 extends RefCounted
-## v0.7.5 BF1 (owner N15; docs/design/BOSS_FIGHTS.md; SIM_CONTRACTS §10d): the dodge-first parts of the boss framework
+## The dodge-first parts of the boss framework
 ## (BossAi calls them). Markers that follow the player's exact position, lock and strike (`marks`, `row_lanes`: one
 ## shape function each, mark_of and row_lanes_of, drawn and hit alike, EI-07); the `pattern` move's waves
 ## (BulletPatterns) and a burst's landing; the shield of a signature pattern (shielded(), read by Damage and the
@@ -8,12 +8,12 @@ extends RefCounted
 ## Pure: no stream is drawn here.
 
 
-## v0.7.5 BF1: a move that lays tracked markers one after another (marks, row_lanes).
+## A move that lays tracked markers one after another (marks, row_lanes).
 static func is_marker_move(move: int) -> bool:
 	return move == BossAttackTable.Move.MARKS or move == BossAttackTable.Move.ROW_LANES
 
 
-## v0.7.5 BF1: `t` ticks into a marker attack: marker k starts at k × mark_gap_ticks, follows the player's exact
+## `t` ticks into a marker attack: marker k starts at k × mark_gap_ticks, follows the player's exact
 ## position until its windup's last lock_ticks, then holds until it strikes (at k × mark_gap_ticks + windup_ticks).
 static func track_marks(w: World, b: int, atk: BossAttackTable, t: int) -> void:
 	if w.player_dead():
@@ -21,14 +21,14 @@ static func track_marks(w: World, b: int, atk: BossAttackTable, t: int) -> void:
 	for k in atk.count:
 		if t < k * atk.mark_gap_ticks + atk.windup_ticks - atk.lock_ticks:
 			w.bosses.set_pt(b, k, w.player_pos())
-			if atk.second_ticks > 0:  # v0.9.5 BH2 (B1): its second cross sits beside it, locking with it
+			if atk.second_ticks > 0:  # Its second cross sits beside it, locking with it
 				w.bosses.set_pt(b, atk.count + k, BossHard.second_point(w, b, atk, w.player_pos()))
 
 
-## v0.7.5 BF1: marker k's state `t` ticks into its attack: -1 not started, 0 tracking, 1 locked, 2 striking (this
+## Marker k's state `t` ticks into its attack: -1 not started, 0 tracking, 1 locked, 2 striking (this
 ## tick), 3 done.
 static func mark_state(atk: BossAttackTable, k: int, t: int) -> int:
-	if k >= atk.count:  # v0.9.5 BH2 (B1): a second cross
+	if k >= atk.count:  # A second cross
 		return BossHard.second_state(atk, k, t)
 	var t0 := k * atk.mark_gap_ticks
 	if t < t0:
@@ -40,14 +40,14 @@ static func mark_state(atk: BossAttackTable, k: int, t: int) -> int:
 	return 2 if t == t0 + atk.windup_ticks else 3
 
 
-## v0.7.5 BF1: ticks into boss i's attack (its windup, then its active time).
+## Ticks into boss i's attack (its windup, then its active time).
 static func attack_ticks(w: World, i: int, atk: BossAttackTable) -> int:
 	var st := w.actors.state_t[i]
 	return st if w.actors.state[i] == EnemyAi.State.WINDUP else atk.windup_ticks + st
 
 
-## v0.7.5 BF1: a shielded attack (the signature pattern) is winding up or running: hits spark off (Damage). It opens
-## between patterns. v0.8.0 FB2: a shielded Cross opens only for its window (its active time after the spin).
+## A shielded attack (the signature pattern) is winding up or running: hits spark off (Damage). It opens
+## between patterns. a shielded Cross opens only for its window (its active time after the spin).
 static func shielded(w: World, i: int) -> bool:
 	if not BossAi.is_boss_kind(w.actors.kinds[i]):
 		return false
@@ -56,20 +56,23 @@ static func shielded(w: World, i: int) -> bool:
 		return false
 	var atk := BossAi.attack_of(w, i)
 	if atk != null and atk.move == BossAttackTable.Move.CROSS and BossPrism.in_window(w, i):
-		return false  # v0.8.0 FB2 (F7): the Cross's window, between two spins
+		return false  # The Cross's window, between two spins
 	if (
 		atk != null
 		and atk.shield_active_ticks >= 0
 		and s == EnemyAi.State.ACTIVE
 		and w.actors.state_t[i] >= atk.shield_active_ticks
 	):
-		return false  # v0.10.5 O2a (L3): the shield holds only the first part of the pattern
+		return false  # The shield holds only the first part of the pattern
 	return atk != null and atk.shielded
 
 
-## v0.7.5 BF1: a pattern attack's active tick st: a burst's shell lands (a disc that hurts, where the windup locked),
+## A pattern attack's active tick st: a burst's shell lands (a disc that hurts, where the windup locked),
 ## and each wave tick fires its wave from the body (or the landing point) toward the locked aim.
 static func resolve_pattern(w: World, i: int, b: int, atk: BossAttackTable, st: int) -> void:
+	if atk.move == BossAttackTable.Move.GREAT_JAVELIN:  # Its own flight, not a bullet pattern
+		BossGreatJavelin.throw(w, i, b, atk, st)
+		return
 	var pat := atk.pattern
 	if pat == null:
 		return
@@ -79,12 +82,12 @@ static func resolve_pattern(w: World, i: int, b: int, atk: BossAttackTable, st: 
 		if AttackShapes.disc_touches(c, pat.land_radius_m, w.player_pos(), w.player.radius_m):
 			BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, c)
 	var k := BulletPatterns.wave_at(pat, st)
-	var part := 0 if pat.cross_delay_ticks > 0 else -1  # v0.9.5 BH3 (B6): the crossing wall leaves later
+	var part := 0 if pat.cross_delay_ticks > 0 else -1  # The crossing wall leaves later
 	var kc := BulletPatterns.cross_wave_at(pat, st)
 	if k < 0 and kc < 0:
 		return
 	if k >= 0:
-		BossHard.aim_fan(w, i, atk, k)  # v0.9.5 BH2 (B2): the first fan leads you, the next aims where you are
+		BossHard.aim_fan(w, i, atk, k)  # The first fan leads you, the next aims where you are
 	var origin := w.bosses.pt(b, 0) if burst else w.actors.pos(i)
 	var r := 0.0 if burst else w.actors.radius[i] + pat.radius_m + BulletPatterns.MUZZLE_M
 	var dmg := BossAi.orb_damage(w, i, atk)
@@ -97,15 +100,15 @@ static func resolve_pattern(w: World, i: int, b: int, atk: BossAttackTable, st: 
 		n += BulletPatterns.fire(
 			w, i, pat, k, origin, w.actors.lock_a[i], r, dmg, -2, Vector2i.ZERO, part
 		)
-	BossRicochet.arm_pattern(w, atk, n)  # v0.8.0 BS2 (S5): the Turret Cross's embers bounce once
+	BossRicochet.arm_pattern(w, atk, n)  # The Turret Cross's embers bounce once
 
 
-## v0.7.5 BF1: where marker k of a `marks` attack stands (it follows the player until it locks).
+## Where marker k of a `marks` attack stands (it follows the player until it locks).
 static func mark_of(w: World, i: int, k: int) -> Vector2:
 	return w.bosses.pt(BossAi.entry_of(w, i), k)
 
 
-## v0.7.5 BF1: marker k of a `row_lanes` attack: two lanes through its point, along the row (x) and the column (y),
+## Marker k of a `row_lanes` attack: two lanes through its point, along the row (x) and the column (y),
 ## each reaching length_m / 2 each way unless a wall cuts it short.
 static func row_lanes_of(w: World, i: int, k: int) -> Array[Obb]:
 	var atk := BossAi.attack_of(w, i)
@@ -119,7 +122,7 @@ static func row_lanes_of(w: World, i: int, k: int) -> Array[Obb]:
 	return out
 
 
-## v0.7.5 BF1: the markers of a marks / row_lanes attack showing now (started, not yet struck).
+## The markers of a marks / row_lanes attack showing now (started, not yet struck).
 static func marks_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionary:
 	var t := attack_ticks(w, i, atk)
 	var items: Array[Dictionary] = []
@@ -129,7 +132,7 @@ static func marks_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionar
 		if st < 0 or st > 2:
 			continue
 		var pr := clampi((t - k * atk.mark_gap_ticks) * 1000 / maxi(1, atk.windup_ticks), 0, 1000)
-		if k >= atk.count:  # v0.9.5 BH2 (B1): a second cross fills from the lock to its strike
+		if k >= atk.count:  # A second cross fills from the lock to its strike
 			var shown := (k - atk.count) * atk.mark_gap_ticks + atk.windup_ticks - atk.lock_ticks
 			var span := BossHard.strike_at(atk, k) + atk.windup_ticks - shown
 			pr = clampi((t - shown) * 1000 / maxi(1, span), 0, 1000)
@@ -140,7 +143,7 @@ static func marks_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionar
 			item["shape"] = &"disc"
 			item["center"] = mark_of(w, i, k)
 			item["radius"] = atk.radius_m
-			if atk.pattern != null and st == 1:  # v0.7.5 BF2: the egg flies onto its locked circle
+			if atk.pattern != null and st == 1:  # The egg flies onto its locked circle
 				var t_lock := k * atk.mark_gap_ticks + atk.windup_ticks - atk.lock_ticks
 				item["lob"] = {
 					"from": w.actors.pos(i),
@@ -163,7 +166,7 @@ static func marks_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionar
 	}
 
 
-## v0.7.5 BF2: a pattern's cast, for its windup and its whole firing: {"shape": &"cast", "ground": false, "progress",
+## A pattern's cast, for its windup and its whole firing: {"shape": &"cast", "ground": false, "progress",
 ## "move", "look"}. Nothing on the ground (owner N15/N16: no line for shots; TelegraphViews skips it); the boss's body
 ## winds up and holds its cast pose from it (the avatar reads the progress), so every wave's shots come from a cast
 ## the player saw for at least the windup (the readable-cause rule; windups are >= MIN_TELEGRAPH_TICKS).
@@ -177,11 +180,13 @@ static func cast_telegraph(atk: BossAttackTable, windup: bool, progress: int) ->
 	}
 
 
-## v0.7.5 BF1: a pattern draws nothing on the ground but a burst's landing marker (and its flying shell); v0.7.5 BF2:
+## A pattern draws nothing on the ground but a burst's landing marker (and its flying shell);
 ## the rest of a pattern's time is its cast (cast_telegraph).
 static func pattern_telegraph(
 	w: World, i: int, b: int, atk: BossAttackTable, windup: bool, progress: int
 ) -> Dictionary:
+	if atk.move == BossAttackTable.Move.GREAT_JAVELIN:  # Its line and its landing mark
+		return BossGreatJavelin.telegraph(w, i, atk, windup, progress)
 	var pat := atk.pattern
 	if pat == null:
 		return {}
@@ -207,7 +212,7 @@ static func pattern_telegraph(
 	return out
 
 
-## v0.7.5 BF1: the pattern boss i is firing now, for its avatar and the views: {} or {"id" (the pattern's), "kind"
+## The pattern boss i is firing now, for its avatar and the views: {} or {"id" (the pattern's), "kind"
 ## (BulletPatternTable.Kind), "look", "shielded", "winding" (true in the windup), "progress" (0..1000 of the windup,
 ## then of the active time)}.
 static func pattern_state(w: World, i: int) -> Dictionary:
@@ -239,10 +244,10 @@ static func resolve_marks(w: World, i: int, b: int, atk: BossAttackTable, st: in
 	for k in BossHard.marker_count(atk):
 		var at := BossHard.strike_at(atk, k)
 		if k < atk.count and atk.pattern != null and atk.egg_ticks <= 0:
-			burst_mark(w, i, atk, k, st - k * atk.mark_gap_ticks)  # v0.8.0 BS1: an egg bursts on its own clock
+			burst_mark(w, i, atk, k, st - k * atk.mark_gap_ticks)  # An egg bursts on its own clock
 		if atk.pillar_ticks > 0 and st == at + 1 and (atk.second_ticks <= 0 or k >= atk.count):
-			# v0.8.0 BS1 (S1): the spikes stay as pillars, the tick after the strike (the strike's own lanes,
-			# drawn and hit on its tick, are never cut short by its pillars). v0.9.5 BH2: with second crosses,
+			# The spikes stay as pillars, the tick after the strike (the strike's own lanes,
+			# drawn and hit on its tick, are never cut short by its pillars). with second crosses,
 			# only the second ones leave pillars (the first ones' would cut the second ones' lanes short).
 			BossSignatures.raise_pillars(w, i, atk, k)
 		if st != at:
@@ -252,17 +257,20 @@ static func resolve_marks(w: World, i: int, b: int, atk: BossAttackTable, st: in
 			var c := mark_of(w, i, k)
 			if AttackShapes.disc_touches(c, atk.radius_m, p, pr):
 				BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, c)
-			BossSignatures.lay_egg(w, b, atk, c)  # v0.8.0 BS1 (S3): the egg stays, to pop or to hatch
-			BossTide.undertow(w, atk, c)  # v0.9.0 NB1: the Undertow drags the player toward it
-			BossShade.snuff(w, atk, c)  # v0.9.0 NB4: the Snuff puts out the lantern nearest it
+			BossSignatures.lay_egg(w, b, atk, c, k)  # The egg stays, to pop or to hatch
+			if k == BossHard.marker_count(atk) - 1:
+				BossHazard.rock_stage(w, i, b)  # The Barrage's last shell brings a rock down
+			BossTide.undertow(w, atk, c)  # The Undertow drags the player toward it
+			BossShade.snuff(w, atk, c)  # The Snuff puts out the lantern nearest it
 		else:
 			for o: Obb in row_lanes_of(w, i, k):
 				if Collide.circle_vs_obb(p, pr, o) != Vector2.ZERO:
 					BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, o.center)
 					break
+			BossQuake.lanes_strike(w, i, k, atk)  # A lane through a quake pillar shatters it
 
 
-## v0.7.5 BF2 (the Brood Mother's Egg Storm): marker k of a `marks` attack with a pattern is an egg's landing; `local`
+## The Brood Mother's Egg Storm: marker k of a `marks` attack with a pattern is an egg's landing; `local`
 ## ticks after it struck (0 = the strike) the pattern's waves burst from it (its lob was the marker's lock), aimed
 ## at where the player stands then (the pattern's aim offset puts the player in a gap), from egg_r out of its
 ## centre. BulletPatterns.fire leaves out the shots that would spawn on the player.
@@ -279,18 +287,18 @@ static func burst_mark(w: World, i: int, atk: BossAttackTable, k: int, local: in
 	)
 
 
-## v0.7.5 BF2: how far from a landing's (or an eruption's) centre its burst's shots appear: half its circle.
+## How far from a landing's (or an eruption's) centre its burst's shots appear: half its circle.
 static func egg_r(atk: BossAttackTable) -> float:
 	return atk.radius_m * 0.5
 
 
-## v0.7.5 BF2: a burrow with a lock (the Brood Mother's): its eruption circle follows the player's exact position
+## A burrow with a lock (the Brood Mother's): its eruption circle follows the player's exact position
 ## while the ripple tracks (BossStore point 0); it locks there for the lock.
 static func tracked_burrow(atk: BossAttackTable) -> bool:
 	return atk.move == BossAttackTable.Move.BURROW and atk.lock_ticks > 0
 
 
-## v0.7.5 BF2: a burrow's eruption burst (its pattern, a ring), `st` ticks after it erupted at `c`, aimed at the
+## A burrow's eruption burst (its pattern, a ring), `st` ticks after it erupted at `c`, aimed at the
 ## player (a ring's gap is centred on its aim).
 static func burst_eruption(w: World, i: int, atk: BossAttackTable, c: Vector2, st: int) -> void:
 	var pat := atk.pattern
@@ -304,14 +312,14 @@ static func burst_eruption(w: World, i: int, atk: BossAttackTable, c: Vector2, s
 	)
 
 
-## v0.7.5 BF2: ticks a burrow's eruption lasts (its burst's waves; 1 without a pattern).
+## Ticks a burrow's eruption lasts (its burst's waves; 1 without a pattern).
 static func eruption_ticks(atk: BossAttackTable) -> int:
 	if atk.pattern == null:
 		return 1
 	return atk.pattern.duration_ticks() - atk.pattern.lob_ticks
 
 
-## v0.7.5 BF3: the circles of volley k of a `grid` attack: the cells of the count × count board (cell_m apart,
+## The circles of volley k of a `grid` attack: the cells of the count × count board (cell_m apart,
 ## centred where the windup locked, on the player) whose colour is k's (even volleys hold the centre cell, the
 ## player's), leaving out a cell whose centre is in a wall. Drawn and struck alike (EI-07).
 static func grid_discs(w: World, i: int, k: int) -> PackedVector2Array:
@@ -324,7 +332,7 @@ static func grid_discs(w: World, i: int, k: int) -> PackedVector2Array:
 	)
 	for y in range(-h, h + 1):
 		for x in range(-h, h + 1):
-			if atk.safe_cells > 0:  # v0.9.5 BH2 (B5): every cell but the safe ones
+			if atk.safe_cells > 0:  # Every cell but the safe ones
 				if safe.has(Vector2i(x, y)):
 					continue
 			elif absi(x + y) % 2 != k % 2:
@@ -335,12 +343,12 @@ static func grid_discs(w: World, i: int, k: int) -> PackedVector2Array:
 	return out
 
 
-## v0.7.5 BF3: volley k's state `t` ticks into a grid attack (mark_state's codes): the first volley's board tracks the
-## player until the lock; each later volley (the board stays where it locked) shows only for its own lock_ticks
-## before it strikes, so one colour flashes at a time.
+## Volley k's state `t` ticks into a grid attack (mark_state's codes): the first volley's board tracks the
+## player until the lock; each later volley (the board stays where it locked) stays hidden until the volley before it
+## lands, then shows (locked) for one mark_gap_ticks before it strikes: one colour at a time.
 static func grid_state(atk: BossAttackTable, k: int, t: int) -> int:
 	var strike := k * atk.mark_gap_ticks + atk.windup_ticks
-	if k > 0 and t < strike - atk.lock_ticks:
+	if k > 0 and t < strike - atk.mark_gap_ticks:
 		return -1
 	if t < atk.windup_ticks - atk.lock_ticks:
 		return 0
@@ -349,8 +357,8 @@ static func grid_state(atk: BossAttackTable, k: int, t: int) -> int:
 	return 2 if t == strike else 3
 
 
-## v0.7.5 BF3: a grid's telegraph: &"marks" with one disc item per circle of each volley showing now (its progress
-## over its own showing time: the whole windup for the first, the lock for the later ones).
+## A grid's telegraph: &"marks" with one disc item per circle of each volley showing now (its progress
+## over its own showing time: the whole windup for the first, one mark_gap for the later ones).
 static func grid_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionary:
 	var t := attack_ticks(w, i, atk)
 	var items: Array[Dictionary] = []
@@ -360,7 +368,7 @@ static func grid_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionary
 		var st := grid_state(atk, k, t)
 		if st < 0 or st > 2:
 			continue
-		var span := atk.windup_ticks if k == 0 else atk.lock_ticks
+		var span := atk.windup_ticks if k == 0 else atk.mark_gap_ticks
 		var t0 := k * atk.mark_gap_ticks + atk.windup_ticks - span
 		var pr := clampi((t - t0) * 1000 / maxi(1, span), 0, 1000)
 		if first < 0:
@@ -388,13 +396,15 @@ static func grid_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionary
 	}
 
 
-## Tick phase 6 (v0.7.5 BF3): volley k of a grid strikes on active tick k × mark_gap_ticks, once, on its colour's
+## Tick phase 6: volley k of a grid strikes on active tick k × mark_gap_ticks, once, on its colour's
 ## circles (each volley may hit; the hurt iframes still apply).
 static func resolve_grid(w: World, i: int, b: int, atk: BossAttackTable, st: int) -> void:
 	var gap := maxi(1, atk.mark_gap_ticks)
 	if st % gap != 0 or st / gap >= atk.volleys:
 		return
 	w.bosses.hit[b] = 0
+	if st / gap == atk.volleys - 1:
+		BossHazard.rock_stage(w, i, b)  # The Mortar's last volley brings a rock down
 	var p := w.player_pos()
 	for c: Vector2 in grid_discs(w, i, st / gap):
 		if AttackShapes.disc_touches(c, atk.radius_m, p, w.player.radius_m):
@@ -402,7 +412,7 @@ static func resolve_grid(w: World, i: int, b: int, atk: BossAttackTable, st: int
 			return
 
 
-## v0.7.5 BF3: molten flood lane k of a `row_flood` attack: along the row (x) through the tracked point, offset
+## Molten flood lane k of a `row_flood` attack: along the row (x) through the tracked point, offset
 ## gap_m × (k - (count - 1) / 2) in y, reaching length_m / 2 each way from the player's x unless a wall cuts it
 ## short.
 static func row_flood_of(w: World, i: int, k: int) -> Obb:
@@ -413,7 +423,7 @@ static func row_flood_of(w: World, i: int, k: int) -> Obb:
 	return AttackShapes.lane(c - Vector2(back, 0.0), 0, maxf(fwd + back, 0.01), atk.half_width_m)
 
 
-## v0.7.5 BF3: a raining pattern's drops in the air now (a FLOWER with rain_ticks: each wave is thrown up from the
+## A raining pattern's drops in the air now (a FLOWER with rain_ticks: each wave is thrown up from the
 ## body as the wave starts and lands, as a shot, rain_ticks later): [from, to, progress 0..1, progress a tick] per
 ## drop, where wave_shots puts it. Pure; for the views only (a drop hurts once it has landed).
 static func rain_drops(w: World, i: int) -> Array:

@@ -49,6 +49,8 @@ static func fight(id: StringName, bot: int, seed_value: int = 5, stats: Dictiona
 			w.actors.state[i] == EnemyAi.State.MOVE and w.bosses.gap_t[b] >= t_b.gap_ticks - 1
 		)
 		w.step(_frame(w, i, bot, t))
+		# F9: percent-of-max-HP quakes kill at any HP, so the driver is topped up to live to the end.
+		w.actors.hp[0] = w.actors.max_hp[0]
 		i = w.actors.index_of(bid)
 		if closing and i >= 0 and w.actors.state[i] == EnemyAi.State.WINDUP:
 			if w.bosses.attack[BossAi.entry_of(w, i)] == gap:

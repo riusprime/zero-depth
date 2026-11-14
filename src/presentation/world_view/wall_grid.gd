@@ -1,7 +1,7 @@
 class_name WallGrid
 extends RefCounted
 ## The walls' union on a grid of their edges: per cell, the wall it belongs to (the first that covers it) or -1.
-## v0.8.0 N10: ProceduralWall's grid (presentation only).
+## ProceduralWall's grid (presentation only).
 
 var xs := PackedFloat64Array()
 var ys := PackedFloat64Array()
@@ -74,7 +74,7 @@ func owner_at(p: Vector2) -> int:
 	return at(i, j)
 
 
-## v0.8.0 N13 (ProceduralWall's rim and fill): each solid cell's distance (m, from its centre) to the union's edge
+## ProceduralWall's rim and fill: each solid cell's distance (m, from its centre) to the union's edge
 ## along the grid's rows and columns (the nearest open cell in any of the four directions; off the grid is open).
 func edge_dist() -> PackedFloat32Array:
 	var d := PackedFloat32Array()

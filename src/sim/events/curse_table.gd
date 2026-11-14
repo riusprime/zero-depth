@@ -2,7 +2,7 @@ class_name CurseTable
 extends RefCounted
 ## One curse's compiled numbers (v0.5.0 EV; EventCompiler from CurseDefinition): its effect (Curses.Effect), the
 ## amount in per mille (a count for the count effects, ticks for hit_stun), the threat it adds and its draw weight.
-## v0.6.0 CU: an optional second drawback (effect_2, -1 = none) and the upside of a trade-off curse (up_effect, -1 =
+## An optional second drawback (effect_2, -1 = none) and the upside of a trade-off curse (up_effect, -1 =
 ## a plain curse) with its sentence.
 
 var id := &""
@@ -17,8 +17,8 @@ var up_amount := 0
 var up_desc_key := &""
 var threat := 1
 var weight := 0
-## v0.9.0 EL: a retired curse's place (its content deleted: Marked, owner Q25): never drawn (weight 0), no effect, no
-## threat; a save still holding it drops it (Curses.drop_retired).
+## A retired curse's place (its content deleted: Marked, owner Q25): never drawn (weight 0), no effect, no
+## threat.
 var retired := false
 
 

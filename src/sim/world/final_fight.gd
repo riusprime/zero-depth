@@ -1,36 +1,32 @@
 class_name FinalFight
 extends RefCounted
-## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F3): the final boss's fight state, one per World that holds it (the final
+## The final boss's fight state, one per World that holds it (the final
 ## arena, or the Playground when the owner summons it; World.final_fight, null everywhere else). One fight, three
 ## bodies: `tables` are the bodies' boss tables in order (the Colossus, the Prism, the Nemesis), `phase` the body
 ## fighting now (its actor id `body_id`), `shatter_t` the ticks left of the shatter between two bodies (0 = none) out of
 ## `shatter_ticks`, `phase_tick` the tick the current body began (its rise), and `won` once the last body fell (on
-## `won_tick`). FinalBoss runs it. Hashed and saved (WorldSnapshot: a state class; ADDED_SINCE_V05 lists the World
-## field, so a save made before FB1, which has no final fight, loads as before).
-## v0.8.0 FB2 (owner F7, "Phase-by-phase mix"): the fight's centre `home` (where the first body rose; the Prism floats
+## `won_tick`). FinalBoss runs it. Hashed and saved (WorldSnapshot: a state class).
+## The fight's centre `home` (where the first body rose; the Prism floats
 ## back to it) and the damage meter (FinalBoss.note_damage / measure): the damage the player dealt in each of the
 ## last DPS_SECONDS closed seconds of the fight's measured time (a ring, `dps_head` its next slot, `dps_closed`
-## seconds closed so far), the damage of the second running (`dps_acc`) and its ticks counted (`dps_t`). An FB1 save
-## lacks them (WorldSnapshot.ADDED_SINCE_V05): the base's fresh values (the arena's centre, an empty meter).
+## seconds closed so far), the damage of the second running (`dps_acc`) and its ticks counted (`dps_t`).
 
-## v0.8.0 FB3 (owner F6, F7; BossNemesis, NemesisBuild): the mimic body's state. As it rises (NemesisBuild.prepare)
+## The mimic body's state. As it rises (NemesisBuild.prepare)
 ## the fight reads the player's build once: the run's weapon (`weapon`, a BossAttackTable.WEAPON_*), the Nemesis's hit
 ## and its cap (`hit`, `hit_cap`), the player's combo arcs (`combo_half`, `combo_reach`: a Blade run's steps as its
 ## wand made them), its ranged form (`shot`) and the hostile copies of the strongest cards (`casts`); `ready` once read.
 ## While it fights, the fight records the player's path (a ring of the last ECHO_MAX ticks' positions, `echo_x` and
 ## `echo_y`, `echo_head` its next slot, `echo_n` how many are held) and their dashes (`dash_due`: the tick the Nemesis
 ## answers the last one, -1 none; `dash_dir` its way); the Nemesis's own dash (`dash_t` ticks left, `dash_vel` m per
-## tick) and its stance (`stance`, BossTable.STANCE_*, for `stance_t` more ticks). An FB2 save lacks them
-## (WorldSnapshot.ADDED_SINCE_V05): a fresh mimic state, read again at the Nemesis's next tick (its HP stays as saved).
+## tick) and its stance (`stance`, BossTable.STANCE_*, for `stance_t` more ticks).
 
 ## v0.8.0 N2 (owner O41: "each phase takes 1-2 minutes 1 minute being the most op and longer if you are not op";
 ## O42, O52: The Fallen "should mimic and nerf you … only at certain times … on and off"; FinalPace): the pace of the
 ## body fighting now: `paced` once its HP was set from the meter (at `pace_dps`, the measured damage per second × 1000
 ## it was set from), `pace_budget` the damage it may still take now (× 1000: its rate cap's bucket), and `copying`
-## while The Fallen's attack in progress began in a mimic window (it swings and casts the player's build). An older
-## save lacks them (WorldSnapshot.ADDED_SINCE_V05): a fresh pace (unpaced, an empty bucket), set again from the meter.
+## while The Fallen's attack in progress began in a mimic window (it swings and casts the player's build).
 
-## v0.9.5 BH6 (owner, 2026-10-25; BOSSES_HARD.md HC4-HC6; BossInterphase): The Fallen's interphases and dashes.
+## The Fallen's interphases and dashes.
 ## `ip_done` has bit k once interphase k began; `ip_stage` is 0 (none), 1 (a threshold reached: it finishes its move),
 ## 2 (vanished: the set `ip_set` runs, `ip_t` ticks in) or 3 (the return telegraph); `ip_prev` the set of the last
 ## interphase (a set is never drawn twice in a row), `ip_total` every tick spent in stages 2 and 3 (the pace's clock
@@ -39,12 +35,11 @@ extends RefCounted
 ## which no interphase hit lands. Eruptions (`er_*`: place, strike tick), spike lines (`sl_*`: first place, way, tick it
 ## starts to move, length, its middle's offset across, hit) and lanterns (`lamp_t`: burn ticks left) are the set's.
 ## `rd_*` the dash between moves: `rd_pending` (one is due when the next move would begin), `rd_t` ticks of its
-## telegraph left, `rd_to` where it goes. An older save lacks them (WorldSnapshot.ADDED_SINCE_V05): none begun, none
-## pending.
+## telegraph left, `rd_to` where it goes.
 
-## v0.8.0 FB2: the meter's ring holds this many seconds (a body reads its last dps_seconds of them).
+## The meter's ring holds this many seconds (a body reads its last dps_seconds of them).
 const DPS_SECONDS := BossSchemas.DPS_MAX_SECONDS
-## v0.8.0 FB3: the echo's ring holds this many ticks (BossTable.echo_ticks is at most this).
+## The echo's ring holds this many ticks (BossTable.echo_ticks is at most this).
 const ECHO_MAX := 120
 
 var tables := PackedInt32Array()
@@ -57,14 +52,14 @@ var won := false
 var won_tick := -1
 ## The fight's name (RunTable.final_name_key; setup, not hashed: the boss bar's title).
 var name_key := &""
-## v0.8.0 FB2: the fight's centre, and the damage meter (one-second buckets, a ring of DPS_SECONDS).
+## The fight's centre, and the damage meter (one-second buckets, a ring of DPS_SECONDS).
 var home := Vector2.ZERO
 var dps_secs := PackedInt32Array()
 var dps_head := 0
 var dps_closed := 0
 var dps_acc := 0
 var dps_t := 0
-## v0.8.0 FB3: the mimic body (class doc).
+## The mimic body (class doc).
 var ready := false
 var weapon := BossAttackTable.WEAPON_BLADE
 var hit := 0
@@ -83,12 +78,12 @@ var dash_t := 0
 var dash_vel := Vector2.ZERO
 var stance := 0
 var stance_t := 0
-## v0.8.0 N2: the body's pace and The Fallen's window copy (class doc).
+## The body's pace and The Fallen's window copy (class doc).
 var paced := false
 var pace_dps := 0
 var pace_budget := 0
 var copying := false
-## v0.9.5 BH6: the interphases and the dash between moves (class doc).
+## The interphases and the dash between moves (class doc).
 var ip_done := 0
 var ip_stage := 0
 var ip_t := 0
@@ -131,7 +126,7 @@ static func create(p_tables: PackedInt32Array, p_shatter_ticks: int) -> FinalFig
 	return f
 
 
-## v0.8.0 FB2: closes the second running into the ring.
+## Closes the second running into the ring.
 func close_second() -> void:
 	if dps_secs.size() != DPS_SECONDS:
 		dps_secs.resize(DPS_SECONDS)
@@ -142,7 +137,7 @@ func close_second() -> void:
 	dps_t = 0
 
 
-## v0.8.0 FB2: [the damage of the last `n` closed seconds (at most what closed), how many seconds that is].
+## [the damage of the last `n` closed seconds (at most what closed), how many seconds that is].
 func measured(n: int) -> Array[int]:
 	var k := mini(clampi(n, 0, DPS_SECONDS), dps_closed)
 	var sum := 0
@@ -151,7 +146,7 @@ func measured(n: int) -> Array[int]:
 	return [sum, k]
 
 
-## v0.8.0 FB3: records the player at `at` this tick in the echo ring.
+## Records the player at `at` this tick in the echo ring.
 func note_echo(at: Vector2) -> void:
 	if echo_x.size() != ECHO_MAX:
 		echo_x.resize(ECHO_MAX)
@@ -162,7 +157,7 @@ func note_echo(at: Vector2) -> void:
 	echo_n = mini(echo_n + 1, ECHO_MAX)
 
 
-## v0.8.0 FB3: where the player stood `ago` ticks before the last one recorded (the oldest held when the ring holds
+## Where the player stood `ago` ticks before the last one recorded (the oldest held when the ring holds
 ## fewer; `fallback` when it holds none).
 func echo_at(ago: int, fallback: Vector2) -> Vector2:
 	if echo_n <= 0 or echo_x.size() != ECHO_MAX:
@@ -189,9 +184,9 @@ func hash_into(h: StateHasher) -> void:
 	for v in [1 if paced else 0, pace_dps, pace_budget, 1 if copying else 0]:  # v0.8.0 N2
 		h.add_int(v)
 	if ip_done != 0 or ip_stage != 0 or ip_prev >= 0 or rd_pending != 0 or rd_t != 0:
-		_hash_interphase(h)  # v0.9.5 BH6: only once an interphase or a dash has begun (an earlier fight hashes as before)
+		_hash_interphase(h)  # Only once an interphase or a dash has begun (an earlier fight hashes as before)
 	if not ready and echo_n == 0:
-		return  # v0.8.0 FB3: no mimic body has fought yet (an earlier fight hashes as before)
+		return  # No mimic body has fought yet (an earlier fight hashes as before)
 	for v in [weapon, hit, hit_cap, echo_head, echo_n, dash_due, dash_t, stance, stance_t]:
 		h.add_int(v)
 	h.add_int(1 if ready else 0)

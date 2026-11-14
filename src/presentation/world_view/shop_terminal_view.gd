@@ -1,6 +1,6 @@
 class_name ShopTerminalView
 extends Node3D
-## The shop terminal (v0.5.0 SH): a low-poly vending console on a hexagonal plinth, in the game's metal and the
+## The shop terminal: a low-poly vending console on a hexagonal plinth, in the game's metal and the
 ## shards' violet: a chamfered body, a slanted glowing screen facing the way in, a coin slot strip, two side posts
 ## with light caps, and a shard gem turning over the screen. It brightens while you stand in reach, pulses when a
 ## purchase or sale lands, and shakes (the screen going red) on a refusal. Glowing materials have emission on from

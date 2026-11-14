@@ -1,6 +1,6 @@
 class_name PackLooks
 extends RefCounted
-## v0.10.0 VX2 (docs/roadmap/v0.9.5/VFX_PACK.md R1-R13): which pack effect (data/vfx/pack_fx_vx2.tres) draws a hero
+## Which pack effect (data/vfx/pack_fx_vx2.tres) draws a hero
 ## shot or form of an element, and the colours it is given. The one place the hero's views read it, so a bolt, a
 ## needle, a wisp, a lance ball and a laser of one element are coloured alike. Presentation only (EI-07): constants
 ## and look-ups.
@@ -11,7 +11,6 @@ extends RefCounted
 ## The elements that have their own scene; anything else (none, void) takes the storm's blue.
 const SHAPED: Array[StringName] = [&"ember", &"frost", &"venom", &"storm", &"bleed"]
 const VOID_VIOLET := Color("#8B55FF")
-const PALE_GOLD := Color("#FFF3C4")
 ## How big a bolt's pack effect is drawn per metre of the shot's drawn core radius: the scene's head is this wide
 ## (ice ball, fire ball and the projectile's stretched sphere differ), so the on-screen size matches the old pulse.
 const BOLT_PER_RADIUS := {

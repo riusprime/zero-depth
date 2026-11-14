@@ -4,10 +4,9 @@ extends Node3D
 ## following a target with a dead zone. It moves in _process, so physics interpolation is off for it.
 
 const YAW_DEG := 45.0
-## v0.8.0 GF3 (owner O22): the hit-stop's tiny camera kick: an offset (screen metres: h, v) along the swing, easing
+## The hit-stop's tiny camera kick: an offset (screen metres: h, v) along the swing, easing
 ## back over KICK_SECONDS. Off with shake off or reduced motion, like the shake.
 const KICK_SECONDS := 0.09
-## v0.9.0 CV (owner C20-C22, Q17: "a short, subtle vibration … without visibly pulling the camera across the screen"):
 ## the vibration's offset at level 1 (screen metres) and how fast a thud fades (level per second). Three fast
 ## incommensurate sines per axis (Hz): a buzz with no direction that averages to nothing, unlike shake()'s sweep.
 const VIBRATE_M := 0.06
@@ -25,16 +24,16 @@ var camera: Camera3D
 var target := Vector3.ZERO
 ## Screen shake (PRESENTATION §1, §6): off means none at all.
 var shake_enabled := true
-## v0.8.0 N11 (owner O69): the arrival's flourish (PortalTransitView sets it each tick): a roll of the view about its
+## The arrival's flourish (PortalTransitView sets it each tick): a roll of the view about its
 ## axis (radians) and a zoom (1 = none, above 1 closer). None with shake off or reduced motion, like the shake.
 var flourish_roll := 0.0
 var flourish_zoom := 1.0
 var _shake := 0.0
 var _shake_seed := 0
-## v0.8.0 GF3: the kick (see KICK_SECONDS).
+## The kick (see KICK_SECONDS).
 var _kick := Vector2.ZERO
 var _kick_t := 0.0
-## v0.9.0 CV: the vibration's level (0..1) and its clock (seconds).
+## The vibration's level (0..1) and its clock (seconds).
 var _vibrate := 0.0
 var _vibrate_t := 0.0
 var _pitch: Node3D
@@ -50,7 +49,7 @@ func _init() -> void:
 	camera.size = view_size
 	camera.near = RenderSwitches.camera_near()  # 0.1, or 30 m with the cheaper sun (v0.10.5 PB, switch 8)
 	# The directional shadow of an orthographic camera covers near..far, so a long far plane spreads the shadow
-	# map thin and the edges stair-step (v0.2.0 L2). At the default size and pitch the ground is 48-72 m away.
+	# map thin and the edges stair-step. At the default size and pitch the ground is 48-72 m away.
 	camera.far = 100.0
 	camera.position = Vector3(0, 0, 60)
 	_pitch.add_child(camera)
@@ -91,7 +90,7 @@ func _process(delta: float) -> void:
 		camera.v_offset = off.y
 
 
-## v0.8.0 GF3: a tiny kick of the view along `dir` (a direction in 3D, flat), `metres` at its start. Does nothing when
+## A tiny kick of the view along `dir` (a direction in 3D, flat), `metres` at its start. Does nothing when
 ## shake is off or reduced motion is on. A kick replaces the last one (never stacked).
 func kick(dir: Vector3, metres: float) -> void:
 	if not shake_enabled or ViewPrefs.reduced_motion:
@@ -107,7 +106,7 @@ func kick(dir: Vector3, metres: float) -> void:
 	_kick_t = KICK_SECONDS
 
 
-## v0.8.0 GF3: the kick's offset now (screen metres), easing out to zero.
+## The kick's offset now (screen metres), easing out to zero.
 func kick_offset() -> Vector2:
 	if _kick_t <= 0.0:
 		return Vector2.ZERO
@@ -121,14 +120,7 @@ func shake(amount: float) -> void:
 		_shake = minf(1.0, _shake + amount)
 
 
-## v0.8.0 N11: holds the shake at `level` (0..1) at least (a steady tremble while the receiver charges). Off like
-## shake().
-func shake_to(level: float) -> void:
-	if shake_enabled and not ViewPrefs.reduced_motion:
-		_shake = maxf(_shake, minf(1.0, level))
-
-
-## v0.8.0 N11: the arrival's roll (radians) and zoom (1 = none); back to none with shake off or reduced motion.
+## The arrival's roll (radians) and zoom (1 = none); back to none with shake off or reduced motion.
 func set_flourish(roll: float, zoom: float) -> void:
 	if not shake_enabled or ViewPrefs.reduced_motion:
 		roll = 0.0
@@ -141,14 +133,14 @@ func shake_level() -> float:
 	return _shake
 
 
-## v0.9.0 CV: holds the vibration at `level` (0..1) at least: a build-up (the arrival's charge, the Ascension portal's
+## Holds the vibration at `level` (0..1) at least: a build-up (the arrival's charge, the Ascension portal's
 ## pull). It fades by itself once nothing holds it. Off with shake off or reduced motion, like the shake.
 func vibrate_to(level: float) -> void:
 	if shake_enabled and not ViewPrefs.reduced_motion:
 		_vibrate = maxf(_vibrate, clampf(level, 0.0, 1.0))
 
 
-## v0.9.0 CV: a burst of vibration (a heavy landing: the hero's pop, the boss door's slab) that eases out.
+## A burst of vibration (a heavy landing: the hero's pop, the boss door's slab) that eases out.
 func thud(amount: float) -> void:
 	if shake_enabled and not ViewPrefs.reduced_motion:
 		_vibrate = minf(1.0, _vibrate + amount)
@@ -158,7 +150,7 @@ func vibration_level() -> float:
 	return _vibrate
 
 
-## v0.9.0 CV: the vibration's offset now (screen metres: h, v), at most VIBRATE_M × the level on each axis.
+## The vibration's offset now (screen metres: h, v), at most VIBRATE_M × the level on each axis.
 func vibration_offset() -> Vector2:
 	if _vibrate <= 0.0:
 		return Vector2.ZERO

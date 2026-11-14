@@ -344,22 +344,6 @@ func test_deterministic_and_a_mid_pull_save_restores() -> void:
 	assert_eq(restored.state_hash(), a.state_hash(), "same hash 360 ticks on")
 
 
-func test_an_older_snapshot_without_the_cadence_loads() -> void:
-	var s := _fight(Vector2(-7, 2))
-	var w: World = s[0]
-	var snap := WorldSnapshot.take(w)
-	var bosses: Dictionary = snap["world"][&"bosses"]
-	assert_true(bosses.has(&"sig_boss"), "the cadence is saved")
-	bosses.erase(&"sig_boss")
-	bosses.erase(&"sig_due")
-	var base := BossLab.world()
-	BossLab.ready_boss(base, &"tidecaller")
-	assert_eq(WorldSnapshot.apply(base, snap), "", "a save from before NB1 loads")
-	assert_true(
-		base.bosses.sig_boss.is_empty(), "with no cadence yet (it starts at its next think)"
-	)
-
-
 func test_the_death_lines_name_the_tide() -> void:
 	var s := _fight(Vector2(-7, 0))
 	var w: World = s[0]

@@ -1,12 +1,12 @@
 class_name ModifierTable
 extends RefCounted
-## v0.6.0 MX1: one compiled ModifierDefinition (ContentCompiler.compile_modifier), in sim units. Loadout: compiled
+## One compiled ModifierDefinition (ContentCompiler.compile_modifier), in sim units. Loadout: compiled
 ## at setup, never written in play (Modifiers.compile reads it into fresh specs).
 
-## ModifierDefinition.Stage, same numbers. v0.6.5 WN1: the order of one card's own ops (across cards the slot order
+## ModifierDefinition.Stage, same numbers. the order of one card's own ops (across cards the slot order
 ## decides: WandCompile).
 enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }
-## v0.8.0 AO: ModifierDefinition.OrderKind, same numbers.
+## ModifierDefinition.OrderKind, same numbers.
 enum OrderKind { FREE, SHAPE, COUNT, MOTION }
 const STAGE_COUNT := 6
 
@@ -18,15 +18,15 @@ var target := PackedStringArray()
 var stage: int = Stage.PAYLOAD
 var ops: Array[ModifierOp] = []
 var overlay := &""
-## v0.8.0 AO: ModifierDefinition.OrderKind, same numbers (WandCompile: a SHAPE card takes in what is left of it).
+## ModifierDefinition.OrderKind, same numbers (WandCompile: a SHAPE card takes in what is left of it).
 var order_kind := 0
-## v0.8.0 MR (owner O91, Split Wave without Wave): the card's other reading. On a spec matching alt_target (and not
+## The card's other reading. On a spec matching alt_target (and not
 ## target) that has no hook child matching target yet, the card's `alt` ops run instead (WandCompile.run): Split Wave
 ## splits a flying slash, and on a slash with no flying slash its hits throw small crescents. Empty: none.
 var alt_target := PackedStringArray()
 
 
-## v0.6.5 WN1: the wand trigger's op (a trigger card's one op), or null for a modifier of rewrites.
+## The wand trigger's op (a trigger card's one op), or null for a modifier of rewrites.
 func trigger_op() -> ModifierOp:
 	for o in ops:
 		if o.op == ModifierOp.Op.TRIGGER:
@@ -38,7 +38,7 @@ func is_trigger() -> bool:
 	return trigger_op() != null
 
 
-## v0.6.5 WN3 (WAND.md rule 6, a duplicate levels the card up): this card at `level` (1..5): itself when no op grows
+## WAND.md rule 6, a duplicate levels the card up: this card at `level` (1..5): itself when no op grows
 ## with the level (or at level 1), else a copy whose ops are at that level (ModifierOp.at_level). Compile-time only.
 func at(level: int) -> ModifierTable:
 	if level <= 1:
@@ -62,7 +62,7 @@ func at(level: int) -> ModifierTable:
 	return t
 
 
-## v0.10.5 W3-P3: the card's main number is a share of the hit (a hook's child, Twin's or Halo's share:
+## The card's main number is a share of the hit (a hook's child, Twin's or Halo's share:
 ## ModifierOp.is_share), which its overlevels grow here; a card without one grows the weapon's damage factor instead
 ## (CardLevels.weapon_overlevel_permille).
 func has_share() -> bool:
@@ -72,7 +72,7 @@ func has_share() -> bool:
 	return false
 
 
-## v0.10.5 W3-P3 (overlevels; CardLevels.overlevel_permille): this card with each share × `permille` / 1000
+## Overlevels; CardLevels.overlevel_permille: this card with each share × `permille` / 1000
 ## (ModifierOp.overlevelled); itself at 1000 or below, or without a share. Compile-time only
 ## (Modifiers.build_modifiers_of).
 func overlevelled(permille: int) -> ModifierTable:

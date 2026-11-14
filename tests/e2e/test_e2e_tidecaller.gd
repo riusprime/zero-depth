@@ -14,12 +14,6 @@ func after_each() -> void:
 	E2e.center_sticks()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func _walk(e: E2e, target: Vector2, done: Callable) -> bool:
 	var w := e.world()
 	var nav := NavField.new()
@@ -54,7 +48,7 @@ func test_continue_floor_4_and_fight_the_tidecaller_through_its_pull() -> void:
 	await e.landed()
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(main.driver.debug.god, "God mode for the fight")
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(await e.open_boss_door(), "E opened the boss door")

@@ -1,19 +1,19 @@
 class_name BombView
 extends Node3D
-## v0.9.0 BM (owner C §6.3; PLAN C51): the Bomb form. Each bomb in flight (WorldReader.projectile_is_bomb) is a chunky
+## The Bomb form. Each bomb in flight (WorldReader.projectile_is_bomb) is a chunky
 ## faceted iron bomb, tumbling as it flies, with a fuse spark flickering on top in its element's colour; each blast
 ## (a BLAST event: where, how big, the bomb's spec) is a stylised ring that sweeps out to the blast's radius and fades,
 ## in the element's colours (BeamLooks: default energy, Fire, Lightning, Frost, Venom, Bleed), with the owner's
 ## `blast_ring` PNG (assets/textures/vfx/, white on transparent, tinted) when installed, else a code-made band. With the
 ## effects layer each blast also draws VfxLayer's burst of its element (the fire explosion for Fire and the default).
-## v0.9.0 VX (VFX_AUDIT.md): V2 the first element's centre and the second's edge; V10 the blast ring lies on the floor,
+## VFX_AUDIT.md: V2 the first element's centre and the second's edge; V10 the blast ring lies on the floor,
 ## so its colours go through AttackFormLooks.ground_safe (V49: never a telegraph's hostile hue); V11 (owner "Keep fire
 ## blast") a no-element bomb keeps the fire explosion; each fuse sheds its element's sparks.
 ## Presentation only (EI-07): it reads the reader, never writes; a blast's life is sim ticks.
 
 const BOMBS_MAX := 16
 const BLASTS_MAX := 8
-## v0.9.5 FC2: the lightning rings drawn at once, and the ring shader's phase that puts its band at ARC_FRONT of the
+## The lightning rings drawn at once, and the ring shader's phase that puts its band at ARC_FRONT of the
 ## quad's half-width (0.25 + 0.72 u), so a ring of radius r is drawn at r / ARC_FRONT.
 const ARCS_MAX := 6
 const ARC_U := 0.7
@@ -74,7 +74,7 @@ static var _shaders := {}
 var bombs := 0
 var blasts := 0
 var last_look := &""
-## v0.9.5 FC2: bombs waiting on the ground (a Halo cross, a Backfire drop, mines) and lightning rings drawn.
+## Bombs waiting on the ground (a Halo cross, a Backfire drop, mines) and lightning rings drawn.
 var waiting := 0
 var arcs := 0
 ## The effects layer for the element bursts (WorldViewRoot hands it in; null: the rings alone).
@@ -84,7 +84,7 @@ var _bomb_nodes: Array[MeshInstance3D] = []
 var _sparks: Array[MeshInstance3D] = []
 var _rings: Array[MeshInstance3D] = []
 var _ring_mat: Array[ShaderMaterial] = []
-## v0.9.5 FC2: Ring's growing lightning rings (the reader's bomb_rows of kind ring).
+## Ring's growing lightning rings (the reader's bomb_rows of kind ring).
 var _arcs: Array[MeshInstance3D] = []
 var _arc_mat: Array[ShaderMaterial] = []
 ## Live blasts: [pos (Vector2), radius (m), start tick, look].
@@ -238,7 +238,7 @@ func sync(reader: WorldReader) -> void:
 		bombs += 1
 	var rings := 0
 	var rows := reader.bomb_rows()
-	for row in rows:  # v0.9.5 FC2: bombs waiting (Halo, Backfire, Mine) and Ring's rings
+	for row in rows:  # Bombs waiting (Halo, Backfire, Mine) and Ring's rings
 		var kind: StringName = row["kind"]
 		if kind == &"ring":
 			if rings < ARCS_MAX:
@@ -321,7 +321,7 @@ func draw_fx(layer: VfxCore) -> void:
 	var fx := layer as VfxLayer
 	if fx == null:
 		return
-	# v0.9.0 VX: each fuse sheds its element's sparks (a no-element bomb's fuse: embers, as its fire blast, V11).
+	# Each fuse sheds its element's sparks (a no-element bomb's fuse: embers, as its fire blast, V11).
 	var fuse := _form.kind if _form.kind != &"" else &"fire"
 	var element := _form.element if _form.element != &"" else &"ember"
 	for k in bombs:

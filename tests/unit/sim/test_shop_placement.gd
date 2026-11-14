@@ -6,9 +6,10 @@ extends GutTest
 ## seed, on the whole floor) its front is reachable from the start at the player's radius. v0.7.5 MG (owner N12): the
 ## shop stands every two floors (1, 3, 5 ...), so floor 2 has none.
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
 const PLAYER_RADIUS := 0.35
 
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 var _specs: Array[BossArenaSpec] = []
 
 
@@ -48,7 +49,7 @@ func test_one_reachable_shop_in_a_side_room_over_1000_seeds() -> void:
 	var rooms_seen := {}
 	var failures := 0
 	var t0 := Time.get_ticks_msec()
-	for s in SEEDS:
+	for s in _seeds:
 		var seed_value := 7000 + s * 7919
 		var f := _floor(seed_value, _specs[s % _specs.size()])
 		var tag := "seed %d" % seed_value
@@ -90,10 +91,10 @@ func test_one_reachable_shop_in_a_side_room_over_1000_seeds() -> void:
 	gut.p(
 		(
 			"shops: %d floors, %d with a shop, %d in a dead end, %d room footprints, %d ms"
-			% [SEEDS, SEEDS - failures, dead_ends, rooms_seen.size(), ms]
+			% [_seeds, _seeds - failures, dead_ends, rooms_seen.size(), ms]
 		)
 	)
-	assert_gt(dead_ends, SEEDS / 2, "mostly in a dead end (a side room)")
+	assert_gt(dead_ends, _seeds / 2, "mostly in a dead end (a side room)")
 
 
 ## The whole floor (gate and terminal as walls) at the player's radius: the front is in the start's region.

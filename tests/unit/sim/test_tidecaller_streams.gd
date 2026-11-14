@@ -422,24 +422,6 @@ func test_the_streams_are_in_the_state_and_a_save_restores() -> void:
 	assert_eq(restored.state_hash(), a.state_hash(), "same hash 300 ticks on")
 
 
-func test_an_older_snapshot_without_the_streams_loads() -> void:
-	var s := _fight()
-	var w: World = s[0]
-	CombatLab.idle(w, 300)
-	var snap := WorldSnapshot.take(w)
-	var bosses: Dictionary = snap["world"][&"bosses"]
-	assert_true(bosses.has(&"str_boss"), "the streams are saved")
-	for f: StringName in BossStore.new().get_property_list().map(
-		func(p: Dictionary) -> StringName: return p["name"]
-	):
-		if f.begins_with("str_") or f.begins_with("wv_"):
-			bosses.erase(f)
-	var base := BossLab.world()
-	BossLab.ready_boss(base, &"tidecaller")
-	assert_eq(WorldSnapshot.apply(base, snap), "", "a save from before BH4 loads")
-	assert_true(base.bosses.str_boss.is_empty(), "with no stream yet (it starts at its next think)")
-
-
 func test_the_boss_gone_takes_its_waves_with_it() -> void:
 	var s := _fight()
 	var w: World = s[0]

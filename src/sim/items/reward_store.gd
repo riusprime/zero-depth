@@ -1,15 +1,15 @@
 class_name RewardStore
 extends RefCounted
-## Altars and chests on the floor (v0.3.0 E), as parallel arrays in ascending id order. Hashed.
+## Altars and chests on the floor, as parallel arrays in ascending id order. Hashed.
 ## An altar is free; a chest costs `price` shards. Opening one rolls its offer once (OFFER_SLOTS item indices,
 ## -1 for an empty slot) and keeps it until a card is taken, so cancelling and reopening shows the same cards.
 
-## v0.5.5 AR: LEGENDARY, the boss's free legendary altar (BossReward). Appended, never inserted: the kind is hashed.
-## v0.6.0 CU: DROP, a free one-card drop (a stolen core, Marked's rare card; CoreTheft.grant), its offer set at once.
+## LEGENDARY, the boss's free legendary altar (BossReward). Appended, never inserted: the kind is hashed.
+## DROP, a free one-card drop (a stolen core, Marked's rare card; CoreTheft.grant), its offer set at once.
 enum Kind { ALTAR, CHEST, LEGENDARY, DROP }
 
 const OFFER_SLOTS := 3
-## v0.8.0 N7: `rolled` of a chest whose one card was dealt: the panel shows it and its next answer takes it.
+## `rolled` of a chest whose one card was dealt: the panel shows it and its next answer takes it.
 const DEALT := 2
 
 var ids := PackedInt32Array()
@@ -18,7 +18,7 @@ var pos_y := PackedFloat32Array()
 var kind := PackedInt32Array()
 ## Shards to open (0 for an altar).
 var price := PackedInt32Array()
-## 1 once the offer was rolled; v0.8.0 N7: DEALT once a chest's card was dealt.
+## 1 once the offer was rolled; DEALT once a chest's card was dealt.
 var rolled := PackedInt32Array()
 ## OFFER_SLOTS item indices per reward (index into World.item_tables, -1 = empty), flattened.
 var offer := PackedInt32Array()

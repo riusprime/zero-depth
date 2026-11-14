@@ -1,7 +1,7 @@
 class_name SpawnMixEntry
 extends Resource
 ## One line of a spawn director's mix: an enemy, its weight, and the tier it starts appearing at. A new enemy kind
-## joins the hordes with one more line (v0.4.0 SC).
+## joins the hordes with one more line.
 
 @export var enemy_id: StringName
 @export var weight := 1

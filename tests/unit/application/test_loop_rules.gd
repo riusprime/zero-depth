@@ -5,7 +5,7 @@ extends GutTest
 
 
 func _run_table() -> RunTable:
-	return ContentCompiler.compile_run(ContentRepository.load_all().get_def(&"run", SaveLab.RUN_ID))
+	return ContentCompiler.compile_run(SharedContent.repo().get_def(&"run", SaveLab.RUN_ID))
 
 
 func _loop_two_run(run_seed: int) -> RunState:
@@ -19,7 +19,7 @@ func _loop_two_run(run_seed: int) -> RunState:
 func test_the_content_has_five_rules_and_the_lower_hp_step() -> void:
 	assert_eq(RunDefinition.LOOP_RULE_IDS, LoopRules.POOL, "content's list matches the sim's pool")
 	for id: StringName in [&"five_floors", &"three_floors"]:
-		var def: RunDefinition = ContentRepository.load_all().get_def(&"run", id)
+		var def: RunDefinition = SharedContent.repo().get_def(&"run", id)
 		assert_eq(def.loop_rules, LoopRules.POOL, "%s: the five rules" % id)
 		assert_eq(def.loop_enemy_hp_permille, 3500, "%s: enemies ×3.5 a loop (was ×6)" % id)
 		assert_eq(def.loop_boss_hp_permille, 3500, "%s: bosses ×3.5 a loop" % id)
@@ -63,7 +63,7 @@ func test_the_loop_device_draws_the_rule_and_the_floor_holds_it() -> void:
 	assert_eq(RunRecap.rule_keys(run), PackedStringArray([LoopRules.name_key(run.loop_rules[0])]))
 
 
-func test_the_rules_round_trip_and_an_older_payload_has_none() -> void:
+func test_the_rules_round_trip() -> void:
 	var run := _loop_two_run(321)
 	var w := SaveLab.build_floor(run)
 	CombatLab.idle(w, 30)
@@ -76,18 +76,6 @@ func test_the_rules_round_trip_and_an_older_payload_has_none() -> void:
 	var w2 := SaveLab.build_floor(back)
 	assert_eq(WorldSnapshot.apply(w2, q["world"]), "", "the snapshot fits")
 	assert_eq(w2.state_hash(), w.state_hash(), "Continue resumes the same state")
-	# A payload written before O5b: no rule keys, no world fields.
-	(p["run"] as Dictionary).erase("loop_rules")
-	(p["run"] as Dictionary).erase("loop_rule_loop")
-	var snap: Dictionary = p["world"]["world"]
-	for f in [&"loop_rules", &"loop_shield_permille", &"loop_shield_half_arc"]:
-		snap.erase(f)
-	var old := RunSaver.run_from(p, _run_table())
-	assert_true(old.loop_rules.is_empty(), "an older run holds no rule")
-	assert_eq(LoopRules.newest(old), &"", "and announces none")
-	var w3 := SaveLab.build_floor(old)
-	assert_eq(WorldSnapshot.apply(w3, p["world"]), "", "its snapshot restores")
-	assert_true(w3.loop_rules.is_empty())
 
 
 func test_a_loop_one_world_hashes_as_before() -> void:
@@ -138,13 +126,11 @@ func test_swift_and_point_blank_change_the_enemy_tables() -> void:
 
 
 func test_lean_mending_makes_orbs_rarer_and_stronger() -> void:
-	var base := ContentCompiler.compile_rewards(
-		ContentRepository.load_all().get_def(&"rewards", &"floor")
-	)
+	var base := ContentCompiler.compile_rewards(SharedContent.repo().get_def(&"rewards", &"floor"))
 	var run := _loop_two_run(321)
 	run.loop_rules = [&"lean_mending"] as Array[StringName]
 	var w := SaveLab.build_floor(run)
-	assert_eq(w.reward_table.heal_orb_chance_permille, base.heal_orb_chance_permille * 500 / 1000)
+	assert_eq(w.reward_table.heal_orb_meter, base.heal_orb_meter * 2, "v0.11.0 F3: twice the kills")
 	assert_eq(w.reward_table.heal_orb_heal_permille, base.heal_orb_heal_permille * 2000 / 1000)
 
 

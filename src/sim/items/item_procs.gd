@@ -70,7 +70,7 @@ static func heal_cap_left(w: World) -> int:
 
 # --- Bolt hits: Static Chain and Frost Core -----------------------------------------------------------------
 ## Projectile `pi` hit actor `i` at `at`, removing `got` HP. Only the player's bolts count, and only landed hits
-## (got > 0: a hit on a spawning enemy doesn't count). DoT never reaches here. v0.6.0 MX1: the bolt spec's slow
+## (got > 0: a hit on a spawning enemy doesn't count). DoT never reaches here. the bolt spec's slow
 ## (Frost Core's modifier, or the slow rider), then its ON_HIT hooks (Static Chain's jump, Attacks).
 static func on_bolt_hit(w: World, i: int, pi: int, got: int, at: Vector2) -> void:
 	if w.projectiles.team[pi] != ActorStore.TEAM_PLAYER or got <= 0:
@@ -84,7 +84,7 @@ static func on_bolt_hit(w: World, i: int, pi: int, got: int, at: Vector2) -> voi
 static func _frost(w: World, i: int, pi: int, root: int) -> void:
 	var m := w.item_mods
 	var a := w.actors
-	var spec := Attacks.projectile_spec(w, pi)  # v0.6.0 MX2: the bolt's own spec
+	var spec := Attacks.projectile_spec(w, pi)  # The bolt's own spec
 	if m.slow_ticks <= 0 or a.dead[i] == 1 or spec == null or not spec.has_status(&"slow"):
 		return
 	a.slow_t[i] = m.slow_ticks
@@ -108,9 +108,13 @@ static func bolt_effect(tags: int) -> StringName:
 static func slow_factor(w: World, i: int) -> float:
 	if w.actors.frozen_t[i] > 0:  # Engines: a frozen enemy doesn't move.
 		return 0.0
-	var ice := 1000  # v0.9.5 EE3: Black Ice slows a poisoned enemy further
+	var ice := 1000  # Black Ice slows a poisoned enemy further
 	if w.pair_mask != 0:
 		ice = ElementPairs.slow_permille(w, i)
+	if not w.spell_hold_id.is_empty():  # A spell's stun (0) or slow (Spells.hold)
+		ice = ice * Spells.hold_permille(w, i) / 1000
+		if ice <= 0:
+			return 0.0
 	if w.actors.slow_t[i] <= 0:
 		return ice / 1000.0
 	return w.item_mods.slow_permille * ice / 1000000.0

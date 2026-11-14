@@ -1,9 +1,9 @@
 class_name CodexIcon
 extends Control
-## v0.7.5 CX: one Codex entry's picture: a card's icon (ItemIcons, which falls through to the abilities' and the stat
+## One Codex entry's picture: a card's icon (ItemIcons, which falls through to the abilities' and the stat
 ## cards' symbols) in its colour, an enemy's or boss's emblem (CodexGlyphs), or a biome's landscape in its palette.
 ## A locked entry is the same shape as a dark silhouette. Draws only (EI-07).
-## v0.10.5 W3-O19 (every UI element in Astral): a card with a painted icon (AstralCardArt, the cards' own) shows it,
+## Every UI element in Astral: a card with a painted icon (AstralCardArt, the cards' own) shows it,
 ## a dark silhouette while locked; the hostile and the lore colours are Astral's (no red, orange or ember).
 
 ## A locked entry's silhouette colour.
@@ -28,11 +28,11 @@ func show_entry(p_entry: Dictionary, p_locked: bool) -> void:
 ## The entry's colour when unlocked (a card's own colour, the hostile reds).
 static func color_of(e: Dictionary) -> Color:
 	var page: StringName = e.get("page", &"")
-	if page == &"lore":  # v0.10.5 O18: not a hostile red (W3-O19: Astral's accent)
+	if page == &"lore":  # Not a hostile red (W3-O19: Astral's accent)
 		return AstralCardArt.ACCENT
-	if page == &"enemies":  # v0.10.5 W3-O19: Astral's muted rose
+	if page == &"enemies":  # Astral's muted rose
 		return AstralCardArt.POOR
-	if page == &"bosses":  # v0.10.5 W3-O19: the legendary pale gold
+	if page == &"bosses":  # The legendary pale gold
 		return AstralCardArt.rarity(4)
 	if page != &"cards":
 		return CodexGlyphs.color(page)
@@ -54,7 +54,7 @@ func _draw() -> void:
 	var c := SILHOUETTE if locked else color_of(entry)
 	match page:
 		&"cards":
-			# v0.10.5 W3-O19: the card's painted icon; W3-P10f: a Starbound card or Constellation always shows one
+			# The card's painted icon; W3-P10f: a Starbound card or Constellation always shows one
 			# (icon_unknown until its art lands)
 			if (
 				AstralCardArt.has_icon(entry["id"])
@@ -72,7 +72,7 @@ func _draw() -> void:
 			drawn = CodexGlyphs.draw(self, shapes, r, c)
 		&"bosses":
 			drawn = CodexGlyphs.draw(self, CodexGlyphs.shapes(page, entry["id"]), r, c)
-		&"lore":  # v0.10.5 O18: a carved rune diamond
+		&"lore":  # A carved rune diamond
 			var m := r.get_center()
 			var h := minf(r.size.x, r.size.y) * 0.42
 			var w := h * 0.7

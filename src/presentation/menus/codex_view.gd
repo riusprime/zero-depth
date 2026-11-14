@@ -1,16 +1,16 @@
 class_name CodexView
 extends Control
-## v0.7.5 CX (owner N6: "the journal of codex cards"): the Codex, from the main menu and the pause menu. Ember stone
-## (MenuStyle, v0.8.0 MU) over the blurred game or the menu's own ember scene: the title and how much you've found, four
+## The Codex, from the main menu and the pause menu. Ember stone
+##  over the blurred game or the menu's own ember scene: the title and how much you've found, four
 ## pages (Cards, Enemies, Bosses, Biomes), the page's entries as tiles in sections (CodexTile; the Cards page by pool:
 ## Gun, Blade, shared, triggers, legendary, then stat cards, utilities and passives), and beside them the focused entry:
 ## a card as its stone tablet (StoneCard, as in a pick) with its name and sentence (the game's own keys), or an emblem /
 ## a landscape with its line, and your counts from the profile (CodexStore). An entry you haven't met is a silhouette,
 ## "???". Keyboard: arrows move, Q / E change the page, Esc goes back. Pad: d-pad or stick, LB / RB, B. Mouse: hover a
 ## tile, click a page, Back. It reads the catalog (the content) and the profile's counters; it changes nothing. v0.7.5
-## AC: given an AchievementBook, a fifth page, Achievements (AchievementsPage), follows the four. v0.9.0 CL: the last
+## AC: given an AchievementBook, a fifth page, Achievements (AchievementsPage), follows the four. the last
 ## page, Collectibles (ArchivePage), is the Rune Archive's shelves (the hub's Archive opens on it: page_of).
-## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): the Codex in the Astral style (AstralUi): the
+## The Codex in the Astral style (AstralUi): the
 ## game blurred under Astral's cool ink, a sigil and the title in Cinzel, the pages as tabs on a hairline (the one shown
 ## underlined with a diamond, focus lit as a row), the sections' heads in small caps, the tiles Astral frames with a
 ## medallion ring (CodexTile), the detail an Astral veil holding the Astral card (StoneCard astral: the owner's frame
@@ -27,9 +27,9 @@ const TAB_KEYS := {
 	&"achievements": "UI_ACH_TAB",  # v0.7.5 AC
 	&"collectibles": "UI_CODEX_TAB_COLLECTIBLES",  # v0.9.0 CL
 }
-## v0.7.5 AC: the Achievements page's id (not a CodexStore page: it reads the AchievementBook).
+## The Achievements page's id (not a CodexStore page: it reads the AchievementBook).
 const ACHIEVEMENTS := &"achievements"
-## v0.9.0 CL: the Collectibles page's id (not a CodexStore page: the catalog's collectibles and the profile's finds).
+## The Collectibles page's id (not a CodexStore page: the catalog's collectibles and the profile's finds).
 const COLLECTIBLES := &"collectibles"
 const SECTION_KEYS := {
 	&"gun": "UI_CODEX_SECTION_GUN",
@@ -43,9 +43,10 @@ const SECTION_KEYS := {
 	&"passives": "UI_CODEX_SECTION_PASSIVES",
 	&"starbound": "STARBOUND_KIND",  # v0.10.5 W3-P10f
 	&"constellations": "CONSTELLATION_KIND",
+	&"relics": "UI_CODEX_SECTION_RELICS",  # v0.11.0 O14b
 	&"enemies": "UI_CODEX_TAB_ENEMIES",
 	&"bosses": "UI_CODEX_TAB_BOSSES",
-	&"final": "UI_CODEX_SECTION_FINAL",  # v0.8.0 FB1: the final boss's bodies
+	&"final": "UI_CODEX_SECTION_FINAL",  # The final boss's bodies
 	&"biomes": "UI_CODEX_TAB_BIOMES",
 	&"lore": "UI_CODEX_TAB_LORE",
 }
@@ -69,23 +70,23 @@ const EMBLEM := 220.0
 var catalog: CodexCatalog
 var store: CodexStore
 var page := &"cards"
-## The pages shown, in order: CodexStore.PAGES, then Achievements when there is a book (v0.7.5 AC).
+## The pages shown, in order: CodexStore.PAGES, then Achievements when there is a book.
 var pages: Array[StringName] = []
-## v0.7.5 AC: the achievements (null: no Achievements page) and their page.
+## The achievements (null: no Achievements page) and their page.
 var achievements: AchievementBook
 var achievements_page: AchievementsPage
-## v0.9.0 CL: the Collectibles page (null when the content has no collectible).
+## The Collectibles page (null when the content has no collectible).
 var archive_page: ArchivePage
 var tabs := {}
 var tiles: Array[CodexTile] = []
 var progress := Label.new()
-var card := StoneCard.new(1.0, true)  # v0.10.5 W3-O19: the Astral card (the owner's frame and icon)
+var card := StoneCard.new(1.0, true)  # The Astral card (the owner's frame and icon)
 var emblem := CodexIcon.new()
 var name_label := Label.new()
 var section_label := Label.new()
 var desc_label := Label.new()
 var counts_label := Label.new()
-## v0.10.5 W3-O19: an enemy's "Weak to / Resists" on lines of their own, in Astral's accent.
+## An enemy's "Weak to / Resists" on lines of their own, in Astral's accent.
 var matchup_label := Label.new()
 var back := Button.new()
 var _scroll := ScrollContainer.new()
@@ -111,12 +112,12 @@ func _init(
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	AstralUi.apply(self)
 	var backdrop := MenuBackdrop.new()
-	backdrop.astral = true  # v0.10.5 W3-O19: the game blurred under Astral's cool ink
+	backdrop.astral = true  # The game blurred under Astral's cool ink
 	add_child(backdrop)
 	var margin := MarginContainer.new()
 	margin.name = "Margin"
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", int(MenuStyle.LIST_LEFT))
+	margin.add_theme_constant_override("margin_left", int(AstralMenu.LEFT))
 	margin.add_theme_constant_override("margin_right", 80)
 	margin.add_theme_constant_override("margin_top", 56)
 	margin.add_theme_constant_override("margin_bottom", 44)
@@ -128,7 +129,7 @@ func _init(
 	margin.add_child(col)
 	col.add_child(_header())
 	col.add_child(_tab_row())
-	var tab_rule := AstralUi.LeftRule.new(1180.0)  # v0.10.5 W3-O19: the tabs stand on a hairline
+	var tab_rule := AstralUi.LeftRule.new(1180.0)  # The tabs stand on a hairline
 	tab_rule.name = "TabRule"
 	tab_rule.custom_minimum_size = Vector2(0, 8)
 	col.add_child(tab_rule)
@@ -138,11 +139,11 @@ func _init(
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 40)
 	col.add_child(body)
-	if achievements != null:  # v0.7.5 AC: shown in the body's place on its own page
+	if achievements != null:  # Shown in the body's place on its own page
 		achievements_page = AchievementsPage.new(achievements)
 		achievements_page.visible = false
 		col.add_child(achievements_page)
-	if pages.has(COLLECTIBLES):  # v0.9.0 CL: shown in the body's place on its own page
+	if pages.has(COLLECTIBLES):  # Shown in the body's place on its own page
 		archive_page = ArchivePage.new(
 			catalog.collectibles, CollectibleBook.found_flags(store.profile, catalog.collectibles)
 		)
@@ -164,7 +165,7 @@ func _init(
 	back.name = "Back"
 	back.text = "UI_BACK"
 	back.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	AstralUi.plate_button(back)  # v0.10.5 W3-O19: an Astral plate
+	AstralUi.plate_button(back)  # An Astral plate
 	back.pressed.connect(func() -> void: back_pressed.emit())
 	foot.add_child(back)
 	var hint := AstralUi.hint("UI_CODEX_HINT")
@@ -190,7 +191,7 @@ func _header() -> Control:
 	return row
 
 
-## v0.10.5 W3-O19: the tabs' look: the page shown underlined with a filled diamond, focus and hover lit as a row.
+## The tabs' look: the page shown underlined with a filled diamond, focus and hover lit as a row.
 func _style_tabs() -> void:
 	for p: StringName in tabs:
 		var b: Button = tabs[p]
@@ -248,7 +249,7 @@ func _detail() -> Control:
 	info.add_theme_constant_override("separation", 10)
 	row.add_child(info)
 	name_label.name = "EntryName"
-	AstralUi.title(name_label, 26)  # v0.10.5 W3-O19: Cinzel, small caps under it, Atkinson body
+	AstralUi.title(name_label, 26)  # Cinzel, small caps under it, Atkinson body
 	section_label.name = "Section"
 	AstralUi.caps(section_label, AstralUi.LABEL_SIZE)
 	desc_label.name = "Desc"
@@ -273,14 +274,14 @@ func open(p: StringName) -> void:
 	focus_first()
 
 
-## v0.9.0 HB: shows page `p` before the view is in the tree (the hub's Trophy Area opens on the Achievements); its
+## Shows page `p` before the view is in the tree (the hub's Trophy Area opens on the Achievements); its
 ## first focus comes with focus_first, so no scroll of the page it replaced is left waiting.
 func start_on(p: StringName) -> void:
 	if pages.has(p):
 		_set_page(p)
 
 
-## v0.9.0 CL: the page a hub station's panel opens on: the Trophy Area's Achievements, the Rune Archive's Collectibles
+## The page a hub station's panel opens on: the Trophy Area's Achievements, the Rune Archive's Collectibles
 ## (&"" for any other: the first page).
 static func page_of(panel: StringName) -> StringName:
 	match panel:
@@ -325,9 +326,9 @@ func _set_page(p: StringName) -> void:
 	if p == page and not tiles.is_empty():
 		return
 	if p == page and p == ACHIEVEMENTS and not achievements_page.rows.is_empty():
-		return  # v0.7.5 AC: the Achievements page is already built
+		return  # The Achievements page is already built
 	if p == page and p == COLLECTIBLES and not archive_page.tiles.is_empty():
-		return  # v0.9.0 CL: so is the Collectibles page
+		return  # So is the Collectibles page
 	page = p
 	_build_page()
 
@@ -366,7 +367,7 @@ func _build_page() -> void:
 		head.name = "Head_%s" % s
 		head.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		head.text = "%s   %d / %d" % [tr(SECTION_KEYS[s]), have, rows.size()]
-		AstralUi.caps(head, 15, AstralCardArt.METAL)  # v0.10.5 W3-O19: Cinzel small caps
+		AstralUi.caps(head, 15, AstralCardArt.METAL)  # Cinzel small caps
 		_list.add_child(head)
 		var grid := GridContainer.new()
 		grid.name = "Grid_%s" % s
@@ -397,7 +398,7 @@ func _build_page() -> void:
 		_show(tiles[0].entry)
 
 
-## v0.8.0 RM: left and right stop at a row's ends instead of jumping to the nearest tile of another section (with the
+## Left and right stop at a row's ends instead of jumping to the nearest tile of another section (with the
 ## two mutations the legendary section takes two rows, and right from its first row's end landed on a stat card,
 ## skipping the rest of that section).
 func _stop_at_row_ends(here: Array[CodexTile]) -> void:
@@ -409,7 +410,7 @@ func _stop_at_row_ends(here: Array[CodexTile]) -> void:
 			t.focus_neighbor_right = t.get_path_to(t)
 
 
-## v0.8.0: a short row is never skipped. Down from a column the next row (or the next section's only row) doesn't
+## A short row is never skipped. Down from a column the next row (or the next section's only row) doesn't
 ## reach lands on that row's last tile, and up from a column the row above doesn't reach lands on its last tile. Godot's
 ## own focus search otherwise jumps over the short row to the next full one, so its cards (Gun Twin and Halo Shot,
 ## after AO's two Gun cards) can't be reached by the arrows from that side.
@@ -434,7 +435,7 @@ func _link_short_rows(above: Array[CodexTile], here: Array[CodexTile]) -> void:
 			here[k].focus_neighbor_top = here[k].get_path_to(above[a_n - 1])
 
 
-## v0.7.5 AC: the Achievements page in the body's place; up from its first line goes to its tab.
+## The Achievements page in the body's place; up from its first line goes to its tab.
 func _build_achievements() -> void:
 	_body.visible = false
 	achievements_page.visible = true
@@ -450,7 +451,7 @@ func _build_achievements() -> void:
 	_style_tabs()
 
 
-## v0.9.0 CL: the Collectibles page in the body's place; up from its first shelf goes to its tab.
+## The Collectibles page in the body's place; up from its first shelf goes to its tab.
 func _build_archive() -> void:
 	_body.visible = false
 	if achievements_page != null:
@@ -487,7 +488,7 @@ static func desc_of(ci: Object, e: Dictionary) -> String:
 	return ci.tr(key) % args
 
 
-## v0.10.5 O10 (owner P3; Matchups): an enemy entry's "Weak to: Laser" and "Resists: Glaive" lines (the id's
+## An enemy entry's "Weak to: Laser" and "Resists: Glaive" lines (the id's
 ## MATCHUP_<ID> key); "" for an entry with neither.
 static func matchup_text(ci: Object, e: Dictionary) -> String:
 	var lines := PackedStringArray()
@@ -522,7 +523,7 @@ func _on_tile_focus(t: CodexTile, head: Label) -> void:
 		_scroll.ensure_control_visible.call_deferred(head)
 
 
-## v0.8.0 RR (owner O33): Cards entry `e`'s frame tier (PickSlot.TIERS): a mod's or a stat card's tier in order
+## Cards entry `e`'s frame tier (PickSlot.TIERS): a mod's or a stat card's tier in order
 ## (a Legendary one the legendary gold), an ability card the ability's.
 static func tier_of(e: Dictionary) -> int:
 	if int(e["type"]) == WorldReader.CARD_ABILITY:
@@ -531,7 +532,7 @@ static func tier_of(e: Dictionary) -> int:
 	return CardFrames.LEGENDARY_TIER if r == 3 else r
 
 
-## v0.8.0 RR: the tier word a mod card shows in the Codex ("Common", "Rare", "Epic", "Legendary"); "" for an ability
+## The tier word a mod card shows in the Codex ("Common", "Rare", "Epic", "Legendary"); "" for an ability
 ## or a stat card (a stat card's tier is drawn per offer).
 static func tier_text(ci: Object, e: Dictionary) -> String:
 	if int(e["type"]) != WorldReader.CARD_MOD:
@@ -552,7 +553,7 @@ func _show(e: Dictionary) -> void:
 	if is_card:
 		var fam := CardFrames.family(e["id"], int(e["type"]))
 		var tier := tier_of(e)
-		var tier_word := tier_text(self, e)  # v0.8.0 RR (owner O33): every card says its tier
+		var tier_word := tier_text(self, e)  # Every card says its tier
 		if not locked and tier_word != "":
 			section_text = "%s · %s" % [section_text, tier_word]
 		if locked:
@@ -576,8 +577,8 @@ func _show(e: Dictionary) -> void:
 	name_label.text = "???" if locked else title_of(self, e)
 	section_label.text = section_text
 	desc_label.text = tr("UI_CODEX_LOCKED") if locked else desc_of(self, e)
-	var mu := "" if locked else matchup_text(self, e)  # v0.10.5 O10: an enemy's "Weak to / Resists"
-	matchup_label.text = mu  # v0.10.5 W3-O19: on its own lines, in the accent
+	var mu := "" if locked else matchup_text(self, e)  # An enemy's "Weak to / Resists"
+	matchup_label.text = mu  # On its own lines, in the accent
 	matchup_label.visible = mu != ""
 	counts_label.text = "" if locked else counts_text(e)
 

@@ -1,6 +1,6 @@
 class_name RuneCipher
 extends RefCounted
-## v0.9.5 RS1 (RUNIC_STONE.md S4, the hidden cipher): the Runic Stone's lines are English, written one Elder Futhark
+## RUNIC_STONE.md S4, the hidden cipher: the Runic Stone's lines are English, written one Elder Futhark
 ## rune per letter. A glyph id is the rune's place in the Futhark (0 = fehu ... 23 = othala); a space is GAP. The
 ## game never translates a line: a curious player decodes it with a Futhark table. The strokes that draw each glyph
 ## are the presentation's (RunicGlyphs).

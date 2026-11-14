@@ -1,6 +1,6 @@
 class_name BossKinds
 extends RefCounted
-## Bosses (v0.3.0 C): boss ids to actor kinds (ContentCompiler.BOSS_KINDS; a test matches BossSchemas.KINDS). Moved
+## Bosses: boss ids to actor kinds (ContentCompiler.BOSS_KINDS; a test matches BossSchemas.KINDS). Moved
 ## out of ContentCompiler in v0.9.0 NB4 (its line limit) unchanged, with the Lantern Shade added.
 
 const ALL := {
@@ -10,7 +10,7 @@ const ALL := {
 	&"warlord": ActorStore.Kind.WARLORD,
 	&"hive_lens": ActorStore.Kind.HIVE_LENS,
 	&"foundry": ActorStore.Kind.FOUNDRY,
-	&"colossus": ActorStore.Kind.COLOSSUS,  # v0.8.0 FB1: the final boss's bodies (data/final_boss)
+	&"colossus": ActorStore.Kind.COLOSSUS,  # The final boss's bodies (data/final_boss)
 	&"prism": ActorStore.Kind.PRISM,
 	&"nemesis": ActorStore.Kind.NEMESIS,
 	&"tidecaller": ActorStore.Kind.TIDECALLER,  # v0.9.0 NB1

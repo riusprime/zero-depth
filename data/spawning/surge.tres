@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SurgeDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/surge_definition.gd" id="1_srg"]
+
+[resource]
+script = ExtResource("1_srg")
+surges_min = 1
+surges_max = 2
+first_seconds_min = 40.0
+first_seconds_max = 80.0
+gap_seconds_min = 60.0
+gap_seconds_max = 120.0
+size_min = 30
+size_max = 60
+duration_seconds = 10.0
+alive_cap = 120
+id = &"surge"

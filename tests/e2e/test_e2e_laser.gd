@@ -15,11 +15,6 @@ func _item(w: World, id: StringName) -> int:
 	return AttackScenario.item_index(w.item_tables, id)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## A spot `dist` m from the hero along one of 16 ways whose line from the hero crosses no wall (or INF).
 static func clear_spot(w: World, dist: float) -> Vector2:
 	var p := w.player_pos()
@@ -75,7 +70,7 @@ func test_the_laser_taken_at_an_altar_burns_an_enemy_while_held() -> void:
 	await e.start_from_menu(&"gun")
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)
 	assert_true(
@@ -95,7 +90,7 @@ func test_the_laser_taken_at_an_altar_burns_an_enemy_while_held() -> void:
 	# the move comes last and isn't repeated.
 	e.mouse_button(MOUSE_BUTTON_RIGHT, true)
 	await e.mouse_to(cam.unproject_position(SimPlane.to_3d(at, SimPlane.CORE_HEIGHT)))
-	for k in 90:
+	for k in 220:  # v0.11.0 O1: past the 3 s cooldown, so a shot fires with the aim on the enemy
 		await e.frames(1)
 		drawn = drawn or main.view.laser.shown > 0
 		hummed = hummed or main.audio.holding(&"laser_loop")
@@ -103,12 +98,73 @@ func test_the_laser_taken_at_an_altar_burns_an_enemy_while_held() -> void:
 	assert_gte(j, 0)
 	if j >= 0:
 		gut.p(
-			"LZ e2e: dummy hp %d / %d after 90 frames held" % [w.actors.hp[j], w.actors.max_hp[j]]
+			"O1 e2e: dummy hp %d / %d after 220 frames held" % [w.actors.hp[j], w.actors.max_hp[j]]
 		)
-		assert_lt(w.actors.hp[j], w.actors.max_hp[j], "the held beam burns the enemy")
+		assert_lt(w.actors.hp[j], w.actors.max_hp[j], "the held lance hits the enemy")
 	assert_true(drawn, "the beam is drawn")
 	assert_true(hummed, "and hums")
 	e.mouse_button(MOUSE_BUTTON_RIGHT, false)
-	await e.frames(4)
-	assert_eq(main.view.laser.shown, 0, "let go: the beam is gone")
+	await e.frames(WorldReader.LANCE_GLOW_TICKS + 4)  # v0.11.0 O1 (Q7): the last shot's glow fades in 0.5 s
+	assert_eq(main.view.laser.shown, 0, "let go: the lance is gone")
 	assert_false(main.audio.holding(&"laser_loop"), "and silent")
+
+
+## v0.11.0 O1 (owner Q4, Q28: "a 3 second cooldown"; PLAN L1): held, the Laser fires an instant lance every 3 s, each
+## one drawn. The same run as above (the Laser taken at an altar with the keyboard; the standing dummy a TEST HELPER);
+## right click held with the mouse on the dummy for four periods. The sim's firing ticks (read) are 3 s apart, and the
+## view draws each lance as it fires.
+func test_the_held_laser_fires_a_lance_every_3_seconds() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu(&"gun")
+	var w := e.world()
+	await e.tap(KEY_QUOTELEFT)
+	await e.click_dev("God")
+	await e.tap(KEY_QUOTELEFT)
+	await e.frames(2)
+	assert_true(
+		await take_at_altar(e, main, &"gun_laser", [&"gun_pierce", &"ember_core"]), "took the Laser"
+	)
+	var at := clear_spot(w, 4.0)
+	assert_ne(at, Vector2.INF, "a clear line from the hero")
+	w.dummy_speed = 0.0  # TEST HELPER (labelled): a standing dummy, as above
+	w.add_dummy(at, 0.35, 50000)
+	var cam := main.view.rig.camera
+	var period := SimTick.seconds_to_ticks(3.0)
+	var fired := PackedInt32Array()
+	var held := PackedInt32Array()  # the hit-stop ticks since the lance before (none for the first)
+	var frozen := 0
+	var drawn := 0
+	var last := w.mx.lz_shot_tick
+	e.mouse_button(MOUSE_BUTTON_RIGHT, true)
+	await e.mouse_to(cam.unproject_position(SimPlane.to_3d(at, SimPlane.CORE_HEIGHT)))
+	for k in period * 4 + 30:
+		var stopped := w.freeze_ticks > 0  # this tick is hit-stop: the world, the cooldown too, holds
+		await e.frames(1)
+		if stopped and not fired.is_empty():
+			frozen += 1
+		if w.mx.lz_shot_tick != last:
+			last = w.mx.lz_shot_tick
+			fired.append(last)
+			held.append(frozen)
+			frozen = 0
+		if not fired.is_empty() and main.view.laser.shown > 0 and drawn < fired.size():
+			drawn = fired.size()
+	e.mouse_button(MOUSE_BUTTON_RIGHT, false)
+	gut.p(
+		(
+			"O1 e2e: lance firing ticks %s, hit-stop ticks between %s (period %d ticks)"
+			% [str(fired), str(held), period]
+		)
+	)
+	assert_gte(fired.size(), 4, "four lances in four periods held")
+	# Exactly every 3 s of the sim's clock. A hit-stop holds everything, the cooldown too (SIM_CONTRACTS), so its
+	# ticks don't count: the floor's own enemies may touch the hero meanwhile (God ends when the dev panel closes). A
+	# Swarmer's touch did (4 ticks of hurt hit-stop), which made the first gap 184 (fix1, 2026-11-08).
+	for k in range(1, fired.size()):
+		assert_eq(
+			fired[k] - fired[k - 1] - held[k],
+			period,
+			"lance %d came 3 s (hit-stop aside) after the one before" % k
+		)
+	assert_eq(drawn, fired.size(), "every lance was drawn")

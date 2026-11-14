@@ -24,6 +24,7 @@ func after_each() -> void:
 
 func test_a_pad_shot_before_the_right_stick_goes_the_way_the_hero_walked() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	await HubWalk.new(e).to_build_screen()  # v0.9.0 HB: Play, then the Portal Machine
 	var picker := main.get_node_or_null("UI/BuildPicker") as BuildPicker

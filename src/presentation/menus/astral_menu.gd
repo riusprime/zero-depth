@@ -1,13 +1,14 @@
 class_name AstralMenu
 extends RefCounted
-## v0.10.5 W3-O18 (owner 2026-11-04: "and what about the rest of the UI? it should match the new style"): the menus in
+## The menus in
 ## Astral (W3_O13_UI_STYLE_G2.md round 2, the owner's pick; the round-2 mock's pause and options): the main menu, the
 ## pause menus, Options, the run recap, the credits. Nothing boxed: lists are letter-spaced Cinzel capitals, the
 ## focused row lit with a four-point star and a tapered streak under it (AstralButton), panels a light ink veil
 ## between two fading hairlines (VeilBox), buttons slim lozenge plates (AstralChrome.plate), the game blurred under
 ## Astral's cool ink (MenuBackdrop.astral). Crisp 1 px lines on whole pixels, an 8 px grid, Astral's palette only
 ## (AstralCardArt's tokens): no ember, no orange, no brown. One Theme for these menus: `AstralMenu.apply(control)`.
-## The hub's station panels, the Codex, the Build page and the build picker keep Ember stone (MenuStyle).
+## v0.11.1 Step 13 (owner: "Astral current one live should be the only HUD style for all elements throughout the
+## game"): the hub's station panels and the Training Room's terminal too (MenuPanel); the Ember stone menus are gone.
 ## Presentation only (EI-07): nothing here decides an outcome.
 
 ## The heat colour: a muted amber, the one warm colour (the depths' line in the pause menu).
@@ -141,6 +142,33 @@ static func body(l: Label, px: int, col: Color, bold: bool = false) -> Label:
 	l.add_theme_font_size_override("font_size", px)
 	l.add_theme_color_override("font_color", col)
 	return l
+
+
+## A field row (Options' look: FieldRow, its label "Label" in small Cinzel capitals, `label_w` px wide) added to
+## `to`; its control goes in after the label and lights the row with `light`.
+static func field_row(to: Control, label_key: String, label_w: float) -> FieldRow:
+	var row := FieldRow.new()
+	row.add_theme_constant_override("separation", 16)
+	row.custom_minimum_size = Vector2(0, 48)
+	var l := Label.new()
+	l.name = "Label"
+	l.text = label_key
+	l.custom_minimum_size = Vector2(label_w, 0)
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	caps(l, LABEL_SIZE, AstralCardArt.DIM, 600, 0.24)
+	row.add_child(l)
+	to.add_child(row)
+	return row
+
+
+## Lights a field row and its label while `c` (its control) has the focus (Astral: focus reads by brightness).
+static func light(row: FieldRow, c: Control) -> void:
+	var l := row.get_node("Label") as Label
+	var lit := func(on: bool) -> void:
+		l.add_theme_color_override("font_color", AstralCardArt.TEXT if on else AstralCardArt.DIM)
+		row.lit = on
+	c.focus_entered.connect(lit.bind(true))
+	c.focus_exited.connect(lit.bind(false))
 
 
 ## A faint accent wash over `r`, fading out to the right (a lit row's band).

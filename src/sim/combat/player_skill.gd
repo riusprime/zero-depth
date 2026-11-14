@@ -1,9 +1,9 @@
 class_name PlayerSkill
 extends RefCounted
-## The Vent and Skill buttons (v0.3.5 K; owner F1, F18). Runs in tick phase 4 after PlayerKit; the skill's movement
+## The Vent and Skill buttons. Runs in tick phase 4 after PlayerKit; the skill's movement
 ## runs in phase 5 (World._move_and_collide), so walls stop it as they stop a dash.
 ## - Vent (InputFrame.VENT): with at least vent_min_heat (40) and the 6 s cooldown over, the heat goes out as the vent
-##   blast (Heat.vent) and resets to 0; otherwise (v0.9.5 HT) nothing happens (a silent VENT_COLD event only).
+##   blast (Heat.vent) and resets to 0; otherwise nothing happens (a silent VENT_COLD event only).
 ## - Skill (InputFrame.SKILL): the build's second ability (PlayerTable.skill; none outside a build). It starts when
 ##   ready (cooldown over, no swing, dash or guard, not overheated) and commits: until it ends no swing, shot, dash
 ##   or blink starts. Its cooldown counts from the press.
@@ -13,7 +13,7 @@ extends RefCounted
 ##     within range_m; damage per pellet x the build's bolt factor; each enemy hit (not a boss) is knocked back;
 ##     the user steps back recoil_m.
 ##   A use that lands adds its heat once (Heat.on_hit), and every use emits SKILL_USED (amount = SkillTable.Kind).
-## v0.6.0 MX1: the hit itself launches the Skill's compiled spec (Modifiers.skill, Attacks.launch); its shape tests
+## The hit itself launches the Skill's compiled spec (Modifiers.skill, Attacks.launch); its shape tests
 ## are Attacks' (the forecast reads the same ones, EI-07). No v0.5 item targets the Skill, so it is unchanged.
 
 const TAGS_CLEAVE := SimEvent.TAG_MELEE | SimEvent.TAG_SKILL
@@ -45,7 +45,7 @@ static func busy(w: World) -> bool:
 static func advance(w: World) -> void:
 	var k := w.kit
 	if k.vent_cd > 0:
-		k.vent_cd -= 1  # v0.9.5 HT: the 6 s Vent cooldown
+		k.vent_cd -= 1  # The 6 s Vent cooldown
 	if k.vent_buffer > 0:
 		k.vent_buffer = 0
 		_vent(w)
@@ -79,7 +79,7 @@ static func ready(w: World) -> bool:
 		and not w.player_dead()
 		and Heat.can_attack(w)
 		and not Curses.stunned(w)
-	)  # v0.6.0 CU: Brittle
+	)  # Brittle
 
 
 static func _vent(w: World) -> void:
@@ -89,7 +89,7 @@ static func _vent(w: World) -> void:
 		var e := w.emit_event(SimEvent.Kind.VENT, pid, pid, pid, w.player_pos())
 		e.amount = heat
 	else:
-		# v0.9.5 HT: a refused press (under vent_min_heat, on cooldown, overheated) does nothing the player sees or
+		# A refused press (under vent_min_heat, on cooldown, overheated) does nothing the player sees or
 		# hears. The VENT_COLD event stays in the log (event sequence numbers are in the goldens), silent in AudioEvents.
 		w.kit.cold_tick = w.tick
 		w.emit_event(SimEvent.Kind.VENT_COLD, pid, pid, pid, w.player_pos())
@@ -98,7 +98,7 @@ static func _vent(w: World) -> void:
 static func _start(w: World, t: SkillTable) -> void:
 	var k := w.kit
 	k.skill_t = 1
-	k.skill_cd = Stats.cooldown(w, t.cooldown_ticks)  # v0.4.0 BS: the cooldowns stat
+	k.skill_cd = Stats.cooldown(w, t.cooldown_ticks)  # The cooldowns stat
 	k.skill_root = w.take_root()
 	k.skill_tick = w.tick
 	k.skill_from = w.player_pos()
@@ -108,7 +108,7 @@ static func _start(w: World, t: SkillTable) -> void:
 	var e := w.emit_event(SimEvent.Kind.SKILL_USED, pid, pid, pid, k.skill_from)
 	e.root_id = k.skill_root
 	e.amount = t.kind
-	Curses.on_ability_use(w)  # v0.6.0 CU: Blood Price
+	Curses.on_ability_use(w)  # Blood Price
 	if not lunge:
 		_blast(w, t)
 
@@ -142,7 +142,7 @@ static func _cleave(w: World, _t: SkillTable) -> void:
 	var ctx := AttackContext.make(center, k.skill_angle, dmg, k.skill_root, TAGS_CLEAVE, &"")
 	if Attacks.launch(w, spec, ctx):
 		w.add_freeze(spec.hitstop_ticks)
-	Breakables.on_skill(w, center, k.skill_angle, true)  # v0.9.0 DX (Q23): only the Skill wears a cracked wall
+	Breakables.on_skill(w, center, k.skill_angle, true)  # Only the Skill wears a cracked wall
 
 
 # --- Scatter Blast ------------------------------------------------------------------------------------------
@@ -165,11 +165,11 @@ static func _blast(w: World, t: SkillTable) -> void:
 		return Gamble.shot_damage(w, PlayerBuild.bolt_damage(w, spec.damage))
 	ctx.on_ray = func(end: Vector2) -> void: k.pellet_ends.append(end)
 	ctx.on_landed = func(target: int) -> void: _knock(w, target, origin, t)
-	var rings: Array = []  # v0.10.5 W3-O1: the Ring card's flying rings ([from, to, start_r, end_r] each)
+	var rings: Array = []  # The Ring card's flying rings ([from, to, start_r, end_r] each)
 	ctx.on_ring = func(from: Vector2, to: Vector2, r0: float, r1: float) -> void:
 		rings.append([from, to, r0, r1])
 	Attacks.launch(w, spec, ctx)
-	Breakables.on_skill(w, origin, k.skill_angle, false, rings)  # v0.9.0 DX (Q23): a pellet ending on a cracked wall
+	Breakables.on_skill(w, origin, k.skill_angle, false, rings)  # A pellet ending on a cracked wall
 
 
 ## Twin: BladeForms._knock / _advance_knock (the Heavy card's push, BladeState.k_*). Kept apart on purpose (audit
@@ -231,7 +231,7 @@ static func read(w: World) -> Dictionary:
 	if t == null:
 		return {}
 	var k := w.kit
-	var spec := Modifiers.skill(w)  # v0.6.0 MX1: the view draws the compiled spec
+	var spec := Modifiers.skill(w)  # The view draws the compiled spec
 	return {
 		"kind": t.kind,
 		"cooldown": k.skill_cd,

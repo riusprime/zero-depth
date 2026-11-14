@@ -1,6 +1,6 @@
 class_name BladeFormView
 extends Node3D
-## v0.6.5 WN4 (docs/design/WAND.md, the Blade pool's "You see" column; owner W5: "the slash becomes a spell"): what the
+## docs/design/WAND.md, the Blade pool's "You see" column; owner W5: "the slash becomes a spell": what the
 ## Blade's cards do to the slash that neither the laser blade (KitView) nor the attack forms (AttackFormView) draw,
 ## read each sync from WorldReader.blade_forms() and the live projectiles' specs. Presentation only (EI-07): it decides
 ## nothing, and its timing is sim ticks.
@@ -14,12 +14,12 @@ extends Node3D
 ## - Counter: a ring flash round the hero; Finisher+: its big shockwave ring;
 ## - Orbit Blades: a blade at each orbiting blade's place, turning.
 ## One ImmediateMesh, rebuilt each sync; flat marks on the floor use the hero's cool core, never a hostile hue.
-## v0.8.0 PF2 (owner O9, the Blade Storm build's frame): the crescents and the ghost slashes are instances of one mesh
+## The crescents and the ghost slashes are instances of one mesh
 ## per shape (a crescent's width and radius; a ghost's width, reach, way and age in ticks), baked once with the same
 ## band, colours and height, in a MultiMesh each (BakedMeshPools): a crowd of them costs a transform each, not 84
 ## vertices each. They look the same as before.
 
-## v0.10.0 VX8 (VFX_PACK N3): the pack draws the Blade's forms: the baked crescents and ghost slashes wear a copy of
+## VFX_PACK N3: the pack draws the Blade's forms: the baked crescents and ghost slashes wear a copy of
 ## rim_area_04's material, the fissure's eruption is vfx_impact_02, the parry spark vfx_hit_04 and the counter's and
 ## finisher's rings the pulse areas; false (or a full family): the old looks.
 const PACK_BLADE := true
@@ -42,22 +42,24 @@ const ARC_SEGMENTS := 14
 const CRESCENT_R := 0.45
 const CRESCENT_MAX_HALF := 1.2
 const SPARK := Color(1.0, 0.97, 0.85, 1.0)
-## v0.8.0 PF2: the baked shapes (BakedMeshPools keys' first value).
+## The baked shapes (BakedMeshPools keys' first value).
 const SHAPE_CRESCENT := 0
 const SHAPE_GHOST := 1
 const SHAPE_GHOST_MIRROR := 2
 
 ## What the last sync drew, by kind (the tests read it): crescent, ghost, crack, line, spark, ring, blade.
 var drawn := {}
+## True once a sync with nothing to draw drew the empty mesh: later empty syncs return at once.
+var quiet := false
 var _mesh := ImmediateMesh.new()
 var _node := MeshInstance3D.new()
 var _mat := StandardMaterial3D.new()
 var _core := ThemePalette.color(&"player_core")
 var _looks := {}
-## v0.8.0 PF2: the build digest read once a sync (the crescents' look cache keys on it), and the baked shapes' pools.
+## The build digest read once a sync (the crescents' look cache keys on it), and the baked shapes' pools.
 var _digest := ""
 var _baked := BakedMeshPools.new()
-## v0.10.0 VX8: the pack the view hangs under (null: none), the rim material of the baked bands, and what each effect of
+## The pack the view hangs under (null: none), the rim material of the baked bands, and what each effect of
 ## the pack chose when it began: key -> [PACK or OLD, tick].
 var _pack: PackFx = null
 var _rim: ShaderMaterial
@@ -82,14 +84,24 @@ func _init() -> void:
 
 
 func sync(reader: WorldReader) -> void:
-	_mesh.clear_surfaces()
-	drawn = {}
 	var tick := reader.tick()
 	_digest = reader.attack_digest()
+	var b := reader.blade_forms()
+	# Nothing to draw, and the last sync drew the empty mesh and pools already: rebuilding them changes nothing
+	var empty: bool = (
+		(b["fx"] as Array).is_empty()
+		and (b["cracks"] as Array).is_empty()
+		and (b["blades"] as PackedVector2Array).is_empty()
+		and not _any_crescent(reader)
+	)
+	if empty and quiet:
+		return
+	quiet = empty
+	_mesh.clear_surfaces()
+	drawn = {}
 	_pack = BladePack.pack_of(self) if PACK_BLADE else null
 	if _pack != null and _rim == null:
 		_rim = BladePack.rim_material(_core)
-	var b := reader.blade_forms()
 	_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 	_baked.begin()
 	var any := false
@@ -110,6 +122,17 @@ func sync(reader: WorldReader) -> void:
 
 func _count(kind: StringName) -> void:
 	drawn[kind] = int(drawn.get(kind, 0)) + 1
+
+
+## Some player projectile flies as a crescent.
+func _any_crescent(reader: WorldReader) -> bool:
+	for i in reader.projectile_count():
+		if (
+			reader.projectile_team(i) == 0
+			and _crescent_of(reader, reader.projectile_spec_key(i)).x > 0.0
+		):
+			return true
+	return false
 
 
 ## The arc width (1/4096 turns) a player projectile's spec gives its crescent (x; 0: not a flying slash) and its
@@ -147,7 +170,7 @@ func _crescents(reader: WorldReader) -> bool:
 	return false  # the crescents are the pools' (the ImmediateMesh's surface doesn't hold them)
 
 
-## v0.8.0 PF2: shape `key` (SHAPE_*, half-width in radians, radius or reach, age) as a mesh round the origin, aimed
+## Shape `key` (SHAPE_*, half-width in radians, radius or reach, age) as a mesh round the origin, aimed
 ## along +x, exactly the band _arc_band drew for it: a crescent round a centre 0.7 r behind its bolt, from r - 0.12 to
 ## r + 0.08; a ghost slash swept and faded at its age.
 func _bake(key: Vector4) -> ArrayMesh:
@@ -192,7 +215,7 @@ func _band_mesh(
 			[d1 * r0, inner],
 		]:
 			verts.append(SimPlane.to_3d(centre + (pair[0] as Vector2), HEIGHT))
-			# v0.10.0 VX8: the band seen as the rim of a disc (the rim material's masks are radial), 0.5 at its centre
+			# The band seen as the rim of a disc (the rim material's masks are radial), 0.5 at its centre
 			uvs.append(Vector2(0.5, 0.5) + 0.5 * (pair[0] as Vector2) / maxf(r1, 0.01))
 			cols.append(pair[1])
 	var arrays := []
@@ -206,7 +229,7 @@ func _band_mesh(
 	return m
 
 
-## v0.8.0 PF2: how many crescents and ghost slashes the last sync laid out as instances.
+## How many crescents and ghost slashes the last sync laid out as instances.
 func baked_drawn() -> int:
 	return _baked.used_total()
 
@@ -237,7 +260,7 @@ func _ghost(f: Dictionary, age: int, at: Vector2, yaw: float) -> bool:
 		SHAPE_GHOST_MIRROR if int(f["kind"]) == WorldReader.BLADE_FX_ARC_MIRROR else SHAPE_GHOST
 	)
 	var xf := Transform3D(Basis(Vector3.UP, yaw), SimPlane.to_3d(at))
-	if _baked.add(Vector4(way, half, reach, maxi(age, 0)), xf, _bake):  # v0.8.0 PF2: a baked shape
+	if _baked.add(Vector4(way, half, reach, maxi(age, 0)), xf, _bake):  # A baked shape
 		_count(&"ghost")
 	return false  # the ghosts are the pools' (the ImmediateMesh's surface doesn't hold them)
 

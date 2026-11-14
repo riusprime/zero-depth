@@ -3,20 +3,18 @@ extends PanelContainer
 ## Threat T and the curses held (v0.5.0 EV, PLAN R4; PD-05): "THREAT 2" over one line per curse (its mark, name and
 ## sentence). The HUD shows it at the top left while you hold a curse; the pause menu shows it too. A curse just
 ## taken or lifted flashes a caption under the title for a moment. Reads only.
-## v0.6.0 UP: on the HUD an Ember stone slab (HudStyle) with the curses' colour along its top; inside a menu (the
-## pause screen) the menu's Ember stone look (MenuStyle).
-## v0.10.5 W3-O20 (UI style Astral): in HudStyle.ASTRAL the HUD's Astral side panel in both places (ink, a contour
+## UI style Astral: the HUD's Astral side panel on the HUD and in the pause screen (ink, a contour
 ## and an inner contour, the curses' colour as a short line on top); the title in letter-spaced Cinzel, the lines in
 ## Astral's silver-white (each curse keeps its mark in the curses' colour), the empty line and the caption dim.
 
 const FLASH_S := 3.0
 const MARGIN := Vector2(14, 9)
-## The widest a curse line runs before it wraps (v0.6.0 UP: a long Spanish line ran under the top plate).
+## The widest a curse line runs before it wraps (a long Spanish line ran under the top plate).
 const LINE_W := 560.0
-## A curse line's type size (HudStyle raises it to its MIN_LABEL in ASTRAL).
+## A curse line's type size (HudStyle raises it to its MIN_LABEL).
 const LINE_SIZE := 15
 
-## Whether it wears the menus' Ember stone (set when it is added to a MenuPanel).
+## Whether it sits in a menu (set when it is added to a MenuPanel).
 var in_menu := false
 ## The reader last shown (read only), to word the panel again on a language switch.
 var _reader: WorldReader
@@ -59,26 +57,16 @@ func _notification(what: int) -> void:
 		sync(_reader)  # the pause menu syncs it once: a language switch from its Options words it again
 
 
-## The panel's box and title colour for where it is: Ember stone in a menu, the HUD's slab otherwise.
+## The panel's box and title (one Astral panel on the HUD and in the pause).
 func _apply_look() -> void:
-	if HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O20: one Astral panel on the HUD and in the pause
-		add_theme_stylebox_override(
-			"panel", HudStyle.side_panel_box(MARGIN + Vector2(4, 4), CurseLook.COLOR)
-		)
-		HudStyle.serif_label(_title, 18, 4, HudStyle.A_TEXT)
-		_note.add_theme_color_override("font_color", HudStyle.A_DIM)
-	elif in_menu:
-		add_theme_stylebox_override("panel", MenuStyle.stone_panel(MARGIN))
-		_title.add_theme_color_override("font_color", MenuStyle.TEXT)
-	else:
-		add_theme_stylebox_override("panel", HudStyle.side_panel_box(MARGIN, CurseLook.COLOR))
-		_title.add_theme_color_override("font_color", CurseLook.COLOR.lerp(Color.WHITE, 0.35))
+	add_theme_stylebox_override("panel", HudStyle.side_panel_box(MARGIN + Vector2(4, 4)))
+	HudStyle.serif_label(_title, 18, 4, HudStyle.A_TEXT)
+	_note.add_theme_color_override("font_color", HudStyle.A_DIM)
 	queue_redraw()
 
 
 func _draw() -> void:
-	if not in_menu or HudStyle.current == HudStyle.Style.ASTRAL:
-		HudStyle.draw_side_panel(self, CurseLook.COLOR)
+	HudStyle.draw_side_panel(self, CurseLook.COLOR)
 
 
 ## Anchors the panel to the top-left corner, `top` px down.
@@ -107,7 +95,7 @@ func sync(reader: WorldReader) -> void:
 				)
 			)
 	var now := reader.curses_owned()
-	if now == _shown and TranslationServer.get_locale() == _locale:  # v0.6.0 UP: worded again on a switch
+	if now == _shown and TranslationServer.get_locale() == _locale:  # Worded again on a switch
 		return
 	_shown = now.duplicate()
 	_locale = TranslationServer.get_locale()
@@ -115,9 +103,7 @@ func sync(reader: WorldReader) -> void:
 		_rows.remove_child(c)
 		c.queue_free()
 	if now.is_empty():
-		_rows.add_child(
-			_line(tr("UI_THREAT_NONE"), HudStyle.pick(HudStyle.A_DIM, Color(1, 1, 1, 0.55)))
-		)
+		_rows.add_child(_line(tr("UI_THREAT_NONE"), HudStyle.A_DIM))
 	for c in now:
 		var row := HBoxContainer.new()
 		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -125,12 +111,7 @@ func sync(reader: WorldReader) -> void:
 		var mark := CardMark.new(11.0)
 		mark.color = CurseLook.COLOR
 		row.add_child(mark)
-		row.add_child(
-			_line(
-				CurseLook.line(self, reader, c),
-				HudStyle.pick(HudStyle.A_TEXT, CurseLook.COLOR.lerp(Color.WHITE, 0.45))
-			)
-		)
+		row.add_child(_line(CurseLook.line(self, reader, c), HudStyle.A_TEXT))
 		_rows.add_child(row)
 
 

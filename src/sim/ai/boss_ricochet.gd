@@ -1,6 +1,6 @@
 class_name BossRicochet
 extends RefCounted
-## v0.8.0 BS2 (owner O5; docs/roadmap/v0.8.0/BOSS_SIGNATURES.md S5, approved 2026-10-14; SIM_CONTRACTS §10f): the
+## The
 ## Siege Engine's ricochet shells. A `pattern` attack with `bounces` (its Turret Cross) fires embers that bounce off
 ## a wall once instead of breaking on it, so the cross comes back at you from behind; from its `deploy` attack's
 ## bounce_phase on (phase 3) the turrets it deployed shoot shots that bounce once too. The bounce is the projectile

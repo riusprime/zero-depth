@@ -1,6 +1,6 @@
 class_name BossLava
 extends RefCounted
-## v0.8.0 BS2 (owner O5; docs/roadmap/v0.8.0/BOSS_SIGNATURES.md S6, approved 2026-10-14; SIM_CONTRACTS §10f): the
+## The
 ## Foundry's floor is lava.
 ## - Molten floor: a `row_flood` attack with lava_ticks leaves its lanes molten where they struck, from the tick after
 ##   their last standing tick, for lava_ticks: a player standing in it (their centre) takes lava_damage once every
@@ -110,6 +110,7 @@ static func lay(w: World, i: int, atk: BossAttackTable) -> int:
 		bs.lava_boss.append(w.actors.ids[i])
 		bs.lava_attack.append(bs.attack[t])
 	BossSignatures.set_nav_extra(w)
+	BossHazard.on_lanes(w, i, pieces)  # Pools stay on the lanes after they cool
 	return pieces.size()
 
 

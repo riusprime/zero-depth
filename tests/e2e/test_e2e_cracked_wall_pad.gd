@@ -13,11 +13,6 @@ func after_each() -> void:
 	E2e.center_sticks()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func _grant(e: E2e, main: Main, id: StringName) -> void:
 	var w := e.world()
 	var guard := 0
@@ -25,9 +20,9 @@ func _grant(e: E2e, main: Main, id: StringName) -> void:
 		(main.driver.debug.mod_choice < 0 or w.item_tables[main.driver.debug.mod_choice].id != id)
 		and guard < 160
 	):
-		await _click(e, main, "NextMod")
+		await e.click_dev("NextMod")
 		guard += 1
-	await _click(e, main, "GrantMod")
+	await e.click_dev("GrantMod")
 	await e.frames(3)
 
 
@@ -43,7 +38,7 @@ func _break_with_l2(build: StringName, from_m: float, card := &"") -> void:
 	var b := w.breakables
 	var view := main.view.breakables
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	if card != &"":
 		await _grant(e, main, card)
 		assert_eq(

@@ -28,8 +28,7 @@ var wall_up := 0
 ## Sets up `w`'s purple-rune room (setup, after every other room kind and secret): marks the layout
 ## (PurpleRooms.mark at `chance_permille`, from chance()) and registers the dais. No-op on a floor that gets none, or
 ## one without a Deep gate spot.
-## v0.9.0 SH, HF: `taken`, rooms it never takes (the shrine's and the fountain's, Shrines.site_rooms; none on a floor
-## saved before SH, as it was built).
+## v0.9.0 SH, HF: `taken`, rooms it never takes (the shrine's and the fountain's, Shrines.site_rooms).
 static func setup(
 	w: World, chance_permille: int, taken: PackedInt32Array = PackedInt32Array()
 ) -> void:
@@ -42,7 +41,7 @@ static func setup(
 	p.entry = w.interactables.add(
 		Interactables.Kind.PURPLE_DAIS, f.purple_pos, DAIS_REACH_M + w.solids.bonus(), 0
 	)
-	w.solids.add_square(Solids.Kind.DAIS, 0, f.purple_pos)  # v0.9.5 SB: the dais is solid
+	w.solids.add_square(Solids.Kind.DAIS, 0, f.purple_pos)  # The dais is solid
 	w.purple = p
 
 
@@ -63,21 +62,15 @@ static func avoid_spots(w: World) -> PackedVector2Array:
 ## next floor"): run `run`'s current floor's chance (per mille) of a purple-rune room: `per_floor`'s entry for the
 ## floor within the loop (SecretsDefinition.purple_floor_permille), while the loop has had none yet (RunState.
 ## purple_floors: one a loop, the lead's reading); 0 on a floor that offers no Deep gate (the loop's last) and on a
-## floor saved before DP.
+## world built without a run.
 static func chance(run: RunState, per_floor: PackedInt32Array) -> int:
-	if run == null or legacy_deep_gate(run) or not Routes.offers_choice(run):
+	if not Routes.offers_choice(run):
 		return 0
 	for f in run.purple_floors:
 		if f > run.loop_floors:
 			return 0
 	var i := run.floor_index - 1
 	return per_floor[i] if i >= 0 and i < per_floor.size() else 0
-
-
-## Whether run `run`'s current floor keeps the Deep gate on every floor before the last (a floor resumed from a save
-## made before DP, floor rules 1-11).
-static func legacy_deep_gate(run: RunState) -> bool:
-	return run.floor_rules <= RunState.FLOOR_RULES_V090_RA
 
 
 ## The press on registry entry i (Interactables.handle): the runes awaken, once.

@@ -190,10 +190,17 @@ func test_furnace_waves_live_the_walls_leave_apart_and_the_quadrant_is_safe() ->
 ## B8 ---------------------------------------------------------------------------------------------------------------
 
 
+## Twin Wardens whose Crossfire tracks, as v0.9.5 BH3 (B8) shipped it. O5 took the tracking off the shipped attacks; the
+## rule stays in the sim and the content validator, so these tests switch it on in the compiled table.
 func _twins(player_at: Vector2) -> Array:
 	var w := BossLab.world()
 	w.actors.set_pos(0, player_at)
 	var i := BossLab.ready_boss(w, &"twin_wardens", Vector2.ZERO)
+	var table := BossAi.table_of(w, i)
+	table.twin_bolt = -1  # the resting twin's bolt (O5) is another attack: only the fans are measured here
+	for id: StringName in [&"crossfire", &"crossfire_3"]:
+		_atk(table, id).lines_ticks = 72
+		_atk(table, id).lines_turn_milli = 11378
 	w.actors.hp[0] = LONG
 	w.actors.max_hp[0] = LONG
 	var aid := w.actors.ids[i]
@@ -205,21 +212,28 @@ func _twins(player_at: Vector2) -> Array:
 	return [w, aid, pid]
 
 
-func test_crossfire_lines_follow_you_for_1_2_s_at_up_to_60_degrees_a_second() -> void:
+## Both bodies on one Crossfire, the case the tracking rule needs (BossTwin.track_crossfire); since O5 the twins take
+## turns in the real fight. The partner starts first, so the lead's start aims both.
+func _both_cross(w: World, s: Array) -> void:
+	BossLab.start(w, _i(w, s[2]), &"crossfire")
+	BossLab.start(w, _i(w, s[1]), &"crossfire")
+
+
+func test_the_shipped_crossfire_shows_its_lines_for_1_2_s_and_does_not_track() -> void:
 	var t := _table(&"twin_wardens")
 	for id: StringName in [&"crossfire", &"crossfire_3"]:
 		var atk := _atk(t, id)
-		assert_eq(atk.lines_ticks, 72, "%s: the lines follow for 1.2 s" % id)
-		assert_eq(atk.windup_ticks, 72, "%s: and are drawn that whole time" % id)
+		assert_eq(atk.lines_ticks, 0, "%s: the lines do not follow (since O5)" % id)
+		assert_eq(atk.lines_turn_milli, 0, "%s: no turn" % id)
+		assert_eq(atk.windup_ticks, 72, "%s: drawn for 1.2 s" % id)
 		assert_gte(atk.windup_ticks, MIN_TICKS)
-		assert_eq(atk.lines_turn_milli, 11378, "%s: 60 degrees a second" % id)
 		assert_eq(atk.damage, 22, "%s: damage unchanged" % id)
 
 
 func test_the_lines_start_on_you_then_the_crossing_follows_at_a_limited_turn() -> void:
 	var s := _twins(Vector2(0, -5))
 	var w: World = s[0]
-	BossLab.start(w, _i(w, s[1]), &"crossfire")
+	_both_cross(w, s)
 	var i := _i(w, s[1])
 	var j := _i(w, s[2])
 	var e := BossAi.entry_of(w, i)
@@ -257,7 +271,7 @@ func test_the_lines_start_on_you_then_the_crossing_follows_at_a_limited_turn() -
 func test_a_hero_who_outruns_the_turn_is_not_at_the_crossing() -> void:
 	var s := _twins(Vector2(0, -5))
 	var w: World = s[0]
-	BossLab.start(w, _i(w, s[1]), &"crossfire")
+	_both_cross(w, s)
 	var e := BossAi.entry_of(w, _i(w, s[1]))
 	var p := Vector2(0, -5)
 	for k in 71:
@@ -275,7 +289,7 @@ func test_a_hero_who_outruns_the_turn_is_not_at_the_crossing() -> void:
 func test_the_crossing_is_drawn_the_whole_1_2_s_and_standing_on_it_is_safe() -> void:
 	var s := _twins(Vector2(0, -5))
 	var w: World = s[0]
-	BossLab.start(w, _i(w, s[1]), &"crossfire")
+	_both_cross(w, s)
 	for k in 72:
 		var tw := BossTwin.state(w, _i(w, s[1]))
 		assert_true(
@@ -384,9 +398,9 @@ func _dark(p: Vector2) -> Array:
 	return s
 
 
-func test_lanterns_burn_4_s_the_dark_lasts_9_s_and_each_snuff_puts_out_two() -> void:
+func test_lanterns_burn_6_s_the_dark_lasts_9_s_and_each_snuff_puts_out_two() -> void:
 	var t := _table(&"lantern_shade")
-	assert_eq(t.lamp_ticks, 240, "a lantern burns 4 s (was 6)")
+	assert_eq(t.lamp_ticks, 360, "v0.11.0 O4 (owner Q10 a): a lantern stays lit 6 s (B10 had 4)")
 	assert_eq(t.dark_hold_ticks, 540, "the dark lasts 9 s (was 8)")
 	assert_gt(t.sig_every_ticks, t.dark_hold_ticks, "and still lifts before the next Lights Out")
 	for id: StringName in [&"snuff", &"snuff_3"]:
@@ -404,6 +418,9 @@ func test_a_snuff_leaves_the_two_farthest_lanterns_lit_and_you_can_relight_the_r
 	var s := _dark(Vector2(-1.5, -1.5))
 	var w: World = s[0]
 	var t := BossAi.table_of(w, _i(w, s[1]))
+	var lit0 := w.bosses.lamp_t
+	lit0.fill(360)  # v0.11.0 O4: the lanterns start out; all four lit for this
+	w.bosses.lamp_t = lit0
 	BossShade.snuff(w, _atk(t, &"snuff"), p)
 	var lit: Array = []
 	for k in 4:
@@ -420,19 +437,19 @@ func test_a_snuff_leaves_the_two_farthest_lanterns_lit_and_you_can_relight_the_r
 	w.bosses.lamp_t = lt
 	BossShade.snuff(w, _atk(t, &"snuff"), p)
 	assert_eq(w.bosses.lamp_t[3], 0, "the last one goes too")
-	# The answer: walk to a dead lantern and it burns again for 4 s.
+	# The answer: walk to a dead lantern and it burns again for 6 s (v0.11.0 O4).
 	_hold(w, LAMPS[1] + Vector2(-1.0, 0), 1)
-	assert_eq(w.bosses.lamp_t[1], 240, "passing within reach relights it for 4 s")
+	assert_eq(w.bosses.lamp_t[1], 360, "passing within reach lights it for 6 s")
 
 
-func test_in_the_dark_four_seconds_after_it_falls_every_lantern_has_burnt_out() -> void:
+## v0.11.0 O4 (owner Q10 a): the lanterns start out (stepping on one lights it), so the dark falls on out lanterns;
+## it still lifts after 9 s.
+func test_the_dark_falls_on_out_lanterns_and_lifts_after_9_s() -> void:
 	var s := _dark(Vector2(-1.5, -1.5))
 	var w: World = s[0]
-	_hold(w, Vector2(-1.5, -1.5), 239)
-	assert_eq(w.bosses.lamp_t[0], 1, "alight a tick before 4 s")
-	_hold(w, Vector2(-1.5, -1.5), 1)
+	_hold(w, Vector2(-1.5, -1.5), 240)
 	for k in 4:
-		assert_eq(w.bosses.lamp_t[k], 0, "lantern %d out at 4 s" % k)
+		assert_eq(w.bosses.lamp_t[k], 0, "lantern %d out" % k)
 	_hold(w, Vector2(-1.5, -1.5), 299)
 	assert_true(BossShade.dark(w), "still dark at 9 s")
 	_hold(w, Vector2(-1.5, -1.5), 2)

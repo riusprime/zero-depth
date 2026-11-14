@@ -5,19 +5,19 @@ extends SceneTree
 
 const OUT := "res://build/shots/v0.0.1/en/"
 const SHOTS := [
-	# [name, biome, pitch, technique, occlusion]
-	["camera_pitch30", &"ruins", 30.0, &"outline", true],
-	["camera_pitch35", &"ruins", 35.26, &"outline", true],
-	["camera_pitch45", &"ruins", 45.0, &"outline", true],
-	["occlusion_none", &"ruins", 35.26, &"outline", false],
-	["occlusion_fade", &"ruins", 35.26, &"outline", true],
-	["occlusion_xray", &"ruins", 35.26, &"outline", false],
-	["occlusion_fade_xray", &"ruins", 35.26, &"outline", true],
-	["biome_ruins", &"ruins", 35.26, &"outline", true],
-	["biome_night_rocks", &"night_rocks", 35.26, &"outline", true],
-	["biome_red_canyon", &"red_canyon", 35.26, &"outline", true],
-	["biome_frozen_shore", &"frozen_shore", 35.26, &"outline", true],
-	["biome_starfall", &"starfall", 35.26, &"outline", true],
+	# [name, biome, pitch, occlusion]
+	["camera_pitch30", &"ruins", 30.0, true],
+	["camera_pitch35", &"ruins", 35.26, true],
+	["camera_pitch45", &"ruins", 45.0, true],
+	["occlusion_none", &"ruins", 35.26, false],
+	["occlusion_fade", &"ruins", 35.26, true],
+	["occlusion_xray", &"ruins", 35.26, false],
+	["occlusion_fade_xray", &"ruins", 35.26, true],
+	["biome_ruins", &"ruins", 35.26, true],
+	["biome_night_rocks", &"night_rocks", 35.26, true],
+	["biome_red_canyon", &"red_canyon", 35.26, true],
+	["biome_frozen_shore", &"frozen_shore", 35.26, true],
+	["biome_starfall", &"starfall", 35.26, true],
 ]
 
 var _index := -1
@@ -52,7 +52,7 @@ func _next() -> void:
 	var s: Array = SHOTS[_index]
 	_gallery = Gallery.new()
 	root.add_child(_gallery)
-	_gallery.setup(s[1], s[2], s[3], s[4])
+	_gallery.setup(s[1], s[2], s[3])
 	_frames = 0
 
 

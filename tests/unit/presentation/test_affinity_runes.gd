@@ -23,7 +23,7 @@ func after_each() -> void:
 
 func _avatar(look: Dictionary) -> PlayerAvatar:
 	var a := PlayerAvatar.new()
-	a.setup(Color("#1A1A22"))
+	a.setup()
 	add_child_autofree(a)
 	a.set_look(look)
 	return a

@@ -1,6 +1,6 @@
 class_name Venom
 extends RefCounted
-## v0.6.0 MX4 (M4 Venom Core: "Hits stack poison that spreads on death"): the poison engine, beside the v0.3.0 ones
+## M4 Venom Core: "Hits stack poison that spreads on death": the poison engine, beside the v0.3.0 ones
 ## (Engines). A hit whose spec feeds &"poison" adds stacks (capped at poison_max_stacks, each new stack refreshing
 ## poison_ticks); every poison_period_ticks a poisoned enemy takes poison_damage × stacks as DoT (its own root, proc 0,
 ## never a HIT: it can't set off on-hit effects); when a poisoned enemy dies, its stacks spread to every enemy within
@@ -8,7 +8,6 @@ extends RefCounted
 ## card). No randomness. The actor columns are hashed with the modifier engine's state (ModifierRuntime.hash_into).
 
 const EFFECT_POISON := &"venom"
-const EFFECT_SPREAD := &"venom_spread"
 ## ProcLedger code of a spread (after the hook feeds' codes; appended, never renumbered).
 const CODE_SPREAD := 70
 
@@ -21,7 +20,7 @@ static func add(w: World, i: int, n: int, root: int) -> void:
 		return
 	if a.poison_stacks[i] == 0:
 		a.poison_cd[i] = m.poison_period_ticks
-		ElementLevels.on_poison_start(w, i)  # v0.9.5 EE1: Contagion's first jump
+		ElementLevels.on_poison_start(w, i)  # Contagion's first jump
 	a.poison_stacks[i] = mini(a.poison_stacks[i] + n, ElementLevels.poison_cap(w))
 	a.poison_t[i] = m.poison_ticks
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[0], a.ids[0], a.ids[i], a.pos(i))
@@ -39,7 +38,7 @@ static func tick(w: World) -> void:
 	for i in range(1, a.size()):
 		if a.poison_stacks[i] == 0:
 			continue
-		if not (w.pair_mask != 0 and ElementPairs.poison_holds(w, i)):  # v0.9.5 EE3: Black Ice
+		if not (w.pair_mask != 0 and ElementPairs.poison_holds(w, i)):  # Black Ice
 			a.poison_t[i] -= 1
 		a.poison_cd[i] -= 1
 		if a.poison_cd[i] <= 0:
@@ -56,22 +55,22 @@ static func tick(w: World) -> void:
 				a.ids[0],
 				a.ids[0],
 				EFFECT_POISON,
-				&"venom"  # v0.10.5 O10: the matchup's element
+				&"venom"  # The matchup's element
 			)
 		if a.poison_t[i] <= 0:
 			a.poison_stacks[i] = 0
 			a.poison_cd[i] = 0
-	ElementLevels.tick_contagion(w)  # v0.9.5 EE1: Venom Lv 2, Contagion
-	ElementPairs.tick(w)  # v0.9.5 EE3: Toxic Fumes' clouds
+	ElementLevels.tick_contagion(w)  # Venom Lv 2, Contagion
+	ElementPairs.tick(w)  # Toxic Fumes' clouds
 
 
 ## Enemy `i` died (Damage._apply, a kill the player owns) under root `root`: its poison spreads.
 static func on_kill(w: World, i: int, root: int) -> void:
 	var a := w.actors
 	var m := w.item_mods
-	var n := a.poison_stacks[i] if i < a.poison_stacks.size() else 0
+	var n := a.poison_stacks[i]
 	if w.affinity != null and n > 0:
-		Affinities.on_poison_kill(w, i, n, root)  # v0.9.0 RB: A3 Venom's jump to the nearest
+		Affinities.on_poison_kill(w, i, n, root)  # A3 Venom's jump to the nearest
 	if n <= 0 or m.poison_spread_m <= 0.0:
 		return
 	var at := a.pos(i)

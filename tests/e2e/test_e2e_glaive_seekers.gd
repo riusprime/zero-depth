@@ -16,11 +16,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## (as test_e2e_lance_scatter.gd's) Takes card `id` at the nearest altar (its offer forced: TEST HELPER), checking
 ## its slot tag. True when taken.
 func _take_at_altar(e: E2e, main: Main, id: StringName, others: Array) -> bool:
@@ -55,7 +50,7 @@ func _boot_with(e: E2e, id: StringName) -> Main:
 	var main: Main = await e.boot()
 	await e.start_from_menu(&"gun")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)
 	assert_true(await _take_at_altar(e, main, id, [&"gun_twin", &"ember_core"]), "took %s" % id)

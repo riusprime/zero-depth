@@ -12,6 +12,17 @@ func test_all_data_validates() -> void:
 	assert_eq(repo.count(&"utility"), 2, "guard and blink")
 
 
+## A release build skips the first-load check; the next debug load of the same root still makes it.
+func test_only_a_debug_build_checks_the_content_at_the_first_load() -> void:
+	var root := "res://data/credits"
+	ContentRepository._checked_roots.erase(root)
+	assert_gt(ContentRepository.load_all(root, false).paths.size(), 0)
+	assert_false(ContentRepository._checked_roots.has(root), "a release load skips the check")
+	ContentRepository.load_all(root, true)
+	assert_true(ContentRepository._checked_roots.has(root), "a debug load checks it")
+	ContentRepository._checked_roots.erase(root)
+
+
 func test_manifest_hash_is_stable_across_loads() -> void:
 	var a := ContentRepository.load_all().manifest_hash()
 	var b := ContentRepository.load_all().manifest_hash()

@@ -126,23 +126,11 @@ func barrier_count() -> int:
 	return _barriers.size()
 
 
-func veiled_rooms() -> PackedInt32Array:
-	var out := PackedInt32Array()
-	for r in _veils.size():
-		if _veils[r].visible and _veil_target > 0.0:
-			out.append(r)
-	return out
-
-
-func veil_target() -> float:
-	return _veil_target
-
-
 func _build_barriers(reader: WorldReader, overrun: bool) -> void:
 	for b in _barriers:
 		b.queue_free()
 	_barriers.clear()
-	if overrun:  # v0.9.5 DR (Q6): the Overrun's seal is the Lockdowns' falling bars (LockdownView), no glowing box
+	if overrun:  # The Overrun's seal is the Lockdowns' falling bars (LockdownView), no glowing box
 		return
 	for rect in reader.arena_barriers():
 		var m := MeshInstance3D.new()

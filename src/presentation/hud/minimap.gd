@@ -9,6 +9,8 @@ const ACTION := &"map"
 var state := MinimapState.new()
 var corner := MinimapView.new(false)
 var full_map := MinimapView.new(true)
+## The corner window's frame, over the corner map (MinimapView.CornerTicks).
+var ticks := MinimapView.CornerTicks.new(corner)
 var _reader: WorldReader
 
 
@@ -19,6 +21,8 @@ func _init() -> void:
 	for v: MinimapView in [corner, full_map]:
 		v.state = state
 		add_child(v)
+	add_child(ticks)
+	move_child(ticks, corner.get_index() + 1)  # drawn over the corner map, as the corner drew them last
 	corner.visible = false
 
 
@@ -44,5 +48,6 @@ func _show() -> void:
 	var held := on_floor and InputMap.has_action(ACTION) and Input.is_action_pressed(ACTION)
 	full_map.visible = held
 	corner.visible = on_floor and not held
+	ticks.visible = corner.visible
 	corner.refresh()
 	full_map.refresh()

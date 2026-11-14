@@ -52,7 +52,7 @@ static func lane(start: Vector2, angle: int, length: float, half_width: float) -
 
 
 ## The angles of `count` pellets spread evenly over the cone of `half_cone` either side of `angle` (1/4096 turns;
-## one pellet goes straight). v0.3.5 K: the Scatter Blast's rays, which its view draws too.
+## one pellet goes straight). the Scatter Blast's rays, which its view draws too.
 static func pellet_angles(angle: int, half_cone: int, count: int) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	if count <= 1:

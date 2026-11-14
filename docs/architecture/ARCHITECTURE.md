@@ -39,6 +39,14 @@ app ──► presentation ──► application ──► sim ──► content
   `InputFrame` bits or debug commands applied at a tick boundary.
 - `scripts/` (bench, checks, content tools; the bot balance sims were retired in v0.5.5, owner P1) may use `application`, `sim` and `content`. Only `scripts/shots/` and
   `scripts/checks/` boot the app (`main.tscn`), because they test the running game.
+- **The sim's native core** (v0.11.1 step 54b; LOCKED_DECISIONS 2026-11-11): the sim's hot loops run only in a C++
+  library (GDExtension, `native/`, [`native/README.md`](../../native/README.md)): the table kinds' thinking, steering
+  and strikes, the collision passes, the projectile sweep and the path flood. It is part of the `sim` layer, not a
+  layer of its own: every `World` makes its native side in `_init` (`NativeWorld.make`, `src/sim/world/native_world.gd`,
+  the one sim file allowed to name `ClassDB`), every hashed column stays in GDScript, and the native side holds only
+  caches, so saves and hashes are GDScript's. The library is required: without it the game stops at its start with one
+  error and exit code 1 (`src/app/native_check.gd`), a GUT run stops before its first test, and a `World` does nothing.
+  Presentation has its own native helper (`ZdCrowd`, the batched enemies), which keeps its GDScript writer.
 
 ## 3. Architecture lint
 
@@ -52,6 +60,8 @@ app ──► presentation ──► application ──► sim ──► content
   - **Scene and engine access:** `Node`, `SceneTree`, `get_tree`, `get_node`, `emit_signal`, `await`, `Tween`,
     `Timer`, `Input`, `Time.`, `OS.`, `Engine.`, `load(`, `preload(` (except the allow-listed kernel tables).
   - **Randomness:** `randi`, `randf`, `randomize`, `RandomNumberGenerator`, `cosmetic`.
+  - **Class lookup:** `ClassDB`, except exactly `ClassDB.class_exists(CLASS)` and `ClassDB.instantiate(CLASS)` in
+    `src/sim/world/native_world.gd` (the native core's seam).
   - **Banned maths:** `sin(`, `cos(`, `tan(`, `atan2(`, `atan(`, `pow(`, `exp(`, `log(`, plus the method forms
     `.angle(`, `.rotated(`, `from_angle(`, `angle_to(`, `angle_to_point(` and `.slerp(`.
 - This widens Deathventory's purity scan (`tests/unit/dv_330/test_statuses_hazards.gd`). That scan read only one
@@ -108,7 +118,7 @@ src/
     camera/      iso rig, follow, shake, occlusion
     input/       device tracker, mouse ground-plane aim, prompt glyphs
     hud/  menus/  theme/  audio/  vfx/
-  app/           main.tscn, main.gd (the composition root), sim_driver.gd, stage_scenario.gd, galleries/
+  app/           main.tscn, main.gd (the composition root), sim_driver.gd, galleries/
   debug/         dev_panel, event_chain_inspector, debug_event_log, debug_time_controller, galleries/
 scripts/
   sim/           gen_trig_lut.gd, kernel_smoke.gd, encounter_sim.gd, run_sim.gd, policies/
@@ -123,6 +133,8 @@ data/
 locale/strings.csv
 tests/
   unit/ arch/ golden/ gen/ content/ e2e/ export/ support/
+  support/       test and tool helpers that never ship (FightBot, StageScenario, ComboCard, the labs); scripts/ use
+                 them too. KernelScenario and ScriptedInput stay in src/sim/world/: the export smoke runs them in the pack
 docs/ (this kit)
 ```
 
@@ -149,7 +161,12 @@ docs/ (this kit)
   ray vs. right stick).
 - **Mouse aim.** The cached mouse position becomes a camera ray (`project_ray_origin`/`project_ray_normal`),
   intersected with the plane at core height.
-- **Aim assist.** Gamepad only, a cone of about 12° (GA: input), applied in `application` before quantization.
+- **Aim assist.** `AimAssist` (application), called from `PlayerInput.sample` before the latch quantizes the aim, so
+  the recorded `InputFrame` holds the bent aim and replays need no assist code. A pull, not a snap: the aim turns
+  `strength_percent` (10) of the way toward the target nearest it by angle (a tie: the nearer) inside `cone_degrees`
+  (12) either side and within `range_m` (12 m); the aim distance is untouched. Targets: living, hittable enemy-team
+  actors (bosses and elites too), not horde critters or Wire Weaver posts. Mouse and gamepad (`PlayerInput.ASSISTED`);
+  the Options switch `aim_assist` turns it off. Numbers in `data/tuning/aim_assist.tres` (the dev panel's Sim group).
 - **e2e tests** drive the real `main.tscn` the way a player does ([`TEST_MATRIX.md`](TEST_MATRIX.md) T-E2E):
   1. `Input.parse_input_event(ev)`, then `Input.flush_buffered_events()`;
   2. `await get_tree().physics_frame`, under `--fixed-fps 60`.

@@ -1,6 +1,6 @@
 class_name CodexGlyphs
 extends RefCounted
-## v0.7.5 CX: the Codex's emblems for enemies and bosses, in the item icons' style (ItemIcons: shapes in a unit box,
+## The Codex's emblems for enemies and bosses, in the item icons' style (ItemIcons: shapes in a unit box,
 ## y down, drawn with CanvasItem calls, no external art), and a biome's small landscape in its own palette. An enemy
 ## is drawn by its behaviour, a boss by its id; one this table doesn't know gets the generic emblem, so new content
 ## shows without code. Presentation only (EI-07).
@@ -11,7 +11,7 @@ const ENEMY := Color("#FF6A5A")
 const BOSS := Color("#FFB347")
 
 
-## v0.7.5 SM (accessibility pass): under a colour-blind mode an enemy's emblem wears that mode's enemy colour
+## Accessibility pass: under a colour-blind mode an enemy's emblem wears that mode's enemy colour
 ## (ThemePalette), as the enemies do in the game.
 static func color(page: StringName) -> Color:
 	if page == &"bosses":
@@ -21,7 +21,8 @@ static func color(page: StringName) -> Color:
 
 ## The shapes of an enemy (by behaviour id) or a boss (by id).
 static func shapes(page: StringName, key: StringName) -> Array:
-	return _boss(key) if page == &"bosses" else _enemy(key)
+	# A variant: its base's; a signature its own (not its base's)
+	return _boss(key) if page == &"bosses" else _enemy(BehaviourSchemas.VARIANT_OF.get(key, key))
 
 
 static func _enemy(behaviour: StringName) -> Array:
@@ -73,6 +74,51 @@ static func _enemy(behaviour: StringName) -> Array:
 			for p: Array in [[0.3, 0.3], [0.7, 0.3], [0.5, 0.5], [0.3, 0.72], [0.7, 0.72]]:
 				out.append(_circle(Vector2(p[0], p[1]), 0.13, 0.0))
 			return out
+		&"dust_mite":  # The horde critters
+			return [
+				_circle(Vector2(0.5, 0.56), 0.24, 0.0),
+				_circle(Vector2(0.5, 0.26), 0.1, 0.0),
+				_line([[0.18, 0.4], [0.82, 0.72]], 0.05),
+				_line([[0.82, 0.4], [0.18, 0.72]], 0.05),
+			]
+		&"cave_bat":
+			return [
+				_poly(
+					[[0.08, 0.36], [0.5, 0.5], [0.92, 0.36], [0.76, 0.7], [0.5, 0.6], [0.24, 0.7]]
+				),
+				_circle(Vector2(0.5, 0.42), 0.1, 0.0),
+			]
+		&"ember_flea":
+			return [
+				_circle(Vector2(0.56, 0.42), 0.2, 0.0),
+				_line([[0.42, 0.56], [0.24, 0.84], [0.4, 0.84]], 0.05),
+			]
+		&"ice_crab":
+			return [
+				_poly(
+					[[0.2, 0.5], [0.34, 0.34], [0.66, 0.34], [0.8, 0.5], [0.66, 0.66], [0.34, 0.66]]
+				),
+				_circle(Vector2(0.18, 0.24), 0.08, 0.0),
+				_circle(Vector2(0.82, 0.24), 0.08, 0.0),
+			]
+		&"star_mote":
+			return [
+				_poly(
+					[
+						[0.6, 0.14],
+						[0.68, 0.36],
+						[0.9, 0.4],
+						[0.72, 0.54],
+						[0.76, 0.78],
+						[0.6, 0.64],
+						[0.44, 0.78],
+						[0.48, 0.54],
+						[0.3, 0.4],
+						[0.52, 0.36]
+					]
+				),
+				_line([[0.4, 0.6], [0.12, 0.88]], 0.05),
+			]
 		&"splitter":
 			return [
 				_circle(Vector2(0.5, 0.5), 0.38, 0.0),
@@ -80,6 +126,30 @@ static func _enemy(behaviour: StringName) -> Array:
 			]
 		&"splitling":
 			return [_poly([[0.2, 0.56], [0.3, 0.32], [0.5, 0.22], [0.7, 0.32], [0.8, 0.56]])]
+		&"star_warper":  # A hooded body and the star it marks beside it
+			return [
+				_poly([[0.22, 0.86], [0.3, 0.42], [0.42, 0.14], [0.54, 0.42], [0.6, 0.86]]),
+				_poly(
+					[
+						[0.78, 0.5],
+						[0.82, 0.62],
+						[0.94, 0.64],
+						[0.84, 0.72],
+						[0.88, 0.86],
+						[0.78, 0.78],
+						[0.68, 0.86],
+						[0.72, 0.72],
+						[0.62, 0.64],
+						[0.74, 0.62]
+					]
+				),
+			]
+		&"gravity_node":  # An orb in its ring of pull
+			return [
+				_circle(Vector2(0.5, 0.5), 0.2, 0.0),
+				_circle(Vector2(0.5, 0.5), 0.38, 0.05),
+				_circle(Vector2(0.5, 0.5), 0.07, 0.0, true),
+			]
 		&"shield_bearer":
 			return [
 				_poly([[0.22, 0.12], [0.78, 0.12], [0.78, 0.5], [0.5, 0.9], [0.22, 0.5]]),
@@ -104,6 +174,67 @@ static func _enemy(behaviour: StringName) -> Array:
 				_line([[0.5, 0.66], [0.5, 0.94]], 0.06),
 				_line([[0.06, 0.5], [0.34, 0.5]], 0.06),
 				_line([[0.66, 0.5], [0.94, 0.5]], 0.06),
+			]
+		&"wire_weaver":  # Two posts and the live cable between them
+			return [
+				_line([[0.2, 0.2], [0.2, 0.86]], 0.08),
+				_line([[0.8, 0.2], [0.8, 0.86]], 0.08),
+				_line([[0.2, 0.32], [0.38, 0.4], [0.5, 0.3], [0.62, 0.42], [0.8, 0.32]], 0.05),
+				_circle(Vector2(0.2, 0.16), 0.06, 0.0),
+				_circle(Vector2(0.8, 0.16), 0.06, 0.0),
+			]
+		&"scrap_hound":  # a low hound mid-dart
+			return [
+				_poly([[0.1, 0.5], [0.62, 0.4], [0.9, 0.46], [0.62, 0.6], [0.1, 0.62]]),
+				_line([[0.24, 0.6], [0.16, 0.86]], 0.06),
+				_line([[0.58, 0.58], [0.68, 0.86]], 0.06),
+				_circle(Vector2(0.8, 0.47), 0.04, 0.0, true),
+			]
+		&"rock_lurker":  # a boulder with glowing cracks
+			return [
+				_poly(
+					[
+						[0.14, 0.78],
+						[0.2, 0.36],
+						[0.46, 0.18],
+						[0.78, 0.26],
+						[0.88, 0.6],
+						[0.8, 0.82]
+					]
+				),
+				_line([[0.36, 0.34], [0.48, 0.52], [0.42, 0.72]], 0.05, true),
+				_line([[0.66, 0.36], [0.6, 0.58]], 0.05, true),
+			]
+		&"stone_thrower":  # a rock held overhead in two arms
+			return [
+				_circle(Vector2(0.5, 0.2), 0.14, 0.0),
+				_poly([[0.28, 0.52], [0.72, 0.52], [0.78, 0.9], [0.22, 0.9]]),
+				_line([[0.3, 0.54], [0.36, 0.26]], 0.08),
+				_line([[0.7, 0.54], [0.64, 0.26]], 0.08),
+			]
+		&"kiln_beetle":  # A round shell over a glowing belly
+			return [
+				_poly([[0.14, 0.56], [0.24, 0.26], [0.5, 0.14], [0.76, 0.26], [0.86, 0.56]]),
+				_circle(Vector2(0.5, 0.66), 0.18, 0.0),
+				_circle(Vector2(0.5, 0.66), 0.08, 0.0, true),
+			]
+		&"cinder_priest":  # a hood and a tall staff over a vent
+			return [
+				_poly([[0.5, 0.1], [0.72, 0.4], [0.66, 0.9], [0.34, 0.9], [0.28, 0.4]]),
+				_line([[0.82, 0.12], [0.82, 0.92]], 0.06),
+				_circle(Vector2(0.82, 0.12), 0.08, 0.0),
+			]
+		&"frost_spitter":  # a lobbed blob on its arc
+			return [
+				_circle(Vector2(0.26, 0.7), 0.18, 0.0),
+				_line([[0.36, 0.56], [0.52, 0.3], [0.7, 0.3], [0.82, 0.5]], 0.06),
+				_circle(Vector2(0.82, 0.62), 0.1, 0.0),
+			]
+		&"glacier_turtle":  # a domed shell held in front
+			return [
+				_poly([[0.12, 0.7], [0.2, 0.34], [0.5, 0.18], [0.8, 0.34], [0.88, 0.7]]),
+				_line([[0.3, 0.42], [0.7, 0.42]], 0.06, true),
+				_line([[0.5, 0.22], [0.5, 0.66]], 0.06, true),
 			]
 	return [  # any other enemy: a hostile diamond with an eye
 		_poly([[0.5, 0.08], [0.9, 0.5], [0.5, 0.92], [0.1, 0.5]]),
@@ -155,14 +286,14 @@ static func _boss(id: StringName) -> Array:
 				_poly([[0.5, 0.08], [0.7, 0.36], [0.62, 0.56], [0.38, 0.56], [0.3, 0.36]]),
 				_poly([[0.5, 0.3], [0.58, 0.44], [0.5, 0.54], [0.42, 0.44]], true),
 			]
-		&"tidecaller":  # v0.9.0 NB1: a bell over two waves
+		&"tidecaller":  # A bell over two waves
 			return [
 				_poly([[0.36, 0.14], [0.64, 0.14], [0.74, 0.5], [0.26, 0.5]]),
 				_circle(Vector2(0.5, 0.56), 0.06, 0.0, true),
 				_line([[0.1, 0.7], [0.3, 0.62], [0.5, 0.7], [0.7, 0.62], [0.9, 0.7]], 0.05),
 				_line([[0.1, 0.86], [0.3, 0.78], [0.5, 0.86], [0.7, 0.78], [0.9, 0.86]], 0.05),
 			]
-		&"twin_wardens":  # v0.9.0 NB2: two tower shields joined by a chain
+		&"twin_wardens":  # Two tower shields joined by a chain
 			return [
 				_poly([[0.08, 0.2], [0.34, 0.2], [0.34, 0.7], [0.21, 0.86], [0.08, 0.7]]),
 				_poly([[0.66, 0.2], [0.92, 0.2], [0.92, 0.7], [0.79, 0.86], [0.66, 0.7]]),
@@ -170,14 +301,14 @@ static func _boss(id: StringName) -> Array:
 				_circle(Vector2(0.5, 0.5), 0.05, 0.0, false),
 				_circle(Vector2(0.58, 0.5), 0.05, 0.0, false),
 			]
-		&"clockwork_judge":  # v0.9.0 NB3: a clock face, its two hands, a gear beneath
+		&"clockwork_judge":  # A clock face, its two hands, a gear beneath
 			return [
 				_circle(Vector2(0.5, 0.4), 0.3, 0.0, false),
 				_line([[0.5, 0.4], [0.5, 0.18]], 0.05),
 				_line([[0.5, 0.4], [0.66, 0.48]], 0.05),
 				_circle(Vector2(0.5, 0.84), 0.1, 0.0, false),
 			]
-		&"lantern_shade":  # v0.9.0 NB4: an empty hood over a hanging lantern
+		&"lantern_shade":  # An empty hood over a hanging lantern
 			return [
 				_poly([[0.5, 0.06], [0.78, 0.3], [0.74, 0.62], [0.26, 0.62], [0.22, 0.3]]),
 				_poly([[0.5, 0.2], [0.64, 0.34], [0.6, 0.54], [0.4, 0.54], [0.36, 0.34]], true),

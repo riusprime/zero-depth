@@ -60,6 +60,24 @@ the order is part of the contract:
 | 10 | **Publish cues** | The tick's events are appended to the event log that presentation reads (§9). |
 | 11 | **Optional hash** | When a checkpoint is due (§10), the `StateHasher` runs. |
 
+**Where the phases run** (v0.11.1 step 54b, [`native/README.md`](../../native/README.md)). The hot loops of phases
+3, 5 and 6 run in the native library, the only implementation; the rules around them stay GDScript:
+- **3, the flow field:** on every `NavField.PERIOD` tick the whole bounded flood runs native in one call
+  (`NativeNav`); `NavField` keeps the grid, the seeds, the skip rule and `dist` (snapshotted). There is no flood
+  sliced over ticks any more, so the field is never older than its flood tick.
+- **3, AI:** the table kinds (`NativeKindTable`: NATIVE and HOOKED; the horde, the critters, the variants) think
+  native (`ZdWorld.think`: the staggered plan, the state machine, aim); GDScript applies the intents it returns in
+  ascending row order (every random draw, on `rng_enemy`; the Mender's heal; the hooks), then the rows the table
+  leaves to GDScript think in ascending order (bosses, elites, signatures, the Cinder Priest, eggs, dummies).
+- **5:** the hero steps (GDScript), the script rows steer (GDScript), then the table kinds steer native
+  (`ZdWorld.move`) and every body goes through the native collision passes (`resolve_actors`); GDScript then
+  builds the body grid its rules query (`actors_near`, `enemies_near`).
+- **6:** the table kinds' hit shapes and sight tests run native (`ZdWorld.strike`); GDScript applies the hits, bolts,
+  waves and hooks in row order, then resolves the script rows, then the critters' touches. Projectiles: GDScript
+  steers those with a behaviour, the native sweep finds each one's first contact (`sweep_shots`), and GDScript runs
+  every contact through `ProjectileContacts` in ascending projectile order.
+- Everything else (input, actions, statuses, deaths, spawns, hashing) is GDScript, unchanged.
+
 **Who calls `step`.** `SimDriver` (in `src/app/`) calls it from `_physics_process`. Godot's project settings
 make that a fixed 60 Hz loop with a catch-up cap ([`ARCHITECTURE.md`](ARCHITECTURE.md) §4). Headless sims,
 replays and tests call `step` directly in a loop, with no scene tree.
@@ -1333,6 +1351,75 @@ starting value.
   saved (an older save holds none, `ADDED_SINCE_V05`) and hashed only once a card was taken (`Starbound.hash_into`),
   so every loop-1 world hashes as before (T3). `World.starbound_tables` is loadout.
 
+## 8p. Spells (v0.11.0 O10; owner Q17-Q20, [`SPELLS.md`](../roadmap/v0.11.0/SPELLS.md))
+
+Code: `Spells` (src/sim/abilities); data: `SpellDefinition`, `SpellRulesDefinition` (CONTENT_SCHEMA §8); every number
+is a starting value (O12 measures them).
+
+- **The card.** An `Offers` code of its own, `SPELL_BASE (5000) + k`, type `Offers.SPELL`, k in
+  `SpellDefinition.SPELLS` order. It never enters the wand (`World.mod_slots`): `World.spell_slots` (spell indices,
+  pick order, at most `SpellRules.slots` = 4), `spell_levels`, `spell_cd` (ticks left) and `spell_cast_tick` side by
+  side. Slots and levels are run-long (`RunCarry`); a new floor's cooldowns start ready. Taken through the normal pick
+  (`BuildSlots.take`): a held spell levels up (Lv 3 at most in loop 1, Lv 5 from loop 2); a new one takes the next free
+  slot; with every slot full it replaces the held spell of the lowest level (the leftmost of those), which its card
+  says first (`Offers.info` "replaces"); skipping the card keeps the slots.
+- **The offer.** The run's pool is every spell whose element card (`SpellTable.element_item`) is in
+  `World.items_owned`, held spells below their cap included. A regular altar's fresh offer gets one spell card with
+  `SpellRules.offer_permille`'s chance, drawn by weight (× `affinity_permille` when the spell's affinity is the run's
+  rune affinity), all on the named stream `loot:spell:<loop>:<floor>:<reward id>` (the loot stream untouched); it
+  replaces the last card that is neither the leading fresh ability, a Starbound card, the only compatible card nor a
+  jackpot (appended to a short offer). Never in a chest, the shop, an epic or a boss altar.
+- **The runner** (tick phase 6, after `Abilities.advance`): each slot's cooldown counts down; at 0 the spell casts the
+  first tick it has a target, then waits its cooldown again. Hits are the player's (`Damage.hit`, `TAG_ABILITY`, the
+  spell id as the effect: damage stat and crit apply; no ElementStack falloff or level share); each enemy hit gets the
+  element's status as the element card gives it (`add_burn`, `add_frost`, `add_bleed`, `Venom.add`; Lightning's charge,
+  `ElementStack.on_hit`). "The densest pack" (`Spells.densest_pack`, also `WorldReader.spell_aim`): the living enemy
+  within reach whose `pack_radius_m` circle holds the most living enemies within reach (ties: the nearest, then the
+  lower index). Frost Nova: every enemy within its radius is hit and frozen (a freeze-immune one gets a frost stack),
+  then pushed `push_m` away over 6 ticks (an elite half, a boss never). Fireball: `count` balls locked on the densest
+  pack (the next on the densest outside the earlier bursts) fly at `speed_mps` and burst `radius_m` (hit + burn).
+  Sky Strike: `count` bolts at distinct random enemies within reach (one draw each on `combat:spell_sky:<tick>:<slot>`),
+  each hit + charge, then a jump to the nearest other enemy within `jump_m`.
+- **The roster (v0.11.0 O11; `SpellRoster` casts, `SpellZones` runs what lasts).** One store for every lasting spell,
+  `World.spell_zone_*` (kind, spell, level, root, end tick, next pulse, damage a pulse, two counters, centre, velocity,
+  radius; at most `SpellZones.MAX` = 64, a new one past it is not made). The wand's fire patches (`ElementAbilities`)
+  run AttackSpecs from the wand's book and a spell has none there, so the spells keep their own store; the statuses
+  and the burn are the element cards' own. A zone pulses every `period_ticks` (each pulse its own root): every living
+  enemy whose centre is within its radius takes the hit and the element's status. New casts pulse the tick they are
+  cast (the runner casts before the zones advance). Per row (Lv 5 extra after the semicolon):
+  - F1 Blizzard: a storm on the densest pack, `seconds` long; those still inside at its end freeze `bonus_seconds`.
+  - F2 Frost Nova; a frozen enemy any hit of yours lands on shatters (`Spells.on_frozen_hit`, from `Damage.hit`): its
+    freeze ends and it takes `bonus_damage` (`spell_frost_nova_shatter`).
+  - F3 Ice Lances: `count` shards at the nearest enemies, each hitting its line's first 1 + `pierce` (out to reach);
+    a shard's hit that kills splits it into 2 more at the 2 nearest others within `jump_m`.
+  - B1 Fireball; each burst leaves a burning ground of `bonus_radius_m` for `bonus_seconds` (`bonus_damage` a pulse).
+  - B2 Burning Ground (10 s): a patch under you; it follows you at `speed_mps` (half the hero's walk).
+  - B3 Meteor (16 s): a mark on the densest pack, locked when it appears; `delay_s` later the strike hits what is
+    inside then (enemies can walk out), burns and knocks down `seconds` (a hold); the crater burns `bonus_seconds`.
+  - L1 Sky Strike; each enemy a bolt or its jump strikes is stunned `bonus_seconds`.
+  - L2 Ball Lightning: an orb rolls from you along your facing at `speed_mps`, each pulse zapping the nearest `count`
+    within its radius; a burst of `bonus_radius_m` at its end.
+  - L3 Static Field: a ring around you; your dash's first tick discharges it (a `bonus_radius_m` burst, it ends).
+  - V1 Venom Orb: lobbed like a Fireball (the balls in flight), it lands as a pool; an enemy the player kills inside a
+    Lv 5 pool leaves a small pool (`bonus_radius_m`, `bonus_seconds`; at most 8 at once, a small one leaves none).
+  - V2 Toxic Cloud: follows you, dropping a puff (its radius, `bonus_seconds` long) each pulse; the puffs pulse on the
+    cloud's beat and hit an enemy once a tick however many it stands in; the puffs slow (`slow_permille`, a hold).
+  - V3 Spitter Vine: stands where it grew, each pulse its `count` heads spit at the nearest enemies within reach;
+    a spit passes through `pierce` more on its line.
+  - X1 Blood Thorns: a ring from `inner_m` to the radius (an enemy's body touching it), Lv 3+ again `delay_s` later;
+    the ring stays `bonus_seconds` as a wall (`bonus_damage` a pulse).
+  - X2 Hemorrhage: `count` marks on the enemies with the most HP within reach; `delay_s` later the hit, then all its
+    bleed at once (one DoT tick, `spell_hemorrhage_burst`: bleed damage × stacks × the periods it had left), and its
+    stacks spread to the enemies within the radius.
+  - X3 Leech: around you, drains each bleeding enemy within its radius (Lv 5: the others at half); you heal 1 HP per
+    `heal_per_damage` HP drained, at most the level's `heal_cap` a cast (a HEAL event, no LIMIT).
+- **Holds (O11).** `World.spell_hold_*` (actor id, ticks, speed per mille; one per enemy, the longer and the stronger
+  win, at most 128): 0 ‰ (a stun, a knock-down) holds an enemy as frozen does in `EnemyAi` and `EliteAi` without
+  freezing it; a slow scales `ItemProcs.slow_factor`. Never on a freeze-immune actor (a boss).
+- **Hash and snapshot.** Hashed once a spell is held or a ball, push, zone or hold runs (`Spells.touched`; the zones and
+  the holds after the pushes); `World.spell_fx_*` is the view's log, never hashed. An older save holds no spells
+  (`WorldSnapshot.ADDED_SINCE_V05`).
+
 ## 9. What presentation receives
 
 Presentation sees the sim only through `WorldReader`, a read-only facade over `World`
@@ -1376,12 +1463,22 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
   - the shop (v0.5.0 SH; `ShopState`: id, room, open, rolled, heal used, rerolls, last action, tick and value, the
     refusal tick, the stock, the position), after the gamble shrine, only on floors with a shop; the stat cards taken
     (`World.stat_cards`, the `Offers` codes in order) with the build block, once it is touched.
+  - the objective markers (v0.11.0 O2; `ObjectiveMarkers`: reasons, followed entity ids, fixed points), after the
+    shard drops, only once a marker was ever set (`touched`). A hint for the view only: no outcome reads them.
 - It runs on demand, not every tick:
   - every 60 ticks in replays and goldens (a checkpoint);
   - at encounter end;
   - in tests.
 - A replay that doesn't match its checkpoint hash reports the first mismatching checkpoint and diffs the two
   `snapshot()`s.
+- **Determinism with the native core** (v0.11.1 step 54b): the hashed state is the same function over the same
+  GDScript columns; the native kernels hold nothing between calls, so a snapshot restores exactly and a run resumes
+  as it would have gone on. The results are deterministic per build and identical across the Windows (MSVC) and
+  Linux (gcc) builds, debug and release: the C++ uses only IEEE single-precision `+ - * /`, `sqrt` and the shared
+  trig tables, under fixed float flags (`native/README.md`). The cross-compiler fixtures check it on every platform:
+  each kernel's hash on seeded inputs (`tests/golden/fixtures/native_kernels_hash.txt`) and a seeded horde world's
+  state hash after 600 ticks (`native_horde_hash.txt`), recorded from the owner's Windows build and checked by
+  `tests/golden/test_native_fixtures.gd` and, for the release library, `scripts/native/check_release.sh`.
 
 ## 10a. The world snapshot (v0.4.0 SV)
 
@@ -1976,6 +2073,20 @@ PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and t
 - **Hittable only when lit.** `BossShade.unlit(w, i)`: the Shade in the dark whose body (its radius) touches no
   light. `Damage.hit` and `Damage.tick_dot` treat it like a shield (`Damage._blocked`: `BossDodge.shielded` or
   `unlit`): the HIT shows with `TAG_BLOCKED`, no HP lost; `WorldReader.boss_invulnerable` says so for the bar.
+- **v0.11.0 O4 (owner Q10 a: "40 % damage in the dark, 150 % inside a lit pool; a lantern stays lit 6 s; dark 9 s /
+  light 4 s"; supersedes the bullet above and the lanterns' and Lights Out's lines where they differ).** No
+  immunity: `unlit` and the block are gone and Lights Out is never shielded (`ShadeRules` rejects `shielded`). A
+  player's hit (`Damage.hit`, after `BossChallenge`) and tick (`Damage.tick_dot`) on the Shade are scaled by
+  `BossShade.light_permille`: `lit_mult_permille` (1500, `TAG_SHADE_LIT`) while its body touches a lit lantern's
+  pool (`in_pool`, dark or light), else `dark_mult_permille` (400, `TAG_SHADE_DARK`) while it stands in the dark
+  outside the player's own `light_m` circle, else 1000. The lanterns start out; every tick (dark or light) a lantern
+  within reach of the living player is set to `lamp_ticks` (6 s), else it burns down; the dark falls on them as they
+  are; a Snuff puts lit ones out dark or light. Only the first Lights Out schedules the dark (`shade_at`); from that
+  dark the room alternates on its own clock: `shade_until` is the next flip, the dark lasting `dark_hold_ticks` (540)
+  and the light `light_hold_ticks` (240, from `light_lasts_seconds`; 0 keeps the NB4b rule), so a later Lights Out
+  only plays its wisps. While dark the hint marker `ObjectiveMarkers.SHADE_LANTERN` points at every unlit lantern,
+  cleared in the light and when the Shade goes. Reads: `boss_light()` adds `light_left` and `boss_mult`;
+  `WorldReader.boss_light_permille(i)` for the boss bar's dim/bright tag (`HUD_SHADE_DARK` / `HUD_SHADE_LIT`).
 - **The Snuff (`marks` with `snuff`).** A tracked circle (it follows the player's exact position, locks 0.8 s); on
   its strike (`BossDodge.resolve_marks` → `BossShade.snuff`) the lit lantern nearest its centre goes out (`lamp_t` 0),
   in the dark only. Phase 3's Snuff lays two.

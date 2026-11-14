@@ -8,13 +8,13 @@
 
 [sub_resource type="QuadMesh" id="QuadMesh_pif6d"]
 size = Vector2(1.6, 1.6)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="QuadMesh" id="QuadMesh_qusda"]
 size = Vector2(1.3, 1.3)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="SphereMesh" id="SphereMesh_812m8"]
 radius = 0.3

@@ -1,6 +1,6 @@
 class_name SlotRibbon
 extends Control
-## v0.9.0 AS2 (owner, step AS's G2: "B: ribbon + pips"; PLAN "Owner decisions" AS): the ember-red ribbon across a
+## The ember-red ribbon across a
 ## reward card whose slot is full: "REPLACES TWIN" (a Form or Pattern card: the held card it replaces, which burns
 ## when this one is picked) or "CHOOSE ONE TO REPLACE" (a full Secondary or Element slot: the Swap panel asks which
 ## card goes). StoneCard lays it across the card above the rarity gem, below the sentence, so it never covers the

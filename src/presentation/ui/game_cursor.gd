@@ -1,6 +1,6 @@
 class_name GameCursor
 extends Node
-## v0.9.5 MC2 (owner L16, his cursor sheet): the game's own mouse cursor, a faceted stone arrowhead with a red gem.
+## The game's own mouse cursor, a faceted stone arrowhead with a red gem.
 ## Seven states, cut from his sheet by scripts/art/cut_cursor_sheet.py into assets/ui/cursors/<state>_<size>.png:
 ## DEFAULT, HOVER (an enabled button), CLICK (0.12 s after a left press in a menu), DISABLED (a disabled button),
 ## AIM (always in a run), INTERACT (the hub's InteractPrompt is shown) and INVALID (a control with meta
@@ -8,7 +8,7 @@ extends Node
 ## The textures load once per size class (32 px below 900 px of window height, 48, 64 from 1440). The hardware cursor
 ## is set only when the state or the size changes; a frame costs one hovered-control lookup.
 ## When a pad was the last device used, the cursor is hidden during a run and comes back on mouse motion.
-## v0.10.5 W3-O20 (owner 2026-11-04 night: every UI element Astral): the sprites are Astral now, drawn by
+## The sprites are Astral now, drawn by
 ## scripts/art/astral_cursors.py (a slim ink dart with a 1 px silver contour and a small star; the aim a thin ring with
 ## four ticks and a diamond; invalid in Astral's rose) in place of the stone arrowhead; the states, sizes and hotspots
 ## (hotspots.json) are the same.
@@ -158,14 +158,6 @@ func state() -> int:
 
 func texture(s: int) -> Texture2D:
 	return _textures[s] if s < _textures.size() else null
-
-
-func set_context(run: bool) -> void:
-	if int(run) == _context:
-		return
-	_context = int(run)
-	_set_state(wanted(run))
-	_apply_visibility()
 
 
 func _set_state(s: int) -> void:

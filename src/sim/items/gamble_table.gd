@@ -1,10 +1,10 @@
 class_name GambleTable
 extends RefCounted
-## The gamble shrine's compiled rules (v0.3.0 L19), built from GambleDefinition by ContentCompiler.compile_gamble.
+## The gamble shrine's compiled rules, built from GambleDefinition by ContentCompiler.compile_gamble.
 ## The defaults equal the data's starting values, so a world built without content still has a sane shrine.
 ## Per stat (index = Stat): what one win adds (`amount`: HP for MAX_HP, per mille for every other stat; REGEN is per
 ## mille of max HP per second), its draw weight and its cap in wins.
-## v0.8.0 N14 (owner O72): how often a floor has a shrine, how many stats one shrine grants before it is spent, and
+## How often a floor has a shrine, how many stats one shrine grants before it is spent, and
 ## how often a paid use fails (paid, no stat).
 
 enum Stat { MAX_HP, MELEE, SHOT, MOVE, DASH_CD, REGEN, HEAT, SHARDS }
@@ -28,7 +28,7 @@ var floor_price_step_permille := 500
 var interact_radius_m := 1.8
 var spot_distance_m := 2.6
 var clear_radius_m := 0.9
-## v0.8.0 N14 (O72): the chance a floor has a shrine (per mille, drawn from `map:shrine`), the wins one shrine grants
+## The chance a floor has a shrine (per mille, drawn from `map:shrine`), the wins one shrine grants
 ## before it is spent, and the chance a paid use fails (per mille, drawn from `loot:shrine:<try>`).
 var floor_chance_permille := 400
 var max_wins := 3
@@ -37,7 +37,7 @@ var fail_permille := 300
 var amount := PackedInt32Array([8, 60, 60, 40, 60, 5, 80, 50])
 var weight := PackedInt32Array([3, 3, 3, 2, 2, 2, 2, 2])
 var cap := PackedInt32Array([6, 5, 5, 4, 4, 4, 4, 4])
-## The PlayerTable.WEAPON_* bit a stat feeds (v0.3.0 L15), 0 = any: melee damage needs the blade, shot damage the gun.
+## The PlayerTable.WEAPON_* bit a stat feeds, 0 = any: melee damage needs the blade, shot damage the gun.
 var requires_weapon := PackedInt32Array([0, 1, 2, 0, 0, 0, 0, 0])
 
 

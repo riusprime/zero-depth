@@ -5,8 +5,10 @@ extends GutTest
 ## the test moved to seed 385, the first whose floor-1 shrine is Fortune with the same five rolls.
 ## God from the dev panel (clicked with the mouse: the dev route, so the walk is safe), then walking up to the shrine
 ## with the stick shows its price above it and the prompt (red with no shards, and E then pays nothing; v0.8.0 N18,
-## owner O76: no odds line under it); with shards, E on the keyboard pays 25 and wins a stat (the card spins and lands
-## on it); X on the pad pays 38 and fails (the shrine fizzles, "It failed", no stat, the price still rises to 57);
+## owner O76: no odds line under it); with shards, E on the keyboard pays 25 and wins a stat (v0.11.0 F13: a symbol
+## cycles above the shrine, stops on it and flies into the corner panel, whose row updates on arrival; no centre
+## card); X on the pad pays 38 and fails (the shrine fizzles, a cracked symbol above it, no line, no stat, the price
+## still rises to 57);
 ## after the 3rd win the shrine is spent: dimmed, "Spent" above it, the prompt says so, and E pays nothing.
 
 ## Run seed 385's floor-1 shrine (Fortune): uses 1 and 2 fail, 0, 3 and 4 win (Gamble.fails on its floor seed).
@@ -17,11 +19,6 @@ func after_each() -> void:
 	for a in [&"move_up", &"move_down", &"move_left", &"move_right"]:
 		Input.action_release(a)
 	TranslationServer.set_locale("en")
-
-
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
 
 
 func _pad_x(e: E2e) -> void:
@@ -57,8 +54,11 @@ func test_find_the_shrine_win_fail_and_spend_it_with_keyboard_and_pad() -> void:
 	var shrine := main.view.gamble_shrine
 	assert_not_null(shrine, "the shrine is drawn")
 	assert_eq(shrine.root.position, SimPlane.to_3d(w.gamble_pos), "at the sim's shrine position")
+	# No God here: it outlasts the panel now, and a hero who can't be hurt is shoved off the shrine by the room's
+	# enemies for the whole test. The panel still opens and closes, so the walk starts on the tick it always did.
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	var front := Gamble.front(w.gamble_pos, layout.door_approaches(room, 1.0)[0])
 	assert_true(await e.walk_to(front, 0.35), "walked up to the shrine")
@@ -88,9 +88,26 @@ func test_find_the_shrine_win_fail_and_spend_it_with_keyboard_and_pad() -> void:
 	assert_eq([w.gamble_uses, w.gamble_wins], [1, 1])
 	var first := w.gamble_last_stat
 	assert_eq(Gamble.stacks(w, first), 1, "and won a stat")
-	assert_true(hud.gamble.card.showing(), "the result card shows")
+	var roll := hud.gamble.roll
+	assert_eq(roll.count(), 1, "a symbol rolls above the shrine")
+	assert_null(hud.find_child("GambleCard", true, false), "no centre card")
 	assert_true(shrine.spinning(), "the core spins with it")
-	await e.frames(int(GambleCard.SPIN_S * 60.0) + 6)
+	var cam := main.get_viewport().get_camera_3d()
+	var shrine_px := cam.unproject_position(SimPlane.to_3d(w.gamble_pos))
+	assert_lt(roll.center_of(0).y, shrine_px.y, "above the shrine on the screen")
+	assert_lt(roll.center_of(0).distance_to(shrine_px), 600.0, "and near it")
+	assert_eq(hud.gamble.stats.row_count(), 0, "the corner panel waits for the symbol")
+	assert_true(hud.gamble.stats.visible, "but is up for it")
+	await e.frames(int(GambleRoll.SPIN_S * 60.0) + 6)
+	assert_eq(roll.shown_id(0), w.gamble_table.STAT_IDS[first], "stopped on the real result")
+	assert_eq(hud.gamble.stats.row_count(), 0, "not updated before the flight")
+	await e.frames(int((GambleRoll.HOLD_S + GambleRoll.FLY_S) * 60.0) + 8)
+	assert_eq(roll.count(), 0, "the symbol arrived")
+	assert_eq(hud.gamble.stats.row_count(), 1, "the corner panel updated")
+	assert_eq(
+		hud.gamble.stats.row_text(0),
+		GambleIcons.line(hud, GambleTable.STAT_IDS[first], Gamble.bonus(w, first))
+	)
 	assert_eq(shrine.price_label.text, "38", "the next use costs more")
 	# Use 2: the pad's X pays 38 and fails.
 	await _pad_x(e)
@@ -99,13 +116,15 @@ func test_find_the_shrine_win_fail_and_spend_it_with_keyboard_and_pad() -> void:
 	assert_eq(_total(w), 1, "no stat")
 	assert_gt(w.gamble_fail_tick, -1, "the failure reached the sim")
 	assert_true(shrine.fizzling(), "the shrine cracks and fizzles")
-	assert_eq(hud.gamble.fail_text(), tr("UI_GAMBLE_FAILED"))
-	assert_eq(hud.gamble.fail_text(), "It failed")
+	assert_eq(roll.count(), 1, "a broken symbol above the shrine")
+	await e.frames(int(GambleRoll.SPIN_S * 60.0) + 6)
+	assert_true(roll.is_broken(0), "it stops on the cracked symbol")
+	assert_null(hud.find_child("GambleFailed", true, false), "no line")
 	assert_eq(shrine.price_label.text, "57", "the price still rises after a miss")
 	# Use 3 fails, uses 4 and 5 win: the third win spends the shrine.
 	for k in 3:
 		await e.tap(KEY_E)
-		await e.frames(int(GambleCard.SPIN_S * 60.0) + 6)
+		await e.frames(int((GambleRoll.SPIN_S + GambleRoll.HOLD_S + GambleRoll.FLY_S) * 60.0) + 8)
 	assert_eq([w.gamble_uses, w.gamble_wins], [5, 3], "five tries, three wins")
 	assert_eq(w.shards, 1000 - 25 - 38 - 57 - 86 - 129, "every try was paid")
 	assert_eq(_total(w), 3, "three stats")

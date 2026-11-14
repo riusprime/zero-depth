@@ -214,7 +214,7 @@ static func source_value(defs: Array[ContentDef], source: String) -> Variant:
 	return null
 
 
-## v0.9.0 RG: every source names a field of a definition, and the value here equals it (a float share of 0..1 here as
+## Every source names a field of a definition, and the value here equals it (a float share of 0..1 here as
 ## per mille).
 static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 	var issues: Array[ValidationIssue] = []

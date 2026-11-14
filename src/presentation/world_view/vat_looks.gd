@@ -1,28 +1,26 @@
 class_name VatLooks
 extends RefCounted
-## v0.10.5 W3-V1 (the enemy VAT pilot): the material a VatCrowd draws a kind with. Its vertex stage poses each vertex
+## The enemy VAT pilot: the material a VatCrowd draws a kind with. Its vertex stage poses each vertex
 ## from the baked joint transforms (VatBake: each joint on its grid, multilinear over the instance's drives, a loop
 ## wrapped; a joint after its parent, up its chain, as the scene tree composed the nodes); its fragment stage is
 ## EnemyLooks' body and accent shading, unchanged (the same render modes, ALBEDO / METALLIC / SPECULAR / ROUGHNESS, a
 ## plate's emission mix(rest, hit, shown), an accent's colour x its glow), with the per-piece colours from the mesh's
 ## CUSTOM0 / CUSTOM1 instead of one material per piece.
 ## Per instance (VatCrowd): INSTANCE_CUSTOM = the drives 0..3 (the Swarmer's: windup raise, strike, crouch, gait phase);
-## v0.10.5 W3-V4a: a rig with more drives reads the rest from zd_drives, the instance's row (INSTANCE_ID), four a
+## A rig with more drives reads the rest from zd_drives, the instance's row (INSTANCE_ID), four a
 ## texel. COLOR = the hit value's rgb (EnemyLooks.hit_value) and in alpha the accent glow g, as g when the hit is off
 ## and -(1 + g) when it shows. The mesh has no vertex colours, so COLOR in the vertex stage is the instance's alone.
-## v0.10.5 W3-V4a: a plain plate (mode 2: the Charger's face) takes neither the flash nor a glow; a rig whose joints
+## A plain plate (mode 2: the Charger's face) takes neither the flash nor a glow; a rig whose joints
 ## scale (the Charger's lunge stretch) turns its normals by the inverse transpose, as the scene does; a mesh with
 ## two-sided pieces (the Charger's cull_disabled shell) draws with cull_disabled and drops the back faces of its
 ## one-sided ones (CUSTOM2.y).
-## v0.10.5 W3-V4b: mode 3 is an accent glowing at the instance's drive 3 (INSTANCE_CUSTOM.w) instead of COLOR's (the
+## Mode 3 is an accent glowing at the instance's drive 3 (INSTANCE_CUSTOM.w) instead of COLOR's (the
 ## Sniper's muzzle: its own glow; that rig has no gait); a pose with an `albedo_tex` (the owner's models) draws the
 ## textured variant: each plate's (mode 0) albedo times that map at the mesh's UV, as EnemyLooks.body's textured plates.
-## v0.10.5 W3-V4c: up to 32 drives (the drive texture's first three texels fill d, the next four e); CUSTOM2.z > 0
+## Up to 32 drives (the drive texture's first three texels fill d, the next four e); CUSTOM2.z > 0
 ## makes an accent glow at drive CUSTOM2.z - 1 instead of the instance's glow (the Needle's muzzle: a second glow), and
 ## CUSTOM2.w = 1 draws a piece unshaded, as an unshaded StandardMaterial3D shows it: its albedo as is, no light, no
 ## flash (the Warden's cracks, the Arc Caster's crystal, the Bomb Drone's fuse). Flags, not new mode numbers.
-## The stencil outline pass (EnemyLooks._OUTLINE: grown along the normal, drawn where the stencil is not 1) follows
-## when ActorLooks.OUTLINES is on, posed the same way; an accent draws none (its triangles fold to a point there).
 ## Presentation only (EI-07).
 
 ## The joint chain is followed up to VatBake.MAX_CHAIN (32) joints.
@@ -130,7 +128,6 @@ const _DRIVES := """
 """
 const _BODY_HEAD := """shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx;
-stencil_mode write, compare_always, 1;
 """
 const _BODY_VARYINGS := """
 varying vec3 zd_albedo;
@@ -159,7 +156,7 @@ const _BODY_VERTEX := """
 }
 
 void fragment() {"""
-## v0.10.5 W3-V4a: in the two-sided variant, a one-sided piece's back faces are not drawn.
+## In the two-sided variant, a one-sided piece's back faces are not drawn.
 const _ONE_SIDED := """
 	if (!FRONT_FACING && zd_one_sided > 0.5) {
 		discard;
@@ -178,25 +175,7 @@ const _BODY_FRAGMENT := """
 	}
 }
 """
-const _OUTLINE_HEAD := """shader_type spatial;
-render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx, unshaded;
-stencil_mode read, compare_not_equal, 1;
-
-uniform vec4 albedo : source_color;
-uniform float grow;
-"""
-const _OUTLINE_BODY := """
-	vec3 n = zd_normal(m, NORMAL);
-	VERTEX = CUSTOM1.a > 0.5 ? (m * vec4(VERTEX, 1.0)).xyz + n * grow : vec3(0.0);
-}
-
-void fragment() {
-	ALBEDO = albedo.rgb;
-	ALPHA = albedo.a;
-}
-"""
-
-## v0.10.5 W3-V4b: the textured variant (the owner's models: their plates are textured, their accents are not), the
+## The textured variant (the owner's models: their plates are textured, their accents are not), the
 ## map sampled for every fragment, outside the branch, so its mip level is never read from a neighbour that skipped it.
 const _TEX := "uniform sampler2D zd_tex : source_color, filter_linear_mipmap, repeat_enable;\n"
 const _TEX_ALBEDO := (
@@ -215,21 +194,17 @@ static func _shader(id: String, code: String) -> Shader:
 	return _shaders[id]
 
 
-## The body material for the baked `pose` (VatBake.pose_for), outlined in `outline` `outline_m` thick when
-## ActorLooks.OUTLINES is on (0: none); `two_sided` (the mesh's "two_sided" meta): the cull_disabled variant. A new
-## material per crowd look (its uniforms are the pose's and the look's drive texture, set_drives).
-static func material(
-	pose: Dictionary, outline: Color, outline_m: float, two_sided := false
-) -> ShaderMaterial:
+## The body material for the baked `pose` (VatBake.pose_for); `two_sided` (the mesh's "two_sided" meta): the
+## cull_disabled variant. A new material per crowd look (its uniforms are the pose's and the look's drive texture,
+## set_drives).
+static func material(pose: Dictionary, two_sided := false) -> ShaderMaterial:
 	var head := _BODY_HEAD
-	if not ActorLooks.OUTLINES:
-		head = head.replace("stencil_mode write, compare_always, 1;\n", "")
 	if two_sided:
 		head = head.replace("cull_back", "cull_disabled")
 	var m := ShaderMaterial.new()
 	var tex: Texture2D = pose.get("albedo_tex")
 	m.shader = _shader(
-		"body%d%d%d" % [int(ActorLooks.OUTLINES), int(two_sided), int(tex != null)],
+		"body%d%d" % [int(two_sided), int(tex != null)],
 		(
 			head
 			+ (_TEX if tex != null else "")
@@ -248,16 +223,6 @@ static func material(
 	if tex != null:
 		m.set_shader_parameter("zd_tex", tex)
 	_set_pose(m, pose)
-	if ActorLooks.OUTLINES and outline_m > 0.0:
-		var o := ShaderMaterial.new()
-		o.shader = _shader(
-			"outline", _OUTLINE_HEAD + _POSE + "\nvoid vertex() {" + _DRIVES + _OUTLINE_BODY
-		)
-		o.render_priority = EnemyLooks.PASS_PRIORITY
-		o.set_shader_parameter("albedo", outline)
-		o.set_shader_parameter("grow", outline_m)
-		_set_pose(o, pose)
-		m.next_pass = o
 	return m
 
 
@@ -267,12 +232,9 @@ static func _set_pose(m: ShaderMaterial, pose: Dictionary) -> void:
 	m.set_shader_parameter("zd_scaled", bool(pose.get("scaled", false)))
 
 
-## v0.10.5 W3-V4a: the drive texture (one row per instance) `m` (and its outline pass) reads the drives past the
-## fourth from.
+## The drive texture (one row per instance) `m` reads the drives past the fourth from.
 static func set_drives(m: ShaderMaterial, tex: Texture2D) -> void:
 	m.set_shader_parameter("zd_drives", tex)
-	if m.next_pass is ShaderMaterial:
-		(m.next_pass as ShaderMaterial).set_shader_parameter("zd_drives", tex)
 
 
 ## The value an instance's COLOR carries (see the class notes): the hit value's rgb, the glow and whether it shows.

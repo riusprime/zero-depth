@@ -2,7 +2,7 @@ extends SceneTree
 ## v0.8.0 HR (owner O89: "lag mostly comes from shooting hordes"): counts what a horde costs the renderer. A scene:
 ## the iso camera (IsoRig), a sun with shadows, a ground, a wall standing between the camera and part of the crowd
 ## (the X-ray shows them through it), and N enemies of the horde kinds, Splitlings too (charger=1: all Chargers):
-## the real ActorViews over a real World with the compiled enemies, X-ray technique, stepped SPAWN_TICKS past their
+## the real ActorViews over a real World with the compiled enemies, stepped SPAWN_TICKS past their
 ## spawn, a third of them flashing as if hit. After `settle` frames it reads, for `frames` frames, RenderingServer's
 ## draw calls, objects and primitives in the frame and reports their median, plus the actors' MeshInstance3D count.
 ## Counts, not timings (timings on a busy cloud machine are noise).
@@ -105,7 +105,6 @@ func _initialize() -> void:
 	wall.rotation_degrees = Vector3(0, 45, 0)
 	scene.add_child(wall)
 	_views = ActorViews.new()
-	_views.technique = &"outline"
 	scene.add_child(_views)
 	_views.sync(reader)
 	for i in reader.actor_count():  # a third flashing, as if hit

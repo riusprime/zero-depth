@@ -1,6 +1,6 @@
 extends GutTest
 ## v0.9.0 CL (owner: "collectibles are fine", COLLECTIBLES.md as drafted) through main.tscn with real input only:
-## 1. Run seed 5's floor-2 save (a Blood Shrine) is continued from the menu (Enter); God from the dev panel (clicked);
+## 1. Run seed 27's floor-2 save (a Blood Shrine) is continued from the menu (Enter); God from the dev panel (clicked);
 ##    the stick walks up to the shrine, E pays its price, the Blood Coin shows beside it (drawn), the stick walks onto
 ##    it: the profile has it at once, a toast says "Added to the Rune Archive", the run's fragments rise by one. The
 ##    pause menu goes to the hub: its first floor rune is lit and the Blood Coin's niche on the Archive's shelf glows;
@@ -9,18 +9,16 @@ extends GutTest
 ## 2. A profile with 12 found: Play; the hub's north gate is open and the Keystone waits on the alcove's pedestal; the
 ##    stick walks through the gate to it: taken (the profile, its fragment), its rune lit, the hub's line says so.
 
-const BLOOD_SEED := 5
+## v0.11.0 O13b: seed 5's floor 2 (Ruins) now has a Wire Weaver string its cable across the walk; the stick pushed
+## into it until the hero died (the dev panel's God lasts only while the panel is open). Seed 27's floor 2 (Frozen
+## Shore) holds a Blood shrine and the Blood Coin with a clear walk.
+const BLOOD_SEED := 27
 const FLOOR := 2
 
 
 func after_each() -> void:
 	E2e.center_sticks()
 	TranslationServer.set_locale("en")
-
-
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
 
 
 func _front(w: World, at: Vector2) -> Vector2:
@@ -42,7 +40,7 @@ func test_a_find_in_a_run_is_kept_and_the_hub_shows_it() -> void:
 	await e.landed()
 	assert_eq(main.run.floor_index, FLOOR, "floor 2 continues")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	var w := e.world()
 	assert_true(w.shrine != null and w.shrine.kind == ShrineTable.Kind.BLOOD, "a Blood Shrine")
@@ -132,6 +130,7 @@ func test_twelve_open_the_gate_and_the_keystone_waits() -> void:
 		CollectibleBook.record(profile, defs[k].id, 1)
 	var before := MetaProgress.fragments(profile)
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot(profile)
 	var walk := HubWalk.new(e)
 	assert_true(await walk.enter(), "Play: the hub")

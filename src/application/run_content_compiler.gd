@@ -4,7 +4,7 @@ extends RefCounted
 ## ContentCompiler to keep it under the lint's file-length limit. Same rules: definitions in, sim tables out.
 
 
-## v0.5.5 AR: the sealed arenas (null without a definition: no regular arenas).
+## The sealed arenas (null without a definition: no regular arenas).
 static func compile_arena(def: ArenaDefinition) -> ArenaTable:
 	if def == null:
 		return null
@@ -21,7 +21,7 @@ static func compile_arena(def: ArenaDefinition) -> ArenaTable:
 	return t
 
 
-## v0.9.0 LK (owner Q21): the Lockdowns' numbers (null without a definition: no Lockdowns).
+## The Lockdowns' numbers (null without a definition: no Lockdowns).
 static func compile_lockdown(def: LockdownDefinition) -> LockdownTable:
 	if def == null:
 		return null
@@ -48,7 +48,7 @@ static func compile_lockdown(def: LockdownDefinition) -> LockdownTable:
 	return t
 
 
-## v0.9.0 RB (AFFINITIES.md): the run's rune affinity, its offer bias resolved against the compiled `items` (one per
+## AFFINITIES.md: the run's rune affinity, its offer bias resolved against the compiled `items` (one per
 ## mille per item index). Null for None (or no definition): the run builds no affinity state.
 static func compile_affinity(def: AffinityDefinition, items: Array[ItemTable]) -> AffinityTable:
 	if def == null or def.is_none():
@@ -74,7 +74,7 @@ static func compile_affinity(def: AffinityDefinition, items: Array[ItemTable]) -
 	return t
 
 
-## v0.9.0 SH, HF (owner Q29b, W36): the shrines' and the fountain's numbers (null without a definition: every shrine
+## v0.9.0 SH, HF: the shrines' and the fountain's numbers (null without a definition: every shrine
 ## stays a Fortune shrine and no floor has a fountain).
 static func compile_shrines(def: ShrineDefinition) -> ShrineTable:
 	if def == null:
@@ -97,7 +97,7 @@ static func compile_shrines(def: ShrineDefinition) -> ShrineTable:
 	return t
 
 
-## v0.5.5 AR (X1b): the boss-only legendary tier, its ids resolved against the compiled stat cards and items.
+## The boss-only legendary tier, its ids resolved against the compiled stat cards and items.
 static func compile_legendary(
 	def: LegendaryDefinition, stats: Array[StatTable], items: Array[ItemTable]
 ) -> LegendaryTable:
@@ -127,7 +127,7 @@ static func compile_legendary(
 	return t
 
 
-## v0.8.0 FL (owner O91): the floor-paced loot table (LootPacingDefinition); null without a definition (no pacing).
+## The floor-paced loot table (LootPacingDefinition); null without a definition (no pacing).
 static func compile_loot_pacing(def: LootPacingDefinition) -> LootPacingTable:
 	if def == null:
 		return null
@@ -186,13 +186,13 @@ static func compile_sim_tuning(def: SimTuningDefinition) -> SimTuning:
 	t.attack_speed_knee2_permille = def.attack_speed_knee2_permille
 	t.attack_speed_slope_permille = def.attack_speed_slope_permille
 	t.attack_speed_slope2_permille = def.attack_speed_slope2_permille
-	t.loop_ease_max = def.loop_ease_max  # v0.9.5 BH2: the final fight's loop ease (was FinalPace constants)
+	t.loop_ease_max = def.loop_ease_max  # The final fight's loop ease (was FinalPace constants)
 	t.loop_time_ease_permille = def.loop_time_ease_permille
 	t.loop_damage_ease_permille = def.loop_damage_ease_permille
 	return t
 
 
-## v0.8.0 RT (owner O12): the designed room layouts (data/room_layouts), RoomLayouts.key(cells) -> Array of
+## The designed room layouts (data/room_layouts), RoomLayouts.key(cells) -> Array of
 ## RoomLayoutTable in id order: centimetres, anchors per mille, yaws in 1/4096 turns.
 static func compile_room_layouts(repo: ContentRepository) -> Dictionary:
 	var out := {}
@@ -229,7 +229,7 @@ static func compile_room_layout(def: RoomLayoutDefinition) -> RoomLayoutTable:
 	return t
 
 
-## v0.8.0 SR (owner O13): the biomes' shop rooms (data/shop_rooms), biome id -> ShopRoomTable: the stall and the
+## The biomes' shop rooms (data/shop_rooms), biome id -> ShopRoomTable: the stall and the
 ## dressing groups in centimetres and per mille, as compile_room_layout.
 static func compile_shop_rooms(repo: ContentRepository) -> Dictionary:
 	var out := {}
@@ -251,6 +251,70 @@ static func compile_shop_rooms(repo: ContentRepository) -> Dictionary:
 	return out
 
 
+## PLAN P1: the large rooms' purposes (data/rooms/purposes), in id order: centimetres, per mille and
+## 1/4096 turns, each group's yaw turned into its parts' centres and angles (RoomPurposeTable).
+static func compile_room_purposes(repo: ContentRepository) -> Array[RoomPurposeTable]:
+	var out: Array[RoomPurposeTable] = []
+	if repo == null:
+		return out
+	var defs: Array = repo.all_of(&"room_purpose")
+	defs.sort_custom(
+		func(a: RoomPurposeDefinition, b: RoomPurposeDefinition) -> bool:
+			return String(a.id) < String(b.id)
+	)
+	for def: RoomPurposeDefinition in defs:
+		out.append(compile_room_purpose(def))
+	return out
+
+
+static func compile_room_purpose(def: RoomPurposeDefinition) -> RoomPurposeTable:
+	var t := RoomPurposeTable.new()
+	t.id = def.id
+	t.min_cells = def.min_cells
+	t.weight = def.weight
+	t.biomes = def.biomes.duplicate()
+	t.far_wall = def.far_wall
+	t.shift_cm = roundi(def.shift_m * 100.0)
+	t.turn = ContentCompiler.degrees_to_units(def.turn_deg)
+	var index := {}
+	for c in def.choices:
+		index[c.id] = t.choices.size()
+		t.choices.append(c.weights.duplicate())
+	for g in def.groups:
+		var cg := RoomPurposeTable.Group.new()
+		cg.anchor = Vector2i(roundi(g.anchor.x * 1000.0), roundi(g.anchor.y * 1000.0))
+		cg.offset = Vector2i(roundi(g.offset.x * 100.0), roundi(g.offset.y * 100.0))
+		cg.focal = g.focal
+		cg.choice = int(index.get(g.choice, -1)) if g.choice != &"" else -1
+		cg.options = g.options.duplicate()
+		cg.chance_permille = g.chance_permille
+		var turn := deg_to_rad(g.yaw)
+		for p in g.parts:
+			var cp := RoomPurposeTable.Part.new()
+			cp.token = p.token
+			var at := p.at.rotated(turn)
+			cp.at = Vector2i(roundi(at.x * 100.0), roundi(at.y * 100.0))
+			cp.angle = posmod(ContentCompiler.degrees_to_units(p.yaw + g.yaw), SimTick.ANGLE_UNITS)
+			cp.height_permille = roundi(p.height_scale * 1000.0)
+			cp.spread_permille = roundi(p.height_spread * 1000.0)
+			cp.side = p.side
+			cp.chance_permille = p.chance_permille
+			cg.parts.append(cp)
+		t.groups.append(cg)
+	for pal in def.palettes:
+		var pieces := {}
+		for q in pal.pieces:
+			var cq := RoomPurposeTable.Piece.new()
+			cq.piece = q.piece
+			cq.size = Vector2i(roundi(q.size.x * 100.0), roundi(q.size.y * 100.0))
+			cq.height = roundi(q.height * 100.0)
+			cq.solid = q.solid
+			cq.lift = roundi(q.lift * 100.0)
+			pieces[q.token] = cq
+		t.palettes[pal.biome] = pieces
+	return t
+
+
 static func _layout_group(g: RoomLayoutGroup) -> RoomLayoutGroupTable:
 	var cg := RoomLayoutGroupTable.new()
 	if g == null:
@@ -268,7 +332,7 @@ static func _layout_group(g: RoomLayoutGroup) -> RoomLayoutGroupTable:
 	return cg
 
 
-## v0.7.5 MG (owner N9): the generator's room counts, footprints and span from data/map over FloorParams' defaults
+## The generator's room counts, footprints and span from data/map over FloorParams' defaults
 ## (null: the defaults, which equal the shipped file).
 static func compile_map(def: MapDefinition) -> FloorParams:
 	var p := FloorParams.defaults()
@@ -287,19 +351,20 @@ static func compile_map(def: MapDefinition) -> FloorParams:
 	p.timed_door_ticks = def.timed_door_ticks
 	p.timed_switch_steps_max = def.timed_switch_steps_max  # v0.9.5 TS
 	p.timed_lever_ticks = def.timed_lever_ticks
+	p.purpose_permille = def.purpose_permille  # v0.11.0 O15
 	return p
 
 
-## v0.9.0 FV (owner Q24): the run's id, its floors' room ranges and its wand slots onto `t`
+## The run's id, its floors' room ranges and its wand slots onto `t`
 ## (ContentCompiler.compile_run).
 static func add_run_shape(t: RunTable, def: RunDefinition) -> RunTable:
 	t.id = def.id
 	t.rooms_min_by_floor = def.rooms_min_by_floor.duplicate()
 	t.rooms_max_by_floor = def.rooms_max_by_floor.duplicate()
 	t.wand_slots_per_floor = def.wand_slots_per_floor.duplicate()
-	t.max_hp_per_floor = def.max_hp_per_floor  # v0.9.0 SV: the hero grows each floor
+	t.max_hp_per_floor = def.max_hp_per_floor  # The hero grows each floor
 	t.max_hp_floor_cap = def.max_hp_floor_cap
-	t.loop_rules = def.loop_rules.duplicate()  # v0.10.5 O5b: the loop rules and their numbers
+	t.loop_rules = def.loop_rules.duplicate()  # The loop rules and their numbers
 	t.loop_swift_permille = def.loop_swift_permille
 	t.loop_heal_chance_permille = def.loop_heal_chance_permille
 	t.loop_heal_amount_permille = def.loop_heal_amount_permille
@@ -310,10 +375,10 @@ static func add_run_shape(t: RunTable, def: RunDefinition) -> RunTable:
 	return t
 
 
-## v0.9.0 FV (owner Q24, "Scale with floor size"): the altar and chest counts by the floor's rooms onto `t`
+## The altar and chest counts by the floor's rooms onto `t`
 ## (ContentCompiler.compile_rewards).
 static func add_reward_bands(t: RewardTable, def: RewardsDefinition) -> RewardTable:
-	t.extra_chest_permille = def.extra_chest_permille  # v0.10.5 S7: the extra chests and altars
+	t.extra_chest_permille = def.extra_chest_permille  # The extra chests and altars
 	t.extra_altar_permille = def.extra_altar_permille
 	t.count_rooms = def.count_rooms.duplicate()
 	t.band_counts.clear()
@@ -335,7 +400,7 @@ static func add_reward_bands(t: RewardTable, def: RewardsDefinition) -> RewardTa
 	return t
 
 
-## v0.9.0 FV: every floor's boss pool (indices into ContentCompiler.compile_bosses), entry f − 1, for floors 1 to
+## Every floor's boss pool (indices into ContentCompiler.compile_bosses), entry f − 1, for floors 1 to
 ## `floors` (at least as many as the pools name): an empty entry for a floor without a pool (FloorShape.boss draws
 ## it from the bosses not yet met).
 static func compile_boss_pools(repo: ContentRepository, floors: int) -> Array[PackedInt32Array]:

@@ -15,7 +15,7 @@ extends RefCounted
 ##   lanes (2 at Lv 1–4, 3 at Lv 5), each at Twin's damage share, the extra ones at the secondary proc.
 ## - Overlap: blasts in one tick past WandTable.blast_merge_after (8) merge into one within their radius already set off
 ##   this tick (Attacks.merged_at, the existing budget). One BLAST event a blast (the views and the sound read it).
-## - No other explosion (Q11): the bomb's blast is the only one.
+## - No other explosion: the bomb's blast is the only one.
 ## Pure: no randomness, no engine calls.
 
 
@@ -28,7 +28,7 @@ static func is_bomb(s: AttackSpec) -> bool:
 static func touches(w: World, pi: int) -> bool:
 	if w.projectiles.team[pi] != ActorStore.TEAM_PLAYER:
 		return false
-	var key := w.projectiles.spec_key[pi] if pi < w.projectiles.spec_key.size() else ""
+	var key := w.projectiles.spec_key[pi]
 	return key != "" and is_bomb(Attacks.projectile_spec(w, pi))
 
 
@@ -37,13 +37,13 @@ static func active(w: World) -> bool:
 	return PlayerBuild.has_gun(w) and not PlayerBuild.has_blade(w) and is_bomb(Modifiers.bolt(w))
 
 
-## The blast radius of `s` now (m): blast_mm, the area stat on it. v0.9.5 FC2: Big Shot's and Rapid Fire's factors.
+## The blast radius of `s` now (m): blast_mm, the area stat on it. Big Shot's and Rapid Fire's factors.
 static func radius_m(w: World, s: AttackSpec) -> float:
 	return Stats.area(w, BombMods.blast_mm(w, s) / 1000.0)
 
 
 ## Bomb projectile `pi` of `spec` ended at `at`: it bursts (the class doc). Returns the enemies its blast landed on
-## (-1: merged into a blast already set off this tick). v0.9.5 FC2: with Bomb cards (BombMods) it may skip, home, wait
+## (-1: merged into a blast already set off this tick). with Bomb cards (BombMods) it may skip, home, wait
 ## as a mine, and its blast may leave a ring, an echo and bomblets.
 static func blast(w: World, spec: AttackSpec, pi: int, at: Vector2) -> int:
 	var p := w.projectiles

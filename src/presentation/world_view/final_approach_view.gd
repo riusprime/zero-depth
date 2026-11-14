@@ -99,7 +99,7 @@ func sync(reader: WorldReader) -> void:
 		return
 	calm = ViewPrefs.reduced_motion
 	altar.calm = calm
-	if not _landed and reader.arrival_progress() >= 0.5:  # Q17: the landing at the causeway's foot
+	if not _landed and reader.arrival_progress() >= 0.5:  # The landing at the causeway's foot
 		_landed = true
 		if rig != null:
 			rig.thud(ARRIVE_THUD)

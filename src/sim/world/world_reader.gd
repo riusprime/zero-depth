@@ -5,34 +5,32 @@ extends RefCounted
 ## It is a wide facade on purpose: one read method per thing a view needs.
 
 const KIND_PLAYER := ActorStore.Kind.PLAYER
-## v0.9.0 FA: the final approach's states (approach_state).
+## The objective markers' reasons (objectives(); ObjectiveMarkers), for the view's lines.
+const OBJECTIVE_GATEKEEPER_PILLAR := ObjectiveMarkers.GATEKEEPER_PILLAR
+const OBJECTIVE_SHADE_LANTERN := ObjectiveMarkers.SHADE_LANTERN
+const OBJECTIVE_TWINS_ACTIVE := ObjectiveMarkers.TWINS_ACTIVE
+## The final approach's states (approach_state).
 const APPROACH_WALK := FinalApproach.State.WALK
 const APPROACH_BUILDUP := FinalApproach.State.BUILDUP
 const APPROACH_FIGHT := FinalApproach.State.FIGHT
-## v0.9.0 IX: the shared interactables' kinds (interactable_kind).
-const INTERACT_PYLON := Interactables.Kind.PYLON
-const INTERACT_TIMED_SWITCH := Interactables.Kind.TIMED_SWITCH
-const INTERACT_RUNE_PILLAR := Interactables.Kind.RUNE_PILLAR  # v0.9.0 RA
-## v0.9.0 DX: the destructible props' kinds (breakable_kind).
+## The destructible props' kinds (breakable_kind).
 const BREAKABLE_CRATE := Breakables.Kind.CRATE
 const BREAKABLE_URN := Breakables.Kind.URN
 const BREAKABLE_BARREL := Breakables.Kind.BARREL
+## v0.11.0 O1 (owner Q7: "drawn fast (~0.15 s), glow fading ~0.5 s"): how long beams() keeps the last lance for the
+## view (presentation timing: the lance hit on its firing tick).
+const LANCE_GLOW_TICKS := 30
 const BREAKABLE_EXPLOSIVE := Breakables.Kind.EXPLOSIVE
-## v0.9.0 TD: the timed door's states (timed_door_state).
+## The timed door's states (timed_door_state).
 const TIMED_SHUT := TimedDoor.State.SHUT
 const TIMED_OPEN := TimedDoor.State.OPEN
 const TIMED_HELD := TimedDoor.State.HELD
-## v0.9.0 LK: the Lockdown kinds (lockdown()["kinds"], ["kind"]).
+## The Lockdown kinds (lockdown()["kinds"], ["kind"]).
 const LOCKDOWN_NORMAL := LockdownTable.Kind.NORMAL
 const LOCKDOWN_HAZARD := LockdownTable.Kind.HAZARD
-## v0.9.0 SH, HF: the shrine kinds (shrine_kind) and the interactables the shrines and the fountain use.
-const SHRINE_FORTUNE := ShrineTable.Kind.FORTUNE
+## v0.9.0 SH, HF: the shrine kinds (shrine_kind).
 const SHRINE_BLOOD := ShrineTable.Kind.BLOOD
-const SHRINE_CHAOS := ShrineTable.Kind.CHAOS
-const INTERACT_SHRINE := Interactables.Kind.SHRINE
-const INTERACT_FOUNTAIN := Interactables.Kind.FOUNTAIN
-const LOCKDOWN_ELITE := LockdownTable.Kind.ELITE
-## v0.8.0 RM: the remnant kinds, activations and Thermal Break's effect id, for the views (the layer rule).
+## The remnant kinds, activations and Thermal Break's effect id, for the views (the layer rule).
 const REMNANT_SEGMENT := RemnantRule.Kind.SEGMENT
 const REMNANT_ANCHOR := RemnantRule.Kind.ANCHOR
 const REMNANT_FRAGMENT := RemnantRule.Kind.FRAGMENT
@@ -42,15 +40,15 @@ const EFFECT_THERMAL_BREAK := Engines.EFFECT_THERMAL_BREAK
 const KIND_CHARGER := ActorStore.Kind.CHARGER
 const KIND_WARDEN := ActorStore.Kind.WARDEN
 const KIND_NEEDLE := ActorStore.Kind.NEEDLE
-## Bosses and the Brood Mother's hatchlings (v0.3.0 C).
+## Bosses and the Brood Mother's hatchlings.
 const KIND_HATCHLING := ActorStore.Kind.HATCHLING
 const KIND_GATEKEEPER := ActorStore.Kind.GATEKEEPER
 const KIND_BROOD_MOTHER := ActorStore.Kind.BROOD_MOTHER
 const KIND_SIEGE_ENGINE := ActorStore.Kind.SIEGE_ENGINE
-## v0.3.5 AI: the Arc Caster and the Bomb Drone.
+## The Arc Caster and the Bomb Drone.
 const KIND_ARC_CASTER := ActorStore.Kind.ARC_CASTER
 const KIND_BOMB_DRONE := ActorStore.Kind.BOMB_DRONE
-## v0.4.0 EN: the horde kinds (a Splitter splits into Splitlings).
+## The horde kinds (a Splitter splits into Splitlings).
 const KIND_SWARMER := ActorStore.Kind.SWARMER
 const KIND_SPLITTER := ActorStore.Kind.SPLITTER
 const KIND_SPLITLING := ActorStore.Kind.SPLITLING
@@ -58,37 +56,68 @@ const KIND_SHIELD_BEARER := ActorStore.Kind.SHIELD_BEARER
 const KIND_MENDER := ActorStore.Kind.MENDER
 const KIND_MINE_LAYER := ActorStore.Kind.MINE_LAYER
 const KIND_SNIPER := ActorStore.Kind.SNIPER
-## v0.4.0 BO: the second boss of each pool, and the Hive Lens's drones.
+## The second boss of each pool, and the Hive Lens's drones.
 const KIND_WARLORD := ActorStore.Kind.WARLORD
 const KIND_HIVE_LENS := ActorStore.Kind.HIVE_LENS
 const KIND_FOUNDRY := ActorStore.Kind.FOUNDRY
 const KIND_LENS_DRONE := ActorStore.Kind.LENS_DRONE
-## v0.8.0 FB1: the final boss's bodies.
+## The final boss's bodies.
 const KIND_COLOSSUS := ActorStore.Kind.COLOSSUS
 const KIND_PRISM := ActorStore.Kind.PRISM
 const KIND_NEMESIS := ActorStore.Kind.NEMESIS
-## v0.9.0 NB1: floor 4's first new boss.
+## Floor 4's first new boss.
 const KIND_TIDECALLER := ActorStore.Kind.TIDECALLER
-## v0.9.0 EL: the elite archetypes, and their two attacks (elite_attack).
+## The elite archetypes, and their two attacks (elite_attack).
 const KIND_BREAKER := ActorStore.Kind.BREAKER
 const KIND_RIFT_HUNTER := ActorStore.Kind.RIFT_HUNTER
 const KIND_CONDUIT := ActorStore.Kind.CONDUIT
 const ELITE_BASIC := EliteAi.Attack.BASIC
 const ELITE_ABILITY := EliteAi.Attack.ABILITY
-## v0.9.0 NB2: floor 4's Twin Wardens, the amber body (the boss) and the violet one (its twin).
+## Floor 4's Twin Wardens, the amber body (the boss) and the violet one (its twin).
 const KIND_TWIN_WARDEN := ActorStore.Kind.TWIN_WARDEN
 const KIND_TWIN_WARDEN_VIOLET := ActorStore.Kind.TWIN_WARDEN_VIOLET
-## v0.9.0 NB3: floor 5's Clockwork Judge, and boss_echo's "phase" (no echo, the path showing, the ghosts striking).
+## Floor 5's Clockwork Judge, and boss_echo's "phase" (no echo, the path showing, the ghosts striking).
 const KIND_CLOCKWORK_JUDGE := ActorStore.Kind.CLOCKWORK_JUDGE
-## v0.9.0 NB4: floor 5's Lantern Shade (its light: boss_light).
+## Floor 5's Lantern Shade (its light: boss_light).
 const KIND_LANTERN_SHADE := ActorStore.Kind.LANTERN_SHADE
+## The five horde critters, one per biome (EnemyAi.is_critter).
+const KIND_DUST_MITE := ActorStore.Kind.DUST_MITE
+const KIND_CAVE_BAT := ActorStore.Kind.CAVE_BAT
+const KIND_EMBER_FLEA := ActorStore.Kind.EMBER_FLEA
+const KIND_ICE_CRAB := ActorStore.Kind.ICE_CRAB
+const KIND_STAR_MOTE := ActorStore.Kind.STAR_MOTE
+## The biome variants (each drawn as its base's body in its biome's accent: body_kind, VariantLooks).
+const KIND_RUBBLE_WARDEN := ActorStore.Kind.RUBBLE_WARDEN
+const KIND_DIM_NEEDLE := ActorStore.Kind.DIM_NEEDLE
+const KIND_EMBER_CHARGER := ActorStore.Kind.EMBER_CHARGER
+const KIND_FROST_CHARGER := ActorStore.Kind.FROST_CHARGER
+const KIND_SPLIT_SNIPER := ActorStore.Kind.SPLIT_SNIPER
+## The Starfall signatures (StarfallKinds; their stand-in bodies: StarfallAvatar).
+const KIND_STAR_WARPER := ActorStore.Kind.STAR_WARPER
+const KIND_GRAVITY_NODE := ActorStore.Kind.GRAVITY_NODE
+const TRAIL_FIRE := Variants.TRAIL_FIRE
+const TRAIL_SLICK := Variants.TRAIL_SLICK
+const TRAIL_RUBBLE := Variants.TRAIL_RUBBLE
+const DIM_LOOK := Variants.DIM_LOOK
+## The Ruins and Night Rocks signatures (RuinsRocks) and the Wire Weaver's post.
+const KIND_WIRE_WEAVER := ActorStore.Kind.WIRE_WEAVER
+const KIND_WIRE_POST := ActorStore.Kind.WIRE_POST
+const KIND_SCRAP_HOUND := ActorStore.Kind.SCRAP_HOUND
+const KIND_ROCK_LURKER := ActorStore.Kind.ROCK_LURKER
+const KIND_STONE_THROWER := ActorStore.Kind.STONE_THROWER
+## The Red Canyon's and the Frozen Shore's signature enemies (CanyonShore; CanyonShoreBodies).
+const KIND_KILN_BEETLE := ActorStore.Kind.KILN_BEETLE
+const KIND_CINDER_PRIEST := ActorStore.Kind.CINDER_PRIEST
+const KIND_FROST_SPITTER := ActorStore.Kind.FROST_SPITTER
+const KIND_GLACIER_TURTLE := ActorStore.Kind.GLACIER_TURTLE
+const ICE_CHUNK_RADIUS_M := CanyonShore.CHUNK_RADIUS_M
 const ECHO_NONE := BossJudge.NONE
 const ECHO_SHOW := BossJudge.SHOW
 const ECHO_REPLAY := BossJudge.REPLAY
-## v0.9.0 NB2: a Warden turning angry (STATUS_APPLY's effect) and the chain's burn (its DAMAGE's effect).
+## A Warden turning angry (STATUS_APPLY's effect) and the chain's burn (its DAMAGE's effect).
 const EFFECT_TWIN_ANGER := BossTwin.EFFECT_ANGER
 const EFFECT_TWIN_CHAIN := BossTwin.EFFECT_BURN
-## v0.8.0 N2: The Fallen's mimic window states (final_pace "window", fallen_window), for the presentation.
+## The Fallen's mimic window states (final_pace "window", fallen_window), for the presentation.
 const FALLEN_OFF := FinalPace.Mimic.OFF
 const FALLEN_WARN := FinalPace.Mimic.WARN
 const FALLEN_ON := FinalPace.Mimic.ON
@@ -97,14 +126,14 @@ const MOTION_SLASH_RIGHT_TO_LEFT := SwingStep.Motion.SLASH_RIGHT_TO_LEFT
 const MOTION_SLASH_LEFT_TO_RIGHT := SwingStep.Motion.SLASH_LEFT_TO_RIGHT
 const MOTION_THRUST := SwingStep.Motion.THRUST
 const MOTION_SPIN := SwingStep.Motion.SPIN
-## v0.6.5 WN4: the Blade pool's view marks (blade_forms()["fx"][k]["kind"]; BladeForms.FX_*).
+## The Blade pool's view marks (blade_forms()["fx"][k]["kind"]; BladeForms.FX_*).
 const BLADE_FX_ARC := BladeForms.FX_ARC
 const BLADE_FX_ARC_MIRROR := BladeForms.FX_ARC_MIRROR
 const BLADE_FX_LINE := BladeForms.FX_LINE
 const BLADE_FX_PARRY := BladeForms.FX_PARRY
 const BLADE_FX_BURST := BladeForms.FX_BURST
 const BLADE_FX_COUNTER := BladeForms.FX_COUNTER
-## v0.6.0 MX1: attack spec forms (attack_spec()["form"]) and the weapon attacks' ids.
+## Attack spec forms (attack_spec()["form"]) and the weapon attacks' ids.
 const FORM_ARC := AttackSpec.Form.ARC
 const FORM_BOLT := AttackSpec.Form.BOLT
 const FORM_RING := AttackSpec.Form.RING
@@ -124,7 +153,6 @@ const ITEM_RICOCHET_CORE := ItemTable.Kind.RICOCHET_CORE
 const ITEM_KINETIC_DASH := ItemTable.Kind.KINETIC_DASH
 const ITEM_OVERCHARGE := ItemTable.Kind.OVERCHARGE
 const ITEM_VAMPIRIC_CORE := ItemTable.Kind.VAMPIRIC_CORE
-const ITEM_STATIC_CHAIN := ItemTable.Kind.STATIC_CHAIN
 const ITEM_MOMENTUM := ItemTable.Kind.MOMENTUM
 const ITEM_FROST_CORE := ItemTable.Kind.FROST_CORE
 const ITEM_THORN_MANTLE := ItemTable.Kind.THORN_MANTLE
@@ -146,18 +174,13 @@ const STATE_WINDUP := EnemyAi.State.WINDUP
 const STATE_ACTIVE := EnemyAi.State.ACTIVE
 const STATE_RECOVER := EnemyAi.State.RECOVER
 ## The Arc Caster's spells (v0.3.5 AI; EnemyAi.Spell), for actor_spell().
-const SPELL_BOLT := EnemyAi.Spell.BOLT
-const SPELL_SPREAD := EnemyAi.Spell.SPREAD
 const SPELL_RUNE := EnemyAi.Spell.RUNE
 ## A boss knocked off balance by a full stagger meter (BossAi).
 const STATE_STAGGERED := BossAi.STAGGERED
-## v0.8.0 BA: a boss in its phase gate (BossGates; boss_gate_permille), for its roar.
+## A boss in its phase gate (BossGates; boss_gate_permille), for its roar.
 const STATE_GATE := BossAi.GATE
-## v0.8.0 BS1 (S3): an egg waiting, and bursting (BossSignatures).
-const STATE_EGG := BossSignatures.EGG
-## v0.8.0 BS2 (S5): the hostile team (a ricochet's sparks are drawn for its shots).
+## The hostile team (a ricochet's sparks are drawn for its shots).
 const TEAM_ENEMY := ActorStore.TEAM_ENEMY
-const STATE_EGG_BURST := BossSignatures.EGG_BURST
 ## How far from a gated boss its adds rise (m).
 const GATE_ADD_RING_M := BossGates.ADD_RING_M
 ## Boss moves, for telegraph()["move"] and boss_move() (views pick an animation from them).
@@ -172,25 +195,28 @@ const MOVE_BARRAGE := BossAttackTable.Move.BARRAGE
 const MOVE_RAIL := BossAttackTable.Move.RAIL
 const MOVE_BOLT_FAN := BossAttackTable.Move.BOLT_FAN
 const MOVE_DEPLOY := BossAttackTable.Move.DEPLOY
-## Boss challenge (v0.3.0 BX): the vortex that drags you in, then slams.
+## Boss challenge: the vortex that drags you in, then slams.
 const MOVE_PULL := BossAttackTable.Move.PULL
-## v0.4.0 BO: parallel lanes that stand while active (spears, molten floor).
+## Parallel lanes that stand while active (spears, molten floor).
 const MOVE_FLOOD := BossAttackTable.Move.FLOOD
-## v0.7.5 BF1: a bullet pattern, tracked ground circles, tracked row-and-column lanes.
+## A bullet pattern, tracked ground circles, tracked row-and-column lanes.
 const MOVE_PATTERN := BossAttackTable.Move.PATTERN
 const MOVE_MARKS := BossAttackTable.Move.MARKS
 const MOVE_ROW_LANES := BossAttackTable.Move.ROW_LANES
 const MOVE_GRID := BossAttackTable.Move.GRID  # v0.7.5 BF3
 const MOVE_ROW_FLOOD := BossAttackTable.Move.ROW_FLOOD
-const MOVE_GAZE := BossAttackTable.Move.GAZE  # v0.8.0 BS2 (S4)
-const MOVE_MELT := BossAttackTable.Move.MELT  # v0.8.0 BS2 (S6)
+const MOVE_GAZE := BossAttackTable.Move.GAZE  # v0.8.0 BS2
+const MOVE_MELT := BossAttackTable.Move.MELT  # v0.8.0 BS2
 const MOVE_COMBO := BossAttackTable.Move.COMBO  # v0.8.0 FB1 (the Colossus)
 const MOVE_SPIKE_CHASE := BossAttackTable.Move.SPIKE_CHASE
 const MOVE_SPIKE_BURST := BossAttackTable.Move.SPIKE_BURST
 const MOVE_CROSS := BossAttackTable.Move.CROSS  # v0.8.0 FB2 (the Prism)
 const MOVE_LANCES := BossAttackTable.Move.LANCES  # v0.10.5 O3 (the Prism's last phase)
 const MOVE_KNEEL := BossAttackTable.Move.KNEEL
-const EFFECT_PRISM_BURST := BossPrismLast.EFFECT_BURST
+const MOVE_GREAT_JAVELIN := BossAttackTable.Move.GREAT_JAVELIN  # v0.11.0 F9 (the Warlord)
+const GREAT_JAVELIN_THROW := BossGreatJavelin.THROW  # boss_great_javelin()["phase"]
+const GREAT_JAVELIN_EMBEDDED := BossGreatJavelin.EMBEDDED
+const GREAT_JAVELIN_RETURN := BossGreatJavelin.RETURN
 const LANCE_TRACKING := BossPrismLast.TRACKING  # boss_lances: a lance's phase
 const LANCE_LOCKED := BossPrismLast.LOCKED
 const LANCE_STRIKING := BossPrismLast.STRIKING
@@ -198,28 +224,21 @@ const MOVE_MIMIC_COMBO := BossAttackTable.Move.MIMIC_COMBO  # v0.8.0 FB3 (the Ne
 const MOVE_MIMIC_SHOTS := BossAttackTable.Move.MIMIC_SHOTS
 const MOVE_CARD_CAST := BossAttackTable.Move.CARD_CAST
 const MOVE_TIDE := BossAttackTable.Move.TIDE  # v0.9.0 NB1 (the Tidecaller's Pull)
+const MOVE_WAVE := BossAttackTable.Move.WAVE  # The Tidecaller's crossing wave
 const MOVE_CROSSFIRE := BossAttackTable.Move.CROSSFIRE  # v0.9.0 NB2 (the Twin Wardens)
 const MOVE_CHAIN_SWEEP := BossAttackTable.Move.CHAIN_SWEEP
 const MOVE_ECHO := BossAttackTable.Move.ECHO  # v0.9.0 NB3 (the Clockwork Judge)
 const MOVE_VERDICT := BossAttackTable.Move.VERDICT
-## v0.9.0 NB1: boss_tide's "phase".
+## boss_tide's "phase".
 const TIDE_NONE := BossTide.NONE
 const TIDE_PULL := BossTide.PULL
 const TIDE_PUSH := BossTide.PUSH
 const TIDE_MAX_MPS := BossTide.MAX_MPS
-## v0.8.0 FB3: the Nemesis's stances (BossTable.STANCE_*) and the effect ids of its dash and its card casts.
-const STANCE_ECHO := BossTable.STANCE_ECHO
-const STANCE_MIRROR := BossTable.STANCE_MIRROR
-const STANCE_CLOSE := BossTable.STANCE_CLOSE
-const STANCE_BACK := BossTable.STANCE_BACK
+## The effect id of the Nemesis's dash.
 const EFFECT_NEMESIS_DASH := BossNemesis.EFFECT_DASH
-const EFFECT_NEMESIS_CAST := BossNemesis.EFFECT_CAST
-## v0.8.0 FB1: a final boss's body shattering (FinalBoss.SHATTER), and its views' events (STATUS_APPLY effect ids).
+## A final boss's body shattering (FinalBoss.SHATTER).
 const STATE_SHATTER := FinalBoss.SHATTER
-const EFFECT_FINAL_SHATTER := FinalBoss.EFFECT_SHATTER
-const EFFECT_FINAL_RISE := FinalBoss.EFFECT_RISE
-## v0.9.5 BH6: the Fallen's interphase (BossInterphase): the vanished body's state and its views' events.
-const STATE_INTERPHASE := BossInterphase.STATE
+## The Fallen's interphase (BossInterphase): its views' events.
 const EFFECT_FALLEN_VANISH := BossInterphase.EFFECT_VANISH
 const EFFECT_FALLEN_BEAMS := BossInterphase.EFFECT_BEAMS
 const EFFECT_FALLEN_ERUPT := BossInterphase.EFFECT_ERUPT
@@ -227,41 +246,87 @@ const EFFECT_FALLEN_DARK := BossInterphase.EFFECT_DARK
 const EFFECT_FALLEN_RAIN := BossInterphase.EFFECT_RAIN
 const EFFECT_FALLEN_LINE := BossInterphase.EFFECT_LINE
 const EFFECT_FALLEN_RETURN := BossInterphase.EFFECT_RETURN
-## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
+## Rewards: reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
-## v0.8.0 N8: card_forecast's kinds: no number, a level, a value per mille, max HP. Literals equal to CardForecast's
+## card_forecast's kinds: no number, a level, a value per mille, max HP. Literals equal to CardForecast's
 ## KIND_* (a const naming CardForecast here would close a load cycle; test_reward_cards.gd checks they match).
 const GAIN_NONE := 0
 const GAIN_LEVEL := 1
 const GAIN_PERMILLE := 2
 const GAIN_HP := 3
-const REWARD_LEGENDARY := RewardStore.Kind.LEGENDARY  # v0.5.5 AR (X1b)
-const REWARD_DROP := RewardStore.Kind.DROP  # v0.6.0 CU: a free one-card drop (a stolen core, Marked's card)
-## v0.6.0 CU: a drop's kind (CoreState.Drop).
+const REWARD_LEGENDARY := RewardStore.Kind.LEGENDARY  # v0.5.5 AR
+const REWARD_DROP := RewardStore.Kind.DROP  # A free one-card drop (a stolen core, Marked's card)
+## A drop's kind (CoreState.Drop).
 const DROP_CORE := CoreState.Drop.CORE
 const DROP_BOSS_CORE := CoreState.Drop.BOSS_CORE
 const DROP_ELITE_CARD := CoreState.Drop.ELITE_CARD
 const RARITY_LEGENDARY := Offers.LEGENDARY
-## v0.5.0 RT: the routes (Routes.Route).
+## The routes (Routes.Route).
 const ROUTE_NORMAL := Routes.Route.NORMAL
 const ROUTE_DEEP := Routes.Route.DEEP
-## v0.7.5 AP: the device taken on the Ascension floor (ascension_choice); v0.8.0 P2 (O28): the Ascension portal or
+## The device taken on the Ascension floor (ascension_choice); the Ascension portal or
 ## the Loop device (no picks: walking in is the choice).
 const ASCEND_NONE := Ascension.Choice.NONE
 const ASCEND_PORTAL := Ascension.Choice.ASCENSION
 const ASCEND_LOOP := Ascension.Choice.LOOP
-const RARITY_RARE := ItemTable.RARE
-## Kit (v0.3.5 K): the build skills.
+## Kit: the build skills.
 const SKILL_LUNGE_CLEAVE := SkillTable.Kind.LUNGE_CLEAVE
 const SKILL_SCATTER_BLAST := SkillTable.Kind.SCATTER_BLAST
-## Build (v0.4.0 BS): card types, ability kinds, slots and levels.
+## Build: card types, ability kinds, slots and levels.
 const CARD_MOD := Offers.MOD
 const CARD_ABILITY := Offers.ABILITY
 const CARD_STAT := Offers.STAT
-const CARD_CURSE := Offers.CURSE  # v0.6.0 CU: a trade-off curse card
-const CARD_STARBOUND := Offers.STARBOUND  # v0.10.5 W3-P10b: a Starbound card (loop 2+)
-## v0.10.5 W3-P10b: the Starbound cards (starbound()'s order) and the view's log kinds (starbound_fx).
+const CARD_CURSE := Offers.CURSE  # A trade-off curse card
+const CARD_STARBOUND := Offers.STARBOUND  # A Starbound card (loop 2+)
+const CARD_SPELL := Offers.SPELL  # A spell card (its element card held)
+## The spells, their elements and the view's log kinds (spell_fx).
+const SPELL_FROST_NOVA := Spells.FROST_NOVA
+const SPELL_FIREBALL := Spells.FIREBALL
+const SPELL_SKY_STRIKE := Spells.SKY_STRIKE
+const SPELL_BLIZZARD := Spells.BLIZZARD  # The rest of the roster
+const SPELL_ICE_LANCES := Spells.ICE_LANCES
+const SPELL_BURNING_GROUND := Spells.BURNING_GROUND
+const SPELL_METEOR := Spells.METEOR
+const SPELL_BALL_LIGHTNING := Spells.BALL_LIGHTNING
+const SPELL_STATIC_FIELD := Spells.STATIC_FIELD
+const SPELL_VENOM_ORB := Spells.VENOM_ORB
+const SPELL_TOXIC_CLOUD := Spells.TOXIC_CLOUD
+const SPELL_SPITTER_VINE := Spells.SPITTER_VINE
+const SPELL_BLOOD_THORNS := Spells.BLOOD_THORNS
+const SPELL_HEMORRHAGE := Spells.HEMORRHAGE
+const SPELL_LEECH := Spells.LEECH
+const SPELL_ELEMENT_FROST := Spells.ELEMENT_FROST
+const SPELL_ELEMENT_FIRE := Spells.ELEMENT_FIRE
+const SPELL_ELEMENT_LIGHTNING := Spells.ELEMENT_LIGHTNING
+const SPELL_ELEMENT_VENOM := Spells.ELEMENT_VENOM
+const SPELL_ELEMENT_BLEED := Spells.ELEMENT_BLEED
+const SPELL_FX_NOVA := Spells.FX_NOVA
+const SPELL_FX_BURST := Spells.FX_BURST
+const SPELL_FX_BOLT := Spells.FX_BOLT
+const SPELL_FX_JUMP := Spells.FX_JUMP
+## The new casts in the log and the lasting kinds (spell_zones).
+const SPELL_FX_LANCE := Spells.FX_LANCE
+const SPELL_FX_SHATTER := Spells.FX_SHATTER
+const SPELL_FX_THORNS := Spells.FX_THORNS
+const SPELL_FX_SPIT := Spells.FX_SPIT
+const SPELL_FX_ZAP := Spells.FX_ZAP
+const SPELL_FX_STRIKE := Spells.FX_STRIKE
+const SPELL_FX_DISCHARGE := Spells.FX_DISCHARGE
+const SPELL_FX_HEMO := Spells.FX_HEMO
+const SPELL_FX_DRAIN := Spells.FX_DRAIN
+const SPELL_ZONE_BLIZZARD := SpellZones.BLIZZARD
+const SPELL_ZONE_FIRE := SpellZones.FIRE
+const SPELL_ZONE_METEOR_MARK := SpellZones.METEOR_MARK
+const SPELL_ZONE_ORB := SpellZones.ORB
+const SPELL_ZONE_STATIC := SpellZones.STATIC
+const SPELL_ZONE_POOL := SpellZones.POOL
+const SPELL_ZONE_PUFF := SpellZones.PUFF
+const SPELL_ZONE_VINE := SpellZones.VINE
+const SPELL_ZONE_THORN_WALL := SpellZones.THORN_WALL
+const SPELL_ZONE_HEMO := SpellZones.HEMO
+const SPELL_ZONE_LEECH := SpellZones.LEECH
+## The Starbound cards (starbound()'s order) and the view's log kinds (starbound_fx).
 const STARBOUND_ARC_JUMP := Starbound.ARC_JUMP
 const STARBOUND_RISING_EDGE := Starbound.RISING_EDGE
 const STARBOUND_ECHO_CAST := Starbound.ECHO_CAST
@@ -269,9 +334,9 @@ const STARBOUND_FERVOUR := Starbound.FERVOUR
 const STARBOUND_DETONATION := Starbound.DETONATION
 const STARBOUND_FX_BURST := Starbound.FX_BURST
 const STARBOUND_FX_JUMP := Starbound.FX_JUMP
-## v0.10.5 O7b: the SHARDS event's effect id when a lying drop is picked up (views tell it from an instant payout).
+## The SHARDS event's effect id when a lying drop is picked up (views tell it from an instant payout).
 const SHARD_PICKUP_EFFECT := ShardDrops.EFFECT
-## v0.5.0 SH: the shop's last action (ShopState.Action; v0.10.5 W3-O9: selling and the curse lift are gone).
+## The shop's last action (ShopState.Action; selling and the curse lift are gone).
 const SHOP_BUY := ShopState.Action.BUY
 const SHOP_HEAL := ShopState.Action.HEAL
 const SHOP_REROLL := ShopState.Action.REROLL
@@ -279,13 +344,11 @@ const ABILITY_COMBO_SWORD := AbilityTable.Kind.COMBO_SWORD
 const ABILITY_PULSE_GUN := AbilityTable.Kind.PULSE_GUN
 const ABILITY_BLINK := AbilityTable.Kind.BLINK
 const ABILITY_AEGIS := AbilityTable.Kind.AEGIS
-## v0.6.0 MX2: the weapon, the utility and the six modifier slots' abilities at most.
-const ABILITY_SLOTS := 2 + BuildSlots.SLOTS
-## v0.6.0 MX2 (BuildSlots): the modifier slots, and the swap answers' pick values. v0.6.5 WN1: the most slots the
+## BuildSlots: the modifier slots, and the swap answers' pick values. the most slots the
 ## wand ever has (it grows 4 → 6 → 8; build()["max"] is the count now), and the reorder's pick values
 ## (PICK_WAND_MOVE_BASE + from × WAND_MOVE_STRIDE + to).
 const MOD_SLOTS := Wand.MAX_SLOTS
-## v0.9.0 AS (owner Q2–Q5, Q14; AttackSlots): a card's slot tag (card_info()["slot"], wand()["cards"][n]["slot"]; NONE
+## A card's slot tag (card_info()["slot"], wand()["cards"][n]["slot"]; NONE
 ## for a card without one on this run) and each tag's translation key; the forms' name keys (wand()["form"]).
 const SLOT_NONE := AttackSlots.FREE
 const SLOT_FORM := AttackSlots.FORM
@@ -295,19 +358,18 @@ const SLOT_ELEMENT := AttackSlots.ELEMENT
 const SLOT_TAG_KEYS := AttackSlots.TAG_KEYS
 const PICK_WAND_MOVE_BASE := InputFrame.PICK_WAND_MOVE_BASE
 const WAND_MOVE_STRIDE := InputFrame.WAND_MOVE_STRIDE
-## v0.6.5 WN1: the triggers a wand card cuts on (wand()["cards"][n]["trigger"]; -1 for a card of rewrites).
+## The triggers a wand card cuts on (wand()["cards"][n]["trigger"]; -1 for a card of rewrites).
 const WAND_ON_HIT := AttackSpec.Trigger.ON_HIT
 const WAND_ON_KILL := AttackSpec.Trigger.ON_KILL
 const WAND_ON_END := AttackSpec.Trigger.ON_END
 const WAND_ON_FINISHER := AttackSpec.Trigger.ON_FINISHER
 const WAND_ON_CRIT := AttackSpec.Trigger.ON_CRIT
-## v0.8.0 AO: what a wand card does to the cards to its left (wand()["cards"][n]["order"]; Wand.order_of).
+## What a wand card does to the cards to its left (wand()["cards"][n]["order"]; Wand.order_of).
 const WAND_ORDER_SHAPE := ModifierTable.OrderKind.SHAPE
 const WAND_ORDER_COUNT := ModifierTable.OrderKind.COUNT
 const WAND_ORDER_MOTION := ModifierTable.OrderKind.MOTION
 const PICK_SWAP_SKIP := InputFrame.PICK_SWAP_SKIP
-const ABILITY_MAX_LEVEL := AbilityTable.MAX_LEVEL
-## v0.5.0 EV: event pedestals, costs, rewards and refusals (Events).
+## Event pedestals, costs, rewards and refusals (Events).
 const EVENT_READY := Events.State.READY
 const EVENT_ACTIVE := Events.State.ACTIVE
 const EVENT_DONE := Events.State.DONE
@@ -325,18 +387,16 @@ const EVENT_BLOCK_OK := Events.OK
 const EVENT_BLOCK_SHARDS := Events.NEED_SHARDS
 const EVENT_BLOCK_NOTHING := Events.NEED_NOTHING_TO_GAIN
 const EVENT_BLOCK_BUSY := Events.NEED_BUSY
-## v0.4.0 AB: a Napalm Drone fire patch (element_fx()["fire_kind"]).
-const FIRE_NAPALM := ElementAbilities.FIRE_NAPALM
-## v0.6.0 MX2: Arc Field's shock field, and any other spec's patch (a hook's zone).
+## Arc Field's shock field, and any other spec's patch (a hook's zone).
 const FIRE_FIELD := ElementAbilities.FIRE_FIELD
 const FIRE_ZONE := ElementAbilities.FIRE_ZONE
 
-## v0.9.5 PF3: kind masks (kind -> 1) for any_boss / any_elite, built once.
+## Kind masks (kind -> 1) for any_boss / any_elite, built once.
 static var _boss_mask := PackedByteArray()
 static var _elite_mask := PackedByteArray()
 
 var _w: World
-## v0.8.0 RT: piece_key -> wall index of the floor's interior pieces (built on the first layout_prop ask).
+## piece_key -> wall index of the floor's interior pieces (built on the first layout_prop ask).
 var _layout_wall_index := {}
 
 
@@ -472,15 +532,45 @@ func shooting() -> bool:
 	return PlayerKit.shooting(_w)
 
 
-## v0.9.0 LZ (owner Q8): the Laser's beams now, empty while it isn't firing: Laser.trace from the hero along the aim,
-## the geometry the tick's hits use (EI-07). Each {from, to, hits (actor indices), at (their points), wall}.
+## The Laser's paths. Q7: instant, drawn fast, a glow fading: the paths of the last
+## lance, as the sim planned and hit them on its firing tick (LaserMods.record, EI-07), for LANCE_GLOW_TICKS after it;
+## empty after that or when the Gun's shot is no Laser. Each {from, to, kind, lane, wmul, impact, end, wall, hits
+## (empty: the shot's hits are its DAMAGE events), age (ticks since the shot), glow (LANCE_GLOW_TICKS)}; a Ring also
+## {circle}.
 func beams() -> Array[Dictionary]:
-	if not Laser.firing(_w):
-		return []
-	return Laser.trace(_w, Modifiers.bolt(_w), _w.player_pos(), _w.aim_angle)
+	var s := _w.mx
+	var out: Array[Dictionary] = []
+	if s.lz_shot_tick < 0 or not Laser.active(_w):
+		return out
+	var age := _w.tick - s.lz_shot_tick
+	if age >= LANCE_GLOW_TICKS:
+		return out
+	var ring := LaserMods.mm(LaserMods.param(_w, "ring_mm"))
+	for k in s.lz_shot_from.size():
+		var kind: StringName = LaserMods.KINDS[clampi(
+			s.lz_shot_row[k * 4], 0, LaserMods.KINDS.size() - 1
+		)]
+		var f := s.lz_shot_row[k * 4 + 3]
+		var b := {
+			"from": s.lz_shot_from[k],
+			"to": s.lz_shot_to[k],
+			"kind": kind,
+			"lane": s.lz_shot_row[k * 4 + 1],
+			"wmul": s.lz_shot_row[k * 4 + 2],
+			"impact": f & LaserMods.F_IMPACT != 0,
+			"end": f & LaserMods.F_END != 0,
+			"wall": f & LaserMods.F_WALL != 0,
+			"hits": PackedInt32Array(),
+			"age": age,
+			"glow": LANCE_GLOW_TICKS,
+		}
+		if kind == LaserMods.K_RING:
+			b["circle"] = ring
+		out.append(b)
+	return out
 
 
-## v0.9.5 FC1: Echo's strikes still to come, for the view's pale ghost beams: {from, to, left (ticks), total}.
+## Echo's strikes still to come, for the view's pale ghost beams: {from, to, left (ticks), total}.
 func laser_ghosts() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var s := _w.mx
@@ -500,7 +590,7 @@ func laser_ghosts() -> Array[Dictionary]:
 	return out
 
 
-## v0.9.5 FC1: the Laser's mines alive: {pos, age (ticks)}.
+## The Laser's mines alive: {pos, age (ticks)}.
 func laser_mines() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var s := _w.mx
@@ -509,7 +599,7 @@ func laser_mines() -> Array[Dictionary]:
 	return out
 
 
-## v0.9.5 FC2: the Bomb cards' rows for the view: {kind (&"burst", &"drop", &"mine" or
+## The Bomb cards' rows for the view: {kind (&"burst", &"drop", &"mine" or
 ## &"ring"), pos, r (m, a ring's largest), age, left (ticks), span (ticks, born to due), secondary}.
 func bomb_rows() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
@@ -532,42 +622,42 @@ func bomb_rows() -> Array[Dictionary]:
 	return out
 
 
-## v0.9.5 FC3: the Void's lightning rings growing (VoidMods.read_rings): {pos, r (m, the largest), age, span (ticks)}.
+## The Void's lightning rings growing (VoidMods.read_rings): {pos, r (m, the largest), age, span (ticks)}.
 func void_rings() -> Array[Dictionary]:
 	return VoidMods.read_rings(_w)
 
 
-## v0.9.5 FC4: the Lance's lightning rings growing (LanceMods.read_rings): {pos, r (m, the largest), age, span (ticks)}.
+## The Lance's lightning rings growing (LanceMods.read_rings): {pos, r (m, the largest), age, span (ticks)}.
 func lance_rings() -> Array[Dictionary]:
 	return LanceMods.read_rings(_w)
 
 
-## v0.9.5 FC6: the lightning rings round the Glaive's discs (GlaiveMods.read_rings): {pos, r (m)}.
+## The lightning rings round the Glaive's discs (GlaiveMods.read_rings): {pos, r (m)}.
 func glaive_rings() -> Array[Dictionary]:
 	return GlaiveMods.read_rings(_w)
 
 
-## v0.9.5 FC7: the lightning rings Ring makes where a Seekers dart hit (SeekerMods.read_rings): {pos, r (m)}.
+## The lightning rings Ring makes where a Seekers dart hit (SeekerMods.read_rings): {pos, r (m)}.
 func seeker_rings() -> Array[Dictionary]:
 	return SeekerMods.read_rings(_w)
 
 
-## v0.9.5 FC4: the Lance's split shards in view (LanceMods.read_shards): {from, to, age, span (ticks)}.
+## The Lance's split shards in view (LanceMods.read_shards): {from, to, age, span (ticks)}.
 func lance_shards() -> Array[Dictionary]:
 	return LanceMods.read_shards(_w)
 
 
-## v0.9.0 BM: player projectile `i` is a bomb (the Bomb form's shot; BombView draws it, not the pulses).
+## Player projectile `i` is a bomb (the Bomb form's shot; BombView draws it, not the pulses).
 func projectile_is_bomb(i: int) -> bool:
 	return Bomb.touches(_w, i)
 
 
-## v0.9.0 BM: the run's Gun shot is the Bomb (its throw's sound).
+## The run's Gun shot is the Bomb (its throw's sound).
 func bomb_active() -> bool:
 	return Bomb.active(_w)
 
 
-## v0.9.0 AF1 (owner Q7, F5): the run's Gun shot is the Lance; how far it has charged (0..1). v0.9.0 AF1b: and the
+## The run's Gun shot is the Lance; how far it has charged (0..1). and the
 ## charging ball in front of the hero (Lance.orb: {pos, radius}, the ball a release now would launch: EI-07), empty
 ## while it isn't charging.
 func lance_active() -> bool:
@@ -582,7 +672,7 @@ func lance_orb() -> Dictionary:
 	return Lance.orb(_w)
 
 
-## v0.9.0 AF1 (owner Q7, F6): player projectile `i` is a Scatter pellet (ScatterView draws it, not the pulses), and the
+## Player projectile `i` is a Scatter pellet (ScatterView draws it, not the pulses), and the
 ## run's Gun shot is the Scatter (its blast's sound).
 func projectile_is_pellet(i: int) -> bool:
 	return Scatter.is_pellet(_w, i)
@@ -592,7 +682,7 @@ func scatter_active() -> bool:
 	return Scatter.active(_w)
 
 
-## v0.9.0 AF2 (owner Q7, F7): player projectile `i` is a Glaive disc (GlaiveView draws it, not the pulses), it is on
+## Player projectile `i` is a Glaive disc (GlaiveView draws it, not the pulses), it is on
 ## its way back, and the run's Gun shot is the Glaive (its throw's sound).
 func projectile_is_disc(i: int) -> bool:
 	return Glaive.is_disc(_w, i)
@@ -606,7 +696,7 @@ func glaive_active() -> bool:
 	return Glaive.active(_w)
 
 
-## v0.9.0 AF2 (owner Q7, F8): player projectile `i` is a Seekers dart (SeekersView draws it, not the pulses), and the
+## Player projectile `i` is a Seekers dart (SeekersView draws it, not the pulses), and the
 ## run's Gun shot is the Seekers (its volley's sound).
 func projectile_is_dart(i: int) -> bool:
 	return Seekers.is_dart(_w, i)
@@ -616,7 +706,7 @@ func seekers_active() -> bool:
 	return Seekers.active(_w)
 
 
-## v0.9.0 VP: player projectile `i` is a Void shot (VoidView draws it, not the pulses), and the run's Gun shot is the
+## Player projectile `i` is a Void shot (VoidView draws it, not the pulses), and the run's Gun shot is the
 ## Void (its hum).
 func projectile_is_void(i: int) -> bool:
 	return VoidShots.is_void_projectile(_w, i)
@@ -626,7 +716,7 @@ func void_active() -> bool:
 	return VoidShots.active(_w)
 
 
-## v0.9.0 AF3 (owner Q7, F9, F10): player projectile `i` is a Wave shot (WaveView draws it, not the pulses); the Wave
+## Player projectile `i` is a Wave shot (WaveView draws it, not the pulses); the Wave
 ## shots in flight (WaveShots.read: id, pos, dir, half width, depth); the run's Gun shot is the Wave; the wisps round
 ## the hero (Wisps.read: pos, angle, wait, period; empty without the Wisps card).
 func projectile_is_wave(i: int) -> bool:
@@ -645,12 +735,12 @@ func wisps() -> Array[Dictionary]:
 	return Wisps.read(_w)
 
 
-## v0.9.5 FC9: the lightning rings the wisps' shots left (WispMods.read_rings): {pos, r (m, the largest), age, span}.
+## The lightning rings the wisps' shots left (WispMods.read_rings): {pos, r (m, the largest), age, span}.
 func wisp_rings() -> Array[Dictionary]:
 	return WispMods.read_rings(_w)
 
 
-## v0.9.5 FC0 (owner): the Rune Explosion's bursts now (RuneExplosion.read: uid, pos, radius, edge, age, grow, fade,
+## The Rune Explosion's bursts now (RuneExplosion.read: uid, pos, radius, edge, age, grow, fade,
 ## the actors hit), and whether the run's Gun shot is the Rune Explosion.
 func rune_bursts() -> Array[Dictionary]:
 	return RuneExplosion.read(_w)
@@ -660,27 +750,27 @@ func rune_active() -> bool:
 	return RuneExplosion.active(_w)
 
 
-## v0.9.5 FC5: what the Rune Explosion cards leave on the floor (RuneMods.read: holds, shrinks, mines, shards, glyphs).
+## What the Rune Explosion cards leave on the floor (RuneMods.read: holds, shrinks, mines, shards, glyphs).
 func rune_effects() -> Dictionary:
 	return RuneMods.read(_w)
 
 
-## v0.9.0 AF3: player projectile `i` is a wisp's orb (its own chirp).
+## Player projectile `i` is a wisp's orb (its own chirp).
 func projectile_is_wisp(i: int) -> bool:
 	return Wisps.is_wisp_shot(_w, i)
 
 
-## v0.9.0 LZ: the Laser fires now (its hum, the view).
+## The Laser fires now (its hum, the view).
 func beam_firing() -> bool:
 	return Laser.firing(_w)
 
 
-## v0.9.0 LZ: the Laser's elements (the Gun shot's, in the order the cards added them; empty: the default energy).
+## The Laser's elements (the Gun shot's, in the order the cards added them; empty: the default energy).
 func beam_elements() -> PackedStringArray:
 	return Modifiers.bolt(_w).elements.duplicate() if Laser.active(_w) else PackedStringArray()
 
 
-## v0.8.0 GF1 (owner O19): whether the Gun fired a shot in the last tick (the cooldown was just set to the full
+## Whether the Gun fired a shot in the last tick (the cooldown was just set to the full
 ## period: PlayerKit and GunForms set it on every shot, and it only counts down after). The hero's cast flourish.
 func shot_fired() -> bool:
 	return _w.shot_cd > 0 and _w.shot_cd == ItemEffects.last_shot_cd(_w)  # v0.10.5 W3-P9
@@ -690,7 +780,7 @@ func projectile_team(i: int) -> int:
 	return _w.projectiles.team[i]
 
 
-## v0.4.0 BS: the forced loadout's utility, or an owned Blink / Aegis ability (Abilities.utility).
+## The forced loadout's utility, or an owned Blink / Aegis ability (Abilities.utility).
 func utility() -> int:
 	return Abilities.utility(_w)
 
@@ -754,14 +844,14 @@ func actor_recovering(i: int) -> bool:
 	return EnemyAi.is_enemy_kind(_w.actors.kinds[i]) and _w.actors.state[i] == EnemyAi.State.RECOVER
 
 
-## The spell an Arc Caster is casting (v0.3.5 AI): SPELL_BOLT, SPELL_SPREAD or SPELL_RUNE (0 for other kinds).
+## The spell an Arc Caster is casting: EnemyAi.Spell (BOLT, SPREAD, or SPELL_RUNE; 0 for other kinds).
 func actor_spell(i: int) -> int:
 	return _w.actors.pick[i]
 
 
 ## The enemy's telegraph, from the same function that resolves the attack (EI-07). {} when none.
 func telegraph(i: int) -> Dictionary:
-	var a := _w.actors  # v0.9.5 PF3: every telegraph needs a windup, an active attack or a Mine Layer
+	var a := _w.actors  # Every telegraph needs a windup, an active attack or a Mine Layer
 	var st := a.state[i]
 	if (
 		st != EnemyAi.State.WINDUP
@@ -772,7 +862,7 @@ func telegraph(i: int) -> Dictionary:
 	return EnemyAi.telegraph(_w, i)
 
 
-# --- Horde kinds (v0.4.0 EN) --------------------------------------------------------------------------------------
+# --- Horde kinds --------------------------------------------------------------------------------------
 ## The id of the ally a Mender is healing (its beam's far end), or -1.
 func actor_heal_target(i: int) -> int:
 	if _w.actors.kinds[i] != ActorStore.Kind.MENDER or _w.actors.pick[i] <= 0:
@@ -790,9 +880,9 @@ func actor_priority(i: int) -> bool:
 	return EnemyAi.is_priority(_w.actors.kinds[i])
 
 
-## The line a Sniper shoots down (its telegraph's lane), for the shot's tracer.
-func sniper_line(i: int) -> Obb:
-	return EnemyAi.snipe_lane(_w, i)
+## The lanes Sniper i's shot hits (one line; a Split Sniper's line and its three branches).
+func sniper_lines(i: int) -> Array[Obb]:
+	return EnemyAi.snipe_lanes(_w, i)
 
 
 func mine_count() -> int:
@@ -818,14 +908,14 @@ func mine_fuse(k: int) -> int:
 
 
 ## 0 while fighting, 1 when the last wave is cleared (or the run's last portal taken), 2 when the player is dead, 3 when
-## the portal of a floor before the last was taken (the app loads the next floor). v0.8.0 FB1 (F1): the Ascension portal
-## (P2) goes on to the final arena (3) when the run has a final boss; the final arena's outcome is 1 once its last body
+## the portal of a floor before the last was taken (the app loads the next floor). the Ascension portal
+##  goes on to the final arena (3) when the run has a final boss; the final arena's outcome is 1 once its last body
 ## fell.
 func outcome() -> int:
 	if _w.final_fight != null and _w.final_fight.won and _w.boss_flow != null:
 		return 1
 	if _w.boss_flow != null and _w.boss_flow.exited():
-		if _w.boss_flow.ascension:  # v0.8.0 P2: the Loop device or the final boss go on; no final boss: won
+		if _w.boss_flow.ascension:  # The Loop device or the final boss go on; no final boss: won
 			return 3 if Ascension.looped(_w) or _w.boss_flow.final_next else 1
 		return 1 if _w.floor_index >= _w.floor_count else 3
 	if _w.player_dead():
@@ -833,7 +923,7 @@ func outcome() -> int:
 	return 1 if _w.cleared else 0
 
 
-## v0.8.0 N3 (owner O45): the portal on this floor leads to another floor the app loads (outcome() turns 3 once the hero
+## The portal on this floor leads to another floor the app loads (outcome() turns 3 once the hero
 ## is through it), not to the run's end: the loading cover closes only then.
 func portal_loads() -> bool:
 	if _w.boss_flow == null:
@@ -892,7 +982,7 @@ func projectile_id(i: int) -> int:
 	return _w.projectiles.ids[i]
 
 
-## v0.7.5 BF1: projectile i's fireball look key (BulletPatterns; "" = a plain shot, drawn by ActorViews).
+## Projectile i's fireball look key (BulletPatterns; "" = a plain shot, drawn by ActorViews).
 func projectile_look(i: int) -> String:
 	return _w.projectiles.look_of(i)
 
@@ -926,18 +1016,18 @@ func run_seconds() -> float:
 	return float(_w.run_ticks) / SimTick.TICKS_PER_SECOND
 
 
-## The spawn director's danger tier (0 without one; v0.4.0 TU: the difficulty curve's when the floor has one).
+## The spawn director's danger tier (0 without one; the difficulty curve's when the floor has one).
 func tier() -> int:
 	return _w.spawner.danger_tier(_w.run_ticks) if _w.spawner != null else 0
 
 
-## v0.10.5 O6 (owner P4: the catch-up shown, D4 flipped): the floor's catch-up m on its enemies, per mille (1000 = ×1;
+## The floor's catch-up m on its enemies, per mille (1000 = ×1;
 ## also 1000 without the catch-up table). Read only; the HUD's depths tag and the pause line show it.
 func catch_up_permille() -> int:
 	return _w.catch_up.enemy if _w.catch_up_table != null else 1000
 
 
-# --- The intensity director (v0.8.0 N5, owner O58) ---------------------------------------------------------------
+# --- The intensity director ---------------------------------------------------------------
 ## True when the floor's ordinary spawning has the intensity director. The player is never shown it (owner: "for now
 ## nothing, quietness, the enemies are the real indicator"); the dev panel (F10's Tools page) reads it.
 func has_intensity() -> bool:
@@ -959,7 +1049,7 @@ func intensity_timer() -> int:
 	return maxi(0, _w.intensity.timer) if has_intensity() else 0
 
 
-## v0.10.5 O4 (owner D46): how the director reads the hero now (IntensityState.Standing; BETWEEN without it).
+## How the director reads the hero now (IntensityState.Standing; BETWEEN without it).
 func intensity_standing() -> int:
 	return _w.intensity.standing if has_intensity() else IntensityState.Standing.BETWEEN
 
@@ -996,7 +1086,7 @@ func new_kinds() -> PackedInt32Array:
 	return _w.spawner.curve.new_kinds if has_curve() else PackedInt32Array()
 
 
-## v0.4.0 TU (owner D8): where the heal orbs lie, in drop order, and their ids.
+## Where the heal orbs lie, in drop order, and their ids.
 func heal_orbs() -> PackedVector2Array:
 	var out := PackedVector2Array()
 	for k in _w.orbs.size():
@@ -1008,12 +1098,29 @@ func heal_orb_ids() -> PackedInt32Array:
 	return _w.orbs.ids
 
 
-## v0.10.5 O7b (owner P6; ShardDrops): kill shards lying on the floor, in drop order: where, their sequence numbers
+## Kill shards lying on the floor, in drop order: where, their sequence numbers
 ## (stable while a drop lies) and the shards each holds; and the hero's reach for them (pickup range included).
 func shard_drops() -> PackedVector2Array:
 	var out := PackedVector2Array()
 	for k in _w.shard_drops.size():
 		out.append(_w.shard_drops.pos(k))
+	return out
+
+
+## The objective markers (World.objectives), each {"reason": StringName, "pos": Vector2
+## on the sim plane, "entity": the followed actor's id or -1}. A followed actor that is gone or dead is left out.
+func objectives() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var o := _w.objectives
+	for k in o.size():
+		var id := o.entity[k]
+		var at := o.pos(k)
+		if id != ObjectiveMarkers.NO_ENTITY:
+			var i := _w.actors.index_of(id)
+			if i < 0 or _w.actors.hp[i] <= 0:
+				continue
+			at = _w.actors.pos(i)
+		out.append({"reason": o.reason_at(k), "pos": at, "entity": id})
 	return out
 
 
@@ -1025,10 +1132,6 @@ func shard_drop_amounts() -> PackedInt32Array:
 	return _w.shard_drops.amounts
 
 
-func shard_drop_reach() -> float:
-	return Stats.reach(_w, ShardDrops.REACH_M)
-
-
 ## True while a living enemy of `kind` is on the floor.
 func kind_alive(kind: int) -> bool:
 	var a := _w.actors
@@ -1038,7 +1141,7 @@ func kind_alive(kind: int) -> bool:
 	return false
 
 
-## v0.10.5 O15: the name keys of the enemy duos that appeared on this floor, in first-seen order.
+## The name keys of the enemy duos that appeared on this floor, in first-seen order.
 func pairing_names() -> Array[StringName]:
 	var out: Array[StringName] = []
 	if _w.spawner == null or _w.spawner.pairings == null:
@@ -1059,7 +1162,7 @@ func kills() -> int:
 	return _w.kills
 
 
-# --- Items (v0.2.0 E) ---------------------------------------------------------------------------------------
+# --- Items ---------------------------------------------------------------------------------------
 ## Owned items in pickup order, as indices into the item tables (item_kind / item_name_key read them).
 func items_owned() -> PackedInt32Array:
 	return _w.items_owned
@@ -1073,11 +1176,6 @@ func has_item_kind(kind: int) -> bool:
 	return _w.item_mods.has(kind)
 
 
-## Number of compiled items (valid item indices are 0..item_table_count() - 1).
-func item_table_count() -> int:
-	return _w.item_tables.size()
-
-
 func item_kind(item_index: int) -> int:
 	return _w.item_tables[item_index].kind
 
@@ -1088,11 +1186,7 @@ func item_id(item_index: int) -> StringName:
 
 ## Locale keys (tr() them in the view).
 func item_name_key(item_index: int) -> StringName:
-	return Offers.item_keys(_w, _w.item_tables[item_index])[0]  # v0.6.5 WN5a: T4's face per weapon
-
-
-func item_desc_key(item_index: int) -> StringName:
-	return Offers.item_keys(_w, _w.item_tables[item_index])[1]
+	return Offers.item_keys(_w, _w.item_tables[item_index])[0]  # T4's face per weapon
 
 
 func pickup_count() -> int:
@@ -1147,12 +1241,8 @@ func shockwave_radius_m() -> float:
 	return Modifiers.nth_burst_radius_m(_w)
 
 
-## Twin Arc: an echo swing is pending, its angle and step, and the tick the last echo swung (-1 = never). The echo
+## Twin Arc: an echo swing's angle and step, and the tick the last echo swung (-1 = never). The echo
 ## uses swing_shape(echo_step()) with this angle.
-func echo_pending() -> bool:
-	return _w.echo_t > 0
-
-
 func echo_angle() -> int:
 	return _w.echo_angle
 
@@ -1175,7 +1265,7 @@ func projectile_bounce_tick(i: int) -> int:
 	return _w.projectiles.bounce_tick[i]
 
 
-## v0.6.0 MX1: the ids of the build's compiled attacks (the combo steps, the bolt, the Skill), and one attack's final
+## The ids of the build's compiled attacks (the combo steps, the bolt, the Skill), and one attack's final
 ## spec as plain data (AttackSpec.read: form, tags, modifiers, sizes, damage, statuses, elements, behaviour, hooks
 ## with their children), {} for an unknown id. AttackView draws the weapon attacks from it.
 func attack_ids() -> PackedStringArray:
@@ -1192,7 +1282,7 @@ func step_attack_id(step: int = -1) -> StringName:
 	return Modifiers.step_id(_step_index(step))
 
 
-## v0.6.0 MX4: what the M-list's modifiers do that no attack spec shows (ModifierOverlays draws it): Aether Shell's
+## What the M-list's modifiers do that no attack spec shows (ModifierOverlays draws it): Aether Shell's
 ## barrier is up ("shell"; "shell_tick" the last hit it absorbed, -1 = none), Ascension's next attack is charged
 ## ("charged"), the dash is intangible now ("phase", Phase Dash), the poisoned enemies' positions ("poisoned"), and
 ## where a queued launch waits ("queued": Long Shadow's afterimage, Twin Cast's repeat).
@@ -1212,19 +1302,19 @@ func modifier_marks() -> Dictionary:
 	}
 
 
-## v0.6.5 WN4: the Blade pool's marks for the views (BladeForms.read: ghost slashes, fissure cracks and eruptions,
+## The Blade pool's marks for the views (BladeForms.read: ghost slashes, fissure cracks and eruptions,
 ## cut shots, a counter, the orbiting blades).
 func blade_forms() -> Dictionary:
 	return BladeForms.read(_w)
 
 
-## v0.6.5 WN5a: the wand's small spells cast lately, oldest first (WandCasts.read: tick, key, pos, angle in 1/4096
+## The wand's small spells cast lately, oldest first (WandCasts.read: tick, key, pos, angle in 1/4096
 ## turns, cast: a trigger's child spell). AttackFormView draws each once.
 func wand_casts() -> Array[Dictionary]:
 	return WandCasts.read(_w)
 
 
-## v0.6.5 WN4: how the current swing's cards change the swing itself, for the blade and the hero's pose
+## How the current swing's cards change the swing itself, for the blade and the hero's pose
 ## (BladeForms.swing_read: weight, rate, lunge, knockback, parry).
 func blade_swing() -> Dictionary:
 	return BladeForms.swing_read(_w)
@@ -1235,7 +1325,7 @@ func attack_digest() -> String:
 	return Modifiers.book(_w).digest
 
 
-## v0.6.0 MX3: the final spec an AttackBook key names (a root's id, a hook child's "<parent key>/<n>"; MX2), as
+## The final spec an AttackBook key names (a root's id, a hook child's "<parent key>/<n>"; MX2), as
 ## plain data ({} for "" or a key the current build doesn't have). AttackFormView draws the live attacks from it.
 func attack_spec_at(key: String) -> Dictionary:
 	if key == "":
@@ -1244,13 +1334,13 @@ func attack_spec_at(key: String) -> Dictionary:
 	return s.read() if s != null else {}
 
 
-## v0.6.0 MX3: the spec key player projectile i runs ("" = none: an enemy's, or one from before MX2).
+## The spec key player projectile i runs ("" = none: an enemy's, or one from before MX2).
 func projectile_spec_key(i: int) -> String:
 	var keys := _w.projectiles.spec_key
 	return keys[i] if i < keys.size() else ""
 
 
-## v0.6.5 WN3: projectile `i`'s radius (a charged shot is bigger than its spec, G13), and how far the Gun's shot in
+## Projectile `i`'s radius (a charged shot is bigger than its spec, G13), and how far the Gun's shot in
 ## the barrel has charged (0..1; 0 when the Gun doesn't charge: GunForms).
 func projectile_radius(i: int) -> float:
 	return _w.projectiles.radius[i]
@@ -1260,7 +1350,7 @@ func gun_charge() -> float:
 	return GunForms.charge_fraction(_w)
 
 
-## v0.6.0 MX3: the spec keys of the bombs in flight and of the patches, parallel to ability_fx()["bomb_pos"] and
+## The spec keys of the bombs in flight and of the patches, parallel to ability_fx()["bomb_pos"] and
 ## element_fx()["fire_pos"] ("" = one without a spec: Napalm Drone's patches).
 func bomb_spec_keys() -> PackedStringArray:
 	return _padded(_w.ab.bomb_spec, _w.ab.bomb_pos.size())
@@ -1270,8 +1360,8 @@ func fire_spec_keys() -> PackedStringArray:
 	return _padded(_w.ab.fire_spec, _w.ab.fire_pos.size())
 
 
-## v0.6.0 MX3: the RING form's live rings: {key, pos, radius (full), start, end} (the radius now grows linearly from
-## start to end, ModifierAbilities.ring_radius). v0.8.0 N3: a travelling ring (pulses > 0) also gives where it left
+## The RING form's live rings: {key, pos, radius (full), start, end} (the radius now grows linearly from
+## start to end, ModifierAbilities.ring_radius). a travelling ring (pulses > 0) also gives where it left
 ## (from), its velocity per tick, its orbit and orbit angle, and "pos" is its centre this tick; ring_place puts it at
 ## any moment between ticks.
 func rings_live() -> Array[Dictionary]:
@@ -1299,7 +1389,7 @@ func rings_live() -> Array[Dictionary]:
 	return out
 
 
-## v0.8.0 N3: a travelling ring of rings_live() at moment `t` (ticks, fractional): [centre, radius], by the sim's own
+## A travelling ring of rings_live() at moment `t` (ticks, fractional): [centre, radius], by the sim's own
 ## formulas (ModifierAbilities.travel_centre and travel_radius), so the ring drawn is the ring that hits.
 static func ring_place(r: Dictionary, t: float) -> Array:
 	var age := t - float(r["start"])
@@ -1326,14 +1416,14 @@ func has_floor() -> bool:
 	return _w.floor_layout != null
 
 
-## The floor has the run's gate (its boss flow; v0.7.5 PG: the Playground's room has a floor and no gate).
+## The floor has the run's gate (its boss flow; the Playground's room has a floor and no gate).
 func has_gate() -> bool:
 	return (
 		_w.floor_layout != null
 		and _w.boss_flow != null
-		and _w.final_fight == null  # FB1: not the arena
+		and _w.final_fight == null  # Not the arena
 		and _w.approach == null
-	)  # v0.9.0 FA: nor its approach
+	)  # Nor its approach
 
 
 func floor_bounds() -> Rect2:
@@ -1362,7 +1452,7 @@ func at_gate() -> bool:
 	return _w.floor_layout != null and _w.floor_layout.portal_front().has_point(_w.player_pos())
 
 
-## v0.5.9 L8: the kit piece a themed room's wall i is drawn with (&"" for any other wall). Presentation only.
+## The kit piece a themed room's wall i is drawn with (&"" for any other wall). Presentation only.
 func wall_piece(i: int) -> StringName:
 	var f := _w.floor_layout
 	if f == null or i < f.slab_first or i >= _w.walls.size():
@@ -1370,7 +1460,7 @@ func wall_piece(i: int) -> StringName:
 	return f.piece_tag(_w.walls[i])
 
 
-## v0.8.0 RT: a designed room's blocker's drawn height (m; 0 = the kit's own), or -1.0 for any other wall (the biome's
+## A designed room's blocker's drawn height (m; 0 = the kit's own), or -1.0 for any other wall (the biome's
 ## swap rules apply to a designed room's pieces). Presentation only.
 func wall_layout_height(i: int) -> float:
 	var f := _w.floor_layout
@@ -1379,14 +1469,14 @@ func wall_layout_height(i: int) -> float:
 	return f.piece_height(_w.walls[i])
 
 
-## v0.8.0 RT: the designed rooms' drawn-only pieces (presentation only).
+## The designed rooms' drawn-only pieces (presentation only).
 func layout_prop_count() -> int:
 	return _w.floor_layout.layout_props.size() if _w.floor_layout != null else 0
 
 
 ## Prop i: {"piece": StringName, "pos": Vector2, "angle": int (1/4096), "size": Vector2 (m), "height": float (m; 0 =
 ## the kit's own), "wall": the wall index it stands on (-1: decoration on open floor; -2: its blocker is gone, so it
-## isn't drawn)}.
+## isn't drawn), "lift": its base height (m; v0.11.0 O15, a lintel; 0 on the ground)}.
 func layout_prop(i: int) -> Dictionary:
 	var f := _w.floor_layout
 	var p: Array = f.layout_props[i]
@@ -1397,7 +1487,32 @@ func layout_prop(i: int) -> Dictionary:
 			for k in range(f.slab_first, _w.walls.size()):
 				_layout_wall_index[FloorLayout.piece_key(_w.walls[k])] = k
 		wall = int(_layout_wall_index.get(key, -2))
-	return {"piece": p[0], "pos": p[1], "angle": p[2], "size": p[3], "height": p[4], "wall": wall}
+	var lift: float = p[6] if p.size() > 6 else 0.0  # A lintel's base height
+	return {
+		"piece": p[0],
+		"pos": p[1],
+		"angle": p[2],
+		"size": p[3],
+		"height": p[4],
+		"wall": wall,
+		"lift": lift
+	}
+
+
+## The room's purpose (RoomPurposeTable id; &"" for none). Presentation only.
+func floor_room_purpose(room: int) -> StringName:
+	return _w.floor_layout.purpose_of(room) if _w.floor_layout != null else &""
+
+
+## The purpose rooms' interiors (their palettes already name each biome's pieces, so the dresser draws
+## them as named). Presentation only.
+func floor_purpose_rects() -> Array:
+	var out: Array = []
+	var f := _w.floor_layout
+	if f != null:
+		for room in f.purpose_rooms():
+			out.append(f.rooms[room])
+	return out
 
 
 ## The room's designed layout id (&"" for a rule-built room). For tools and shots.
@@ -1416,7 +1531,7 @@ func wall_class(i: int) -> int:
 	return 1 if i < f.walls.size() else 2
 
 
-# --- Items, the second eight (v0.2.0 J) ---------------------------------------------------------------------
+# --- Items, the second eight ---------------------------------------------------------------------
 ## Vampiric Core: the tick it last healed (-1 = never), and HP it can still heal in the current cap window.
 func heal_tick() -> int:
 	return _w.heal_tick
@@ -1481,7 +1596,7 @@ func phase_radius_m() -> float:
 	return _w.item_mods.phase_radius_m
 
 
-# --- Run flow (v0.3.0 B) -----------------------------------------------------------------------------------
+# --- Run flow -----------------------------------------------------------------------------------
 
 
 ## This floor's number in the run (1-based) and the run's floor count.
@@ -1493,12 +1608,12 @@ func floor_count() -> int:
 	return _w.floor_count
 
 
-## v0.7.5 AP: the run's loop (1 until the first Ascend) and its floor counted across loops.
+## The run's loop (1 until the first Ascend) and its floor counted across loops.
 func loop() -> int:
 	return _w.loop
 
 
-## v0.10.5 O5b: the loop rules on this floor (LoopRules.POOL ids, in the order drawn; none on loop 1).
+## The loop rules on this floor (LoopRules.POOL ids, in the order drawn; none on loop 1).
 func loop_rules() -> Array[StringName]:
 	var out: Array[StringName] = []
 	for k in _w.loop_rules:
@@ -1507,7 +1622,7 @@ func loop_rules() -> Array[StringName]:
 	return out
 
 
-## v0.10.5 W3-P10c: a loop's Constellation pick is open (the world waits for it), its ids, and the held ones in pick
+## A loop's Constellation pick is open (the world waits for it), its ids, and the held ones in pick
 ## order (Constellations; their names: Constellations.name_key, desc_key; their art: card_id).
 func constellation_open() -> bool:
 	return Constellations.open(_w)
@@ -1521,7 +1636,7 @@ func constellations() -> PackedInt32Array:
 	return _w.constellations.duplicate()
 
 
-## v0.10.5 W3-P10g: Starfall's star is Meteor now (Starfall held, Fire at Lv 3; the Codex's Meteor entry).
+## Starfall's star is Meteor now (Starfall held, Fire at Lv 3; the Codex's Meteor entry).
 func meteor_on() -> bool:
 	return Starfall.meteor_on(_w)
 
@@ -1542,17 +1657,17 @@ func run_floor() -> int:
 	return _w.run_floor_index()
 
 
-## v0.7.5 AP: this floor's gate is the Ascension portal (the loop's last floor of a run).
+## This floor's gate is the Ascension portal (the loop's last floor of a run).
 func ascension_floor() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.ascension
 
 
-## v0.7.5 AP: the device taken: ASCEND_NONE, ASCEND_PORTAL or ASCEND_LOOP (v0.8.0 P2).
+## The device taken: ASCEND_NONE, ASCEND_PORTAL or ASCEND_LOOP.
 func ascension_choice() -> int:
 	return _w.boss_flow.ascend_choice if _w.boss_flow != null else ASCEND_NONE
 
 
-## v0.8.0 P2 (owner O28): the Loop device beside the Ascension portal (a loop's last floor): whether it stands, its
+## The Loop device beside the Ascension portal (a loop's last floor): whether it stands, its
 ## centre, the way it faces and the radius that takes the hero (it opens with the portal: portal_active).
 func has_loop_device() -> bool:
 	return ascension_floor() and _w.floor_layout != null and _w.floor_layout.has_loop_device
@@ -1570,7 +1685,7 @@ func loop_device_radius() -> float:
 	return Ascension.LOOP_RADIUS_M
 
 
-## v0.9.0 VP (owner Q10): the Void shots in flight (VoidShots.read: id, pos, dir, aura, pull radius, root), and the
+## The Void shots in flight (VoidShots.read: id, pos, dir, aura, pull radius, root), and the
 ## enemies their pull leans now (VoidShots.leans: actor id -> the way it is drawn, m a tick).
 func void_shots() -> Array[Dictionary]:
 	return VoidShots.read(_w)
@@ -1580,13 +1695,13 @@ func void_leans() -> Dictionary:
 	return VoidShots.leans(_w)
 
 
-## v0.8.0 RM (owner O91): the remnants alive and Dodge Imprint's standing point (Remnants.read: {remnants: [{uid,
+## The remnants alive and Dodge Imprint's standing point (Remnants.read: {remnants: [{uid,
 ## kind, card, activate, a, b, dir, age, life, count, target}], imprint, imprint_at}).
 func remnants() -> Dictionary:
 	return Remnants.read(_w)
 
 
-## v0.8.0 RM: the radius (m) of the cast card `card`'s remnant releases (the view's flash; 0 without one).
+## The radius (m) of the cast card `card`'s remnant releases (the view's flash; 0 without one).
 func remnant_cast_radius(card: StringName) -> float:
 	return Remnants.cast_radius(_w, card)
 
@@ -1623,18 +1738,18 @@ func boss_door_sealed() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.door_sealed()
 
 
-## v0.8.0 BD (owner O83): the door's slide before the fight from the sim, 0 (shut) .. 1 (open; BossFlow.door_progress),
+## The door's slide before the fight from the sim, 0 (shut).. 1 (open; BossFlow.door_progress),
 ## or -1 when the sim doesn't drive it (a floor before BD, or once the fight began).
 func boss_door_progress() -> float:
 	return _w.boss_flow.door_progress(_w.tick) if _w.boss_flow != null else -1.0
 
 
-## v0.9.0 DS: how long the boss door takes to open, in ticks (the impact cue leads the touchdown).
+## How long the boss door takes to open, in ticks (the impact cue leads the touchdown).
 func boss_door_open_ticks() -> int:
 	return BossFlow.DOOR_OPEN_TICKS
 
 
-## v0.8.0 BD (O83): the interact press would open the boss door now (the prompt).
+## The interact press would open the boss door now (the prompt).
 func boss_door_in_reach() -> bool:
 	return (
 		_w.boss_flow != null
@@ -1648,7 +1763,7 @@ func portal_active() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.portal_active()
 
 
-## Portal transit (v0.3.5 PT): 0..1 through the hero's way into the portal and through the arrival on a new floor
+## Portal transit: 0..1 through the hero's way into the portal and through the arrival on a new floor
 ## (-1 when that isn't playing), the portal's centre, and whether the world holds still (input is ignored).
 func portal_enter_progress() -> float:
 	return _w.boss_flow.enter_progress(_w.tick) if _w.boss_flow != null else -1.0
@@ -1662,35 +1777,35 @@ func transit_holds() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.holds_world()
 
 
-## v0.8.0 N11 (owner O69): the floor has a receiver, the platform the hero arrives on in the middle of its first room
+## The floor has a receiver, the platform the hero arrives on in the middle of its first room
 ## (at floor_start_pos): every run floor, Deep floors too; not the final arena or the Playground (no gate there).
 func floor_receiver() -> bool:
 	return has_gate()
 
 
-## v0.8.0 N11: the arrival playing now is floor 1 of a run's (the big landing; a later floor's is the step-out).
+## The arrival playing now is floor 1 of a run's (the big landing; a later floor's is the step-out).
 func arrival_first() -> bool:
 	return _w.run_floor_index() == 1
 
 
-## v0.9.0 SA (owner Q16: "only floor 1"): floor 1 of a run arrives on the altar (AltarStage) instead of the receiver,
+## Floor 1 of a run arrives on the altar (AltarStage) instead of the receiver,
 ## at floor_start_pos; the start hall keeps its cover and spawn spots FloorParams.start_clear_radius (3.5 m) away,
 ## outside the altar's 3.3 m.
 func arrival_altar() -> bool:
 	return floor_receiver() and arrival_first()
 
 
-## v0.9.0 SA: the arrival's whole length in ticks (0 when the floor opens without one).
+## The arrival's whole length in ticks (0 when the floor opens without one).
 func arrival_ticks() -> int:
 	return _w.boss_flow.arrive_ticks if _w.boss_flow != null else 0
 
 
-## v0.8.0 N11: the hero is still arriving (the world holds; nothing spawns, nothing acts, the hero isn't there yet).
+## The hero is still arriving (the world holds; nothing spawns, nothing acts, the hero isn't there yet).
 func arriving() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.arrive_left > 0
 
 
-# --- Routes (v0.5.0 RT) ---------------------------------------------------------------------------------------
+# --- Routes ---------------------------------------------------------------------------------------
 ## This floor's boss room has the Deep gate (a run's floor before the last), where it stands and faces.
 func has_deep_portal() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.routes
@@ -1709,7 +1824,7 @@ func gate_open(route: int) -> bool:
 	return _w.boss_flow != null and _w.boss_flow.gate_open(route)
 
 
-## v0.9.0 PT (owner C4, Q15): 0..1 through gate `route`'s forming after the boss died (0 while it is closed: before
+## 0..1 through gate `route`'s forming after the boss died (0 while it is closed: before
 ## the boss died, or once the other gate was taken); the hero can walk in once it is 1 (BossFlow.PORTAL_FORM_TICKS).
 func portal_form_progress(route: int) -> float:
 	if not gate_open(route):
@@ -1729,20 +1844,20 @@ func floor_is_deep() -> bool:
 
 ## Reward i is the Deep floor's epic altar.
 func reward_is_epic(i: int) -> bool:
-	return Routes.is_epic_altar(_w, i) or TimedDoor.is_epic(_w, i)  # v0.9.0 TD: the secret room's
+	return Routes.is_epic_altar(_w, i) or TimedDoor.is_epic(_w, i)  # The secret room's
 
 
-## v0.5.5 AR (X1b): reward i is the boss's legendary altar.
+## Reward i is the boss's legendary altar.
 func reward_is_legendary(i: int) -> bool:
 	return BossReward.is_legendary(_w, i) or reward_drop_kind(i) == DROP_BOSS_CORE  # v0.6.0 CU
 
 
-## v0.8.0 RR (owner O33): the picks the floor's boss altar still gives after the one open now (0 on loop 1).
+## The picks the floor's boss altar still gives after the one open now (0 on loop 1).
 func legendary_picks_left() -> int:
 	return _w.legendary_picks
 
 
-## v0.8.0 FL (owner O91; LootPacing.jackpot): card k of the open choice is a jackpot card (it says "Jackpot"). Replaces
+## Card k of the open choice is a jackpot card (it says "Jackpot"). Replaces
 ## v0.6.5 WN5b's legendary_card_level: the boss's altar no longer takes a wand card to level 5.
 func choice_jackpot(k: int) -> bool:
 	var i := choice_reward()
@@ -1752,29 +1867,29 @@ func choice_jackpot(k: int) -> bool:
 	return k >= 0 and k < offer.size() and LootPacing.is_jackpot(_w, _w.rewards.ids[i], offer[k])
 
 
-## v0.6.0 CU: reward i's drop kind (DROP_*), or -1 when it isn't a drop.
+## Reward i's drop kind (DROP_*), or -1 when it isn't a drop.
 func reward_drop_kind(i: int) -> int:
 	return CoreTheft.drop_kind(_w, _w.rewards.ids[i])
 
 
-## v0.6.0 CU: the card a drop holds (an Offers code for card_info), or -1 when it holds none.
+## The card a drop holds (an Offers code for card_info), or -1 when it holds none.
 func reward_drop_card(i: int) -> int:
 	var offer := _w.rewards.offer_of(i)
 	return offer[0] if _w.rewards.kind[i] == REWARD_DROP and not offer.is_empty() else -1
 
 
-## v0.5.5 AR: reward i stands in an arena that isn't cleared (it can't be opened yet).
+## Reward i stands in an arena that isn't cleared (it can't be opened yet).
 func reward_locked(i: int) -> bool:
 	return Arenas.locked(_w, i)
 
 
-## v0.5.5 AR: the sealed arenas (Arenas.read: active, rooms, overrun, cleared, sealed, overrun_sealed, wave, waves,
+## The sealed arenas (Arenas.read: active, rooms, overrun, cleared, sealed, overrun_sealed, wave, waves,
 ## alive, next_wave_tick, sealed_tick, clear_tick, last_cleared).
 func arenas() -> Dictionary:
 	return Arenas.read(_w)
 
 
-## v0.5.5 AR: the barriers of the sealed arena now (centre and half extents, axis-aligned), for the door views.
+## The barriers of the sealed arena now (centre and half extents, axis-aligned), for the door views.
 func arena_barriers() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	for o in _w.arenas.barriers:
@@ -1783,7 +1898,7 @@ func arena_barriers() -> Array[Rect2]:
 
 
 ## The gate the hero went into (the Deep gate once it was taken, else the gate): its centre and facing.
-## v0.8.0 P2: the Loop device once it was taken.
+## The Loop device once it was taken.
 func entered_portal_pos() -> Vector2:
 	if ascension_choice() == ASCEND_LOOP:
 		return loop_device_pos()
@@ -1796,7 +1911,7 @@ func entered_portal_angle() -> int:
 	return deep_portal_angle() if route_taken() == Routes.Route.DEEP else portal_angle()
 
 
-# --- Bosses (v0.3.0 C) --------------------------------------------------------------------------------------
+# --- Bosses --------------------------------------------------------------------------------------
 static func is_boss_kind(kind: int) -> bool:
 	return BossAi.is_boss_kind(kind)
 
@@ -1815,7 +1930,7 @@ func boss_door_depth(p: Vector2) -> float:
 	return _w.floor_layout.boss_door_depth(p) if _w.floor_layout != null else 0.0
 
 
-## v0.9.5 PF3: kind masks (kind -> 1), built once from the sim's own predicates, so a view asks "is any boss / elite
+## Kind masks (kind -> 1), built once from the sim's own predicates, so a view asks "is any boss / elite
 ## here?" with one table lookup per actor instead of a chain of calls (read-only; no sim state).
 static func _build_masks() -> void:
 	var n: int = ActorStore.Kind.values().max() + 1
@@ -1867,6 +1982,131 @@ func any_telegraph() -> bool:
 	)
 
 
+## The actors telegraph(i) can be non-empty for (winding up, acting, or a Mine Layer), ascending: every other
+## actor's telegraph is {}. A view walks these instead of asking every actor; the search runs in the engine's array
+## code, so a horde with few windups costs few steps.
+func telegraph_indices() -> PackedInt32Array:
+	var a := _w.actors
+	var out := PackedInt32Array()
+	_append_indices(a.state, EnemyAi.State.WINDUP, out)
+	_append_indices(a.state, EnemyAi.State.ACTIVE, out)
+	var i := a.kinds.find(ActorStore.Kind.MINE_LAYER)
+	while i >= 0:
+		if a.state[i] != EnemyAi.State.WINDUP and a.state[i] != EnemyAi.State.ACTIVE:
+			out.append(i)
+		i = a.kinds.find(ActorStore.Kind.MINE_LAYER, i + 1)
+	out.sort()
+	return out
+
+
+## The actors in `state` (actor_state's raw value, not the latched one), ascending.
+func indices_in_state(state: int) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	_append_indices(_w.actors.state, state, out)
+	return out
+
+
+## The actors other than the player (index 0) that carry a status any_status(i) is true for, ascending. A column
+## with no stacks at all is skipped whole, so a fight without statuses costs one count per column.
+func status_indices() -> PackedInt32Array:
+	var a := _w.actors
+	var n := a.size()
+	var out := PackedInt32Array()
+	var cols: Array[PackedInt32Array] = []
+	for col: PackedInt32Array in [
+		a.burn_stacks, a.shock_stacks, a.bleed_stacks, a.frost_stacks, a.poison_stacks, a.frozen_t
+	]:
+		if col.count(0) < col.size():
+			cols.append(col)
+	if cols.is_empty() or n < 2:
+		return out
+	var mark := PackedByteArray()
+	mark.resize(n)
+	for col in cols:
+		for i in range(1, mini(n, col.size())):
+			if col[i] > 0:
+				mark[i] = 1
+	var k := mark.find(1)
+	while k >= 0:
+		out.append(k)
+		k = mark.find(1, k + 1)
+	return out
+
+
+## The actors other than the player that burn or are frozen (burn_stacks(i) > 0 or actor_frozen(i)), ascending.
+func burn_or_frozen_indices() -> PackedInt32Array:
+	var a := _w.actors
+	var out := PackedInt32Array()
+	var burn := a.burn_stacks.count(0) < a.burn_stacks.size()
+	var frozen := a.frozen_t.count(0) < a.frozen_t.size()
+	if not burn and not frozen:
+		return out
+	for i in range(1, a.size()):
+		if (burn and a.burn_stacks[i] > 0) or (frozen and a.frozen_t[i] > 0):
+			out.append(i)
+	return out
+
+
+## The actors other than the player whose kind is one of `kinds`, ascending (a view that draws a few kinds walks
+## these instead of every actor).
+func indices_of_kinds(kinds: Array) -> PackedInt32Array:
+	var col := _w.actors.kinds
+	var out := PackedInt32Array()
+	for kind: int in kinds:
+		var i := col.find(kind, 1)
+		while i >= 0:
+			out.append(i)
+			i = col.find(kind, i + 1)
+	if kinds.size() > 1:
+		out.sort()
+	return out
+
+
+## The actors other than the player that carry a core (actor_core(i) is that core's card), ascending.
+func core_indices() -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for id in _w.cores.ids:
+		var i := _w.actors.index_of(id)
+		if i >= 1 and not out.has(i):
+			out.append(i)
+	out.sort()
+	return out
+
+
+## Every actor's id, by index (a copy: the caller may keep it past the tick).
+func actor_ids() -> PackedInt32Array:
+	return _w.actors.ids.duplicate()
+
+
+## Every actor's x and y on the plane, by index (copies; actor_pos(i) is Vector2(xs[i], ys[i])).
+func actor_xs() -> PackedFloat32Array:
+	return _w.actors.pos_x.duplicate()
+
+
+func actor_ys() -> PackedFloat32Array:
+	return _w.actors.pos_y.duplicate()
+
+
+## Every projectile's id and place, by index (copies; projectile_pos(i) is Vector2(xs[i], ys[i])).
+func projectile_ids() -> PackedInt32Array:
+	return _w.projectiles.ids.duplicate()
+
+
+func projectile_xs() -> PackedFloat32Array:
+	return _w.projectiles.pos_x.duplicate()
+
+
+func projectile_ys() -> PackedFloat32Array:
+	return _w.projectiles.pos_y.duplicate()
+
+
+static func _append_indices(col: PackedInt32Array, value: int, out: PackedInt32Array) -> void:
+	var i := col.find(value)
+	while i >= 0:
+		out.append(i)
+		i = col.find(value, i + 1)
+
+
 ## The actor index of the first live boss, or -1 (the boss bar shows it).
 func boss_index() -> int:
 	if not any_boss():
@@ -1882,9 +2122,14 @@ func boss_name_key(i: int) -> StringName:
 	return BossAi.table_of(_w, i).name_key
 
 
-## v0.5.5 DS (D7): 0..1000, how far boss i's phase gate has run (0 when it isn't in one; BossGates).
+## 0..1000, how far boss i's phase gate has run (0 when it isn't in one; BossGates).
 func boss_gate_permille(i: int) -> int:
 	return BossGates.progress(_w, i)
+
+
+## True while boss i is stunned by a broken quake pillar (it takes more damage meanwhile).
+func boss_stunned(i: int) -> bool:
+	return BossQuake.stunned(_w, i)
 
 
 func boss_in_gate(i: int) -> bool:
@@ -1907,7 +2152,7 @@ func boss_move(i: int) -> int:
 	return atk.move if atk != null else -1
 
 
-## v0.8.0 BA: the timing of boss i's attack in progress, for its animation clip (the strike pose lands on the first
+## The timing of boss i's attack in progress, for its animation clip (the strike pose lands on the first
 ## active tick): Vector4i(windup ticks, active ticks, recover ticks, the ticks between strikes when it strikes more
 ## than once (a `marks` or `row_lanes` attack's later markers), else 0); Vector4i.ZERO with no attack.
 func boss_attack_ticks(i: int) -> Vector4i:
@@ -1915,7 +2160,7 @@ func boss_attack_ticks(i: int) -> Vector4i:
 	if atk == null:
 		return Vector4i.ZERO
 	var gap := atk.mark_gap_ticks if atk.count > 1 and BossDodge.is_marker_move(atk.move) else 0
-	if atk.move == MOVE_COMBO:  # v0.8.0 FB1: a swing per gap, then the slam
+	if atk.move == MOVE_COMBO:  # A swing per gap, then the slam
 		gap = atk.mark_gap_ticks
 	return Vector4i(atk.windup_ticks, atk.active_ticks, atk.recover_ticks, gap)
 
@@ -1942,7 +2187,7 @@ func boss_leap(i: int) -> Array:
 	return [true, clampf(float(_w.actors.state_t[i] + 1) / atk.active_ticks, 0.0, 1.0)]
 
 
-## v0.7.5 BF1 (owner N15, "Shielded during big patterns"): boss i is shielded now (its signature pattern runs): the
+## Boss i is shielded now (its signature pattern runs): the
 ## player's hits spark off it. For the shell view and the avatars' shield pose.
 func boss_shielded(i: int) -> bool:
 	return BossDodge.shielded(_w, i)
@@ -1950,31 +2195,31 @@ func boss_shielded(i: int) -> bool:
 
 ## v0.8.0 N4 (owner O56: "if your boss has a shield you have to break before you can hurt it again, make the bar say
 ## so"): no hit can hurt boss i now: its invulnerable ticks run (the rise, a phase gate, a leap or burrow, a mimic's
-## dash), its signature pattern's shield is up (boss_shielded), or it stands in a gate or a final shatter. The boss
+## dash), its signature pattern's shield is up (boss_shielded), or it stands in a gate or a final shatter (v0.11.0
+## Never the Lantern Shade's dark, which only cuts the damage: boss_light_permille). The boss
 ## bar's invulnerable look. A read only (Damage decides; this mirrors its checks).
 func boss_invulnerable(i: int) -> bool:
 	var s := _w.actors.state[i]
 	return (
 		_w.actors.invuln[i] > 0
 		or BossDodge.shielded(_w, i)
-		or BossShade.unlit(_w, i)  # v0.9.0 NB4: a Lantern Shade in the dark
 		or s == BossAi.GATE
 		or s == FinalBoss.SHATTER
 		or s == BossInterphase.STATE
-	)  # v0.9.5 BH6: the Fallen, vanished
+	)  # The Fallen, vanished
 
 
-## v0.8.0 N4: the shields boss i still has to pass before it can fall, derived from sim state (no store counts
+## The shields boss i still has to pass before it can fall, derived from sim state (no store counts
 ## shields): its phase gates still to come (each an invulnerable transition). 0 in its last phase. A final boss's
 ## body counts its own gates only (owner O59: nothing on the bar hints how many bodies remain).
 func boss_shields_left(i: int) -> int:
 	var t := BossAi.table_of(_w, i)
 	if t.rotation:
-		return 0  # v0.10.5 O3: a spell-rotation body (the Prism) opens no gate (BossGates.begin): no phase is a shield
+		return 0  # A spell-rotation body (the Prism) opens no gate (BossGates.begin): no phase is a shield
 	return maxi(0, t.phase_threshold.size() - 1 - boss_phase(i))
 
 
-## v0.8.0 N4 (owner O56: "The bosses should have one full bar and refill when changing phases"): boss i's HP within
+## Boss i's HP within
 ## its current phase, 0..1000: full at the phase's start (its threshold of max HP), empty at the next phase's
 ## threshold (or 0 in the last phase). The boss bar shows one full bar per phase from it.
 func boss_phase_permille(i: int) -> int:
@@ -1987,24 +2232,26 @@ func boss_phase_permille(i: int) -> int:
 	return clampi((_w.actors.hp[i] - lo) * 1000 / maxi(1, hi - lo), 0, 1000)
 
 
-## v0.7.5 BF1: the bullet pattern boss i is winding up or firing: {} or {"id", "kind" (BulletPatternTable.Kind),
+## The bullet pattern boss i is winding up or firing: {} or {"id", "kind" (BulletPatternTable.Kind),
 ## "look", "shielded", "winding", "progress" 0..1000} (BossAi.pattern_state), for the avatars' poses.
 func boss_pattern(i: int) -> Dictionary:
 	return BossDodge.pattern_state(_w, i)
 
 
-## v0.7.5 BF3: the drops boss i's raining pattern (the Foundry's Slag Fountain) has in the air now, each [from, to
+## The drops boss i's raining pattern (the Foundry's Slag Fountain) has in the air now, each [from, to
 ## (sim-plane points), progress 0..1, progress a tick]; they land as fireballs where `to` is (BossDodge.rain_drops).
 func boss_rain(i: int) -> Array:
 	return BossDodge.rain_drops(_w, i)
 
 
-## v0.8.0 BS1 (owner O5, S1): the Gatekeeper's standing pillars (walls while they stand): [center, half side (m),
-## the tick it rose, the tick it sinks] each, for StoneSpikeViews.
+## The Gatekeeper's standing pillars (walls while they stand): [center, half side (m),
+## the tick it rose, the tick it sinks] each, for StoneSpikeViews (not the quake pillars).
 func boss_pillars() -> Array:
 	var out := []
 	var bs := _w.bosses
 	for k in bs.pillar_x.size():
+		if BossQuake.is_quake(bs, k):
+			continue  # Those are boss_quake_pillars
 		out.append(
 			[
 				Vector2(bs.pillar_x[k], bs.pillar_y[k]),
@@ -2016,13 +2263,34 @@ func boss_pillars() -> Array:
 	return out
 
 
-## v0.8.0 BS1 (S2): the javelins boss i has stuck in the floor: [at, angle out (1/4096 turns), the tick it stuck,
+## The Gatekeeper's standing quake pillars (walls too), each BossQuake.ring_state: its
+## centre, half side, its ring's radius and growth before each pulse, its pulse clock (QuakePillarViews).
+func boss_quake_pillars() -> Array:
+	return BossQuake.view(_w)
+
+
+## The javelins boss i has stuck in the floor: [at, angle out (1/4096 turns), the tick it stuck,
 ## the tick it flies back] each (BossSignatures.javelins_of).
 func boss_javelins(i: int) -> Array:
 	return BossSignatures.javelins_of(_w, i)
 
 
-## v0.8.0 BS1 (S2): boss i's recall, for its pull: 0..1000 from its first javelin sticking to their flight back
+## Boss i's great javelin for its view, or {} (BossGreatJavelin.view).
+func boss_great_javelin(i: int) -> Dictionary:
+	return BossGreatJavelin.view(_w, i)
+
+
+## The embedded great javelins' quake rings, for StoneSpikeViews (BossGreatJavelin.quake_rings).
+func boss_javelin_quakes() -> Array:
+	return BossGreatJavelin.quake_rings(_w)
+
+
+## The recall line of boss i's great javelin, a telegraph for TelegraphViews, or {} (BossGreatJavelin).
+func boss_javelin_recall_line(i: int) -> Dictionary:
+	return BossGreatJavelin.recall_line(_w, i)
+
+
+## Boss i's recall, for its pull: 0..1000 from its first javelin sticking to their flight back
 ## (1000 on that tick), or -1 with none stuck.
 func boss_recall_permille(i: int) -> int:
 	var from := 1 << 30
@@ -2035,31 +2303,31 @@ func boss_recall_permille(i: int) -> int:
 	return clampi((_w.tick - from) * 1000 / maxi(1, back - from), 0, 1000)
 
 
-## v0.8.0 BS1 (S3): actor i is a Brood Mother's egg: its time to hatch or burst 0..1000 (1000 bursting), else -1.
+## Actor i is a Brood Mother's egg: its time to hatch or burst 0..1000 (1000 bursting), else -1.
 func actor_egg_permille(i: int) -> int:
 	return BossSignatures.egg_permille(_w, i)
 
 
-## v0.8.0 BS2 (owner O5, S4): boss i's Gaze: {} or {"winding", "progress", "from", "to", "angle", "half_width",
+## Boss i's Gaze: {} or {"winding", "progress", "from", "to", "angle", "half_width",
 ## "way", "hit"} (BossGaze.state): the eye brightening and its thin aim line in the windup, then the beam.
 func boss_gaze(i: int) -> Dictionary:
 	return BossGaze.state(_w, i)
 
 
-## v0.9.0 NB1 (BOSSES_4_5.md N1): boss i's tide: {} or {"phase" (TIDE_NONE while its bell rings in the windup,
+## BOSSES_4_5.md N1: boss i's tide: {} or {"phase" (TIDE_NONE while its bell rings in the windup,
 ## TIDE_PULL, TIDE_PUSH), "windup", "progress" (0..1000 of that part), "speed" (m/s), "centre"} (BossTide.state).
 func boss_tide(i: int) -> Dictionary:
 	return BossTide.state(_w, i)
 
 
-## v0.9.5 BH4 (BOSSES_HARD.md T3): the Tidecaller's crossing waves on the floor, each {"boss", "wall" (0 north .. 3
+## BOSSES_HARD.md T3: the Tidecaller's crossing waves on the floor, each {"boss", "wall" (0 north.. 3
 ## west), "dir", "start", "pos", "length", "thick", "telegraph" (0..1000 as a foam line, -1 once it moves),
 ## "progress" (0..1000 of its run), "hit", "formed"} (BossStream.state).
 func boss_waves() -> Array[Dictionary]:
 	return BossStream.state(_w)
 
 
-## v0.9.0 NB2 (BOSSES_4_5.md N2): Warden body i's pair: {} for any other actor; else "lead" (the boss's body),
+## BOSSES_4_5.md N2: Warden body i's pair: {} for any other actor; else "lead" (the boss's body),
 ## "partner" (the other's index), "angry", "anger" (0..1000 left), "chain" ([] or [from, to]), "hot" (it burns),
 ## "lifted" (the Chain Sweep has it), "burned" (ticks since it last burned the player, -1 none); in a Crossfire "safe",
 ## "gap" ([from, to]), "progress", "firing"; the boss's Chain Sweep "sweep" {from, to, half_width, locked, progress,
@@ -2070,7 +2338,7 @@ func boss_twin(i: int) -> Dictionary:
 	return BossTwin.state(_w, i)
 
 
-## v0.9.0 NB3 (BOSSES_4_5.md N3): the Clockwork Judge i's echo: {} for any other actor; else "recording" (0..1000),
+## BOSSES_4_5.md N3: the Clockwork Judge i's echo: {} for any other actor; else "recording" (0..1000),
 ## "trail" (the points recorded), "phase" (ECHO_NONE, ECHO_SHOW, ECHO_REPLAY), and while an echo runs "progress",
 ## "t", "windup", "gap", "radius", "path" ([{pos, k, at, struck}]); a Verdict winding up "verdict" {center, half,
 ## locked, progress} (BossJudge.state).
@@ -2080,23 +2348,33 @@ func boss_echo(i: int) -> Dictionary:
 	return BossJudge.state(_w, i)
 
 
-## v0.9.0 NB4 (BOSSES_4_5.md N4): the Lantern Shade's light: {} with no Shade; else "dark", "falling" (0..1000 to
+## BOSSES_4_5.md N4: the Lantern Shade's light: {} with no Shade; else "dark", "falling" (0..1000 to
 ## the next Lights Out's dark, -1 none), "dark_left" (NB4b: ticks until the dark lifts, -1 none), "light_m" (the
 ## player's circle), "lamp_m", "lamp_ticks", "lamps" ([{pos, lit, left, frac}]), "boss" (its actor index) and
-## "boss_lit" (hittable) (BossShade.state).
+## "boss_lit" (its damage taken not cut by the dark), v0.11.0 O4: "light_left" (ticks until the dark falls again, -1
+## none) and "boss_mult" (BossShade.state).
 func boss_light() -> Dictionary:
 	return BossShade.state(_w)
 
 
-## v0.8.0 FB2 (FINAL_BOSS.md F5): boss i's Cross: {} or {"winding", "window", "progress", "arms" ([from, to, hit] per
+## The per-mille of a hit boss i takes from the room's light now (the Lantern Shade: 400 in
+## the dark, 1500 in a lit lantern's pool; 1000 otherwise and for every other boss). The boss bar's dim/bright tag; the
+## same function Damage applies (BossShade.light_permille).
+func boss_light_permille(i: int) -> int:
+	if i < 0 or i >= _w.actors.size():
+		return 1000
+	return BossShade.light_permille(_w, i)
+
+
+## FINAL_BOSS.md F5: boss i's Cross: {} or {"winding", "window", "progress", "arms" ([from, to, hit] per
 ## beam), "angle", "half_width", "way", "quarter", "speed", "bolt" ({} or {"from", "to", "angle", "progress",
 ## "shard"})} (BossPrism.state): the spin-up's aim lines, the turning beams, the window, the bolt's aim line.
-## v0.8.0 PR (O84): no "orb_shard" (a Cross fires no orbs).
+## No "orb_shard" (a Cross fires no orbs).
 func boss_cross(i: int) -> Dictionary:
 	return BossPrism.state(_w, i)
 
 
-## v0.8.0 FB2: boss i's orbiting shards' places now (empty for a body without shards).
+## Boss i's orbiting shards' places now (empty for a body without shards).
 func boss_shards(i: int) -> PackedVector2Array:
 	if i < 0 or i >= _w.actors.size() or not BossAi.is_boss_kind(_w.actors.kinds[i]):
 		return PackedVector2Array()
@@ -2105,7 +2383,7 @@ func boss_shards(i: int) -> PackedVector2Array:
 	return BossPrism.shards(_w, i)
 
 
-## v0.10.5 O3 (owner L6; O3_PRISM.md): boss i's Facet Lances: {} or {"winding", "progress", "half_width", "rims",
+## Boss i's Facet Lances: {} or {"winding", "progress", "half_width", "rims",
 ## "lances" ([{"k", "phase", "progress", "from", "to"}])} (BossPrismLast.state).
 func boss_lances(i: int) -> Dictionary:
 	if not _is_boss(i):
@@ -2113,7 +2391,7 @@ func boss_lances(i: int) -> Dictionary:
 	return BossPrismLast.state(_w, i)
 
 
-## v0.10.5 O3: boss i's Shattered Kneel: {} or {"stage", "progress", "crack", "burst_tick", "range"}
+## Boss i's Shattered Kneel: {} or {"stage", "progress", "crack", "burst_tick", "range"}
 ## (BossPrismLast.kneel_state).
 func boss_kneel(i: int) -> Dictionary:
 	if not _is_boss(i):
@@ -2130,7 +2408,7 @@ func _is_boss(i: int) -> bool:
 	)
 
 
-## v0.8.0 FB3 (FINAL_BOSS.md F6, F7): the Nemesis (boss i, a mimic body) for the views: {} or {"weapon", "stance",
+## FINAL_BOSS.md F6, F7: the Nemesis (boss i, a mimic body) for the views: {} or {"weapon", "stance",
 ## "dashing", "dash_dir", "echo", "mirror", "hit", "hit_cap", "cards" (each {"code", "level", "card_id", "arc",
 ## "arc_half", "arc_reach_m", "arc_strikes", "volley", "shots", "circle", "back", "split", "look", "blast", "blast_m"}),
 ## "casting" (the card index it casts now, -1 none), "cast_progress"} (BossNemesis.state).
@@ -2142,16 +2420,7 @@ func nemesis(i: int) -> Dictionary:
 	return BossNemesis.state(_w, i)
 
 
-## v0.8.0 FB2 (F7): the final fight's measured damage per second (the meter's last `seconds`, at most what it holds)
-## in thousandths, and how many seconds that is: [dps × 1000, seconds] ([0, 0] outside the fight).
-func final_dps(seconds: int = FinalFight.DPS_SECONDS) -> PackedInt32Array:
-	if _w.final_fight == null:
-		return PackedInt32Array([0, 0])
-	var m := _w.final_fight.measured(seconds)
-	return PackedInt32Array([m[0] * 1000 / maxi(1, m[1]) if m[1] > 0 else 0, m[1]])
-
-
-## v0.8.0 BS2 (S6): the Foundry's molten floor down now: [rect (sim plane), the tick it was laid, the tick it cools]
+## The Foundry's molten floor down now: [rect (sim plane), the tick it was laid, the tick it cools]
 ## each.
 func boss_lava() -> Array:
 	var out := []
@@ -2161,7 +2430,14 @@ func boss_lava() -> Array:
 	return out
 
 
-## v0.8.0 BS2 (S6): the meltdowns, each {"centre", "radius" (molten beyond it; INF while it only glows: the melt
+## The bosses' arena hazards, each {"id", "look" (lava, venom, rock), "centre",
+## "radius", "armed", "warn" (0..1000 of its warning; 1000 armed), "armed_ticks" (how long armed), "left" (ticks to
+## its end)}. The view reads only this (EI-07).
+func boss_hazards() -> Array:
+	return BossHazard.rows(_w)
+
+
+## The meltdowns, each {"centre", "radius" (molten beyond it; INF while it only glows: the melt
 ## attack's windup), "next" (the radius it melts to next), "warn" (0..1000 while the next step glows, else -1),
 ## "bound" (the room, Rect2), "bridge" (bool), "exit" (the bridge's far end), "half" (its half width)}.
 func boss_melts() -> Array:
@@ -2198,7 +2474,7 @@ func final_fight() -> bool:
 	return _w.final_fight != null
 
 
-## The world is the final arena (the run's last world: the fight and its arrival; v0.9.0 FA: and its approach).
+## The world is the final arena (the run's last world: the fight and its arrival; and its approach).
 func final_arena() -> bool:
 	return (_w.final_fight != null or _w.approach != null) and _w.boss_flow != null
 
@@ -2240,7 +2516,7 @@ func final_shattering() -> bool:
 	return FinalBoss.shattering(_w)
 
 
-## v0.9.5 BH6 (BOSSES_HARD.md HC4, HC5): the Fallen's interphase while it is vanished or returning, else {}: "stage"
+## BOSSES_HARD.md HC4, HC5: the Fallen's interphase while it is vanished or returning, else {}: "stage"
 ## (2 vanished, 3 returning), "set" (0 rays, 1 rain, 2 lights out), "t", "ticks", "center", "radius", "beams", "erupts",
 ## "lines", "points", "ret" (BossInterphase.state).
 func final_interphase() -> Dictionary:
@@ -2250,11 +2526,6 @@ func final_interphase() -> Dictionary:
 ## The final fight's centre (where the first body rose; the Fallen slams back down here).
 func final_home() -> Vector2:
 	return _w.final_fight.home if _w.final_fight != null else Vector2.ZERO
-
-
-## The Fallen's interphases that have begun (a bitmask: bit 0 the first) and the one running now (0 none).
-func final_interphases_done() -> int:
-	return _w.final_fight.ip_done if _w.final_fight != null else 0
 
 
 ## The last body fell (the fight is won).
@@ -2294,11 +2565,6 @@ func approach_pylon_lit(k: int) -> bool:
 ## How many pylons are on.
 func approach_pylons_lit() -> int:
 	return _w.approach.lit_count() if _w.approach != null else 0
-
-
-## The tick pylon k was switched on (-1 not yet).
-func approach_pylon_tick(k: int) -> int:
-	return _w.approach.lit_tick[k] if _w.approach != null else -1
 
 
 ## The unlit pylon the interact press would switch on now, or -1 (the HUD's prompt).
@@ -2354,12 +2620,7 @@ func approach_causeway_half_width() -> float:
 	return _w.floor_layout.causeway_half_w if _w.approach != null else 0.0
 
 
-## The tick the current body began (its rise).
-func final_phase_tick() -> int:
-	return _w.final_fight.phase_tick if _w.final_fight != null else -1
-
-
-## v0.8.0 N2 (owner O41, O42, O52; FinalPace.state): the current body's pace and The Fallen's mimic window: {} outside a
+## The current body's pace and The Fallen's mimic window: {} outside a
 ## final fight, else {"paced" (its HP set from the meter), "dps" (the measured damage per second it was set from),
 ## "seconds" (how long it lasts at that rate), "budget" (the damage it may take now: the rate cap's bucket), "capped"
 ## (the bucket is empty: hits land for nothing until it refills), "window" (FinalPace.Mimic: OFF, WARN, ON),
@@ -2374,7 +2635,7 @@ func final_pace() -> Dictionary:
 	return out
 
 
-## v0.8.0 N2: The Fallen's mimic window now (FinalPace.Mimic: 0 off, 1 the warning, 2 on).
+## The Fallen's mimic window now (FinalPace.Mimic: 0 off, 1 the warning, 2 on).
 func fallen_window() -> int:
 	return FinalPace.window(_w) if _w.final_fight != null else FALLEN_OFF
 
@@ -2384,7 +2645,7 @@ func killer_cause_key() -> StringName:
 	return BossAi.cause_key(_w)
 
 
-# --- Boss challenge (v0.3.0 BX) ----------------------------------------------------------------------------------
+# --- Boss challenge ----------------------------------------------------------------------------------
 ## How far boss i has risen, 0..1000: state ticks over BossAi.INTRO_TICKS while it rises, then 1000 (L22: the boss
 ## bar fills over exactly this).
 func boss_intro_permille(i: int) -> int:
@@ -2412,18 +2673,14 @@ func boss_arena_band() -> Dictionary:
 	return BossChallenge.band(_w)
 
 
-# --- Rewards (v0.3.0 E) -------------------------------------------------------------------------------------
+# --- Rewards -------------------------------------------------------------------------------------
 func shards() -> int:
 	return _w.shards
 
 
-## v0.5.5 EC (owner Q-S4): shards the portal left behind on the way to this floor (half of the unspent ones).
+## Shards the portal left behind on the way to this floor (half of the unspent ones).
 func shards_left_behind() -> int:
 	return _w.shards_left_behind
-
-
-func item_rarity(item_index: int) -> int:
-	return _w.item_tables[item_index].rarity
 
 
 func reward_count() -> int:
@@ -2438,12 +2695,12 @@ func reward_pos(i: int) -> Vector2:
 	return _w.rewards.pos(i)
 
 
-## REWARD_ALTAR, REWARD_CHEST or (v0.5.5 AR) REWARD_LEGENDARY.
+## REWARD_ALTAR, REWARD_CHEST or REWARD_LEGENDARY.
 func reward_kind(i: int) -> int:
 	return _w.rewards.kind[i]
 
 
-## Shards to open (0 for an altar), under the prices curse (v0.5.0 EV).
+## Shards to open (0 for an altar), under the prices curse.
 func reward_price(i: int) -> int:
 	return Rewards.price_of(_w, i)
 
@@ -2478,13 +2735,13 @@ func choice_items() -> PackedInt32Array:
 	return _w.rewards.offer_of(i) if i >= 0 else PackedInt32Array()
 
 
-## v0.8.0 N8 (owner O62): what taking card `code` changes, old → new (CardForecast: the take's own steps; on the
+## What taking card `code` changes, old → new (CardForecast: the take's own steps; on the
 ## open choice's reward).
 func card_forecast(code: int) -> Dictionary:
 	return CardForecast.of(_w, code, choice_reward())
 
 
-## v0.8.0 N7 (owner O61): the open choice is a chest's dealt card (no choice: any answer takes it).
+## The open choice is a chest's dealt card (no choice: any answer takes it).
 func choice_dealt() -> bool:
 	var i := choice_reward()
 	return i >= 0 and _w.rewards.rolled[i] == RewardStore.DEALT
@@ -2499,7 +2756,7 @@ func reward_denied_tick() -> int:
 	return _w.reward_denied_tick
 
 
-# --- Walls with thickness (v0.3.0 A) ------------------------------------------------------------------------
+# --- Walls with thickness ------------------------------------------------------------------------
 
 
 ## The generated floor's footprint, for the stage's ground: each room's cells (its thick walls and doorways
@@ -2525,13 +2782,187 @@ func player_on_ice() -> bool:
 	return IcePatches.on_ice(_w)
 
 
-## v0.7.5 NB2: which surface the floor's patches are (&"ice", Starfall's &"starglow"; &"" for none): the stage draws
+## Which surface the floor's patches are (&"ice", Starfall's &"starglow"; &"" for none): the stage draws
 ## each its own way. The patches themselves are ice_patch_count / ice_patch either way.
 func surface_kind() -> StringName:
 	return _w.ice.kind if _w.ice != null else &""
 
 
-# --- Engines and combos (v0.3.0 G) --------------------------------------------------------------------------
+# --- The biome variants (v0.11.0 O13a; Variants) ----------------------------------------------------------------
+## The body an actor kind is drawn with: a biome variant's base (the Rubble Warden a Warden's), else its own.
+static func body_kind(kind: int) -> int:
+	return EnemyAi.VARIANT_BASE.get(kind, kind)
+
+
+## Whether projectile i is a Dim Needle's shot still dark (farther than its dark distance from the hero).
+func projectile_dark(i: int) -> bool:
+	return Variants.shot_dark(_w, i)
+
+
+## Whether actor i is a Rubble Warden still in its crust.
+func crust_on(i: int) -> bool:
+	return Variants.crust_on(_w, i)
+
+
+## The variants' trails now: {"kind": PackedInt32Array (TRAIL_FIRE / TRAIL_SLICK / TRAIL_RUBBLE), "pos":
+## PackedVector2Array, "r":
+## PackedFloat32Array, "age" and "left": PackedInt32Array (ticks since dropped, ticks until it goes), "lit":
+## PackedByteArray (1: fire that burns now), "seed": PackedInt32Array (the dropping charger's id x 4096 + its tick)}.
+func variant_trails() -> Dictionary:
+	var v := _w.variants
+	var out := {
+		"kind": PackedInt32Array(),
+		"pos": PackedVector2Array(),
+		"r": PackedFloat32Array(),
+		"age": PackedInt32Array(),
+		"left": PackedInt32Array(),
+		"lit": PackedByteArray(),
+		"seed": PackedInt32Array(),
+	}
+	for k in v.trail_count():
+		out["kind"].append(v.trail_kind[k])
+		out["pos"].append(v.trail_pos(k))
+		out["r"].append(v.trail_r[k])
+		out["age"].append(_w.tick - v.trail_born[k])
+		out["left"].append(v.trail_until[k] - _w.tick)
+		out["lit"].append(1 if Variants.burning(_w, k) else 0)
+		out["seed"].append(v.trail_owner[k] * 4096 + v.trail_born[k] % 4096)
+	return out
+
+
+# --- The Ruins and Night Rocks signatures (v0.11.0 O13b; RuinsRocks) --------------------------------------------
+## The Wire Weavers' live cables: [end a (Vector2), end b (Vector2), ticks live (int), the Weaver's id (int)] each.
+func cables() -> Array:
+	var s := _w.ruins_rocks
+	var out := []
+	for k in s.cable_count():
+		var ends := RuinsRocks.cable_ends(_w, k)
+		if not ends.is_empty():
+			out.append([ends[0], ends[1], _w.tick - s.cable_born[k], s.cable_owner[k]])
+	return out
+
+
+## The Stone Throwers' rocks standing: [centre (Vector2), half side (float), ticks left (int)] each.
+func thrown_rocks() -> Array:
+	var s := _w.ruins_rocks
+	var out := []
+	for k in s.rock_count():
+		out.append([Vector2(s.rock_x[k], s.rock_y[k]), s.rock_half[k], s.rock_until[k] - _w.tick])
+	return out
+
+
+## Whether actor i is a Rock Lurker still waiting as a boulder, and whether it hears the hero (its rumble).
+func lurker_hidden(i: int) -> bool:
+	return RuinsRocks.hidden(_w, i)
+
+
+func lurker_rumbling(i: int) -> bool:
+	return RuinsRocks.rumbling(_w, i)
+
+
+## Whether actor i is a Scrap Hound stopped by a hit (its yelp).
+func hound_yelped(i: int) -> bool:
+	return RuinsRocks.yelped(_w, i)
+
+
+## Stone Thrower i's rock in flight: 0..1000 of the way (-1: none in the air), from its hands to where it lands.
+func thrower_flight(i: int) -> int:
+	return RuinsRocks.flight_permille(_w, i)
+
+
+func thrower_target(i: int) -> Vector2:
+	return Vector2(_w.actors.lock_x[i], _w.actors.lock_y[i])
+
+
+## Stone Thrower i's timing (ticks) for its animation: the lift (WINDUP), the throw (ACTIVE: the flight
+## and its landing tick), the recovery.
+func thrower_ticks(i: int) -> Vector3i:
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	return Vector3i(t.windup_ticks, t.flight_ticks + 1, t.recover_ticks)
+
+
+# --- The Red Canyon's and the Frozen Shore's signature enemies (v0.11.0 O13c; CanyonShore) --------------------
+## Cinder Priest i's vent's pulse now (0..1000, CanyonShore.vent_pulse; 0: no vent, or outside its warning): its
+## staff keeps time with it.
+func priest_pulse(i: int) -> int:
+	var k := _w.canyon_shore.vent_of(_w.actors.ids[i])
+	return CanyonShore.vent_pulse(_w, k) if k >= 0 else 0
+
+
+## Whether actor i is a Glacier Turtle whose shell still stands.
+func shell_on(i: int) -> bool:
+	return CanyonShore.shell_on(_w, i)
+
+
+## The Kiln Beetles' bursts waiting: [centre (Vector2), radius (float), progress 0..1000 toward the blow, seed] each.
+## The seed is stable for a burst's whole life: its birth tick * 64 + its ordinal among the bursts born that tick
+## (one delay for the kind, so they blow together and removing earlier ones never shifts it; the array index would).
+func kiln_bursts() -> Array:
+	var s := _w.canyon_shore
+	var out := []
+	var ordinal := 0
+	for k in s.burst_count():
+		ordinal = ordinal + 1 if k > 0 and s.burst_born[k] == s.burst_born[k - 1] else 0
+		var span := maxi(1, s.burst_due[k] - s.burst_born[k])
+		out.append(
+			[
+				s.burst_pos(k),
+				s.burst_r[k],
+				clampi((_w.tick - s.burst_born[k]) * 1000 / span, 0, 1000),
+				s.burst_born[k] * 64 + ordinal
+			]
+		)
+	return out
+
+
+## The lava vents: [centre (Vector2), radius (float), pulse 0..1000 (CanyonShore.vent_pulse; 0: none), ticks since its
+## last eruption (-1: none yet), whether a living priest keeps it, its priest's id] each.
+func lava_vents() -> Array:
+	var s := _w.canyon_shore
+	var out := []
+	for k in s.vent_count():
+		out.append(
+			[
+				s.vent_pos(k),
+				s.vent_r[k],
+				CanyonShore.vent_pulse(_w, k),
+				_w.tick - s.vent_last[k] if s.vent_last[k] >= 0 else -1,
+				s.vent_until[k] < 0,
+				s.vent_owner[k]
+			]
+		)
+	return out
+
+
+## The Frost Spitters' blobs in the air: [from, to (Vector2), slick radius (float), progress 0..1000 of the flight,
+## seed] each.
+func ice_blobs() -> Array:
+	var s := _w.canyon_shore
+	var out := []
+	for k in s.blob_count():
+		var span := maxi(1, s.blob_land[k] - s.blob_born[k])
+		out.append(
+			[
+				Vector2(s.blob_fx[k], s.blob_fy[k]),
+				Vector2(s.blob_tx[k], s.blob_ty[k]),
+				s.blob_r[k],
+				clampi((_w.tick - s.blob_born[k]) * 1000 / span, 0, 1000),
+				s.blob_born[k] * 64 + s.blob_owner[k] % 64
+			]
+		)
+	return out
+
+
+## The broken shells' ice chunks sliding: [centre (Vector2), serial] each.
+func ice_chunks() -> Array:
+	var s := _w.canyon_shore
+	var out := []
+	for k in s.chunk_count():
+		out.append([s.chunk_pos(k), s.chunk_serial[k]])
+	return out
+
+
+# --- Engines and combos --------------------------------------------------------------------------
 ## Shock, bleed and frost stacks on actor i, and whether it is frozen.
 func shock_stacks(actor_i: int) -> int:
 	return _w.actors.shock_stacks[actor_i]
@@ -2555,7 +2986,7 @@ func actor_frozen(actor_i: int) -> bool:
 	return Engines.frozen(_w, actor_i)
 
 
-## v0.9.5 PF2: actor i carries any status the status view draws (one call instead of six for the common none).
+## Actor i carries any status the status view draws (one call instead of six for the common none).
 func any_status(actor_i: int) -> bool:
 	var a := _w.actors
 	return (
@@ -2568,7 +2999,7 @@ func any_status(actor_i: int) -> bool:
 	)
 
 
-## v0.9.5 EE2: Fire's Heat sync (`fire`) or Frost's Shatter runs (the card is Lv 3): the status pip's "+" shows.
+## Fire's Heat sync (`fire`) or Frost's Shatter runs (the card is Lv 3): the status pip's "+" shows.
 func element_plus(fire: bool) -> bool:
 	return (
 		ElementLevelsFsf.level(_w, ElementLevelsFsf.FIRE if fire else ElementLevelsFsf.FROST) >= 3
@@ -2594,10 +3025,6 @@ func combos_owned() -> PackedInt32Array:
 	return _w.combos_owned
 
 
-func combo_table_count() -> int:
-	return _w.combo_tables.size()
-
-
 func combo_id(combo_index: int) -> StringName:
 	return _w.combo_tables[combo_index].id
 
@@ -2607,19 +3034,15 @@ func combo_name_key(combo_index: int) -> StringName:
 	return _w.combo_tables[combo_index].name_key
 
 
-func combo_desc_key(combo_index: int) -> StringName:
-	return _w.combo_tables[combo_index].desc_key
-
-
 ## The two item ids a combo needs.
 func combo_item_ids(combo_index: int) -> Array[StringName]:
 	var c := _w.combo_tables[combo_index]
-	if c.item_a < 0:  # v0.10.5 O1: a retired combo's stub has no halves
+	if c.item_a < 0:  # A retired combo's stub has no halves
 		return []
 	return [_w.item_tables[c.item_a].id, _w.item_tables[c.item_b].id]
 
 
-## v0.9.5 EE3 (ElementPairs): a pair's id, text keys and its two element cards (the banner), the pairs on now (bit X
+## ElementPairs: a pair's id, text keys and its two element cards (the banner), the pairs on now (bit X
 ## each), and the Toxic Fumes clouds: their centres, the radius they share and the ticks each has left.
 func pair_id(x: int) -> StringName:
 	return ElementPairs.IDS[x]
@@ -2627,10 +3050,6 @@ func pair_id(x: int) -> StringName:
 
 func pair_name_key(x: int) -> StringName:
 	return ElementPairs.name_key(x)
-
-
-func pair_desc_key(x: int) -> StringName:
-	return ElementPairs.desc_key(x)
 
 
 func pair_card_ids(x: int) -> Array[StringName]:
@@ -2641,17 +3060,17 @@ func pair_mask() -> int:
 	return _w.pair_mask
 
 
-## v0.9.5 EP4: how many element pairs there are.
+## How many element pairs there are.
 func pair_count() -> int:
 	return ElementPairs.COUNT
 
 
-## v0.9.5 EP4: pair `x`'s level 1-3 now (0 while off).
+## Pair `x`'s level 1-3 now (0 while off).
 func pair_level(x: int) -> int:
 	return ElementPairs.level(_w, x)
 
 
-## v0.9.5 EP4: the pairs taking item `item_idx` would turn on or raise, flat [x, new_level, ...].
+## The pairs taking item `item_idx` would turn on or raise, flat [x, new_level,...].
 func pair_preview(item_idx: int) -> PackedInt32Array:
 	return ElementPairs.preview(_w, item_idx)
 
@@ -2709,19 +3128,19 @@ func projectile_is_shard(i: int) -> bool:
 	return (_w.projectiles.tags[i] & SimEvent.TAG_SHRAPNEL) != 0
 
 
-func player_build() -> Dictionary:  # v0.3.0 P: PlayerBuild.read (has_blade, has_gun, facing, regenerating, ...).
+func player_build() -> Dictionary:  # PlayerBuild.read (has_blade, has_gun, facing, regenerating,...).
 	return PlayerBuild.read(_w)
 
 
-func heat_tier() -> int:  # v0.9.5 PF3: heat_state()["tier"] (TIER_COOL without heat) without building the dictionary
+func heat_tier() -> int:  # heat_state()["tier"] (TIER_COOL without heat) without building the dictionary
 	return Heat.tier_of(_w)
 
 
 func heat_state() -> Dictionary:
-	return Heat.read(_w)  # Overclock heat (v0.3.0 L18): the meter's values (Heat.read); {} without heat.
+	return Heat.read(_w)  # Overclock heat: the meter's values (Heat.read); {} without heat.
 
 
-# --- Gamble shrine (v0.3.0 L19) -----------------------------------------------------------------------------
+# --- Gamble shrine -----------------------------------------------------------------------------
 ## The floor has a gamble shrine.
 func has_gamble() -> bool:
 	return Gamble.present(_w)
@@ -2772,7 +3191,7 @@ func gamble_uses() -> int:
 	return _w.gamble_uses
 
 
-## v0.8.0 N14 (owner O72): the shrine's wins on this floor and how many it grants (the sim's own numbers), whether it
+## The shrine's wins on this floor and how many it grants (the sim's own numbers), whether it
 ## is spent (blocked), the chance a use fails (per mille) and the last failed use's tick (-1 = none).
 func gamble_wins() -> int:
 	return Gamble.wins(_w)
@@ -2784,10 +3203,6 @@ func gamble_max_wins() -> int:
 
 func gamble_spent() -> bool:
 	return Gamble.spent(_w)
-
-
-func gamble_fail_permille() -> int:
-	return Gamble.fail_permille(_w)
 
 
 func gamble_fail_tick() -> int:
@@ -2822,16 +3237,16 @@ func gamble_bonus(stat: int) -> int:
 	return Gamble.bonus(_w, stat)
 
 
-func tier_progress() -> float:  # v0.3.0 UI (L23): 0 .. <1 through the danger tier
+func tier_progress() -> float:  # 0.. <1 through the danger tier
 	if _w.spawner == null:
 		return 0.0
 	var c := _w.spawner.curve
-	if c != null:  # v0.10.5 O6: through the overtime too (CurveTable.shown_permille_at), so the bar fills smoothly
+	if c != null:  # Through the overtime too (CurveTable.shown_permille_at), so the bar fills smoothly
 		return float(c.shown_permille_at(_w.run_ticks) % 1000) / 1000.0
-	return float(_w.spawner.danger_permille(_w.run_ticks) % 1000) / 1000.0  # v0.4.0 TU: the curve's
+	return float(_w.spawner.danger_permille(_w.run_ticks) % 1000) / 1000.0  # The curve's
 
 
-# --- Minimap (v0.3.0 MM) ------------------------------------------------------------------------------------
+# --- Minimap ------------------------------------------------------------------------------------
 ## The room whose interior holds p (-1 inside a wall, a doorway, or without a floor).
 func floor_room_of(p: Vector2) -> int:
 	return _w.floor_layout.room_of(p) if _w.floor_layout != null else -1
@@ -2846,12 +3261,12 @@ func floor_portal_room() -> int:
 	return _w.floor_layout.portal_room if _w.floor_layout != null else -1
 
 
-## v0.6.1 SD: where the hero starts the floor (the player's position without a floor).
+## Where the hero starts the floor (the player's position without a floor).
 func floor_start_pos() -> Vector2:
 	return _w.floor_layout.start_pos if _w.floor_layout != null else _w.player_pos()
 
 
-## v0.6.1 SD: every open spot enemies may spawn on (the floor's per-room spots and the world's list), so the
+## Every open spot enemies may spawn on (the floor's per-room spots and the world's list), so the
 ## dressing keeps off them. Read only, for presentation.
 func spawn_spots() -> PackedVector2Array:
 	var out := PackedVector2Array(_w.spawn_points)
@@ -2884,7 +3299,7 @@ func floor_boss_door() -> int:
 	return _w.floor_layout.boss_door_index if _w.floor_layout != null else -1
 
 
-# --- Kit: Vent and Skill (v0.3.5 K) ------------------------------------------------------------------------
+# --- Kit: Vent and Skill ------------------------------------------------------------------------
 ## The build's skill for the views (PlayerSkill.read; {} without one): kind, cooldown and total, ready, running
 ## (its tick, 0 = none) and move_ticks, angle, start tick and point, the last cleave/blast (tick, where, pellet ends),
 ## and the shape numbers (half_arc, reach_m, half_cone, range_m, pellets, lunge_m).
@@ -2911,7 +3326,7 @@ func vent_cold_tick() -> int:
 	return _w.kit.cold_tick
 
 
-# --- Build (v0.4.0 BS): the four ability slots, stat cards, crit and the card offers -----------------------------
+# --- Build: the four ability slots, stat cards, crit and the card offers -----------------------------
 
 
 ## The owned abilities in slot order (Abilities.read: id, name_key, kind, auto, button, level, cooldown,
@@ -2925,64 +3340,65 @@ func ability_fx() -> Dictionary:
 	return Abilities.fx(_w)
 
 
-## v0.4.0 AB: Arc Field, Frost Nova, the fire patches and the ability combos' moments (ElementAbilities.fx).
-## A fire patch's kind in element_fx()["fire_kind"]: FIRE_NAPALM is Napalm Drone's (else Flame Trail's).
+## Arc Field, Frost Nova, the fire patches and the ability combos' moments (ElementAbilities.fx).
+## A fire patch's kind in element_fx()["fire_kind"]: ElementAbilities.FIRE_NAPALM is Napalm Drone's (else Flame
+## Trail's).
 func element_fx() -> Dictionary:
 	return ElementAbilities.fx(_w)
 
 
-## v0.4.0 AB: the Overrun room (Overrun.read: active, room, doors, inside, entered, kills, needed, cleared,
+## The Overrun room (Overrun.read: active, room, doors, inside, entered, kills, needed, cleared,
 ## clear_tick, bonus, reward_id, boosted).
 func overrun() -> Dictionary:
 	return Overrun.read(_w)
 
 
-## v0.6.0 MX2: the build (BuildSlots.read): the modifier slots in pick order (code, id, name_key, type, level), the
+## The build (BuildSlots.read): the modifier slots in pick order (code, id, name_key, type, level), the
 ## slot count (max), and the pending swap's card (swap_code, -1 for none) and source.
 func build() -> Dictionary:
 	return BuildSlots.read(_w)
 
 
-## v0.6.5 WN1 (Wand.read): the wand in slot order: the weapon (&"gun" / &"blade"), the slot count, each card (code,
+## Wand.read: the wand in slot order: the weapon (&"gun" / &"blade"), the slot count, each card (code,
 ## id, name_key, type, level, trigger: -1 or the AttackSpec.Trigger it cuts on) and the cuts (the trigger slots).
 func wand() -> Dictionary:
 	return Wand.read(_w)
 
 
-## v0.6.5 WN1 (Wand.describe): the wand's plain-words read-back as translation keys and their arguments (the Build
+## Wand.describe: the wand's plain-words read-back as translation keys and their arguments (the Build
 ## page renders it, WN2).
 func wand_read_back() -> Array[Dictionary]:
 	return Wand.describe(Wand.read(_w))
 
 
-## v0.6.5 WN2: a wand read (wand()) with the card in slot `from` moved to slot `to`: the rule the sim's reorder
+## A wand read (wand()) with the card in slot `from` moved to slot `to`: the rule the sim's reorder
 ## applies (Wand.moved_read), so the Build page's preview is the outcome it will get (EI-07).
 static func wand_moved(wand_read: Dictionary, from: int, to: int) -> Dictionary:
 	return Wand.moved_read(wand_read, from, to)
 
 
-## v0.6.5 WN2: the plain-words read-back of any wand read (Wand.describe), e.g. a preview from wand_moved.
+## The plain-words read-back of any wand read (Wand.describe), e.g. a preview from wand_moved.
 static func wand_describe(wand_read: Dictionary) -> Array[Dictionary]:
 	return Wand.describe(wand_read)
 
 
-## v0.8.0 MR (owner O91): per card of a wand read, why it can't act where it sits (Wand.flags: a translation key, or
+## Per card of a wand read, why it can't act where it sits (Wand.flags: a translation key, or
 ## &""): the tiles dim such a card and show the reason.
 static func wand_flags(wand_read: Dictionary) -> Array[StringName]:
 	return Wand.flags(wand_read)
 
 
-## v0.6.5 WN2: describe()'s lines in words (Wand.render; `translate` is the view's tr).
+## describe()'s lines in words (Wand.render; `translate` is the view's tr).
 static func wand_render(lines: Array[Dictionary], translate: Callable) -> String:
 	return Wand.render(lines, translate)
 
 
-## v0.6.5 WN2: the wand moves (pick values) that turn the card order `from` into `to` (Wand.plan_moves).
+## The wand moves (pick values) that turn the card order `from` into `to` (Wand.plan_moves).
 static func wand_plan_moves(from: PackedInt32Array, to: PackedInt32Array) -> PackedInt32Array:
 	return Wand.plan_moves(from, to)
 
 
-## v0.6.5 WN2: a wand read with its incoming card swapped in for slot `leave` and moved to `at` (Wand.swapped_read:
+## A wand read with its incoming card swapped in for slot `leave` and moved to `at` (Wand.swapped_read:
 ## the rules the sim's swap answer and reorder apply), and the picks that do it (Wand.swap_picks).
 static func wand_swapped(wand_read: Dictionary, leave: int, at: int) -> Dictionary:
 	return Wand.swapped_read(wand_read, leave, at)
@@ -2992,7 +3408,7 @@ static func wand_swap_picks(leave: int, at: int) -> PackedInt32Array:
 	return Wand.swap_picks(leave, at)
 
 
-## v0.10.5 O13 (WandForecast.of_read): the wand forecast of a wand read (wand(), or a preview from wand_moved /
+## WandForecast.of_read: the wand forecast of a wand read (wand(), or a preview from wand_moved /
 ## wand_swapped; {} = the held wand): "line" (the spell left to right) and "numbers_line" as translation keys and
 ## their arguments, and "numbers" (shots, damage, period_ticks, per_second_x10, area_mm). It compiles the wand with the
 ## sim's own compiler and writes nothing (EI-07).
@@ -3000,7 +3416,7 @@ func wand_forecast(wand_read: Dictionary = {}) -> Dictionary:
 	return WandForecast.of_read(_w, wand_read if not wand_read.is_empty() else Wand.read(_w))
 
 
-## v0.10.5 O13: a forecast's two lines in words (Wand.render; `translate` is the view's tr): [the spell, the numbers].
+## A forecast's two lines in words (Wand.render; `translate` is the view's tr): [the spell, the numbers].
 static func wand_forecast_text(forecast: Dictionary, translate: Callable) -> PackedStringArray:
 	if forecast.is_empty():
 		return PackedStringArray(["", ""])
@@ -3009,17 +3425,17 @@ static func wand_forecast_text(forecast: Dictionary, translate: Callable) -> Pac
 	return PackedStringArray([Wand.render(line, translate), Wand.render(nums, translate)])
 
 
-## v0.6.5 WN2: whether a move from slot `from` to slot `to` changes a wand of `n` cards (Wand.can_move).
+## Whether a move from slot `from` to slot `to` changes a wand of `n` cards (Wand.can_move).
 static func wand_can_move(n: int, from: int, to: int) -> bool:
 	return Wand.can_move(n, from, to)
 
 
-## v0.6.0 MX2: a swap choice is open (a new modifier with the six slots full waits for its slot or a skip).
+## A swap choice is open (a new modifier with the six slots full waits for its slot or a skip).
 func swapping() -> bool:
 	return BuildSlots.swapping(_w)
 
 
-## v0.6.0 MX2: the build's weapon (the starting weapon ability's id, &"" outside a build) and the utility pick's id.
+## The build's weapon (the starting weapon ability's id, &"" outside a build) and the utility pick's id.
 func weapon_id() -> StringName:
 	for idx in _w.ability_owned:
 		if _w.ability_tables[idx].start_weapon != 0:
@@ -3027,12 +3443,12 @@ func weapon_id() -> StringName:
 	return &""
 
 
-## v0.9.5 PF2: whether the hero holds any ability (the weapon is one of them).
+## Whether the hero holds any ability (the weapon is one of them).
 func has_abilities() -> bool:
 	return not _w.ability_owned.is_empty()
 
 
-## v0.9.5 PF2: a cheap number that changes whenever the HUD's build pips would: the wand's cards and their levels, its
+## A cheap number that changes whenever the HUD's build pips would: the wand's cards and their levels, its
 ## size, the weapon form, and the abilities held. The HUD rewrites the pips only when it changes.
 func pips_key() -> int:
 	var levels := PackedInt32Array()
@@ -3062,13 +3478,13 @@ func card_info(code: int) -> Dictionary:
 	return Offers.info(_w, code)
 
 
-## v0.10.5 W3-P10b: the Starbound cards held (Starbound.read: each card's id, picks and stacks; the room's crits and
+## The Starbound cards held (Starbound.read: each card's id, picks and stacks; the room's crits and
 ## kills, and the crit-damage and haste bonuses they give now).
 func starbound() -> Dictionary:
 	return Starbound.read(_w)
 
 
-## v0.10.5 W3-P10b: Starbound card k's numbers ({} for none): its id, reach (m), amount and cap.
+## Starbound card k's numbers ({} for none): its id, reach (m), amount and cap.
 func starbound_table(k: int) -> Dictionary:
 	var t := Starbound.table(_w, k)
 	if t == null:
@@ -3076,7 +3492,7 @@ func starbound_table(k: int) -> Dictionary:
 	return {"id": t.id, "reach_m": t.reach_m, "amount": t.amount, "cap": t.cap}
 
 
-## v0.10.5 W3-P10b (V1-V3): the recent Detonation bursts and Arc Jump jumps (kind Starbound.FX_*, start tick, from, to).
+## V1-V3: the recent Detonation bursts and Arc Jump jumps (kind Starbound.FX_*, start tick, from, to).
 func starbound_fx() -> Dictionary:
 	return {
 		"kind": _w.starbound_fx_kind.duplicate(),
@@ -3086,7 +3502,38 @@ func starbound_fx() -> Dictionary:
 	}
 
 
-## v0.9.5 TX: the Gun form fired now (the held Form card's row id: &"orbs", &"laser" ...; &"" on a Blade run), for the
+## The spells held (0: none).
+func spell_count() -> int:
+	return _w.spell_slots.size()
+
+
+## The spell slots (Spells.read: the slot count, and each held slot's spell, id, name key, element,
+## level, cooldown left and total in ticks, the tick it last cast) and the tick now.
+func spells() -> Dictionary:
+	return Spells.read(_w)
+
+
+## The recent casts (kind Spells.FX_*, tick, from, to, radius m) and the Fireballs in flight (position,
+## spell, level).
+func spell_fx() -> Dictionary:
+	return {
+		"kind": _w.spell_fx_kind.duplicate(),
+		"tick": _w.spell_fx_tick.duplicate(),
+		"from": _w.spell_fx_from.duplicate(),
+		"to": _w.spell_fx_to.duplicate(),
+		"size": _w.spell_fx_size.duplicate(),
+		"balls": _w.spell_ball_pos.duplicate(),
+		"ball_spell": _w.spell_ball_spell.duplicate(),
+		"spell": _w.spell_fx_spell.duplicate(),  # The spell each cast is (-1: none)
+	}
+
+
+## The lasting spells now (SpellZones.read: kind, spell, level, centre, radius, life left 0..1000).
+func spell_zones() -> Dictionary:
+	return SpellZones.read(_w)
+
+
+## The Gun form fired now (the held Form card's row id: &"orbs", &"laser"...; &"" on a Blade run), for the
 ## form line a Gun card shows (FormCardText).
 func attack_form_id() -> StringName:
 	return AttackSlots.form_id(_w)
@@ -3116,23 +3563,23 @@ func event_room(k: int) -> int:
 	return _w.ev.room[k]
 
 
-## v0.8.0 N17 (owner O75): the curse room's altar (a pedestal index), or -1 on a floor without a curse room.
+## The curse room's altar (a pedestal index), or -1 on a floor without a curse room.
 func event_curse_altar() -> int:
 	return _w.ev.curse_k
 
 
-## v0.8.0 N17: the curse room (a room index), or -1.
+## The curse room (a room index), or -1.
 func event_curse_room() -> int:
 	return _w.ev.room[_w.ev.curse_k] if _w.ev.curse_k >= 0 else -1
 
 
-## v0.8.0 N19 (O80): whether the curse room is a room of its own (CurseRoom.furnish; false on a floor built under
+## Whether the curse room is a room of its own (CurseRoom.furnish; false on a floor built under
 ## N17's rules, whose curse room kept its interior).
 func curse_room_furnished() -> bool:
 	return _w.floor_layout != null and _w.floor_layout.curse_room >= 0
 
 
-## v0.8.0 N19: the curse room's crystal clusters as [centre: Vector2, half side (m)] (the altar's footprint left out).
+## The curse room's crystal clusters as [centre: Vector2, half side (m)] (the altar's footprint left out).
 func curse_room_crystals() -> Array:
 	var out: Array = []
 	if _w.floor_layout == null or _w.floor_layout.curse_room < 0:
@@ -3243,7 +3690,7 @@ func event_defend_radius_m() -> float:
 	return _w.ev.rules.defend_radius_m
 
 
-## Actor i is an elite (v0.9.0 EL: one of the three archetypes).
+## Actor i is an elite (one of the three archetypes).
 func actor_elite(i: int) -> bool:
 	return EliteAi.is_elite_kind(_w.actors.kinds[i])
 
@@ -3400,7 +3847,7 @@ func shop_angle() -> int:
 	return _w.floor_layout.shop_angle if _w.floor_layout != null else 0
 
 
-## v0.8.0 SR: the shop stands in its biome's shop room, a tent stall (false: the terminal).
+## The shop stands in its biome's shop room, a tent stall (false: the terminal).
 func shop_stall() -> bool:
 	return _w.floor_layout != null and _w.floor_layout.shop_layout != &"" and Shop.present(_w)
 
@@ -3410,12 +3857,12 @@ func shop_front() -> Vector2:
 	return ShopPlacement.front(_w.floor_layout) if _w.floor_layout != null else _w.shop.pos
 
 
-## v0.8.0 SR: the shop room's layout id (&"" for the terminal).
+## The shop room's layout id (&"" for the terminal).
 func shop_layout() -> StringName:
 	return _w.floor_layout.shop_layout if _w.floor_layout != null else &""
 
 
-## v0.8.0 SR: the shop room's own pieces (the stall, its goods, sacks and lanterns) for ShopStallView.
+## The shop room's own pieces (the stall, its goods, sacks and lanterns) for ShopStallView.
 func shop_piece_count() -> int:
 	return _w.floor_layout.shop_props.size() if shop_stall() else 0
 
@@ -3486,14 +3933,6 @@ func interact_prompt_args() -> Array:
 	return Interactables.prompt_args(_w, i)
 
 
-func interactable_count() -> int:
-	return _w.interactables.size()
-
-
-func interactable_kind(i: int) -> int:
-	return _w.interactables.kind[i]
-
-
 func interactable_pos(i: int) -> Vector2:
 	return _w.interactables.pos[i]
 
@@ -3534,10 +3973,6 @@ func timed_door_angle() -> int:
 	return a if f.door_rooms[f.timed_door].x == f.timed_host else (a + 2048) % 4096
 
 
-func timed_door_slab() -> Obb:
-	return _w.floor_layout.timed_door_wall
-
-
 func timed_door_width() -> float:
 	return _w.floor_layout.door_widths[_w.floor_layout.timed_door]
 
@@ -3559,10 +3994,6 @@ func timed_timer_ticks() -> int:
 	return _w.timed.open_ticks if _w.timed != null else 0
 
 
-func timed_ticks_left() -> int:
-	return _w.timed.ticks_left(_w.tick) if _w.timed != null else 0
-
-
 ## How many times the door has opened (0: never, the secret room still unseen).
 func timed_opened() -> int:
 	return _w.timed.opened if _w.timed != null else 0
@@ -3577,7 +4008,7 @@ func timed_switch_entry(k: int) -> int:
 	return _w.timed.switches[k]
 
 
-## v0.9.5 TS: the lever inside the secret room (its registry entry, -1 without one).
+## The lever inside the secret room (its registry entry, -1 without one).
 func timed_lever_entry() -> int:
 	return _w.timed.lever if _w.timed != null else -1
 
@@ -3591,7 +4022,7 @@ func timed_host() -> int:
 	return _w.floor_layout.timed_host if _w.timed != null else -1
 
 
-## v0.9.0 TD (owner Q23: "hidden room should not appear or be visible until you open it"): the room not drawn, lit or
+## The room not drawn, lit or
 ## shown on the minimap yet (-1 none): the secret room until its door first opens.
 func hidden_room() -> int:
 	if _w.timed == null or _w.timed.opened > 0:
@@ -3599,12 +4030,7 @@ func hidden_room() -> int:
 	return _w.floor_layout.timed_room
 
 
-## The hidden room's cells in metres, grid line to grid line (Rect2() for none).
-func hidden_room_cells() -> Rect2:
-	return room_cells_rect(hidden_room())
-
-
-## v0.9.0 RA (Q23; Secrets.hidden_rooms): every secret room not drawn, lit or shown on the minimap yet (the timed door's
+## Q23; Secrets.hidden_rooms: every secret room not drawn, lit or shown on the minimap yet (the timed door's
 ## until it first opens, the rune puzzle's until it is solved), ascending by kind.
 func hidden_rooms() -> PackedInt32Array:
 	return Secrets.hidden_rooms(_w)
@@ -3680,10 +4106,6 @@ func rune_door_width() -> float:
 	return _w.floor_layout.door_widths[_w.floor_layout.rune_door]
 
 
-func rune_door_depth() -> float:
-	return _w.floor_layout.door_depths[_w.floor_layout.rune_door]
-
-
 # --- The purple runes (v0.9.0 DP; PurpleRunes) ----------------------------------------------------------------
 ## The floor has a purple-rune room: its room, its dais's spot and registry entry, whether awakened and when.
 func has_purple_runes() -> bool:
@@ -3696,10 +4118,6 @@ func purple_room() -> int:
 
 func purple_dais_pos() -> Vector2:
 	return _w.floor_layout.purple_pos if _w.purple != null else Vector2.ZERO
-
-
-func purple_dais_entry() -> int:
-	return _w.purple.entry if _w.purple != null else -1
 
 
 func purple_lit() -> bool:
@@ -3716,6 +4134,98 @@ func deep_portal_site() -> bool:
 	if has_deep_portal():
 		return true
 	return _w.purple != null and _w.floor_layout != null and _w.floor_layout.has_deep_portal
+
+
+# --- The heart room and the relics (v0.11.0 O14b; HeartRoom, Relics) ------------------------------------------------
+## The final approach holds the hidden room under the throne.
+func heart_room() -> bool:
+	return _w.heart != null and _w.floor_layout != null and _w.floor_layout.heart_room >= 0
+
+
+## Its interior, its walls (the pedestal and the slab are among them), the pedestal, the rune slab and the sealed door
+## (its centre on the far wall and the way it faces into the room).
+func heart_room_rect() -> Rect2:
+	return _w.floor_layout.rooms[_w.floor_layout.heart_room] if heart_room() else Rect2()
+
+
+func heart_walls() -> Array[Obb]:
+	var out: Array[Obb] = []
+	if heart_room():
+		var f := _w.floor_layout
+		for i in range(f.heart_wall_first, f.walls.size()):
+			out.append(f.walls[i])
+	return out
+
+
+func heart_pedestal_pos() -> Vector2:
+	return _w.floor_layout.heart_pedestal if heart_room() else Vector2.ZERO
+
+
+func heart_slab_pos() -> Vector2:
+	return _w.floor_layout.heart_slab if heart_room() else Vector2.ZERO
+
+
+func heart_door_pos() -> Vector2:
+	return _w.floor_layout.heart_door if heart_room() else Vector2.ZERO
+
+
+func heart_door_angle() -> int:
+	return _w.floor_layout.heart_door_angle if heart_room() else 0
+
+
+## The room's wall thickness, the slab's half size (along the far wall, off it) and the pedestal's half side (m).
+func heart_wall_thickness() -> float:
+	return FinalArena.WALL_HALF * 2.0
+
+
+func heart_slab_half() -> Vector2:
+	return FinalArena.HEART_SLAB_HALF
+
+
+func heart_pedestal_half() -> float:
+	return FinalArena.HEART_PEDESTAL_HALF_M
+
+
+## The relic still lies on the pedestal; the tick it was taken (-1 not here).
+func heart_relic_here() -> bool:
+	return heart_room() and _w.heart.relic_here(_w)
+
+
+## The door is sealed (N2: the remembered Crown not yet built), and the hero stands within its reach.
+func heart_door_sealed() -> bool:
+	return heart_room() and _w.heart.door == HeartRoom.Door.SEALED
+
+
+func heart_door_near() -> bool:
+	return heart_room() and Kin.length(player_pos() - heart_door_pos()) <= HeartRoom.DOOR_REACH_M
+
+
+## Relic `k` (Relics index) is held; its uses this run; the last saved blow's tick (-1 none), where it pulsed and the
+## ring's radius.
+func relic_held(k: int = Relics.CITY_HEART) -> bool:
+	return Relics.held(_w, k)
+
+
+func relic_pulse_tick() -> int:
+	return _w.relic_pulse_tick
+
+
+func relic_pulse_pos() -> Vector2:
+	return _w.relic_pulse_pos
+
+
+func relic_ring_radius(k: int = Relics.CITY_HEART) -> float:
+	var t := Relics.table(_w, k)
+	return t.ring_radius_m if t != null else 0.0
+
+
+func relic_id(k: int) -> StringName:
+	var t := Relics.table(_w, k)
+	return t.id if t != null else &""
+
+
+func relic_count() -> int:
+	return _w.relics.size()
 
 
 # --- The destructibles (v0.9.0 DX; Breakables) -----------------------------------------------------------------
@@ -3791,10 +4301,6 @@ func breakable_broken(i: int) -> bool:
 	return _w.breakables.broken[i] == 1
 
 
-func breakable_break_tick(i: int) -> int:
-	return _w.breakables.break_tick[i]
-
-
 func breakable_fuse_tick(i: int) -> int:
 	return _w.breakables.fuse_tick[i]
 
@@ -3812,7 +4318,7 @@ func barrel_radius() -> float:
 	return _w.breakables.radius_m if _w.breakables != null else 0.0
 
 
-## v0.9.0 DX (Q29b, hidden rune markings): every secret's doorway (the timed door's, the rune puzzle's, the cracked
+## Q29b, hidden rune markings: every secret's doorway (the timed door's, the rune puzzle's, the cracked
 ## wall's), each {center, angle (from the room before it into the secret room), width, depth}.
 func secret_doors() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
@@ -3853,15 +4359,6 @@ func affinity_ward() -> int:
 
 func affinity_ward_tick() -> int:
 	return _w.affinity.ward_tick if _w.affinity != null else -1
-
-
-## A2 Storm and A3 Venom: the dash shocks given and the poison jumps made on this floor.
-func affinity_shocks() -> int:
-	return _w.affinity.shocks if _w.affinity != null else 0
-
-
-func affinity_jumps() -> int:
-	return _w.affinity.jumps if _w.affinity != null else 0
 
 
 ## A4 Astral: how near (m) a secret pulses (0: off), and whether the minimap marks a secret's room once entered.
@@ -3910,7 +4407,7 @@ func has_shrines() -> bool:
 	return _w.shrine != null
 
 
-## The floor's shrine kind (SHRINE_FORTUNE, SHRINE_BLOOD, SHRINE_CHAOS; Fortune also when there is none).
+## The floor's shrine kind (ShrineTable.Kind: FORTUNE, BLOOD, CHAOS; Fortune also when there is none).
 func shrine_kind() -> int:
 	return Shrines.kind_of(_w)
 
@@ -3935,7 +4432,7 @@ func lockdown_doors(room: int) -> Array[Dictionary]:
 	return out
 
 
-## Puzzle calm (Q22): the hero stands in an unsolved puzzle's room (new packs at a quarter of the rate).
+## Puzzle calm: the hero stands in an unsolved puzzle's room (new packs at a quarter of the rate).
 func puzzle_calm() -> bool:
 	return Interactables.calm_now(_w)
 
@@ -3993,12 +4490,12 @@ func elites() -> Dictionary:
 	}
 
 
-## v0.9.0 CL: the floor holds collectibles (armed at setup; Collectibles).
+## The floor holds collectibles (armed at setup; Collectibles).
 func has_collectibles() -> bool:
 	return _w.collect != null
 
 
-## v0.9.0 CL: the floor's collectibles, one per entry: {id, source (Collectibles.Source), pos, shown_tick, taken_tick}
+## The floor's collectibles, one per entry: {id, source (Collectibles.Source), pos, shown_tick, taken_tick}
 ## (shown_tick -1: its source hasn't given it yet; taken_tick -1: not taken). Empty without any.
 func collectibles() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
@@ -4021,27 +4518,110 @@ func collectibles() -> Array[Dictionary]:
 	return out
 
 
-## v0.9.0 CL: the collectibles the hero took on this floor (their ids).
+## The collectibles the hero took on this floor (their ids).
 func collectibles_taken() -> PackedStringArray:
 	return _w.collect.taken_ids() if _w.collect != null else PackedStringArray()
 
 
-## v0.9.5 SM (Stress Mark): the sides marked on actor `i` (bits 0 up, 1 right, 2 down, 3 left on the screen).
+## Stress Mark: the sides marked on actor `i` (bits 0 up, 1 right, 2 down, 3 left on the screen).
 func stress_mask(i: int) -> int:
 	return StressMarks.mask_of(_w, i)
 
 
-## v0.9.5 SM: the radius (m) within which marks are shown, 0 without the card.
+## The radius (m) within which marks are shown, 0 without the card.
 func stress_radius_m() -> float:
 	var idx := StressMarks.card(_w)
 	return 0.0 if idx < 0 else _w.item_tables[idx].mark_radius_m
 
 
-## v0.9.5 SM: the unit vector from an enemy out to screen side `side` (0 up, 1 right, 2 down, 3 left).
+## The unit vector from an enemy out to screen side `side` (0 up, 1 right, 2 down, 3 left).
 static func stress_side_dir(side: int) -> Vector2:
 	return StressMarks.side_dir(side)
 
 
-## v0.9.5 SM: the side's angle on the sim plane (1/4096 turn).
+## The side's angle on the sim plane (1/4096 turn).
 static func stress_side_angle(side: int) -> int:
 	return StressMarks.SIDE_ANGLES[side]
+
+
+# --- v0.11.0 O9: the horde critters and their surges (Surges) ------------------------------------------------------
+## Surges begun on this floor (the HUD's line: one more each time a surge begins).
+func surges_started() -> int:
+	return Surges.started(_w)
+
+
+## True while a surge's window is open.
+func surge_running() -> bool:
+	return Surges.running(_w)
+
+
+## The floor's horde critter kind (-1: none).
+func critter_kind() -> int:
+	return _w.critter_kind
+
+
+## A horde critter kind (contact damage only).
+static func is_critter_kind(kind: int) -> bool:
+	return EnemyAi.is_critter(kind)
+
+
+# --- v0.11.0 O9c: the actor store's columns, whole (CritterCrowd reads a surge's rows straight from them: no call per
+# actor per field). Packed arrays are copy-on-write: a view reading one never changes the world's (EI-07).
+func actor_ids_column() -> PackedInt32Array:
+	return _w.actors.ids
+
+
+func actor_kinds_column() -> PackedInt32Array:
+	return _w.actors.kinds
+
+
+func actor_pos_x_column() -> PackedFloat32Array:
+	return _w.actors.pos_x
+
+
+func actor_pos_y_column() -> PackedFloat32Array:
+	return _w.actors.pos_y
+
+
+func actor_facing_column() -> PackedInt32Array:
+	return _w.actors.facing
+
+
+func actor_state_column() -> PackedInt32Array:
+	return _w.actors.state
+
+
+func actor_hp_column() -> PackedInt32Array:
+	return _w.actors.hp
+
+
+func actor_max_hp_column() -> PackedInt32Array:
+	return _w.actors.max_hp
+
+
+# --- The Starfall signatures (v0.11.0 O13d; StarfallKinds) ----------------------------------------------------------
+## Star Warper i's star while it winds up: [centre (Vector2), the strike's radius, the star's own radius, progress
+## 0..1000]; [] when it has none (not winding up, or no Warper).
+func warper_star(i: int) -> Array:
+	if (
+		not StarfallKinds.is_warper(_w.actors.kinds[i])
+		or _w.actors.state[i] != EnemyAi.State.WINDUP
+	):
+		return []
+	var sd := StarfallKinds.star_disc(_w, i)
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	var progress := clampi(_w.actors.state_t[i] * 1000 / maxi(1, _w.actors.windup[i]), 0, 1000)
+	return [sd[0], sd[1], t.mark_radius_m, progress]
+
+
+## Whether Star Warper i is stunned (the hero stood on its star).
+func warper_stunned(i: int) -> bool:
+	return StarfallKinds.stunned(_w, i)
+
+
+## Gravity Node i's pull reach (m); 0 for any other actor.
+func gravity_reach(i: int) -> float:
+	if not StarfallKinds.is_node(_w.actors.kinds[i]):
+		return 0.0
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	return t.pull_radius_m if t != null else 0.0

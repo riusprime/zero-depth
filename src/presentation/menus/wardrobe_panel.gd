@@ -1,12 +1,13 @@
 class_name WardrobePanel
 extends MenuPanel
-## v0.9.0 RB (owner, PLAN "Owner decisions" RB; docs/roadmap/v0.9.0/AFFINITIES.md): the hub Wardrobe's panel. Two
-## choices, picked apart (W53): the robe's colour and the rune affinity, each a cycler (left / right, or press to step;
+## The hub Wardrobe's panel. Two
+## choices, picked apart: the robe's colour and the rune affinity, each a cycler (left / right, or press to step;
 ## keyboard, mouse and pad through the focus, as every menu), a line on the affinity's gain and its trade-off, and Back.
 ## The hero in the hub wears the choice at once (HubSession). A robe not yet bought (Rune Fragments, MP) is shown with
 ## "locked" and isn't worn: the hero keeps the last robe that is. MP2: the epic robes are picked like the others once
 ## owned; a hidden one not bought yet is listed as "???" (Wardrobe.HIDDEN_NAME), locked. The affinity is free and
 ## changes any time here; the run locks it when it starts.
+## v0.11.1 Step 13 (owner: Astral the only style): in Astral (MenuPanel), each choice an Options-style field row.
 
 signal picked(robe: StringName, affinity: StringName)
 signal back_pressed
@@ -46,16 +47,15 @@ func _init(
 		keys.append(String(Wardrobe.HIDDEN_NAME if masked else r.name_key))
 	robe_cycler = LockCycler.new(ids, keys, String(current_robe), unlocked)
 	robe_cycler.name = "Robe"
-	robe_cycler.astral = true  # v0.10.5 W3-O20: Astral's chevrons and hairline (OptionCycler)
+	robe_cycler.astral = true  # Astral's chevrons and hairline (OptionCycler)
 	robe_cycler.custom_minimum_size = Vector2(300, 40)
 	robe_cycler.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	robe_cycler.changed.connect(_on_robe)
-	_row("WARDROBE_ROBE").add_child(robe_cycler)
+	_row("WARDROBE_ROBE", robe_cycler)
 	lock_note = Label.new()
 	lock_note.name = "LockNote"
 	lock_note.text = "WARDROBE_LOCKED_NOTE"
-	lock_note.add_theme_font_size_override("font_size", MenuStyle.NOTE_SIZE)
-	lock_note.add_theme_color_override("font_color", MenuStyle.DIM)
+	AstralMenu.body(lock_note, AstralMenu.NOTE_SIZE, AstralCardArt.DIM)
 	lock_note.visible = false
 	box.add_child(lock_note)
 	var aids: Array = []
@@ -65,35 +65,27 @@ func _init(
 		akeys.append(String(a.name_key))
 	affinity_cycler = OptionCycler.new(aids, akeys, String(current_aff))
 	affinity_cycler.name = "Affinity"
-	affinity_cycler.astral = true  # v0.10.5 W3-O20: Astral's chevrons and hairline (OptionCycler), as in Options
+	affinity_cycler.astral = true  # Astral's chevrons and hairline (OptionCycler), as in Options
 	affinity_cycler.custom_minimum_size = Vector2(300, 40)
 	affinity_cycler.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	affinity_cycler.changed.connect(_on_affinity)
-	_row("WARDROBE_AFFINITY").add_child(affinity_cycler)
+	_row("WARDROBE_AFFINITY", affinity_cycler)
 	desc = Label.new()
 	desc.name = "Desc"
 	desc.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.custom_minimum_size = Vector2(MenuStyle.LIST_W + 120, 96)
-	desc.add_theme_font_size_override("font_size", MenuStyle.NOTE_SIZE + 2)
-	desc.add_theme_color_override("font_color", MenuStyle.TEXT)
+	desc.custom_minimum_size = Vector2(AstralMenu.LIST_W + 120, 96)
+	AstralMenu.body(desc, AstralMenu.BODY_SIZE, AstralCardArt.TEXT)
 	box.add_child(desc)
 	add_button("UI_BACK", func() -> void: back_pressed.emit()).name = "Back"
 	add_hint("UI_MENU_HINT")
 	_show_desc()
-	AstralUi.dress(self)  # v0.10.5 W3-O19 (owner: every UI element in Astral): the station in the Astral style
 
 
-func _row(label_key: String) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
-	var l := Label.new()
-	l.text = label_key
-	l.custom_minimum_size = Vector2(170, 0)
-	l.add_theme_font_size_override("font_size", 22)
-	row.add_child(l)
-	box.add_child(row)
-	return row
+func _row(label_key: String, c: Control) -> void:
+	var row := AstralMenu.field_row(box, label_key, 170.0)
+	row.add_child(c)
+	AstralMenu.light(row, c)
 
 
 func focus_first() -> void:
@@ -109,7 +101,7 @@ func _on_robe(id: String) -> void:
 		picked.emit(worn_robe, affinity)
 
 
-## The note under a locked robe: its own hint (v0.9.5 RS2: the Runic robe is earned, not bought) or the shop's.
+## The note under a locked robe: its own hint (the Runic robe is earned, not bought) or the shop's.
 func _note_for(id: String) -> String:
 	for r: RobeDefinition in _robes:
 		if String(r.id) == id and not String(r.unlock_hint_key).is_empty():
@@ -127,7 +119,6 @@ func _show_desc() -> void:
 	for a: AffinityDefinition in _affinities:
 		if a.id == affinity:
 			desc.text = "%s\n%s" % [tr(a.desc_key), tr(a.cost_key)]
-			desc.add_theme_color_override("font_color", AstralCardArt.TEXT)  # v0.10.5 W3-O19
 			return
 	desc.text = ""
 

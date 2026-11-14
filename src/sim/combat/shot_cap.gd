@@ -98,14 +98,14 @@ static func room(w: World, want: int, root: bool) -> int:
 
 
 ## The player's own shots a second at the most, now: 60 over the Gun's fastest period (its attack speed and Rapid
-## Fire's ramp at its top, ItemEffects.shot_period_milli_of's rule). v0.10.5 W3-P9: the period is exact (thousandths
+## Fire's ramp at its top, ItemEffects.shot_period_milli_of's rule). the period is exact (thousandths
 ## of a tick) and the shots carry its fraction, so a window holds at most 1 + (WINDOW·1000 − 1) / period shots (the
 ## same count as before for a whole-tick period).
 static func reserve(w: World) -> int:
 	var spec := Modifiers.bolt(w)
 	var base := maxi(1, spec.period_ticks)
 	var r := AttackRate.rate(w, spec.rate_bonus_permille + maxi(0, spec.ramp_cap_permille))
-	r = AttackRate.form_rate(spec, r)  # v0.9.0 LZ: ItemEffects.shot_period_ticks' rule
+	r = AttackRate.form_rate(spec, r)  # ItemEffects.shot_period_ticks' rule
 	var p := base * 1000
 	if r != 1000:
 		p = maxi(mini(base, AttackRate.MIN_SHOT_TICKS) * 1000, base * 1000000 / maxi(1, r))

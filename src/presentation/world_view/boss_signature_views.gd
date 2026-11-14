@@ -1,6 +1,6 @@
 class_name BossSignatureViews
 extends Node3D
-## v0.8.0 BS1 (owner O5, "something that actually stands out for each boss"; BOSS_SIGNATURES.md S2, S3): the pieces
+## The pieces
 ## the bosses' signature mechanics leave on the floor, read from the sim (WorldReader; EI-07), never decided here.
 ## (S1's pillars are StoneSpikeViews: the same 3D stone spikes standing for the pillar's life.)
 ## - The Warlord's javelins stuck in the floor (WorldReader.boss_javelins): a code-made 3D javelin each (a dark shaft,
@@ -12,7 +12,7 @@ extends Node3D
 ##   its veins glowing brighter as it nears its hatch, wobbling harder and faster (the hatch wobble), and an HP pip
 ##   bar over it (its HP over its max: break it before it hatches). A bursting egg swells and splits. The Hatchling
 ##   inside is hidden meanwhile (ActorViews).
-## v0.8.0 BS2 (S4-S6):
+## S4-S6:
 ## - The Hive Lens's Gaze (WorldReader.boss_gaze): through its windup the eye brightens (a flare and a light at the
 ##   eye) and a thin aim line runs the way the beam will open; then a real 3D beam, a hot core and a wider glow (two
 ##   cylinders, a scrolling noise shader) from the eye down to where it strikes, a burning strip on the floor under
@@ -84,7 +84,7 @@ void fragment() {
 }
 """
 
-## v0.8.0 BS2: the Gaze's colours, the eye's height (the Hive Lens hovers) and where the beam meets the floor's
+## The Gaze's colours, the eye's height (the Hive Lens hovers) and where the beam meets the floor's
 ## height at its far end; the aim line's radius; scorch marks, sparks and the lava's timing.
 const GAZE := Color(1.0, 0.22, 0.52)
 const GAZE_CORE := Color(1.0, 0.86, 0.95)
@@ -100,10 +100,10 @@ const SPARK_MAX := 48
 const SPARK_TICKS := 12.0
 const LAVA_FADE_TICKS := 8.0
 const LAVA_CRUST_TICKS := 60.0
-## v0.8.0 TX2: the lava and meltdown shaders' owner textures (BossStrikeMeshes.GROUND_TEX slots).
+## The lava and meltdown shaders' owner textures (BossStrikeMeshes.GROUND_TEX slots).
 const LAVA_SLOTS := ["lava_tex", "crust_tex"]
-## v0.10.0 VX5 (R27): the Gaze's beam is the pack's (a full family keeps the old look); false: the old cylinders.
-## v0.10.0 FX (owner, 2026-10-31: the Foundry "uses both older and newer VFX ... performance drops"): VX5's flames on
+## The Gaze's beam is the pack's (a full family keeps the old look); false: the old cylinders.
+## VX5's flames on
 ## the molten floor are gone. The floor's own shader already burns and crusts; the pack's fire areas stood on top of
 ## it (up to 4 a piece and 10 round the meltdown), so the two looks drew at once and filled the area family.
 const PACK_GAZE := true
@@ -126,7 +126,7 @@ var _jav: Array = []
 var _egg_rows: Array = []
 var _drawn := 0
 var _tips := PackedVector3Array()
-## v0.8.0 BS2: the Gaze (its last sync's state, the eye's sim position added), its meshes and lights; scorch marks
+## The Gaze (its last sync's state, the eye's sim position added), its meshes and lights; scorch marks
 ## [at, tick, seed]; ricochet sparks [at, tick] and each hostile shot's last bounce tick seen (by id); lava and melt
 ## rows (the last sync) and their pooled nodes.
 var _gaze := {}
@@ -157,7 +157,7 @@ var _gaze_packed := false
 
 func _init() -> void:
 	name = "BossSignatures"
-	# v0.8.0 N1 (O55, the lighting audit): everything here is laid out in _draw on frame time (ticks plus the
+	# O55, the lighting audit: everything here is laid out in _draw on frame time (ticks plus the
 	# fraction), its lights, scorch and spark pools included: no physics interpolation on top (as VfxCore).
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var mm := MultiMesh.new()
@@ -543,7 +543,7 @@ func _init_bs2() -> void:
 		m.set_shader_parameter("core", GAZE_CORE)
 		m.set_shader_parameter("strength", part[1])
 		m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
-		if mi == _aim:  # v0.8.0 TX1: the owner's dashed aim line, the owner's beam strip
+		if mi == _aim:  # The owner's dashed aim line, the owner's beam strip
 			FxTextures.texture_beam(m, "fx_aim_lines", FxTextures.AIM_DASHED, 6.0, false, 0.6)
 		else:
 			FxTextures.texture_beam(m, "fx_beam", 3, 5.0, false, 0.5)
@@ -584,7 +584,7 @@ func _init_bs2() -> void:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.visible = false
 		add_child(mi)
-	var impact := FxTextures.flare_material(GAZE, GAZE_CORE, 2)  # v0.8.0 TX1: the owner's impact flare
+	var impact := FxTextures.flare_material(GAZE, GAZE_CORE, 2)  # The owner's impact flare
 	if impact != null:
 		_impact.mesh = FxTextures.flare_mesh()
 		_impact.material_override = impact
@@ -767,7 +767,7 @@ func _draw_gaze(now: float, still: bool) -> void:
 		return
 	var hw := float(g["half_width"])
 	var pack_beam: Node3D = null
-	if PACK_GAZE and _hold != null:  # R27: the pack's beam in the Gaze's colour, in place of the two cylinders
+	if PACK_GAZE and _hold != null:  # The pack's beam in the Gaze's colour, in place of the two cylinders
 		pack_beam = _hold.hold(&"gaze", BossPackHold.beam_id(GAZE), eye, 1.0, {}, false)
 	if pack_beam != null:
 		BossPackHold.beam_place(pack_beam, eye, to, hw)
@@ -865,7 +865,7 @@ func _sync_lava_nodes() -> void:
 		var m := ShaderMaterial.new()
 		m.shader = _lava_shader
 		m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
-		BossStrikeMeshes.set_ground_textures(m, LAVA_SLOTS)  # v0.8.0 TX2: the owner's lava and crust
+		BossStrikeMeshes.set_ground_textures(m, LAVA_SLOTS)  # The owner's lava and crust
 		mi.material_override = m
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(mi)
@@ -903,7 +903,7 @@ func _sync_melt_nodes() -> void:
 		var m := ShaderMaterial.new()
 		m.shader = _melt_shader
 		m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
-		BossStrikeMeshes.set_ground_textures(m, LAVA_SLOTS)  # v0.8.0 TX2: the owner's lava and crust
+		BossStrikeMeshes.set_ground_textures(m, LAVA_SLOTS)  # The owner's lava and crust
 		mi.material_override = m
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.extra_cull_margin = 64.0

@@ -1,6 +1,6 @@
 class_name CodexStore
 extends RefCounted
-## v0.7.5 CX (owner N6): the Codex's counters, kept in the player profile's `codex` section (ProfileStore). Outside
+## The Codex's counters, kept in the player profile's `codex` section (ProfileStore). Outside
 ## the run and outside the sim: never part of RunState, a save or any hash; the app layer records into it from what
 ## the sim reports (CodexRecorder reads WorldReader and SimEvents, EI-07), and the Codex page reads it.
 ## The model follows Deathventory's discovery journal (riusprime/deathventory, src/application/journal_store.gd: a
@@ -10,7 +10,8 @@ extends RefCounted
 ## An entry exists once it is unlocked (met in play); its counters start at 0 and only grow.
 ## The counter API (docs/roadmap/v0.7.5/evidence/CODEX.md "Counter API"; AC's achievements read it):
 ## - unlock(page, id), is_unlocked(page, id), unlocked_ids(page), unlocked_count(page);
-## - add(page, id, counter, by) (counts up and unlocks), raise_to(page, id, counter, value) (keeps the highest);
+## - add(page, id, counter, by) (counts up and unlocks), raise_to(page, id, counter, value) (keeps the highest),
+##   put(page, id, counter, value) (sets it; v0.11.0 O2);
 ## - count(page, id, counter), total(page, counter) (summed over a page's entries);
 ## - the `unlocked` signal on an entry's first meeting, and `changed` after every counter write.
 
@@ -21,7 +22,7 @@ signal unlocked(page: StringName, id: StringName)
 const SECTION := "codex"
 const VERSION := 1
 const PAGES: Array[StringName] = [&"cards", &"enemies", &"bosses", &"biomes", &"lore"]
-## v0.10.5 O18: the Lore page's entries in order (one line per system), and the ones open from the start; the rest
+## The Lore page's entries in order (one line per system), and the ones open from the start; the rest
 ## unlock when their system is first met (CodexRecorder). An "always" entry reads as unlocked without being stored.
 const LORE_IDS: Array[StringName] = [
 	&"depths",
@@ -33,7 +34,7 @@ const LORE_IDS: Array[StringName] = [
 	&"runes",
 	&"crown",
 	&"ascension",
-	# v0.10.5 O5b (O5_LOOPS.md R2): one line per loop rule (LoopRules.lore_id), unlocked when a loop first draws it
+	# O5_LOOPS.md R2: one line per loop rule (LoopRules.lore_id), unlocked when a loop first draws it
 	&"rule_swift",
 	&"rule_lean_mending",
 	&"rule_elite_hunt",
@@ -136,6 +137,18 @@ func raise_to(page: StringName, id: StringName, counter: StringName, value: int)
 	dirty = true
 	changed.emit(page, id, counter, value)
 	return value
+
+
+## Sets a value outright (unlocking the entry), for a note that isn't a count (MechanicHints' last run).
+func put(page: StringName, id: StringName, counter: StringName, value: int) -> void:
+	if id == &"":
+		return
+	var e := _entry(page, id, true)
+	if int(e.get(String(counter), 0)) == value and e.has(String(counter)):
+		return
+	e[String(counter)] = value
+	dirty = true
+	changed.emit(page, id, counter, value)
 
 
 func count(page: StringName, id: StringName, counter: StringName) -> int:

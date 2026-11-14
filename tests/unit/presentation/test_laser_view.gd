@@ -2,7 +2,8 @@ extends GutTest
 ## v0.9.0 LZ (owner C §6.2; PLAN C49): the Laser's view. While the beam fires, one ribbon per beam ends where the sim's
 ## trace ends (on the enemy, at a wall), with an impact there; each element has its own look (colours, its own strip
 ## texture through the beam_core_<look> manifest id with a code fallback, its impact's shape); Twin shows two ribbons;
-## nothing shows when the trigger is let go; the hum loops while the beam fires.
+## nothing shows when the trigger is let go; the hum loops while the beam fires. v0.11.0 O1 (Q7): the lance shows for
+## half a second after each shot (drawn out fast, its glow fading), not while held.
 
 const W := preload("res://tests/support/mx4_world.gd")
 
@@ -19,19 +20,32 @@ func _world(items: Array = [], at: Array = [[Vector2(4.0, 0.0), 100000]]) -> Wor
 	return W.world(&"gun", ids, at)
 
 
-func test_a_held_beam_shows_a_ribbon_to_the_enemy_with_an_impact() -> void:
+## v0.11.0 O1 (owner Q7: "instant, drawn fast (~0.15 s), glow fading ~0.5 s"): the shot's lance, as the sim hit it,
+## through the enemy to 9 m, drawn out over DRAW_TICKS, its glow fading, gone by LANCE_GLOW_TICKS (held or not).
+func test_a_shot_shows_one_lance_through_the_enemy_drawn_fast_and_fading() -> void:
 	var w := _world()
 	var r := WorldReader.new(w)
-	W.run(w, 3, 0, W.S)
+	W.run(w, 1, 0, W.S)
 	_view.sync(r)
-	assert_eq([_view.shown, _view.impacts, _view.look], [1, 1, &"default"])
+	assert_eq([_view.shown, _view.impacts, _view.look], [1, 0, &"default"], "no wall: no impact")
 	var b: Dictionary = r.beams()[0]
 	assert_almost_eq(
-		(b["to"] as Vector2).x, 4.0 - 0.35 - 0.15, 0.05, "the beam ends on the enemy's edge"
+		(b["to"] as Vector2).x, 9.0 + w.player.radius_m, 0.05, "through the enemy to 9 m"
 	)
-	W.run(w, 2, 0, 0)
+	assert_lt(_view.drawn_now, 0.5, "it starts drawing at the hero")
+	W.run(w, int(LaserWeight.DRAW_TICKS) - 1, 0, W.S)  # the first sync came a tick after the shot
 	_view.sync(r)
-	assert_eq(_view.shown, 0, "let go: no beam")
+	assert_almost_eq(_view.drawn_now, 1.0, 0.001, "drawn out in 0.15 s")
+	assert_almost_eq(_view.fade_now, 1.0, 0.001, "at full glow")
+	W.run(w, 12, 0, W.S)
+	_view.sync(r)
+	assert_between(_view.fade_now, 0.01, 0.99, "the glow fades")
+	W.run(w, WorldReader.LANCE_GLOW_TICKS - 21, 0, W.S)
+	_view.sync(r)
+	assert_eq(_view.shown, 0, "gone after 0.5 s, though still held")
+	assert_eq(
+		LaserView.cut(PackedVector2Array([Vector2.ZERO, Vector2(4, 0)]), 0.5)[1], Vector2(2, 0)
+	)
 
 
 func test_twin_shows_two_beams() -> void:
@@ -121,29 +135,29 @@ func test_v095_fc1_the_cards_extra_paths_ghosts_rings_and_mines_are_drawn() -> v
 	assert_eq(_view.rings_shown, 1, "Ring's circle at the tip")
 	var w2 := _world([&"gun_echo", &"gun_mine"], [])
 	var r2 := WorldReader.new(w2)
-	W.run(w2, 70, 0, W.S)
+	W.run(w2, 10, 0, W.S)
 	_view.sync(r2)
-	assert_gt(_view.ghosts_shown, 0, "Echo's strikes to come show as ghosts")
-	assert_eq(_view.mines_shown, 1, "a mine dropped at the tip after a second")
-	var w3 := _world([&"gun_homing", &"gun_pierce"], [[Vector2(3.0, 3.0), 100000]])
+	assert_gt(_view.ghosts_shown, 0, "Echo's strike to come shows as a ghost")
+	assert_eq(_view.mines_shown, 1, "a held Mine (a lab) dropped one at the tip")
+	var w3 := _world([&"gun_homing"], [[Vector2(3.0, 3.0), 100000]])
 	var r3 := WorldReader.new(w3)
 	W.run(w3, 3, 0, W.S)
 	_view.sync(r3)
 	assert_eq(_view.shown, 1, "v0.10.0 FX: a bent beam is one continuous ribbon")
 	assert_gt(_view.points_shown, 4, "rounded along its curve")
-	W.run(w3, 2, 0, 0)
+	W.run(w3, WorldReader.LANCE_GLOW_TICKS, 0, 0)
 	_view.sync(r3)
-	assert_eq(_view.shown, 0, "let go: none")
+	assert_eq(_view.shown, 0, "the glow over: none")
 
 
 ## v0.10.5 W3-O8 (owner F14: the Laser "doesn't feel as powerful or impactful as other attack forms"): a beam with
 ## weight. The ribbon is a core with a halo round it (by Effects density), its width pulses slightly, a firing starts
-## with a flash (the muzzle and the impact bigger, fading in FLASH_TICKS) and the impact throws sparks (by density).
-func test_w3o8_the_beam_has_a_core_a_glow_a_pulse_a_start_flash_and_hit_sparks() -> void:
+## with a flash (the muzzle and the impact bigger, fading in FLASH_TICKS). v0.11.0 O1d: no hit sparks any more.
+func test_w3o8_the_beam_has_a_core_a_glow_a_pulse_and_a_start_flash() -> void:
 	var was := ViewPrefs.effects_density
 	ViewPrefs.effects_density = "high"
-	var layer: VfxLayer = add_child_autofree(VfxLayer.new())
 	var w := _world()
+	w.add_wall_now(Obb.make(Vector2(6.0, 0.0), Vector2(0.2, 2.0), 0))  # v0.11.0 O1: the lance's impact is a wall's
 	var r := WorldReader.new(w)
 	W.run(w, 1, 0, W.S)
 	_view.sync(r)
@@ -159,10 +173,8 @@ func test_w3o8_the_beam_has_a_core_a_glow_a_pulse_a_start_flash_and_hit_sparks()
 	assert_eq(float(mat.get_shader_parameter(&"glow")), LaserWeight.glow("high"), "the halo")
 	var muzzle: MeshInstance3D = _view.get("_muzzle")
 	var big := muzzle.scale.x
-	_view.draw_fx(layer)
-	assert_eq(_view.sparks_drawn, LaserWeight.sparks("high"), "the impact throws its sparks")
 	var widths: Array[float] = []
-	for k in 22:
+	for k in 22:  # v0.11.0 O1: within the lance's half second of glow
 		W.run(w, 1, 0, W.S)
 		_view.sync(r)
 		if _view.flash_now == 0.0:
@@ -173,14 +185,12 @@ func test_w3o8_the_beam_has_a_core_a_glow_a_pulse_a_start_flash_and_hit_sparks()
 	assert_lt(widths.max(), 1.0 + LaserWeight.PULSE + 0.001, "slightly")
 	ViewPrefs.effects_density = "low"
 	_view.sync(r)
-	_view.draw_fx(layer)
-	assert_eq(_view.sparks_drawn, LaserWeight.sparks("low"), "fewer at Low")
 	assert_eq(float(mat.get_shader_parameter(&"glow")), LaserWeight.glow("low"))
-	W.run(w, 2, 0, 0)
+	W.run(w, 170, 0, 0)  # v0.11.0 O1: past the 3 s cooldown
 	_view.sync(r)
 	W.run(w, 1, 0, W.S)
 	_view.sync(r)
-	assert_almost_eq(_view.flash_now, 1.0, 1e-4, "a new firing flashes again")
+	assert_almost_eq(_view.flash_now, 1.0, 1e-4, "a new shot flashes again")
 	ViewPrefs.effects_density = was
 
 
@@ -188,8 +198,76 @@ func test_w3o8_laser_weight_numbers() -> void:
 	assert_eq(LaserWeight.flash(0.0), 1.0)
 	assert_eq(LaserWeight.flash(LaserWeight.FLASH_TICKS), 0.0)
 	assert_lt(LaserWeight.flash(4.0), LaserWeight.flash(2.0), "fading")
-	assert_lt(LaserWeight.sparks("low"), LaserWeight.sparks("high"))
-	for j in 5:
-		var s: Array = LaserWeight.spark_offset(j, 5, 7.0)
-		assert_lte((s[0] as Vector3).length(), LaserWeight.SPARK_REACH_M + 0.6, "near the impact")
-		assert_between(float(s[1]), 0.0, 1.0)
+
+
+## v0.11.0 VX (owner PD-13: new effects use the premade packs): with the pack, the lance is the pack's laser of its
+## element (the scene's own core, outer and ball materials) laid on one tube through the sim's points, drawn out and
+## fading as the ribbon did; the ribbon and the plain impact quad hide. v0.11.0 O1d: the element is the colour only.
+func test_vx_the_lance_is_the_packs_laser_on_one_tube() -> void:
+	var was := ViewPrefs.effects_density
+	ViewPrefs.effects_density = "high"
+	_view.pack_fx = add_child_autofree(PackFx.new())
+	var w := _world()
+	w.add_wall_now(Obb.make(Vector2(6.0, 0.0), Vector2(0.2, 2.0), 0))
+	var r := WorldReader.new(w)
+	W.run(w, int(LaserWeight.DRAW_TICKS), 0, W.S)
+	_view.sync(r)
+	assert_eq(_view.shown, 1)
+	assert_eq(_view.tubes_shown, 1, "one tube for the lance")
+	var t: LaserPackTube = _view.tubes[0]
+	assert_true(t.ok, "the pack scene's parts were found")
+	assert_eq(
+		t.scene_path, PackFx.scene_path_of(PackLooks.laser_id(&"")), "the plain laser's scene"
+	)
+	assert_true(t.visible)
+	var ribbons: Array = _view.get("_ribbons")
+	assert_false((ribbons[0] as MeshInstance3D).visible, "the ribbon hides")
+	assert_false(
+		(_view.get("_impacts")[0] as MeshInstance3D).visible, "the plain impact quad hides"
+	)
+	W.run(w, WorldReader.LANCE_GLOW_TICKS, 0, W.S)
+	_view.sync(r)
+	assert_eq(_view.shown, 0)
+	assert_false(t.visible, "the tube goes with the lance")
+	ViewPrefs.effects_density = was
+
+
+## v0.11.0 O1d (owner: "element just changes the color but does not spawn the fire/frost etc particles"): with an
+## element
+## the lance's look changes (its colour), and the effects layer draws nothing along the ray or at its hit.
+func test_o1d_an_element_is_the_colour_only() -> void:
+	var layer: VfxLayer = add_child_autofree(VfxLayer.new())
+	var w := W.world(&"gun", [&"gun_laser", &"ember_core"], [[Vector2(4.0, 0.0), 100000]])
+	w.add_wall_now(Obb.make(Vector2(6.0, 0.0), Vector2(0.2, 2.0), 0))
+	var r := WorldReader.new(w)
+	W.run(w, 1, 0, W.S)
+	_view.sync(r)
+	assert_eq(_view.shown, 1, "the lance is drawn")
+	assert_eq(_view.look, &"fire", "its look is the element's")
+	layer.begin(12.0)
+	_view.draw_fx(layer)
+	for pool: StringName in [&"spark", &"glow", &"ember", &"flame", &"flake", &"bolt", &"bubble"]:
+		assert_eq(layer.used(pool), 0, "%s: nothing along the ray or at the hit" % pool)
+
+
+## v0.11.0 O1d: the lance's tube only rebuilds when its points change or its radius has moved enough.
+func test_o1d_the_tube_rebuilds_only_when_it_changes() -> void:
+	var t: LaserPackTube = add_child_autofree(LaserPackTube.new())
+	t.ok = true
+	for m in [t.get("_core"), t.get("_outer"), t.get("_start"), t.get("_end")]:
+		(m as MeshInstance3D).material_override = ShaderMaterial.new()
+	var pts: Array[Vector3] = [Vector3.ZERO, Vector3(1, 0, 0), Vector3(2, 0, 0.2)]
+	t.lay(pts, 0.1, 0.25, 1.0, 1.0, 1.0)
+	assert_eq(t.rebuilds, 1, "built")
+	assert_gt((t.get("_core").mesh as ArrayMesh).get_surface_count(), 0, "a surface")
+	t.lay(pts, 0.1, 0.25, 0.9, 1.0, 1.0)
+	assert_eq(t.rebuilds, 1, "the glow alone doesn't rebuild it")
+	t.lay(pts, 0.102, 0.255, 0.8, 1.0, 1.0)
+	assert_eq(t.rebuilds, 1, "nor a small change of radius")
+	t.lay(pts, 0.05, 0.12, 0.5, 1.0, 1.0)
+	assert_eq(t.rebuilds, 2, "a real thinning does")
+	var more: Array[Vector3] = [
+		Vector3.ZERO, Vector3(1, 0, 0), Vector3(2, 0, 0.2), Vector3(3, 0, 0.4)
+	]
+	t.lay(more, 0.05, 0.12, 0.5, 1.0, 1.0)
+	assert_eq(t.rebuilds, 3, "as the lance draws out")

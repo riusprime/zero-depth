@@ -1,11 +1,11 @@
 class_name CodeProps
 extends RefCounted
-## v0.7.5 NB1: decoration pieces the owner's kit lacks, built in code in the low-poly faceted shard style (flat
+## Decoration pieces the owner's kit lacks, built in code in the low-poly faceted shard style (flat
 ## facets, a few dozen triangles each), in the same form as KitModels.get_piece: a mesh in the unit box (footprint
 ## x and z in -0.5..0.5, bottom at y = 0, top at y = 1), its material and its natural size. StageKit draws them
 ## where a kit piece would go; a delivered .glb (docs/art/requests/v0.7.5_frozen_shore.md) replaces one by id
 ## through KitModels. Presentation only.
-## v0.7.5 NB2 (Starfall): star crystals (a small glowing cluster), meteorites (low dark faceted stones with a faint
+## Starfall: star crystals (a small glowing cluster), meteorites (low dark faceted stones with a faint
 ## glow) and the star monolith (a leaning faceted obelisk, square cover); docs/art/requests/v0.7.5_starfall.md.
 
 ## Per piece: natural height (m), footprint (m) and role, like KitModels.SPECS.
@@ -110,7 +110,7 @@ static func _spike(st: SurfaceTool, at: Vector3, h: float, w: float, lean: Vecto
 		_tri(st, shoulder[k], tip, shoulder[k2], inside)
 
 
-## v0.7.5 NB2: a small cluster of hexagonal crystals from one root, the tallest near upright, two leaning out
+## A small cluster of hexagonal crystals from one root, the tallest near upright, two leaning out
 ## (three six-sided prisms, 162 vertices: under the 200 low-poly cap).
 static func star_crystal_mesh() -> ArrayMesh:
 	var st := _begin()
@@ -123,7 +123,7 @@ static func star_crystal_mesh() -> ArrayMesh:
 	return _end(st)
 
 
-## v0.7.5 NB2: a low lumpy stone: a jittered eight-sided base, a bulging shoulder ring and a flattened top, faceted.
+## A low lumpy stone: a jittered eight-sided base, a bulging shoulder ring and a flattened top, faceted.
 static func meteorite_mesh() -> ArrayMesh:
 	var n := 8
 	var jitter := [1.0, 0.82, 0.94, 0.78, 0.97, 0.86, 0.92, 0.8]
@@ -149,7 +149,7 @@ static func meteorite_mesh() -> ArrayMesh:
 	return _end(st)
 
 
-## v0.7.5 NB2: a faceted obelisk of dark star stone, five-sided, tapering and leaning a little to an off-centre
+## A faceted obelisk of dark star stone, five-sided, tapering and leaning a little to an off-centre
 ## point (square cover: its base fills the footprint).
 static func star_monolith_mesh() -> ArrayMesh:
 	var n := 5
@@ -192,12 +192,12 @@ static func _prism(
 		_tri(st, shoulder[k], tip, shoulder[k2], inside)
 
 
-## v0.7.5 NB2: Starfall's crystal: pale violet, glossy, a magenta-violet glow from within.
+## Starfall's crystal: pale violet, glossy, a magenta-violet glow from within.
 static func star_crystal_material() -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = STAR_CRYSTAL
 	m.roughness = 0.15
-	m.metallic = ShardMesh.CRYSTAL_METALLIC  # v0.8.0 GX: the glint
+	m.metallic = ShardMesh.CRYSTAL_METALLIC  # The glint
 	m.metallic_specular = 0.8
 	m.rim_enabled = true
 	m.rim = 0.5
@@ -207,7 +207,7 @@ static func star_crystal_material() -> StandardMaterial3D:
 	return m
 
 
-## v0.7.5 NB2: meteorite stone: dark violet-grey, rough, a faint teal glow as if still warm from the fall.
+## Meteorite stone: dark violet-grey, rough, a faint teal glow as if still warm from the fall.
 static func meteor_material() -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = METEOR
@@ -229,7 +229,7 @@ static func ice_material() -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = ICE
 	m.roughness = 0.12
-	m.metallic = ShardMesh.CRYSTAL_METALLIC  # v0.8.0 GX: the glint
+	m.metallic = ShardMesh.CRYSTAL_METALLIC  # The glint
 	m.metallic_specular = 0.8
 	m.rim_enabled = true
 	m.rim = 0.4

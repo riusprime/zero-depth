@@ -1,6 +1,6 @@
 class_name EliteAvatar
 extends AvatarBase
-## v0.9.0 EL (owner Q26; ELITES.md E1-E3; art list §3.1): the three elites, drawn with the owner's models
+## The three elites, drawn with the owner's models
 ## (assets/models/enemies/elite_*.glb, cut into parts by scripts/assets/mi2_prep.py: the owner, "enemies are not
 ## animated, you will have to do it manually") and posed here in frame time from the sim's state (EI-07: it reads,
 ## never writes). Each part turns about its own pivot (+X the front, Y up). The surfaces are `base` (as delivered) and
@@ -49,8 +49,6 @@ var _rest := {}
 var _glow_mat: ShaderMaterial
 var _glow_pieces: Array[GeometryInstance3D] = []
 var _glow_e := -1.0
-var _outline := Color.BLACK
-var _technique := &"outline"
 var _state := WorldReader.STATE_SPAWN
 var _pick := WorldReader.ELITE_BASIC
 var _progress := 0.0
@@ -77,11 +75,9 @@ func has_model() -> bool:
 	return model != null
 
 
-func setup(p_kind: int, outline_color: Color, technique: StringName = &"outline") -> void:
+func setup(p_kind: int) -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	kind = p_kind
-	_outline = outline_color
-	_technique = technique
 	height = float(HEIGHTS.get(kind, 2.4))
 	body = Node3D.new()
 	add_child(body)
@@ -106,7 +102,7 @@ func dying() -> bool:
 	return _die_t >= 0.0
 
 
-## v0.10.5 W3-Q6: the values straight to _apply (no Dictionary per elite per sync).
+## The values straight to _apply (no Dictionary per elite per sync).
 func sync(reader: WorldReader, i: int) -> void:
 	_apply(
 		reader.actor_state(i),
@@ -266,7 +262,7 @@ func _pose_model(ability: bool, calm: bool) -> void:
 				(parts["shards"] as Node3D).rotation.y = -_t * 0.9
 
 
-## v0.9.5 PF5: the hit flash and the accent glow are each written to a list of pieces (RigMerge swaps merged
+## The hit flash and the accent glow are each written to a list of pieces (RigMerge swaps merged
 ## pieces in them).
 func rig_spec() -> Dictionary:
 	return {"keep": [], "sets": [_hit_pieces, _glow_pieces]}
@@ -283,7 +279,7 @@ func _set_glow(e: float) -> void:
 ## The owner's model (EnemyModels.get_model): each part a node at its pivot, `base` on the shared body material (the
 ## hit flash and the biome's cast), `glow` on the accent.
 func _build_model(m: Dictionary) -> void:
-	var base := shared_body(kind, Color.WHITE, m["texture"], _outline, 0.0)
+	var base := shared_body(kind, Color.WHITE, m["texture"])
 	model = Node3D.new()
 	model.name = "Model"
 	_model_scale = float(m["scale"])
@@ -311,7 +307,7 @@ func _build_model(m: Dictionary) -> void:
 		_rest[String(pname)] = pivot.position
 
 
-## L15: without the model file, a box body of the elite's height and a glowing accent band.
+## Without the model file, a box body of the elite's height and a glowing accent band.
 func _build_stand_in(accent: Color) -> void:
 	var w := height * 0.4
 	var box := BoxMesh.new()
@@ -319,7 +315,7 @@ func _build_stand_in(accent: Color) -> void:
 	var piece := MeshInstance3D.new()
 	piece.mesh = box
 	piece.position = Vector3(0, height * 0.5, 0)
-	piece.material_override = shared_body(kind, accent.darkened(0.6), null, _outline, 0.02)
+	piece.material_override = shared_body(kind, accent.darkened(0.6), null)
 	body.add_child(piece)
 	_hit_pieces.append(piece)
 	var band := BoxMesh.new()

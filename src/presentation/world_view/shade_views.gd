@@ -34,7 +34,7 @@ const WISP := Color(0.78, 0.66, 1.0)
 const IRON := Color("#1C1822")
 const LAMP_ENERGY := 2.4
 const HERO_ENERGY := 2.2
-## NB4b: the dark lifts from full in 1 / LIFT_RATE s (0.4 s), the lanterns' pools staying on until it has.
+## The dark lifts from full in 1 / LIFT_RATE s (0.4 s), the lanterns' pools staying on until it has.
 const LIFT_RATE := 2.5
 
 ## The dark pass's shared part: each pixel's place on the floor (from the depth buffer), the drifting fog, how lit it
@@ -203,6 +203,8 @@ var dark_quad := MeshInstance3D.new()
 ## The room's sun and ambient light (WorldViewRoot hands its StageView in), dimmed with the dark so the bodies, the
 ## walls and their see-through cutaways go dark too and the lanterns' and your lights carry the room.
 var stage: StageView
+## True once a frame with nothing to show drew it all hidden: later frames only keep the stage's lit levels.
+var quiet := false
 var _dark_mat := ShaderMaterial.new()
 var _mist_mat := ShaderMaterial.new()
 var _ground_sh := Shader.new()
@@ -221,7 +223,7 @@ var _wisps := MultiMeshInstance3D.new()
 var _wisp_pos: Array[Vector3] = []
 var _player := Vector2.ZERO
 var _used := 0
-## NB4b: the dark drawn last frame (held through the lift's fade).
+## The dark drawn last frame (held through the lift's fade).
 var _shown_dark := false
 ## The stage's sun and ambient levels before the dark, restored when it lifts.
 var _sun_base := -1.0
@@ -523,6 +525,15 @@ func _process(delta: float) -> void:
 
 ## Frame-time animation (the tests and the shot scripts call it too).
 func advance(delta: float) -> void:
+	# No dark, no lantern standing, no wisp: the last frame drew all of it hidden, so another would change nothing
+	# but the stage's lit levels, which are still read while the room is lit
+	if _settled():
+		if quiet:
+			_dim_stage()
+			return
+		quiet = true
+	else:
+		quiet = false
 	var calm := 0.35 if ViewPrefs.reduced_motion else 1.0
 	_clock += delta * calm
 	var target := 0.0
@@ -531,7 +542,7 @@ func advance(delta: float) -> void:
 			target = 1.0
 		elif int(_light["falling"]) >= 0:
 			target = smoothstep(0.15, 1.0, float(_light["falling"]) / 1000.0)
-	# NB4b: the dark ramps in over Lights Out's fall and lifts with a short fade (LIFT_RATE) when its stretch ends.
+	# The dark ramps in over Lights Out's fall and lifts with a short fade (LIFT_RATE) when its stretch ends.
 	var rate := 1.5 if target >= _strength else LIFT_RATE
 	_strength = move_toward(_strength, target, delta * rate)
 	dark_quad.visible = _strength > 0.002
@@ -560,6 +571,15 @@ func advance(delta: float) -> void:
 	_draw_wisps()
 
 
+func _settled() -> bool:
+	if not _light.is_empty() or _strength > 0.0 or not _wisp_pos.is_empty():
+		return false
+	for lamp: Dictionary in _lamps:
+		if (lamp["root"] as Node3D).visible:
+			return false
+	return true
+
+
 ## The stage's sun down to 12 % and its ambient to 20 % at full dark (their levels kept while the room is lit).
 func _dim_stage() -> void:
 	if stage == null or stage.sun == null or stage.environment == null:
@@ -583,7 +603,7 @@ func lights_used() -> int:
 ## relights), its pool over the dark, its burn ring, its out ring; the lit ones join the dark pass's lights.
 func _draw_lamps(delta: float, lights: PackedVector4Array) -> PackedVector4Array:
 	var r := float(_light.get("lamp_m", 3.0))
-	# NB4b: as the dark lifts the lanterns' pools fade with it rather than going out under a still-dark screen.
+	# As the dark lifts the lanterns' pools fade with it rather than going out under a still-dark screen.
 	var dark := bool(_light.get("dark", false)) or (_shown_dark and _strength > 0.002)
 	_shown_dark = dark
 	for k in _lamps.size():
@@ -606,7 +626,7 @@ func _draw_lamps(delta: float, lights: PackedVector4Array) -> PackedVector4Array
 		gm.emission_energy_multiplier = 2.4 * burn if lit else 0.15
 		gm.emission = WARM if lit else Color(0.9, 0.3, 0.1)
 		(lamp["light"] as OmniLight3D).light_energy = LAMP_ENERGY * burn
-		var pool_on := lit and dark
+		var pool_on := lit  # A lit pool (150 %) shows in the full light too
 		(lamp["pool"] as MeshInstance3D).visible = pool_on
 		(lamp["pool_mat"] as ShaderMaterial).set_shader_parameter("power", 0.75 * burn)
 		(lamp["pool_mat"] as ShaderMaterial).set_shader_parameter("clock", _clock + k * 3.0)

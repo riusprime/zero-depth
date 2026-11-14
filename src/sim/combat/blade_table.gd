@@ -1,6 +1,6 @@
 class_name BladeTable
 extends RefCounted
-## v0.6.5 WN4: the Blade pool's runner numbers in sim units (BladeFormsDefinition compiled by BladeCompiler). Loadout:
+## The Blade pool's runner numbers in sim units (BladeFormsDefinition compiled by BladeCompiler). Loadout:
 ## compiled at setup, never written in play (World.blade_table; null = a lab world: these defaults, which mirror
 ## data/wand/blade_forms.tres).
 

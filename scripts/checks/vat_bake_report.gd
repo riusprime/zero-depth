@@ -3,11 +3,11 @@ extends SceneTree
 ## far the baked pose is from the live one: over SAMPLES random states (a horde kind: the windup raise, the strike, the
 ## crouch, the clock, the rise-in; v0.10.5 W3-V4a, the Charger and the Hatchling: every drive of its rig, mixed
 ## freely, ChargerVat.sample) the real avatar is posed by its own code and every vertex compared,
-## in metres, with the same vertex posed through the baked texture the way the shader samples it (VatBake.eval_*,
+## in metres, with the same vertex posed through the baked texture the way the shader samples it (VatVerify.eval_*,
 ## the shader's arithmetic on the CPU). Run twice: normal and reduced motion. Headless is fine (no renderer needed):
 ##   APPDATA=<temp> godot --headless --path . -s scripts/checks/vat_bake_report.gd [-- --samples=4000]
 ## v0.10.5 W3-V4b: the horde kinds past the Swarmer are posed from every input their pose reads at once
-## (HordeAvatar.pose_with over HordeVat.sample: the death, the walk, the heal, the tell too; VatBake.pose_error_full).
+## (HordeAvatar.pose_with over HordeVat.sample: the death, the walk, the heal, the tell too; VatVerify.pose_error_full).
 ## Writes build/vat/<sha>_bake.txt (never into docs) and prints it. The GPU's own sampling is checked by the
 ## side-by-side shots (scripts/shots/vat_sheet.gd), not here.
 
@@ -62,8 +62,8 @@ func _report(kind: int) -> PackedStringArray:
 	var mesh := VatBake.mesh_for(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 	var t_mesh := (Time.get_ticks_usec() - t0) / 1000.0
 	var img: Image = pose["image"]
-	var live := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
-	var vat := VatBake.vat_avatar_of(kind, Color.BLACK)
+	var live := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0)
+	var vat := VatBake.vat_avatar_of(kind)
 	var js := VatBake.joints(live)
 	(
 		out
@@ -89,11 +89,11 @@ func _report(kind: int) -> PackedStringArray:
 		ViewPrefs.reduced_motion = calm
 		var full := live is HordeAvatar and kind != WorldReader.KIND_SWARMER  # v0.10.5 W3-V4b
 		var e := (
-			VatBake.pose_error_full(
+			VatVerify.pose_error_full(
 				live as HordeAvatar, vat as HordeAvatar, pose, mesh, _samples, SEED
 			)
 			if full
-			else VatBake.pose_error(live, vat, pose, mesh, _samples, SEED)
+			else VatVerify.pose_error(live, vat, pose, mesh, _samples, SEED)
 		)
 		(
 			out

@@ -45,12 +45,6 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## Plays the arrival from its first tick: [ticks it took, the hero moved during it, enemies seen, hero shown before
 ## the end, HUD shown during it, the receiver's highest charge (v0.9.0 SA: floor 1's altar's buildup), the lowest the
 ## hero stood, v0.9.0 PT: the arrival portal's fullest form, the hero's farthest offset from its spot].
@@ -93,6 +87,7 @@ func _watch_arrival(e: E2e, main: Main) -> Array:
 
 func test_the_hero_lands_on_the_altar_then_the_floor_starts() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	await e.start_from_menu(&"blade", false)
 	var w := e.world()
@@ -166,12 +161,13 @@ func test_the_hero_lands_on_the_altar_then_the_floor_starts() -> void:
 ## v0.9.0 PT (owner Q16): floor 2 has no receiver: the hero steps out of the portal it took, which then collapses.
 func test_through_the_gate_floor_two_steps_out_of_the_portal() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
 	var w := e.world()
 	var f := w.floor_layout
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
@@ -182,7 +178,7 @@ func test_through_the_gate_floor_two_steps_out_of_the_portal() -> void:
 	if not sealed:
 		return
 	await e.frames(30)
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(3)
 	await e.tap(KEY_QUOTELEFT)  # the panel closes: the run goes on
 	var entered: bool = await _walk(

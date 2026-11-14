@@ -1,6 +1,6 @@
 class_name ModifierAbilities
 extends RefCounted
-## The RING runner (v0.6.0 MX2: add_ring, advance_rings), the form every ring attack runs. v0.10.5 O1 (owner L23):
+## The RING runner (add_ring, advance_rings), the form every ring attack runs.
 ## the old abilities that fired as weapon modifiers (Bomb Lobber, Arc Field, Frost Nova, Flame Trail) are gone, and
 ## their triggers with them. No randomness here (EI-05).
 
@@ -15,7 +15,7 @@ static func advance(w: World) -> void:
 
 # --- The RING runner ----------------------------------------------------------------------------------------------
 ## A ring of `spec` from `at` growing to `r` over the spec's life (Attacks.launch), dealing ctx.damage to each enemy
-## its edge passes, at ctx's root and hook level. v0.8.0 AO: it starts growing `delay` ticks from now (WandRings: a
+## its edge passes, at ctx's root and hook level. it starts growing `delay` ticks from now (WandRings: a
 ## pulse, a thrown ring; until then it waits, hitting nothing). v0.8.0 N3 (owner O47: "substituting the fireball for
 ## a shooting ring"): `travel` holds a travelling ring's flight (WandRings.launch: [velocity per tick, orbit radius,
 ## orbit start angle, pulses, life ticks, which ring of the launch]); empty: the plain ring that grows where it was
@@ -30,7 +30,6 @@ static func add_ring(
 	travel: Array = []
 ) -> void:
 	var st := w.ab
-	_pad_travel(st)
 	var life := maxi(1, spec.life_ticks)
 	if not travel.is_empty():
 		life = maxi(1, int(travel[4]))
@@ -50,22 +49,10 @@ static func add_ring(
 	st.ring_k.append(int(travel[5]) if not travel.is_empty() else 0)
 
 
-## v0.8.0 N3: a save from before N3 holds rings without the travel columns: they are plain rings (zeros).
-static func _pad_travel(st: AbilityState) -> void:
-	var n := st.ring_pos.size()
-	if st.ring_pulse.size() == n and st.ring_k.size() == n:
-		return
-	st.ring_vel.resize(n)
-	st.ring_orb.resize(n)
-	st.ring_orb_a.resize(n)
-	st.ring_pulse.resize(n)
-	st.ring_k.resize(n)
-
-
 ## The radius ring k has grown to at tick `t` (a plain ring: linear from 0 over its life).
 static func ring_radius(w: World, k: int, t: int) -> float:
 	var st := w.ab
-	if k < st.ring_pulse.size() and st.ring_pulse[k] > 0:
+	if st.ring_pulse[k] > 0:
 		return travel_radius(
 			st.ring_r[k], st.ring_pulse[k], st.ring_end[k] - st.ring_start[k], t - st.ring_start[k]
 		)
@@ -73,7 +60,7 @@ static func ring_radius(w: World, k: int, t: int) -> float:
 	return st.ring_r[k] * clampi(t - st.ring_start[k], 0, life) / life
 
 
-## v0.8.0 N3: ring k's centre at tick `t` (a plain ring: where it was cast).
+## Ring k's centre at tick `t` (a plain ring: where it was cast).
 static func ring_centre(w: World, k: int, t: int) -> Vector2:
 	var st := w.ab
 	if k >= st.ring_pulse.size() or st.ring_pulse[k] <= 0:
@@ -83,7 +70,7 @@ static func ring_centre(w: World, k: int, t: int) -> Vector2:
 	)
 
 
-## v0.8.0 N3 (WandRings, class doc): a travelling ring's radius `age` ticks after it left (fractional for the view):
+## WandRings, class doc: a travelling ring's radius `age` ticks after it left (fractional for the view):
 ## each of its `pulses` (its life split evenly) grows from WandRings.START_PERMILLE of `full` to `full` over at most
 ## WandRings.GROW_TICKS, so a pulsing ring's edge sweeps out again each pulse.
 static func travel_radius(full: float, pulses: int, life: int, age: float) -> float:
@@ -96,7 +83,7 @@ static func travel_radius(full: float, pulses: int, life: int, age: float) -> fl
 	return full * (s + (1.0 - s) * f)
 
 
-## v0.8.0 N3: a travelling ring's centre `age` ticks after it left from `from` at `vel` per tick, circling its own
+## A travelling ring's centre `age` ticks after it left from `from` at `vel` per tick, circling its own
 ## travelling centre at `orb` metres (Swirl left of the Ring: the group spins as it flies), from angle `orb_a`.
 static func travel_centre(
 	from: Vector2, vel: Vector2, orb: float, orb_a: int, age: float
@@ -109,24 +96,23 @@ static func travel_centre(
 
 
 ## Each ring grows one tick; an enemy whose near edge the ring's edge crossed this tick takes the hit (the first tick
-## also hits what stands on the centre). A ring that reached its radius runs its ON_END hooks and goes. v0.8.0 N3: a
+## also hits what stands on the centre). A ring that reached its radius runs its ON_END hooks and goes. a
 ## travelling ring hits each enemy its disc passes over, once per pulse (_travel_step), and ends where its flight
 ## ends.
 static func advance_rings(w: World) -> void:
 	var st := w.ab
 	if st.ring_pos.is_empty():
 		return
-	_pad_travel(st)
 	var a := w.actors
 	var book := Modifiers.book(w)
 	var k := 0
 	while k < st.ring_pos.size():
-		if w.tick < st.ring_start[k]:  # v0.8.0 AO: a pulse or a thrown ring not started yet
+		if w.tick < st.ring_start[k]:  # A pulse or a thrown ring not started yet
 			k += 1
 			continue
 		var at := st.ring_pos[k]
 		var spec := book.find(st.ring_spec[k])
-		if st.ring_pulse[k] > 0:  # v0.8.0 N3: a travelling ring
+		if st.ring_pulse[k] > 0:  # A travelling ring
 			at = _travel_step(w, k, spec)
 		else:
 			var now := ring_radius(w, k, w.tick)
@@ -157,7 +143,7 @@ static func advance_rings(w: World) -> void:
 		k += 1
 
 
-## v0.8.0 N3: one tick of travelling ring k: every enemy its disc covers now that this ring hasn't hit in this pulse
+## One tick of travelling ring k: every enemy its disc covers now that this ring hasn't hit in this pulse
 ## takes the hit (once per ring and pulse: AbilityState.ring_seen). Returns its centre now.
 static func _travel_step(w: World, k: int, spec: AttackSpec) -> Vector2:
 	var st := w.ab
@@ -185,7 +171,7 @@ static func _travel_step(w: World, k: int, spec: AttackSpec) -> Vector2:
 	return c
 
 
-## v0.8.0 N3: whether the ring (root, tag) already hit actor id `id`.
+## Whether the ring (root, tag) already hit actor id `id`.
 static func _seen(st: AbilityState, root: int, tag: int, id: int) -> bool:
 	var s := st.ring_seen
 	var j := 0
@@ -196,7 +182,7 @@ static func _seen(st: AbilityState, root: int, tag: int, id: int) -> bool:
 	return false
 
 
-## v0.8.0 N3: ring k is going; when no other ring of its root travels on, its hits are forgotten.
+## Ring k is going; when no other ring of its root travels on, its hits are forgotten.
 static func _forget(st: AbilityState, k: int) -> void:
 	if st.ring_seen.is_empty():
 		return
@@ -231,7 +217,7 @@ static func _remove_ring(st: AbilityState, k: int) -> void:
 	st.ring_k.remove_at(k)
 
 
-## The rings growing now, for the view: [centre, radius now] each (v0.8.0 N3: a travelling ring's centre now).
+## The rings growing now, for the view: [centre, radius now] each (a travelling ring's centre now).
 static func rings_now(w: World) -> Array:
 	var out := []
 	for k in w.ab.ring_pos.size():

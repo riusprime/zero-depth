@@ -14,7 +14,7 @@ static var _held: ContentRepository  # keeps the cached secrets def alive while 
 
 static func force_chance(permille: int = 1000) -> void:
 	if _held == null:
-		_held = ContentRepository.load_all()
+		_held = SharedContent.repo()
 	var secrets: SecretsDefinition = _held.get_def(&"secrets", &"secrets")
 	if _saved_permille < 0:
 		_saved_permille = secrets.rune_permille
@@ -32,7 +32,7 @@ static func restore_chance() -> void:
 ## v0.9.0 FV: `floor` picks the run's floor; floor 1 is now 10-12 rooms and rarely holds two dead ends (a timed door
 ## and a rune puzzle both), so the tests that want both use a deeper one.
 static func world(first_seed: int = 1, with_timed: bool = false, floor: int = 1) -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	for s in range(first_seed, first_seed + 80):
 		var lab := RunLab.new(repo, s, &"blade")
 		lab.run.floor_index = floor

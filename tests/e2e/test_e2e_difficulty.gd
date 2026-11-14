@@ -35,12 +35,6 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## Every Label text under `node`.
 func _texts(node: Node) -> PackedStringArray:
 	var out := PackedStringArray()
@@ -58,10 +52,10 @@ func test_a_strong_build_meets_the_hidden_catch_up_and_the_boss_gates() -> void:
 	assert_not_null(w.catch_up_table, "the real game loads the catch-up")
 	assert_eq(w.catch_up.enemy, 1000, "floor 1 with a fresh build: ×1")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	# v0.10.5 O1: the three auto abilities are deleted (a utility has one level): the strong build is four wand cards
 	for k in 4:
-		await _click(e, main, "GrantMod")
+		await e.click_dev("GrantMod")
 		await e.frames(2)
 	# TEST HELPER (labelled): the cards four slots hold cannot reach the boss's expected power alone (the three auto
 	# abilities that did are deleted), so five Damage stat cards stand in for the rest of a strong build.
@@ -107,7 +101,7 @@ func test_a_strong_build_meets_the_hidden_catch_up_and_the_boss_gates() -> void:
 	var panel := main.get_node("UI/DevPanel")
 	var readout := (panel.find_child("CatchUp", true, false) as Label).text
 	assert_true(readout.contains("boss x"), "the dev panel does: %s" % readout)
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(3)
 	# v0.9.0 DP (owner Q26b): floor 1 never earns the Purple Portal: the gate alone opens; the Deep floor's bite
 	# (T + 1, the raised cap, the violet haze) is test_e2e_purple_portal's and test_deep_bite's.

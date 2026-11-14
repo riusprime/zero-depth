@@ -3,7 +3,7 @@ extends RefCounted
 ## v0.9.0 HB3 (owner: "we need decoration, floor, some other models to decorate, a different walls we don't re use what
 ## we have"; the art list §4b, eight pieces delivered 2026-10-23, prepared by scripts/assets/hb3_prep.py): the Rune
 ## Ring's floor, walls, pillar braziers, sealed gate and dressing props, drawn from the hub's plan. Each piece is the
-## owner's (ShopModels lists it) or a code stand-in when it isn't installed (L15). The plan frame is HubView's: plan
+## owner's (ShopModels lists it) or a code stand-in when it isn't installed. The plan frame is HubView's: plan
 ## (x, y) is local (x, 0, -y).
 ## - The floor: the paving (hub_ground, tiled) on the plaza, the centre medallion (hub_ground_centre) laid once under
 ##   the machine with its 16 sockets on the floor runes, and the walkway (hub_ground_path) along the paths: the spawn to
@@ -41,11 +41,11 @@ const PILLAR_STAND_IN_H := 3.2
 ## The floor's layers (m over the plaza's paving; the medallion over the walkway).
 const PATH_Y := 0.006
 const MEDALLION_Y := 0.012
-## v0.10.5 W3-O5 (owner F1: "visible black gaps between the inner circular floor and the walls"): the plaza's paving
+## The plaza's paving
 ## reaches this far past its radius (m), under the whole wall (the prepared segment's foot reaches 2.14 m out; the
 ## paving stopped 0.6 m out, so the dark ground past it showed in the wall's recesses).
 const PLAZA_PAST_WALL := 2.4
-## v0.10.5 W3-O5 (owner F1: "visible gaps between individual wall pieces"): the prepared segment spans its 30° only
+## The prepared segment spans its 30° only
 ## at its foot (±15°); above it narrows to ±13.7°, so neighbours stood up to 0.8 m apart at their ends. Each segment is
 ## stretched round the ring by this much (radius kept: its curve still sits on the plaza's ring), so the narrowest
 ## band still reaches ±15° and the ends overlap; every other segment sits WALL_STAGGER further out (a share of its
@@ -55,7 +55,7 @@ const WALL_STAGGER := 1.003
 
 
 ## The plaza's floor (see the header) under `plan`.
-## v0.10.5 W3-O5: past the paving lies the void (HubVoid), not a darker ground.
+## Past the paving lies the void (HubVoid), not a darker ground.
 static func ground(plan: Node3D, hub: HubDefinition) -> void:
 	var disc := CylinderMesh.new()
 	disc.top_radius = hub.radius_m + PLAZA_PAST_WALL
@@ -152,7 +152,7 @@ static func walls(plan: Node3D, hub: HubDefinition) -> Node3D:
 		if absf(wrapf(a - PI * 0.5, -PI, PI)) < 0.01:
 			continue  # the north gate's slot
 		if hub.training_door_half_m > 0.0 and absf(wrapf(a - PI * 1.5, -PI, PI)) < 0.01:
-			continue  # v0.10.5 O17: the Training Room's door (training_door fills the rest of the slot)
+			continue  # The Training Room's door (training_door fills the rest of the slot)
 		var south := sin(a) < -0.3
 		var seg := Node3D.new()
 		seg.name = "Wall%d" % k
@@ -178,7 +178,7 @@ static func walls(plan: Node3D, hub: HubDefinition) -> Node3D:
 	return root
 
 
-## v0.10.5 O17 (owner P17): the Training Room's south door, in the slot its wall segment left: low stone fillers from
+## The Training Room's south door, in the slot its wall segment left: low stone fillers from
 ## the slot's ends to the door's posts (as low as the south rim), the two posts, the short lane past the rim (paved,
 ## walled low, closed at its end) and a blue glow pooled at its end, the way in. Null when the hub has no door.
 static func training_door(plan: Node3D, hub: HubDefinition) -> Node3D:
@@ -333,7 +333,7 @@ static func gate(plan: Node3D, hub: HubDefinition, gy: float) -> Dictionary:
 	return {"frame": root, "doors": seal, "model": false}
 
 
-## v0.10.5 W3-O5: a copy of the wall segment `mesh` (its middle on +z, round the plaza's centre) with every vertex's
+## A copy of the wall segment `mesh` (its middle on +z, round the plaza's centre) with every vertex's
 ## angle round the centre times `spread` and its distance from the centre times `out`; normals and tangents turn with
 ## their vertex.
 static func spread_segment(mesh: Mesh, spread: float, out: float) -> ArrayMesh:

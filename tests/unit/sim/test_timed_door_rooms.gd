@@ -7,12 +7,14 @@ extends GutTest
 ## both switches stand in the room before it, apart, and the walk from either to the door is at most 60 % of the timer
 ## at base move speed. At the data's 35 % the share of floors holding one is near it.
 
-const SEEDS := 1000
+const FULL_SEEDS := 1000
 const TIMER := 900
 ## v0.9.5 TS: the spread placement.
 const TS_SEEDS := 200
 const TS_TIMER := 1200
 const TS_STEPS := 2
+
+var _seeds := Seeds.count(FULL_SEEDS)  # v0.11.1 Step 4: 200 here, 1,000 in the GitHub full suite
 
 
 func _layout(seed_value: int, map: FloorParams, spec: BossArenaSpec, arenas: int) -> FloorLayout:
@@ -35,7 +37,7 @@ func test_every_timed_door_is_completable_and_never_on_the_way() -> void:
 	var natural := 0
 	var worst := 0.0
 	var bad := 0
-	for s in SEEDS:
+	for s in _seeds:
 		var seed_value := 7001 + s * 7919
 		var f := _layout(seed_value, map, spec, arenas.share_permille)
 		if RngStream.derive(seed_value, TimedDoorRooms.STREAM).chance_permille(
@@ -80,13 +82,13 @@ func test_every_timed_door_is_completable_and_never_on_the_way() -> void:
 		. p(
 			(
 				"TIMED_DOORS| seeds=%d placed_when_tried=%d natural_35pct=%d bad=%d worst_walk_m=%.1f budget_m=%.1f"
-				% [SEEDS, placed, natural, bad, worst, budget]
+				% [_seeds, placed, natural, bad, worst, budget]
 			)
 		)
 	)
 	assert_eq(bad, 0, "every timed door completable, off the way")
-	assert_gt(placed, SEEDS * 8 / 10, "most floors have a dead end that fits one")
-	assert_between(natural, SEEDS * 30 / 100, SEEDS * 40 / 100, "about 35 % of floors are tried")
+	assert_gt(placed, _seeds * 8 / 10, "most floors have a dead end that fits one")
+	assert_between(natural, _seeds * 30 / 100, _seeds * 40 / 100, "about 35 % of floors are tried")
 
 
 func test_the_same_seed_marks_the_same_door() -> void:

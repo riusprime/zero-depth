@@ -3,10 +3,10 @@ extends PanelContainer
 ## A compact item card (PLAN v0.2.0 L13, owner: "more concise, appear in a smaller card and one small sentence … add to
 ## the card a symbol"): the item's icon, its name in its colour and one short sentence. It fades and slides in when
 ## shown and fades out when hidden. It shows text it is given (already translated); it decides nothing about the game.
-## v0.6.1 R1: the card is a wide plaque (Plaques, PlaqueBox; v0.8.0 MU: a carved Ember stone slab with a glowing
+## The card is a wide plaque (Plaques, PlaqueBox; a carved Ember stone slab with a glowing
 ## groove in the card's family colour, CardFrames.family); the name and the sentence step down in size until they
 ## fit the plaque's margins (en and es).
-## v0.10.5 W3-O20 (UI style Astral): in HudStyle.ASTRAL the name is letter-spaced Cinzel in Astral's silver-white, the
+## UI style Astral: the name is letter-spaced Cinzel in Astral's silver-white, the
 ## sentence silver-white, the caption dim; the icon keeps its colour toned toward Astral's silver (HudStyle.tone).
 
 const WIDTH := 600.0
@@ -21,7 +21,7 @@ const GROW := [
 const ICON := 44.0
 const GAP := 12
 const PAD := 4.0
-## v0.10.5 W3-O20: nothing under HudStyle.MIN_LABEL (17; 12 to 15 read 8 to 10 px at 720p); a longer line grows the
+## Nothing under HudStyle.MIN_LABEL (17; 12 to 15 read 8 to 10 px at 720p); a longer line grows the
 ## plaque (GROW) instead.
 const NAME_SIZES := [21, 20, 19, 18, 17]
 const DESC_SIZES := [18, 17]
@@ -73,17 +73,13 @@ func _init() -> void:
 	_name.add_theme_font_override("font", name_font())
 	_caption.add_theme_font_override("font", HudStyle.font(false))
 	_caption.add_theme_font_size_override("font_size", CAPTION_SIZE)
-	_caption.add_theme_color_override(
-		"font_color", HudStyle.pick(HudStyle.A_DIM, Color(1, 1, 1, 0.6))
-	)
+	_caption.add_theme_color_override("font_color", HudStyle.A_DIM)
 	_caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(_name)
 	head.add_child(_caption)
 	_desc.name = "Desc"
 	_desc.add_theme_font_override("font", HudStyle.font(false))
-	_desc.add_theme_color_override(
-		"font_color", HudStyle.pick(HudStyle.A_TEXT, Color(0.86, 0.88, 0.92))
-	)
+	_desc.add_theme_color_override("font_color", HudStyle.A_TEXT)
 	_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.add_child(_desc)
 	for l: Label in [_name, _caption, _desc]:
@@ -104,9 +100,7 @@ func show_item(
 	icon.set_item(id, c)
 	_box.set_plaque(plaque if plaque != &"" else Plaques.of_card(id))
 	_name.text = title
-	_name.add_theme_color_override(
-		"font_color", HudStyle.pick(HudStyle.A_TEXT, c.lerp(Color.WHITE, 0.35))
-	)
+	_name.add_theme_color_override("font_color", HudStyle.A_TEXT)
 	_desc.text = sentence
 	_caption.text = caption
 	_caption.visible = caption != ""
@@ -118,11 +112,9 @@ func show_item(
 		_apply()
 
 
-## v0.10.5 W3-O20: the name's face (Cinzel in ASTRAL, else Atkinson bold); the fit measures with it.
+## The name's face (Cinzel); the fit measures with it.
 static func name_font() -> Font:
-	if HudStyle.current == HudStyle.Style.ASTRAL:
-		return HudStyle.serif(650, 2)
-	return HudStyle.font(true)
+	return HudStyle.serif(650, 2)
 
 
 func hide_card() -> void:

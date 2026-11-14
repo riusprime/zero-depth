@@ -1,6 +1,6 @@
 class_name ModifierOpDefinition
 extends Resource
-## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md §2): one rule of a modifier, a sub-resource of ModifierDefinition.ops.
+## docs/design/MODIFIER_ENGINE.md §2: one rule of a modifier, a sub-resource of ModifierDefinition.ops.
 ## Numbers are in content units (seconds, degrees, metres per second); ContentCompiler.compile_modifier converts them
 ## to sim units with the same functions the item compiler uses, so a migrated item keeps its exact numbers.
 ## The op's stage is the modifier's unless `stage` names another (a card that both fans and weakens its shots):
@@ -9,28 +9,28 @@ extends Resource
 ## Appended, never renumbered. Numeric ops change one spec field: SET, ADD, MAX, MIN (by value) and MUL_PERMILLE
 ## (field × value / 1000). SET_FORM changes what the attack is. STATUS feeds an engine status on hit (stacks, one
 ## application every `every` landed hits; 0 = every hit). ELEMENT names an element the view draws. HOOK adds an
-## attack the spec spawns (its trigger, form, tags, size and damage below). v0.6.5 WN1: TRIGGER, a wand trigger card's
+## attack the spec spawns (its trigger, form, tags, size and damage below). TRIGGER, a wand trigger card's
 ## one op: it cuts the wand (the cards to its right build the child spell cast on `hook_trigger`; Modifiers).
-## v0.8.0 RM (owner O91; WAND.md rule 12): REMNANT, a hook that leaves a remnant (Remnants) instead of launching at
+## REMNANT, a hook that leaves a remnant (Remnants) instead of launching at
 ## once: its child (form, hook_* fields, hook_ops, then the cards to its right) is what the remnant's activation
 ## casts, and the remnant_* fields below say what is left, when and how it activates.
 enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK, TRIGGER, REMNANT }
 
-## The forms of the design's §1 (AttackSpec.Form mirrors these numbers). v0.6.0 MX4: WEAPON, a hook's child only: a
+## The forms of the design's §1 (AttackSpec.Form mirrors these numbers). WEAPON, a hook's child only: a
 ## copy of the weapon's last attack (the Blade's current combo step, or the Gun's shot), resolved when it launches
 ## (Long Shadow's afterimage, Meltdown Edge's circle).
 enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }
 
 ## When a hook fires (AttackSpec.Trigger mirrors these numbers). ON_HIT: each landed hit; ON_KILL: a hit that
-## kills; ON_NTH: an Nth step of the combo (the spec's nth_every) when it resolves. v0.6.0 MX4: ON_END: where the
+## kills; ON_NTH: an Nth step of the combo (the spec's nth_every) when it resolves. ON_END: where the
 ## attack ends (an arc's tip, a bolt's end, a burst, a bomb's blast, a ring at its radius; the dash's end);
 ## ON_LAUNCH: as the attack launches, from where it leaves (the dash's start, every MOVE step walked, a blink's
 ## start, a vent); EVERY_NTH: every hook_every-th launch of the spec launches the child instead (Bomb Rounds).
-## v0.6.5 WN1 (the wand's triggers): ON_CRIT, a landed critical hit; ON_FINISHER, the combo's last step's hits (a
+## The wand's triggers: ON_CRIT, a landed critical hit; ON_FINISHER, the combo's last step's hits (a
 ## TRIGGER op only: Modifiers compiles it into the last step's ON_HIT).
 enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER }
 
-## v0.8.0 RM (Remnants; SIM_CONTRACTS §8l): a REMNANT op's remnant. Kinds: SEGMENT (a line between two points),
+## Remnants; SIM_CONTRACTS §8l: a REMNANT op's remnant. Kinds: SEGMENT (a line between two points),
 ## ANCHOR (a point that pulls), MARK (on an enemy, with a direction), FRAGMENT (on an enemy, a count). Appended, never
 ## renumbered (RemnantRule mirrors the numbers).
 enum RemnantKind { SEGMENT, ANCHOR, MARK, FRAGMENT }
@@ -48,11 +48,11 @@ enum RemnantSpawn { LINK, CONTACT, HIT, PATH, NONE }
 ## of it in its trigger section, each releasing the cast at its damage (at most remnant_release_max).
 enum RemnantActivate { ENEMY_CROSS, ATTACK_CROSS, PULL, TURN, FINISHER, DELAY, CONSUME }
 
-## v0.6.0 MX4: when a hook may fire: always, or only while the heat is at Overclock (Heat Sink Rounds). v0.6.5 WN4:
+## When a hook may fire: always, or only while the heat is at Overclock (Heat Sink Rounds).
 ## COUNTER, only on a slash that counters (within its counter window after a dash: Counter, B16).
 enum When { ALWAYS, OVERCLOCK, COUNTER }
 
-## v0.6.5 WN1: the triggers a TRIGGER op may cut on (WAND.md T1–T4).
+## The triggers a TRIGGER op may cut on (WAND.md T1–T4).
 const WAND_TRIGGERS: Array[int] = [
 	Trigger.ON_HIT, Trigger.ON_KILL, Trigger.ON_END, Trigger.ON_FINISHER, Trigger.ON_CRIT
 ]
@@ -100,7 +100,7 @@ const FIELD_STAGE := {
 	&"resonance_permille": [3, &"resonance_permille", ""],
 	&"heat_rate_permille": [5, &"heat_rate_permille", ""],
 	&"range": [5, &"range", ""],
-	# v0.10.5 W3-S18: Halo's reach when the bolt also homes (SpecForms.halo_homing_reach)
+	# Halo's reach when the bolt also homes (SpecForms.halo_homing_reach)
 	&"halo_homing_reach_permille": [5, &"halo_homing_permille", ""],
 	# v0.6.5 WN3 (the Gun pool: GunForms)
 	&"twin": [1, &"twin", ""],
@@ -120,16 +120,16 @@ const FIELD_STAGE := {
 	&"line_m": [5, &"line_m", ""],
 	# v0.8.0 BL (BLADE_AUDIT B1: Double Slash +1 repeat a level)
 	&"repeats": [1, &"repeats", ""],
-	# v0.8.0 PF2 (owner O9): a bolt hook's projectiles alive at once, at most (Blade Storm's blades)
+	# A bolt hook's projectiles alive at once, at most (Blade Storm's blades)
 	&"alive_max": [1, &"alive_max", ""],
-	# v0.8.0 AO (owner O37): a Ring's share of the damage when it is more than one ring or pulse, and Swirl's motion
+	# A Ring's share of the damage when it is more than one ring or pulse, and Swirl's motion
 	&"ring_share_permille": [3, &"ring_share_permille", ""],
 	&"swirl": [2, &"swirl", ""],
-	# v0.8.0 RM (owner O91): Dodge Imprint (a dash spec's): for this long after a dash, the next weapon attack is cast
+	# Dodge Imprint (a dash spec's): for this long after a dash, the next weapon attack is cast
 	# from where the dash began, × imprint_permille
 	&"imprint_seconds": [3, &"imprint_ticks", "ticks"],
 	&"imprint_permille": [3, &"imprint_permille", ""],
-	# v0.8.0 MR (owner O91): a projectile's share of the launch's damage (Twin, Spread, Halo), and the rhythm cards'
+	# A projectile's share of the launch's damage (Twin, Spread, Halo), and the rhythm cards'
 	# extra rate (FireRhythm: Rapid Fire's ramp, Flurry's burst)
 	&"share_permille": [3, &"share_permille", ""],
 	&"ramp_permille": [5, &"ramp_permille", ""],
@@ -138,36 +138,36 @@ const FIELD_STAGE := {
 	&"burst_permille": [5, &"burst_permille", ""],
 	&"burst_swings": [5, &"burst_swings", ""],
 	&"burst_pause_seconds": [5, &"burst_pause_ticks", "ticks"],
-	# v0.9.0 LZ (owner Q8): the Laser form (AttackSpec names each)
+	# The Laser form (AttackSpec names each)
 	&"beam_hold": [0, &"beam_hold", ""],
 	&"beam_permille": [3, &"beam_permille", ""],
 	&"rate_scale_permille": [5, &"rate_scale_permille", ""],
 	&"move_permille": [3, &"move_permille", ""],
-	# v0.9.0 BM (owner Q9): the Bomb form's blast radius (mm)
+	# The Bomb form's blast radius (mm)
 	&"blast_radius_mm": [3, &"blast_mm", ""],
-	# v0.9.0 VP (owner Q10): the Void form's aura (mm), its damage ticks (s), its pull's reach (mm) and top speed (mm/s)
+	# The Void form's aura (mm), its damage ticks (s), its pull's reach (mm) and top speed (mm/s)
 	&"void_aura_mm": [3, &"void_mm", ""],
 	&"void_tick_seconds": [3, &"void_tick_ticks", "ticks"],
 	&"void_pull_mm": [3, &"void_pull_mm", ""],
 	&"void_pull_mmps": [3, &"void_pull_mmps", ""],
-	# v0.9.0 AF1 (owner Q7): the Lance form's line (Lance) and the Scatter form's pellets (Scatter)
+	# The Lance form's line (Lance) and the Scatter form's pellets (Scatter)
 	&"lance": [0, &"lance", ""],
 	&"pellets": [0, &"pellets", ""],
-	# v0.9.0 AF2 (owner Q7): the Glaive form's disc (Glaive) and the Seekers form's darts (Seekers)
+	# The Glaive form's disc (Glaive) and the Seekers form's darts (Seekers)
 	&"glaive": [0, &"glaive", ""],
 	&"seekers": [0, &"seekers", ""],
-	# v0.9.0 AF3 (owner Q7): the Wave form's width (mm; WaveShots) and the Wisps form's wisps, their period and share
+	# The Wave form's width (mm; WaveShots) and the Wisps form's wisps, their period and share
 	&"wave_width_mm": [3, &"wave_mm", ""],
 	&"wisps": [0, &"wisps", ""],
 	&"wisp_seconds": [3, &"wisp_ticks", "ticks"],
 	&"wisp_permille": [3, &"wisp_permille", ""],
-	# v0.9.5 FC0 (owner): the Rune Explosion form's radius (mm) and growth time (s)
+	# The Rune Explosion form's radius (mm) and growth time (s)
 	&"rune_radius_mm": [3, &"rune_mm", ""],
 	&"rune_seconds": [3, &"rune_ticks", "ticks"],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).
-## v0.6.0 MX4: poison (Venom Core's engine, Venom).
+## Poison (Venom Core's engine, Venom).
 const STATUSES: Array[StringName] = [&"burn", &"shock", &"bleed", &"frost", &"slow", &"poison"]
 const ELEMENTS: Array[StringName] = [&"ember", &"storm", &"frost", &"venom", &"void", &"bleed"]
 
@@ -196,31 +196,31 @@ const ELEMENTS: Array[StringName] = [&"ember", &"storm", &"frost", &"venom", &"v
 @export var hook_damage_permille := 0
 @export var hook_every := 0
 @export var hook_effect: StringName = &""
-## v0.6.0 MX4: the hook's child launches this long after its trigger (0 = at once); it fires only `hook_when`; and
+## The hook's child launches this long after its trigger (0 = at once); it fires only `hook_when`; and
 ## `hook_ops` shape the child before the build's modifiers compile it (any op but HOOK, in order, each in its own
 ## field's units: a count, a speed, a life, a status, an element...).
 @export var hook_delay_seconds := 0.0
 @export var hook_when := When.ALWAYS
 @export var hook_ops: Array[Resource] = []  # ModifierOpDefinitions (Resource: a script never types itself)
-## v0.6.5 WN1 (TRIGGER): the trigger on a Gun run when it differs from hook_trigger (-1: the same). T4 is On Finisher
+## TRIGGER: the trigger on a Gun run when it differs from hook_trigger (-1: the same). T4 is On Finisher
 ## with the Blade and On Crit with the Gun.
 @export var hook_trigger_gun := -1
-## v0.6.5 WN3 (WAND.md rule 6, a duplicate levels the card up 1–5): added to `value` per level above 1, in the same
+## WAND.md rule 6, a duplicate levels the card up 1–5: added to `value` per level above 1, in the same
 ## units (a numeric op; a HOOK op: to hook_damage_permille). 0 = the op is the same at every level.
 @export var per_level := 0.0
-## v0.8.0 BL (BLADE_AUDIT B2): per_level counts only for the levels above this one (1: from level 2, as before; 2: from
+## BLADE_AUDIT B2: per_level counts only for the levels above this one (1: from level 2, as before; 2: from
 ## level 3 on, so a drawback stays whole at levels 1 and 2 and shrinks from 3).
 @export var per_level_after := 1
-## v0.9.5 CLV (CARD_LEVELS.md): the value at level 1, 2, 3 ... in `value`'s units, for a step that isn't linear (Twin:
+## CARD_LEVELS.md: the value at level 1, 2, 3... in `value`'s units, for a step that isn't linear (Twin:
 ## copies 1, 1, 2; share 700, 900, 750). Empty = `value` + `per_level` as before. A numeric op only; at most 5 entries.
 @export var level_values := PackedFloat32Array()
-## v0.6.5 WN5b (TRIGGER; WAND.md's legendary "On Hit ×2": the cast repeats twice): how many times the cut's child spell
+## TRIGGER; WAND.md's legendary "On Hit ×2": the cast repeats twice: how many times the cut's child spell
 ## is cast each time the trigger fires (1..3), each cast hook_delay_seconds after the one before.
 @export var hook_casts := 1
-## v0.8.0 MR (owner O91, Split Wave): an op of the card's other reading (ModifierDefinition.alt_target): it runs only
+## An op of the card's other reading (ModifierDefinition.alt_target): it runs only
 ## there, and the others only on the target.
 @export var alt := false
-## v0.8.0 RM (owner O91: "Build reusable remnants, connections and events"; Remnants): a REMNANT op's remnant (see the
+## A REMNANT op's remnant (see the
 ## enums): its kind, when it is left and how it activates; its life (s) and the most of this card's alive (each + its
 ## per_level a level above 1); the least time between two of its hits on one enemy; its charges (activations before it
 ## is spent; 0 = until its life ends); a crack's length and a segment's half width (m); two shots this close link

@@ -33,7 +33,7 @@ const FINAL_LIMIT := 36000
 
 
 static func _repo() -> ContentRepository:
-	return ContentRepository.load_all()
+	return SharedContent.repo()
 
 
 ## An open-plane world with the base Blade build (data/player/runner.tres + data/builds/blade.tres, the heat on), the
@@ -96,7 +96,7 @@ func _dodge(id: StringName, attack_id: StringName, dist: float, way: int) -> Arr
 				pressed = InputFrame.DASH
 				dashed = n if dashed < 0 else dashed
 		var go := dir
-		if running and atk.beam_turn_milli > 0 and way < 2:
+		if running and atk.beam_burns and way < 2:
 			# v0.9.5 BH2 (B4): the burning beam turns after you, so the bot's answer is to circle the boss, drifting in
 			var rel := w.player_pos() - w.actors.pos(i)
 			var side := -1.0 if way == 0 else 1.0
@@ -138,10 +138,10 @@ func test_a_big_attack_is_followed_by_a_still_punish_window() -> void:
 				bigs[[def.id, a.id]] = true
 	assert_eq(
 		bigs.size(),
-		15,
+		17,
 		(
 			"v0.9.0 NB1: the Tidecaller's Shell Slam; NB2: the Wardens' Shield Bash; NB3: the Gavel;"
-			+ " NB4: the Lantern Sweep"
+			+ " NB4: the Lantern Sweep; v0.11.0 O5: the Wardens' Charge and Ground Slam"
 		)
 	)
 	for key: Array in bigs:

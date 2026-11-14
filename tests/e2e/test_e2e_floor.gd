@@ -4,7 +4,7 @@ extends GutTest
 ## per room outside the sealed arena, which is filled first; none in the start hall) and the sealed gate. Walking
 ## (left stick only) to the nearest altar shows the interact prompt; pad X opens it, the 3-card pick appears, d-pad
 ## right and A take the 2nd card: the item is owned, the altar is gone, the HUD card names the item and the icon row
-## gains one.
+## gains one (v0.11.0 F12: the HUD names the card as a ticker line).
 
 
 func after_each() -> void:
@@ -131,9 +131,43 @@ func test_walk_to_an_altar_and_take_the_second_card_with_the_pad() -> void:
 			)
 	assert_eq(w.rewards.index_of(altar_id), -1, "the altar is consumed")
 	assert_eq(main.view.rewards.node_of(altar_id), null, "and gone from the view")
-	assert_eq(hud.card_mode(), &"pickup", "the card shows the item just taken")
-	assert_eq(hud.card().title_text(), face["title"], "the HUD names the card")
-	assert_eq(hud.card().desc_text(), face["sentence"], "and says what it does")
-	assert_eq(hud.card().icon_id(), face["id"], "with its symbol")
+	assert_true(hud.notices.texts().has(face["title"]), "the ticker names the card taken")
+	assert_ne(hud.card_mode(), &"pickup", "no pickup card in the centre any more")
 	var mod := Offers.type_of(offer[1]) == Offers.MOD
 	assert_eq(hud.item_icon_count(), 1 if mod else 0, "a mod joins the carried-items row")
+
+
+## v0.11.0 F12 (owner: "it is just a notification"): a pickup makes a line in the ticker under the top plate, with
+## no card in the centre, and the line is gone after its hold. Real input only (the pad walks, opens and picks).
+func test_a_pickup_is_a_ticker_line_that_goes_after_its_hold() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu()
+	var w := e.world()
+	var hud: Hud = main.get_node("UI/Hud")
+	var target_i := E2e.nearest_reward(w, RewardStore.Kind.ALTAR)
+	var reached: bool = await e.walk_to(
+		w.rewards.pos(target_i), w.reward_table.interact_radius_m * 0.6
+	)
+	assert_true(reached, "walked up to the altar")
+	await e.frames(2)
+	assert_true(hud.notices.is_empty(), "nothing yet")
+	e.joy_button(JOY_BUTTON_X, true)
+	await e.frames(1)
+	e.joy_button(JOY_BUTTON_X, false)
+	await e.frames(2)
+	e.joy_button(JOY_BUTTON_A, true)
+	e.joy_button(JOY_BUTTON_A, false)
+	await e.frames(3)
+	assert_eq(w.choosing, -1, "the pick closed")
+	assert_eq(hud.notices.line_count(), 1, "the card taken is one ticker line")
+	var plate := main.get_node("UI/Hud/TopPlate") as Control
+	assert_gte(
+		hud.notices.get_global_rect().position.y,
+		plate.get_global_rect().end.y,
+		"under the top plate"
+	)
+	assert_ne(hud.card_mode(), &"pickup", "no pickup card")
+	var frames := int((NoticeTicker.HOLD + NoticeTicker.FADE_OUT) * 60.0) + 10
+	await e.frames(frames)
+	assert_true(hud.notices.is_empty(), "never permanent: gone after its hold")

@@ -8,7 +8,7 @@ extends RefCounted
 var events: Array[EventTable] = []
 var curses: Array[CurseTable] = []
 var rules := EventRules.new()
-## `loot:event` (rolls when a panel first opens, the cursed chest rolls) and `ai:elite` (v0.9.0 EL: an elite's core
+## `loot:event` (rolls when a panel first opens, the cursed chest rolls) and `ai:elite` (an elite's core
 ## card and its 30 % drop): sub-streams of loot and ai (SIM_CONTRACTS §5), so no older draw moves.
 var rng: RngStream
 var rng_elite: RngStream
@@ -24,7 +24,7 @@ var state := PackedInt32Array()
 var rolled := PackedInt32Array()
 var roll_card := PackedInt32Array()
 var roll_curse := PackedInt32Array()
-## v0.8.0 N17 (owner O75): the curse room's altar (a pedestal index), or -1 on a floor without a curse room.
+## The curse room's altar (a pedestal index), or -1 on a floor without a curse room.
 var curse_k := -1
 ## The pedestal whose panel is open (an index), or -1: while >= 0 the world waits.
 var open := -1
@@ -40,7 +40,7 @@ var overclock_bonus := 0
 var cursed_ids := PackedInt32Array()
 var cursed_slot := PackedInt32Array()
 var cursed_curse := PackedInt32Array()
-## v0.7.5 MG (N10): cursed chest offers rolled on this floor (EventRules.cursed_chests_per_floor caps it).
+## Cursed chest offers rolled on this floor (EventRules.cursed_chests_per_floor caps it).
 var cursed_rolled := 0
 ## For the views: the last choice taken (tick, pedestal, choice), a refused pick, a curse gained (tick, curse), a
 ## curse lifted (tick, curse) and a defence finished (tick, pedestal).
@@ -105,5 +105,5 @@ func hash_into(h: StateHasher) -> void:
 	for v in [cleanse_tick, cleanse_last, done_tick, done_pedestal, 1 if force_curse else 0]:
 		h.add_int(v)
 	h.add_int(cursed_rolled)  # v0.7.5 MG
-	if curse_k >= 0:  # v0.8.0 N17: only floors with a curse room
+	if curse_k >= 0:  # Only floors with a curse room
 		h.add_int(curse_k)

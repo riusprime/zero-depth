@@ -28,7 +28,7 @@ const KIT: Array[StringName] = [
 	&"rubble_small",
 	&"grass_tuft",
 	&"debris_low",
-	# v0.8.0 MI (owner O79): the piece roles (BiomeLook.ROLES) the layouts name; each biome draws them from its pools.
+	# The piece roles (BiomeLook.ROLES) the layouts name; each biome draws them from its pools.
 	&"cover_square",
 	&"cover_block",
 	&"cover_long",
@@ -68,7 +68,7 @@ func category() -> StringName:
 	return &"room_layout"
 
 
-## The pieces this layout may name (v0.8.0 SR: a shop room adds its stall's pieces, ShopRoomDefinition).
+## The pieces this layout may name (a shop room adds its stall's pieces, ShopRoomDefinition).
 func kit() -> Array[StringName]:
 	return KIT
 
@@ -210,13 +210,6 @@ static func _filled(box: Rect2, solids: Array[Rect2], a: int, b: int) -> bool:
 ## A piece's footprint around its group's anchor (its yaw left out).
 static func footprint(p: RoomLayoutPiece) -> Rect2:
 	return Rect2(p.at - p.size * 0.5, p.size)
-
-
-## The gap between two rects (m): 0 when they touch or overlap.
-static func gap_between(a: Rect2, b: Rect2) -> float:
-	var dx := maxf(maxf(a.position.x - b.end.x, b.position.x - a.end.x), 0.0)
-	var dy := maxf(maxf(a.position.y - b.end.y, b.position.y - a.end.y), 0.0)
-	return sqrt(dx * dx + dy * dy)
 
 
 ## True when the piece's turned footprint lies inside one of the solids (within OVERHANG).

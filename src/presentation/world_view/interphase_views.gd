@@ -25,7 +25,7 @@ const CORE := Color(0.95, 0.86, 1.0)
 const HOT := Color(1.0, 0.35, 0.55)
 const BEAM_Y := 0.9
 const MAX_ARMS := 5
-## v0.10.0 VX5 (R37): a violet pillar of light where an eruption strikes; false: none.
+## A violet pillar of light where an eruption strikes; false: none.
 const PACK_PILLARS := true
 const MAX_DISCS := 8
 const MAX_STRIPS := 8
@@ -74,6 +74,8 @@ void fragment() {
 }
 """
 
+## True once a draw with nothing to show hid it all: later frames and syncs draw nothing until there is.
+var quiet := false
 var _data := {}
 var _light := {}
 var _tick := 0
@@ -249,10 +251,12 @@ func sync(reader: WorldReader) -> void:
 	elif prev >= 2 and _stage == 0:  # it slams back down
 		_bursts.append([1, SimPlane.to_3d(reader.final_home(), 0.05), 0.0])
 	_note_strikes()
-	_draw(0.0)
+	_redraw(0.0)
 
 
 func _process(delta: float) -> void:
+	if quiet:  # (a sync with something to show clears it)
+		return
 	_clock += delta * (0.0 if ViewPrefs.reduced_motion else 1.0)
 	for g in _ghosts:
 		g[1] += delta
@@ -260,6 +264,17 @@ func _process(delta: float) -> void:
 		b[2] += delta
 	_ghosts = _ghosts.filter(func(g: Array) -> bool: return g[1] < SPIKE_S)
 	_bursts = _bursts.filter(func(b: Array) -> bool: return b[2] < BURST_S)
+	_redraw(delta)
+
+
+## Draws, unless there is nothing to show and the last draw hid it all already.
+func _redraw(delta: float) -> void:
+	if _data.is_empty() and _ghosts.is_empty() and _bursts.is_empty():
+		if quiet:
+			return
+		quiet = true
+	else:
+		quiet = false
 	_draw(delta)
 
 
@@ -273,7 +288,7 @@ func _note_strikes() -> void:
 			_pack_pillar(e)
 
 
-## R37: the pack's pillar of light, in the Fallen's violet, where an eruption strikes (spikes and floor ring stay).
+## The pack's pillar of light, in the Fallen's violet, where an eruption strikes (spikes and floor ring stay).
 func _pack_pillar(e: Dictionary) -> void:
 	var pack := BossPackHold.find(self) if PACK_PILLARS else null
 	if pack == null or not pack.has_room(&"area"):

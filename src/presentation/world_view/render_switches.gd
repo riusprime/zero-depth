@@ -33,7 +33,6 @@ const RENDER_THREAD := false
 ## 5. Every effect, enemy and attack shader drawn once, tiny, behind the loading cover (ShaderWarmup), so the first
 ## shot, spawn or effect of a floor never compiles one mid-fight. Same pixels. false: compiled on first use again.
 const SHADER_WARMUP := true
-## v0.10.5 PB (owner, perf wave 2; docs/roadmap/v0.10.5/evidence/PB_SHADOWS.md):
 ## 6. No particle system casts a shadow (ParticleShadowOff, under WorldViewRoot and HubView): sparks, smoke, motes
 ## and the VFX pack's effects stop drawing into the sun's and the torches' shadow passes. false: the scenes' own.
 const PARTICLES_NO_SHADOW := true

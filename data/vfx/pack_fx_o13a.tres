@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PackFxDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/pack_fx_definition.gd" id="1_packfx"]
+
+[resource]
+script = ExtResource("1_packfx")
+id = &"pack_fx_o13a"
+ids = Array[StringName]([&"shot_dim_needle"])
+scenes = PackedStringArray("res://assets/BinbunVFX/magic_projectiles/effects/mprojectile_basic/mprojectile_basic_vfx_01.tscn")
+families = Array[StringName]([&"enemy_shot"])
+scales = PackedFloat32Array(1)
+primary = Array[Color]([Color(0, 1, 0.4, 1)])
+secondary = Array[Color]([Color(0.04, 0.54, 0.23, 1)])
+tertiary = Array[Color]([Color(0.06, 0.2, 0.1, 1)])

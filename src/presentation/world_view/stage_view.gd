@@ -5,7 +5,7 @@ extends Node3D
 
 const TILE_M := 4.0
 const EDGE_WALL_HEIGHT := 1.0
-## Cover slabs inside rooms. 1.8 m (was 2.4) so slabs hide less of the floor from the iso camera (v0.2.0).
+## Cover slabs inside rooms. 1.8 m (was 2.4) so slabs hide less of the floor from the iso camera.
 const SLAB_HEIGHT := 1.8
 const FADED_ALPHA := 0.3
 ## Soft-shadow blur: 0.5 straightens the edges; 1.0 and above wiped out the props' small shadows in the test
@@ -16,14 +16,14 @@ const SHADOW_BLUR := 0.5
 ## so the space between rooms reads as void (v0.2.0 I, v0.3.0 A). Any room or structural wall the footprint
 ## doesn't enclose (a room added after generation) gets ground too: the room grown by this margin, the wall's box.
 const ROOM_GROUND_MARGIN := 0.8
-## v0.5.9: the kit's ground textures by biome (prop_style; "" for any other), and the metres one texture covers.
-## v0.6.0 (owner, 2026-10-09): Ruins uses the same ground as the other floors ("change the texture from first floor
+## The kit's ground textures by biome (prop_style; "" for any other), and the metres one texture covers.
+## Ruins uses the same ground as the other floors ("change the texture from first floor
 ## to match the rest of the floors").
 const GROUND_TEXTURES := {
 	&"": "res://assets/textures/kit/ground_b.png",
 	&"night_rocks": "res://assets/textures/kit/ground_b.png",
 	&"red_canyon": "res://assets/textures/kit/ground_b.png",
-	# v0.9.0 MI2: Frozen Shore's snow is the owner's ground_snow (delivered 2026-10-22).
+	# Frozen Shore's snow is the owner's ground_snow (delivered 2026-10-22).
 	&"frozen_shore": "res://assets/textures/kit/ground_snow.png",
 }
 const GROUND_TEXTURE_M := 4.0
@@ -36,31 +36,31 @@ const WALL_TOP_TEXTURE := "res://assets/textures/kit/tex_wall_top_%s.png"
 ## Lighting quality (v0.5.9 Step 1, GameSettings "lighting"): "high" adds contact shadow (SSAO) and bounce light
 ## (SSIL); "low" leaves both off for slower GPUs.
 const LIGHTING_QUALITIES: Array[String] = ["high", "low"]
-## v0.5.5 DS (S5): the Deep look, layered on the biome's mood (the Deep gate's violet; starting values).
+## The Deep look, layered on the biome's mood (the Deep gate's violet; starting values).
 const DEEP_VIOLET := Color("#8A5CFF")
 const DEEP_EDGE := Color("#140A26")
 const DEEP_FOG_DENSITY := 0.012
-## v0.8.0 GX: the volumetric fog's reach from the camera (m; past IsoRig's 100 m far plane, as the floor is 48-72 m
+## The volumetric fog's reach from the camera (m; past IsoRig's 100 m far plane, as the floor is 48-72 m
 ## away) and its froxel spread (1: even, as nothing near the camera needs the detail).
 const VOLUMETRIC_LENGTH := 110.0
 const VOLUMETRIC_DETAIL_SPREAD := 1.0
 
-## Which biome's props to scatter (v0.3.0 B): &"night_rocks" (faceted boulders, dead trees), &"red_canyon" (mesa
+## Which biome's props to scatter: &"night_rocks" (faceted boulders, dead trees), &"red_canyon" (mesa
 ## chunks, dry grass), anything else Ruins (rubble, grass). Set before build().
 var prop_style := &""
 var palette := {}
 ## The biome's lighting mood (v0.5.9 Step 1). Null keeps the pre-v0.5.9 look (one bright sun, linear tonemap), the
 ## G2 mockup's variant A. Set before build().
 var mood: BiomeMood = null
-## v0.7.5 NB1: the biome's own look (BiomeLook: square cover, decoration swaps, the edge); null for the first three
+## The biome's own look (BiomeLook: square cover, decoration swaps, the edge); null for the first three
 ## biomes, which keep their hand-written look. Set before build().
 var look: BiomeLook = null
-## v0.7.5 NB1: the floor's ice patches (null without any) and what lies past the floor's edge (null: the void).
+## The floor's ice patches (null without any) and what lies past the floor's edge (null: the void).
 var ice: IceViews
 var edge: BiomeEdge
-## v0.7.5 NB2: the floor's starglow pools (Starfall's surface; null without any).
+## The floor's starglow pools (Starfall's surface; null without any).
 var glow: StarglowViews
-## v0.8.0 FB1: the final arena's own stage (null on every other floor): its round floor, ring, seating, gate, void.
+## The final arena's own stage (null on every other floor): its round floor, ring, seating, gate, void.
 var final_arena: FinalArenaStage
 var lighting := "high"
 var environment: Environment
@@ -70,42 +70,42 @@ var contact_shadows: MeshInstance3D
 ## The floor built from the owner's kit (v0.5.9 Step 4), when there is a mood and every wall and cover piece
 ## loads; otherwise the boxes and primitive props draw as before.
 var kit: StageKit
-## v0.8.0 GX (owner O86): the air on the "high" tier (StageAtmosphere: the fog layer, embers, dust); null without
+## The air on the "high" tier (StageAtmosphere: the fog layer, embers, dust); null without
 ## the kit.
 var atmosphere: StageAtmosphere
-## v0.6.1 SD (owner R4): the crystal-shard clusters dressing the floor (null without the kit or a floor).
+## The crystal-shard clusters dressing the floor (null without the kit or a floor).
 var shards: ShardCluster
-## v0.5.5 DS (owner S5, "Deep floors must feel different"): a Deep floor (WorldReader.floor_is_deep) keeps its biome's
+## A Deep floor (WorldReader.floor_is_deep) keeps its biome's
 ## mood and gets a violet haze on top: violet-tinted fog (thicker), ambient, sun and void (_apply_deep).
 var deep := false
-## v0.9.0 TD (Q23; HiddenRoom): the hidden room's drawn pieces (its ground, own walls), out of sight until
+## Q23; HiddenRoom: the hidden room's drawn pieces (its ground, own walls), out of sight until
 ## reveal_hidden(); its loose decoration and wall lights are left out (the timed door's view lights it once open).
 var hidden_nodes: Array[Node3D] = []
 var wall_specs: Array = []
-## v0.8.0 N10: how long the procedural walls took to build (ms; 0 without them): the probes read it.
+## How long the procedural walls took to build (ms; 0 without them): the probes read it.
 var wall_build_ms := 0.0
 var _wall_nodes: Array[MeshInstance3D] = []
 var _wall_solid: StandardMaterial3D
 var _wall_faded: StandardMaterial3D
 var _wall_classes: Array[int] = []
-## v0.5.9 L8: each drawn wall's kit piece from a themed room (&"" for none).
+## Each drawn wall's kit piece from a themed room (&"" for none).
 var _wall_pieces: Array[StringName] = []
-## v0.8.0 RT: each drawn wall's designed-room height (m; 0 = the kit's own; -1 for a wall that isn't a designed room's).
+## Each drawn wall's designed-room height (m; 0 = the kit's own; -1 for a wall that isn't a designed room's).
 var _wall_layout_heights := PackedFloat64Array()
 ## Sim-plane rects the ground covers on a generated floor (empty in the arena: a square ground).
 var _ground_rects: Array[Rect2] = []
-## v0.8.0 N12: the queue the stage is being built on (build() makes its own), and whether the kit dresses the floor.
+## The queue the stage is being built on (build() makes its own), and whether the kit dresses the floor.
 var _queue: ViewBuildQueue
 var _use_kit := false
-## v0.8.0 N12: the crystal shards' placement (ShardDressing.place, on a worker), and its input.
+## The crystal shards' placement (ShardDressing.place, on a worker), and its input.
 var _shard_input := {}
 var _shard_placed: Array = []
-## v0.8.0 N12: the dresser's input and placements, and the procedural walls' input and result (on a worker).
+## The dresser's input and placements, and the procedural walls' input and result (on a worker).
 var _dressing := {}
 var _placements: Array = []
-## v0.8.0 N19: the furnished curse room (Rect2() for none), whose loose decoration and wall lights are left out.
+## The furnished curse room (Rect2() for none), whose loose decoration and wall lights are left out.
 var _curse_rect := Rect2()
-## v0.9.0 SA: floor 1's arrival altar (its centre; radius 0 for none): no loose decoration on it.
+## Floor 1's arrival altar (its centre; radius 0 for none): no loose decoration on it.
 var _altar_at := Vector2.ZERO
 var _altar_r := 0.0
 var _proc_input := {}
@@ -124,7 +124,7 @@ func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> voi
 	q.run_all()
 
 
-## v0.8.0 N12 (owner O70): build()'s parts as jobs on `q` (ViewBuildQueue), in build()'s order; a load runs them over
+## build()'s parts as jobs on `q` (ViewBuildQueue), in build()'s order; a load runs them over
 ## frames behind the loading cover. A part that learns its own pieces as it goes adds them right after itself
 ## (q.add_next: the crystal shards' placement on a worker, then one room's shards a job).
 func queue_build(
@@ -134,7 +134,7 @@ func queue_build(
 	palette = p_palette
 	deep = reader.floor_is_deep()
 	q.add("stage_light", _build_environment_and_light)
-	if reader.final_arena():  # v0.8.0 FB1 (F2): the final arena draws itself
+	if reader.final_arena():  # The final arena draws itself
 		q.add("final_arena", _build_final_arena.bind(reader))
 		return
 	q.add("ground", _build_floor_ground.bind(reader, arena_half))
@@ -150,9 +150,9 @@ func _build_environment_and_light() -> void:
 	_build_light()
 
 
-## v0.9.0 HB: only the mood's environment, grade, vignette and sun (the hub draws its own ground and props).
+## Only the mood's environment, grade, vignette and sun (the hub draws its own ground and props).
 func build_lighting_only() -> void:
-	_build_environment_and_light()  # v0.10.5 W3-O5 (owner F2): no biome backdrop; the hub's HubVoid
+	_build_environment_and_light()  # No biome backdrop; the hub's HubVoid
 
 
 func _build_floor_ground(reader: WorldReader, arena_half: float) -> void:
@@ -164,7 +164,7 @@ func _build_floor_ground(reader: WorldReader, arena_half: float) -> void:
 		for i in reader.wall_count():
 			if reader.wall_class(i) == 0:
 				_add_ground(reader.wall(i).bounds())
-		for room in reader.hidden_rooms():  # v0.9.0 TD (Q23); RA: every hidden room
+		for room in reader.hidden_rooms():  # v0.9.0 TD; RA: every hidden room
 			_hidden_ground[room] = HiddenRoom.split(reader, _ground_rects, room)
 			_hidden_rects.append(reader.floor_room(room))
 		_hidden_walls = HiddenRoom.walls(reader)
@@ -187,7 +187,7 @@ func _build_dressing(reader: WorldReader, arena_half: float) -> void:
 		_build_props(reader.seed_value(), arena_half)
 
 
-## v0.8.0 FB1: the final arena (FinalArenaStage): the walls' specs stay for the occlusion, its wall blocks are the
+## The final arena (FinalArenaStage): the walls' specs stay for the occlusion, its wall blocks are the
 ## faded ones.
 func _build_final_arena(reader: WorldReader) -> void:
 	_build_walls(reader, false)
@@ -199,11 +199,11 @@ func _build_final_arena(reader: WorldReader) -> void:
 	_wall_faded = final_arena.wall_faded
 
 
-## v0.7.5 NB1: the sim's ice patches, wherever the floor has them (Frozen Shore's surface).
+## The sim's ice patches, wherever the floor has them (Frozen Shore's surface).
 func _build_ice(reader: WorldReader) -> void:
 	if reader.ice_patch_count() == 0:
 		return
-	if reader.surface_kind() == &"starglow":  # v0.7.5 NB2: Starfall's pools, not ice
+	if reader.surface_kind() == &"starglow":  # Starfall's pools, not ice
 		glow = StarglowViews.new()
 		glow.name = "Starglow"
 		add_child(glow)
@@ -215,14 +215,14 @@ func _build_ice(reader: WorldReader) -> void:
 	ice.build(reader, reader.seed_value())
 
 
-## v0.7.5 NB1: the biome's edge past the floor (BiomeLook.edge; Frozen Shore's frozen sea), on generated floors.
+## The biome's edge past the floor (BiomeLook.edge; Frozen Shore's frozen sea), on generated floors.
 func _build_edge(reader: WorldReader) -> void:
 	if look == null or not BiomeEdge.has_style(look.edge) or _ground_rects.is_empty():
 		return
 	edge = BiomeEdge.new()
 	edge.name = "Edge"
 	add_child(edge)
-	# v0.8.0 MI: the owner's void pieces the biome's pools name (the heaviest of each pool).
+	# The owner's void pieces the biome's pools name (the heaviest of each pool).
 	var pieces := {}
 	var pools: Dictionary = StageDresser.look_input(look).get("pools", {})
 	for role: StringName in [&"void_island", &"void_spike"]:
@@ -305,7 +305,7 @@ func _mood_environment(env: Environment) -> void:
 		env.fog_density = mood.fog_density
 		env.fog_light_color = mood.fog_color
 		env.fog_height = mood.fog_height
-		# v0.8.0 GX (O86): volumetric fog, its density from StageAtmosphere's layer only (an even density over the
+		# Volumetric fog, its density from StageAtmosphere's layer only (an even density over the
 		# 48-72 m between the iso camera and the floor would black the frame out); the void never takes it, and it
 		# reaches past the camera's far plane (IsoRig: 100 m). On and off with the lighting tier (set_lighting).
 		env.volumetric_fog_density = 0.0
@@ -337,7 +337,7 @@ func apply_mood() -> void:
 		atmosphere.retune(mood)
 
 
-## v0.5.5 DS (S5): the Deep haze on top of whatever look the environment has (the mood's, or the old one): the void
+## The Deep haze on top of whatever look the environment has (the mood's, or the old one): the void
 ## and the ambient pulled toward violet, and violet fog at least DEEP_FOG_DENSITY thick.
 func _apply_deep(env: Environment) -> void:
 	env.background_color = env.background_color.lerp(DEEP_EDGE, 0.6)
@@ -359,7 +359,7 @@ func set_lighting(quality: String) -> void:
 	environment.ssao_enabled = high
 	environment.ssil_enabled = high and mood.ssil_enabled
 	if mood != null:
-		# v0.8.0 GX (O86): the new atmosphere is "high" only: volumetric fog, the height haze, embers and dust.
+		# The new atmosphere is "high" only: volumetric fog, the height haze, embers and dust.
 		var height_haze := mood.fog_height_density if high else 0.0
 		environment.fog_height_density = height_haze
 		environment.fog_enabled = mood.fog_density > 0.0 or deep or height_haze > 0.0
@@ -410,14 +410,14 @@ func _build_light() -> void:
 		light.rotation_degrees = Vector3(mood.sun_pitch_deg, mood.sun_yaw_deg, 0)
 		light.light_energy = mood.sun_energy
 		light.light_color = mood.sun_color
-		light.light_volumetric_fog_energy = mood.volumetric_sun_energy  # v0.8.0 GX: torches carry the fog
-	if deep:  # v0.5.5 DS (S5): the sun pulled toward violet, a little dimmer
+		light.light_volumetric_fog_energy = mood.volumetric_sun_energy  # Torches carry the fog
+	if deep:  # The sun pulled toward violet, a little dimmer
 		light.light_color = light.light_color.lerp(DEEP_VIOLET, 0.45)
 		light.light_energy *= 0.85
 	light.shadow_enabled = true
 	light.shadow_blur = SHADOW_BLUR
 	light.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
-	RenderSwitches.apply_sun(light)  # v0.10.5 PB: 80 m, or the cheaper sun (switch 8)
+	RenderSwitches.apply_sun(light)  # 80 m, or the cheaper sun (switch 8)
 	sun = light
 	add_child(light)
 
@@ -442,7 +442,7 @@ func _add_ground(r: Rect2) -> void:
 	_ground_rects.append(r)
 
 
-## The same checker as _build_ground, on the global tile grid, clipped to each room's rect. With a mood (v0.5.9),
+## The same checker as _build_ground, on the global tile grid, clipped to each room's rect. With a mood,
 ## the owner's ground texture instead, mapped in world space so it runs on across tiles, tinted by the biome.
 func _build_room_ground() -> void:
 	var mats := [_mat(palette["ground"]), _mat(palette["ground_alt"])]
@@ -510,17 +510,17 @@ func _add_ground_tiles(cells: Array, mats: Array, prefix := "Ground") -> Array[N
 	return made
 
 
-## v0.9.0 TD: `node` (hidden room `room`'s) out of sight until reveal_hidden().
+## `node` (hidden room `room`'s) out of sight until reveal_hidden().
 func _hide(node: Node3D, room: int) -> void:
 	node.visible = false
-	node.set_meta(ShaderWarmup.WARM_META, true)  # v0.10.5: drawn behind the cover, so the reveal compiles nothing
+	node.set_meta(ShaderWarmup.WARM_META, true)  # Drawn behind the cover, so the reveal compiles nothing
 	hidden_nodes.append(node)
 	if not _hidden_by.has(room):
 		_hidden_by[room] = []
 	(_hidden_by[room] as Array).append(node)
 
 
-## v0.9.0 TD (Q23): hidden room `room` comes into sight (its door first opened; RA: its puzzle solved); -1: every
+## Hidden room `room` comes into sight (its door first opened; RA: its puzzle solved); -1: every
 ## hidden room. Idempotent.
 func reveal_hidden(room := -1) -> void:
 	for r: int in _hidden_by.keys():
@@ -536,7 +536,7 @@ func reveal_hidden(room := -1) -> void:
 			_hidden_walls.erase(i)
 
 
-## v0.9.0 TD: StageKit's pieces of the hidden room's own walls, out of sight (after the kit's nodes are built).
+## StageKit's pieces of the hidden room's own walls, out of sight (after the kit's nodes are built).
 func _hide_kit_walls() -> void:
 	if kit == null:
 		return
@@ -684,17 +684,17 @@ func _build_kit(reader: WorldReader) -> void:
 	for i in reader.floor_door_count():
 		doors.append(reader.floor_door_rect(i))
 	var keep: Array = [reader.portal_pos()]
-	if reader.floor_receiver():  # v0.8.0 N11 (O69): nothing stands on the hero's receiver
+	if reader.floor_receiver():  # Nothing stands on the hero's receiver
 		keep.append(reader.floor_start_pos())
 	for i in reader.reward_count():
 		keep.append(reader.reward_pos(i))
-	if reader.shop_stall():  # v0.8.0 SR: no rubble where you walk up to the counter
+	if reader.shop_stall():  # No rubble where you walk up to the counter
 		keep.append(reader.shop_front())
-	if reader.event_curse_altar() >= 0:  # v0.8.0 N17: nothing stands on the curse altar
+	if reader.event_curse_altar() >= 0:  # Nothing stands on the curse altar
 		keep.append(reader.event_pos(reader.event_curse_altar()))
-	if reader.has_purple_runes():  # v0.9.0 DP: nothing stands on the purple dais
+	if reader.has_purple_runes():  # Nothing stands on the purple dais
 		keep.append(reader.purple_dais_pos())
-	if reader.has_shrines() and reader.shrine()["has_fountain"]:  # v0.9.0 HF: nor on the fountain
+	if reader.has_shrines() and reader.shrine()["has_fountain"]:  # Nor on the fountain
 		keep.append(reader.shrine()["fountain_pos"])
 	var dressing := {
 		"walls": walls,
@@ -705,13 +705,14 @@ func _build_kit(reader: WorldReader) -> void:
 		"biome": prop_style,
 		"seed": reader.seed_value(),
 		"props": _layout_props(reader),
+		"named_rooms": reader.floor_purpose_rects(),  # Their pieces are drawn as named
 	}
-	if look != null:  # v0.7.5 NB1: the biome's own cover and decoration (v0.8.0 MI: its piece pools)
+	if look != null:  # The biome's own cover and decoration (its piece pools)
 		dressing.merge(StageDresser.look_input(look), true)
-	# v0.8.0 N12 (O70): the dressing and the ruin's geometry are pure work (StageDresser and ProceduralWall read only
+	# The dressing and the ruin's geometry are pure work (StageDresser and ProceduralWall read only
 	# their dictionaries and the cosmetic stream; no node, no mesh): on a worker. Then the nodes, a few a job.
 	_dressing = dressing
-	# v0.8.0 N19 (O80): the pact room keeps only its own fixed look (CurseRoomView.strip after the dresser)
+	# The pact room keeps only its own fixed look (CurseRoomView.strip after the dresser)
 	_curse_rect = (
 		reader.floor_room(reader.event_curse_room()) if reader.curse_room_furnished() else Rect2()
 	)
@@ -724,7 +725,7 @@ func _build_kit(reader: WorldReader) -> void:
 		"seed": reader.seed_value(),
 		"face_m": mood.wall_texture_m,
 		"top_m": mood.wall_top_texture_m,
-		"calm": WallCalm.calm_of(mood),  # v0.8.0 N15: the biome's calmer walls
+		"calm": WallCalm.calm_of(mood),  # The biome's calmer walls
 	}
 	_queue.add_next_worker("dress", _dress)
 	_queue.add_next("kit_nodes", _build_kit_nodes.bind(reader, walls, rooms, doors, keep))
@@ -746,11 +747,11 @@ func _build_kit_nodes(
 	reader: WorldReader, walls: Array, rooms: Array, doors: Array, keep: Array
 ) -> void:
 	var tex := wall_textures(prop_style) if not _proc.is_empty() else {}
-	tex.merge(WallCalm.look_of(mood))  # v0.8.0 N15: the shader's calming values
+	tex.merge(WallCalm.look_of(mood))  # The shader's calming values
 	kit = StageKit.new()
 	kit.name = "Kit"
 	add_child(kit)
-	# v0.8.0 N12: in parts (StageKit.queue_build), then the shadows and the shards after them.
+	# In parts (StageKit.queue_build), then the shadows and the shards after them.
 	kit.queue_build(_queue, _placements, wall_specs.size(), palette["cover"], mood, _proc, tex)
 	_queue.add_next("kit_shadows", func() -> void: kit.set_shadows(lighting == "high"))
 	_queue.add_next("kit_hidden", _hide_kit_walls)  # v0.9.0 TD
@@ -758,7 +759,7 @@ func _build_kit_nodes(
 	_build_shards(reader, walls, rooms, doors, keep, _placements)
 
 
-## v0.8.0 GX (owner O86): the air round the kit's light props (after the kit has placed them).
+## The air round the kit's light props (after the kit has placed them).
 func _build_atmosphere() -> void:
 	if mood == null or kit == null:
 		return
@@ -769,7 +770,7 @@ func _build_atmosphere() -> void:
 	set_lighting(lighting)
 
 
-## v0.8.0 N10 (the probes' numbers): the structural walls' drawn wall meshes (kit pieces and procedural walls; not
+## The probes' numbers: the structural walls' drawn wall meshes (kit pieces and procedural walls; not
 ## the light props) and their full-detail triangles: {"nodes": int, "tris": int}.
 func structural_wall_stats() -> Dictionary:
 	var nodes := 0
@@ -803,7 +804,7 @@ static func mesh_tris(mesh: Mesh) -> int:
 	return n
 
 
-## v0.8.0 N10: the owner's wall textures for a biome ({"face", "top"}; Ruins' when the biome has none).
+## The owner's wall textures for a biome ({"face", "top"}; Ruins' when the biome has none).
 static func wall_textures(biome: StringName) -> Dictionary:
 	var out := {}
 	for pair: Array in [["face", WALL_TEXTURE], ["top", WALL_TOP_TEXTURE]]:
@@ -814,7 +815,7 @@ static func wall_textures(biome: StringName) -> Dictionary:
 	return out
 
 
-## v0.8.0 RT: the designed rooms' drawn-only pieces (WorldReader.layout_prop).
+## The designed rooms' drawn-only pieces (WorldReader.layout_prop).
 static func _layout_props(reader: WorldReader) -> Array:
 	var out: Array = []
 	for i in reader.layout_prop_count():
@@ -831,7 +832,7 @@ static func _names(d: Dictionary) -> Dictionary:
 	return out
 
 
-## v0.6.1 SD (owner R4): crystal-shard clusters on top of the kit (ShardDressing's rules; ShardCluster draws them).
+## Crystal-shard clusters on top of the kit (ShardDressing's rules; ShardCluster draws them).
 ## Presentation only: the same walls, doorways and keep-clear spots the dresser used, plus its light props, the
 ## other interactables, the enemy spawn spots and the hero's start.
 func _build_shards(
@@ -840,18 +841,18 @@ func _build_shards(
 	if not reader.has_floor():
 		return
 	var clear: Array = keep.duplicate()
-	var special: Array = []  # v0.6.1 SD4: rooms holding these are never crystal rooms
+	var special: Array = []  # Rooms holding these are never crystal rooms
 	for p: Dictionary in placements:
 		if p["kind"] == &"light":
 			clear.append(SimPlane.to_sim((p["xform"] as Transform3D).origin))
-	if reader.deep_portal_site():  # v0.9.0 DP: where the Deep gate may still open
+	if reader.deep_portal_site():  # Where the Deep gate may still open
 		clear.append(reader.deep_portal_pos())
-	if reader.has_purple_runes():  # v0.9.0 DP: none on the purple dais
+	if reader.has_purple_runes():  # None on the purple dais
 		clear.append(reader.purple_dais_pos())
 	if reader.has_shop():
 		clear.append(reader.shop_pos())
 		special.append(reader.shop_pos())
-	if reader.has_shrine_site():  # v0.9.0 SH: any shrine kind stands on the gamble shrine's site
+	if reader.has_shrine_site():  # Any shrine kind stands on the gamble shrine's site
 		clear.append(reader.gamble_pos())
 		special.append(reader.gamble_pos())
 	if reader.has_shrines() and reader.shrine()["has_fountain"]:  # v0.9.0 HF
@@ -860,15 +861,15 @@ func _build_shards(
 	for k in reader.event_count():
 		clear.append(reader.event_pos(k))
 		special.append(reader.event_pos(k))
-	if reader.has_timed_door():  # v0.9.0 TD: no crystals in the secret room or round the switches
+	if reader.has_timed_door():  # No crystals in the secret room or round the switches
 		special.append(reader.floor_room(reader.timed_room()).get_center())
 		for k in reader.timed_switch_count():
 			clear.append(reader.interactable_pos(reader.timed_switch_entry(k)))
-	if reader.has_rune_puzzle() and reader.rune_room() >= 0:  # v0.9.0 RA: none in its hidden room or round the pillars
+	if reader.has_rune_puzzle() and reader.rune_room() >= 0:  # None in its hidden room or round the pillars
 		special.append(reader.floor_room(reader.rune_room()).get_center())
 		for k in reader.rune_pillar_count():
 			clear.append(reader.interactable_pos(reader.rune_pillar_entry(k)))
-	if reader.has_cracked_wall():  # v0.9.0 DX: none in the room behind the cracked wall
+	if reader.has_cracked_wall():  # None in the room behind the cracked wall
 		special.append(reader.floor_room(reader.crack_room()).get_center())
 	for k in reader.breakable_count():  # nor on a container or a barrel
 		clear.append(reader.breakable_pos(k))
@@ -887,7 +888,7 @@ func _build_shards(
 		"start": reader.floor_start_pos(),
 		"seed": reader.seed_value(),
 	}
-	# v0.8.0 N12 (O70): the placement is pure work (ShardDressing reads only the dictionary), on a worker; then each
+	# The placement is pure work (ShardDressing reads only the dictionary), on a worker; then each
 	# room's crystals are baked and added in a job of their own.
 	_queue.add_next_worker("shards_place", _place_shards)
 	_queue.add_next("shards", _build_shard_rooms)

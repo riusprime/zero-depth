@@ -1,6 +1,6 @@
 class_name HealthBarTrail
 extends RefCounted
-## v0.8.0 N4 (owner O56, O57): the shared model of a health bar's motion, used by the hero's HUD bar, every boss bar
+## The shared model of a health bar's motion, used by the hero's HUD bar, every boss bar
 ## and the bars over enemies (and the hero's own over-head bar). It is fed the sim's fraction (set_target, once per
 ## tick or frame) and run in frame time (advance); it decides nothing (EI-07: the sim's HP is the outcome, this only
 ## shows it).

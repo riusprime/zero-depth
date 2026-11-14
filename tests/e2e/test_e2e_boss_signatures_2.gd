@@ -21,25 +21,20 @@ func after_each() -> void:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE))
 
 
-func _click(e: E2e, main: Main, button_name: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button_name, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func _summon(e: E2e, main: Main, id: StringName) -> int:
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.is_dev_panel_open())
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	var choice := main.get_node("UI/DevPanel").find_child("BossChoice", true, false) as Label
 	var w := e.world()
 	var name := tr(w.boss_tables[BossLab.table_index(w, id)].name_key)
 	for k in 8:
 		if choice.text == name:
 			break
-		await _click(e, main, "NextBoss")
+		await e.click_dev("NextBoss")
 		await e.frames(1)
 	assert_eq(choice.text, name)
-	await _click(e, main, "SpawnBoss")
+	await e.click_dev("SpawnBoss")
 	await e.frames(2)
 	await e.tap(KEY_QUOTELEFT)
 	assert_false(main.is_dev_panel_open())

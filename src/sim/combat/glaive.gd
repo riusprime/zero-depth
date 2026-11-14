@@ -36,7 +36,7 @@ static func is_disc(w: World, pi: int) -> bool:
 ## Disc `pi` is on its way back (the return rule turned it).
 static func coming_back(w: World, pi: int) -> bool:
 	var p := w.projectiles
-	return p.moves and pi < p.ret.size() and p.ret[pi] == 2
+	return p.moves and p.ret[pi] == 2
 
 
 ## The run's Gun shot is the Glaive now.

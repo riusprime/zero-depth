@@ -29,7 +29,15 @@ func test_the_shipped_floor_is_valid_and_compiles() -> void:
 	assert_eq(t.hp_tier_permille[1], 1100)
 	assert_eq(t.damage_tier_permille[1], 1050)
 	assert_eq(t.interval_tier_permille[1], 900)
-	assert_eq(t.kinds.size(), 11)
+	assert_eq(
+		t.kinds.size(), 26, "the eleven, the five biome variants (O13a), ten signatures (O13b-d)"
+	)
+	# v0.11.0 O13a (Q23): the variants' rows are biome-only (their biome's floors), the eleven shared
+	# O13b-d: the ten signatures are biome-only too
+	var own := PackedByteArray(
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+	)
+	assert_eq(t.biome_only, own)
 	assert_eq(t.packs.size(), t.kinds.size(), "a pack per mix row (0 = the floor's draw)")
 	var warden := t.kinds.find(ActorStore.Kind.WARDEN)
 	assert_gte(warden, 0)
@@ -120,3 +128,28 @@ func test_bad_caps_and_packs_are_rejected() -> void:
 	d = _def()
 	d.edge_band_m = -1.0
 	assert_has(_codes(d), &"negative")
+
+
+## v0.11.0 O9 (owner Q15: "once or twice a floor, 30-60 over 10 s"; Q16: the alive cap): the shipped surge numbers, and
+## a bad set refused.
+func test_the_surge_numbers_are_the_owners_and_validated() -> void:
+	var repo := ContentRepository.load_all()
+	var def: SurgeDefinition = repo.get_def(&"surge", &"surge")
+	assert_not_null(def, "data/spawning/surge.tres")
+	assert_eq(def.validate(), [])
+	assert_eq([def.surges_min, def.surges_max], [1, 2], "once or twice a floor")
+	assert_eq([def.size_min, def.size_max], [30, 60], "30-60 of them")
+	assert_eq(def.duration_seconds, 10.0, "over 10 s")
+	assert_lte(def.alive_cap, SurgeDefinition.HARD_CAP, "never above the hard cap")
+	var t := ContentCompiler.compile_floor_spawning(repo, 1)
+	assert_not_null(t.surge, "every floor's spawner carries the surges")
+	assert_eq(t.surge.duration_ticks, 600)
+	assert_lte(t.surge.alive_cap, t.cap_max, "at most the spawner's hard cap")
+	var bad := def.duplicate(true) as SurgeDefinition
+	bad.size_min = 70
+	bad.alive_cap = 150
+	bad.duration_seconds = 0.0
+	var codes := bad.validate().map(func(v: ValidationIssue) -> StringName: return v.code)
+	assert_has(codes, &"surge_order", "size_min above size_max")
+	assert_has(codes, &"surge_range", "alive_cap above 120")
+	assert_has(codes, &"not_positive", "a window of 0 s")

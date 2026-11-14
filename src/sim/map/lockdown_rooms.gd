@@ -1,13 +1,12 @@
 class_name LockdownRooms
 extends RefCounted
-## v0.9.0 LK (owner Q21: "a new room type"; "1-2 a floor, short"): the floor's Lockdown rooms and their kinds, chosen
-## after every other room kind and secret is set (Lockdowns.setup, last), from the rooms already generated, so the
-## floor's walls and every other draw stay as they were:
+## The floor's Lockdown rooms and their kinds, chosen right after the arenas and the Overrun room (FloorScenario.build),
+## from the rooms already generated, so the floor's walls stay as they were:
 ## - a candidate is never the start hall, the boss room or its host, the portal room, the Overrun room, the shop's
 ##   room (ShopPlacement's pick, on any floor), the curse room, an arena, a secret room (the timed door's, the rune
 ##   puzzle's, the cracked wall's) or a secret's host, the purple-rune room, or a room in `taken` (an event's, the
 ##   gamble shrine's); it needs at least MIN_SPOTS spawn points (its formations stand inside) and (v0.9.0 CF, owner:
-##   "lets never make it a 1x1") at least the table's min_cells grid cells (0, a floor saved before CF: any room);
+##   "lets never make it a 1x1") at least the table's min_cells grid cells (0: any room);
 ## - the count is drawn in rooms_min..rooms_max from the `map:lockdowns` sub-stream of the floor seed, the candidates
 ##   are shuffled from it and taken in that order, rooms off the main path (start hall to boss room) first;
 ## - each is taken only if, with every Lockdown taken so far, the arenas and the Overrun room shut, every room reached
@@ -16,7 +15,7 @@ extends RefCounted
 ##   (never two in a row);
 ## - each one's kind is drawn from the same stream by the kinds' weights among those allowed on the floor (the Elite
 ##   kind is step EL's hook, weight 0 in the data).
-## v0.9.0 CF2 (owner: "Lockdowns get rooms first"): from floor rules 17 mark runs right after the arenas and the
+## Mark runs right after the arenas and the
 ## Overrun room (FloorScenario.build, `taken` empty, no event, shrine, curse room or secret placed yet), and those
 ## kinds keep out of lockdown_rooms (and a secret's host is never one); the rules above are unchanged.
 ## Pure sim code: integers, BFS over the doorway graph.
@@ -69,11 +68,11 @@ static func mark(
 	for r in f.lockdown_rooms:
 		f.lockdown_kinds.append(maxi(0, Offers.pick(rng, weights)))
 	if set_piece and not f.lockdown_kinds.is_empty():
-		f.lockdown_kinds[0] = LockdownTable.Kind.ELITE  # v0.10.5 O14: the midpoint set piece
+		f.lockdown_kinds[0] = LockdownTable.Kind.ELITE  # The midpoint set piece
 	return f.lockdown_rooms
 
 
-## v0.10.5 O14 (Schell's interest curve): `ordered` with, first, the candidate that is valid as the floor's first
+## Schell's interest curve: `ordered` with, first, the candidate that is valid as the floor's first
 ## Lockdown and whose nearest main-path room lies closest to the main path's middle room (ties: fewer doorways to the
 ## path, then the shuffled order). `ordered` unchanged when no candidate is valid.
 static func _set_piece_first(

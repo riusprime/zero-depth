@@ -24,10 +24,10 @@ extends RefCounted
 ##   pulls you to its level: your damage on it × nerf_permille (pace_ref_dps / the dps its HP was set from, at least
 ##   nerf_min_permille: the base hero's damage), your move speed at most the base (Stats.move_permille). Outside, it
 ##   fights with its own kit and you with yours.
-## - v0.9.5 BH1 (owner Q11, HC7): each loop finished (n = min(loop - 1, loop_ease_max)) shortens the fight:
+## - v0.9.5 BH1: each loop finished (n = min(loop - 1, loop_ease_max)) shortens the fight:
 ##   pace_ref_ticks and the floor pace_min_ticks (and the rate cap, which is that floor) are cut by
 ##   loop_time_ease_permille (120) per loop before the square root and the clamp (ease_permille); the final bodies'
-##   attacks hit loop_damage_ease_permille (80) per loop softer (damage_ease_permille; FinalBoss._spawn). v0.9.5 BH2:
+##   attacks hit loop_damage_ease_permille (80) per loop softer (damage_ease_permille; FinalBoss._spawn).
 ##   the three numbers (3, 120, 80) are data (data/tuning/sim.tres, SimTuning), no longer constants here.
 ## Pure: integer maths (64-bit), the integer square root (CatchUp.isqrt); no stream is drawn.
 
@@ -50,18 +50,18 @@ static func table(w: World) -> BossTable:
 # --- the HP ---------------------------------------------------------------------------------------------------------
 
 
-## v0.9.5 BH1 (Q11): the loops finished that ease the final fight: min(loop - 1, loop_ease_max) (3 as shipped).
+## The loops finished that ease the final fight: min(loop - 1, loop_ease_max) (3 as shipped).
 static func loops_eased(w: World) -> int:
 	return clampi(w.loop - 1, 0, w.tuning.loop_ease_max)
 
 
-## v0.9.5 BH1: what the fight's target time (and its floor) is scaled by, per mille: 1000 - 120 per loop finished
+## What the fight's target time (and its floor) is scaled by, per mille: 1000 - 120 per loop finished
 ## (loop_time_ease_permille).
 static func ease_permille(w: World) -> int:
 	return 1000 - w.tuning.loop_time_ease_permille * loops_eased(w)
 
 
-## v0.9.5 BH1: what the final bodies' attack damage is scaled by, per mille: 1000 - 80 per loop finished
+## What the final bodies' attack damage is scaled by, per mille: 1000 - 80 per loop finished
 ## (loop_damage_ease_permille).
 static func damage_ease_permille(w: World) -> int:
 	return 1000 - w.tuning.loop_damage_ease_permille * loops_eased(w)
@@ -77,7 +77,7 @@ static func hp_for(dps_milli: int, t: BossTable, ease: int = 1000) -> int:
 
 
 ## The ticks a paced body of table t lasts at `dps_milli`: pace_ref_ticks × sqrt(ref / dps), clamped. `ease` (per
-## mille; v0.9.5 BH1: ease_permille) scales pace_ref_ticks and the clamp's floor.
+## mille; ease_permille) scales pace_ref_ticks and the clamp's floor.
 static func seconds_at(dps_milli: int, t: BossTable, ease: int = 1000) -> int:
 	var root := CatchUp.isqrt(t.pace_ref_dps * 1000000000 / maxi(1, dps_milli))  # sqrt(ref / dps) per mille
 	var lo := maxi(1, t.pace_min_ticks * ease / 1000)
@@ -126,7 +126,7 @@ static func advance(w: World, i: int, t: BossTable) -> void:
 	if a.state[i] == EnemyAi.State.SPAWN or a.dead[i] == 1:
 		return
 	if f.ip_stage >= BossInterphase.STAGE_VANISHED:
-		return  # v0.9.5 BH6: vanished, the bucket does not fill and no window cue comes
+		return  # Vanished, the bucket does not fill and no window cue comes
 	if t.pace:
 		if not f.paced:
 			_try_set(w, i, t)
@@ -174,7 +174,7 @@ static func window_at(w: World, tick: int) -> int:
 	if i < 0 or w.actors.dead[i] == 1 or w.actors.state[i] == EnemyAi.State.SPAWN:
 		return Mimic.OFF
 	if f.ip_stage >= BossInterphase.STAGE_VANISHED:
-		return Mimic.OFF  # v0.9.5 BH6: no window while it is vanished
+		return Mimic.OFF  # No window while it is vanished
 	var u := (
 		tick
 		- f.phase_tick
@@ -193,7 +193,7 @@ static func window_at(w: World, tick: int) -> int:
 	return Mimic.OFF
 
 
-## True when the mimic body copies the build now: in a window, or always when its table has no windows (FB3).
+## True when the mimic body copies the build now: in a window, or always when its table has no windows.
 static func copies(w: World) -> bool:
 	var t := table(w)
 	if t == null or not t.mimic:

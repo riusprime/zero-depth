@@ -13,7 +13,7 @@ extends RefCounted
 ## - FIGHT: the buildup ended: the walls of light (FloorLayout.light_walls) close the plateau's ring (a hero still out
 ##   on the causeway is set back inside first, at the plateau's edge by the causeway's top), and the Colossus rises
 ##   from the altar (FinalBoss.begin): today's fight, unchanged.
-## v0.9.0 IX: the pylons are entries of the shared interactable registry (Interactables, Kind.PYLON, ref k, reach
+## The pylons are entries of the shared interactable registry (Interactables, Kind.PYLON, ref k, reach
 ## PYLON_REACH_M; register()): the registry's slot in World.step's order (after the boss door's) picks the press and
 ## calls press(); the HUD's shared prompt shows APPROACH_PYLON_PROMPT by an unlit one. A lit pylon's entry is disabled.
 ## Pure: no stream is drawn.
@@ -114,6 +114,7 @@ func advance(w: World) -> void:
 	fight_tick = w.tick
 	var f := w.floor_layout
 	var r := FinalArena.radius_of(f)
+	HeartRoom.on_fight(w, EDGE_IN)  # A hero in the heart room is set back by its doorway
 	if Kin.length(w.player_pos() - f.altar_pos) > r - EDGE_IN:  # still out on the causeway: back on the plateau
 		var axis := Kin.dir(FinalArena.START_ANGLE)
 		w.actors.set_pos(0, f.altar_pos + axis * (r - EDGE_IN))

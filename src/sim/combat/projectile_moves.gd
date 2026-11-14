@@ -1,14 +1,14 @@
 class_name ProjectileMoves
 extends RefCounted
-## v0.6.0 MX4 (the M-list's projectile behaviours; SIM_CONTRACTS §8b): what a player projectile's spec makes it do in
+## The M-list's projectile behaviours; SIM_CONTRACTS §8b: what a player projectile's spec makes it do in
 ## flight, read once when it spawns (World._apply_spawns) into ProjectileStore's behaviour columns and run in its
 ## sweep (World._projectile_hits, tick phase 6):
 ## - pierce N (Edge Rounds): a hit passes through, N times (the Hot pierce and Pulse Gun's come first);
-## - return (Boomerang; v0.9.0 AF2: the Glaive's disc, the card retired into it): at half its life it turns back
+## - return (Boomerang; the Glaive's disc, the card retired into it): at half its life it turns back
 ##   toward the player, passing through every enemy (each sweep leaves it past the body it hit), and ends at the
 ##   player;
 ## - homing (Seeker): each tick it turns at most `homing` (1/4096 turns) toward the nearest enemy within HOME_M (v0.9.0
-##   AF2: a Seekers dart toward its own one of the enemies nearest the hero, Seekers.target);
+##   A Seekers dart toward its own one of the enemies nearest the hero, Seekers.target);
 ## - orbit first (Orbit Rounds): it circles the player at ORBIT_R_M for orbit_ticks, starting from its aim, then
 ##   leaves along the aim it came round to (its life waits for the orbit).
 ## No trig (Kin), no randomness; the columns are hashed only once a projectile had a behaviour.
@@ -34,11 +34,11 @@ static func on_spawn(w: World, pi: int, extra_pierce: int = 0) -> void:
 			and s.orbit_ticks <= 0
 			and not GunForms.moves(s)
 		)
-	):  # v0.6.5 WN3: spiral, mine
+	):  # Spiral, mine
 		return
 	p.moves = true
-	GunForms.on_spawn(w, pi, s)  # v0.6.5 WN3: before the orbit, so life0 counts the mine's wait
-	p.pierce_left[pi] = s.pierce + extra_pierce  # v0.9.5 WB: the Wisps' shots pierce one more
+	GunForms.on_spawn(w, pi, s)  # Before the orbit, so life0 counts the mine's wait
+	p.pierce_left[pi] = s.pierce + extra_pierce  # The Wisps' shots pierce one more
 	p.ret[pi] = 1 if s.returns > 0 else 0
 	p.home[pi] = s.homing
 	p.speed[pi] = Kin.length(Vector2(p.vel_x[pi], p.vel_y[pi]))
@@ -51,22 +51,26 @@ static func on_spawn(w: World, pi: int, extra_pierce: int = 0) -> void:
 
 
 ## Before projectile `pi`'s sweep: an orbiting one steps round the player (its velocity is this tick's chord), a
-## homing one turns, a returning one heads for the player (and ends there).
-static func steer(w: World, pi: int) -> void:
+## homing one turns, a returning one heads for the player (and ends there). true when a form held its
+## velocity itself this tick (an orbit lap round the hero, a Mine hold or wait, a Halo dart's straight run), so a
+## Gravity Node does not bend it (StarfallKinds.bend_projectile).
+static func steer(w: World, pi: int) -> bool:
 	var p := w.projectiles
 	if not p.moves or pi >= p.ret.size():
-		return
-	VoidMods.steer(w, pi)  # v0.9.5 FC3: a void's orbit, mine and homing
-	LanceMods.steer(w, pi)  # v0.9.5 FC4: a lance's Homing
-	if GlaiveMods.steer(w, pi):  # v0.9.5 FC6: a disc's Orbit lap and Mine hold set its velocity
-		return
-	if SeekerMods.steer(w, pi):  # v0.9.5 FC7: a dart's Orbit lap, Mine hold and Halo's straight flight
-		return
-	if GunForms.mine_waits(w, pi):  # v0.6.5 WN3: G12 Mine, still until touched
-		return
+		return false
+	VoidMods.steer(w, pi)  # A void's orbit, mine and homing
+	LanceMods.steer(w, pi)  # A lance's Homing
+	if GlaiveMods.steer(w, pi):  # A disc's Orbit lap and Mine hold set its velocity
+		return true
+	if SeekerMods.steer(w, pi):  # A dart's Orbit lap, Mine hold and Halo's straight flight
+		return true
+	if GunForms.mine_waits(w, pi):  # G12 Mine, still until touched
+		return true
+	var lap := p.orbit_n[pi] > 0 and p.orbit_t[pi] > 0
 	_steer(w, pi)
-	GlaiveMods.steer_after(w, pi)  # v0.9.5 FC6: a disc's Homing, Ricochet's end
-	GunForms.spiral_turn(w, pi)  # v0.6.5 WN3: G11 Spiral, after homing and the way back
+	GlaiveMods.steer_after(w, pi)  # A disc's Homing, Ricochet's end
+	GunForms.spiral_turn(w, pi)  # G11 Spiral, after homing and the way back
+	return lap
 
 
 static func _steer(w: World, pi: int) -> void:
@@ -93,15 +97,15 @@ static func _steer(w: World, pi: int) -> void:
 		if d <= w.player.radius_m + p.radius[pi] + p.speed[pi]:
 			p.life[pi] = 1
 		elif p.life[pi] <= 1 and Glaive.is_disc(w, pi):
-			p.life[pi] = 2  # v0.9.0 AF2: a Glaive disc's way home is not cut short (a pierce's push ate its life)
+			p.life[pi] = 2  # A Glaive disc's way home is not cut short (a pierce's push ate its life)
 		if d > 0.0:
 			var v := to * (p.speed[pi] / d)
 			p.vel_x[pi] = v.x
 			p.vel_y[pi] = v.y
 		return
 	if p.home[pi] > 0:
-		var best := Seekers.target(w, pi)  # v0.9.0 AF2: a Seekers dart curves to its own enemy
-		if best == Seekers.STRAIGHT:  # v0.9.5 FC7: no enemy left for it to seek
+		var best := Seekers.target(w, pi)  # A Seekers dart curves to its own enemy
+		if best == Seekers.STRAIGHT:  # No enemy left for it to seek
 			return
 		if best < 0:
 			best = _nearest(w, at, HOME_M)
@@ -150,7 +154,7 @@ static func pierce(w: World, pi: int, k: int, from: Vector2) -> bool:
 	var out := from + dir * (along + sqrt(maxf(0.0, reach * reach - perp2)))
 	p.pos_x[pi] = out.x
 	p.pos_y[pi] = out.y
-	if p.ret[pi] == 1 and Glaive.is_disc(w, pi):  # v0.9.0 AF2: the push spends the disc's flight (it turns 7 m out)
+	if p.ret[pi] == 1 and Glaive.is_disc(w, pi):  # The push spends the disc's flight (it turns 7 m out)
 		p.life[pi] = maxi(1, p.life[pi] - roundi(Kin.length(out - from) / speed))
 	return true
 
@@ -175,7 +179,7 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	]:
 		h.add_ints(arr)
 	h.add_f32s(p.speed)
-	for k in p.mine_t.size():  # v0.6.5 WN3: only once a projectile spiralled or waited
+	for k in p.mine_t.size():  # Only once a projectile spiralled or waited
 		if p.spiral[k] != 0 or p.mine_t[k] != 0:
 			h.add_ints(p.spiral)
 			h.add_ints(p.mine_t)

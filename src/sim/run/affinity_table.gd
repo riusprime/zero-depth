@@ -1,6 +1,6 @@
 class_name AffinityTable
 extends RefCounted
-## v0.9.0 RB (AFFINITIES.md A1-A5): the run's rune affinity, compiled from its AffinityDefinition
+## AFFINITIES.md A1-A5: the run's rune affinity, compiled from its AffinityDefinition
 ## (RunContentCompiler.compile_affinity). Content: read in play, never written (the snapshot keeps it as loadout).
 ## Integers and metres only; the colour and glyph stay in content for the presentation.
 

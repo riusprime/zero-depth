@@ -10,9 +10,12 @@ extends Node3D
 ## - the window (beams out, shield down): a gold ring pulsing round her feet (strike now);
 ## - a bolt's aim line: a thin red line in the air from its shard down its locked way, brightening and tightening over
 ##   its 0.4 s, then gone as the bolt flies (FireballViews draws the bolt);
-## - a shard firing (an orb volley, a bolt's aim): a flash and a small light at the sim shard.
+## - a shard firing (an orb volley, a bolt's aim): a flash and a small light on the crystal she is drawn with that
+##   is nearest the sim shard (PrismAvatar.nearest_crystal; her crystals float in place while the sim's ring turns),
+##   so the shot looks as if it leaves a crystal. Only this flash moves: every line that shows where the player will
+##   be hit (the arms, the bolt's aim line, the lances, the kneel's reach) stays where the sim has it.
 ## Ticks are the sim's (the views pause with it); reduced motion: no flicker or pulse.
-## v0.10.5 O3 (owner L6; O3_PRISM.md): her last phase's Facet Lances and Shattered Kneel are drawn by its child
+## Her last phase's Facet Lances and Shattered Kneel are drawn by its child
 ## PrismLastViews (`last`), in this view's frame.
 
 const BEAM := Color(1.0, 0.16, 0.3)
@@ -26,10 +29,14 @@ const SHARD_Y := 1.9
 const AIM_RADIUS := 0.06
 const BOLT_RADIUS := 0.035
 const MAX_ARMS := 8
-## v0.10.0 VX5 (R27): the beams are the pack's (beam_vfx), the old cylinders where its family is full; false: all old.
+## The beams are the pack's (beam_vfx), the old cylinders where its family is full; false: all old.
 const PACK_BEAMS := true
 
 var last := PrismLastViews.new()
+## The actors' view (WorldViewRoot sets it): where her avatar is found. Null (tests): the flash is at the sim shard.
+var actors: ActorViews
+## True once a sync outside her fight drew the empty state: later syncs do nothing until the fight is back.
+var quiet := false
 var _cross := {}
 var _shards := PackedVector2Array()
 var _at := Vector2.ZERO
@@ -44,6 +51,7 @@ var _ring := MeshInstance3D.new()
 var _ring_mat := StandardMaterial3D.new()
 var _ends: Array = []
 var _hold: BossPackHold = null
+var _avatar: PrismAvatar = null
 
 
 func _init() -> void:
@@ -61,7 +69,7 @@ func _init() -> void:
 			"impact": _flare(BEAM_CORE),
 			"light": OmniLight3D.new(),
 		}
-		# v0.8.0 TX1: the owner's beam strip, chevron aim lines (pointing out along each arm) and impact flares.
+		# The owner's beam strip, chevron aim lines (pointing out along each arm) and impact flares.
 		for key in ["core", "glow"]:
 			FxTextures.texture_beam(_mat_of(arm[key]), "fx_beam", 0, 5.0, false, 0.5)
 		FxTextures.texture_beam(
@@ -166,16 +174,24 @@ func _flare(c: Color) -> MeshInstance3D:
 
 func sync(reader: WorldReader) -> void:
 	_tick = reader.tick()
+	var i := reader.boss_index()
+	var fight := i >= 0 and reader.final_fight()
+	# Outside her fight, once a draw has hidden everything, a redraw would only hide it again
+	if not fight and quiet:
+		return
+	quiet = not fight
 	_cross = {}
 	_shards = PackedVector2Array()
-	var i := reader.boss_index()
-	if i >= 0 and reader.final_fight():
+	if fight:
 		_cross = reader.boss_cross(i)
 		_shards = reader.boss_shards(i)
 		_at = reader.actor_pos(i)
 		_radius = reader.actor_radius(i)
+		var node := actors.actor_node(reader.actor_id(i)) if actors != null else null
+		_avatar = node.get_meta(&"enemy_avatar", null) as PrismAvatar if node != null else null
 		last.set_state(reader.boss_lances(i), reader.boss_kneel(i), _at, _radius, _tick)
 	else:
+		_avatar = null
 		last.set_state({}, {}, _at, _radius, _tick)
 	_draw(float(_tick))
 
@@ -183,18 +199,6 @@ func sync(reader: WorldReader) -> void:
 func _process(_delta: float) -> void:
 	if not _cross.is_empty() or last.active():
 		_draw(float(_tick))
-
-
-## True while any arm is drawn (an aim line or a beam; tests and the tour).
-func cross_drawn() -> bool:
-	for arm in _arms:
-		if (
-			(arm["core"] as Node3D).visible
-			or (arm["aim"] as Node3D).visible
-			or arm.get("packed", false)
-		):
-			return true
-	return false
 
 
 ## Arms drawn as beams now (tests).
@@ -223,14 +227,18 @@ func bolt_line_drawn() -> bool:
 	return _bolt_line.visible
 
 
+## Where the firing shard's flash is drawn now (tests); only meaningful while it shows.
+func shard_flash_at() -> Vector3:
+	return _shard_flash.position
+
+
+func shard_flash_drawn() -> bool:
+	return _shard_flash.visible
+
+
 ## The window's ring shows (tests).
 func window_drawn() -> bool:
 	return _ring.visible
-
-
-## A shard's firing flash shows (tests).
-func shard_flash_drawn() -> bool:
-	return _shard_flash.visible
 
 
 func _draw(now: float) -> void:
@@ -245,7 +253,7 @@ func _draw(now: float) -> void:
 		arm["packed"] = false
 	for n: Node3D in [_bolt_line, _shard_flash, _shard_light, _core_light, _ring]:
 		n.visible = false
-	last.draw(now, _hold)  # v0.10.5 O3: the lances, the kneel
+	last.draw(now, _hold)  # The lances, the kneel
 	if _cross.is_empty():
 		if _hold != null:
 			_hold.end()
@@ -294,7 +302,7 @@ func _draw_arms(c: Dictionary, p: float, now: float, still: bool, flicker: float
 		var core: MeshInstance3D = arm["core"]
 		var glow: MeshInstance3D = arm["glow"]
 		var pack_beam: Node3D = null
-		if _hold != null:  # R27: the pack's beam (the colour's nearest scene) in place of the two cylinders
+		if _hold != null:  # The pack's beam (the colour's nearest scene) in place of the two cylinders
 			pack_beam = _hold.hold(k, BossPackHold.beam_id(BEAM), a, 1.0, {}, false)
 		if pack_beam != null:
 			BossPackHold.beam_place(pack_beam, a, b, hw)
@@ -343,6 +351,8 @@ func _draw_shard(c: Dictionary, flicker: float) -> void:
 	if k < 0 or k >= _shards.size():
 		return
 	var at := SimPlane.to_3d(_shards[k], SHARD_Y)
+	if is_instance_valid(_avatar):  # the drawn crystal nearest the sim shard, at its own height
+		at = to_local(_avatar.nearest_crystal(to_global(at))) if is_inside_tree() else at
 	_shard_flash.visible = true
 	_shard_flash.position = at
 	_shard_flash.scale = Vector3.ONE * 0.6

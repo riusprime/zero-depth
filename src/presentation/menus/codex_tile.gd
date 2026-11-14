@@ -1,11 +1,11 @@
 class_name CodexTile
 extends Button
-## v0.7.5 CX: one Codex entry in the page's grid; v0.8.0 MU (Ember stone, MenuStyle): a small carved stone tablet,
+## One Codex entry in the page's grid; Ember stone: a small carved stone tablet,
 ## its picture (CodexIcon) in a round socket with a glowing inlay ring and its name, the glowing groove at its foot,
 ## both in the card's colour (CardFrames) or the page's colour; the focused tile is ember-lit. A locked entry is a dark,
 ## unlit tablet with a silhouette named "???". It is a Button, so the keyboard, the mouse and the pad reach it through
 ## the focus.
-## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): an Astral tile (AstralUi.TileBox: a 1 px frame,
+## An Astral tile (AstralUi.TileBox: a 1 px frame,
 ## an inner frame 6 px in, a medallion ring with a dotted inner ring round the picture; focus: the frame and the ring
 ## brighten, a second frame 6 px outside, four small stars round the ring); a locked one drawn fainter. Its name in
 ## Astral's type.
@@ -21,7 +21,7 @@ var entry := {}
 var locked := true
 var picture := CodexIcon.new()
 var name_label := Label.new()
-var _tint := MenuStyle.EMBER
+var _tint := AstralCardArt.ACCENT
 
 
 func _init() -> void:
@@ -59,7 +59,7 @@ func show_entry(p_entry: Dictionary, title: String, p_locked: bool) -> void:
 	name = "Tile_%s" % p_entry["id"]
 	picture.show_entry(p_entry, p_locked)
 	name_label.text = "???" if p_locked else title
-	TextFit.fit_label_words(name_label, SIZE.x - 12.0, NAME_SIZE)  # v0.8.0 N18: a long word shrinks
+	TextFit.fit_label_words(name_label, SIZE.x - 12.0, NAME_SIZE)  # A long word shrinks
 	name_label.add_theme_color_override(
 		"font_color", AstralCardArt.DIM if p_locked else AstralCardArt.TEXT
 	)
@@ -76,11 +76,11 @@ static func tint_of(e: Dictionary) -> Color:
 		return CardFrames.tint(CardFrames.frame_of(fam))
 	if e.get("page", &"") == &"biomes":
 		var palette: Array = e.get("palette", [])
-		return palette[3] if palette.size() > 3 else MenuStyle.EMBER  # its accent
+		return palette[3] if palette.size() > 3 else AstralCardArt.ACCENT  # its accent
 	return CodexIcon.color_of(e)
 
 
-## v0.10.5 W3-O19: Astral tiles; the ring in Astral's line (no family colour: the picture keeps its own).
+## Astral tiles; the ring in Astral's line (no family colour: the picture keeps its own).
 func _style() -> void:
 	var quiet := 0.55 if locked else 1.0
 	var normal := AstralUi.TileBox.new(0.0, quiet)

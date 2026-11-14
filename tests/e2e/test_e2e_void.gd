@@ -16,11 +16,6 @@ func _item(w: World, id: StringName) -> int:
 	return AttackScenario.item_index(w.item_tables, id)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## (as test_e2e_bomb.gd's)
 ## A spot `dist` m from the hero along one of 16 ways whose line from the hero crosses no wall (or INF).
 static func clear_spot(w: World, dist: float) -> Vector2:
@@ -83,7 +78,7 @@ func test_the_void_taken_at_an_altar_hurts_its_path_and_tugs_the_group() -> void
 	await e.start_from_menu(&"gun")
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)
 	assert_true(

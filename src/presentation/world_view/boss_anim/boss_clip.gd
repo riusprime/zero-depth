@@ -40,6 +40,23 @@ const SETTLE := 1
 ## The default attack timing: the windup fills 0..STRIKE, the active ticks STRIKE..HOLD_END.
 const STRIKE := 0.5
 const HOLD_END := 0.62
+## The same
+## loosening O16a gave the Twin Wardens by hand, applied to a whole library once it is built:
+## - the idle: every bone's and the body's sway swings `gain` (IDLE_GAIN by default) times as wide about its middle
+##   (a held pose, such as a carried weapon, stays where it is), plus, when `sway` > 0, a slow weight shift of the
+##   whole body (radians);
+## - each attack clip (a move's clip or its shielded variant): every moving track that rises from rest to its first
+##   pose at the windup first dips the other way (ANTICIPATE of that pose, at ANTICIPATE_AT of the way to it: the
+##   gather before the draw-back), and every track that eases back to rest from the end of its active part
+##   overshoots rest the other way (RECOIL of that pose, RECOIL_AT of the way through the recovery: the follow-
+##   through). The keys at `strike` and `hold` are untouched, so the strike pose still lands on the sim's first
+##   active tick; the clip still ends at rest. Both new keys are SETTLE: reduced motion skips them.
+## Parameter tracks (glow, legs, chains) are left alone. Starting values.
+const IDLE_GAIN := 1.6
+const ANTICIPATE := 0.3
+const ANTICIPATE_AT := 0.3
+const RECOIL := 0.4
+const RECOIL_AT := 0.35
 
 var name: StringName
 var loop := false
@@ -124,15 +141,6 @@ func track_of(target: StringName, channel: int) -> int:
 	return -1
 
 
-## Every target this clip moves (tests: the bones it needs).
-func target_names() -> Array[StringName]:
-	var out: Array[StringName] = []
-	for t in targets:
-		if not out.has(t):
-			out.append(t)
-	return out
-
-
 ## Track k's value at time t (0..1; a loop wraps). Allocates nothing.
 func value(k: int, t: float, reduced: bool = false) -> float:
 	var s := first[k]
@@ -197,3 +205,103 @@ func _track(target: StringName, channel: int, axis: Vector3, keys: Array) -> Bos
 		eases.append(int(key[2]) if key.size() > 2 else IN_OUT)
 		flags.append(int(key[3]) if key.size() > 3 else 0)
 	return self
+
+
+## Loosens a built library in place, once (the wind-up, the recoil, the idle sway: see IDLE_GAIN).
+static func loosen(library: Dictionary, sway: float = 0.0, gain: float = IDLE_GAIN) -> void:
+	var moves := {}
+	for n: StringName in BossAnimator.MOVE_CLIPS.values():
+		moves[n] = true
+	for c: BossClip in library.values():
+		if c.name == &"idle":
+			c._loosen_idle(sway, gain)
+		elif (
+			moves.has(c.name)
+			or (String(c.name).ends_with(BossAnimator.SHIELDED_SUFFIX) and c.name != &"shielded")
+		):
+			c._loosen_attack()
+
+
+func _keys_of(k: int) -> Array:
+	var out := []
+	for j in counts[k]:
+		var q := first[k] + j
+		out.append([times[q], values[q], eases[q], flags[q]])
+	return out
+
+
+## Rebuilds the flattened tracks from per-track key lists (build time only).
+func _rebuild(tracks: Array) -> void:
+	var t0 := targets.duplicate()
+	var c0 := channels.duplicate()
+	var a0 := axes.duplicate()
+	targets.clear()
+	channels = PackedInt32Array()
+	axes = PackedVector3Array()
+	first = PackedInt32Array()
+	counts = PackedInt32Array()
+	times = PackedFloat32Array()
+	values = PackedFloat32Array()
+	eases = PackedInt32Array()
+	flags = PackedInt32Array()
+	for k in tracks.size():
+		_track(t0[k], c0[k], a0[k], tracks[k])
+
+
+func _loosen_idle(sway: float, gain: float) -> void:
+	var tracks := []
+	for k in targets.size():
+		var keys := _keys_of(k)
+		if channels[k] != PARAM:
+			var lo := INF
+			var hi := -INF
+			for key: Array in keys:
+				lo = minf(lo, key[1])
+				hi = maxf(hi, key[1])
+			var mid := (lo + hi) * 0.5
+			for key: Array in keys:
+				key[1] = mid + (float(key[1]) - mid) * gain
+		tracks.append(keys)
+	_rebuild(tracks)
+	if sway > 0.0:
+		turn(BODY, Vector3(1, 0, 0), [[0, sway], [0.5, -sway], [1, sway]])
+
+
+func _loosen_attack() -> void:
+	var tracks := []
+	for k in targets.size():
+		var keys := _keys_of(k)
+		if channels[k] != PARAM and keys.size() >= 3:
+			_anticipate(keys)
+			_recoil(keys)
+		tracks.append(keys)
+	_rebuild(tracks)
+
+
+## A dip the other way before the first pose (the first key rest at 0, the next a pose reached by the strike).
+func _anticipate(keys: Array) -> void:
+	var k0: Array = keys[0]
+	var k1: Array = keys[1]
+	var t1 := float(k1[0])
+	if float(k0[0]) != 0.0 or absf(k0[1]) > 0.0001 or absf(k1[1]) < 0.0001:
+		return
+	if t1 < 0.2 or t1 > strike + 0.0001:
+		return
+	keys.insert(1, [t1 * ANTICIPATE_AT, -float(k1[1]) * ANTICIPATE, OUT, SETTLE])
+
+
+## An overshoot past rest after the active part (the last key rest at 1, the one before it at or after `hold`), unless
+## the track already settles after its strike.
+func _recoil(keys: Array) -> void:
+	var n := keys.size()
+	var last: Array = keys[n - 1]
+	var prev: Array = keys[n - 2]
+	var tp := float(prev[0])
+	if float(last[0]) != 1.0 or absf(last[1]) > 0.0001 or absf(prev[1]) < 0.0001:
+		return
+	if tp < hold - 0.0001 or 1.0 - tp < 0.15:
+		return
+	for key: Array in keys:
+		if float(key[0]) > strike and (int(key[3]) & SETTLE) != 0:
+			return
+	keys.insert(n - 1, [tp + (1.0 - tp) * RECOIL_AT, -float(prev[1]) * RECOIL, OUT, SETTLE])

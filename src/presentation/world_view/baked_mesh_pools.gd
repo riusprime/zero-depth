@@ -1,6 +1,5 @@
 class_name BakedMeshPools
 extends Node3D
-## v0.8.0 PF2 (owner O9: "find a way … so the game doesn't have lag"; docs/roadmap/v0.8.0/evidence/PERF.md PF2):
 ## BladeFormView's crescents and ghost slashes as MultiMesh instances. Each shape (a key: a crescent's width and
 ## radius, a ghost's width, reach, way and age) is baked once into a mesh by the view, with its colours, and drawn in a
 ## pool of its own: a crowd of them costs one transform each and one draw call per shape, where the ImmediateMesh
@@ -49,11 +48,6 @@ func used_total() -> int:
 	for k: Variant in _used:
 		n += int(_used[k])
 	return n
-
-
-## The shapes with a pool (tests).
-func shape_count() -> int:
-	return _pools.size()
 
 
 func _pool(mesh: Mesh) -> MultiMeshInstance3D:

@@ -1,10 +1,10 @@
 class_name PlaygroundPanel
 extends PanelContainer
-## v0.7.5 PG (owner N20, docs/tools/PLAYGROUND.md; pick "Dev-tool style, no mockups"): the Playground's panel on the
+## The Playground's panel on the
 ## left of the screen, opened with F1 (the sim waits while it is open). Four tabs:
 ## - Build: every card the build can take, by group, with a search and a level; your build, with Remove; Change weapon.
 ## - Spawn: the click tool (a dummy, endless or with an HP; an enemy; a boss; delete), Clear enemies, Clear all; v0.8.0
-##   FB1: the final boss (its whole fight at the room's centre) and a button per phase that jumps to that body.
+##   The final boss (its whole fight at the room's centre) and a button per phase that jumps to that body.
 ## - Biome: the five biomes.
 ## - Player: god mode, full heal, the DPS meter's reset and visibility.
 ## A left click on the floor (outside the panel) uses the tool; a right click always deletes. Commands go through

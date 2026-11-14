@@ -1,6 +1,6 @@
 class_name HubMachine
 extends Node3D
-## v0.9.0 HB (PLAN W42: "the hub portal sends the player into the run; the blue altar is their arrival point"): the
+## PLAN W42: "the hub portal sends the player into the run; the blue altar is their arrival point": the
 ## Portal Machine in the hub's centre. The owner's model (`hub_portal_machine`, delivered 2026-10-22: a tall upright
 ## stone ring on a stepped platform, "no glow, nothing inside the ring") draws the machine; the code fills its ring.
 ## Without the model, the stand-in reuses SA's altar (AltarStage.arrival(): the stepped dais, the floating blue runes
@@ -19,7 +19,7 @@ const PYLON_X := 1.55
 const MODEL_RING_Y := 0.53
 const MODEL_RING_R := 0.25
 const MODEL_RING_Z := 0.0
-## v0.9.0 HB2: the climb to the owner's ring (plan m, measured on his model drawn 4.6 m tall): the foot of its front
+## The climb to the owner's ring (plan m, measured on his model drawn 4.6 m tall): the foot of its front
 ## steps, their top (the dais, MODEL_DAIS_H m up) and the ring's plane (the dais runs through it).
 const MODEL_STEPS_FOOT := -2.75
 const MODEL_STEPS_TOP := -1.0
@@ -39,7 +39,7 @@ var outer: MeshInstance3D
 var core_glow: Dictionary
 var looped := false
 var focus := 0.0
-## v0.9.0 HB2: the portal's flare as the hero crosses it (0 rest .. 1 full), and its burst of light motes.
+## The portal's flare as the hero crosses it (0 rest.. 1 full), and its burst of light motes.
 var flare := 0.0
 var burst: CPUParticles3D
 var ring_height := 0.0
@@ -166,7 +166,7 @@ func _build_stand_in() -> float:
 	return top + RING_Y
 
 
-## v0.9.0 HB2: the hero's climb into the ring, as plan points with their height (x, y: plan m; z: m over the floor):
+## The hero's climb into the ring, as plan points with their height (x, y: plan m; z: m over the floor):
 ## the steps' foot, their top, the ring's plane and just past it.
 func walk_points() -> Array[Vector3]:
 	return [
@@ -177,7 +177,7 @@ func walk_points() -> Array[Vector3]:
 	]
 
 
-## v0.9.0 HB2: the portal flares as the hero crosses it (k 0..1); its burst of motes fires once as it starts.
+## The portal flares as the hero crosses it (k 0..1); its burst of motes fires once as it starts.
 func set_flare(k: float) -> void:
 	if k > 0.0 and flare <= 0.0 and burst.visible:
 		burst.restart()

@@ -10,20 +10,15 @@ extends GutTest
 const FACE_M := 1.4
 
 
-func _click(e: E2e, main: Main, button_name: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button_name, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func _spawn(e: E2e, main: Main, kind: int, key: String) -> int:
 	var choice := main.get_node("UI/DevPanel").find_child("EnemyChoice", true, false) as Label
-	for k in 16:
+	for k in 64:  # a full lap (v0.11.0 O9: the critters; O13b-d: the signatures took it past 32)
 		if choice.text == tr(key):
 			break
-		await _click(e, main, "NextEnemy")
+		await e.click_dev("NextEnemy")
 		await e.frames(1)
 	assert_eq(choice.text, tr(key), "the panel names the %s" % key)
-	await _click(e, main, "SpawnEnemy")
+	await e.click_dev("SpawnEnemy")
 	await e.frames(3)
 	var w := e.world()
 	var best := -1
@@ -80,7 +75,7 @@ func test_the_dev_panel_brings_in_each_horde_kind_and_it_acts() -> void:
 	await e.start_from_menu(&"gun")
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.is_dev_panel_open())
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(main.driver.debug.god, "God mode")
 	for spec in [
 		[ActorStore.Kind.SWARMER, "ENEMY_SWARMER", [&""]],
@@ -119,7 +114,7 @@ func test_the_mender_heals_an_ally_the_player_shot() -> void:
 	var main: Main = await e.boot()
 	await e.start_from_menu(&"gun")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	var mender: int = await _spawn(e, main, ActorStore.Kind.MENDER, "ENEMY_MENDER")
 	var ally: int = await _spawn(e, main, ActorStore.Kind.SPLITTER, "ENEMY_SPLITTER")
 	var w := e.world()

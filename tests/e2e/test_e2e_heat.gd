@@ -79,7 +79,7 @@ func test_hit_enemies_until_hot_then_press_vent() -> void:
 	# needs swings landing without a 1 s gap) is built on Wardens the panel brings in next to the wanderer, a new one
 	# whenever none is left (up to WARDENS).
 	var choice := e.main.get_node("UI/DevPanel").find_child("EnemyChoice", true, false) as Label
-	for k in 16:
+	for k in 64:  # a full lap (v0.11.0 O9: the critters; O13b-d: the signatures took it past 32)
 		if choice.text == tr("ENEMY_WARDEN"):
 			break
 		await _click(e, "NextEnemy")

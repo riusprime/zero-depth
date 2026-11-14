@@ -2,7 +2,7 @@ class_name ElementPairs
 extends RefCounted
 ## v0.9.5 EE3 (ELEMENTS.md X1-X10; the owner: "maybe we could add some special combinations so something else happens
 ## when you have 2 level 3 elements they do something special"): two elements held together turn on one named pair
-## rule (v0.9.5 EP1: from Lv 1; the pair's level is the lower of the two elements' levels, and its strength scales by
+## rule (from Lv 1; the pair's level is the lower of the two elements' levels, and its strength scales by
 ## table.level_permille: 40 / 70 / 100 % of the Lv 3 bonus; a chain pair acts on its first `level` jumps below Lv 3).
 ## The elements are Fire (ember_core), Lightning (storm_core), Frost (frost_core), Venom (venom_core) and
 ## Bleed (shared_bleed); the Gun has two element slots, so on a Gun run one pair is on at most (the mask allows more for
@@ -148,7 +148,7 @@ static func bonus(w: World, x: int, m: int) -> int:
 	return 1000 + (m - 1000) * scale(w, x) / 1000
 
 
-## v0.9.5 EP4: the pairs that taking item `idx` would turn on or raise, flat [x, new_level, ...] (the offer card's
+## The pairs that taking item `idx` would turn on or raise, flat [x, new_level,...] (the offer card's
 ## line). Empty for a card that is not an element card or that changes no pair. Slot limits and swaps are ignored.
 static func preview(w: World, idx: int) -> PackedInt32Array:
 	var out := PackedInt32Array()

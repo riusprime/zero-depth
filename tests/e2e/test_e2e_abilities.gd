@@ -10,11 +10,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_pick_an_ability_card_at_an_altar_and_see_it_fire() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
@@ -25,7 +20,7 @@ func test_pick_an_ability_card_at_an_altar_and_see_it_fire() -> void:
 	assert_eq(reader.abilities().size(), 1, "slot 1 holds the weapon")
 	assert_eq(reader.abilities()[0]["id"], &"combo_sword", "the Blade's Combo Sword")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")  # the walk and the wait are about the ability, not survival (panel stays open)
+	await e.click_dev("God")  # the walk and the wait are about the ability, not survival (panel stays open)
 	var altar := E2e.nearest_reward(w, RewardStore.Kind.ALTAR)
 	var altar_id := w.rewards.ids[altar]
 	assert_true(await e.walk_to(w.rewards.pos(altar), w.reward_table.interact_radius_m * 0.6))
@@ -76,9 +71,9 @@ func test_blink_card_then_shift_blinks() -> void:
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
 	while w.ability_tables[main.driver.debug.ability_choice].id != &"blink":
-		await _click(e, main, "NextAbility")  # (the dev panel's forced loadout)
+		await e.click_dev("NextAbility")  # (the dev panel's forced loadout)
 	assert_eq(w.ability_tables[main.driver.debug.ability_choice].id, &"blink")
-	await _click(e, main, "GrantAbility")
+	await e.click_dev("GrantAbility")
 	await e.frames(2)
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)

@@ -3,9 +3,10 @@ extends GutTest
 ## v0.9.0 NB2 (owner Q24 "ok go for those"; docs/roadmap/v0.9.0/BOSSES_4_5.md row N2): The Twin Wardens, floor 4's
 ## second boss. Two bodies (two linked actors, BossTwin), one shared HP, one bar, one defeat; a chain between them held
 ## between 3 m and 9 m that burns 12 every 0.5 s on touch (never while dashing, never against a wall, not solid); a hit
-## on one angers the other (+40 % speed, 3 s, at most one angry); Crossfire (shielded): each fires a fan whose gap
-## crosses the other's only at the safe spot between them; Chain Sweep: the line tracks, locks and lashes. Phases at
-## 66 % and 33 % on both bodies at once, determinism, a mid-fight save, an older save, the death lines.
+## on one angers the other (+40 % speed, 3 s, at most one angry); Crossfire: the violet fires a fan whose gap runs
+## through the safe spot; Chain Sweep: the line tracks, locks and lashes. Phases at 66.7 % and 33.3 % on both bodies
+## at once, determinism, a mid-fight save, an older save, the death lines. v0.11.0 O5 (owner L7, Q11, Q29): the roles
+## (test_twin_wardens_roles.gd); a hit on the body standing back does nothing, so these tests hit the leader.
 
 const S := EnemyAi.State
 const LONG := 1 << 20
@@ -61,6 +62,16 @@ func _chain_len(w: World, s: Array) -> float:
 	return w.actors.pos(_i(w, s[1])).distance_to(w.actors.pos(_i(w, s[2])))
 
 
+## v0.11.0 O5: drops the pair onto phase `phase`'s gate (its HP at that threshold), then steps through the gate.
+func _to_phase(w: World, boss_id: int, phase: int) -> void:
+	var i := _i(w, boss_id)
+	var hp := BossAi.table_of(w, i).phase_threshold[phase] * w.actors.max_hp[i] / 1000
+	w.actors.hp[i] = hp
+	w.actors.hp[BossTwin.partner_of(w, i)] = hp
+	w.step(InputFrame.new())
+	BossLab.through_gate(w, boss_id)
+
+
 func test_the_data_is_the_approved_row() -> void:
 	var repo := ContentRepository.load_all()
 	var def: BossDefinition = repo.get_def(&"bosses", &"twin_wardens")
@@ -72,10 +83,12 @@ func test_the_data_is_the_approved_row() -> void:
 	assert_eq([t.chain_min_m, t.chain_max_m], [3.0, 9.0], "the chain 3..9 m")
 	assert_eq([t.chain_burn, t.chain_burn_ticks], [12, 30], "12 a tick at 0.5 s")
 	assert_eq([t.anger_permille, t.anger_ticks], [1400, 180], "angry +40 % for 3 s")
-	assert_eq(t.phase_threshold, PackedInt32Array([1000, 660, 330]), "phases at 66 % and 33 %")
+	assert_eq(
+		t.phase_threshold, PackedInt32Array([1000, 667, 333]), "v0.11.0 O5 (Q29): three full bars"
+	)
 	var cross := t.attacks[t.attack_index(&"crossfire")]
 	assert_eq(cross.move, BossAttackTable.Move.CROSSFIRE)
-	assert_true(cross.shielded, "shielded during the signature pattern")
+	assert_false(cross.shielded, "v0.11.0 O5 (owner L3): no shield; its caster is the one to hit")
 	assert_not_null(cross.pattern)
 	assert_eq(cross.twin_look, &"warden_violet_ember", "the twin's embers are violet")
 	var sweep := t.attacks[t.attack_index(&"chain_sweep")]
@@ -108,9 +121,6 @@ func test_bad_twin_numbers_are_errors() -> void:
 	def.anger_speed_permille = 900
 	assert_has(codes.call(def), &"range", "anger speeds a body up")
 	def = fresh.call()
-	def.attack(&"crossfire").shielded = false
-	assert_has(codes.call(def), &"missing", "Crossfire is shielded")
-	def = fresh.call()
 	def.attack(&"chain_sweep").late_cause_key = &""
 	def.attack(&"chain_sweep_fast").late_cause_key = &""
 	assert_has(codes.call(def), &"missing", "the burn needs its death line")
@@ -132,14 +142,17 @@ func test_two_bodies_share_one_hp_and_one_bar() -> void:
 	assert_between(_chain_len(w, s), 3.0, 9.0, "risen within the chain's lengths")
 	assert_eq(w.actors.hp[j], w.actors.hp[i])
 	assert_eq(w.actors.max_hp[j], w.actors.max_hp[i])
-	var hp0 := w.actors.hp[i]
-	assert_gt(_hit(w, s[2], 100), 0)
-	assert_eq(w.actors.hp[i], w.actors.hp[j], "one HP")
-	assert_lt(w.actors.hp[i], hp0, "a hit on the twin is the boss's")
-	var hp1 := w.actors.hp[i]
+	var hp0 := w.actors.hp[j]
 	assert_gt(_hit(w, s[1], 100), 0)
-	assert_eq(w.actors.hp[j], w.actors.hp[i], "and the other way")
-	assert_lt(w.actors.hp[j], hp1)
+	assert_eq(w.actors.hp[j], w.actors.hp[i], "one HP")
+	assert_lt(w.actors.hp[j], hp0, "a hit on the boss is the twin's")
+	_to_phase(w, s[1], 1)  # v0.11.0 O5: the violet leads now (the amber stands back)
+	i = _i(w, s[1])
+	j = _i(w, s[2])
+	var hp1 := w.actors.hp[i]
+	assert_gt(_hit(w, s[2], 100), 0)
+	assert_eq(w.actors.hp[i], w.actors.hp[j], "and the other way")
+	assert_lt(w.actors.hp[i], hp1)
 
 
 func test_they_fall_together_one_defeat_one_reward() -> void:
@@ -153,7 +166,7 @@ func test_they_fall_together_one_defeat_one_reward() -> void:
 	w.actors.hp[_i(w, s[1])] = 5
 	w.actors.hp[_i(w, s[2])] = 5
 	BossAi.table_of(w, _i(w, s[1])).phase_threshold = PackedInt32Array([1000])  # no gate in the way
-	_hit(w, s[2], 50)
+	_hit(w, s[1], 50)  # v0.11.0 O5: the leader (a hit on the one standing back does nothing)
 	assert_true(w.actors.dead[_i(w, s[1])] == 1 and w.actors.dead[_i(w, s[2])] == 1, "both fall")
 	w.step(InputFrame.new())
 	var defeats := []
@@ -181,7 +194,7 @@ func test_the_phases_turn_on_both_at_once() -> void:
 	var i := _i(w, s[1])
 	w.actors.hp[i] = w.actors.max_hp[i] * 670 / 1000
 	w.actors.hp[_i(w, s[2])] = w.actors.hp[i]
-	_hit(w, s[2], w.actors.max_hp[i] * 20 / 1000)
+	_hit(w, s[1], w.actors.max_hp[i] * 20 / 1000)
 	w.step(InputFrame.new())
 	assert_eq(w.actors.state[_i(w, s[1])], BossAi.GATE, "the boss's gate")
 	assert_eq(w.actors.state[_i(w, s[2])], BossAi.GATE, "the twin's, the same tick")
@@ -190,7 +203,9 @@ func test_the_phases_turn_on_both_at_once() -> void:
 	for aid in [s[1], s[2]]:
 		var b := BossAi.entry_of(w, _i(w, aid))
 		assert_eq(w.bosses.phase[b], 1)
-		assert_eq(BossAi.attack_of(w, _i(w, aid)).id, &"crossfire", "phase 2 opens with Crossfire")
+	# v0.11.0 O5: phase 2 is the violet's: it opens with Crossfire, the amber stands back
+	assert_eq(BossAi.attack_of(w, _i(w, s[2])).id, &"crossfire", "phase 2 opens with Crossfire")
+	assert_null(BossAi.attack_of(w, _i(w, s[1])), "the amber stands back")
 
 
 func test_the_chain_stays_3_to_9_m() -> void:
@@ -283,6 +298,11 @@ func test_a_hit_on_one_angers_the_other_one_at_a_time() -> void:
 	var s := _fight(Vector2(-8, 0))
 	var w: World = s[0]
 	_hush(w, s[1])
+	_to_phase(w, s[1], 1)  # v0.11.0 O5: phase 3, both can be hit
+	_to_phase(w, s[1], 2)
+	for b in w.bosses.twin_anger_t.size():
+		w.bosses.twin_anger_t[b] = 0
+		w.bosses.twin_angry[b] = 0
 	var i := _i(w, s[1])
 	var j := _i(w, s[2])
 	assert_false(BossTwin.angry(w, i) or BossTwin.angry(w, j), "calm at first")
@@ -313,52 +333,42 @@ func test_a_hit_on_one_angers_the_other_one_at_a_time() -> void:
 	assert_almost_eq(steps[1] / steps[0], 1.4, 0.01, "+40 % angry")
 
 
-func test_crossfire_gaps_meet_only_between_them() -> void:
-	var s := _fight(Vector2(0, -5))
-	var w: World = s[0]
-	_still(w, s[1])
-	w.actors.set_pos(_i(w, s[1]), Vector2(-3, 0))
-	w.actors.set_pos(_i(w, s[2]), Vector2(3, 0))
-	w.step(InputFrame.new())
-	BossLab.start(w, _i(w, s[1]), &"crossfire")
-	var i := _i(w, s[1])
-	var j := _i(w, s[2])
-	assert_eq(BossAi.attack_of(w, j).id, &"crossfire", "the twin fires it too")
-	assert_true(BossDodge.shielded(w, i) and BossDodge.shielded(w, j), "both shielded")
-	var safe := w.bosses.pt(BossAi.entry_of(w, i), 0)
-	assert_eq(w.bosses.pt(BossAi.entry_of(w, j), 0), safe, "one safe spot")
-	# v0.9.5 BH3 (B8): the lines cross on the player where the attack starts (they follow it from there)
-	assert_almost_eq(safe, Vector2(0, -5), Vector2(0.001, 0.001), "on the player")
-	# Standing on the spot until the lines lock: no shot lands; one step aside at the last tick: hit.
-	var hurt := func(at: Vector2) -> int:
+## v0.11.0 O5 (owner L7): Crossfire is the violet Warden's (phase 2 on): its fan leaves a gap through the safe spot,
+## distance_m off the chain's middle on the player's side; the amber stands back and fires none.
+func test_crossfire_leaves_a_gap_through_the_safe_spot() -> void:
+	var run := func(at: Vector2, steps: int) -> Array:
 		var s2 := _fight(Vector2(0, -5))
 		var w2: World = s2[0]
+		_to_phase(w2, s2[1], 1)
 		_still(w2, s2[1])
+		BossAi.table_of(w2, _i(w2, s2[1])).twin_bolt = -1  # no bolt from the amber meanwhile
 		w2.actors.set_pos(_i(w2, s2[1]), Vector2(-3, 0))
 		w2.actors.set_pos(_i(w2, s2[2]), Vector2(3, 0))
+		w2.actors.set_pos(0, Vector2(0, -5))
 		w2.step(InputFrame.new())
-		BossLab.start(w2, _i(w2, s2[1]), &"crossfire")
+		BossLab.start(w2, _i(w2, s2[2]), &"crossfire")
+		var safe := w2.bosses.pt(BossAi.entry_of(w2, _i(w2, s2[2])), 0)
 		var hp := w2.actors.hp[0]
-		for k in 360:
-			w2.actors.set_pos(0, safe if k < 71 else at)
+		for k in steps:
+			w2.actors.set_pos(0, safe if at == Vector2.INF else at)
 			w2.step(InputFrame.new())
-		return hp - w2.actors.hp[0]
-	assert_eq(hurt.call(safe), 0, "the gaps cross at the safe spot")
-	assert_gt(hurt.call(safe + Vector2(2.2, -1.0)), 0, "off it, a fan finds you")
-	assert_gt(hurt.call(Vector2(-4, -5)), 0, "to the side too")
-	# The twin's embers are violet, the boss's amber; each fan leaves its gap toward the spot.
-	CombatLab.until(w, func(x: World) -> bool: return x.projectiles.size() > 10, 200)
-	var seen := {}
+		return [w2, s2, safe, hp - w2.actors.hp[0]]
+	var r: Array = run.call(Vector2.INF, 1)
+	var w: World = r[0]
+	var s: Array = r[1]
+	var safe: Vector2 = r[2]
+	assert_null(BossAi.attack_of(w, _i(w, s[1])), "the amber fires none")
+	assert_false(BossDodge.shielded(w, _i(w, s[2])), "owner L3: not shielded")
+	assert_almost_eq(safe, Vector2(0, -2), Vector2(0.001, 0.001), "2 m off the chain's middle")
+	assert_eq(run.call(Vector2.INF, 360)[3], 0, "on the safe spot no shot lands")
+	assert_gt(run.call(Vector2(3, -4), 360)[3], 0, "off it the fan finds you")
+	CombatLab.until(w, func(x: World) -> bool: return x.projectiles.size() > 5, 200)
 	for k in w.projectiles.size():
-		var owner := w.projectiles.owner[k]
-		var look := w.projectiles.look[k] if k < w.projectiles.look.size() else ""
-		seen[owner] = look
-		var body := _i(w, owner)
+		assert_eq(w.projectiles.owner[k], s[2], "the violet's shots")
+		assert_eq(w.projectiles.look[k], "warden_violet_ember", "in its colour")
 		var heading := Kin.angle_of(Vector2(w.projectiles.vel_x[k], w.projectiles.vel_y[k]))
-		var to_safe := Kin.angle_of(safe - w.actors.pos(body))
+		var to_safe := Kin.angle_of(safe - w.actors.pos(_i(w, s[2])))
 		assert_gt(Kin.angle_diff(heading, to_safe), 0, "no shot down the gap")
-	assert_eq(seen.get(s[1], ""), "warden_amber_ember")
-	assert_eq(seen.get(s[2], ""), "warden_violet_ember")
 
 
 func test_the_chain_sweep_tracks_locks_and_lashes() -> void:
@@ -403,8 +413,9 @@ func test_the_chain_sweep_tracks_locks_and_lashes() -> void:
 		200
 	)
 	assert_eq(hp - w.actors.hp[0], BossAi.powered(w, i, atk.damage), "the lash lands on the line")
-	var end := BossTwin.sweep_end(w, i)
-	assert_lt(w.actors.pos(_i(w, s[2])).distance_to(end), 1.5, "the twin swung to the line's end")
+	assert_null(
+		BossAi.attack_of(w, _i(w, s[2])), "v0.11.0 O5: the amber's alone (the twin copies nothing)"
+	)
 
 
 func test_the_chain_sweep_misses_off_the_line() -> void:
@@ -418,29 +429,6 @@ func test_the_chain_sweep_misses_off_the_line() -> void:
 	w.actors.set_pos(0, Vector2(-5, 3))
 	CombatLab.idle(w, 3)
 	assert_eq(w.actors.hp[0], hp, "dodged off the line")
-
-
-func test_the_twin_never_picks_it_follows() -> void:
-	var s := _fight(Vector2(-6, 2), Vector2.ZERO, 10.0)
-	var w: World = s[0]
-	var last := {s[1]: -1, s[2]: -1}
-	var starts := {s[1]: [], s[2]: []}
-	for k in 60 * 40:
-		var f := (
-			InputFrame.make(Vector2i(60, 40), 0, 300, 0, 0) if k % 90 < 45 else InputFrame.new()
-		)
-		w.step(f)
-		if _i(w, s[1]) < 0 or _i(w, s[2]) < 0:
-			break
-		for aid in [s[1], s[2]]:
-			var b := BossAi.entry_of(w, _i(w, aid))
-			var now := w.bosses.attack[b]
-			if now >= 0 and now != last[aid]:
-				starts[aid].append([w.tick, now])
-			last[aid] = now
-	assert_gte(starts[s[2]].size(), 4, "the twin attacked")
-	for st: Array in starts[s[2]]:
-		assert_has(starts[s[1]], st, "each twin attack began with its boss's, the same tick")
 
 
 func test_deterministic_and_a_mid_fight_save_restores() -> void:
@@ -475,20 +463,6 @@ func test_deterministic_and_a_mid_fight_save_restores() -> void:
 		a.step(f)
 		restored.step(f)
 	assert_eq(restored.state_hash(), a.state_hash(), "same hash 360 ticks on")
-
-
-func test_an_older_snapshot_without_the_pair_loads() -> void:
-	var w := BossLab.world()
-	BossLab.ready_boss(w, &"tidecaller")
-	var snap := WorldSnapshot.take(w)
-	var bosses: Dictionary = snap["world"][&"bosses"]
-	assert_true(bosses.has(&"twin_lead"), "the pair is saved")
-	for f in BossStore.TWIN_FIELDS:
-		bosses.erase(f)
-	var base := BossLab.world()
-	BossLab.ready_boss(base, &"tidecaller")
-	assert_eq(WorldSnapshot.apply(base, snap), "", "a save from before NB2 loads")
-	assert_true(base.bosses.twin_lead.is_empty(), "with no pair")
 
 
 func test_the_death_lines_name_the_wardens() -> void:

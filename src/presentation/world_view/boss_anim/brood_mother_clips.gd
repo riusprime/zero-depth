@@ -1,6 +1,6 @@
 class_name BroodMotherClips
 extends RefCounted
-## v0.8.0 BA: the Brood Mother's clips (the owner's Crawler Queen, rigged in code by BossRig: body, sac and eight
+## The Brood Mother's clips (the owner's Crawler Queen, rigged in code by BossRig: body, sac and eight
 ## legs). The legs move through parameters the avatar maps onto each leg by where it sits round the body
 ## (BroodMotherAvatar._pose_legs): gait_a_* / gait_b_* (the two alternating leg sets of its scuttle), legs_lift (every
 ## leg; + lifts the tips, - plants them hard), front_lift and back_lift (the front and back pairs), tuck (curled in
@@ -47,6 +47,7 @@ static func library() -> Dictionary:
 			_death(),
 		]:
 			_lib[c.name] = c
+		BossClip.loosen(_lib, 0.015)  # The wind-up, the recoil, the idle sway
 	return _lib
 
 
@@ -96,7 +97,7 @@ static func _marks() -> BossClip:
 		[1, 0],
 	]
 	c.turn(&"sac", Z, sac_turn)
-	# v0.8.0 BS1 (S3, the eggs that stay): first it lays them: the sac dips to the floor and pumps twice, filling.
+	# S3, the eggs that stay: first it lays them: the sac dips to the floor and pumps twice, filling.
 	c.shift(
 		&"sac",
 		UP,

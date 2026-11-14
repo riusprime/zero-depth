@@ -6,7 +6,7 @@ extends RefCounted
 ## The utility chosen before the run (PD-01).
 enum Utility { NONE, GUARD, BLINK }
 
-## Weapon bits (v0.3.0 L15): a build enables one; WEAPONS_ALL is the pre-build default.
+## Weapon bits: a build enables one; WEAPONS_ALL is the pre-build default.
 const WEAPON_BLADE := 1
 const WEAPON_GUN := 2
 const WEAPONS_ALL := 3
@@ -36,12 +36,12 @@ var guard_move_permille := 400
 var blink_range_m := 5.0
 var blink_cooldown_ticks := 150
 var blink_iframe_ticks := 6
-## Melee: a combo of distinct swings (v0.3.0 L11), one SwingStep per step in order; a press within
+## Melee: a combo of distinct swings, one SwingStep per step in order; a press within
 ## combo_window_ticks of a swing's end starts the next step, otherwise (and after the last step) the combo
 ## starts over. Shooting: bolts. Distances in metres, speeds in metres per tick.
 var combo: Array[SwingStep] = default_combo()
 var combo_window_ticks := 12
-## Shooting: a bolt every shot_period_ticks while held, bolt_damage each. v0.8.0 GF1 (owner O18): bigger, slower to
+## Shooting: a bolt every shot_period_ticks while held, bolt_damage each. bigger, slower to
 ## fire, harder-hitting, a little slower in flight (was 7 ticks, 4, 18 m/s, 0.16 m, 36 ticks); the range stays 10.8 m.
 ## The same numbers as data/player/runner.tres.
 var shot_period_ticks := 9
@@ -49,7 +49,7 @@ var bolt_damage := 5
 var bolt_speed := 16.2 / 60.0
 var bolt_radius_m := 0.2
 var bolt_life_ticks := 40
-## v0.10.5 O11 (F1): the push a direct hit gives a normal enemy, in metres (the same as data/player/runner.tres).
+## The push a direct hit gives a normal enemy, in metres (the same as data/player/runner.tres).
 var hit_push_m := 0.15
 var finisher_push_m := 0.45
 var bolt_push_m := 0.03
@@ -58,7 +58,7 @@ var bolt_crit_push_m := 0.06
 ## a run's build, so the kernel and lab worlds keep both), and each weapon's damage in per mille.
 var weapons := WEAPONS_ALL
 var melee_damage_permille := 1000
-## v0.8.0 N1 (D39): the damage the hero takes while the build's weapon is held, per mille (the build's
+## The damage the hero takes while the build's weapon is held, per mille (the build's
 ## damage_taken_permille; the Blade 750). 1000 in the kernel worlds (starting_values), so their goldens keep.
 var damage_taken_permille := 1000
 var bolt_damage_permille := 1000
@@ -92,7 +92,7 @@ static func starting_values() -> PlayerTable:
 ## The v0.3.0 four-slash combo (PLAN L11, starting values): a horizontal slash right to left, a backhand left to
 ## right, a forward thrust (narrow, longer, a slight step) and a heavy spinning finisher (all around, more damage
 ## and hit-stop, a longer recovery, a small lunge). The same numbers as data/player/runner.tres. v0.8.0 N1 (owner
-## O48): the hit-stop 3,3,4,7 -> 4,4,5,8 ticks. v0.10.5 S1 (owner "blade is still pause"): -> 3,3,3,5 ticks.
+## O48): the hit-stop 3,3,4,7 -> 4,4,5,8 ticks. -> 3,3,3,5 ticks.
 static func default_combo() -> Array[SwingStep]:
 	var out: Array[SwingStep] = [
 		SwingStep.make(SwingStep.Motion.SLASH_RIGHT_TO_LEFT, 2, 11, 683, 1.6, 10, 3, 0.0, 5),

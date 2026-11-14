@@ -1,12 +1,11 @@
 class_name SkillVisuals
 extends Node3D
-## The build skills in the world (v0.3.5 K, owner F18). Reads WorldReader.skill_state() only (EI-07):
+## The build skills in the world. Reads WorldReader.skill_state() only (EI-07):
 ## - Lunge Cleave: while the lunge runs, the cleave's fan rides with the hero (the forecast: the same half arc and
 ##   reach the hit uses, PlayerSkill.cleave_touches); a streak from where the lunge started; when it lands, the fan
 ##   flashes white-hot.
 ## - Scatter Blast: a tracer from the muzzle to each pellet's end (the sim's own end points: a wall, an enemy or full
 ##   range) and a quick flash of the cone (half_cone, range_m).
-## v0.5.5 LK (owner A1: "The ability for gun and blade should match the animation"):
 ## - the cleave is drawn as a wide blade sweep across the real hit shape: a ribbon over the fan (the hero's edge out
 ##   to edge + reach, -half_arc..+half_arc round the lunge's angle; 180 degrees with the starting values) led by a
 ##   bright blade edge. It crosses the arc over the lunge's last CLEAVE_SWEEP_TICKS ticks and reaches the far edge on
@@ -14,11 +13,11 @@ extends Node3D
 ##   hit-stop and fades;
 ## - the blast adds a muzzle flash at the hero's edge; the cone flash is the real cone (2 x half_cone, range_m).
 ## Every effect ages in sim ticks (sync), not frames, so it lines up with the skill's ticks.
-## v0.5.5 LK (owner A2): every skill effect takes the heat tier's colour (HeatLooks.attack_color): its own cyan below
+## Every skill effect takes the heat tier's colour (HeatLooks.attack_color): its own cyan below
 ## Hot, orange at Hot, red at Overclock.
 ## Nothing here changes an outcome.
 
-## v0.10.0 VX8 (VFX_PACK N3): the cleave's sweep ribbon takes the swing trail's look (BladePack's ribbon material)
+## VFX_PACK N3: the cleave's sweep ribbon takes the swing trail's look (BladePack's ribbon material)
 ## and its hit flashes big_flash_02 (vx8_cleave_flash) beside the fan; false (or the pack full/off): the old looks.
 const PACK_BLADE := true
 ## The pack flash's scale per metre of the cleave's reach, and how far along the reach it sits.
@@ -44,7 +43,7 @@ const HOT := Color("#FFFFFF")
 ## Live effects: [node, material, ticks left, ticks, kind, base alpha].
 var _fx := FxFade.new()
 var _fx_template := _make_template()
-## v0.5.5 LK (A3 VFX audit): the cleave's and the blast's flashes are light, added to the floor (HeatVisuals' glow
+## A3 VFX audit: the cleave's and the blast's flashes are light, added to the floor (HeatVisuals' glow
 ## template); mixed, their pale unshaded fans read as flat sheets over a dark lit floor.
 var _glow_template := HeatVisuals.make_glow_template()
 var _forecast := MeshInstance3D.new()
@@ -63,7 +62,7 @@ var _edge := MeshInstance3D.new()
 var _edge_mat: StandardMaterial3D
 ## The sweep as of the last sync: [progress 0..1, strength 0..1, half arc (1/4096 turns), outer radius m].
 var _sweep_state: Array = [0.0, 0.0, 0, 0.0]
-## v0.10.0 VX8: the sweep ribbon's pack material (own), whether it draws now (a slot is claimed), its scroll and tint.
+## The sweep ribbon's pack material (own), whether it draws now (a slot is claimed), its scroll and tint.
 var _ribbon_mat: ShaderMaterial
 var _ribbon_on := false
 var _phase := 0.0
@@ -168,7 +167,7 @@ func fx_count_of(kind: StringName) -> int:
 
 ## The colour the skill's effects take now (HeatLooks.attack_color of the heat tier).
 func fx_color() -> Color:
-	return AttackView.edge_color(COLOR, _tier)  # v0.6.0 MX1: the attacks' one edge rule
+	return AttackView.edge_color(COLOR, _tier)  # The attacks' one edge rule
 
 
 ## The colour of the newest live effect of a kind (its material's albedo, alpha 1), or transparent black.
@@ -334,7 +333,7 @@ func _process(delta: float) -> void:
 		_ribbon_mat.set_shader_parameter(&"phase", _phase)
 
 
-## v0.10.0 VX8: the sweep draws with the pack's ribbon (a slot of the `trail` family), tinted `c`; with no pack or no
+## The sweep draws with the pack's ribbon (a slot of the `trail` family), tinted `c`; with no pack or no
 ## free slot the old ribbon draws.
 func _use_ribbon(c: Color) -> void:
 	if not _ribbon_on:

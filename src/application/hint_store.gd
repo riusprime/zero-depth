@@ -1,11 +1,11 @@
 class_name HintStore
 extends RefCounted
-## v0.7.5 SM (owner N8): the first-run hints the player has seen, in the profile's `hints` section
+## The first-run hints the player has seen, in the profile's `hints` section
 ## (`{"seen": [ids]}`, there since v0.0.1), and whether hints show at all (the Options toggle "Show hints", the
 ## `hints` setting, on by default). Each hint shows once; "Reset hints" forgets them all. Never part of a run's
 ## state or any hash.
 
-## Every hint, in the order a first run meets them (OnboardingHints decides when each one shows). v0.8.0 N18: pick,
+## Every hint, in the order a first run meets them (OnboardingHints decides when each one shows). pick,
 ## trigger, shop and portal removed (they explained; owner O76); an older profile's seen list may still name them.
 const IDS: Array[StringName] = [
 	&"move",

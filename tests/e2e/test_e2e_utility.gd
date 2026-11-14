@@ -10,12 +10,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## Opens the dev panel and grants the ability `id` (cycling the panel's choice to it).
 func _grant(e: E2e, main: Main, id: StringName) -> void:
 	if not main.is_dev_panel_open():
@@ -24,8 +18,8 @@ func _grant(e: E2e, main: Main, id: StringName) -> void:
 	for k in w.ability_tables.size():
 		if w.ability_tables[main.driver.debug.ability_choice].id == id:
 			break
-		await _click(e, main, "NextAbility")
-	await _click(e, main, "GrantAbility")
+		await e.click_dev("NextAbility")
+	await e.click_dev("GrantAbility")
 	await e.frames(2)
 
 

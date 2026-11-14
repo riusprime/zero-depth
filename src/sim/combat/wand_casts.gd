@@ -1,6 +1,6 @@
 class_name WandCasts
 extends RefCounted
-## v0.6.5 WN5a (docs/design/WAND.md rule 3 and the shared pool; SIM_CONTRACTS §8h): where the wand's small spells were
+## docs/design/WAND.md rule 3 and the shared pool; SIM_CONTRACTS §8h: where the wand's small spells were
 ## cast, for the views. A trigger card's child spell (tagged `cast`, WandCompile) and the shared cards' blasts (a
 ## hook's BURST: Fire's kill burst, Void's pull, Explosive's blast) and slashes leave a mark here when Attacks.run_hook
 ## launches them: the tick, the child spec's book key, where from and which way, and whether it is a trigger's cast.

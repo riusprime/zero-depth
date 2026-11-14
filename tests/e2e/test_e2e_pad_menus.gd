@@ -52,6 +52,7 @@ func _pad_to_station(e: E2e, main: Main, id: StringName) -> void:
 
 func test_pad_a_plays_and_pause_goes_home() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	assert_eq(_focused(main).name, &"Play", "Play has focus at boot")
 	await _pad_to_station(e, main, &"portal")
@@ -87,6 +88,7 @@ func test_pad_a_plays_and_pause_goes_home() -> void:
 
 func test_pad_a_resumes_from_pause() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	await _pad_to_station(e, main, &"portal")
 	await _press(e, JOY_BUTTON_A)  # Blade
@@ -128,6 +130,7 @@ func test_stick_moves_focus_and_pad_a_opens_options_and_credits() -> void:
 ## v0.4.0 BS (F11): the utility picker is gone; the build screen is the last menu before the run.
 func test_pad_back_from_the_build_screen() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	await _pad_to_station(e, main, &"portal")
 	assert_not_null(main.get_node_or_null("UI/BuildPicker"))
@@ -139,6 +142,7 @@ func test_pad_back_from_the_build_screen() -> void:
 
 func test_pad_a_on_the_end_panel() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	await _pad_to_station(e, main, &"portal")
 	await _press(e, JOY_BUTTON_A)  # Blade

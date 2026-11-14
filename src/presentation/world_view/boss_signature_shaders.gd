@@ -1,6 +1,6 @@
 class_name BossSignatureShaders
 extends RefCounted
-## v0.8.0 BS2 (owner O5; BOSS_SIGNATURES.md S4-S6): the shaders BossSignatureViews draws the new signature pieces
+## The shaders BossSignatureViews draws the new signature pieces
 ## with (kept apart so the view stays readable): the Gaze's beam (a hot core and glow with scrolling noise, additive)
 ## and the strip it burns on the floor, the scorch marks it leaves, a ricochet's spark (a camera-facing star), the
 ## Foundry's molten floor (churning, crusting over as it cools) and its meltdown (the floor beyond a radius molten,

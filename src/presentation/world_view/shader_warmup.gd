@@ -1,6 +1,6 @@
 class_name ShaderWarmup
 extends Node3D
-## v0.8.0 HR (owner O89: no fps drops "during the fun part of the game"; RenderSwitches.SHADER_WARMUP): the floor's
+## The floor's
 ## effect, attack and enemy shaders drawn once behind the loading cover, so the first shot, spawn or effect of a floor
 ## never compiles a shader or a pipeline mid-fight. ViewWarmup reads the files on a worker; this is its drawing half,
 ## the view build's last job (WorldViewRoot.queue_setup):
@@ -14,9 +14,9 @@ extends Node3D
 ## - v0.10.5 (the cracked wall's 1.1 s freeze, owner PERF_PLAYLOG_1): every piece under a node marked WARM_META, on any
 ##   material, shown or hidden (the cracked wall's runes, cracks and rubble, the hidden room's pieces): their
 ##   StandardMaterial3D variants (the runes' alpha + unshaded + texture) may be drawn nowhere else on the floor.
-##   v0.10.5 (the first fireballs and elite, PERF_PLAYLOG_1): with internal children and CPUParticles3D meshes too (a
+##   The first fireballs and elite, PERF_PLAYLOG_1: with internal children and CPUParticles3D meshes too (a
 ##   MagicArea's parts: EliteViews' pooled sigil); FireballViews.prepare's looks are its empty MultiMeshes.
-##   v0.10.5 PC: and a view's idle_pieces(), the pool entries kept outside the tree (the walk runs at the view's build,
+##   And a view's idle_pieces(), the pool entries kept outside the tree (the walk runs at the view's build,
 ##   so the proxies hold their meshes and materials; the pieces never need the tree to be drawn here).
 ## Every proxy sits in front of the camera (AT in its frame), scaled to TINY (well under a pixel): the draw is issued,
 ## nothing shows. A load builds the view hidden under the closed cover (Main), so the warm-up hangs beside the view
@@ -30,8 +30,11 @@ const FRAMES := 3
 const MAX_WAIT := 600
 ## At most this many proxies from the view's hidden pieces (each a draw for FRAMES frames).
 const MAX_PROXIES := 400
-## v0.10.5: a node with this meta has every mesh under it drawn here, whatever its material (see the list above).
+## A node with this meta has every mesh under it drawn here, whatever its material (see the list above).
 const WARM_META := &"shader_warm"
+## A node with this meta is left out, with everything under it: another node of the view draws the same material
+## and vertex format (ShardViews' drop shapes, one batch pair a shape).
+const SKIP_META := &"shader_warm_skip"
 const HORDE_KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_SPLITTER,
@@ -40,6 +43,11 @@ const HORDE_KINDS: Array[int] = [
 	WorldReader.KIND_MENDER,
 	WorldReader.KIND_MINE_LAYER,
 	WorldReader.KIND_SNIPER,
+	WorldReader.KIND_DUST_MITE,  # The horde critters (a surge brings dozens at once)
+	WorldReader.KIND_CAVE_BAT,
+	WorldReader.KIND_EMBER_FLEA,
+	WorldReader.KIND_ICE_CRAB,
+	WorldReader.KIND_STAR_MOTE,
 ]
 
 ## The proxies made (tests): from the view's hidden pieces, from the first-use materials, and horde enemies.
@@ -93,7 +101,7 @@ func _process(_delta: float) -> void:
 ## The view's pieces not drawn now (`hidden`: under a hidden node; a MultiMesh showing no instance), and every piece
 ## under a WARM_META node (`warm`).
 func _from_view(n: Node, hidden: bool, warm: bool) -> void:
-	if hidden_proxies >= MAX_PROXIES or n == self:
+	if hidden_proxies >= MAX_PROXIES or n == self or n.has_meta(SKIP_META):
 		return
 	var off := hidden or (n is Node3D and not (n as Node3D).visible)
 	var all := warm or n.has_meta(WARM_META)
@@ -106,14 +114,14 @@ func _from_view(n: Node, hidden: bool, warm: bool) -> void:
 		var mi := n as MeshInstance3D
 		if mi.mesh != null and (all or (off and _custom_shaded(mi))):
 			_mesh_proxy(mi)
-	elif n is CPUParticles3D and all:  # v0.10.5: a MagicArea's sparks (EliteViews' pooled sigil)
+	elif n is CPUParticles3D and all:  # A MagicArea's sparks (EliteViews' pooled sigil)
 		var cp := n as CPUParticles3D
 		if cp.mesh != null:
 			_particles_proxy(cp)
-	# v0.10.5: under a WARM_META node, a node's internal children too (a MagicArea builds its parts as internal ones)
+	# Under a WARM_META node, a node's internal children too (a MagicArea builds its parts as internal ones)
 	for c in n.get_children(all):
 		_from_view(c, off, all)
-	# v0.10.5 PC (owner PERF_PLAYLOG_2): a pool's idle pieces wait outside the tree (EliteViews, TelegraphViews,
+	# A pool's idle pieces wait outside the tree (EliteViews, TelegraphViews,
 	# StatusVisuals, FireballViews: idle_pieces()); drawn here once like its hidden children were
 	if n.has_method(&"idle_pieces"):
 		for c: Node in n.call(&"idle_pieces"):
@@ -241,12 +249,12 @@ func _enemies(actors: ActorViews) -> void:
 		var h := HordeAvatar.new()
 		h.enemy_tint = actors.enemy_tint
 		h.role_glow = ActorViews.role_glow_energy
-		h.setup(kind, actors.outline_color, actors.technique)
+		h.setup(kind)
 		h.set_process(false)
 		add_child(h)
-		RigMerge.merge(h, kind)  # v0.9.5 PF5: the merged body draws on a skinned variant of its shaders
+		RigMerge.merge(h, kind)  # The merged body draws on a skinned variant of its shaders
 		enemies += 1
-		if ViewPrefs.enemy_vat and VatCrowd.supports(kind):  # v0.10.5 W3-V1: its VAT body (and bake) too
+		if ViewPrefs.enemy_vat and VatCrowd.supports(kind):  # Its VAT body (and bake) too
 			add_child(
 				VatCrowd.warm_proxy(
 					kind, actors.enemy_tint, ActorViews.role_glow_energy, actors.outline_color
@@ -256,49 +264,48 @@ func _enemies(actors: ActorViews) -> void:
 		var c := ChargerAvatar.new()
 		c.enemy_tint = actors.enemy_tint
 		c.role_glow = ActorViews.role_glow_energy
-		c.setup(actors.outline_color, actors.technique, kind)
+		c.setup(kind)
 		c.set_process(false)
 		add_child(c)
 		RigMerge.merge(c, kind)
 		enemies += 1
-		if ViewPrefs.enemy_vat and VatCrowd.supports(kind):  # v0.10.5 W3-V4a: its VAT body (and bake) too
+		if ViewPrefs.enemy_vat and VatCrowd.supports(kind):  # Its VAT body (and bake) too
 			add_child(
 				VatCrowd.warm_proxy(
 					kind, actors.enemy_tint, ActorViews.role_glow_energy, actors.outline_color
 				)
 			)
-	if ViewPrefs.enemy_vat:  # v0.10.5 W3-V4c: the stand-alone kinds' VAT bodies (and bakes) too
+	if ViewPrefs.enemy_vat:  # The stand-alone kinds' VAT bodies (and bakes) too
 		for kind in SoloVat.KINDS:
 			add_child(
 				VatCrowd.warm_proxy(
 					kind, actors.enemy_tint, ActorViews.role_glow_energy, actors.outline_color
 				)
 			)
-	_merged_kinds(actors)
+	_merged_kinds()
 
 
-## v0.9.5 PF5: the other enemies' merged bodies (RigMerge) draw on the skinned variant of the standard material; one of
+## The other enemies' merged bodies (RigMerge) draw on the skinned variant of the standard material; one of
 ## each, built and merged as ActorViews does, so that variant is compiled behind the cover too.
-func _merged_kinds(actors: ActorViews) -> void:
-	var oc := actors.outline_color
-	var tq := actors.technique
+func _merged_kinds() -> void:
 	var needle := NeedleAvatar.new()
-	needle.setup(oc, tq)
+	needle.setup()
 	_warm_rig(needle, WorldReader.KIND_NEEDLE)
 	var elite := EliteAvatar.new()
-	elite.setup(WorldReader.KIND_BREAKER, oc, tq)
+	elite.setup(WorldReader.KIND_BREAKER)
 	_warm_rig(elite, WorldReader.KIND_BREAKER)
 	var warden := WardenAvatar.new()
-	warden.setup(oc, tq)
+	warden.setup()
 	_warm_rig(warden, WorldReader.KIND_WARDEN)
-	var caster := ArcCasterAvatar.new()
-	caster.setup(oc, tq)
+	var caster := CinderPriestAvatar.new()
+	caster.kind = WorldReader.KIND_ARC_CASTER
+	caster.setup()
 	_warm_rig(caster, WorldReader.KIND_ARC_CASTER)
 	var drone := BombDroneAvatar.new()
-	drone.setup(oc, tq)
+	drone.setup()
 	_warm_rig(drone, WorldReader.KIND_BOMB_DRONE)
 	var lens := LensDroneAvatar.new()
-	lens.setup(oc, tq)
+	lens.setup()
 	_warm_rig(lens, WorldReader.KIND_LENS_DRONE)
 
 

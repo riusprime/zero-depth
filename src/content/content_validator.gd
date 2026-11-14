@@ -18,13 +18,14 @@ static func validate(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 			)
 		else:
 			seen[key] = d.resource_path
-	issues.append_array(ComboDefinition.cross_check(defs))  # v0.3.0 G: combo pairs.
-	issues.append_array(AbilityDefinition.cross_check(defs))  # v0.4.0 AB: engine items.
-	issues.append_array(ModifierDefinition.cross_check(defs))  # v0.6.0 MX1: item modifiers.
-	issues.append_array(WandMigrationDefinition.cross_check(defs))  # v0.6.5 WN5b: the old cards' map.
-	issues.append_array(AttackSlotsDefinition.cross_check(defs))  # v0.9.0 AS: slot categories, the table.
-	issues.append_array(SpecialRoomDefinition.cross_check(defs))  # v0.9.0 RG: the numbers it repeats
-	issues.append_array(EnemyDefinition.cross_check(defs))  # v0.10.5 O10: the matchup ids
+	issues.append_array(ComboDefinition.cross_check(defs))  # Combo pairs.
+	issues.append_array(AbilityDefinition.cross_check(defs))  # Engine items.
+	issues.append_array(ModifierDefinition.cross_check(defs))  # Item modifiers.
+	issues.append_array(WandMigrationDefinition.cross_check(defs))  # The old cards' map.
+	issues.append_array(AttackSlotsDefinition.cross_check(defs))  # Slot categories, the table.
+	issues.append_array(SpecialRoomDefinition.cross_check(defs))  # The numbers it repeats
+	issues.append_array(EnemyDefinition.cross_check(defs))  # The matchup ids
+	issues.append_array(BiomeDefinition.cross_check(defs))  # Each biome's horde critter
 	issues.sort_custom(
 		func(a: ValidationIssue, b: ValidationIssue) -> bool:
 			return [a.path, a.code, a.message] < [b.path, b.code, b.message]

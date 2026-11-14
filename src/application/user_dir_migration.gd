@@ -1,6 +1,6 @@
 class_name UserDirMigration
 extends RefCounted
-## v0.9.5 TT: the game was named (Zero Depth), and Godot keeps `user://` in a folder named after
+## The game was named (Zero Depth), and Godot keeps `user://` in a folder named after
 ## `config/name`. Before the name, that folder was `{{TITLE}}`. On the first launch under the new
 ## name this COPIES the old folder's files (profile, run save, settings, ...) into the new one, so no
 ## save is lost. It never moves or deletes anything in the old folder. A marker file stops it from

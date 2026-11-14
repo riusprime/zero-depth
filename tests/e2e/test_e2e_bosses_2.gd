@@ -1,15 +1,4 @@
 extends GutTest
-## The second boss of each pool reaches the real game (PLAN v0.4.0 BO). On a run each floor draws its boss from its
-## pool of two (tests/unit/sim/test_bosses_2.gd); here the dev panel, opened with backtick and clicked with the
-## mouse, picks each new boss by name (Next boss), summons it (Spawn boss), and the boss rises with its own model and
-## its name on the HUD's boss bar, then telegraphs an attack that is drawn (on the ground, or the Gaze's aim line and
-## beam) and lands on the player.
-## God mode (also clicked) keeps the player standing; the hits still show as HIT events.
-
-
-func _click(e: E2e, main: Main, button_name: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button_name, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
 
 
 func _reach(id: StringName, kind: int, avatar_class: String) -> void:
@@ -24,17 +13,17 @@ func _reach(id: StringName, kind: int, avatar_class: String) -> void:
 	)
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.is_dev_panel_open())
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	var choice := main.get_node("UI/DevPanel").find_child("BossChoice", true, false) as Label
 	var w := e.world()
 	var name := tr(w.boss_tables[BossLab.table_index(w, id)].name_key)
 	for k in 8:
 		if choice.text == name:
 			break
-		await _click(e, main, "NextBoss")
+		await e.click_dev("NextBoss")
 		await e.frames(1)
 	assert_eq(choice.text, name, "the panel names %s" % name)
-	await _click(e, main, "SpawnBoss")
+	await e.click_dev("SpawnBoss")
 	await e.frames(3)
 	assert_true(w.boss_alive(), "%s came" % id)
 	var reader := main.driver.reader

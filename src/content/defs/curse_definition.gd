@@ -11,7 +11,7 @@ extends ContentDef
 ## enemy_speed (+amount % normal enemies' move speed), regen (-amount % regen), heat_decay (Overclock heat decays
 ## +amount % faster), extra_enemy (+amount enemies in every spawn arrival, under the alive cap), prices (+amount %
 ## shard prices: chests, the gamble shrine, shops), elite_chance (+amount % chance that a spawned enemy is elite);
-## v0.6.0 CU: no_dash (the dash button does nothing), dodge (amount % chance an enemy hit is dodged), attack_slow
+## no_dash (the dash button does nothing), dodge (amount % chance an enemy hit is dodged), attack_slow
 ## (attack speed -amount %), fourth_hit (the 4th Blade combo hit / every 4th Gun shot +amount % damage), max_hp_cut
 ## (max HP -amount %), crit_chance (+amount % crit chance), ability_hp_cost (each Skill or Blink use costs amount %
 ## of max HP, never lethal), ability_damage (+amount % damage on skill and ability hits), heat_linger (Overclock
@@ -43,8 +43,8 @@ const EFFECTS: Array[StringName] = [
 	&"elite_hunt",
 	&"elite_rare_drop",
 ]
-## v0.9.0 EL (owner Q25): the Marked curse's effects, retired with it (their places above stay; no curse may use them).
-## v0.10.5 O1 (owner P1: "Yes, cut the 5"): the five flat curses' effects, retired with them.
+## The Marked curse's effects, retired with it (their places above stay; no curse may use them).
+## The five flat curses' effects, retired with them.
 const RETIRED: Array[StringName] = [
 	&"elite_chance",
 	&"elite_hunt",
@@ -67,10 +67,10 @@ const CUTS: Array[StringName] = [&"attack_slow", &"max_hp_cut", &"heat_linger"]
 @export var desc_key: StringName
 @export var effect: StringName = &"no_dash"
 @export var amount := 15.0
-## v0.6.0 CU: a second drawback (&"" = none).
+## A second drawback (&"" = none).
 @export var effect_2: StringName = &""
 @export var amount_2 := 0.0
-## v0.6.0 CU: the upside of a trade-off curse (&"" = a plain curse), and its sentence (one %s for up_amount, or none).
+## The upside of a trade-off curse (&"" = a plain curse), and its sentence (one %s for up_amount, or none).
 @export var up_effect: StringName = &""
 @export var up_amount := 0.0
 @export var up_desc_key: StringName
@@ -83,7 +83,7 @@ func category() -> StringName:
 	return &"curses"
 
 
-## A trade-off curse (v0.6.0 CU): it has an upside.
+## A trade-off curse: it has an upside.
 func is_trade_off() -> bool:
 	return up_effect != &""
 

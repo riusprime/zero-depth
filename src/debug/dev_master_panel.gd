@@ -11,11 +11,11 @@ extends PanelContainer
 signal changed(key: String)
 signal restart_requested
 signal close_requested
-## v0.8.0 N6 (owner O60): the Playground opens from here (off a run only), not from the main menu.
+## The Playground opens from here (off a run only), not from the main menu.
 signal playground_requested
-## v0.9.0 HB (owner Q27: the small menu): the galleries open from here too (off a run, debug builds only).
+## The galleries open from here too (off a run, debug builds only).
 signal galleries_requested
-## v0.10.5 W3-O12: the Effects gallery (every effect in the game and every unused pack effect), beside the Galleries.
+## The Effects gallery (every effect in the game and every unused pack effect), beside the Galleries.
 signal effects_gallery_requested
 
 const ROW_H := 26.0
@@ -91,13 +91,13 @@ func _top_bar() -> Control:
 	bar.add_child(t)
 	_status.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	bar.add_child(_status)
-	if show_playground:  # v0.8.0 N6 (O60)
+	if show_playground:  # v0.8.0 N6
 		var pg := Button.new()
 		pg.name = "Playground"
 		pg.text = "UI_PLAYGROUND"
 		pg.pressed.connect(func() -> void: playground_requested.emit())
 		bar.add_child(pg)
-		if OS.is_debug_build():  # v0.9.0 HB: was the main menu's debug-only row
+		if OS.is_debug_build():  # Was the main menu's debug-only row
 			var gl := Button.new()
 			gl.name = "Galleries"
 			gl.text = "UI_GALLERIES"
@@ -163,7 +163,7 @@ func _on_pick() -> void:
 	show_source(meta[0], meta[1])
 
 
-## The Tools page is built by Main for this panel; freed with it whether or not it was ever shown (v0.7.5: it was
+## The Tools page is built by Main for this panel; freed with it whether or not it was ever shown (it was
 ## left as an orphan when the panel closed without visiting Tools).
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE and is_instance_valid(tools) and tools.get_parent() == null:
@@ -251,7 +251,7 @@ func _editor(key: String, value: Variant) -> Control:
 ## shards of enemies and bosses on the next spawns; what the floor lays out, and the run's per-floor numbers, on
 ## Restart floor.
 ## The DEV mark a tweaked run shows at the top of the screen (Main shows it while a balance value is off the shipped
-## game). (v0.9.0 HB: made here, moved from Main.)
+## game). (made here, moved from Main.)
 static func mark_label() -> Label:
 	var l := Label.new()
 	l.name = "DevMark"

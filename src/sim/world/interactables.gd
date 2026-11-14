@@ -19,10 +19,21 @@ extends RefCounted
 ## the healing fountain (Shrines, SH and HF: their prompts carry their cost or effect, prompt_key and prompt_args).
 ## Pure: no stream is drawn.
 
-## v0.9.5 TS: TIMED_LEVER, the lever inside the timed door's secret room (TimedDoor.pull).
-enum Kind { PYLON, TIMED_SWITCH, RUNE_PILLAR, PURPLE_DAIS, SHRINE, FOUNTAIN, TIMED_LEVER }
+## TIMED_LEVER, the lever inside the timed door's secret room (TimedDoor.pull).
+## HEART_PEDESTAL and HEART_DOOR, the hidden room under the throne's pedestal and sealed door (HeartRoom).
+enum Kind {
+	PYLON,
+	TIMED_SWITCH,
+	RUNE_PILLAR,
+	PURPLE_DAIS,
+	SHRINE,
+	FOUNTAIN,
+	TIMED_LEVER,
+	HEART_PEDESTAL,
+	HEART_DOOR
+}
 
-## Each kind's prompt (a string key in locale/strings.csv), for the shared prompt view. v0.9.0 DP: the purple dais
+## Each kind's prompt (a string key in locale/strings.csv), for the shared prompt view. the purple dais
 ## (PurpleRunes) reads FA's pylons' "Awaken".
 const PROMPT_KEYS: Array[StringName] = [
 	&"APPROACH_PYLON_PROMPT",
@@ -31,7 +42,9 @@ const PROMPT_KEYS: Array[StringName] = [
 	&"APPROACH_PYLON_PROMPT",
 	&"SHRINE_CHAOS_PROMPT",
 	&"FOUNTAIN_PROMPT",
-	&"TIMED_LEVER_PROMPT"
+	&"TIMED_LEVER_PROMPT",
+	&"HEART_PEDESTAL_PROMPT",
+	&"HEART_DOOR_PROMPT",
 ]
 ## Puzzle calm: the spawn clock runs one tick in CALM_DIVISOR (a quarter of the rate).
 const CALM_DIVISOR := 4
@@ -129,6 +142,10 @@ static func handle(w: World, i: int) -> void:
 			Shrines.press_fountain(w, i)
 		Kind.TIMED_LEVER:
 			TimedDoor.pull(w, i)
+		Kind.HEART_PEDESTAL:
+			HeartRoom.press_pedestal(w)
+		Kind.HEART_DOOR:
+			HeartRoom.press_door(w)
 
 
 ## Entry i's prompt (a string key): its kind's, or (v0.9.0 SH, HF) a shrine's or the fountain's with its cost or

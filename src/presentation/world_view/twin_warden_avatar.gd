@@ -1,18 +1,31 @@
 class_name TwinWardenAvatar
 extends BossAvatar
-## v0.9.0 NB2 (BOSSES_4_5.md N2; art list §2): the Twin Wardens, floor 4's two stone knights joined by a burning chain.
-## This is the amber one (the boss); TwinWardenVioletAvatar its violet twin. Both play TwinWardenClips, so they move
-## as a pair: the whole figure moves through the clips' BODY channel on both models (the owner's amber file keeps
-## its Mixamo skeleton but weights nearly every vertex to the hips, so only the whole figure can move); the violet
-## file is cut into parts (Body, Helm, Shield, Sword; BossModels `parts`), which add small accents. On top of the clips
+## BOSSES_4_5.md N2; art list §2: the Twin Wardens, floor 4's two stone knights joined by a burning chain.
+## This is the amber one (the boss); TwinWardenVioletAvatar its violet twin. Both play TwinWardenClips. Each
+## file is skinned to a full skeleton (spine, arms, legs, the sword, the shield, the shoulder plates, the cloak and
+## the tabard) and carries its own animations: "idle" and "walk" replace the code clips of those names, and
+## OWNER_PLAYS says which moves play its "cast" (the sword levelled at the target) and its "swipe" (the diagonal
+## cut); the other moves keep their code clips, which move the whole figure and turn the head, the shield and the
+## sword a little over the file's idle (the violet's the other way round). The violet file's animations are the
+## amber's mirrored (its sword in the other hand), so driven alike the two move as a pair. On top of the clips
 ## (_pose_rig) the anger the sim reads out (WorldReader.boss_twin) drives it: an angry Warden leans forward, its cracks
 ## and visor blaze and its light flares, so the player sees which one is fast. With the file missing it is a code
 ## stand-in of the same parts (a faceted body and cape, a slit helm with stone fins, a tower shield with its shackle,
+## a short sword) posed from the same inputs. the roles read out too: the Warden to hit
+## now glows brighter (phase 3's exposed one pulses), the one standing back dims and leans back behind its shield.
 ## a short sword) posed from the same inputs. Presentation only (EI-07): it reads the sim and moves its own children.
 
 const HEIGHT := 2.2
 const WALK_SPEED := 1.6
-const STRIDE := 1.1
+## The metres one loop of the amber file's walk covers at the size the game draws it, so its feet don't slide.
+const STRIDE := 1.17
+## The two files' animations by the move that plays them, with the seconds of each one's strike pose and of the
+## end of its active part. A new move that should cast or cut needs only a row here.
+const OWNER_PLAYS := {
+	&"crossfire": {"anim": &"cast", "strike": 0.7, "recover": 1.8},
+	&"pattern": {"anim": &"cast", "strike": 0.7, "recover": 1.8},
+	&"chain_sweep": {"anim": &"swipe", "strike": 0.55, "recover": 0.73},
+}
 
 const STONE := Color("#8A8378")
 const STONE_DARK := Color("#5A544C")
@@ -33,6 +46,11 @@ var _cracks: Array[MeshInstance3D] = []
 ## The anger read each tick (WorldReader.boss_twin), smoothed in frame time (0..1).
 var _angry := false
 var _anger := 0.0
+## Standing back, the one to hit, phase 3's exposed one (read each tick), and the role's smoothed glow.
+var _resting := false
+var _focus := false
+var _exposed := false
+var _role := 1.0
 
 
 ## The cracks' and visor's colour (the violet twin overrides it).
@@ -46,14 +64,21 @@ func shield_side() -> float:
 
 
 func sync(reader: WorldReader, i: int) -> void:
-	_angry = bool(reader.boss_twin(i).get("angry", false))
+	var twin := reader.boss_twin(i)
+	_angry = bool(twin.get("angry", false))
+	_resting = bool(twin.get("resting", false))
+	_focus = bool(twin.get("focus", false))
+	_exposed = bool(twin.get("exposed", false))
 	super(reader, i)
 
 
-## Render scripts and tests set the anger directly: "angry" (bool).
+## Render scripts and tests set the anger directly: "angry" (bool); "resting", "focus", "exposed".
 func apply_state(s: Dictionary) -> void:
 	if s.has("angry"):
 		_angry = bool(s["angry"])
+	_resting = bool(s.get("resting", _resting))
+	_exposed = bool(s.get("exposed", _exposed))
+	_focus = bool(s.get("focus", _focus or _exposed))
 	super(s)
 
 
@@ -83,10 +108,25 @@ func _anchor(point: StringName) -> Vector3:
 		return code.get(point, weak_core.position)
 	match point:
 		&"visor":
-			return pivot.transform * MODEL_VISOR
+			return _riding(&"head", MODEL_VISOR)
 		&"shackle":
-			return pivot.transform * (MODEL_SHACKLE * Vector3(1, 1, side))
+			return _riding(&"shield", MODEL_SHACKLE * Vector3(1, 1, side))
 	return weak_core.position
+
+
+## A point of the model at rest, carried by `bone` when the model has it, else by the whole figure.
+func _riding(bone: StringName, rest: Vector3) -> Vector3:
+	if poser != null and poser.has_bone(bone):
+		return _on_bone(bone, rest)
+	return pivot.transform * rest
+
+
+func _weak_bone() -> StringName:
+	return &"chest"
+
+
+func _owner_plays() -> Dictionary:
+	return OWNER_PLAYS
 
 
 ## 0..1: how angry it shows now (tests).
@@ -197,7 +237,7 @@ func _pose(dt: float) -> void:
 	shield.position.y = 1.05 + torso.position.y + raise * 0.2
 	shield.rotation = Vector3(0, 0.3 * _shielded_amount(), s * 0.06 * walk)
 	sword.rotation = Vector3(0, 0, -0.1 * s * walk - 0.5 * (_wind if windup else 0.0))
-	var glow := (2.0 + 2.5 * _wind + 3.0 * _anger) * (1.0 - 0.6 * _stagger)
+	var glow := (2.0 + 2.5 * _wind + 3.0 * _anger) * (1.0 - 0.6 * _stagger) * role_glow()
 	for m in _cracks:
 		(m.material_override as StandardMaterial3D).emission_energy_multiplier = glow
 	if crack_light != null:
@@ -214,7 +254,7 @@ func _advance_anger(dt: float) -> void:
 
 
 func _clip_library() -> Dictionary:
-	return TwinWardenClips.library()
+	return TwinWardenClips.library(shield_side() < 0.0)
 
 
 func _walk_speed() -> float:
@@ -229,11 +269,24 @@ func _idle_seconds() -> float:
 	return 3.6
 
 
-## After the clips: an angry Warden leans in and its light flares with the clips' glow.
+## After the clips: an angry Warden leans in and its light flares with the clips' glow; the role's glow
+## (the one to hit brighter, phase 3's exposed one pulsing, the one standing back dim and leaning back).
 func _pose_rig(dt: float) -> void:
 	_advance_anger(dt)
+	_role = move_toward(_role, role_glow(), dt * 3.0)
 	if not ViewPrefs.reduced_motion:
 		pivot.rotation.z -= 0.1 * _anger
+		pivot.rotation.z += 0.08 * clampf(1.0 - _role, 0.0, 1.0)  # standing back: it leans back
 	if crack_light != null:
 		var glow := maxf(0.0, 1.0 + 0.6 * animator.param(&"glow") + 1.6 * _anger)
-		crack_light.light_energy = LIGHT_ENERGY * glow * (1.0 - 0.6 * _stagger)
+		var pulse := 0.0 if not _exposed or ViewPrefs.reduced_motion else 0.35 * sin(_t * 6.0)
+		crack_light.light_energy = LIGHT_ENERGY * glow * (_role + pulse) * (1.0 - 0.6 * _stagger)
+
+
+## The role's light (1 = as before): the one to hit 1.6 (exposed 2.0), the one standing back 0.35.
+func role_glow() -> float:
+	if _resting:
+		return 0.35
+	if _exposed:
+		return 2.0
+	return 1.6 if _focus else 1.0

@@ -28,14 +28,15 @@ static func of_projectile(w: World, pi: int) -> int:
 	return permille(w) if w.projectiles.second_of(pi) != 0 else 1000
 
 
-## The proc a launch with `ctx` hits at, per mille.
+## The proc a launch with `ctx` hits at, per mille. times ctx.feed_x, the hits
+## of statuses one hit feeds (the Lance-Laser's 3; above 1000 the stacks multiply, the remainder carried as below).
 static func of_ctx(w: World, ctx: AttackContext) -> int:
-	return permille(w) if ctx.secondary else 1000
+	return (permille(w) if ctx.secondary else 1000) * maxi(1, ctx.feed_x)
 
 
 ## `n` stacks fed at `pm` per mille: rounded down, the remainder carried to the next scaled feed (class doc).
 static func stacks(w: World, n: int, pm: int) -> int:
-	if pm >= 1000 or n <= 0:
+	if pm == 1000 or n <= 0:
 		return n
 	var total := n * pm + w.mx.sec_carry
 	w.mx.sec_carry = total % 1000

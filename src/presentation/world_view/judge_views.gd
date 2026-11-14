@@ -1,6 +1,6 @@
 class_name JudgeViews
 extends Node3D
-## v0.9.0 NB3 (BOSSES_4_5.md N3; the VX quality bar: layered, never a flat single-colour shape): the Clockwork Judge's
+## BOSSES_4_5.md N3; the VX quality bar: layered, never a flat single-colour shape: the Clockwork Judge's
 ## echo and its Verdict's pendulum, drawn from WorldReader.boss_echo (EI-07: it reads; every strike is the sim's,
 ## BossJudge).
 ## - The recording: while the Judge records the last 3 s before its echo, gold glints hang over the points it keeps,
@@ -21,7 +21,6 @@ extends Node3D
 const MAX_POINTS := BossSchemas.ECHO_MAX_POINTS
 const GOLD := Color(1.0, 0.78, 0.3)
 const HOT := Color(1.0, 0.95, 0.72)
-const BRONZE := Color(0.32, 0.2, 0.06)
 const GHOST_S := 0.75
 const RING_S := 0.55
 const FILINGS_PER := 10
@@ -61,6 +60,8 @@ void fragment() {
 }
 """
 
+## True once a frame with nothing to show drew it all hidden: later frames return at once.
+var quiet := false
 var _echo := {}
 var _markers: Array[MeshInstance3D] = []
 var _marker_mats: Array[ShaderMaterial] = []
@@ -312,6 +313,13 @@ func _process(delta: float) -> void:
 
 ## Frame-time animation (the tests and the shot scripts call it too).
 func advance(delta: float) -> void:
+	# No echo, no verdict and every fade done: the last frame drew all of it hidden, so another would change nothing
+	if _settled():
+		if quiet:
+			return
+		quiet = true
+	else:
+		quiet = false
 	var calm := 0.35 if ViewPrefs.reduced_motion else 1.0
 	_clock += delta * calm
 	var phase := int(_echo.get("phase", WorldReader.ECHO_NONE))
@@ -323,6 +331,17 @@ func advance(delta: float) -> void:
 	_light_t = minf(1.0, _light_t + delta / 0.35)
 	_light.light_energy = 1.6 * (1.0 - _light_t)
 	_draw_pendulum(delta, calm)
+
+
+func _settled() -> bool:
+	if not _echo.is_empty() or not _verdict.is_empty() or not _filing_state.is_empty():
+		return false
+	if _show > 0.0 or _drop_t < 1.0 or _light_t < 1.0:
+		return false
+	for t in _ghost_t:
+		if t < 1.0:
+			return false
+	return true
 
 
 ## The recording's glints: one over each point kept, brighter as the echo nears; gone while it runs.

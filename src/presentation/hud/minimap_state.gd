@@ -11,9 +11,9 @@ var discovered := PackedByteArray()
 var current := -1
 ## Grows on every change the map has to redraw for.
 var revision := 0
-## v0.4.0 SV: rooms already entered on a resumed floor (one byte per room), taken when the floor is first read.
+## Rooms already entered on a resumed floor (one byte per room), taken when the floor is first read.
 var preset := PackedByteArray()
-## v0.9.0 TD (owner Q23): the rooms the map doesn't show at all yet (WorldReader.hidden_rooms; v0.9.0 RA: every
+## The rooms the map doesn't show at all yet (WorldReader.hidden_rooms; every
 ## secret room still unseen): no fill, no doorway, no stub into them, and the full map is fitted without them.
 var hidden := PackedInt32Array()
 
@@ -51,7 +51,7 @@ func update(reader: WorldReader) -> bool:
 	if room >= 0 and discovered[room] == 0:
 		discovered[room] = 1
 		changed = true
-	if reader.hidden_rooms() != hidden:  # v0.9.0 TD: a secret room's door first opened (RA: its puzzle solved)
+	if reader.hidden_rooms() != hidden:  # A secret room's door first opened (RA: its puzzle solved)
 		hidden = reader.hidden_rooms()
 		changed = true
 	var rewards := _rewards_signature(reader)
@@ -85,7 +85,7 @@ func door_known(reader: WorldReader, i: int) -> bool:
 	return (is_discovered(d.x) or is_discovered(d.y)) and not door_hidden(reader, i)
 
 
-## v0.9.0 TD: door i leads into the hidden room (drawn as plain wall until it opens).
+## Door i leads into the hidden room (drawn as plain wall until it opens).
 func door_hidden(reader: WorldReader, i: int) -> bool:
 	var d := reader.floor_door_rooms(i)
 	return hidden.has(d.x) or hidden.has(d.y)
@@ -133,13 +133,13 @@ func _rewards_signature(reader: WorldReader) -> String:
 				% [
 					reader.reward_id(i),
 					"+" if reader.reward_affordable(i) else "-",
-					"L" if reader.reward_locked(i) else ""  # v0.5.5 AR: a locked reward unlocks on the clear
+					"L" if reader.reward_locked(i) else ""  # A locked reward unlocks on the clear
 				]
 			)
 		)
-	var a := reader.arenas()  # v0.5.5 AR: an arena sealing or clearing redraws its mark
+	var a := reader.arenas()  # An arena sealing or clearing redraws its mark
 	parts.append("a%d/%d" % [a["sealed"], (a["cleared"] as PackedInt32Array).size()])
-	# v0.10.5 W3-V3: the rest of what the map's icons show, so the cached map layer redraws for it too (before, the
+	# The rest of what the map's icons show, so the cached map layer redraws for it too (before, the
 	# view redrew on the player's next pixel anyway): the Overrun cleared, an event spent, the Deep gate opening, the
 	# shrine site, a secret found.
 	var o := reader.overrun()

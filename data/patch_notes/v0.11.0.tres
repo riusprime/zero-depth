@@ -1,0 +1,110 @@
+[gd_resource type="Resource" script_class="PatchNotesDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/patch_notes_definition.gd" id="1_7rjuu"]
+
+[resource]
+script = ExtResource("1_7rjuu")
+version = "0.11.0"
+body_en = "# Zero Depth v0.11.0 — Fights Worth Learning
+_2026-11-08_ · Bosses you beat by learning them, a Laser that fires lances, elemental spells, horde surges, new enemies for every biome and rooms that have a purpose.
+
+## New Features
+### Bosses
+Three bosses now have a mechanic you can learn and use, instead of waiting out a shield.
+- **The Gatekeeper** raises three quake pillars from phase 2. They pulse a little damage every 3 s. Lure its Shock Lanes cross through a pillar: the pillar shatters and the Gatekeeper is stunned for 2 s and takes 50 % more damage, at most twice a phase. The bar reads \"STUNNED · VULNERABLE\".
+- **The Lantern Shade** is never immune. It takes 40 % damage in the dark and 150 % inside a lit lantern's pool. Step on a lantern to light it for 6 s. The dark lasts 9 s and the light 4 s. The bar and the damage numbers show which you are getting.
+- **The Twin Wardens** fight in three phases, each a full health bar. Phase 1: the yellow twin (Shield Bash, Chain Sweep, Charge, Ground Slam). Phase 2: the purple twin (Crossfire, Orb Volley, Rune Ring, Blink). Phase 3: both together, and the twin you can hurt swaps every 10 s. The resting twin takes no damage and shows a small spark when hit.
+- **Hints:** the first two times you meet one of these mechanics, an arrow and a ping point at what matters. Options → Accessibility → Boss hints turns them off.
+- **Animation:** every boss moves less stiffly: a small dip before each wind-up, a recoil after a strike, a wider idle sway. Timings and telegraphs are the same.
+
+### The Laser
+The Laser is now a lance. While you hold fire it shoots an instant lance every 3 s that goes through every enemy in its line, each one after the first taking 15 % less (never under 40 %). One lance applies three hits' worth of status. You keep full speed while holding it.
+- With **Homing** the lance bends in one smooth curve through up to 8 enemies, then runs on to the first wall. With **Twin** and Homing each lance takes its own enemies at full damage, bowing out and curving in (on one enemy, they meet on it and keep Twin's share).
+- **Rapid Fire** shortens the wait and lowers the damage, **Echo** strikes the same path again at half damage, **Big Shot** makes a wider, stronger lance. Attack speed shortens the wait at half value.
+- The Laser always pierces, so the Pierce and Mine cards are no longer offered with it.
+
+### Elemental spells
+Holding an element card (Fire, Frost, Lightning, Venom, Bleed) adds that element's three spells to your card picks. The element of your Wardrobe rune makes its spells show up more often.
+- You have 4 spell slots, apart from the wand. Each spell casts by itself on its own cooldown (about 12 s) and aims at the thickest group of enemies near you. When the slots are full, a new spell replaces your lowest one.
+- Taking a spell you hold levels it up (Lv 1–3, Lv 4–5 from loop 2), and every level changes something you can see.
+- 15 spells: Blizzard, Frost Nova, Ice Lances; Fireball, Burning Ground, Meteor; Sky Strike, Ball Lightning, Static Field; Venom Orb, Toxic Cloud, Spitter Vine; Blood Thorns, Hemorrhage, Leech (the only one that heals).
+- Four squares above the ability bar show each spell's cooldown and flash when it casts.
+
+### Horde surges
+Once or twice a floor, \"A horde is coming!\": 30 to 60 small critters pour in over 10 s. They have little health and only hurt on contact, so area attacks and spells shine. Surges never start in an Overrun room, an arena, a Lockdown or a boss room.
+- Each biome has its own critter: Dust Mite (Ruins), Cave Bat (Night Rocks, flies), Ember Flea (Red Canyon, hops), Ice Crab (Frozen Shore, slides), Star Mote (Starfall, floats).
+
+### New enemies and biome rosters
+Each biome now has its own enemies: a shared core (Charger, Needle, Swarmer, Warden), two enemies of its own and one local variant. Deeper floors still add the later kinds.
+- **Ruins:** Wire Weaver (strings live cables across the room), Scrap Hound (darts in from behind while you attack something else), Rubble Warden (its crust falls off as cover).
+- **Night Rocks:** Rock Lurker (waits as a boulder; its cracks glow), Stone Thrower (throws rocks that stay as cover), Dim Needle (its shots stay dark until 4 m from you).
+- **Red Canyon:** Kiln Beetle (bursts when it dies), Cinder Priest (makes lava vents erupt; kill it first), Ember Charger (leaves a fire trail).
+- **Frozen Shore:** Frost Spitter (leaves slick ice you slide on), Glacier Turtle (its ice shell blocks shots from the front), Frost Charger (leaves an ice slick).
+- **Starfall:** Star Warper (blinks onto a star mark beside you; stand on the mark to stun it), Gravity Node (pulls every shot near it, yours and theirs), Split Sniper (its shot splits in three).
+- Every new enemy is weak to one attack form or element and resists another, spread so no form is the answer to everything.
+
+### Rooms with a purpose
+Most large rooms are now built around something: a **camp**, a **stone-ring hall** of leaning standing stones, or a **quarry**. Each has its own layout with some variety every run, and doorways and item spots stay clear.
+
+### The Runic Stone
+The Runic Stone's lines now tell one short story, and they lead somewhere.
+
+## Bug Fixes
+- **Void:** with Twin and Split, voids no longer jump or vanish mid-flight. At the void limit the extra small voids are dropped quietly, and Mine stops each Twin void on its own lane.
+- **The Lantern Shade's wisps** are hidden in the dark again (they show inside a light or within 4 m), and its dense wisp patterns leave wider gaps to dodge through.
+- **The Siege Engine's** second volley stays hidden until the first lands, then shows for 1.2 s. Its blasts no longer leave smoke over the next telegraph.
+- **Pierce:** a held card your current attack form doesn't use now says \"Does nothing with this form\" on the wand screen.
+- The Lens Drone is drawn from baked animations like the other regular enemies.
+"
+body_es = "# Zero Depth v0.11.0 — Combates que se aprenden
+_2026-11-08_ · Jefes que se vencen aprendiéndolos, un Láser que dispara lanzas, hechizos elementales, oleadas de hordas, enemigos nuevos en cada bioma y salas con un propósito.
+
+## Novedades
+### Jefes
+Tres jefes tienen ahora una mecánica que puedes aprender y usar, en lugar de esperar a que caiga un escudo.
+- **The Gatekeeper** levanta tres pilares sísmicos desde la fase 2. Laten con un poco de daño cada 3 s. Atrae su cruz de Shock Lanes a través de un pilar: el pilar se rompe y The Gatekeeper queda aturdido 2 s y recibe un 50 % más de daño, como mucho dos veces por fase. La barra dice \"ATURDIDO · VULNERABLE\".
+- **The Lantern Shade** nunca es inmune. Recibe un 40 % del daño en la oscuridad y un 150 % dentro del círculo de un farol encendido. Pisa un farol para encenderlo 6 s. La oscuridad dura 9 s y la luz 4 s. La barra y los números de daño muestran cuál de los dos estás haciendo.
+- **The Twin Wardens** luchan en tres fases, cada una con una barra de vida completa. Fase 1: el gemelo amarillo (golpe de escudo, barrido de cadena, embestida, golpe al suelo). Fase 2: el gemelo morado (fuego cruzado, ráfaga de orbes, anillo rúnico, destello). Fase 3: los dos a la vez, y el gemelo al que puedes herir cambia cada 10 s. El gemelo que descansa no recibe daño y suelta una chispa al golpearlo.
+- **Pistas:** las dos primeras veces que te encuentras una de estas mecánicas, una flecha y un aviso señalan lo importante. Opciones → Accesibilidad → Pistas de jefe las apaga.
+- **Animación:** todos los jefes se mueven con menos rigidez: un pequeño amago antes de cada carga, un retroceso tras un golpe y un balanceo más amplio en reposo. Los tiempos y los avisos no cambian.
+
+### El Láser
+El Láser es ahora una lanza. Mientras mantienes el disparo, lanza una lanza instantánea cada 3 s que atraviesa a todos los enemigos de su línea; cada uno después del primero recibe un 15 % menos (nunca menos del 40 %). Una lanza aplica estados como tres golpes. Mantienes toda tu velocidad mientras disparas.
+- Con **Teledirigido** la lanza se curva en una sola línea suave a través de hasta 8 enemigos y sigue hasta la primera pared. Con **Gemelo** y Teledirigido cada lanza va a por sus propios enemigos con todo su daño, abriéndose y curvándose hacia ellos (con un solo enemigo, se juntan en él y mantienen la parte de Gemelo).
+- **Fuego Rápido** acorta la espera y baja el daño, **Eco** golpea de nuevo el mismo recorrido a mitad de daño y **Disparo Grande** hace una lanza más ancha y más fuerte. La velocidad de ataque acorta la espera a la mitad de su valor.
+- El Láser siempre atraviesa, así que las cartas Perforación y Mina ya no se ofrecen con él.
+
+### Hechizos elementales
+Llevar una carta de elemento (Fuego, Escarcha, Rayo, Veneno, Sangrado) añade los tres hechizos de ese elemento a tus elecciones de cartas. El elemento de tu runa del Vestidor hace que sus hechizos salgan más a menudo.
+- Tienes 4 huecos de hechizo, aparte de la varita. Cada hechizo se lanza solo con su propia recarga (unos 12 s) y apunta al grupo de enemigos más denso cerca de ti. Con los huecos llenos, un hechizo nuevo sustituye al de nivel más bajo.
+- Coger un hechizo que ya tienes lo sube de nivel (Nv 1–3, Nv 4–5 desde el ciclo 2), y cada nivel cambia algo que se ve.
+- 15 hechizos: Ventisca, Nova de escarcha, Lanzas de hielo; Bola de fuego, Suelo ardiente, Meteoro; Rayo celeste, Bola de rayos, Campo estático; Orbe venenoso, Nube tóxica, Enredadera escupidora; Espinas de sangre, Hemorragia, Sanguijuela (el único que cura).
+- Cuatro cuadros sobre la barra de habilidades muestran la recarga de cada hechizo y destellan cuando se lanza.
+
+### Oleadas de hordas
+Una o dos veces por piso, \"¡Se acerca una horda!\": entre 30 y 60 bichos pequeños llegan en 10 s. Tienen poca vida y solo hacen daño al tocarte, así que los ataques de área y los hechizos brillan. Una oleada nunca empieza en una sala de Asedio, una arena, un Bloqueo o la sala de un jefe.
+- Cada bioma tiene su bicho: Ácaro de Polvo (Ruinas), Murciélago de Cueva (Rocas Nocturnas, vuela), Pulga de Brasa (Cañón Rojo, salta), Cangrejo de Hielo (Costa Helada, se desliza), Mota Estelar (Caída Estelar, flota).
+
+### Enemigos nuevos y plantillas por bioma
+Cada bioma tiene ahora sus propios enemigos: un núcleo común (Embestidor, Aguja, Enjambre, Guardián), dos enemigos propios y una variante local. Los pisos más profundos siguen añadiendo los tipos avanzados.
+- **Ruinas:** Tejedor de Cables (tiende cables con corriente por la sala), Sabueso de Chatarra (te ataca por la espalda mientras golpeas a otro), Guardián de Escombros (su costra cae y sirve de cobertura).
+- **Rocas Nocturnas:** Acechador de Roca (espera como una roca; sus grietas brillan), Lanzapiedras (lanza rocas que quedan como cobertura), Aguja Tenue (sus disparos van a oscuras hasta 4 m de ti).
+- **Cañón Rojo:** Escarabajo Horno (estalla al morir), Sacerdote de Ceniza (hace entrar en erupción las grietas de lava; mátalo primero), Embestidor de Ascuas (deja un rastro de fuego).
+- **Costa Helada:** Escupidor de Escarcha (deja hielo resbaladizo en el que te deslizas), Tortuga Glaciar (su caparazón de hielo para los disparos de frente), Embestidor de Escarcha (deja un rastro de hielo).
+- **Caída Estelar:** Saltaestrellas (salta a una marca de estrella a tu lado; ponte sobre la marca para aturdirlo), Nodo Gravitatorio (atrae todos los disparos cercanos, los tuyos y los suyos), Francotirador Bífido (su disparo se divide en tres).
+- Cada enemigo nuevo es débil a una forma de ataque o un elemento y resiste otro, repartidos para que ninguna forma sirva contra todo.
+
+### Salas con un propósito
+La mayoría de las salas grandes se construyen ahora alrededor de algo: un **campamento**, una **sala de piedras en círculo** con menhires inclinados, o una **cantera**. Cada una tiene su propia distribución con algo de variedad en cada partida, y las puertas y los objetos quedan despejados.
+
+### La Piedra rúnica
+Las líneas de la Piedra rúnica cuentan ahora una pequeña historia, y llevan a alguna parte.
+
+## Correcciones
+- **Vacío:** con Gemelo y División, los vacíos ya no saltan ni desaparecen en pleno vuelo. Al llegar al límite de vacíos, los pequeños que sobran se descartan sin más, y Mina detiene cada vacío de Gemelo en su propio carril.
+- **Los fuegos fatuos de The Lantern Shade** vuelven a ocultarse en la oscuridad (se ven dentro de una luz o a menos de 4 m), y sus patrones más densos dejan huecos más anchos para esquivar.
+- **La segunda ráfaga de The Siege Engine** queda oculta hasta que cae la primera y luego se ve 1,2 s. Sus explosiones ya no dejan humo sobre el siguiente aviso.
+- **Perforación:** una carta que tu forma de ataque actual no usa dice ahora \"No hace nada con esta forma\" en la pantalla de la varita.
+- El Dron Lente se dibuja con animaciones horneadas, como los demás enemigos normales.
+"
+id = &"v0_11_0"

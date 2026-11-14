@@ -1,12 +1,11 @@
 class_name ShadowTrim
 extends RefCounted
-## v0.9.5 PF4 (owner, 2026-10-26: "Simpler enemy shadows"): an enemy's small rig pieces (feet, collars, eyes, pods) are
+## An enemy's small rig pieces (feet, collars, eyes, pods) are
 ## each drawn again for every shadow cascade. Only the actor's largest `keep` pieces, by mesh bounding-box volume at
 ## the pieces' scale in the avatar, keep casting; the rest stop. Presentation only (EI-07).
 
 ## false: every piece casts, as before PF4.
 const ENABLED := true
-const ENEMY_KEEP := 2
 const BOSS_KEEP := 4
 
 

@@ -42,9 +42,9 @@ func _fits(rect: Rect2) -> bool:
 	)
 
 
-func _world(ids: Array) -> World:
+func _world(ids: Array, build: StringName = &"blade") -> World:
 	var t := ContentCompiler.compile_player(_repo.get_def(&"player", &"runner"))
-	ContentCompiler.apply_build(t, _repo.get_def(&"build", &"blade"))
+	ContentCompiler.apply_build(t, _repo.get_def(&"build", build))
 	var w := World.new(5, t)
 	w.floor_index = 5  # v0.9.0 FV: eight slots on floor 5 (was 3)
 	w.dummy_speed = 0.0
@@ -87,7 +87,8 @@ func test_the_build_page_at_eight_slots_fits_the_screen_in_both_languages() -> v
 		assert_true(
 			page.row.row_width() <= 1400.0, "%s: the row is %d px" % [lang, page.row.row_width()]
 		)
-		assert_false(page.read_back_text().is_empty(), "%s: the read-back" % lang)
+		assert_eq(page.forecast_ids().size(), 8, "%s: the forecast shows all 8 cards" % lang)
+		assert_true(_fits(page.forecast.icons_rect()), "%s: and stays on screen" % lang)
 		gut.p("%s: build page %s, row %d px" % [lang, rect, page.row.row_width()])
 
 
@@ -127,7 +128,7 @@ func test_every_wand_card_name_fits_its_tile_in_both_languages() -> void:
 	var font := HudStyle.font(true)
 	var width := WandRow.TILE.x - 16.0
 	var lowest := ceili(WandRow.NAME_SIZE * TextFit.WORD_FLOOR)
-	var label := WandRow.make_label(WandRow.NAME_SIZE, true, MenuStyle.TEXT)
+	var label := WandRow.make_label(WandRow.NAME_SIZE, true, AstralCardArt.TEXT)
 	add_child_autofree(label)
 	var checked := 0
 	for lang in LANGS:
@@ -152,3 +153,133 @@ func test_every_wand_card_name_fits_its_tile_in_both_languages() -> void:
 	TranslationServer.set_locale("en")
 	assert_gt(checked, 60, "every slot card, both languages")
 	assert_true(WandRow.NAME_SIZE >= 13 and WandRow.SMALL_SIZE >= 12, "legible at 1280 x 720")
+
+
+func test_the_row_marks_a_card_the_current_form_does_not_use() -> void:
+	var w := _world([&"gun_pierce"], &"gun")
+	w.slot_table = WandCompiler.slots(_repo, w.item_tables)
+	var row := WandRow.new()
+	add_child_autofree(row)
+	TranslationServer.set_locale("en")
+	row.show_wand(WorldReader.new(w).wand(), 8)
+	assert_eq(row.dead_reason(0), &"", "the plain bolt uses Pierce")
+	assert_true(BuildSlots.take(w, WandLab.code(w, &"gun_lance")), "takes the Lance form")
+	row.show_wand(WorldReader.new(w).wand(), 8)
+	assert_eq(row.dead_reason(0), Wand.DEAD_FORM, "the Lance form does not use Pierce")
+	assert_eq(row.level_text(0), "Does nothing with this form", "the tile says why")
+
+
+## v0.11.0 F11: the forecast is the cards' own icons in firing order; a trigger card is followed by an arrow, a card
+## that does nothing is flagged.
+func test_the_forecast_is_the_cards_icons_in_order() -> void:
+	var w := _world([&"gun_pierce"], &"gun")
+	w.slot_table = WandCompiler.slots(_repo, w.item_tables)
+	assert_true(BuildSlots.take(w, WandLab.code(w, &"gun_lance")), "takes the Lance form")
+	var view := WandForecastView.new()
+	view.custom_minimum_size.x = 620.0
+	add_child_autofree(view)
+	var read := WorldReader.new(w).wand()
+	view.show_forecast(read)
+	var ids: Array[StringName] = []
+	for c: Dictionary in read["cards"]:
+		ids.append(c["id"])
+	assert_eq(view.icon_ids(), ids, "one icon per card, in slot order")
+	for k in ids.size():
+		assert_eq(view.icon_texture(k), AstralCardArt.icon(ids[k]), "the card's own icon")
+	var flags := WorldReader.wand_flags(read)
+	for k in ids.size():
+		assert_eq(view.is_dead(k), flags[k] != &"", "the dead-card flag reaches the icon")
+	assert_true(flags.has(Wand.DEAD_FORM), "a card this form does not use")
+	view.show_forecast({})
+	assert_false(view.visible, "no wand: no row")
+
+
+func test_a_trigger_card_is_followed_by_an_arrow() -> void:
+	var view := WandForecastView.new()
+	add_child_autofree(view)
+	var c := func(id: StringName, trig: int) -> Dictionary: return {"id": id, "trigger": trig}
+	view.show_forecast(
+		{"cards": [c.call(&"a", -1), c.call(&"b", 0), c.call(&"c", -1), c.call(&"d", 0)]}
+	)
+	assert_eq(
+		[view.arrow_after(0), view.arrow_after(1), view.arrow_after(2), view.arrow_after(3)],
+		[false, true, false, false]
+	)
+
+
+## 8 cards and triggers shrink to the width the page gives, no smaller than the floor.
+func test_a_long_wand_shrinks_to_stay_on_screen() -> void:
+	var view := WandForecastView.new()
+	add_child_autofree(view)
+	var cards: Array = []
+	for k in 8:
+		cards.append({"id": &"none", "trigger": 0 if k % 2 == 0 else -1})
+	view.custom_minimum_size.x = 400.0
+	view.show_forecast({"cards": cards})
+	assert_lte(view.icons_rect().size.x, 400.0 + WandForecastView.GAP, "fits the width given")
+	assert_gte(view.custom_minimum_size.y, WandForecastView.MIN_ICON, "not below the floor")
+
+
+## v0.11.0 F11: a carried card and its marks: the tile rises, the others part at the bar; with reduced motion it is
+## there at once and the marks still show.
+func _row(read: Dictionary) -> WandRow:
+	var row := WandRow.new()
+	add_child_autofree(row)
+	row.show_wand(read, 4)
+	row.settle()
+	return row
+
+
+func _four_cards() -> Dictionary:
+	var cards: Array = []
+	for k in 4:
+		(
+			cards
+			. append(
+				{
+					"id": &"none",
+					"code": k,
+					"name_key": &"UI_WAND_EMPTY",
+					"type": 0,
+					"level": 1,
+					"trigger": -1,
+					"slot": 0,
+					"order": 0,
+				}
+			)
+		)
+	return {"cards": cards}
+
+
+func test_carrying_lifts_the_card_and_the_row_opens_at_the_landing_bar() -> void:
+	var was := ViewPrefs.reduced_motion
+	ViewPrefs.reduced_motion = true
+	var row := _row(_four_cards())
+	row.carry_from = 2
+	row.held = 0
+	row.refresh_marks()
+	assert_false(row.animating(), "reduced motion: at once")
+	assert_lt(row.tile(2).position.y, WandRow.LIFT, "the card is lifted")
+	assert_eq(row.tile(2).position.x, row.tile(0).position.x, "over the slot it would land in")
+	assert_eq(row.ghost_slot(), 2, "the ghost stays where it came from")
+	assert_eq(row.marker_slot(), 0)
+	assert_gt(row.marker_rect().size.y, WandRow.TILE.y, "the bar shows with no animation")
+	assert_lt(row.marker_rect().get_center().x, row.tile(0).global_position.x, "before slot 1")
+	ViewPrefs.reduced_motion = was
+
+
+func test_a_reorder_glides_each_card_from_where_it_was() -> void:
+	var was := ViewPrefs.reduced_motion
+	ViewPrefs.reduced_motion = false
+	var row := _row(_four_cards())
+	var slot_0 := row.tile(0).position
+	var read := _four_cards()
+	var moved_card = read["cards"].pop_at(0)
+	read["cards"].insert(1, moved_card)
+	row.show_wand(read, 4)  # the tile of slot 0 now holds code 1, which was on slot 1
+	assert_true(row.animating(), "the cards glide")
+	assert_gt(row.tile(0).position.x, slot_0.x + 1.0, "it starts where its card was")
+	await wait_seconds(WandRow.ANIM_S + 0.1)
+	assert_false(row.animating(), "it finishes in about %.2f s" % WandRow.ANIM_S)
+	assert_eq(row.tile(0).position, slot_0, "and rests on the slot")
+	ViewPrefs.reduced_motion = was

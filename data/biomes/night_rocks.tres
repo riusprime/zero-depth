@@ -124,6 +124,10 @@ palette = {
 "outline": Color(0.93333333, 0.94901961, 0.97254902, 1)
 }
 template_tags = PackedStringArray("night_rocks")
+critter_id = &"cave_bat"
+core_ids = Array[StringName]([&"charger", &"needle", &"swarmer", &"warden"])
+signature_ids = Array[StringName]([&"rock_lurker", &"stone_thrower"])
+variant_id = &"dim_needle"
 id = &"night_rocks"
 mood = SubResource("Resource_mood")
 look = SubResource("Resource_look")

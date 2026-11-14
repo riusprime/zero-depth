@@ -1,6 +1,6 @@
 class_name FireRhythm
 extends RefCounted
-## v0.8.0 MR (owner O91: "Rework Rapid Fire/Flurry into distinct sustained-fire/burst rhythms"; WAND.md G14, B8): the
+## The
 ## rhythm cards' extra rate, read when the attack fires and counted into its raw rate bonus (the one the attack-speed
 ## curve takes in: ItemEffects.shot_period_ticks, BladeForms.step add it to the spec's rate_bonus_permille). The
 ## rhythms are data on the spec (AttackSpec.ramp_*, burst_*); their state is ModifierState's (ramp_n, ramp_tick,
@@ -52,4 +52,4 @@ static func on_swing(w: World) -> void:
 		m.burst_n = 1
 	else:
 		m.burst_n = mini(m.burst_n + 1, spec.burst_swings + 1)
-	m.burst_free = w.tick + PlayerKit.current_step(w).ticks  # v0.8.0 SG: the swing ends after its ticks
+	m.burst_free = w.tick + PlayerKit.current_step(w).ticks  # The swing ends after its ticks
