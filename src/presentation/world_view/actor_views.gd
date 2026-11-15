@@ -104,6 +104,8 @@ var _parts := {}
 ## The switches' values the actors were built with (a flip rebuilds them).
 var _vat_on := ViewPrefs.enemy_vat
 var _batch_on := batch_enemies
+## The Siege Engine's ammo cart's actor id (-1 none): a warden body in the sim, drawn as a cart by SiegeCartViews.
+var _cart_id := -1
 
 
 func sync(reader: WorldReader) -> void:
@@ -122,6 +124,7 @@ func sync(reader: WorldReader) -> void:
 	var crowd := _critters()
 	var cols: Array = []  # The batched enemies' columns, read once (the first batched enemy's)
 	var batch_was := batch
+	_cart_id = int(reader.boss_siege().get("cart", {}).get("id", -1)) if reader.any_boss() else -1
 	for i in reader.actor_count():
 		var id := reader.actor_id(i)
 		alive[id] = true
@@ -496,7 +499,7 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int, parts: Array = [])
 		var recovering := reader.actor_recovering(i)
 		if dz.visible != recovering:
 			dz.visible = recovering
-	if reader.actor_egg_permille(i) >= 0:  # Still an egg (BossSignatureViews draws it)
+	if reader.actor_egg_permille(i) >= 0 or reader.actor_id(i) == _cart_id:  # An egg, the cart: drawn elsewhere
 		facing.visible = false
 		bar.visible = false
 	if parts[4] != null:

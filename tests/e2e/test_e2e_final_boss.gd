@@ -147,10 +147,9 @@ func test_the_ascension_portal_walks_into_the_final_boss_and_beats_it() -> void:
 	await e.click_dev("KillBoss")
 	await e.frames(3)
 	assert_true(reader.final_shattering(), "it shatters")
-	assert_eq(bar.status_text(), tr("HUD_FINAL_SHATTER"), "the bar says so")
+	assert_eq(bar.tone(), BossBarTones.INVULNERABLE, "the bar turns steel blue")
 	assert_almost_eq(bar.hp_fraction(), 0.0, 0.01, "its bar is empty")
 	assert_true(bar.invulnerable(), "v0.8.0 N4: it can't be hurt: the bar says so")
-	assert_string_starts_with(bar.shield_text(), tr("HUD_BOSS_INVULNERABLE"))
 	for k in 20:
 		await e.frames(1)
 		assert_eq(_hostile_shots(w), 0, "no hostile shot while it shatters")

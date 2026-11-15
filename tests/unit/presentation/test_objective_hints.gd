@@ -1,6 +1,7 @@
 extends GutTest
 ## v0.11.0 O2 (owner L4, Q12 a): the boss hint's view. A marker off screen shows an arrow at the screen's edge
-## pointing at it; on screen, a ping on it; each reason has its line in English and Spanish; it hides once the reason
+## pointing at it; on screen, a small arrow over it; no reason has a word of text (the owner: the player discovers a
+## mechanic while playing), and the old Wardens' focus marker is not pointed at; it hides once the reason
 ## was met in 2 earlier runs and when Options "Boss hints" is off; it never takes the mouse. Options carries the
 ## toggle. The projection is a test stand-in (sim metres x 100 px from the screen's centre), so no camera is needed.
 
@@ -50,16 +51,17 @@ func test_off_screen_an_arrow_at_the_edge_on_screen_a_ping() -> void:
 	assert_eq(v.mouse_filter, Control.MOUSE_FILTER_IGNORE, "it blocks nothing")
 
 
-func test_every_reason_has_its_line_in_both_languages() -> void:
+func test_no_reason_carries_text_and_the_old_twins_focus_is_not_pointed_at() -> void:
+	var w := SaveLab.floor_world(77, 1)
+	var r := WorldReader.new(w)
 	var v := _view(func(_reason: StringName) -> bool: return true)
-	for lang in ["en", "es"]:
-		TranslationServer.set_locale(lang)
-		for reason: StringName in ObjectiveHints.LABELS:
-			var key: String = ObjectiveHints.LABELS[reason]
-			assert_ne(v.line(reason), key, "%s: %s has a line" % [lang, key])
-	TranslationServer.set_locale("en")
-	assert_eq(v.line(PILLAR), "", "the pillar has an arrow and no line")
-	assert_eq(v.line(&"no_such_reason"), "")
+	assert_false(v.has_method(&"line"), "no line of text for any reason")
+	w.objectives.point(LANTERN, Vector2(1, 0.5))
+	w.objectives.follow(ObjectiveMarkers.TWINS_ACTIVE, w.actors.ids[0])
+	v.sync(r)
+	assert_true(v.showing(LANTERN, ObjectiveHints.PING), "the lantern: an arrow over it")
+	assert_false(v.showing(ObjectiveMarkers.TWINS_ACTIVE), "the old focus marker: nothing")
+	assert_eq(v.shown().size(), 1)
 
 
 func test_it_hides_after_two_meetings_and_with_boss_hints_off() -> void:

@@ -68,6 +68,9 @@ static var parts: Array[GDScript] = [
 	WardenWardViews,
 	WardenBladeViews,
 	ChargeBurstViews,
+	SiegeFieldViews,
+	SiegeCartViews,
+	BossVulnerableViews,
 	JudgeViews,  # v0.9.0 NB3
 	JudgeTimeViews,
 	JudgeRewindViews,
@@ -236,6 +239,10 @@ var twins: TwinViews = _part(TwinViews)
 var warden_wards: WardenWardViews = _part(WardenWardViews)
 var warden_blades: WardenBladeViews = _part(WardenBladeViews)
 var charge_bursts: ChargeBurstViews = _part(ChargeBurstViews)
+## The Siege Engine's Target Lock, boulders and cover; its ammo cart, track and Doom Shell; any boss's vulnerable look.
+var siege_field: SiegeFieldViews = _part(SiegeFieldViews)
+var siege_cart: SiegeCartViews = _part(SiegeCartViews)
+var boss_vulnerable: BossVulnerableViews = _part(BossVulnerableViews)
 ## The Clockwork Judge's echo (its recording, path and ghost trail) and its Verdict's pendulum.
 var judges: JudgeViews = _part(JudgeViews)
 ## Its Time Wave, hour orbs, stopped gears and slow fields; the Rewind's pale copy, the Bell and the throw.
@@ -545,7 +552,9 @@ func _setup_effects() -> void:
 	maelstrom.pack_fx = pack_fx
 	add_child(interphase)  # v0.9.5 BH6
 	add_child(twins)  # v0.9.0 NB2
-	for v: Node3D in [warden_wards, warden_blades, charge_bursts]:
+	for v: Node3D in [
+		warden_wards, warden_blades, charge_bursts, siege_field, siege_cart, boss_vulnerable
+	]:
 		add_child(v)
 		v.set(&"pack_fx", pack_fx)
 	add_child(judges)  # v0.9.0 NB3
@@ -822,6 +831,9 @@ func sync() -> void:
 	_sync_view(&"warden_wards", warden_wards)
 	_sync_view(&"warden_blades", warden_blades)
 	_sync_view(&"charge_bursts", charge_bursts)
+	_sync_view(&"siege_field", siege_field)
+	_sync_view(&"siege_cart", siege_cart)
+	_sync_view(&"boss_vulnerable", boss_vulnerable)
 	_sync_view(&"judges", judges)  # v0.9.0 NB3
 	_sync_view(&"judge_time", judge_time)
 	_sync_view(&"judge_rewind", judge_rewind)

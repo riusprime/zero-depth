@@ -23,6 +23,8 @@ const JUDGE_ORB := ObjectiveMarkers.JUDGE_ORB
 const TIDE_DRY := ObjectiveMarkers.TIDE_DRY
 ## The violet Warden under her whole ward while the amber one winds a charge up: stand so she is on its line.
 const TWINS_WARD := ObjectiveMarkers.TWINS_WARD
+## The Siege Engine's boulders while a blast that needs cover comes (a Shockwave in its last phase, a Doom Shell).
+const SIEGE_BOULDER := ObjectiveMarkers.SIEGE_BOULDER
 
 var codex: CodexStore
 

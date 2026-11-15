@@ -83,8 +83,6 @@ ENEMY_HATCHLING,Hatchling,Cría
 BOSS_GATEKEEPER,The Gatekeeper,The Gatekeeper
 BOSS_BROOD_MOTHER,The Brood Mother,The Brood Mother
 BOSS_SIEGE_ENGINE,The Siege Engine,The Siege Engine
-HUD_BOSS_PHASE_SHIFT,PHASE SHIFT,CAMBIO DE FASE
-HUD_BOSS_STUNNED,STUNNED · VULNERABLE,ATURDIDO · VULNERABLE
 CAUSE_HATCHLING,A Hatchling ran you down.,Una Cría te arrolló.
 CAUSE_GATEKEEPER_SLAM,The Gatekeeper's fist slam crushed you.,El puñetazo de The Gatekeeper te aplastó.
 CAUSE_GATEKEEPER_RINGS,The Gatekeeper's rock rings buried you.,Los anillos de roca de The Gatekeeper te sepultaron.
@@ -456,11 +454,6 @@ CAUSE_TWIN_RIFT_CHARGE,The amber Warden burst out of a rift and ran you down.,El
 CAUSE_TWIN_COMBO,The amber Warden's sword combo cut you down.,El combo de espada del Twin Warden ámbar te derribó.
 CAUSE_TWIN_OVERHEAD,The amber Warden's overhead blow crushed you.,El golpe por lo alto del Twin Warden ámbar te aplastó.
 CAUSE_TWIN_SWORDS,The violet Warden's shadow swords cut you down.,Las espadas sombrías del Twin Warden violeta te derribaron.
-HUD_TWIN_LEADS_AMBER,The amber Warden fights,Lucha el Twin Warden ámbar
-HUD_TWIN_LEADS_VIOLET,The violet Warden fights,Lucha el Twin Warden violeta
-HUD_TWIN_LEADS_BOTH,Both Wardens fight,Luchan los dos Twin Wardens
-HUD_TWIN_EXPOSED_AMBER,AMBER EXPOSED,ÁMBAR EXPUESTO
-HUD_TWIN_EXPOSED_VIOLET,VIOLET EXPOSED,VIOLETA EXPUESTO
 CAPTION_TELEGRAPH_TWIN_WARDENS,[Warning: the Wardens' steel rings],[Aviso: el acero de The Twin Wardens resuena]
 CAPTION_TWIN_CHAIN_BURN,[Steel sizzles],[El acero chisporrotea]
 BOSS_CLOCKWORK_JUDGE,The Clockwork Judge,The Clockwork Judge
@@ -1065,15 +1058,7 @@ ACH_FINAL_LOOPED_NAME,Beyond the Loop,Más allá del ciclo
 ACH_FINAL_LOOPED_DESC,Beat the Hollow Crown after an Ascension loop.,Derrota a Hollow Crown después de un ciclo de Ascensión.
 UI_CODEX_SECTION_FINAL,The Hollow Crown,Hollow Crown
 UI_RECAP_TRUE_ENDING,The Hollow Crown is broken: the true ending.,Hollow Crown está rota: el verdadero final.
-HUD_FINAL_SHATTER,SHATTERED,HECHA AÑICOS
-HUD_FALLEN_WARN,The Fallen reaches for your power…,The Fallen alcanza tu poder…
-HUD_FALLEN_WINDOW,Mirrored · %d s,Imitado · %d s
-HUD_BOSS_INVULNERABLE,Invulnerable,Invulnerable
-HUD_BOSS_SHIELD_ONE,1 shield left,1 escudo restante
-HUD_BOSS_SHIELDS,%d shields left,%d escudos restantes
 HUD_BOSS_PHASE,Phase %d / %d,Fase %d / %d
-HUD_SHADE_DARK,In the dark · %d %% damage,En la oscuridad · %d %% de daño
-HUD_SHADE_LIT,In the light · %d %% damage,En la luz · %d %% de daño
 UI_PG_FINAL,Final boss,Jefe final
 UI_PG_FINAL_PHASE,Phase %d,Fase %d
 UI_PG_FINAL_HINT,Summons the Hollow Crown at the room's centre; a phase button jumps to that body.,Invoca a Hollow Crown en el centro de la sala; un botón de fase salta a ese cuerpo.
@@ -1568,8 +1553,6 @@ CONST_SUPERNOVA_DESC,Starbound cards count twice.,Las cartas Estelares cuentan d
 CONST_HUNTERS_SKY,Hunter's Sky,Cielo del cazador
 CONST_HUNTERS_SKY_DESC,+50 % damage to elites and bosses.,+50 % de daño a élites y jefes.
 UI_BOSS_HINTS,Boss hints,Pistas de jefe
-HINT_SHADE_LANTERN,Step on a lantern to light it,Pisa un farol para encenderlo
-HINT_TWINS_ACTIVE,Hit the glowing twin,Golpea al gemelo que brilla
 ENEMY_DUST_MITE,Dust Mite,Ácaro de Polvo
 ENEMY_DUST_MITE_DESC,"A fist-sized stone tick. Harmless alone; a surge of them swarms you.","Una garrapata de piedra del tamaño de un puño. Inofensiva sola; en oleada, te rodean."
 ENEMY_CAVE_BAT,Cave Bat,Murciélago de Cueva
@@ -1748,4 +1731,3 @@ RELIC_CITY_HEART_DESC,"Once a run, a blow that would kill you leaves you at 1 HP
 HEART_PEDESTAL_PROMPT,Take,Tomar
 HEART_DOOR_PROMPT,Enter,Entrar
 UI_CODEX_SECTION_RELICS,Relics,Reliquias
-HUD_ATTACK_SLOW,Attacks slowed %d %%,Ataques ralentizados un %d %%

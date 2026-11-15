@@ -147,10 +147,43 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   amber streak while `dash` runs; the rifts the pack's violet ripple at each `centre`, the exit's light pillar only
   while the reader marks it `exit`, its `lane` on the floor, a flash on `warden_rift_enter` / `warden_rift_exit` (the
   amber Warden sinks while `boss_hidden`). The swords' rifts (data look `venom`) draw violet while the Wardens fight
-  (`HazardViews`: the pack's rim, then `tw_rift`). The bar shows `HUD_BOSS_STUNNED` while the violet Warden is
+  (`HazardViews`: the pack's rim, then `tw_rift`). The bar's fill shimmers gold (`BossBarTones.VULNERABLE`) while the violet Warden is
   stunned. Hint arrow: `ObjectiveMarkers.TWINS_WARD`, drawn as the pillars' arrow, no text. Clips: the sword combo
   and the overhead play the files' swipe, the Mirror Ward and the Shadow Swords their cast (`OWNER_PLAYS`). Sounds:
   `WardenCues`. The pack rows are `data/vfx/pack_fx_tw.tres`.
+- **The Siege Engine's cover and Doom Shell** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10r). Read
+  from `WorldReader.boss_siege`, `telegraph`, `objectives` and the `STATUS_APPLY` events only; shared looks in
+  `SiegeLooks`. `SiegeFieldViews`: the Target Lock a red-orange reticle of `lock.radius` on `lock.centre` (ring,
+  four turning ticks, a cross, a countdown arc to `left`) with the pack's `se_lock_rim`, still and white-hot once
+  `locked`; the shell the pack's javelin (`se_shell`) falling into it over its last 24 ticks, `siege_shell` the
+  pack's `se_blast`. Each boulder the kit's `rock_large` stretched to `size` × 1.1 m × `size` on `centre` (its own
+  material copy), rising in the pack's rock dust (`vx1_impact_other`) on `siege_boulder`, its cracks glowing over its
+  last 5 s, shaking and sinking while `crumbling`, dust on a `siege_boulder_down` that is not `END_EXPIRED`. The
+  cover only while a blast that needs cover comes (`doom` ≥ 0, the cart's last 120 ticks, or `cover_rule` with the
+  Engine's ring telegraph up): a teal shadow behind each boulder away from the Engine's centre, clipped to `room`
+  (`SiegeLooks.shadow_of`), and a ring on the hero drawn over the rocks (no depth test): teal with the pack's
+  `se_cover` while `covered`, red and pulsing otherwise. The Shockwave's ring telegraph reads `inner` 0 under the cover
+  rule, so its fill covers the whole room and suggests no safe ring round the Engine. `SiegeCartViews`: the cart a
+  code-made wagon (`SiegeLooks.cart`) on `cart.position`, facing `to - from`, wheels rolling with the distance, its
+  own billboard HP bar from full (`ActorViews` hides the sim's warden body: the actor whose id is `cart.id`); a rail
+  from `from` to `to`, dim ahead and lit behind; a faint red circle of the blast's 6 m (`CART_BLAST_M`: the reader does
+  not carry `cart_blast_m`) stronger as its HP falls and gold while the Engine stands in it; a countdown ring under
+  the Engine filling with `progress`, flashing once `doom` ≥ 0 with the pack's `se_cast` and `se_doom` on it;
+  `siege_doom_shell` the pack's `se_blast` on the Engine (and on the hero when `amount_applied` is -1),
+  `siege_cart_destroyed` one of the blast's size. `BossVulnerableViews` (any boss): the pack's gold `se_strip` pulse
+  round the body and the stun stars (`o13d_star_ring`) over it while `boss_stunned` or the siege's `stripped` runs.
+  Hint arrows: `ObjectiveMarkers.SIEGE_BOULDER` (`MechanicHints.SIEGE_BOULDER`). Sounds: `SiegeCues`. The pack rows
+  are `data/vfx/pack_fx_se.tres`.
+- **Boss mechanics carry no words** (owner, 2026-11-15: "too much text … we need to make it subtle so the player
+  discovers it while playing, with arrows or glows"). `ObjectiveHints` draws arrows only (a small arrow over the
+  target on screen, an edge arrow off it) for every reason, never a line of text, and draws nothing for
+  `OBJECTIVE_TWINS_ACTIVE` (the sim still sets it; its exposed-twin rule is gone). The boss bar keeps the boss's
+  name and its phase line ("Phase 2 / 3"; the final boss's body names) and shows every state as a tone of its fill
+  (`BossBarTones`): the phase gate breathes pale, a boss taking more damage (a quake stun, the violet Warden's broken
+  ward, the Engine's stripped armour) shimmers gold, an invulnerable boss is steel blue with a pip per shield left,
+  the Lantern Shade's bar dims in the dark and turns lantern gold in a lit pool, The Fallen's window breathes and then
+  shimmers violet. `AttackSlowHud` shows its clock and pips only. Names, the death recap, sound captions, the Codex
+  and Options keep their words.
 
 - **The player's attacks are drawn from their final specs** (v0.6.0 MX1; design
   [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §4): `AttackView` reads `WorldReader.attack_spec`

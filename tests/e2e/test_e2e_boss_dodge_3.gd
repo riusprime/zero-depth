@@ -125,3 +125,88 @@ func test_the_siege_engine_fight_and_walking_out_of_a_locked_barrage_circle() ->
 	assert_true(locked_seen, "a Barrage circle locked on the player")
 	assert_true(dodged, "dodged by moving after the lock")
 	assert_gt(embers, 0, "the Siege Engine's cannon embers were drawn")
+
+
+## The Siege Engine's second phase reaches the screen: summoned from the dev panel as above, brought to its second
+## phase (TEST HELPER: its HP is set just under the threshold; a real fight to it is minutes long), then real frames:
+## a Target Lock's reticle is drawn on the reader's circle, and the shell it brings down leaves a boulder drawn on the
+## wall's footprint.
+func test_the_siege_engines_target_lock_and_boulder_are_drawn() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu()
+	await e.tap(KEY_QUOTELEFT)
+	await e.click_dev("God")
+	var choice := main.get_node("UI/DevPanel").find_child("BossChoice", true, false) as Label
+	var w := e.world()
+	var name := tr(w.boss_tables[BossLab.table_index(w, &"siege_engine")].name_key)
+	for k in 8:
+		if choice.text == name:
+			break
+		await e.click_dev("NextBoss")
+		await e.frames(1)
+	await e.click_dev("SpawnBoss")
+	await e.frames(2)
+	await e.tap(KEY_QUOTELEFT)
+	assert_false(main.is_dev_panel_open())
+	var reader := main.driver.reader
+	var bid := reader.actor_id(reader.boss_index())
+	var j := w.actors.index_of(bid)
+	w.actors.hp[j] = w.actors.max_hp[j] * 650 / 1000
+	var field: SiegeFieldViews = main.view.siege_field
+	var seen_lock := false
+	var lock_ok := false
+	var shells := 0
+	var seq := w.last_event_seq()
+	for k in 60 * 40:
+		await e.frames(1)
+		# The shell leaves a boulder only inside the Engine's room on open floor: the stick keeps the hero 6-8 m
+		# from it (real input), so the lock follows it there.
+		var to := reader.actor_pos(w.actors.index_of(bid)) - reader.player_pos()
+		var want := (
+			to.normalized()
+			if to.length() > 8.0
+			else (-to.normalized() if to.length() < 6.0 else Vector2.ZERO)
+		)
+		e.stick_toward(want)
+		# TEST HELPER: the start hall's own enemies crowding the hero are killed (a body within 0.3 m of the shell's
+		# square leaves no boulder, the sim's rule; a swarmer hugging the hero blocked every shell here).
+		for jj in range(1, w.actors.size()):
+			if (
+				w.actors.dead[jj] == 0
+				and jj != w.actors.index_of(bid)
+				and not WorldReader.is_boss_kind(w.actors.kinds[jj])
+				and w.actors.pos(jj).distance_to(w.player_pos()) < 5.0
+			):
+				var hero_id := w.actors.ids[0]
+				var at := w.actors.pos(jj)
+				Damage.hit(w, jj, 1 << 20, hero_id, hero_id, w.take_root(), 0, w.player_pos(), at)
+		shells += SiegeLab.ticks_of(w, &"siege_shell", seq).size()
+		seq = w.last_event_seq()
+		var siege := reader.boss_siege()
+		if siege.is_empty():
+			continue
+		var lock: Dictionary = siege["lock"]
+		var drawn := field.lock_circle()
+		if not lock.is_empty() and not drawn.is_empty():
+			seen_lock = true
+			lock_ok = (
+				(drawn[0] as Vector2).distance_to(lock["centre"]) < 0.3
+				and is_equal_approx(drawn[1], float(lock["radius"]))
+			)
+		if not (siege["boulders"] as Array).is_empty() and field.boulders_shown() > 0:
+			break
+	assert_true(seen_lock, "a Target Lock's reticle was drawn")
+	assert_true(lock_ok, "on the reader's circle, of its radius")
+	e.stick_toward(Vector2.ZERO)
+	gut.p("shells landed: %d" % shells)
+	var rows: Array = reader.boss_siege().get("boulders", [])
+	assert_false(rows.is_empty(), "a shell left a boulder")
+	if rows.is_empty():
+		return
+	await e.frames(20)
+	rows = reader.boss_siege()["boulders"]
+	assert_eq(field.boulders_shown(), rows.size(), "a rock per boulder")
+	var f := field.boulder_footprint(0)
+	assert_almost_eq(f["centre"], rows[0]["centre"], Vector2(0.01, 0.01), "on the wall's footprint")
+	assert_almost_eq((f["half"] as Vector2).x, float(rows[0]["half"]), 0.01)

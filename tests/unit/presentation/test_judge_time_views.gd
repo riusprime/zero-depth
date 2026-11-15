@@ -339,8 +339,7 @@ func test_the_hud_shows_the_loss_and_a_pip_per_orb_won_back() -> void:
 	hud.sync(r)
 	assert_true(hud.visible)
 	assert_eq([hud.percent(), hud.pips(), hud.pips_won()], [75, 3, 0], "75 % lost, three hours")
-	assert_string_contains(hud.line(), "75")
-	assert_ne(hud.line(), "HUD_ATTACK_SLOW", "the line is translated")
+	assert_true(hud.visible, "a clock and its pips, no words")
 	for n in 3:
 		w.actors.set_pos(0, r.boss_pickups()[0]["centre"])
 		w.step(InputFrame.new())
@@ -366,8 +365,6 @@ func test_the_orbs_carry_hint_arrows_without_a_line() -> void:
 	var orb := MechanicHints.JUDGE_ORB
 	assert_eq(hints.shown().size(), 3, "one per orb")
 	assert_true(hints.showing(orb, ObjectiveHints.PING), "on screen")
-	assert_true(orb in ObjectiveHints.DOWN_ARROW, "drawn as the pillars' small arrow above it")
-	assert_eq(hints.line(orb), "", "no line of text")
 	hints.project = func(sim: Vector2) -> Vector2: return centre + sim * 1000.0
 	hints.sync(r)
 	assert_true(hints.showing(orb, ObjectiveHints.ARROW), "off screen: an arrow at the edge")
