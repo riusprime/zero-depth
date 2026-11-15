@@ -94,7 +94,7 @@ func _fight(weapon: StringName, plays: bool, seed_value: int) -> Dictionary:
 
 ## True while the row's first cast runs (a row is counted once, by its first warning).
 func _first_cast(w: World) -> bool:
-	return w.bosses.dance_rip_n == 0
+	return w.boss_fight.dance_rip_n == 0
 
 
 ## The bot's input this tick.

@@ -35,9 +35,9 @@ func _running(w: World, i: int) -> Array:
 	var on: Array[int] = []
 	if B.pulling(w, i):
 		on.append(B.PULL)
-	if w.bosses.dance_rip_from >= 0:
+	if w.boss_fight.dance_rip_from >= 0:
 		on.append(B.RIPTIDE)
-	if w.bosses.dance_ht_from >= 0:
+	if w.boss_fight.dance_ht_from >= 0:
 		on.append(B.HIGH_TIDE)
 	return [on[0] if not on.is_empty() else B.NONE, on.size()]
 
@@ -154,8 +154,8 @@ func test_the_first_beat_of_a_phase_comes_after_its_gate() -> void:
 		w, func(x: World) -> bool: return x.actors.state[_i(x, aid)] != BossAi.GATE, 600
 	)
 	var stood := w.tick - 1
-	assert_eq(w.bosses.dance_beat_phase, 1, "phase 2's order")
-	assert_eq(w.bosses.dance_beat_at, stood + 360, "its first beat 6 s after the gate")
+	assert_eq(w.boss_fight.dance_beat_phase, 1, "phase 2's order")
+	assert_eq(w.boss_fight.dance_beat_at, stood + 360, "its first beat 6 s after the gate")
 	var reader: Dictionary = WorldReader.new(w).boss_dance()["beats"]
 	assert_eq(reader["next"], B.RIPTIDE, "the Riptide it brings")
 	assert_eq(reader["order"], PackedInt32Array([B.RIPTIDE, B.PULL]))
@@ -447,14 +447,14 @@ func test_the_rhythm_is_deterministic_hashed_and_restores_mid_beat() -> void:
 	var a: World = make.call(60 * 20)
 	var b: World = make.call(60 * 20)
 	assert_eq(a.state_hash(), b.state_hash(), "two runs agree")
-	assert_gte(a.bosses.dance_beat_k, 1, "a beat has come")
+	assert_gte(a.boss_fight.dance_beat_k, 1, "a beat has come")
 	var before := a.state_hash()
-	a.bosses.dance_beat_at += 1
+	a.boss_fight.dance_beat_at += 1
 	assert_ne(a.state_hash(), before, "the rhythm is hashed")
-	a.bosses.dance_beat_at -= 1
-	a.bosses.dance_rip_warn += 1
+	a.boss_fight.dance_beat_at -= 1
+	a.boss_fight.dance_rip_warn += 1
 	assert_ne(a.state_hash(), before, "and the warning's length")
-	a.bosses.dance_rip_warn -= 1
+	a.boss_fight.dance_rip_warn -= 1
 	for ticks: int in [60 * 10, 60 * 26]:  # In a row of Riptide, then waiting on the next beat
 		var c: World = make.call(ticks)
 		var snap := WorldSnapshot.take(c)

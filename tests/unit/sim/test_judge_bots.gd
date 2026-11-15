@@ -165,8 +165,8 @@ func _around(w: World, from: Vector2, to: Vector2) -> Vector2:
 	var n := int(minf(length, 8.0) / 0.25)
 	for s in range(1, n + 1):
 		var p := from + line * (s * 0.25 / length)
-		for g in w.bosses.gear_x.size():
-			var o := BossGears.obb(w.bosses, g)
+		for g in w.boss_fight.gear_x.size():
+			var o := BossGears.obb(w.boss_fight, g)
 			if Collide.circle_vs_obb(p, r, o) == Vector2.ZERO:
 				continue
 			var reach := o.axis_u * (o.half.x + m)

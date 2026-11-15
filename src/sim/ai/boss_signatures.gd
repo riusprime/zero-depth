@@ -156,8 +156,9 @@ static func set_nav_extra(w: World, flood: bool = true) -> void:
 ## True while any piece the flow field goes round is down (pillars, gears, lava, a meltdown, boulders).
 static func has_extra(w: World) -> bool:
 	var bs := w.bosses
-	var n := bs.pillar_x.size() + bs.gear_x.size() + bs.lava_x.size() + bs.melt_boss.size()
-	return n + bs.sg_b_x.size() > 0  # The Siege Engine's boulders too
+	var fs := w.boss_fight
+	var n := bs.pillar_x.size() + fs.gear_x.size() + bs.lava_x.size() + bs.melt_boss.size()
+	return n + fs.sg_b_x.size() > 0  # The Siege Engine's boulders too
 
 
 # --- S2: the Warlord's javelins -----------------------------------------------------------------------------------

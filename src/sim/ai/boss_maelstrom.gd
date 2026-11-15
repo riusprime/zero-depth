@@ -1,6 +1,6 @@
 class_name BossMaelstrom
 extends RefCounted
-## The Tidecaller's Maelstrom (BossDanceTable.mael_*; BossStore.dance_spin, dance_grace, dance_throw): from
+## The Tidecaller's Maelstrom (BossDanceTable.mael_*; BossFightStore.dance_spin, dance_grace, dance_throw): from
 ## mael_phase to the end of the fight the whole room is a whirlpool round the boss, and no Pull is cast (its phase's
 ## rhythm has none: BossTideBeats.order).
 ## - Each tick the hero is carried round the boss (mael_spin per mille of its own run speed now, along the
@@ -27,7 +27,7 @@ const EFFECT := &"boss_maelstrom"
 
 ## Tick phase 6 (BossDance.advance), boss i in `phase`.
 static func advance(w: World, i: int, d: BossDanceTable, phase: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var a := w.actors
 	if phase < d.mael_phase or a.state[i] == BossAi.GATE:
 		return
@@ -102,10 +102,10 @@ static func drift_of(w: World, i: int, d: BossDanceTable) -> Vector2:
 	var a := w.actors
 	var to := a.pos(i) - w.player_pos()
 	var dist := Kin.length(to)
-	if dist <= 0.0001 or w.bosses.dance_spin == 0:
+	if dist <= 0.0001 or w.boss_fight.dance_spin == 0:
 		return Vector2.ZERO
 	var inward := to / dist
-	var side := Vector2(-inward.y, inward.x) * float(w.bosses.dance_spin)
+	var side := Vector2(-inward.y, inward.x) * float(w.boss_fight.dance_spin)
 	var speed := BossTide.run_speed(w)
 	var gap := maxf(dist - a.radius[i] - w.player.radius_m - BossTide.BODY_GAP_M, 0.0)
 	return side * (speed * d.mael_spin / 1000.0) + inward * minf(speed * d.mael_in / 1000.0, gap)
@@ -117,7 +117,7 @@ static func drift_of(w: World, i: int, d: BossDanceTable) -> Vector2:
 ## and "thrown" (ticks left of a throw), "anchor" (the room's centre, where the boss walks to and then stands) and
 ## "anchored" (it stands there: "centre" equals "anchor").
 static func state(w: World, i: int, d: BossDanceTable) -> Dictionary:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.dance_spin == 0:
 		return {}
 	var speed := BossTide.run_speed(w) * SimTick.TICKS_PER_SECOND

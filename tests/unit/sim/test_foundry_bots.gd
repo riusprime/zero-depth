@@ -54,8 +54,8 @@ func _fight(weapon: StringName, plays: bool, seed_value: int) -> Dictionary:
 		out["hp_lost"] += lost
 		out["biggest"] = maxi(out["biggest"], lost)
 		w.actors.hp[0] = full
-		out["plated_ticks"] += w.bosses.fg_plate
-		out["burning_ticks"] += w.bosses.fg_burning
+		out["plated_ticks"] += w.boss_fight.fg_plate
+		out["burning_ticks"] += w.boss_fight.fg_burning
 		for e in w.events_since(seq):
 			seq = e.seq
 			if e.kind == SimEvent.Kind.DAMAGE and e.target_id == w.actors.ids[0]:

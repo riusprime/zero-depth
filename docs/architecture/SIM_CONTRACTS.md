@@ -2134,7 +2134,7 @@ phase 6 from `BossSignatures.advance` (after the arena hazards, before the proje
 
 The Judge keeps its echo, Verdict, Gear Spiral and Gavel Slam (§10l) and gains the pieces below. Its numbers are
 `BossTable.time` (a `BossTimeTable`, compiled from `BossDefinition.time`; null for every other boss); its state is
-`BossStore.time_*` and `gear_*`. Code: `BossTime`, `BossGears`, `BossRewind`. Only the orbs' spots draw a stream
+`BossFightStore.time_*` (`World.boss_fight`, hashed right after `BossStore`: the sentinels below keep their place) and `gear_*`. Code: `BossTime`, `BossGears`, `BossRewind`. Only the orbs' spots draw a stream
 (`ai`); everything else follows from the clock and the positions. No native change.
 
 - **The Time Wave** (move `time_wave`, appended to `BossAttackTable.Move`). An attack on its own cadence
@@ -2192,7 +2192,7 @@ The Judge keeps its echo, Verdict, Gear Spiral and Gavel Slam (§10l) and gains 
   Verdict dropped; target the hero, pos = its square's centre, amount = the HP it cost, 0 when it missed),
   `judge_return` (amount = HP recovered). The orbs' own events are §10n's.
 - **Hash and save.** Hashed after a `-11` sentinel only while a Judge runs them or a gear stands
-  (`time_boss >= 0 or gear_x not empty`); every world without a Judge hashes as before. `BossStore` is a snapshot
+  (`time_boss >= 0 or gear_x not empty`); every world without a Judge hashes as before. `BossFightStore` is a snapshot
   state class, so the clocks, trails, gears and the locked Bell's Verdict are saved; the restored gears are walls
   again. With the hero dead or outside the room a pending toll and a locked Bell's Verdict go (`BossRewind.cancel`).
 - **Reads.** `WorldReader.boss_time()`: `boss`, `cut`, `wave` (the cast, 0..1000 or -1), `wave_in`, `gears`
@@ -2205,7 +2205,7 @@ The Judge keeps its echo, Verdict, Gear Spiral and Gavel Slam (§10l) and gains 
 
 The Tidecaller keeps its Pull, Undertow, ring stream and crossing waves (§10j) and gains the pieces below. Its
 numbers are `BossTable.dance` (a `BossDanceTable`, compiled from `BossDefinition.dance`; null for every other boss);
-its state is `BossStore.dance_*`. Code: `BossDance` (Riptide, High Tide), `BossMaelstrom`, `SafeArea`,
+its state is `BossFightStore.dance_*`. Code: `BossDance` (Riptide, High Tide), `BossMaelstrom`, `SafeArea`,
 `BossTideBeats` (the rhythm), and `BossTide.rate_of` / `run_speed` / `pop_near`. The `ai` stream is drawn for a row's mirror, the dry circle's spot and the way the
 Maelstrom turns; everything else follows from the clock and the positions. No native change.
 
@@ -2252,7 +2252,7 @@ Maelstrom turns; everything else follows from the clock and the positions. No na
   a warned strip and within its radius of the stretch the front crossed this tick takes `rip_hit` per mille, once a
   cast (a hero entering a strip behind the front is not hit). The next warning begins on the wave's last step. The
   safe strips are `BossDanceTable.SAFE_ORDER` (1, 2, 0, 3) or its mirror (2, 1, 3, 0), one `ai` draw a row.
-  **A cast's warning** (`BossDance.warn_of`, fixed as the cast begins, `BossStore.dance_rip_warn`) is the written
+  **A cast's warning** (`BossDance.warn_of`, fixed as the cast begins, `BossFightStore.dance_rip_warn`) is the written
   `rip_warn_ticks` (the last cast `rip_last_warn_ticks`), or the hero's walk to this cast's safe strip when that is
   longer: `ceil((gap + 1 m) / run_speed × rip_run_margin / 1000)` ticks, where gap is the distance between the
   previous cast's safe strip and this one's nearest edges (the first cast: from the hero's centre to the strip), at
@@ -2304,7 +2304,7 @@ Maelstrom turns; everything else follows from the clock and the positions. No na
   `high_tide_end`, `maelstrom` (it begins; amount = the turn, 1 or -1), `maelstrom_throw` (target the hero, pos =
   where it stood, amount = the HP it cost).
 - **Hash and save.** Hashed after a `-14` sentinel only while a boss runs a dance (`dance_boss >= 0`); every
-  world without one hashes as before. `BossStore` is a snapshot state class, so the clocks and the dry circle are
+  world without one hashes as before. `BossFightStore` is a snapshot state class, so the clocks and the dry circle are
   saved. The tide pools are the arena hazards (hashed once a fight has used one).
 - **Reads.** `WorldReader.boss_dance()`: `boss`, `room`, `along_x`, `strips` (4 × Rect2), `riptide` ({} or `cast`,
   `casts`, `safe`, `struck`, `warn` 0..1000 or -1, `warn_left`, `wave` 0..1000 or -1, `front` m, `hit`),
@@ -2319,7 +2319,7 @@ Maelstrom turns; everything else follows from the clock and the positions. No na
 
 Nothing joins the two bodies any more (§10k as amended: no chain, no burn, no pull); one HP pool and three bars stay.
 Their own numbers are `BossTable.wardens` (a `BossWardensTable`, compiled from `BossDefinition.wardens`; null for
-every other boss); their state is `BossStore.wd_*` (the pair that runs it: `wd_boss`, the amber Warden's id) and
+every other boss); their state is `BossFightStore.wd_*` (the pair that runs it: `wd_boss`, the amber Warden's id) and
 `cb_*`. Code: `BossWardens` (the tick, the end, the read), `BossWardenAmber`, `BossWard`, `BossShadowSwords`,
 `BossRift`, and `BossChargeBurst` (any boss's). Every hook into the boss framework goes through `BossTwin`'s
 (`think`, `on_start`, `moves`, `resolve`, `telegraph`, `may_use`), so `BossAi` gained no line. Only the rift's exit
@@ -2395,7 +2395,7 @@ draws a stream (`ai`). No native change.
   `warden_rift_close`.
 - **Hash and save.** Hashed after a `-15` sentinel only while a pair runs them or a burst is pending
   (`wd_boss >= 0 or cb_boss not empty`); every other world hashes as before. `twin_burn_cd` left the `-3` block, so
-  a Twin Wardens fight hashes differently from before this step. `BossStore` is a snapshot state class, so all of it
+  a Twin Wardens fight hashes differently from before this step. `BossFightStore` is a snapshot state class, so all of it
   is saved; `BossWardensTable` is a content class of the snapshot.
 - **Reads.** `WorldReader.boss_wardens()` (`BossWardens.state`): `lead`, `violet`, `ward` {who, kind (&"", &"mirror",
   &"full"), centre, half_arc, left, broken, stun_left, return_in}, `swords` [{from, to, half_width, cut, cut_in}],
@@ -2408,7 +2408,7 @@ draws a stream (`ai`). No native change.
 
 The Engine keeps its turrets, mortar grid, barrages, rails, deploys and falling rocks (§10d, §10f) and gains the pieces
 below. Its numbers are `BossTable.siege` (a `BossSiegeTable`, compiled from `BossDefinition.siege`; null for every
-other boss); its state is `BossStore.sg_*`. Code: `BossSiege` (Target Lock, boulders, the Shockwave's cover),
+other boss); its state is `BossFightStore.sg_*`. Code: `BossSiege` (Target Lock, boulders, the Shockwave's cover),
 `BossDoom` (the ammo cart, the Doom Shell). No stream is drawn; everything follows from the clock and the positions.
 No native change.
 
@@ -2470,7 +2470,7 @@ No native change.
   = the HP the blast cost, amount_applied = 1 when it stripped the armour), `siege_armour_stripped` (amount = its
   ticks).
 - **Hash and save.** Hashed after a `-21` sentinel only while a boss runs a siege or a boulder stands
-  (`sg_boss >= 0 or sg_b_x not empty`); every world without one hashes as before. `BossStore` is a snapshot state
+  (`sg_boss >= 0 or sg_b_x not empty`); every world without one hashes as before. `BossFightStore` is a snapshot state
   class, so the clocks, the lock and the boulders are saved; the restored boulders are walls again (a snapshot counts
   them among the walls added in play) and the cart is an actor like any.
 - **Reads.** `WorldReader.boss_siege()`: `boss`, `room`, `lock` ({} or `centre`, `radius`, `locked`, `left`),
@@ -2482,7 +2482,7 @@ No native change.
 
 The Foundry keeps its lava, pools and meltdown (§10f, the arena hazards) and gains the pieces below. Its numbers are
 `BossTable.forge` (a `BossForgeTable`, compiled from `BossDefinition.forge`; null for every other boss); its state is
-`BossStore.fg_*` and `slab_*`. Code: `BossForge` (the plate, the scald gauge), `BossSlag` (slabs, Overpressure),
+`BossFightStore.fg_*` and `slab_*`. Code: `BossForge` (the plate, the scald gauge), `BossSlag` (slabs, Overpressure),
 `SafeArea` (§10p) for the burns. No stream is drawn; no native change. The forge's casts are beside the boss's
 attacks (no new move: it goes on fighting through them). The forge takes its clocks (and is hashed) only once its
 boss reaches the forge's first phase, so the first phase hashes as before.
@@ -2531,14 +2531,14 @@ boss reaches the forge's first phase, so the first phase hashes as before.
   `boss_scald`.
 - **Fight end.** With the hero dead or outside the room the gauge empties, a burn ends and an Overpressure running
   ends with its marker (`BossForge.cancel`; the plate and the slabs stay); with the boss gone everything goes
-  (`on_boss_gone`, `BossStore.clear_forge`).
+  (`on_boss_gone`, `BossFightStore.clear_forge`).
 - **Events** (`STATUS_APPLY`, source the boss; never read back): `forge_cast` (amount = its ticks), `plate_forged`,
   `plate_blown` (pos = where the bomb landed, target = the drone, amount = the exposed ticks), `plate_drone` (pos =
   where), `slab_cooled` (pos, amount = slab id, amount_applied = the pool's id), `slab_crumbled`, `slab_shattered`
   (amount = slab id), `slag_drop` (pos, amount = the pool's hazard id), `overpressure_cast` (pos = the nearest safe slab, amount = the cast's ticks), `overpressure`
   (amount = the burn's ticks), `overpressure_end`, `scald_burn` / `scald_burn_end` (target the hero).
 - **Hash and save.** Hashed after a `-22` sentinel while a boss runs a forge or a slab lies (`fg_boss >= 0 or
-  slab_id not empty`). `BossStore` is a snapshot state class, so the clocks, the gauge and the slabs are saved.
+  slab_id not empty`). `BossFightStore` is a snapshot state class, so the clocks, the gauge and the slabs are saved.
 - **Reads.** `WorldReader.boss_forge()`: `boss`, `plate` ({`forging` 0..1000 or -1, `on`, `exposed_left`, `taken`,
   `next_in`}), `slabs` ([{`slab` (false: a pool cooling), `id`, `centre`, `radius`, `cooling` 0..1000, `left` (-1
   cooling), `shattered`, `safe`}]), `overpressure` ({} or `cast`, `cast_left`, `burn`, `burn_left`, `on_slab`),

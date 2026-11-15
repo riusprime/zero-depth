@@ -4,7 +4,7 @@ extends RefCounted
 ## burst_radius_m > 0). The run itself is BossAi's (the locked lane, the body's contact hit). On the tick the run
 ## stops (its length spent, or cut short by a wall when it locked) a burst is armed on the body's spot; burst_ticks
 ## later it hits a hero within burst_radius_m of that spot for the attack's damage, once, whatever the boss does by
-## then. A dash's i-frames avoid it, as any hit. The pending bursts live in BossStore (cb_*), run in tick phase 6
+## then. A dash's i-frames avoid it, as any hit. The pending bursts live in BossFightStore (cb_*), run in tick phase 6
 ## (BossSignatures.advance) and go with their boss or when the hero is dead. Pure: no stream is drawn.
 ## The view reads the lane and the end circle through the wind-up (telegraph: the end follows the aim until the
 ## lane locks) and the armed bursts after it (rows).
@@ -41,27 +41,28 @@ static func telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionary:
 ## Tick phase 6: a charge whose run stopped this tick arms its burst; a burst whose time has come hits.
 static func advance(w: World) -> void:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var a := w.actors
 	if w.player_dead():
-		for k in range(bs.cb_boss.size() - 1, -1, -1):
-			bs.remove_burst(k)
+		for k in range(fs.cb_boss.size() - 1, -1, -1):
+			fs.remove_burst(k)
 		return
 	for b in bs.size():
 		var i := a.index_of(bs.ids[b])
 		if i < 0 or a.state[i] != S.ACTIVE or a.lock_len[i] > 0.0 or bs.attack[b] < 0:
 			continue
 		var atk := BossAi.attack_of(w, i)
-		if not bursts(atk) or bs.cb_boss.has(bs.ids[b]):
+		if not bursts(atk) or fs.cb_boss.has(bs.ids[b]):
 			continue
 		arm(w, i, bs.attack[b], a.pos(i))
-	for k in range(bs.cb_boss.size() - 1, -1, -1):
-		if bs.cb_at[k] <= w.tick:
+	for k in range(fs.cb_boss.size() - 1, -1, -1):
+		if fs.cb_at[k] <= w.tick:
 			_burst(w, k)
 
 
 ## Arms a burst of boss i's attack `attack` (an index) at `at`.
 static func arm(w: World, i: int, attack: int, at: Vector2) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var atk := BossAi.table_of(w, i).attacks[attack]
 	var id := w.actors.ids[i]
 	bs.cb_boss.append(id)
@@ -75,7 +76,7 @@ static func arm(w: World, i: int, attack: int, at: Vector2) -> void:
 
 
 static func _burst(w: World, k: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var id := bs.cb_boss[k]
 	var attack := bs.cb_attack[k]
 	var c := Vector2(bs.cb_x[k], bs.cb_y[k])
@@ -98,7 +99,7 @@ static func _burst(w: World, k: int) -> void:
 
 ## BossSignatures.on_boss_gone: its pending bursts go with it.
 static func on_boss_gone(w: World, boss_id: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	for k in range(bs.cb_boss.size() - 1, -1, -1):
 		if bs.cb_boss[k] == boss_id:
 			bs.remove_burst(k)
@@ -107,7 +108,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 ## WorldReader.boss_charge_bursts: the bursts armed, oldest first.
 static func rows(w: World) -> Array:
 	var out := []
-	var bs := w.bosses
+	var bs := w.boss_fight
 	for k in bs.cb_boss.size():
 		var i := w.actors.index_of(bs.cb_boss[k])
 		if i < 0:

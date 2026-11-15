@@ -130,13 +130,13 @@ static func combo_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionar
 
 ## True while the pair's boss dashes.
 static func dashing(w: World) -> bool:
-	return w.bosses.wd_dash_t > 0
+	return w.boss_fight.wd_dash_t > 0
 
 
 ## Tick phase 3 (BossTwin.think, the boss's turn): the dash's clock; free between two attacks with its clock out, it
 ## starts one.
 static func dash_think(w: World, i: int, wt: BossWardensTable) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var a := w.actors
 	if bs.wd_dash_cd > 0:
 		bs.wd_dash_cd -= 1
@@ -170,7 +170,7 @@ static func dash_think(w: World, i: int, wt: BossWardensTable) -> void:
 
 ## Tick phase 5 (BossTwin.moves): a dash's step, stopped by walls. True while it dashes (nothing else moves it).
 static func dash_move(w: World, i: int, slow: float) -> bool:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.wd_dash_t <= 0:
 		return false
 	var a := w.actors

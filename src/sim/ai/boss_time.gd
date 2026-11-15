@@ -1,6 +1,6 @@
 class_name BossTime
 extends RefCounted
-## The Clockwork Judge fights with time (BossTable.time, a BossTimeTable; BossStore.time_*). This class runs the
+## The Clockwork Judge fights with time (BossTable.time, a BossTimeTable; BossFightStore.time_*). This class runs the
 ## Time Wave, its hour orbs and the slow fields, and ticks the stopped gears (BossGears) and the Rewind
 ## (BossRewind).
 ## - The Time Wave: a `time_wave` attack on its own cadence (wave_due: the first wave_first_ticks after the Judge may
@@ -47,15 +47,16 @@ static func think(w: World, i: int, t: BossTable) -> void:
 	if tt == null:
 		return
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var id := w.actors.ids[i]
-	if bs.time_boss != id:
-		if bs.time_boss >= 0 and w.actors.index_of(bs.time_boss) >= 0:
+	if fs.time_boss != id:
+		if fs.time_boss >= 0 and w.actors.index_of(fs.time_boss) >= 0:
 			return  # One at a time: another Judge runs them
-		bs.clear_time()
-		bs.time_boss = id
+		fs.clear_time()
+		fs.time_boss = id
 	var phase := bs.phase[BossAi.entry_of(w, i)]
-	if phase >= tt.field_phase and bs.time_field_due < 0:
-		bs.time_field_due = w.tick + tt.field_every_ticks
+	if phase >= tt.field_phase and fs.time_field_due < 0:
+		fs.time_field_due = w.tick + tt.field_every_ticks
 	BossRewind.think(w, i, tt, phase)
 
 
@@ -74,12 +75,13 @@ static func wave_attack(t: BossTable, phase: int) -> int:
 ## -1. The first call starts the clock.
 static func wave_due(w: World, i: int, b: int, t: BossTable, cd: int) -> int:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var tt := t.time
-	if tt == null or bs.time_boss != w.actors.ids[i] or w.player_dead():
+	if tt == null or fs.time_boss != w.actors.ids[i] or w.player_dead():
 		return -1
-	if bs.time_wave_due < 0:
-		bs.time_wave_due = w.tick + tt.wave_first_ticks
-	if w.tick < bs.time_wave_due or BossSlow.fight_over(w):
+	if fs.time_wave_due < 0:
+		fs.time_wave_due = w.tick + tt.wave_first_ticks
+	if w.tick < fs.time_wave_due or BossSlow.fight_over(w):
 		return -1
 	var k := wave_attack(t, bs.phase[b])
 	return BossTide.HOLD if k >= 0 and cd > 0 else k
@@ -96,11 +98,12 @@ static func on_cast(w: World, i: int, atk: BossAttackTable) -> void:
 ## Tick phase 6 (BossJudge.resolve), the tick the cast ends: the wave lands (the class comment's rule).
 static func resolve_wave(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var tt := BossAi.table_of(w, i).time
 	if tt == null:
 		return
 	var id := w.actors.ids[i]
-	bs.time_wave_due = w.tick - atk.windup_ticks + tt.wave_every_ticks
+	fs.time_wave_due = w.tick - atk.windup_ticks + tt.wave_every_ticks
 	BossSlow.apply(w, id, tt.wave_cut)
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, id, id, w.actors.ids[0], w.actors.pos(i))
 	e.effect_id = WAVE
@@ -167,9 +170,10 @@ static func room_of(w: World, i: int) -> Rect2:
 ## The objective markers point at the Judge's orbs lying now, and at nothing else for that reason.
 static func point_at_orbs(w: World) -> void:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	w.objectives.clear(ObjectiveMarkers.JUDGE_ORB)
 	for k in bs.pk_x.size():
-		if bs.pk_boss[k] == bs.time_boss:
+		if bs.pk_boss[k] == fs.time_boss:
 			w.objectives.point(ObjectiveMarkers.JUDGE_ORB, Vector2(bs.pk_x[k], bs.pk_y[k]))
 
 
@@ -178,9 +182,10 @@ static func point_at_orbs(w: World) -> void:
 ## and the Judge steps out of a crawling shot's line. The markers follow the orbs taken or gone.
 static func advance(w: World) -> void:
 	var bs := w.bosses
-	if bs.time_boss < 0:
+	var fs := w.boss_fight
+	if fs.time_boss < 0:
 		return
-	var i := w.actors.index_of(bs.time_boss)
+	var i := w.actors.index_of(fs.time_boss)
 	if i < 0 or w.actors.dead[i] == 1:
 		return  # on_boss_gone clears it the tick the body is removed
 	if BossSlow.fight_over(w):
@@ -194,14 +199,14 @@ static func advance(w: World) -> void:
 		_sidestep(w, i, t)
 	if (
 		w.objectives.reasons.count(String(ObjectiveMarkers.JUDGE_ORB))
-		!= bs.pk_boss.count(bs.time_boss)
+		!= bs.pk_boss.count(fs.time_boss)
 	):
 		point_at_orbs(w)
 
 
 ## A slow field half-way between the hero and boss i when its clock says so (not during a phase gate).
 static func _lay_field(w: World, i: int, tt: BossTimeTable) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if tt.field == null or bs.time_field_due < 0 or w.tick < bs.time_field_due:
 		return
 	bs.time_field_due = w.tick + tt.field_every_ticks
@@ -246,9 +251,9 @@ static func _sidestep(w: World, i: int, t: BossTable) -> void:
 ## trails and the markers with it (its cut, orbs and fields go through BossSlow, BossPickups and BossShotFields).
 static func on_boss_gone(w: World, boss_id: int) -> void:
 	BossGears.drop(w, boss_id)
-	if w.bosses.time_boss != boss_id:
+	if w.boss_fight.time_boss != boss_id:
 		return
-	w.bosses.clear_time()
+	w.boss_fight.clear_time()
 	w.objectives.clear(ObjectiveMarkers.JUDGE_ORB)
 
 
@@ -258,7 +263,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 ## (BossGears.rows), "returned" (true once the Judge went back to its own past), and the Rewind's keys
 ## (BossRewind.state). The orbs and the fields: WorldReader.boss_pickups, boss_shot_fields.
 static func state(w: World) -> Dictionary:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var i := w.actors.index_of(bs.time_boss) if bs.time_boss >= 0 else -1
 	if i < 0:
 		return {}

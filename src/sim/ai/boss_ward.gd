@@ -1,6 +1,6 @@
 class_name BossWard
 extends RefCounted
-## The violet Warden's wards (BossWardensTable; state in BossStore wd_*).
+## The violet Warden's wards (BossWardensTable; state in BossFightStore wd_*).
 ## - The Mirror Ward (`mirror_ward`, a cast): as the cast ends a ward stands mirror_ticks on the arc mirror_half_arc
 ##   each side of the way to the hero then (it does not turn afterwards; it stays on the Warden wherever it goes).
 ##   A hit from the hero that comes from inside the arc does nothing. A hero's projectile that reaches the Warden
@@ -35,15 +35,16 @@ const BLOCK := &"warden_block"
 ## The violet Warden's actor index when actor i is her and the pair runs its mechanics, else -1.
 static func _violet(w: World, i: int) -> int:
 	var bs := w.bosses
-	if bs.wd_boss < 0 or i <= 0 or bs.twin_lead.is_empty():
+	var fs := w.boss_fight
+	if fs.wd_boss < 0 or i <= 0 or bs.twin_lead.is_empty():
 		return -1
-	var k := bs.twin_lead.find(bs.wd_boss)
+	var k := bs.twin_lead.find(fs.wd_boss)
 	return i if k >= 0 and bs.twin_body[k] == w.actors.ids[i] else -1
 
 
 ## True while the Mirror Ward stands.
 static func mirror_up(w: World) -> bool:
-	return w.bosses.wd_mirror_until > w.tick
+	return w.boss_fight.wd_mirror_until > w.tick
 
 
 ## True while actor i is the violet Warden under her whole ward.
@@ -51,17 +52,18 @@ static func full(w: World, i: int) -> bool:
 	if _violet(w, i) < 0:
 		return false
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var wt := BossAi.table_of(w, i).wardens
-	if bs.twin_phase[bs.twin_lead.find(bs.wd_boss)] < wt.ward_phase:
+	if bs.twin_phase[bs.twin_lead.find(fs.wd_boss)] < wt.ward_phase:
 		return false
-	return bs.wd_break_at < 0 or w.tick >= bs.wd_break_at + wt.return_ticks
+	return fs.wd_break_at < 0 or w.tick >= fs.wd_break_at + wt.return_ticks
 
 
 ## True while actor i is the violet Warden stunned by her broken ward.
 static func stunned(w: World, i: int) -> bool:
-	if _violet(w, i) < 0 or w.bosses.wd_break_at < 0:
+	if _violet(w, i) < 0 or w.boss_fight.wd_break_at < 0:
 		return false
-	return w.tick < w.bosses.wd_break_at + BossAi.table_of(w, i).wardens.stun_ticks
+	return w.tick < w.boss_fight.wd_break_at + BossAi.table_of(w, i).wardens.stun_ticks
 
 
 ## True when a hit from `from` meets the Mirror Ward of actor i.
@@ -71,7 +73,7 @@ static func faces(w: World, i: int, from: Vector2) -> bool:
 	var at := w.actors.pos(i)
 	if from == at:
 		return false
-	var off := Kin.angle_diff(Kin.angle_of(from - at), w.bosses.wd_mirror_a)
+	var off := Kin.angle_diff(Kin.angle_of(from - at), w.boss_fight.wd_mirror_a)
 	return off <= BossAi.table_of(w, i).wardens.mirror_half_arc
 
 
@@ -80,7 +82,7 @@ static func faces(w: World, i: int, from: Vector2) -> bool:
 static func turns(w: World, target: int, from: Vector2, tags: int, owner_id: int) -> bool:
 	if owner_id != w.actors.ids[0] or not faces(w, target, from):
 		return false
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if tags & SimEvent.TAG_MELEE and bs.wd_push_tick != w.tick:
 		bs.wd_push_tick = w.tick
 		var away := w.player_pos() - w.actors.pos(target)
@@ -123,7 +125,7 @@ static func reflect(w: World, pi: int, actor: int, a: Vector2, v: Vector2, t: fl
 
 ## Tick phase 6 (BossTwin.resolve), as the Mirror Ward's cast ends: the ward stands, facing the hero.
 static func cast(w: World, i: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var wt := BossAi.table_of(w, i).wardens
 	bs.wd_mirror_until = w.tick + wt.mirror_ticks
 	bs.wd_mirror_a = Kin.angle_of(w.player_pos() - w.actors.pos(i))
@@ -148,7 +150,7 @@ static func charge_check(w: World, i: int, j: int) -> void:
 
 static func _break(w: World, i: int, j: int) -> void:
 	var a := w.actors
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var wt := BossAi.table_of(w, i).wardens
 	bs.wd_break_at = w.tick
 	bs.wd_full = 0
@@ -176,7 +178,7 @@ static func _reel(w: World, i: int, ticks: int) -> void:
 ## Tick phase 6 (BossWardens.advance): the wards' beginnings and ends are told once; the hint follows the violet
 ## Warden while the amber one winds up a charge at her standing ward.
 static func advance(w: World, lead: int, violet: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.wd_mirror_on == 1 and not mirror_up(w):
 		bs.wd_mirror_on = 0
 		bs.wd_mirror_until = -1
@@ -208,7 +210,7 @@ static func _tell(w: World, i: int, effect: StringName, ticks: int, whole: int) 
 ## &"full"), "centre" and "half_arc" (the arc, 1/4096 turns; the whole ward 2048 each side), "left" (the Mirror
 ## Ward's ticks, -1 otherwise), "broken" (the whole ward is down), "stun_left" and "return_in" (ticks, 0 when not).
 static func state(w: World, violet: int) -> Dictionary:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var wt := BossAi.table_of(w, violet).wardens
 	var whole := full(w, violet)
 	var mirror := mirror_up(w) and not whole

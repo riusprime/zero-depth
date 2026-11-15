@@ -29,8 +29,8 @@ func _fight(phase: int, hero_at := Vector2(-6, 0), boss_at := Vector2(6, 0)) -> 
 
 ## The Time Wave cast and landed; the Bell and the fields kept out of the way.
 func _wave(w: World, aid: int) -> void:
-	w.bosses.time_bell_due = 1 << 29
-	w.bosses.time_field_due = 1 << 29
+	w.boss_fight.time_bell_due = 1 << 29
+	w.boss_fight.time_field_due = 1 << 29
 	BossLab.start(w, _i(w, aid), &"time_wave")
 	assert_not_null(JudgeLab.until_effect(w, &"time_wave", 95), "the wave lands")
 
@@ -69,8 +69,8 @@ func test_the_cast_shows_then_the_ring_runs_out_and_the_orbs_lie() -> void:
 	view.advance(DT)
 	assert_false(view.cast_shown(), "no cast yet")
 	assert_eq(view.orbs_shown(), 0)
-	w.bosses.time_bell_due = 1 << 29
-	w.bosses.time_field_due = 1 << 29
+	w.boss_fight.time_bell_due = 1 << 29
+	w.boss_fight.time_field_due = 1 << 29
 	BossLab.start(w, _i(w, s[1]), &"time_wave")
 	CombatLab.idle(w, 45)
 	view.sync(r)
@@ -178,8 +178,8 @@ func test_a_slow_field_is_its_radius_and_fades_with_its_life() -> void:
 	var w: World = s[0]
 	var r: WorldReader = s[2]
 	var view := _time_view()
-	w.bosses.time_bell_due = 1 << 29
-	w.bosses.time_field_due = 1 << 29
+	w.boss_fight.time_bell_due = 1 << 29
+	w.boss_fight.time_field_due = 1 << 29
 	BossShotFields.place(w, s[1], BossAi.table_of(w, _i(w, s[1])).time.field, Vector2(0, 0))
 	view.sync(r)
 	view.advance(DT)
@@ -258,7 +258,7 @@ func test_the_pale_copy_follows_and_the_bell_closes_on_it() -> void:
 	view.advance(DT)
 	assert_false(view.copy_shown(), "no copy before the Rewind")
 	JudgeLab.set_phase(w, aid, 1)
-	w.bosses.time_field_due = 1 << 29
+	w.boss_fight.time_field_due = 1 << 29
 	_walk_line(w, 1)
 	view.sync(r)
 	view.advance(DT)
@@ -273,7 +273,7 @@ func test_the_pale_copy_follows_and_the_bell_closes_on_it() -> void:
 	copy = r.boss_time()["copy"]
 	assert_gt(copy.distance_to(w.player_pos()), 1.0, "it trails the hero")
 	assert_almost_eq(view.copy_position(), copy, Vector2(0.01, 0.01), "and the figure follows it")
-	w.bosses.time_bell_due = w.tick
+	w.boss_fight.time_bell_due = w.tick
 	_walk_line(w, 2)
 	assert_gte(int(r.boss_time()["bell"]), 0, "the Bell is cast")
 	view.sync(r)
@@ -427,9 +427,9 @@ func _bell_cast() -> Array:
 	var w: World = s[0]
 	var view := _rewind_view()
 	JudgeLab.set_phase(w, s[1], 1)
-	w.bosses.time_field_due = 1 << 29
+	w.boss_fight.time_field_due = 1 << 29
 	_walk_line(w, 100)
-	w.bosses.time_bell_due = w.tick
+	w.boss_fight.time_bell_due = w.tick
 	_walk_line(w, 2)
 	assert_gte(int(s[2].boss_time()["bell"]), 0, "the Bell is cast")
 	return [w, s[1], s[2], view]
@@ -452,8 +452,8 @@ func test_a_bell_square_is_drawn_where_the_sim_puts_it_and_follows_the_copy() ->
 	assert_almost_eq(box.get_center().x, at.x, 0.2, "at its centre")
 	assert_almost_eq(box.get_center().y, at.z, 0.2)
 	assert_almost_eq(box.size.x, half * 2.0, 0.3, "its size")
-	for k in w.bosses.time_px.size():  # the hero's past moves, and the copy with it
-		w.bosses.time_px[k] += 3.0
+	for k in w.boss_fight.time_px.size():  # the hero's past moves, and the copy with it
+		w.boss_fight.time_px[k] += 3.0
 	view.sync(r)
 	var moved: Vector2 = r.boss_time()["bell_squares"][0]["center"]
 	assert_gt(moved.distance_to(squares[0]["center"]), 1.0, "the copy moved")
@@ -468,9 +468,9 @@ func test_a_locked_bell_square_stays_and_two_squares_are_two_views() -> void:
 	var r: WorldReader = c[2]
 	var view: JudgeRewindViews = c[3]
 	var held := Vector2(2.0, -3.0)
-	w.bosses.time_bv_at = w.tick + 200
-	w.bosses.time_bv_x = held.x
-	w.bosses.time_bv_y = held.y
+	w.boss_fight.time_bv_at = w.tick + 200
+	w.boss_fight.time_bv_x = held.x
+	w.boss_fight.time_bv_y = held.y
 	view.sync(r)
 	var squares: Array = r.boss_time()["bell_squares"]
 	assert_eq(squares.size(), 2, "the locked one and the next toll's")
@@ -507,7 +507,7 @@ func test_a_bell_square_goes_when_the_reader_has_none_and_its_drop_strikes() -> 
 	assert_eq(strikes.strike_count(), 1, "it strikes its square as the Judge's Verdict does")
 	assert_eq(strikes.strikes()[0][0], &"cj_verdict")
 	assert_eq(strikes.strikes()[0][1], &"beam")
-	w.bosses.time_bell_at = -1
-	w.bosses.time_bv_at = -1
+	w.boss_fight.time_bell_at = -1
+	w.boss_fight.time_bv_at = -1
 	view.sync(r)
 	assert_eq(view._squares.extra_nodes().size(), 0, "no square, no view")

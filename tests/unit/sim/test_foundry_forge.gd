@@ -144,7 +144,7 @@ func test_no_forge_before_its_phase() -> void:
 	var s := _only(Vector2(-8, 0), 0, ["plate", "slab", "over", "scald"])
 	var w: World = s[0]
 	_idle(w, 900)
-	assert_eq(w.bosses.fg_boss, -1, "nothing runs (and nothing is hashed) in the first phase")
+	assert_eq(w.boss_fight.fg_boss, -1, "nothing runs (and nothing is hashed) in the first phase")
 	assert_eq(_state(w), {})
 
 
@@ -176,14 +176,14 @@ func test_the_plate_takes_sixty_percent_less_and_the_exposed_hull_more() -> void
 	assert_gt(bare[1], 0)
 	assert_eq(bare[2] & (SimEvent.TAG_ARMOURED | SimEvent.TAG_WEAK_SPOT), 0, "unplated: plain")
 	var dot0 := _hero_dot(w, i, 1000)
-	w.bosses.fg_plate = 1
+	w.boss_fight.fg_plate = 1
 	var plated := _hero_hit(w, i, 1000)
 	assert_eq(plated[0], bare[0])
 	assert_almost_eq(plated[1], bare[1] * 400 / 1000, 1, "plated: 40 %")
 	assert_ne(plated[2] & SimEvent.TAG_ARMOURED, 0, "an armoured hit")
 	assert_almost_eq(_hero_dot(w, i, 1000), dot0 * 400 / 1000, 1, "a damage tick too")
-	w.bosses.fg_plate = 0
-	w.bosses.fg_exposed_until = w.tick + 10
+	w.boss_fight.fg_plate = 0
+	w.boss_fight.fg_exposed_until = w.tick + 10
 	var open := _hero_hit(w, i, 1000)
 	assert_almost_eq(open[1], bare[1] * 1250 / 1000, 1, "exposed: 125 %")
 	assert_ne(open[2] & SimEvent.TAG_WEAK_SPOT, 0)
@@ -204,9 +204,9 @@ func test_a_drone_bomb_landing_by_the_foundry_blows_the_plate_off() -> void:
 	var s := _only(Vector2(2.6, 0), PLATE, ["plate"])
 	var w: World = s[0]
 	var f := ForgeLab.forge(w, s[1])
-	w.bosses.fg_plate_due = w.tick  # forge at once
+	w.boss_fight.fg_plate_due = w.tick  # forge at once
 	_idle(w, f.plate_cast_ticks + 2)
-	assert_eq(w.bosses.fg_plate, 1, "plated")
+	assert_eq(w.boss_fight.fg_plate, 1, "plated")
 	var drones := _fx(w, BossForge.PLATE_DRONE)
 	assert_eq(drones.size(), 1, "a drone is launched with the plate, none being alive")
 	var on_tick := _fx(w, BossForge.PLATE_ON)[0].tick
@@ -234,9 +234,11 @@ func test_a_drone_bomb_landing_by_the_foundry_blows_the_plate_off() -> void:
 			bomb_hit = e.target_id == w.actors.ids[0]
 	assert_true(bomb_hit, "on the tick its bomb landed (it hit the hero standing there too)")
 	assert_eq(blown.amount, f.exposed_ticks)
-	assert_eq(w.bosses.fg_plate, 0)
+	assert_eq(w.boss_fight.fg_plate, 0)
 	assert_eq(_state(w)["plate"]["taken"], 1250, "exposed")
-	assert_eq(w.bosses.fg_plate_due, blown.tick + f.plate_every_ticks, "the next forging in 20 s")
+	assert_eq(
+		w.boss_fight.fg_plate_due, blown.tick + f.plate_every_ticks, "the next forging in 20 s"
+	)
 	_idle(w, f.exposed_ticks)
 	assert_eq(_state(w)["plate"]["taken"], 1000, "5 s later the hull is plain again")
 	var next := JudgeLab.until_effect(w, BossForge.FORGE_CAST, f.plate_every_ticks, blown.seq)
@@ -249,7 +251,7 @@ func test_nothing_else_takes_the_plate_off() -> void:
 	var s := _only(Vector2(-10, 0), PLATE, ["plate"])
 	var w: World = s[0]
 	var i := _i(w, s[1])
-	w.bosses.fg_plate = 1
+	w.boss_fight.fg_plate = 1
 	var landed := 0
 	var blown := 0
 	var kind := ForgeLab.forge(w, s[1]).drone_kind
@@ -267,7 +269,7 @@ func test_nothing_else_takes_the_plate_off() -> void:
 				blown += 1
 	assert_gt(landed, 0, "the drones' bombs landed on the hero, far from the Foundry")
 	assert_eq(blown, 0, "and the plate stayed")
-	assert_eq(w.bosses.fg_plate, 1)
+	assert_eq(w.boss_fight.fg_plate, 1)
 	# A drone the hero kills beside the Foundry does not explode: still plated, and another is launched
 	var f := ForgeLab.forge(w, s[1])
 	var seq := w.last_event_seq()
@@ -277,7 +279,7 @@ func test_nothing_else_takes_the_plate_off() -> void:
 			var hero := w.actors.ids[0]
 			Damage.hit(w, j, 1 << 20, hero, hero, w.take_root(), 0, w.player_pos(), w.actors.pos(j))
 	_idle(w, f.drone_gap_ticks + 2)
-	assert_eq(w.bosses.fg_plate, 1, "a killed drone blows nothing")
+	assert_eq(w.boss_fight.fg_plate, 1, "a killed drone blows nothing")
 	assert_gt(_fx(w, BossForge.PLATE_DRONE, seq).size(), 0, "and another drone comes")
 	assert_lte(BossAi.alive_of(w, f.drone_kind), 1, "one at a time")
 
@@ -308,7 +310,7 @@ func test_a_pool_cools_into_a_slab_in_the_last_phase_and_crumbles() -> void:
 	assert_not_null(crumble)
 	if crumble != null:
 		assert_eq(crumble.tick - cool[0].tick, f.slab_ticks, "8 s later it crumbles")
-	assert_eq(w.bosses.slab_id.size(), 0)
+	assert_eq(w.boss_fight.slab_id.size(), 0)
 
 
 func test_with_no_slag_to_come_a_pool_drops_where_the_hero_stands() -> void:
@@ -324,7 +326,7 @@ func test_with_no_slag_to_come_a_pool_drops_where_the_hero_stands() -> void:
 	_idle(w, f.slab_cool_ticks - 10)
 	assert_eq(_fx(w, BossSlag.SLAG_DROP).size(), 1, "while it cools, no other")
 	_idle(w, 12)
-	assert_eq(w.bosses.slab_id.size(), 1, "it cooled into a slab")
+	assert_eq(w.boss_fight.slab_id.size(), 1, "it cooled into a slab")
 	var other := _only(Vector2(-5, 3), PLATE, ["plate", "slab", "drop"])
 	assert_eq(_fx(other[0], BossSlag.SLAG_DROP).size(), 0, "never before the slag's phase")
 
@@ -379,7 +381,7 @@ func test_overpressure_on_its_clock_costs_six_percent_a_second_off_a_slab() -> v
 	for e in steps:
 		assert_eq(e.amount_applied, 30, "3 % a step")
 	assert_eq(_fx(w, BossSlag.OVER_END, seq).size(), 1)
-	assert_eq(w.bosses.fg_over_due, cast[0].tick + f.over_every_ticks, "the next 22 s after")
+	assert_eq(w.boss_fight.fg_over_due, cast[0].tick + f.over_every_ticks, "the next 22 s after")
 
 
 func test_overpressure_is_paid_through_the_hurt_invulnerability_and_not_on_a_slab() -> void:
@@ -387,14 +389,14 @@ func test_overpressure_is_paid_through_the_hurt_invulnerability_and_not_on_a_sla
 	var w: World = s[0]
 	var f := ForgeLab.forge(w, s[1])
 	ForgeLab.slab(w, s[1], Vector2(6, 6), 6000)
-	w.bosses.fg_over_due = w.tick
+	w.boss_fight.fg_over_due = w.tick
 	var seq := w.last_event_seq()
 	for k in f.over_cast_ticks + f.over_ticks + 2:
 		w.actors.invuln[0] = 999
 		w.step(InputFrame.new())
 		ForgeLab.take_lost(w)
 	assert_eq(ForgeLab.hurts(w, BossSlag.OVER_EFFECT, seq).size(), 8, "no step is swallowed")
-	w.bosses.fg_over_due = w.tick
+	w.boss_fight.fg_over_due = w.tick
 	w.actors.set_pos(0, Vector2(6, 6))
 	seq = w.last_event_seq()
 	assert_eq(_idle(w, f.over_cast_ticks + f.over_ticks + 2), 0, "on the slab: nothing")
@@ -409,7 +411,7 @@ func test_overpressure_waits_for_a_slab_that_is_safe_for_its_whole_length() -> v
 	BossLab.start(w, i, &"meltdown")  # the melt: the floor farther than 8 m from the centre burns
 	_idle(w, 200)
 	assert_eq(BossLava.melt_shapes(w).size(), 1, "the room melts")
-	w.bosses.fg_over_due = w.tick
+	w.boss_fight.fg_over_due = w.tick
 	ForgeLab.slab(w, s[1], Vector2(9.5, 0), 6000)  # on the melt
 	ForgeLab.slab(w, s[1], Vector2(-3, 3), f.over_cast_ticks + f.over_ticks - 1)  # crumbles mid-burn
 	var seq := w.last_event_seq()
@@ -434,7 +436,7 @@ func test_the_marker_points_at_the_nearest_safe_slab_through_overpressure() -> v
 	var f := ForgeLab.forge(w, s[1])
 	ForgeLab.slab(w, s[1], Vector2(6, 6), 6000)
 	ForgeLab.slab(w, s[1], Vector2(-6, 5), 6000)
-	w.bosses.fg_over_due = w.tick
+	w.boss_fight.fg_over_due = w.tick
 	_idle(w, 10)
 	var marks: Array = WorldReader.new(w).objectives()
 	assert_eq(marks.size(), 1)
@@ -459,25 +461,25 @@ func test_the_gauge_fills_from_lava_shots_and_open_floor_and_drains_only_on_a_sl
 	_idle(w, 1)
 	assert_eq(_state(w)["scald"]["gauge"], 0)
 	_idle(w, 600)
-	assert_eq(w.bosses.fg_scald, 0, "open floor outside Overpressure adds nothing")
+	assert_eq(w.boss_fight.fg_scald, 0, "open floor outside Overpressure adds nothing")
 	# A shot of the Foundry's: + 200; one the invulnerability takes: nothing
 	var p := w.player_pos()
 	Damage.hit(w, 0, 10, boss, boss, w.take_root(), SimEvent.TAG_PROJECTILE, p, p)
-	assert_eq(w.bosses.fg_scald, f.scald_hit)
+	assert_eq(w.boss_fight.fg_scald, f.scald_hit)
 	Damage.hit(w, 0, 10, boss, boss, w.take_root(), SimEvent.TAG_PROJECTILE, p, p)
-	assert_eq(w.bosses.fg_scald, f.scald_hit, "an absorbed hit fills nothing")
+	assert_eq(w.boss_fight.fg_scald, f.scald_hit, "an absorbed hit fills nothing")
 	w.actors.invuln[0] = 0
 	Damage.hit(w, 0, 10, boss, boss, w.take_root(), SimEvent.TAG_AREA, p, p)
-	assert_eq(w.bosses.fg_scald, f.scald_hit, "an area hit is not a shot")
+	assert_eq(w.boss_fight.fg_scald, f.scald_hit, "an area hit is not a shot")
 	# In a pool: + 60 a step (no hurt freeze, so the window holds exactly four beats)
 	w.player.hurt_freeze_ticks = 0
 	w.actors.invuln[0] = 0
 	assert_true(BossHazard.place(w, i, Vector2(6, 6)))
 	w.actors.set_pos(0, Vector2(6, 6))
 	_idle(w, 60)  # armed after its warning
-	var g := w.bosses.fg_scald
+	var g := w.boss_fight.fg_scald
 	_idle(w, f.scald_step_ticks * 4)
-	assert_eq(w.bosses.fg_scald - g, 4 * f.scald_lava, "four steps in lava")
+	assert_eq(w.boss_fight.fg_scald - g, 4 * f.scald_lava, "four steps in lava")
 	# Overpressure: + 40 a step off a slab
 	f.over_phase = LAST
 	ForgeLab.slab(w, s[1], Vector2(-6, -6), 6000)
@@ -487,18 +489,18 @@ func test_the_gauge_fills_from_lava_shots_and_open_floor_and_drains_only_on_a_sl
 	for fld: StringName in BossStore.HZ_INT_FIELDS:
 		w.bosses.set(fld, PackedInt32Array())
 	w.actors.set_pos(0, Vector2(0, -8))
-	w.bosses.fg_over_due = w.tick
-	g = w.bosses.fg_scald
+	w.boss_fight.fg_over_due = w.tick
+	g = w.boss_fight.fg_scald
 	var seq := w.last_event_seq()
 	_idle(w, f.over_cast_ticks + f.over_ticks + 2)
 	var steps := ForgeLab.hurts(w, BossSlag.OVER_EFFECT, seq).size()
-	assert_eq(w.bosses.fg_scald - g, steps * f.scald_open, "40 a step of Overpressure")
+	assert_eq(w.boss_fight.fg_scald - g, steps * f.scald_open, "40 a step of Overpressure")
 	# On a slab: - 125 a step, down to 0
 	w.actors.set_pos(0, Vector2(-6, -6))
-	g = w.bosses.fg_scald
+	g = w.boss_fight.fg_scald
 	_idle(w, f.scald_step_ticks * 2)
-	assert_eq(w.bosses.fg_scald, maxi(0, g - 2 * f.scald_drain), "two steps on a slab")
-	assert_true(_state(w)["scald"]["draining"] or w.bosses.fg_scald == 0)
+	assert_eq(w.boss_fight.fg_scald, maxi(0, g - 2 * f.scald_drain), "two steps on a slab")
+	assert_true(_state(w)["scald"]["draining"] or w.boss_fight.fg_scald == 0)
 
 
 func test_a_full_gauge_burns_five_percent_a_second_until_a_slab_drains_it() -> void:
@@ -513,7 +515,7 @@ func test_a_full_gauge_burns_five_percent_a_second_until_a_slab_drains_it() -> v
 		w.actors.invuln[0] = 0
 		var p := w.player_pos()
 		Damage.hit(w, 0, 1, boss, boss, w.take_root(), SimEvent.TAG_PROJECTILE, p, p)
-	assert_eq(w.bosses.fg_scald, 1000, "five shots fill it")
+	assert_eq(w.boss_fight.fg_scald, 1000, "five shots fill it")
 	assert_eq(_fx(w, BossForge.SCALD_BURN, seq).size(), 1, "the burn starts")
 	assert_true(_state(w)["scald"]["burning"])
 	ForgeLab.take_lost(w)
@@ -526,11 +528,11 @@ func test_a_full_gauge_burns_five_percent_a_second_until_a_slab_drains_it() -> v
 	assert_eq(burns.size(), 10, "every 0.5 s for 5 s, through the invulnerability")
 	for e in burns:
 		assert_eq(e.amount_applied, 25, "2.5 % a step")
-	assert_eq(w.bosses.fg_scald, 1000, "it never falls by itself")
+	assert_eq(w.boss_fight.fg_scald, 1000, "it never falls by itself")
 	ForgeLab.slab(w, s[1], Vector2(-8, 0), 6000)
 	seq = w.last_event_seq()
 	_idle(w, f.scald_step_ticks + 1)
-	assert_eq(w.bosses.fg_scald, 1000 - f.scald_drain)
+	assert_eq(w.boss_fight.fg_scald, 1000 - f.scald_drain)
 	assert_eq(_fx(w, BossForge.SCALD_BURN_END, seq).size(), 1, "below full: the burn stops")
 	assert_false(_state(w)["scald"]["burning"])
 	assert_eq(ForgeLab.hurts(w, BossForge.SCALD_EFFECT, seq).size(), 0)
@@ -543,7 +545,7 @@ func test_the_gauge_stays_empty_before_the_last_phase() -> void:
 	_idle(w, 2)
 	var p := w.player_pos()
 	Damage.hit(w, 0, 10, boss, boss, w.take_root(), SimEvent.TAG_PROJECTILE, p, p)
-	assert_eq(w.bosses.fg_scald, 0)
+	assert_eq(w.boss_fight.fg_scald, 0)
 	assert_eq(_state(w)["scald"], {})
 
 
@@ -555,9 +557,9 @@ func test_the_hero_dying_empties_the_gauge_and_ends_overpressure() -> void:
 	var w: World = s[0]
 	var f := ForgeLab.forge(w, s[1])
 	ForgeLab.slab(w, s[1], Vector2(6, 6), 6000)
-	w.bosses.fg_over_due = w.tick
+	w.boss_fight.fg_over_due = w.tick
 	_idle(w, f.over_cast_ticks + 40)
-	assert_gt(w.bosses.fg_scald, 0)
+	assert_gt(w.boss_fight.fg_scald, 0)
 	assert_true(w.objectives.has(ObjectiveMarkers.FOUNDRY_SLAB))
 	w.actors.hp[0] = 1
 	w.actors.invuln[0] = 0
@@ -566,8 +568,8 @@ func test_the_hero_dying_empties_the_gauge_and_ends_overpressure() -> void:
 		w.step(InputFrame.new())
 	assert_true(w.player_dead())
 	assert_eq(BossCauses.key(w), &"CAUSE_FOUNDRY_FIRESTORM", "the recap names it")
-	assert_eq(w.bosses.fg_scald, 0, "the gauge empties")
-	assert_eq(w.bosses.fg_over_from, -1, "Overpressure ends")
+	assert_eq(w.boss_fight.fg_scald, 0, "the gauge empties")
+	assert_eq(w.boss_fight.fg_over_from, -1, "Overpressure ends")
 	assert_false(w.objectives.has(ObjectiveMarkers.FOUNDRY_SLAB))
 
 
@@ -575,8 +577,8 @@ func test_the_scald_names_the_molten_floor_in_the_recap() -> void:
 	var s := _only(Vector2(-8, 0), LAST, ["scald"])
 	var w: World = s[0]
 	_idle(w, 1)
-	w.bosses.fg_scald = 1000
-	w.bosses.fg_burning = 1
+	w.boss_fight.fg_scald = 1000
+	w.boss_fight.fg_burning = 1
 	w.actors.hp[0] = 1
 	for k in 40:
 		w.step(InputFrame.new())
@@ -589,16 +591,16 @@ func test_everything_goes_with_the_foundry() -> void:
 	var w: World = s[0]
 	var i := _i(w, s[1])
 	ForgeLab.slab(w, s[1], Vector2(6, 6), 6000)
-	w.bosses.fg_plate = 1
-	w.bosses.fg_over_due = w.tick
+	w.boss_fight.fg_plate = 1
+	w.boss_fight.fg_over_due = w.tick
 	_idle(w, 30)
 	assert_ne(_state(w), {})
 	w.actors.hp[i] = 0
 	w.actors.dead[i] = 1
 	_idle(w, 2)
-	assert_eq(w.bosses.fg_boss, -1)
-	assert_eq(w.bosses.slab_id.size(), 0, "its slabs go")
-	assert_eq(w.bosses.fg_plate, 0)
+	assert_eq(w.boss_fight.fg_boss, -1)
+	assert_eq(w.boss_fight.slab_id.size(), 0, "its slabs go")
+	assert_eq(w.boss_fight.fg_plate, 0)
 	assert_false(w.objectives.has(ObjectiveMarkers.FOUNDRY_SLAB))
 	assert_eq(_state(w), {})
 
@@ -648,28 +650,28 @@ func test_a_safe_slab_lies_inside_the_melt_at_every_overpressure_over_seeds() ->
 			seen["seq"] = w.last_event_seq()
 			for e in _fx(w, BossSlag.OVER_CAST, from):
 				seen["casts"] += 1
-				var f := BossAi.table_of(w, w.actors.index_of(w.bosses.fg_boss)).forge
+				var f := BossAi.table_of(w, w.actors.index_of(w.boss_fight.fg_boss)).forge
 				var ok := false
-				for k in w.bosses.slab_id.size():
-					var c := BossSlag.slab_centre(w.bosses, k)
+				for k in w.boss_fight.slab_id.size():
+					var c := BossSlag.slab_centre(w.boss_fight, k)
 					var lasts: bool = (
-						w.bosses.slab_until[k] >= e.tick + f.over_cast_ticks + f.over_ticks
+						w.boss_fight.slab_until[k] >= e.tick + f.over_cast_ticks + f.over_ticks
 					)
 					var cool := true
 					for m: Array in BossLava.melt_shapes(w):
 						var low := BossLava.melt_attack(w, 0).melt_min_m
 						var end_r := maxf(low, float(m[BossLava.MELT_R]) - 2.0)  # one step in 7 s
 						cool = cool and Kin.length(c - (m[BossLava.MELT_CENTRE] as Vector2)) < end_r
-					if lasts and cool and w.bosses.slab_broke[k] == 0 and c == e.pos:
+					if lasts and cool and w.boss_fight.slab_broke[k] == 0 and c == e.pos:
 						ok = true
 				if not ok:
 					var why := []
-					for k in w.bosses.slab_id.size():
+					for k in w.boss_fight.slab_id.size():
 						why.append(
 							[
-								BossSlag.slab_centre(w.bosses, k),
-								w.bosses.slab_until[k] - e.tick,
-								w.bosses.slab_broke[k]
+								BossSlag.slab_centre(w.boss_fight, k),
+								w.boss_fight.slab_until[k] - e.tick,
+								w.boss_fight.slab_broke[k]
 							]
 						)
 					var melts := BossLava.melt_shapes(w).map(
@@ -689,13 +691,13 @@ func test_deterministic_hashed_and_a_save_mid_fight_restores() -> void:
 	var b := _last_phase(7, 60 * 30)
 	assert_eq(a.state_hash(), b.state_hash(), "two runs agree")
 	var before := a.state_hash()
-	a.bosses.fg_scald += 1
+	a.boss_fight.fg_scald += 1
 	assert_ne(a.state_hash(), before, "the gauge is hashed")
-	a.bosses.fg_scald -= 1
-	if not a.bosses.slab_x.is_empty():
-		a.bosses.slab_x[0] += 0.5
+	a.boss_fight.fg_scald -= 1
+	if not a.boss_fight.slab_x.is_empty():
+		a.boss_fight.slab_x[0] += 0.5
 		assert_ne(a.state_hash(), before, "and the slabs")
-		a.bosses.slab_x[0] -= 0.5
+		a.boss_fight.slab_x[0] -= 0.5
 	var snap := WorldSnapshot.take(a)
 	var restored := World.from_snapshot(bytes_to_var(var_to_bytes(snap)), JudgeLab.world(7))
 	assert_not_null(restored, "restores")
@@ -716,7 +718,7 @@ func test_a_world_without_a_forge_keeps_no_forge_state() -> void:
 	var s := TideLab.fight(Vector2(-6, 0), Vector2(6, 0))
 	var w: World = s[0]
 	CombatLab.idle(w, 120)
-	assert_eq(w.bosses.fg_boss, -1)
+	assert_eq(w.boss_fight.fg_boss, -1)
 	assert_eq(WorldReader.new(w).boss_forge(), {})
 
 
@@ -732,6 +734,6 @@ func test_the_overclock_heat_is_untouched() -> void:
 		var p := w.player_pos()
 		Damage.hit(w, 0, 1, boss, boss, w.take_root(), SimEvent.TAG_PROJECTILE, p, p)
 	_idle(w, 120)
-	assert_eq(w.bosses.fg_scald, 1000, "the scald is full")
+	assert_eq(w.boss_fight.fg_scald, 1000, "the scald is full")
 	assert_eq(w.heat.milli, 0, "the Overclock heat is not")
 	assert_eq(w.heat.tier, Heat.TIER_COOL, "and stays cool")

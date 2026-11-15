@@ -1,6 +1,6 @@
 class_name BossRift
 extends RefCounted
-## The Twin Wardens' set piece, Through the Rift (BossWardensTable.rift_*; state in BossStore wd_rift_*). Once a fight,
+## The Twin Wardens' set piece, Through the Rift (BossWardensTable.rift_*; BossFightStore.wd_rift_*). Once a fight,
 ## in the last phase, when rift_hp_permille of its bar is left and the amber Warden is free (between two attacks):
 ## 1. OPEN: three rifts open on a ring round the middle of the boss room, rift_gap_m apart, each clear of walls (the
 ##    ring is turned until all three fit; with no fit the set piece is skipped for good). Neither Warden starts
@@ -40,24 +40,24 @@ const CLOSED := &"warden_rift_close"
 
 ## True while actor i is the amber Warden inside the rifts (BossAi.hidden, passes_through).
 static func inside(w: World, i: int) -> bool:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	return bs.wd_rift_stage == INSIDE and bs.wd_boss == w.actors.ids[i]
 
 
 ## True while the set piece holds the Wardens from starting anything (stages 1-3).
 static func holds(w: World) -> bool:
-	var st := w.bosses.wd_rift_stage
+	var st := w.boss_fight.wd_rift_stage
 	return st >= OPEN and st <= INSIDE
 
 
 ## Rift k's centre.
 static func spot(w: World, k: int) -> Vector2:
-	return Vector2(w.bosses.wd_rift_x[k], w.bosses.wd_rift_y[k])
+	return Vector2(w.boss_fight.wd_rift_x[k], w.boss_fight.wd_rift_y[k])
 
 
 ## Tick phase 6 (BossWardens.advance).
 static func advance(w: World, lead: int, violet: int, wt: BossWardensTable) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var a := w.actors
 	match bs.wd_rift_stage:
 		NONE:
@@ -85,14 +85,15 @@ static func advance(w: World, lead: int, violet: int, wt: BossWardensTable) -> v
 ## True when the set piece begins now.
 static func _due(w: World, lead: int, violet: int, wt: BossWardensTable) -> bool:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var a := w.actors
-	if bs.wd_rift_done == 1 or wt.rift_hp_permille <= 0 or wt.rift_attack < 0 or w.player_dead():
+	if fs.wd_rift_done == 1 or wt.rift_hp_permille <= 0 or wt.rift_attack < 0 or w.player_dead():
 		return false
 	var t := BossAi.table_of(w, lead)
 	var last := t.phase_threshold.size() - 1
 	if bs.phase[BossAi.entry_of(w, lead)] < last or a.state[lead] != S.MOVE:
 		return false
-	if bs.wd_dash_t > 0 or a.dead[violet] == 1:
+	if fs.wd_dash_t > 0 or a.dead[violet] == 1:
 		return false
 	# hp / max_hp <= the last bar's share × rift_hp_permille, in per mille of per mille
 	return a.hp[lead] * 1000000 <= a.max_hp[lead] * t.phase_threshold[last] * wt.rift_hp_permille
@@ -100,7 +101,8 @@ static func _due(w: World, lead: int, violet: int, wt: BossWardensTable) -> bool
 
 static func _open(w: World, lead: int, violet: int, wt: BossWardensTable) -> void:
 	var bs := w.bosses
-	bs.wd_rift_done = 1
+	var fs := w.boss_fight
+	fs.wd_rift_done = 1
 	var room := bs.arena
 	var c := room.get_center() if room.has_area() else w.actors.pos(violet)
 	# Three points on a circle are rift_gap_m apart when its radius is the gap over the square root of 3
@@ -120,12 +122,12 @@ static func _open(w: World, lead: int, violet: int, wt: BossWardensTable) -> voi
 			ys.append(p.y)
 		if xs.size() < COUNT:
 			continue
-		bs.wd_rift_x = xs
-		bs.wd_rift_y = ys
-		bs.wd_rift_stage = OPEN
-		bs.wd_rift_at = w.tick
-		bs.wd_rift_in = -1
-		bs.wd_rift_out = -1
+		fs.wd_rift_x = xs
+		fs.wd_rift_y = ys
+		fs.wd_rift_stage = OPEN
+		fs.wd_rift_at = w.tick
+		fs.wd_rift_in = -1
+		fs.wd_rift_out = -1
 		_tell(w, violet, OPENED, w.actors.pos(violet), wt.rift_open_ticks)
 		return
 
@@ -141,7 +143,7 @@ static func _nearest(w: World, at: Vector2) -> int:
 ## Tick phase 5 (BossTwin.moves): true while the set piece moves the Wardens itself (they stand; in RUN the amber one
 ## runs to its rift and goes in when it gets there).
 static func moves(w: World, i: int, wt: BossWardensTable, slow: float) -> bool:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if not holds(w):
 		return false
 	var a := w.actors
@@ -174,11 +176,12 @@ static func moves(w: World, i: int, wt: BossWardensTable, slow: float) -> bool:
 ## The amber Warden is out: its exit charge runs from the exit toward where the hero stood when it was marked.
 static func _emerge(w: World, lead: int, wt: BossWardensTable) -> void:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var a := w.actors
 	var b := BossAi.entry_of(w, lead)
 	var atk := BossAi.table_of(w, lead).attacks[wt.rift_attack]
-	var from := spot(w, bs.wd_rift_out)
-	var to := Vector2(bs.wd_aim_x, bs.wd_aim_y) - from
+	var from := spot(w, fs.wd_rift_out)
+	var to := Vector2(fs.wd_aim_x, fs.wd_aim_y) - from
 	var aim := Kin.angle_of(to) if Kin.length(to) > 0.0001 else a.facing[lead]
 	a.set_pos(lead, from)
 	a.invuln[lead] = 0
@@ -194,14 +197,14 @@ static func _emerge(w: World, lead: int, wt: BossWardensTable) -> void:
 	bs.step[b] = 0
 	bs.hit[b] = 0
 	bs.chained[b] = 1
-	bs.wd_rift_stage = OUT
-	bs.wd_rift_at = w.tick
+	fs.wd_rift_stage = OUT
+	fs.wd_rift_at = w.tick
 	_tell(w, lead, EXIT, from, 0)
 
 
 ## The rifts close (the charge is over, or the fight is).
 static func close(w: World, lead: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.wd_rift_stage == NONE:
 		return
 	if bs.wd_rift_stage == INSIDE and lead >= 0:
@@ -226,7 +229,7 @@ static func _tell(w: World, i: int, effect: StringName, at: Vector2, ticks: int)
 ## entry (he runs to it), exit (true only once the exit is marked)}]), "inside" (he is gone), "exit_in" (ticks until
 ## he is out, -1 outside INSIDE) and, once marked, "lane" ([from, to]: where he will charge).
 static func state(w: World, lead: int, wt: BossWardensTable) -> Dictionary:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.wd_rift_stage == NONE:
 		return {}
 	var left := bs.wd_rift_at + wt.rift_inside_ticks - w.tick if bs.wd_rift_stage == INSIDE else -1

@@ -160,6 +160,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"ShardDropStore",  # v0.10.5 O7b
 	&"ObjectiveMarkers",  # The hint arrow's markers
 	&"BossStore",
+	&"BossFightStore",  # The bosses' fight mechanics
 	&"RewardStore",
 	&"AbilityState",
 	&"KitState",
@@ -262,8 +263,8 @@ static func apply(base: World, snap: Dictionary) -> String:
 	# A sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
 	# so only the wall grid is rebuilt for them.
 	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # Pillars too
-	barriers += base.bosses.gear_x.size()  # The Clockwork Judge's stopped gears
-	barriers += base.bosses.sg_b_x.size()  # The Siege Engine's boulders
+	barriers += base.boss_fight.gear_x.size()  # The Clockwork Judge's stopped gears
+	barriers += base.boss_fight.sg_b_x.size()  # The Siege Engine's boulders
 	barriers += Secrets.slabs_up(base)  # v0.9.0 TD, RA: the secret rooms' slabs while they stand
 	barriers += base.ruins_rocks.rock_count() + base.ruins_rocks.hide_count()  # Rocks, boulders
 	if base.lockdown != null:  # A sealed Lockdown's bars, as an arena's
@@ -519,6 +520,8 @@ static func _make(cls: StringName) -> Object:
 			return ShardDropStore.new()
 		&"BossStore":
 			return BossStore.new()
+		&"BossFightStore":
+			return BossFightStore.new()
 		&"RewardStore":
 			return RewardStore.new()
 		&"AbilityState":

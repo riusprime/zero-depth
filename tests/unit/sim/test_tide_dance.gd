@@ -220,7 +220,7 @@ func _to_riptide(hero_at: Vector2, seed_value: int = 11) -> Array:
 
 ## A strip struck in the row's first three casts and safe in its last, by the row's mirror.
 func _edge_strip(w: World) -> int:
-	return 3 if w.bosses.dance_rip_mirror == 0 else 0
+	return 3 if w.boss_fight.dance_rip_mirror == 0 else 0
 
 
 func test_a_row_is_four_casts_three_strips_each_tick_exact() -> void:
@@ -244,7 +244,7 @@ func test_a_row_is_four_casts_three_strips_each_tick_exact() -> void:
 		w.step(InputFrame.new())
 		lost += TideLab.take_lost(w)
 		w.actors.invuln[0] = 0
-		if w.bosses.dance_rip_from < 0:
+		if w.boss_fight.dance_rip_from < 0:
 			break
 	var casts := _fx(w, BossDance.RIP_CAST)
 	var waves := _fx(w, BossDance.RIP_WAVE)
@@ -269,7 +269,9 @@ func test_a_row_is_four_casts_three_strips_each_tick_exact() -> void:
 	assert_eq(w.tick - waves[3].tick, 37, "the row ends with its last wave")
 	assert_eq(_state(w)["riptide"], {})
 	var gap := d.calm_ticks + d.gap_ticks(1)
-	assert_eq(w.bosses.dance_beat_at, w.tick - 1 + gap, "the next beat 3 s and 8 s after it ended")
+	assert_eq(
+		w.boss_fight.dance_beat_at, w.tick - 1 + gap, "the next beat 3 s and 8 s after it ended"
+	)
 	var again := JudgeLab.until_effect(w, BossDance.RIP_CAST, 900, casts[3].seq)
 	assert_eq(again.tick, waves[3].tick + 36 + gap)
 
@@ -366,7 +368,7 @@ func test_the_pull_and_a_row_never_run_together_before_the_maelstrom() -> void:
 		var i := _i(w, aid)
 		w.actors.hp[i] = maxi(w.actors.hp[i], 1200)
 		var pull := not BossTide.state(w, i).is_empty()
-		var row := w.bosses.dance_rip_from >= 0
+		var row := w.boss_fight.dance_rip_from >= 0
 		pulls += 1 if pull else 0
 		rows += 1 if row else 0
 		both += 1 if pull and row else 0
@@ -424,7 +426,7 @@ func test_outside_the_circle_costs_6_percent_a_second_for_6_s() -> void:
 			paid.append(w.tick)
 			assert_eq(lost, step, "3 % of max HP a step")
 		total += lost
-		if w.bosses.dance_ht_from < 0:
+		if w.boss_fight.dance_ht_from < 0:
 			break
 	var flood := _fx(w, BossDance.HT_FLOOD)
 	var done := _fx(w, BossDance.HT_END)
@@ -437,7 +439,9 @@ func test_outside_the_circle_costs_6_percent_a_second_for_6_s() -> void:
 	assert_eq(done[0].tick - flood[0].tick, 360)
 	assert_false(w.objectives.has(ObjectiveMarkers.TIDE_DRY), "the marker goes")
 	assert_eq(_state(w)["high_tide"], {})
-	assert_eq(w.bosses.dance_beat_at, done[0].tick + 780, "the next 3 s and 10 s after it ended")
+	assert_eq(
+		w.boss_fight.dance_beat_at, done[0].tick + 780, "the next 3 s and 10 s after it ended"
+	)
 	assert_eq(_idle(w, 120), 0, "and nothing after it")
 
 
@@ -539,7 +543,7 @@ func test_the_maelstrom_carries_the_hero_round_and_in() -> void:
 			assert_true(cross * turn >= 0.0, "one way")
 			turn = cross if cross != 0.0 else turn
 	assert_eq(_fx(w, BossMaelstrom.BEGIN).size(), 1, "one whirlpool, one way")
-	assert_eq(w.bosses.dance_spin, spin)
+	assert_eq(w.boss_fight.dance_spin, spin)
 
 
 func test_both_ways_come_up_over_seeds() -> void:
@@ -547,7 +551,7 @@ func test_both_ways_come_up_over_seeds() -> void:
 	for sv in 40:
 		var s := _whirl(Vector2(8, 0), Vector2.ZERO, sv + 1)
 		(s[0] as World).step(InputFrame.new())
-		seen[(s[0] as World).bosses.dance_spin] = true
+		seen[(s[0] as World).boss_fight.dance_spin] = true
 	assert_eq(seen.size(), 2)
 	assert_true(seen.has(1) and seen.has(-1))
 
@@ -631,7 +635,7 @@ func test_no_pull_is_cast_in_the_maelstrom_and_its_casts_never_overlap() -> void
 		w.actors.hp[i] = maxi(w.actors.hp[i], 400)
 		var atk := BossAi.attack_of(w, i)
 		pulls += 1 if atk != null and atk.move == BossAttackTable.Move.TIDE else 0
-		both += 1 if w.bosses.dance_rip_from >= 0 and w.bosses.dance_ht_from >= 0 else 0
+		both += 1 if w.boss_fight.dance_rip_from >= 0 and w.boss_fight.dance_ht_from >= 0 else 0
 	assert_eq(pulls, 0, "no Pull")
 	assert_eq(both, 0, "a row and a High Tide never run together")
 	assert_gte(_fx(w, BossDance.RIP_CAST).size(), 4, "Riptide is cast on top of it")
@@ -774,7 +778,7 @@ func test_a_live_high_tide_never_floods_the_eye_over_seeds() -> void:
 			TideLab.take_lost(w)
 			var i := _i(w, aid)
 			w.actors.hp[i] = maxi(w.actors.hp[i], 400)
-			if w.bosses.dance_ht_from < 0:
+			if w.boss_fight.dance_ht_from < 0:
 				continue
 			floods += 1
 			var gap := BossDance.dry_centre(w).distance_to(w.actors.pos(i))
@@ -870,9 +874,9 @@ func _mid_fight(seed_value: int, ticks: int = 60 * 40) -> World:
 
 func test_everything_goes_when_the_tidecaller_dies() -> void:
 	var w := _mid_fight(7, 60 * 12)
-	var aid := w.bosses.dance_boss
+	var aid := w.boss_fight.dance_boss
 	assert_gte(aid, 0)
-	assert_gte(w.bosses.dance_ht_from, 0, "a High Tide runs")
+	assert_gte(w.boss_fight.dance_ht_from, 0, "a High Tide runs")
 	assert_true(w.objectives.has(ObjectiveMarkers.TIDE_DRY))
 	assert_true(BossHazard.place(w, _i(w, aid), Vector2(-9, -9)))  # The Maelstrom forms no wave
 	assert_gt(WorldReader.new(w).boss_hazards().size(), 0, "tide pools lie")
@@ -885,7 +889,7 @@ func test_everything_goes_when_the_tidecaller_dies() -> void:
 		w.step(InputFrame.new())
 		w.actors.hp[0] = TideLab.LONG
 	assert_lt(_i(w, aid), 0, "it is gone")
-	var bs := w.bosses
+	var bs := w.boss_fight
 	assert_eq([bs.dance_boss, bs.dance_rip_from, bs.dance_ht_from], [-1, -1, -1], "the casts")
 	assert_eq([bs.dance_spin, bs.dance_throw, bs.dance_grace], [0, 0, 0], "the whirlpool")
 	assert_false(w.objectives.has(ObjectiveMarkers.TIDE_DRY), "the marker")
@@ -902,14 +906,14 @@ func test_dying_or_leaving_the_room_ends_the_casts() -> void:
 		var s := _only(Vector2(9, -4), 2, ["riptide", "high_tide"])
 		var w: World = s[0]
 		JudgeLab.until_effect(w, BossDance.HT_CAST, 600)
-		w.bosses.dance_rip_from = w.tick  # A row too, as if both could run
+		w.boss_fight.dance_rip_from = w.tick  # A row too, as if both could run
 		if dead:
 			w.actors.hp[0] = 0
 			w.actors.dead[0] = 1
 		else:
 			w.actors.set_pos(0, Vector2(0, 20))
 		w.step(InputFrame.new())
-		assert_eq([w.bosses.dance_rip_from, w.bosses.dance_ht_from], [-1, -1])
+		assert_eq([w.boss_fight.dance_rip_from, w.boss_fight.dance_ht_from], [-1, -1])
 		assert_false(w.objectives.has(ObjectiveMarkers.TIDE_DRY))
 		assert_eq(_fx(w, BossDance.HT_END).size(), 1)
 		var seq := w.events_since(0).back().seq as int
@@ -965,15 +969,15 @@ func test_deterministic_hashed_and_a_save_mid_fight_restores() -> void:
 	assert_gt(_fx(a, BossDance.RIP_CAST).size(), 0, "a row was cast")
 	assert_gt(_fx(a, BossDance.HT_CAST).size(), 0, "a High Tide too")
 	var before := a.state_hash()
-	a.bosses.dance_grace += 1
+	a.boss_fight.dance_grace += 1
 	assert_ne(a.state_hash(), before, "the clocks are hashed")
-	a.bosses.dance_grace -= 1
-	a.bosses.dance_ht_x += 0.5
+	a.boss_fight.dance_grace -= 1
+	a.boss_fight.dance_ht_x += 0.5
 	assert_ne(a.state_hash(), before, "and the dry circle")
 	# A save with a High Tide running, then one with a row running
 	for ticks: int in [60 * 12, 60 * 33]:
 		var c := _mid_fight(7, ticks)
-		var bs := c.bosses
+		var bs := c.boss_fight
 		assert_true(bs.dance_ht_from >= 0 or bs.dance_rip_from >= 0, "a cast runs at %d" % ticks)
 		var snap := WorldSnapshot.take(c)
 		var restored := World.from_snapshot(bytes_to_var(var_to_bytes(snap)), JudgeLab.world(7))
@@ -995,5 +999,5 @@ func test_a_world_without_a_dance_keeps_no_dance_state() -> void:
 	var s := JudgeLab.fight(Vector2(-6, 0), Vector2(6, 0))
 	var w: World = s[0]
 	CombatLab.idle(w, 120)
-	assert_eq(w.bosses.dance_boss, -1)
+	assert_eq(w.boss_fight.dance_boss, -1)
 	assert_eq(WorldReader.new(w).boss_dance(), {})

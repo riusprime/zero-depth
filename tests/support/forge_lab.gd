@@ -44,7 +44,7 @@ static func set_phase(w: World, aid: int, phase: int) -> void:
 
 ## A slab of the Foundry's at c (its pools' radius) that crumbles `life` ticks from now. Returns its index.
 static func slab(w: World, aid: int, c: Vector2, life: int = 480) -> int:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	bs.slab_id.append(bs.fg_slab_next)
 	bs.fg_slab_next += 1
 	bs.slab_boss.append(aid)

@@ -315,7 +315,7 @@ func test_phase_2_opens_with_its_riptide_and_phase_3_with_no_pull() -> void:
 	var opens := BossAi.attack_of(w, _i(w, aid))
 	assert_true(opens == null or opens.move != BossAttackTable.Move.TIDE, "no Pull opens phase 2")
 	CombatLab.idle(w, 1)
-	assert_eq(w.bosses.dance_beat_phase, 1)
+	assert_eq(w.boss_fight.dance_beat_phase, 1)
 	assert_eq(
 		BossTideBeats.next_of(
 			w, BossAi.table_of(w, _i(w, aid)), BossAi.table_of(w, _i(w, aid)).dance, 1
@@ -348,11 +348,11 @@ func test_deterministic_and_a_mid_pull_save_restores() -> void:
 		a.step(InputFrame.new())
 		b.step(InputFrame.new())
 	assert_eq(a.state_hash(), b.state_hash(), "two runs agree mid-fight")
-	assert_gte(a.bosses.dance_beat_k, 1, "the rhythm is in the state")
+	assert_gte(a.boss_fight.dance_beat_k, 1, "the rhythm is in the state")
 	var before := a.state_hash()
-	a.bosses.dance_beat_end += 1
+	a.boss_fight.dance_beat_end += 1
 	assert_ne(a.state_hash(), before, "and in the hash")
-	a.bosses.dance_beat_end -= 1
+	a.boss_fight.dance_beat_end -= 1
 	var snap := WorldSnapshot.take(a)
 	var restored := World.from_snapshot(bytes_to_var(var_to_bytes(snap)), make.call())
 	assert_not_null(restored, "restores")

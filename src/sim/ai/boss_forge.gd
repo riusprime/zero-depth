@@ -1,7 +1,7 @@
 class_name BossForge
 extends RefCounted
-## The Foundry's forge (BossTable.forge, a BossForgeTable; BossStore.fg_*): a plate its own bomb drones blow off, and
-## the scald gauge the hero carries in its last phase. The cooling slag and Overpressure are BossSlag's. All are
+## The Foundry's forge (BossTable.forge, a BossForgeTable; BossFightStore.fg_*): a plate its own bomb drones blow off,
+## and the scald gauge the hero carries in its last phase. The cooling slag and Overpressure are BossSlag's. All are
 ## beside the boss's attacks (casts, not attacks: it goes on fighting).
 ## - The Forged Plate, from plate_phase: the first forging begins plate_first_ticks into that phase, then one is due
 ##   plate_every_ticks after each blow (never while it wears one). The forging lasts plate_cast_ticks; then the boss
@@ -59,9 +59,10 @@ static func advance(w: World) -> void:
 ## has reached the forge's first phase (so its earlier phase hashes as before); one at a time.
 static func _forger(w: World) -> int:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var a := w.actors
-	if bs.fg_boss >= 0:
-		var i := a.index_of(bs.fg_boss)
+	if fs.fg_boss >= 0:
+		var i := a.index_of(fs.fg_boss)
 		return i if i >= 0 and a.dead[i] == 0 else -1
 	for b in bs.size():
 		var t: BossTable = w.boss_tables[bs.table[b]]
@@ -70,15 +71,15 @@ static func _forger(w: World) -> int:
 			continue
 		if bs.phase[b] < t.forge.first_phase():
 			continue
-		bs.clear_forge()
-		bs.fg_boss = bs.ids[b]
+		fs.clear_forge()
+		fs.fg_boss = bs.ids[b]
 		return i
 	return -1
 
 
 ## The forge of the boss with actor id `boss_id` when it runs the forge, else null.
 static func forge_of(w: World, boss_id: int) -> BossForgeTable:
-	if w.bosses.fg_boss < 0 or w.bosses.fg_boss != boss_id:
+	if w.boss_fight.fg_boss < 0 or w.boss_fight.fg_boss != boss_id:
 		return null
 	var i := w.actors.index_of(boss_id)
 	return BossAi.table_of(w, i).forge if i >= 0 else null
@@ -88,7 +89,7 @@ static func forge_of(w: World, boss_id: int) -> BossForgeTable:
 
 
 static func _plate(w: World, i: int, f: BossForgeTable, phase: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if phase < f.plate_phase:
 		return
 	if bs.fg_plate_due < 0:
@@ -132,7 +133,7 @@ static func _blasts(w: World, i: int, f: BossForgeTable) -> void:
 		var at := Vector2(a.lock_x[j], a.lock_y[j])
 		if Kin.length(at - a.pos(i)) > reach:
 			continue
-		var bs := w.bosses
+		var bs := w.boss_fight
 		bs.fg_plate = 0
 		bs.fg_exposed_until = w.tick + f.exposed_ticks
 		bs.fg_plate_due = w.tick + f.plate_every_ticks
@@ -144,7 +145,7 @@ static func _blasts(w: World, i: int, f: BossForgeTable) -> void:
 
 ## While plated with no drone alive or arriving, one is launched (not while the boss kneels).
 static func _drone(w: World, i: int, f: BossForgeTable) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if f.drone_kind < 0 or w.enemy_table(f.drone_kind) == null or w.actors.state[i] == BossAi.GATE:
 		return
 	if BossAi.alive_of(w, f.drone_kind) > 0:
@@ -178,7 +179,7 @@ static func drone_spot(w: World, i: int, f: BossForgeTable) -> Vector2:
 ## Damage: the share of a hit or tick from the hero that boss `target` (an actor index) takes: plate_taken while it
 ## wears the plate, exposed_taken while it is exposed, else 1000.
 static func taken_permille(w: World, target: int) -> int:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.fg_boss < 0 or w.actors.ids[target] != bs.fg_boss:
 		return 1000
 	var f := BossAi.table_of(w, target).forge
@@ -195,7 +196,7 @@ static func taken_permille(w: World, target: int) -> int:
 
 
 static func _scald(w: World, i: int, f: BossForgeTable, phase: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if phase < f.scald_phase or w.player_dead():
 		return
 	if bs.fg_scald_at < 0:
@@ -239,7 +240,7 @@ static func in_lava(w: World, i: int, p: Vector2) -> bool:
 
 ## The gauge set to g (held to 0..scald_max); the burn starts at the max and stops below it.
 static func set_scald(w: World, i: int, f: BossForgeTable, g: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	bs.fg_scald = clampi(g, 0, f.scald_max)
 	var full := 1 if bs.fg_scald >= f.scald_max else 0
 	if full == bs.fg_burning:
@@ -253,7 +254,8 @@ static func set_scald(w: World, i: int, f: BossForgeTable, g: int) -> void:
 ## the gauge in its scald phase.
 static func on_hero_hurt(w: World, owner_id: int, tags: int, applied: int) -> void:
 	var bs := w.bosses
-	if bs.fg_boss < 0 or owner_id != bs.fg_boss or applied <= 0:
+	var fs := w.boss_fight
+	if fs.fg_boss < 0 or owner_id != fs.fg_boss or applied <= 0:
 		return
 	if not (tags & SimEvent.TAG_PROJECTILE) or tags & SimEvent.TAG_DOT:
 		return
@@ -263,7 +265,7 @@ static func on_hero_hurt(w: World, owner_id: int, tags: int, applied: int) -> vo
 	var f := BossAi.table_of(w, i).forge
 	if f == null or bs.phase[BossAi.entry_of(w, i)] < f.scald_phase:
 		return
-	set_scald(w, i, f, bs.fg_scald + f.scald_hit)
+	set_scald(w, i, f, fs.fg_scald + f.scald_hit)
 
 
 # --- the end of a fight -------------------------------------------------------------------------------------------
@@ -271,7 +273,7 @@ static func on_hero_hurt(w: World, owner_id: int, tags: int, applied: int) -> vo
 
 ## The hero is dead or outside the room: the gauge empties and Overpressure ends (the plate and the slabs stay).
 static func cancel(w: World) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var i := w.actors.index_of(bs.fg_boss) if bs.fg_boss >= 0 else -1
 	if bs.fg_burning == 1 and i >= 0:
 		_event(w, i, SCALD_BURN_END, w.player_pos()).target_id = w.actors.ids[0]
@@ -282,9 +284,9 @@ static func cancel(w: World) -> void:
 
 ## BossSignatures.on_boss_gone: the boss that ran the forge takes it, its slabs and the marker with it.
 static func on_boss_gone(w: World, boss_id: int) -> void:
-	if w.bosses.fg_boss != boss_id:
+	if w.boss_fight.fg_boss != boss_id:
 		return
-	w.bosses.clear_forge()
+	w.boss_fight.clear_forge()
 	w.objectives.clear(ObjectiveMarkers.FOUNDRY_SLAB)
 
 
@@ -311,34 +313,35 @@ static func event(w: World, i: int, effect: StringName, at: Vector2) -> SimEvent
 ## is above 0)).
 static func state(w: World) -> Dictionary:
 	var bs := w.bosses
-	var i := w.actors.index_of(bs.fg_boss) if bs.fg_boss >= 0 else -1
+	var fs := w.boss_fight
+	var i := w.actors.index_of(fs.fg_boss) if fs.fg_boss >= 0 else -1
 	if i < 0:
 		return {}
 	var f := BossAi.table_of(w, i).forge
 	var phase := bs.phase[BossAi.entry_of(w, i)]
 	var forging := -1
-	if bs.fg_cast_from >= 0:
-		forging = clampi((w.tick - bs.fg_cast_from) * 1000 / maxi(1, f.plate_cast_ticks), 0, 1000)
+	if fs.fg_cast_from >= 0:
+		forging = clampi((w.tick - fs.fg_cast_from) * 1000 / maxi(1, f.plate_cast_ticks), 0, 1000)
 	var scald := {}
 	if phase >= f.scald_phase:
 		scald = {
-			"gauge": bs.fg_scald,
+			"gauge": fs.fg_scald,
 			"max": f.scald_max,
-			"burning": bs.fg_burning == 1,
-			"draining": bs.fg_scald > 0 and BossSlag.slab_under(w, w.player_pos()) >= 0,
+			"burning": fs.fg_burning == 1,
+			"draining": fs.fg_scald > 0 and BossSlag.slab_under(w, w.player_pos()) >= 0,
 		}
 	return {
 		"boss": i,
 		"plate":
 		{
 			"forging": forging,
-			"on": bs.fg_plate == 1,
-			"exposed_left": maxi(0, bs.fg_exposed_until - w.tick),
+			"on": fs.fg_plate == 1,
+			"exposed_left": maxi(0, fs.fg_exposed_until - w.tick),
 			"taken": taken_permille(w, i),
-			"next_in": maxi(0, bs.fg_plate_due - w.tick) if bs.fg_plate_due >= 0 else -1,
+			"next_in": maxi(0, fs.fg_plate_due - w.tick) if fs.fg_plate_due >= 0 else -1,
 		},
 		"slabs": BossSlag.rows(w, i, f),
 		"overpressure": BossSlag.over_state(w, f),
-		"overpressure_in": maxi(0, bs.fg_over_due - w.tick) if bs.fg_over_due >= 0 else -1,
+		"overpressure_in": maxi(0, fs.fg_over_due - w.tick) if fs.fg_over_due >= 0 else -1,
 		"scald": scald,
 	}

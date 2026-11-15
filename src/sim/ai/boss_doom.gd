@@ -1,7 +1,7 @@
 class_name BossDoom
 extends RefCounted
-## The Siege Engine's Doom Shell (BossSiegeTable.doom_*, cart_*; BossStore.sg_doom_*, sg_cart_*): an ammo cart rolls
-## across the room to the boss. Run by BossSiege, beside the boss's attacks.
+## The Siege Engine's Doom Shell (BossSiegeTable.doom_*, cart_*; BossFightStore.sg_doom_*, sg_cart_*): an ammo cart
+## rolls across the room to the boss. Run by BossSiege, beside the boss's attacks.
 ## - From doom_phase, carts_in(phase) carts a phase: the first doom_first_ticks into the phase, then one every
 ##   doom_every_ticks; never while one is out, a Doom Shell is due, the boss kneels at a phase change or winds up a
 ##   Shockwave under the cover rule (and that Shockwave waits for the cart: BossSiege.holds).
@@ -44,18 +44,19 @@ const WARN_TICKS := 120
 ## BossSiege.advance: boss i's carts in `phase`.
 static func advance(w: World, i: int, st: BossSiegeTable, phase: int) -> void:
 	var bs := w.bosses
-	if phase >= st.doom_phase and bs.sg_doom_phase != phase:
-		bs.sg_doom_phase = phase
-		bs.sg_doom_n = 0
-		bs.sg_doom_due = w.tick + st.doom_first_ticks
-	if bs.sg_doom_at >= 0:
-		if w.tick >= bs.sg_doom_at:
+	var fs := w.boss_fight
+	if phase >= st.doom_phase and fs.sg_doom_phase != phase:
+		fs.sg_doom_phase = phase
+		fs.sg_doom_n = 0
+		fs.sg_doom_due = w.tick + st.doom_first_ticks
+	if fs.sg_doom_at >= 0:
+		if w.tick >= fs.sg_doom_at:
 			_fire(w, i, st)
 		return
-	if bs.sg_cart_from >= 0:
+	if fs.sg_cart_from >= 0:
 		_roll(w, i, st)
 		return
-	if bs.sg_doom_due < 0 or w.tick < bs.sg_doom_due or bs.sg_doom_n >= st.carts_in(phase):
+	if fs.sg_doom_due < 0 or w.tick < fs.sg_doom_due or fs.sg_doom_n >= st.carts_in(phase):
 		return
 	var atk := BossAi.attack_of(w, i) if bs.attack[BossAi.entry_of(w, i)] >= 0 else null
 	if w.actors.state[i] == BossAi.GATE or BossSiege.covers(w, i, atk):
@@ -65,12 +66,12 @@ static func advance(w: World, i: int, st: BossSiegeTable, phase: int) -> void:
 
 ## True while a cart is out or a Doom Shell is due.
 static func busy(w: World) -> bool:
-	return w.bosses.sg_cart_from >= 0 or w.bosses.sg_doom_at >= 0
+	return w.boss_fight.sg_cart_from >= 0 or w.boss_fight.sg_doom_at >= 0
 
 
 ## True while a Doom Shell comes: its cart has WARN_TICKS of its roll left or less, or it is due.
 static func coming(w: World, st: BossSiegeTable) -> bool:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.sg_doom_at >= 0:
 		return true
 	return bs.sg_cart_from >= 0 and w.tick - bs.sg_cart_from >= st.cart_ticks - WARN_TICKS
@@ -78,7 +79,7 @@ static func coming(w: World, st: BossSiegeTable) -> bool:
 
 ## Sends a cart along the farthest open way, or tries again RETRY_TICKS later.
 static func _send(w: World, i: int, st: BossSiegeTable) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var way := way_of(w, i, st)
 	if way.is_empty() or w.enemy_table(st.cart_kind) == null:
 		bs.sg_doom_due = w.tick + RETRY_TICKS
@@ -153,7 +154,7 @@ static func _open(w: World, a: Vector2, b: Vector2, r: float) -> bool:
 static func make_cart(w: World, i: int, egg: Array) -> bool:
 	if egg.size() != 1 or int(egg[0]) != CART:
 		return false
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var a := w.actors
 	var boss := a.index_of(bs.sg_boss) if bs.sg_boss >= 0 else -1
 	if boss < 0 or bs.sg_cart_from < 0:
@@ -184,14 +185,14 @@ static func leave(w: World, i: int) -> void:
 
 ## Where the cart stands `t` ticks into its roll.
 static func cart_at(w: World, st: BossSiegeTable, t: int) -> Vector2:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var a := Vector2(bs.sg_cart_ax, bs.sg_cart_ay)
 	var b := Vector2(bs.sg_cart_bx, bs.sg_cart_by)
 	return a + (b - a) * (clampi(t, 0, st.cart_ticks) / float(st.cart_ticks))
 
 
 static func _roll(w: World, i: int, st: BossSiegeTable) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var t := w.tick - bs.sg_cart_from
 	if bs.sg_cart < 0:
 		if t > 1:  # Its body never came (no room for it): no cart this time
@@ -216,7 +217,7 @@ static func _roll(w: World, i: int, st: BossSiegeTable) -> void:
 
 ## The cart was destroyed at `at`: it blasts (the class comment's rule).
 static func _blast(w: World, i: int, st: BossSiegeTable, at: Vector2) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	bs.sg_cart = -1
 	bs.sg_cart_from = -1
 	var got := 0
@@ -237,7 +238,7 @@ static func _blast(w: World, i: int, st: BossSiegeTable, at: Vector2) -> void:
 
 ## The Doom Shell fires (the class comment's rule).
 static func _fire(w: World, i: int, st: BossSiegeTable) -> void:
-	w.bosses.sg_doom_at = -1
+	w.boss_fight.sg_doom_at = -1
 	var got := 0
 	var shattered := -1
 	if not w.player_dead():
@@ -252,7 +253,7 @@ static func _fire(w: World, i: int, st: BossSiegeTable) -> void:
 
 ## The hero is dead or outside the room, or the boss is gone: the cart crumbles (no blast) and a Doom Shell due goes.
 static func cancel(w: World) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var ci := w.actors.index_of(bs.sg_cart) if bs.sg_cart >= 0 else -1
 	if ci >= 0 and w.actors.dead[ci] == 0:
 		leave(w, ci)
@@ -273,24 +274,25 @@ static func _event(w: World, i: int, effect: StringName, at: Vector2) -> SimEven
 ## (ticks until the Doom Shell fires, -1 none due), "doom_in" (ticks until the next cart may roll, -1 none yet).
 static func state(w: World, i: int, st: BossSiegeTable) -> Dictionary:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var cart := {}
-	if bs.sg_cart_from >= 0:
-		var t := w.tick - bs.sg_cart_from
-		var ci := w.actors.index_of(bs.sg_cart) if bs.sg_cart >= 0 else -1
+	if fs.sg_cart_from >= 0:
+		var t := w.tick - fs.sg_cart_from
+		var ci := w.actors.index_of(fs.sg_cart) if fs.sg_cart >= 0 else -1
 		cart = {
-			"id": bs.sg_cart,
+			"id": fs.sg_cart,
 			"position": w.actors.pos(ci) if ci >= 0 else cart_at(w, st, t),
-			"from": Vector2(bs.sg_cart_ax, bs.sg_cart_ay),
-			"to": Vector2(bs.sg_cart_bx, bs.sg_cart_by),
+			"from": Vector2(fs.sg_cart_ax, fs.sg_cart_ay),
+			"to": Vector2(fs.sg_cart_bx, fs.sg_cart_by),
 			"hp": w.actors.hp[ci] if ci >= 0 else 0,
 			"max": w.actors.max_hp[ci] if ci >= 0 else 0,
 			"progress": clampi(t * 1000 / st.cart_ticks, 0, 1000),
 			"left": maxi(0, st.cart_ticks - t),
 			"state": &"rolling",
 		}
-	var more := bs.sg_doom_n < st.carts_in(bs.phase[BossAi.entry_of(w, i)])
+	var more := fs.sg_doom_n < st.carts_in(bs.phase[BossAi.entry_of(w, i)])
 	return {
 		"cart": cart,
-		"doom": maxi(0, bs.sg_doom_at - w.tick) if bs.sg_doom_at >= 0 else -1,
-		"doom_in": maxi(0, bs.sg_doom_due - w.tick) if bs.sg_doom_due >= 0 and more else -1,
+		"doom": maxi(0, fs.sg_doom_at - w.tick) if fs.sg_doom_at >= 0 else -1,
+		"doom_in": maxi(0, fs.sg_doom_due - w.tick) if fs.sg_doom_due >= 0 and more else -1,
 	}

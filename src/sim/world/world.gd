@@ -296,6 +296,8 @@ var phase_guard_next := 0
 var boss_tables: Array[BossTable] = []
 ## The live bosses' own state (stagger, phase, the attack in progress).
 var bosses := BossStore.new()
+## The state of the bosses' fight mechanics (the time, the dance, the wardens, the siege, the forge).
+var boss_fight := BossFightStore.new()
 ## The boss attack (index in its table) that killed the player, or -1 (the recap's cause line).
 var killer_attack := -1
 ## The actor id of the last boss spawned while it lives, or -1 (the dev panel's Kill boss, the run flow).
@@ -1548,6 +1550,7 @@ func state_hash() -> String:
 	# Bosses: only in a world with boss tables, so worlds without bosses hash as before.
 	if not boss_tables.is_empty():
 		bosses.hash_into(h)
+		boss_fight.hash_into(h)
 		h.add_int(killer_attack)
 		h.add_int(boss_id)
 	if not enemy_tables.is_empty():  # Enemy AI: only worlds with enemies, so the kernel golden holds.

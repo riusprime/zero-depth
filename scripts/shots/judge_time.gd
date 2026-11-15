@@ -47,8 +47,8 @@ func _initialize() -> void:
 	_boss = s[1]
 	JudgeLab.hush(_world, _boss)
 	BossAi.table_of(_world, _i()).speed = 0.0
-	_world.bosses.time_bell_due = 1 << 29
-	_world.bosses.time_field_due = 1 << 29
+	_world.boss_fight.time_bell_due = 1 << 29
+	_world.boss_fight.time_field_due = 1 << 29
 	_world.step(InputFrame.new())
 	_reader = WorldReader.new(_world)
 	_view = WorldViewRoot.new()
@@ -175,7 +175,7 @@ func _process(_delta: float) -> bool:
 					break
 				_hero += Vector2(0.02, -0.02)
 				_step(1)
-			_world.bosses.time_bell_due = _world.tick
+			_world.boss_fight.time_bell_due = _world.tick
 			var mid := (_hero + _world.actors.pos(_i())) * 0.5 + Vector2(0.4, 0.3)
 			BossShotFields.place(_world, _boss, BossAi.table_of(_world, _i()).time.field, mid)
 			_shoot = true

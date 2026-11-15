@@ -39,7 +39,7 @@ static func hush(w: World, aid: int, still := true) -> void:
 	t.twin_bolt = -1
 	t.wardens.dash_every_ticks = LONG
 	t.wardens.rift_hp_permille = 0
-	w.bosses.wd_dash_cd = LONG
+	w.boss_fight.wd_dash_cd = LONG
 	if still:
 		t.speed = 0.0
 

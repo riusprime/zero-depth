@@ -1,6 +1,6 @@
 class_name BossSiege
 extends RefCounted
-## The Siege Engine's siege (BossTable.siege, a BossSiegeTable; BossStore.sg_*): its shells leave the boulders you
+## The Siege Engine's siege (BossTable.siege, a BossSiegeTable; BossFightStore.sg_*): its shells leave the boulders you
 ## hide behind. Beside the boss's attacks (they are not attacks: it goes on fighting). The Doom Shell's cart is
 ## BossDoom's.
 ## - The Target Lock, from lock_phase: the first lock_first_ticks into that phase, then one every lock_every_ticks
@@ -65,7 +65,7 @@ const ALL := -2
 ## Tick phase 6 (BossSignatures.advance): boulders whose time is up crumble; the boss with a siege runs its lock,
 ## its cart (BossDoom) and the markers.
 static func advance(w: World) -> void:
-	if not w.bosses.sg_b_x.is_empty():
+	if not w.boss_fight.sg_b_x.is_empty():
 		drop(w, DUE)
 	var i := _sieger(w)
 	if i < 0:
@@ -85,17 +85,18 @@ static func advance(w: World) -> void:
 ## risen; one at a time.
 static func _sieger(w: World) -> int:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var a := w.actors
-	if bs.sg_boss >= 0:
-		var i := a.index_of(bs.sg_boss)
+	if fs.sg_boss >= 0:
+		var i := a.index_of(fs.sg_boss)
 		return i if i >= 0 and a.dead[i] == 0 else -1
 	for b in bs.size():
 		var t: BossTable = w.boss_tables[bs.table[b]]
 		var i := a.index_of(bs.ids[b])
 		if t.siege == null or i < 0 or a.dead[i] == 1 or a.state[i] == EnemyAi.State.SPAWN:
 			continue
-		bs.clear_siege()
-		bs.sg_boss = bs.ids[b]
+		fs.clear_siege()
+		fs.sg_boss = bs.ids[b]
 		return i
 	return -1
 
@@ -113,7 +114,7 @@ static func room_of(w: World, i: int) -> Rect2:
 
 
 static func _lock(w: World, i: int, st: BossSiegeTable, phase: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if phase >= st.lock_phase and bs.sg_lock_due < 0:
 		bs.sg_lock_due = w.tick + st.lock_first_ticks
 	if bs.sg_lock_from < 0:
@@ -143,12 +144,12 @@ static func _lock(w: World, i: int, st: BossSiegeTable, phase: int) -> void:
 
 ## Where the lock's circle stands now.
 static func lock_centre(w: World) -> Vector2:
-	return Vector2(w.bosses.sg_lock_x, w.bosses.sg_lock_y)
+	return Vector2(w.boss_fight.sg_lock_x, w.boss_fight.sg_lock_y)
 
 
 ## The shell lands on the lock's circle (the class comment's rule).
 static func _land(w: World, i: int, st: BossSiegeTable) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var c := lock_centre(w)
 	bs.sg_lock_from = -1
 	bs.sg_landed = w.tick
@@ -176,7 +177,7 @@ static func _land(w: World, i: int, st: BossSiegeTable) -> void:
 
 
 ## Boulder k as the wall it is.
-static func boulder_obb(bs: BossStore, k: int) -> Obb:
+static func boulder_obb(bs: BossFightStore, k: int) -> Obb:
 	var h := bs.sg_b_h[k]
 	return Obb.make(Vector2(bs.sg_b_x[k], bs.sg_b_y[k]), Vector2(h, h), 0)
 
@@ -184,8 +185,8 @@ static func boulder_obb(bs: BossStore, k: int) -> Obb:
 ## Every standing boulder as a wall.
 static func boulder_obbs(w: World) -> Array[Obb]:
 	var out: Array[Obb] = []
-	for k in w.bosses.sg_b_x.size():
-		out.append(boulder_obb(w.bosses, k))
+	for k in w.boss_fight.sg_b_x.size():
+		out.append(boulder_obb(w.boss_fight, k))
 	return out
 
 
@@ -195,7 +196,7 @@ static func _raise(w: World, i: int, st: BossSiegeTable, c: Vector2) -> void:
 	var h := st.boulder_half
 	if not fits(w, i, c, h):
 		return
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.sg_b_x.size() >= st.boulder_max:
 		_remove(w, [0], END_CAP)
 	bs.sg_b_id.append(bs.sg_next)
@@ -263,7 +264,7 @@ static func _push_out(w: World, i: int, box: Obb) -> bool:
 
 ## Removes the boulders whose time is up (DUE), every boulder (ALL) or every boulder of boss `which`, walls and all.
 static func drop(w: World, which: int = DUE) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var gone: Array[int] = []
 	for k in bs.sg_b_x.size():
 		var due := bs.sg_b_until[k] <= w.tick
@@ -275,7 +276,7 @@ static func drop(w: World, which: int = DUE) -> void:
 
 ## Shatters the boulders a circle of radius r at p touches (the ammo cart's way). Returns how many.
 static func smash_at(w: World, p: Vector2, r: float) -> int:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var gone: Array[int] = []
 	for k in bs.sg_b_x.size():
 		if Collide.circle_vs_obb(p, r, boulder_obb(bs, k)) != Vector2.ZERO:
@@ -287,7 +288,7 @@ static func smash_at(w: World, p: Vector2, r: float) -> int:
 
 ## Removes boulders `rows` (ascending indices), walls and all, each with a BOULDER_DOWN event.
 static func _remove(w: World, rows: Array, why: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var walls: Array[Obb] = []
 	for n in range(rows.size() - 1, -1, -1):
 		var k: int = rows[n]
@@ -365,7 +366,7 @@ static func take_cover(w: World, i: int) -> int:
 	var from := w.actors.pos(i)
 	if EnemyAi.sees_player(w, from):
 		return -1
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var p := w.player_pos()
 	var on_line: Array[int] = []
 	for k in bs.sg_b_x.size():
@@ -395,7 +396,7 @@ static func unless_held(w: World, b: int, k: int) -> int:
 static func holds(w: World, i: int, atk: BossAttackTable) -> bool:
 	if not covers(w, i, atk):
 		return false
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if BossDoom.busy(w):
 		return true
 	if not bs.sg_b_x.is_empty():
@@ -409,7 +410,7 @@ static func holds(w: World, i: int, atk: BossAttackTable) -> bool:
 ## Damage.target_mult's boss multiplier (BossChallenge.hit_mult) and its ticks: what boss i takes while its armour is
 ## stripped (per mille; 1000 otherwise).
 static func taken_permille(w: World, i: int) -> int:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.sg_boss != w.actors.ids[i] or w.tick >= bs.sg_strip_until:
 		return 1000
 	return BossAi.table_of(w, i).siege.strip_taken
@@ -419,14 +420,15 @@ static func taken_permille(w: World, i: int) -> int:
 ## comes (BossDoom.coming).
 static func _markers(w: World, i: int, b: int, st: BossSiegeTable) -> void:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var atk := BossAi.attack_of(w, i) if bs.attack[b] >= 0 else null
 	var want := atk != null and w.actors.state[i] == EnemyAi.State.WINDUP and covers(w, i, atk)
 	want = want or BossDoom.coming(w, st)
 	if w.objectives.has(ObjectiveMarkers.SIEGE_BOULDER):
 		w.objectives.clear(ObjectiveMarkers.SIEGE_BOULDER)
 	if want:
-		for k in bs.sg_b_x.size():
-			w.objectives.point(ObjectiveMarkers.SIEGE_BOULDER, Vector2(bs.sg_b_x[k], bs.sg_b_y[k]))
+		for k in fs.sg_b_x.size():
+			w.objectives.point(ObjectiveMarkers.SIEGE_BOULDER, Vector2(fs.sg_b_x[k], fs.sg_b_y[k]))
 
 
 # --- the end of a fight -----------------------------------------------------------------------------------------
@@ -435,7 +437,7 @@ static func _markers(w: World, i: int, b: int, st: BossSiegeTable) -> void:
 ## The hero is dead or outside the room: the lock ends, the boulders crumble, the cart and a Doom Shell due go (the
 ## clocks stay).
 static func cancel(w: World) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	bs.sg_lock_from = -1
 	if not bs.sg_b_x.is_empty():
 		drop(w, ALL)
@@ -445,7 +447,7 @@ static func cancel(w: World) -> void:
 
 ## BossSignatures.on_boss_gone: the boss that ran the siege takes its boulders, its cart and its marker with it.
 static func on_boss_gone(w: World, boss_id: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.sg_b_boss.has(boss_id):
 		drop(w, boss_id)
 	if bs.sg_boss != boss_id:
@@ -472,7 +474,8 @@ static func _event(w: World, i: int, effect: StringName, at: Vector2) -> SimEven
 ## "doom_in" (BossDoom.state), "stripped" (ticks of armour stripped left, 0 none).
 static func state(w: World) -> Dictionary:
 	var bs := w.bosses
-	var i := w.actors.index_of(bs.sg_boss) if bs.sg_boss >= 0 else -1
+	var fs := w.boss_fight
+	var i := w.actors.index_of(fs.sg_boss) if fs.sg_boss >= 0 else -1
 	if i < 0:
 		return {}
 	var st := BossAi.table_of(w, i).siege
@@ -480,18 +483,18 @@ static func state(w: World) -> Dictionary:
 		"boss": i,
 		"room": room_of(w, i),
 		"lock": _lock_state(w, st),
-		"lock_in": maxi(0, bs.sg_lock_due - w.tick) if bs.sg_lock_due >= 0 else -1,
+		"lock_in": maxi(0, fs.sg_lock_due - w.tick) if fs.sg_lock_due >= 0 else -1,
 		"boulders": _boulder_rows(w),
 		"cover_rule": bs.phase[BossAi.entry_of(w, i)] >= st.cover_phase,
 		"covered": covered(w, i),
-		"stripped": maxi(0, bs.sg_strip_until - w.tick),
+		"stripped": maxi(0, fs.sg_strip_until - w.tick),
 	}
 	out.merge(BossDoom.state(w, i, st))
 	return out
 
 
 static func _lock_state(w: World, st: BossSiegeTable) -> Dictionary:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.sg_lock_from < 0:
 		return {}
 	var t := w.tick - bs.sg_lock_from
@@ -505,7 +508,7 @@ static func _lock_state(w: World, st: BossSiegeTable) -> Dictionary:
 
 static func _boulder_rows(w: World) -> Array:
 	var out := []
-	var bs := w.bosses
+	var bs := w.boss_fight
 	for k in bs.sg_b_x.size():
 		var left := bs.sg_b_until[k] - w.tick
 		(
