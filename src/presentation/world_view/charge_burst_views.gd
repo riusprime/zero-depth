@@ -8,6 +8,8 @@ extends Node3D
 ## - Armed (the run has stopped, WorldReader.boss_charge_bursts): the circle stays where it was armed and fills from
 ##   its middle out as the burst comes.
 ## - The burst: the pack's explosion, sized to the radius, where an armed circle went off.
+## - The amber Warden's shade (The Fallen remembering the ward, WorldReader.boss_fallen "shade" and "burst"): the same
+##   circle at its run's end, locked as its aim locks, then armed and bursting the same way.
 ## Every slot is built hidden at the start. Reduced motion stills the hatching and the pulse. Nothing here decides.
 
 const SLOTS := 4
@@ -55,8 +57,19 @@ func sync(reader: WorldReader) -> void:
 			continue
 		var locked := bool(tg.get("locked", true))
 		_circles.append([b["center"], float(b["radius"]), locked, 0.0, "w%d" % reader.actor_id(i)])
+	var rows := reader.boss_charge_bursts()
+	var fallen := reader.boss_fallen()
+	if not fallen.is_empty():  # The amber Warden's shade, as The Fallen remembers the ward: a charge with no actor
+		var sh: Dictionary = fallen["shade"]
+		if not sh.is_empty() and float(sh["burst_radius"]) > 0.0:
+			_circles.append([sh["end"], float(sh["burst_radius"]), bool(sh["locked"]), 0.0, "fs"])
+		var bu: Dictionary = fallen["burst"]
+		if not bu.is_empty():
+			var row := bu.duplicate()
+			row["boss"] = -1
+			rows.append(row)
 	var seen := {}
-	for row: Dictionary in reader.boss_charge_bursts():
+	for row: Dictionary in rows:
 		var key := "a%d" % int(row["boss"])
 		seen[key] = true
 		_armed[key] = [row["centre"], float(row["radius"]), int(row["left"])]

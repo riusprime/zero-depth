@@ -144,17 +144,6 @@ func test_the_conduits_beam_is_one_pack_beam_for_its_short_life() -> void:
 	assert_eq(e.fx_count(), 1, "the old bar where the family is full")
 
 
-func test_the_fallens_eruption_is_a_violet_pillar() -> void:
-	var v: InterphaseViews = _under(InterphaseViews.new())
-	v._data = {
-		"erupts": [{"pos": Vector2(4, 4), "radius": 1.5, "striking": true, "progress": 1000}],
-	}
-	v._note_strikes()
-	assert_eq(_fx.live_count(&"area"), 1, "a pillar where it strikes")
-	v._note_strikes()
-	assert_eq(_fx.spawned, 1, "once a strike")
-
-
 func test_the_final_boss_shatter_is_the_packs_explosion() -> void:
 	var f: FinalBossViews = _under(FinalBossViews.new())
 	f._burst(Vector3(2, 0, 2), 1.5, 10)

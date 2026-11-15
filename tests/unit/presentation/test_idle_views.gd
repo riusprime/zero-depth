@@ -211,22 +211,15 @@ func test_the_tide_wave_view_idles_without_waves() -> void:
 	assert_true(view._placed_empty, "and its placing too")
 
 
-func test_the_interphase_view_idles_outside_the_interphase() -> void:
-	var view: InterphaseViews = add_child_autofree(InterphaseViews.new())
+func test_the_fallens_remembered_view_idles_outside_its_fight() -> void:
+	var view: FallenRememberedViews = add_child_autofree(FallenRememberedViews.new())
 	view.set_process(false)
 	var plain := WorldReader.new(W.world(&"gun"))
 	view.sync(plain)
-	view.sync(plain)
-	assert_true(view.quiet, "no interphase: quiet")
-	view._process(DT)
-	assert_true(view.quiet, "and its frames")
-	view._bursts.append([0, Vector3.ZERO, 0.0])  # (a sync starts a burst, then draws)
-	view._redraw(0.0)
-	assert_false(view.quiet, "something to show wakes it")
-	assert_gt(view._runes.multimesh.visible_instance_count, 0, "the burst's runes show")
-	for k in 120:
-		view._process(DT)
-	assert_true(view.quiet, "the burst played out: quiet")
+	view.advance(DT)
+	view.advance(DT)
+	assert_true(view.quiet, "no Fallen: quiet")
+	assert_eq(view.emblems_built(), 0, "and no ghost built outside a final fight")
 
 
 func test_an_attack_form_pool_writes_only_a_change() -> void:

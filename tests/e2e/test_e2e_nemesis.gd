@@ -9,7 +9,9 @@ extends GutTest
 ##   boss bar (its fill breathing violet) and by the violet rings at the hero's and its feet, then opens
 ##   (the fill shimmering violet, the rings and the thread between them): in the window it copies the weapon, dash
 ##   and card.
-## - It stays in the room and casts a mechanic of a boss the run killed (Time Wave or Riptide in the Playground).
+## - It stays in the room and casts a mechanic of a boss the run killed (Time Wave or Riptide in the Playground): the
+##   ghost of that boss rises over it through the cast, then the mechanic's own views draw it (the orbs and the HUD's
+##   clock, or the four strips) and a ring of that boss's colour stands at its feet.
 ## - A run on its second loop (a labelled TEST HELPER sets the loop and the floor; F10's Restart floor rebuilds it):
 ##   God mode and Kill boss (the dev panel) through the Colossus and the Prism, the Ascension portal on the way; at the
 ##   Nemesis, its HP is the pace's (N2) and in its window it answers a dash; Kill boss beats it: the victory recap with
@@ -354,6 +356,8 @@ func test_the_fallen_casts_a_remembered_mechanic_and_never_vanishes() -> void:
 	w.actors.hp[i] = w.actors.max_hp[i] * 650 / 1000  # TEST HELPER (see above)
 	var cast := false
 	var ran := -1
+	var ghost := &""
+	var remembered: FallenRememberedViews = main.view.fallen_remembered
 	for k in 1800:
 		await _e.frames(1)
 		var st := reader.boss_fallen()
@@ -363,10 +367,22 @@ func test_the_fallen_casts_a_remembered_mechanic_and_never_vanishes() -> void:
 		i = reader.boss_index()
 		assert_false(reader.boss_hidden(i), "it stays in the room")
 		cast = cast or int(st["cast"]) >= 0
+		if int(st["cast"]) >= 0 and remembered.emblem_shown() != &"":
+			ghost = remembered.emblem_shown()
+			assert_eq(ghost, st["source"], "the ghost of the boss it remembers rises over it")
 		if int(st["stage"]) == 2:
 			ran = int(st["running"])
 			break
 	assert_true(cast, "a cast first")
+	assert_ne(ghost, &"", "the remembered boss's ghost showed through the cast")
+	await _e.frames(3)
+	var hud: Hud = main.get_node("UI/Hud")
+	if ran == reader.FALLEN_TIME:
+		assert_gt(main.view.judge_time.orbs_shown(), 0, "the hour orbs and their clocks are drawn")
+		assert_true(hud.attack_slow.visible, "the HUD's clock and pips")
+	elif ran == reader.FALLEN_RIPTIDE:
+		assert_eq(main.view.tide_dance.strips_shown(), 4, "the four strips are drawn")
+	assert_eq(remembered.aura_shown(), reader.boss_fallen()["source"], "its colour at its feet")
 	assert_true(
 		[reader.FALLEN_TIME, reader.FALLEN_RIPTIDE].has(ran),
 		"a Time Wave or a Riptide (no boss killed in the Playground): %d" % ran

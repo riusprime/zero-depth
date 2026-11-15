@@ -214,6 +214,8 @@ The biome variants (Rubble Warden, Dim Needle, Ember Charger, Frost Charger, Spl
 |---|---|---|---|
 | ☐ | **Re-export your final-boss file with one shared, smaller texture** (P1) | 2048² or 4096², one texture used by all three bodies | Each of the three models now carries its own copy of the same 8192² texture: +56 MB in the repo |
 | ☐ | Animated Colossus, Prism and The Fallen (P2) | clips named `idle`, `walk` and the attack names in FINAL_BOSS_1..3.md, in an AnimationPlayer inside the `.glb` | Yours replace the code clips by name |
+| ☐ | The Fallen's emblems of the bosses it remembers (P3) | four small emblems, one per boss: the Clockwork Judge (gold), the Tidecaller (sea blue), the Gatekeeper (stone amber), the Twin Wardens (amber and violet) | Over The Fallen while it casts a mechanic it remembers. Today each is a ghost of that boss's own model drawn as glowing light in its colour (the Twins as a pair), rising over it; say if you want a sigil or icon instead |
+| ☐ | The amber Warden's shade (P3) | a translucent amber Warden, 2.6 m, standing and charging | The Fallen's remembered ward: today the amber Warden's model drawn as amber light, held still in its rest pose (no run or wind-up clip) |
 
 ### 3.4 The shop (P2: you're not sure yet)
 
@@ -297,3 +299,4 @@ each new move borrows one). Clips the fight needs, in the rig's scripts (`script
 | ☐ | the Twin Wardens' sounds | A charge's burst arming and going off, Amber's dash, a ward going up and the whole ward breaking, a shot turned back, a swing blocked, a shadow sword's cut, the rifts opening, him going in, the exit marked, him coming out: each borrows an existing sound re-pitched (`WardenCues`). The ward fading and the rifts closing have none | — |
 | ☐ | the Tidecaller's dance sounds | A Riptide warning and its wave, a High Tide's cast and its water rising, the Maelstrom beginning, the eye's throw: each borrows the Tidecaller's bell, its Pull's surge or the boss slam, re-pitched (`TideDanceCues`). The water draining has none | — |
 | ☐ | the Siege Engine's sounds | The Target Lock taking you, its shell landing, a boulder rising and one breaking, a turret crushed, the cart setting off, arriving and blown up, the Doom Shell, the armour stripped: each borrows an existing sound re-pitched (`SiegeCues`). The Shockwave keeps its attack's own; the cart's body arriving has none | — |
+| ☐ | The Fallen's remembered mechanics' sounds | Its cast plays the remembered boss's own telegraph sound; the ward going up and breaking and the shade's wind-up borrow the Twin Wardens' (`FallenCues`); the mechanics' own pieces sound as on their bosses | — |
