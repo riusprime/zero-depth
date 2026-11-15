@@ -222,6 +222,8 @@ var dance: BossDanceTable = null
 var wardens: BossWardensTable = null
 ## The Siege Engine's siege mechanics (null: none).
 var siege: BossSiegeTable = null
+## The Foundry's forge (null: none).
+var forge: BossForgeTable = null
 
 
 ## The attack index with this id, or -1.

@@ -114,6 +114,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"BossDanceTable",  # The Tidecaller's dance (BossTable.dance, content)
 	&"BossWardensTable",  # The Twin Wardens' own mechanics (BossTable.wardens, content)
 	&"BossSiegeTable",  # The Siege Engine's siege mechanics (BossTable.siege, content)
+	&"BossForgeTable",  # The Foundry's forge (BossTable.forge, content)
 	&"SwingStep",
 	&"SkillTable",
 	&"OverrunTable",  # v0.4.0 AB

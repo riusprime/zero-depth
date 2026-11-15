@@ -405,6 +405,7 @@ static func advance(w: World) -> void:
 	BossChargeBurst.advance(w)  # A charge's burst where it ended
 	BossWardens.advance(w)  # The Twin Wardens' wards and Through the Rift
 	BossSiege.advance(w)  # The Siege Engine's Target Lock, boulders and ammo cart
+	BossForge.advance(w)  # The Foundry's plate, its cooling slag, Overpressure and the scald gauge
 
 
 ## World._remove_dead: boss `boss_id` is gone: its pillars sink and its javelins go (its eggs crumble on their own).
@@ -431,6 +432,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	BossDance.on_boss_gone(w, boss_id)  # The Tidecaller's dance
 	BossChargeBurst.on_boss_gone(w, boss_id)  # Its pending bursts go
 	BossSiege.on_boss_gone(w, boss_id)  # The Siege Engine's boulders and cart
+	BossForge.on_boss_gone(w, boss_id)  # The Foundry's forge and its slabs
 
 
 ## The recap's death line for a cause past LATE_CAUSE (a late part): its attack's late_cause_key (its own cause_key

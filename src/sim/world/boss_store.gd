@@ -101,6 +101,27 @@ const BOULDER_INT_FIELDS: Array[StringName] = [
 	&"sg_b_id", &"sg_b_from", &"sg_b_until", &"sg_b_boss"
 ]
 const BOULDER_FLOAT_FIELDS: Array[StringName] = [&"sg_b_x", &"sg_b_y", &"sg_b_h"]
+## The forge's clocks (BossForge, BossSlag), with the value each takes when the forge is forgotten.
+const FORGE_FIELDS := {
+	&"fg_boss": -1,
+	&"fg_plate_due": -1,
+	&"fg_cast_from": -1,
+	&"fg_plate": 0,
+	&"fg_exposed_until": 0,
+	&"fg_drone_at": -1,
+	&"fg_over_due": -1,
+	&"fg_over_from": -1,
+	&"fg_over_step": -1,
+	&"fg_drop_at": -1,
+	&"fg_scald": 0,
+	&"fg_scald_at": -1,
+	&"fg_burning": 0,
+	&"fg_slab_next": 0,
+}
+const SLAB_INT_FIELDS: Array[StringName] = [
+	&"slab_id", &"slab_boss", &"slab_from", &"slab_until", &"slab_broke"
+]
+const SLAB_FLOAT_FIELDS: Array[StringName] = [&"slab_x", &"slab_y", &"slab_r"]
 const INT_FIELDS: Array[StringName] = [
 	&"ids",
 	&"table",
@@ -487,6 +508,39 @@ var sg_b_boss := PackedInt32Array()
 var sg_b_x := PackedFloat32Array()
 var sg_b_y := PackedFloat32Array()
 var sg_b_h := PackedFloat32Array()
+## The Foundry's forge (BossForge, BossSlag). fg_boss is the boss that runs it (-1 = none). The plate: fg_plate_due
+## the tick the next forging may begin (-1 = not in its phase yet), fg_cast_from the tick the forging running began
+## (-1 = none), fg_plate 1 while worn, fg_exposed_until the tick its exposure after a blow ends, fg_drone_at the tick
+## it last launched a drone for the plate (-1 = never). Overpressure: fg_over_due the tick the next may begin (-1 = not
+## in its phase yet), fg_over_from the tick the one running began its cast (-1 = none), fg_over_step the tick of its
+## burn's next step (-1 = the burn has not begun); fg_drop_at the tick it last dropped a pool so the slabs never run
+## out (-1 = never). The scald gauge: fg_scald
+## (0..scald_max), fg_scald_at the tick of its next step (-1 = not in its phase yet), fg_burning 1 while full.
+## fg_slab_next is the next slab_id.
+var fg_boss := -1
+var fg_plate_due := -1
+var fg_cast_from := -1
+var fg_plate := 0
+var fg_exposed_until := 0
+var fg_drone_at := -1
+var fg_over_due := -1
+var fg_over_from := -1
+var fg_over_step := -1
+var fg_drop_at := -1
+var fg_scald := 0
+var fg_scald_at := -1
+var fg_burning := 0
+var fg_slab_next := 0
+## The slabs the boss's pools cooled into, oldest first: [slab_id, its boss, the tick it cooled, the tick it crumbles,
+## the tick a vent blast shattered it (0 = whole), its centre and radius].
+var slab_id := PackedInt32Array()
+var slab_boss := PackedInt32Array()
+var slab_from := PackedInt32Array()
+var slab_until := PackedInt32Array()
+var slab_broke := PackedInt32Array()
+var slab_x := PackedFloat32Array()
+var slab_y := PackedFloat32Array()
+var slab_r := PackedFloat32Array()
 
 
 func size() -> int:
@@ -643,6 +697,14 @@ func hash_into(h: StateHasher) -> void:
 			h.add_ints(get(f))
 		for f: StringName in BOULDER_FLOAT_FIELDS:
 			h.add_f32s(get(f))
+	if fg_boss >= 0 or not slab_id.is_empty():  # Only while a boss runs its forge or a slab lies
+		h.add_int(-22)
+		for f: StringName in FORGE_FIELDS:
+			h.add_int(get(f))
+		for f: StringName in SLAB_INT_FIELDS:
+			h.add_ints(get(f))
+		for f: StringName in SLAB_FLOAT_FIELDS:
+			h.add_f32s(get(f))
 
 
 ## Removes arena hazard k (the arrays stay oldest first).
@@ -732,6 +794,21 @@ func clear_siege() -> void:
 	sg_next = 0
 	for f: StringName in SIEGE_FLOAT_FIELDS:
 		set(f, 0.0)
+
+
+## Removes slab k (the arrays stay oldest first).
+func remove_slab(k: int) -> void:
+	_remove_row(SLAB_INT_FIELDS, SLAB_FLOAT_FIELDS, k)
+
+
+## Forgets the forge's clocks and its slabs (its boss gone).
+func clear_forge() -> void:
+	for f: StringName in FORGE_FIELDS:
+		set(f, FORGE_FIELDS[f])
+	for f: StringName in SLAB_INT_FIELDS:
+		set(f, PackedInt32Array())
+	for f: StringName in SLAB_FLOAT_FIELDS:
+		set(f, PackedFloat32Array())
 
 
 ## Row k out of the parallel arrays named by `ints` and `floats`.

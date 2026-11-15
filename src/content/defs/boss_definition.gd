@@ -118,6 +118,9 @@ var arena_template := 0
 ## The siege this boss fights with (SiegeRules.SPEC; empty: none): the Siege Engine's Target Lock and its boulders,
 ## the Shockwave that needs cover, and the Doom Shell's ammo cart.
 @export var siege := {}
+## The forge this boss fights with (ForgeRules.SPEC; empty: none): the Foundry's Forged Plate, its cooling slag,
+## Overpressure and the scald gauge.
+@export var forge := {}
 
 
 func category() -> StringName:
@@ -156,6 +159,7 @@ func validate() -> Array[ValidationIssue]:
 	DanceRules.validate(self, issues)  # The Tidecaller's dance
 	WardensRules.validate(self, issues)  # The Twin Wardens' own mechanics
 	SiegeRules.validate(self, issues)  # The Siege Engine's cover and Doom Shell
+	ForgeRules.validate(self, issues)  # The Foundry's forge
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1

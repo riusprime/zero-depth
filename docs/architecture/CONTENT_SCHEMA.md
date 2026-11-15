@@ -881,6 +881,21 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   cart's roll plus the delay; a boss with a siege holds a `marks` attack (the death recap names its shells). The
   Engine's `shockwave` telegraph is now 2.0 s. The cart's body is a `warden` (`SiegeCompiler.CART_ENEMY`); the
   turrets a shell destroys are the boss's first `deploy` attack's enemy.
+- **v0.12.0 step 10 (owner brief FO1, FO2, SG-FO).** `BossDefinition.forge: Dictionary` (empty: none), the
+  Foundry's forge, checked by `ForgeRules` (`SPEC`: key → [default, min, max]; an unknown key or a value out of range
+  is an error) and compiled by `ForgeCompiler` into `BossTable.forge` (`BossForgeTable`). Keys, with the Foundry's
+  values: the plate `plate_phase` 1, `plate_first_seconds` 8, `plate_every_seconds` 20 (after a blow),
+  `plate_cast_seconds` 1.5, `plate_taken_permille` 400, `exposed_seconds` 5, `exposed_taken_permille` 1250,
+  `drone_blast_m` 1.5 (a drone's bomb this far from its edge blows it), `drone_distance_m` 3, `drone_gap_seconds` 2;
+  the slag `slab_phase` 2, `slab_cool_seconds` 12, `slab_seconds` 8, `slag_drop_seconds` 6 (0..120; 0 = never:
+  the least time between two pools dropped where the hero stands when no slab is coming); Overpressure `overpressure_phase` 2,
+  `overpressure_first_seconds` 10, `overpressure_every_seconds` 22, `overpressure_cast_seconds` 3,
+  `overpressure_seconds` 4, `overpressure_tick_seconds` 0.5, `overpressure_permille_per_second` 60; the scald
+  `scald_phase` 2, `scald_max` 1000, `scald_hit` 200, `scald_lava` 60, `scald_open` 40, `scald_drain_per_second` 250,
+  `scald_tick_seconds` 0.5, `scald_burn_permille_per_second` 50; and two attack ids the death recap names (required):
+  `overpressure_cause` "firestorm", `scald_cause` "molten_flood". Also checked: both casts last the telegraph
+  minimum; `overpressure_every_seconds` exceeds its cast plus its burn and `slab_seconds` lasts that long; a step of
+  each burn takes 1..400 per mille; a boss with a forge holds a `brood` attack (its drones).
 
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 
