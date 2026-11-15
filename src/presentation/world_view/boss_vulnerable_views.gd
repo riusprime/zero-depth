@@ -3,7 +3,8 @@ extends Node3D
 ## A boss that takes more damage now shows it on itself, without a word (the owner: the player discovers it): the
 ## pack's hot gold pulse (se_strip) round its feet, the size of its body, and its stun stars (o13d_star_ring)
 ## turning over it. Drawn while WorldReader says a broken quake pillar stuns it (boss_stunned: the Gatekeeper) or the
-## Siege Engine's armour is stripped by its cart (boss_siege "stripped"). The violet Warden's broken ward has its own
+## Siege Engine's armour is stripped by its cart (boss_siege "stripped") or a bomb blew the Foundry's plate off
+## (boss_forge plate "exposed_left"). The violet Warden's broken ward has its own
 ## stars (WardenWardViews). The boss bar shimmers gold meanwhile (BossBarTones). Reads only (EI-07).
 
 const PULSE_ID := &"se_strip"
@@ -35,13 +36,22 @@ func sync(reader: WorldReader) -> void:
 		return
 	var siege := reader.boss_siege()
 	var stripped := int(siege.get("boss", -1)) if int(siege.get("stripped", 0)) > 0 else -1
+	var exposed := exposed_foundry(reader)
 	for i in reader.actor_count():
 		if not WorldReader.is_boss_kind(reader.actor_kind(i)) or reader.actor_hp(i) <= 0:
 			continue
-		if i == stripped or reader.boss_stunned(i):
+		if i == stripped or i == exposed or reader.boss_stunned(i):
 			_bosses.append(
 				[SimPlane.to_3d(reader.actor_pos(i)), reader.actor_radius(i), reader.actor_id(i)]
 			)
+
+
+## The Foundry's index while its plate is blown off (it takes more damage), else -1.
+static func exposed_foundry(reader: WorldReader) -> int:
+	var forge := reader.boss_forge()
+	if int(forge.get("plate", {}).get("exposed_left", 0)) <= 0:
+		return -1
+	return int(forge["boss"])
 
 
 func _process(_delta: float) -> void:

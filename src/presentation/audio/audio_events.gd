@@ -532,6 +532,7 @@ func _events(reader: WorldReader, out: Array) -> void:
 					and not TideDanceCues.add(e, out)
 					and not WardenCues.add(e, out)
 					and not SiegeCues.add(e, out)
+					and not ForgeCues.add(e, out)
 				):
 					_fallen_cue(e, out)
 			SimEvent.Kind.BOSS_PICKUP_TAKEN:  # An hour orb taken

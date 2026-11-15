@@ -25,6 +25,8 @@ const TIDE_DRY := ObjectiveMarkers.TIDE_DRY
 const TWINS_WARD := ObjectiveMarkers.TWINS_WARD
 ## The Siege Engine's boulders while a blast that needs cover comes (a Shockwave in its last phase, a Doom Shell).
 const SIEGE_BOULDER := ObjectiveMarkers.SIEGE_BOULDER
+## The Foundry's nearest safe slab while its Overpressure comes and burns.
+const FOUNDRY_SLAB := ObjectiveMarkers.FOUNDRY_SLAB
 
 var codex: CodexStore
 

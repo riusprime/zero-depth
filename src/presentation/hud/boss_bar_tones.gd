@@ -5,7 +5,8 @@ extends RefCounted
 ## shimmers (a quick pulse toward white) or breathes (a slow one). Reads only (EI-07).
 ## - phase_shift: the phase gate; a slow pale breathing (the bar then empties and refills to the new phase).
 ## - vulnerable: the boss takes more damage now (a broken quake pillar's stun, the violet Warden's broken ward, the
-##   Siege Engine's armour stripped by its cart): a hot gold shimmer.
+##   Siege Engine's armour stripped by its cart, the Foundry's plate blown off by a bomb): a hot gold shimmer.
+## - plated: the Foundry wears its Forged Plate (it takes less damage): dull iron, still.
 ## - invulnerable: cold steel blue, still (a shield, the final body shattering); the shields still to pass are pips
 ##   under the bar (BossBar).
 ## - dark / lit: the Lantern Shade in the dark (the fill darkened) or in a lit lantern's pool (lantern gold).
@@ -20,12 +21,14 @@ const DARK := &"dark"
 const LIT := &"lit"
 const FALLEN_WARN := &"fallen_warn"
 const FALLEN_OPEN := &"fallen_open"
+const PLATED := &"plated"
 
 const STEEL := Color("#8FB8E8")
 const GOLD := Color("#FFC15A")
 const HOT := Color("#FFD27A")
 const VIOLET := Color("#C59BFF")
 const PALE := Color("#E8E4F0")
+const IRON := Color("#8A9099")
 const DIM := 0.55
 ## Pulses per second: a shimmer and a breath.
 const SHIMMER_HZ := 3.0
@@ -40,6 +43,7 @@ const LOOKS := {
 	LIT: [GOLD, 0.0, 0.0, 0.0],
 	FALLEN_WARN: [VIOLET, BREATH_HZ, 0.3, 0.0],
 	FALLEN_OPEN: [VIOLET, SHIMMER_HZ, 0.5, 0.0],
+	PLATED: [IRON, 0.0, 0.0, 0.0],
 }
 
 
@@ -51,6 +55,8 @@ static func tone_of(reader: WorldReader, i: int, final: bool) -> StringName:
 		return INVULNERABLE
 	if vulnerable(reader, i, final):
 		return VULNERABLE
+	if not final and plated(reader, i):
+		return PLATED
 	if final:
 		match int(reader.final_pace().get("window", WorldReader.FALLEN_OFF)):
 			WorldReader.FALLEN_WARN:
@@ -76,10 +82,18 @@ static func vulnerable(reader: WorldReader, i: int, final: bool) -> bool:
 	var siege := reader.boss_siege()
 	if int(siege.get("boss", -1)) == i and int(siege.get("stripped", 0)) > 0:
 		return true
+	if BossVulnerableViews.exposed_foundry(reader) == i:
+		return true
 	var twin := reader.boss_twin(i)
 	if twin.is_empty():
 		return false
 	return bool(reader.boss_twin(int(twin.get("partner", -1))).get("exposed", false))
+
+
+## Boss i wears the Foundry's Forged Plate now.
+static func plated(reader: WorldReader, i: int) -> bool:
+	var forge := reader.boss_forge()
+	return int(forge.get("boss", -1)) == i and bool(forge["plate"]["on"])
 
 
 ## The fill's colour in `tone` at clock `t` (s) over the HP colour `base`; reduced motion holds the pulse at its middle.
