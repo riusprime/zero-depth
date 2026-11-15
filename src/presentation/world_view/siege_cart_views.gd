@@ -21,8 +21,6 @@ const BLAST_ID := &"se_blast"
 const SENT := &"siege_cart"
 const DESTROYED := &"siege_cart_destroyed"
 const DOOM_EVENT := &"siege_doom_shell"
-## The cart's blast radius (m). The reader does not carry it: the Siege Engine's data (`cart_blast_m`).
-const CART_BLAST_M := 6.0
 const BLAST_PER_M := 0.6
 const CAST_SCALE := 1.4
 const DOOM_SCALE := 1.1
@@ -51,6 +49,8 @@ var quiet := false
 var _siege := {}
 var _engine := Vector2.ZERO
 var _engine_r := 2.8
+## The cart's blast radius (m), as the reader gives it (boss_siege "cart_blast").
+var _blast_m := 0.0
 var _hero := Vector2.ZERO
 var _last_seq := 0
 var _primed := false
@@ -125,6 +125,7 @@ func sync(reader: WorldReader) -> void:
 		var b := int(_siege["boss"])
 		_engine = reader.actor_pos(b)
 		_engine_r = reader.actor_radius(b)
+		_blast_m = float(_siege["cart_blast"])
 	if not _primed:
 		_primed = true
 		for e in reader.events_since(0):
@@ -135,7 +136,7 @@ func sync(reader: WorldReader) -> void:
 			continue
 		match e.effect_id:
 			DESTROYED:
-				_spawn(SimPlane.to_3d(e.pos, 0.1), CART_BLAST_M * BLAST_PER_M)
+				_spawn(SimPlane.to_3d(e.pos, 0.1), _blast_m * BLAST_PER_M)
 			DOOM_EVENT:
 				_spawn(SimPlane.to_3d(e.pos, 1.2), 2.0)
 				if e.amount_applied < 0:  # in the open: the shell lands on the hero
@@ -201,9 +202,9 @@ func _draw_cart(cart: Dictionary, still: bool) -> void:
 	WardenLooks.lay_strip(_behind, from, at, RAIL_W, 0.045)
 	WardenLooks.param(_behind, &"alpha", BEHIND_ALPHA)
 	WardenLooks.param(_behind, &"clock", _clock)
-	var near_engine := at.distance_to(_engine) <= CART_BLAST_M + _engine_r
+	var near_engine := at.distance_to(_engine) <= _blast_m + _engine_r
 	_blast_ring.position = SimPlane.to_3d(at, 0.03)
-	_blast_ring.scale = Vector3.ONE * CART_BLAST_M
+	_blast_ring.scale = Vector3.ONE * _blast_m
 	WardenLooks.param(_blast_ring, &"tint", GOLD if near_engine else SiegeLooks.DANGER)
 	WardenLooks.param(_blast_ring, &"alpha", lerpf(BLAST_STRONG, BLAST_FAINT, frac))
 	WardenLooks.param(_blast_ring, &"locked", 1.0 if near_engine else 0.0)

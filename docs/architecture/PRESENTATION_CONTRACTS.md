@@ -166,8 +166,8 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   rule, so its fill covers the whole room and suggests no safe ring round the Engine. `SiegeCartViews`: the cart a
   code-made wagon (`SiegeLooks.cart`) on `cart.position`, facing `to - from`, wheels rolling with the distance, its
   own billboard HP bar from full (`ActorViews` hides the sim's warden body: the actor whose id is `cart.id`); a rail
-  from `from` to `to`, dim ahead and lit behind; a faint red circle of the blast's 6 m (`CART_BLAST_M`: the reader does
-  not carry `cart_blast_m`) stronger as its HP falls and gold while the Engine stands in it; a countdown ring under
+  from `from` to `to`, dim ahead and lit behind; a faint red circle of the blast's radius (the reader's
+  `cart_blast`) stronger as its HP falls and gold while the Engine stands in it; a countdown ring under
   the Engine filling with `progress`, flashing once `doom` ≥ 0 with the pack's `se_cast` and `se_doom` on it;
   `siege_doom_shell` the pack's `se_blast` on the Engine (and on the hero when `amount_applied` is -1),
   `siege_cart_destroyed` one of the blast's size. `BossVulnerableViews` (any boss): the pack's gold `se_strip` pulse
@@ -182,7 +182,7 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   `StoneSpikeViews` (`boss_quake_pillars`: rings, pulses, the shatter when one goes) and the stun by
   `BossVulnerableViews` (`boss_stunned`: The Fallen's table carries a quake table); the ward by `WardenWardViews`
   (the whole dome and rim on The Fallen while `ward.up`, the shade's `lane` under it, white-hot when the lane touches
-  The Fallen (`FallenLooks.lane_crosses`: the reader has no `breaks` for the shade), the shatter and stun flash on
+  The Fallen (the reader's `shade.breaks`), the shatter and stun flash on
   `fallen_ward_break`) and `ChargeBurstViews` (the end circle at `shade.end`, then `burst` armed and going off).
   `FallenRememberedViews` adds what has no source view: through the cast (`cast` ≥ 0) a ghost of the remembered boss
   (`FallenLooks.ghost`: its own model from `BossModels`, unshaded light in its colours, the Twins as a pair) rising
@@ -199,8 +199,7 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   events only; shared looks in `ForgeLooks`; no word anywhere. `ForgePlateViews`: through the forging cast the pack's
   hot lift (`fo_forge`) round the Foundry's feet and hammer sparks (`fo_spark`) on its body, faster as `forging`
   fills; while `on`, each drone's bomb in the air carries the pack's ember flare (`fo_bomb`) on FireballViews' arc,
-  and a faint ring (`fo_reach`) of the Foundry's radius plus `ForgeLooks.DRONE_BLAST_M` (1.5, copied from the data's
-  `drone_blast_m`: the reader does not carry it) lies round it, gold (`fo_reach_on`) while a bomb is aimed inside;
+  and a faint ring (`fo_reach`) of the Foundry's radius plus the reader's `plate.blast` lies round it, gold (`fo_reach_on`) while a bomb is aimed inside;
   none while no bomb flies; `plate_blown` bursts steel shards (`fo_shards`) where it landed and on the Foundry.
   `FoundryAvatar` wears a steel shell while plated (a lit metallic pass grown 3.5 cm off the owner's model, the glow
   overlay's `next_pass`; it builds glowing orange through the cast and drops at once when blown; none on the
@@ -250,8 +249,7 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   rows are `data/vfx/pack_fx_wl.tres`.
 - **Boss mechanics carry no words** (owner, 2026-11-15: "too much text … we need to make it subtle so the player
   discovers it while playing, with arrows or glows"). `ObjectiveHints` draws arrows only (a small arrow over the
-  target on screen, an edge arrow off it) for every reason, never a line of text, and draws nothing for
-  `OBJECTIVE_TWINS_ACTIVE` (the sim still sets it; its exposed-twin rule is gone). The boss bar keeps the boss's
+  target on screen, an edge arrow off it) for every reason, never a line of text. The boss bar keeps the boss's
   name and its phase line ("Phase 2 / 3"; the final boss's body names) and shows every state as a tone of its fill
   (`BossBarTones`): the phase gate breathes pale, a boss taking more damage (a quake stun, the violet Warden's broken
   ward, the Engine's stripped armour) shimmers gold, an invulnerable boss is steel blue with a pip per shield left,

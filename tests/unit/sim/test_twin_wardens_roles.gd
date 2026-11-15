@@ -221,7 +221,7 @@ func test_phase_three_the_amber_takes_hits_and_the_violet_is_warded() -> void:
 	hp = w.actors.hp[i]
 	_hit(w, s[2], 100)
 	assert_eq(hp - w.actors.hp[i], 0, "the violet one takes nothing under her ward")
-	assert_eq(w.objectives.entity[0], s[1], "the hint follows the amber one")
+	assert_eq(w.bosses.twin_focus[0], s[1], "the amber one is the body to hit")
 
 
 func test_each_phase_starts_on_a_full_bar_and_the_bar_names_its_warden() -> void:
@@ -293,24 +293,22 @@ func test_the_one_standing_back_sparks_off_and_casts_a_bolt_every_4_s() -> void:
 	assert_gt(_hit(w, s[2], 100), 0, "the violet takes it")
 
 
-func test_the_hint_follows_the_leader_and_clears_when_they_fall() -> void:
+func test_the_body_to_hit_follows_the_leader_and_no_marker_points_at_it() -> void:
 	var s := _fight(Vector2(-6, 2))
 	var w: World = s[0]
 	w.step(InputFrame.new())
-	assert_true(w.objectives.has(ObjectiveMarkers.TWINS_ACTIVE))
-	assert_eq(w.objectives.entity[0], s[1], "phase 1: the amber")
+	assert_eq(w.bosses.twin_focus[0], s[1], "phase 1: the amber")
 	_to_phase(w, s[1], 1)
-	assert_eq(w.objectives.size(), 1)
-	assert_eq(w.objectives.entity[0], s[2], "phase 2: the violet")
+	assert_eq(w.bosses.twin_focus[0], s[2], "phase 2: the violet")
 	_to_phase(w, s[1], 2)
-	assert_eq(w.objectives.entity[0], s[1], "phase 3: the exposed one, the amber first")
+	assert_eq(w.bosses.twin_focus[0], s[1], "phase 3: the amber first")
 	var i := _i(w, s[1])
 	w.actors.hp[i] = 5
 	w.actors.hp[BossTwin.partner_of(w, i)] = 5
 	_hit(w, s[1], 50)
 	w.step(InputFrame.new())
 	assert_false(w.boss_alive())
-	assert_false(w.objectives.has(ObjectiveMarkers.TWINS_ACTIVE), "cleared with the fight")
+	assert_true(w.bosses.twin_lead.is_empty(), "the pair goes with the fight")
 
 
 func test_deterministic_through_the_phases() -> void:

@@ -51,16 +51,14 @@ func test_off_screen_an_arrow_at_the_edge_on_screen_a_ping() -> void:
 	assert_eq(v.mouse_filter, Control.MOUSE_FILTER_IGNORE, "it blocks nothing")
 
 
-func test_no_reason_carries_text_and_the_old_twins_focus_is_not_pointed_at() -> void:
+func test_no_reason_carries_text() -> void:
 	var w := SaveLab.floor_world(77, 1)
 	var r := WorldReader.new(w)
 	var v := _view(func(_reason: StringName) -> bool: return true)
 	assert_false(v.has_method(&"line"), "no line of text for any reason")
 	w.objectives.point(LANTERN, Vector2(1, 0.5))
-	w.objectives.follow(ObjectiveMarkers.TWINS_ACTIVE, w.actors.ids[0])
 	v.sync(r)
 	assert_true(v.showing(LANTERN, ObjectiveHints.PING), "the lantern: an arrow over it")
-	assert_false(v.showing(ObjectiveMarkers.TWINS_ACTIVE), "the old focus marker: nothing")
 	assert_eq(v.shown().size(), 1)
 
 

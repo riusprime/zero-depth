@@ -120,9 +120,9 @@ func test_continue_floor_4_and_fight_the_twin_wardens() -> void:
 	)
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_true(hud.boss_bar.visible, "one bar")
-	# v0.11.0 O5: phase 1, the amber leads: the sim points at it; the bar shows the phase, no words.
-	var pointed := reader.objectives().map(func(o: Dictionary) -> int: return int(o["entity"]))
-	assert_eq(pointed, [bid], "the hint points at the amber Warden")
+	# Phase 1, the amber leads (no marker follows the body to hit); the bar shows the phase, no words.
+	assert_eq(w.bosses.twin_focus[0], bid, "the amber Warden is the one to hit")
+	assert_eq(reader.objectives().size(), 0, "no hint arrow for it")
 	assert_eq(
 		hud.boss_bar.phase_text(), tr("HUD_BOSS_PHASE") % [1, 3], "the bar shows the phase only"
 	)

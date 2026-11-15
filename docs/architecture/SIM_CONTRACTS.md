@@ -2373,8 +2373,8 @@ draws a stream (`ai`). No native change.
   her circle (phase 6): on a touch the ward breaks: `wd_break_at` = the tick, she stands `STAGGERED` for `stun_ticks`
   and takes `stun_permille` meanwhile, he stands `STAGGERED` for `stagger_ticks`, his charge ends without its burst,
   and the ward is back `return_ticks` after the break (plain hits between the stun's end and then).
-  `ObjectiveMarkers.TWINS_WARD` follows her while he winds a charge up with the ward standing; `TWINS_ACTIVE` follows
-  him, and her while she is stunned.
+  `ObjectiveMarkers.TWINS_WARD` follows her while he winds a charge up with the ward standing (no marker follows the
+  body to hit: `twin_focus` and its `EFFECT_FOCUS` event remain).
 - **Through the Rift** (`BossRift`; once a fight). In the last phase, with `rift_hp_permille` of its bar left and the
   amber Warden free (between two attacks): (1) three rifts open on a ring round the middle of the boss room, `rift_gap_m` apart, each
   `rift_radius_m` + his radius clear of walls and inside the room (the ring starts toward the hero and is turned
@@ -2423,9 +2423,14 @@ No native change.
   (`World.add_barrier`: bodies, both sides' shots, sight; the flow field goes round it through
   `BossSignatures.set_nav_extra`) for `boulder_ticks`, at most `boulder_max` (the oldest crumbles when one more
   lands). `BossSiege.fits`: inside the room by its half side plus the gap; the hero's width plus 0.15 m (the gap)
-  from every wall, every other boulder and the Engine's own body; 0.3 m from every other living body but the hero. A
-  hero under it is moved to `BossRewind.free_spot` from its shortest way out. Where it does not fit the shell lands
-  but leaves none. A 400-seed flood test checks that no boulder ever seals floor off.
+  from every wall, every other boulder and the Engine's own body; 0.3 m from the ammo cart (an actor in
+  `BossDoom.CART`), every other boss and every body that is not an enemy. Other enemies do not deny it (one hugging the
+  hero would deny every boulder): each live non-boss enemy the boulder's square touches (its centre within its
+  radius) takes the shell's hit first, `lock_hit` per mille of the hero's max HP through `Damage.hit` (source and
+  owner the Engine, `TAG_AREA`, effect `boss_siege_shell`; an ordinary add dies), then the wall stands, and the hero
+  and each such enemy still alive are moved to `BossRewind.free_spot` from their shortest way out (an enemy with no
+  free spot found stays at that way out, for the collision pass). Where it does not fit the shell lands but leaves
+  none. A 400-seed flood test checks that no boulder ever seals floor off.
 - **The Shockwave needs cover** (from `cover_phase`). A `slam_ring` attack of a boss with a siege hits the hero
   wherever it stands unless `EnemyAi.sees_player` from the Engine's centre fails (a boulder, or any wall, on the
   line): the attack's powered damage, at most `shock_cap` per mille of max HP, once, with the attack's own death
@@ -2476,7 +2481,8 @@ No native change.
 - **Reads.** `WorldReader.boss_siege()`: `boss`, `room`, `lock` ({} or `centre`, `radius`, `locked`, `left`),
   `lock_in`, `boulders` ([{id, centre, half, size, left, crumbling (its last 60 ticks)}]), `cover_rule`, `covered`,
   `cart` ({} or `id`, `position`, `from`, `to`, `hp`, `max`, `progress` 0..1000, `left`, `state`), `doom` (ticks to
-  the Doom Shell, -1 none), `doom_in`, `stripped` (ticks left). A read after a step describes the tick about to run.
+  the Doom Shell, -1 none), `doom_in`, `cart_blast` (the cart's blast radius, m: `cart_blast_m`), `stripped` (ticks
+  left). A read after a step describes the tick about to run.
   The markers: `objectives()` (`siege_boulder`).
 ## 10s. The Foundry's forge (v0.12.0 step 10; owner brief rows FO1, FO2 and SG-FO, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
 
@@ -2540,7 +2546,7 @@ boss reaches the forge's first phase, so the first phase hashes as before.
 - **Hash and save.** Hashed after a `-22` sentinel while a boss runs a forge or a slab lies (`fg_boss >= 0 or
   slab_id not empty`). `BossFightStore` is a snapshot state class, so the clocks, the gauge and the slabs are saved.
 - **Reads.** `WorldReader.boss_forge()`: `boss`, `plate` ({`forging` 0..1000 or -1, `on`, `exposed_left`, `taken`,
-  `next_in`}), `slabs` ([{`slab` (false: a pool cooling), `id`, `centre`, `radius`, `cooling` 0..1000, `left` (-1
+  `next_in`, `blast` (`drone_blast_m`: how far from the boss's edge a bomb still blows the plate off)}), `slabs` ([{`slab` (false: a pool cooling), `id`, `centre`, `radius`, `cooling` 0..1000, `left` (-1
   cooling), `shattered`, `safe`}]), `overpressure` ({} or `cast`, `cast_left`, `burn`, `burn_left`, `on_slab`),
   `overpressure_in`, `scald` ({} before its phase, else `gauge`, `max`, `burning`, `draining`). The marker:
   `objectives()` (`foundry_slab`).
@@ -2615,7 +2621,9 @@ pick and the pieces' own spots draw a stream (`ai`). No native change.
   `stun_permille`, and the mechanic ends with the stun. A run that ends arms a burst there (`fl_bu_*`):
   `ward_burst_ticks` later `ward_burst_hit` to a hero touching `ward_burst_m`. A missed charge is followed
   `ward_gap_ticks` after its end by the next (the shade at the farthest edge again) until `ward_charges`; after the
-  last one's burst the ward ends. Hits through `SafeArea.hurt` (`ONCE`).
+  last one's burst the ward ends. Hits through `SafeArea.hurt` (`ONCE`). While the ward stands and the shade winds up,
+  `ObjectiveMarkers.TWINS_WARD` follows the body (the Twin Wardens' hint arrow for the same moment; cleared with the
+  ward, the shade's run and `FallenWard.clear`).
 - **Never a kill from full.** `FallenRules.MAX_HIT` (400 per mille) bounds `riptide_permille`, `pillar_permille`,
   `ward_permille` and `ward_burst_permille`. **The pace** is unchanged (§10i): the ward's blocked hits and the stuns'
   x1.5 go through `Damage` before `FinalPace.cap_hit`, so the bucket caps them; The Fallen hit for 999,999 every tick
@@ -2642,11 +2650,10 @@ pick and the pieces' own spots draw a stream (`ai`). No native change.
   `FALLEN_RIPTIDE`, `FALLEN_QUAKE`, `FALLEN_WARD`), `source` (its boss id), `stage`, `cast` (0..1000, -1),
   `cast_left`, `left`, `ended`, `count`, `next_in`, `gate`, `pool`, `room`, `ward` ({} or `up`, `stun_left`, `left`),
   `shade` ({} or `position`, `radius`, `stage`, `charge`, `charges`, `lane` (Obb), `locked`, `progress`, `end`,
-  `burst_radius`), `burst` ({} or `centre`, `radius`, `left`, `progress`), `pillar_dash` ({} or `from`, `to`,
+  `burst_radius`, `breaks` (the ward is up and the lane touches the body, its radius plus the contact slop)), `burst` ({} or `centre`, `radius`, `left`, `progress`), `pillar_dash` ({} or `from`, `to`,
   `through`). Each piece's own read reports it too: `boss_attack_slow()`, `boss_pickups()`, `boss_dance()` (The
   Fallen's row in BossDance's shape when no Tidecaller dances: `FallenRiptide.dance_state`), `boss_quake_pillars()`;
-  `boss_invulnerable(i)` is true under the ward. `final_interphase()` is always {}; `EFFECT_FALLEN_VANISH` ..
-  `EFFECT_FALLEN_RETURN` are kept as plain names no event carries (a view still names them).
+  `boss_invulnerable(i)` is true under the ward. The markers: `objectives()` (`twins_ward` on the body).
 
 ## 10u. The Warlord's charge, War Banner and Duel (v0.12.0 step 8; owner brief rows WL1-WL3 and SG-WL, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
 

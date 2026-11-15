@@ -174,7 +174,10 @@ func test_the_cart_is_a_wagon_on_its_place_with_its_hp_track_and_the_doom_cast()
 		view.cast_share(), float(cart["progress"]) / 1000.0, 0.001, "the Engine's ring fills"
 	)
 	var blast := view.blast_circle()
-	assert_eq(blast[1], SiegeCartViews.CART_BLAST_M, "its blast's radius")
+	var boss_id := w.actors.ids[int(r.boss_siege()["boss"])]
+	assert_almost_eq(
+		blast[1], SiegeLab.siege(w, boss_id).cart_blast_m, 0.0001, "the reader's radius"
+	)
 	assert_false(blast[2], "far from the Engine: red")
 	assert_eq(field.hero_read(), &"", "no cover read yet")
 	var ci := SiegeLab.cart(w)

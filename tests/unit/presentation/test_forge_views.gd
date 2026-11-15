@@ -151,13 +151,14 @@ func test_the_ring_is_gold_only_while_the_bomb_is_aimed_inside_the_reach() -> vo
 	var r := WorldReader.new(s[0])
 	var boss := r.actor_pos(r.boss_index())
 	var rr := r.actor_radius(r.boss_index())
+	var blast := float(r.boss_forge()["plate"]["blast"])
 	assert_eq(
-		ForgeLooks.DRONE_BLAST_M,
+		blast,
 		ForgeLab.forge(s[0], s[1]).drone_blast_m,
-		"the data's blast distance"
+		"the reader gives the data's blast distance"
 	)
-	assert_true(Vector2(rr + 1.4, 0).distance_to(boss) <= rr + ForgeLooks.DRONE_BLAST_M)
-	assert_false(Vector2(rr + 1.6, 0).distance_to(boss) <= rr + ForgeLooks.DRONE_BLAST_M)
+	assert_true(Vector2(rr + 1.4, 0).distance_to(boss) <= rr + blast)
+	assert_false(Vector2(rr + 1.6, 0).distance_to(boss) <= rr + blast)
 
 
 func test_pools_darken_as_they_cool_and_slabs_match_the_reader() -> void:

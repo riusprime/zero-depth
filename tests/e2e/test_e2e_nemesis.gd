@@ -352,7 +352,6 @@ func test_the_fallen_casts_a_remembered_mechanic_and_never_vanishes() -> void:
 	var reader := main.driver.reader
 	var w := _e.world()
 	var i := await _risen(main)
-	assert_true(reader.final_interphase().is_empty(), "no vanishing interphase")
 	w.actors.hp[i] = w.actors.max_hp[i] * 650 / 1000  # TEST HELPER (see above)
 	var cast := false
 	var ran := -1

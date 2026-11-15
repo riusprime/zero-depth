@@ -169,18 +169,6 @@ func test_the_siege_engines_target_lock_and_boulder_are_drawn() -> void:
 			else (-to.normalized() if to.length() < 6.0 else Vector2.ZERO)
 		)
 		e.stick_toward(want)
-		# TEST HELPER: the start hall's own enemies crowding the hero are killed (a body within 0.3 m of the shell's
-		# square leaves no boulder, the sim's rule; a swarmer hugging the hero blocked every shell here).
-		for jj in range(1, w.actors.size()):
-			if (
-				w.actors.dead[jj] == 0
-				and jj != w.actors.index_of(bid)
-				and not WorldReader.is_boss_kind(w.actors.kinds[jj])
-				and w.actors.pos(jj).distance_to(w.player_pos()) < 5.0
-			):
-				var hero_id := w.actors.ids[0]
-				var at := w.actors.pos(jj)
-				Damage.hit(w, jj, 1 << 20, hero_id, hero_id, w.take_root(), 0, w.player_pos(), at)
 		shells += SiegeLab.ticks_of(w, &"siege_shell", seq).size()
 		seq = w.last_event_seq()
 		var siege := reader.boss_siege()

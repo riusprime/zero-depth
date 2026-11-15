@@ -145,7 +145,7 @@ func _read_fallen(reader: WorldReader) -> void:
 		_charge = {
 			"lane": sh["lane"],
 			"progress": sh["progress"],
-			"breaks": FallenLooks.lane_crosses(sh["lane"], _full_at, reader.actor_radius(i)),
+			"breaks": bool(sh["breaks"]),
 		}
 
 

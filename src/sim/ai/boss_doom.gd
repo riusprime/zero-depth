@@ -293,6 +293,7 @@ static func state(w: World, i: int, st: BossSiegeTable) -> Dictionary:
 	var more := fs.sg_doom_n < st.carts_in(bs.phase[BossAi.entry_of(w, i)])
 	return {
 		"cart": cart,
+		"cart_blast": st.cart_blast_m,
 		"doom": maxi(0, fs.sg_doom_at - w.tick) if fs.sg_doom_at >= 0 else -1,
 		"doom_in": maxi(0, fs.sg_doom_due - w.tick) if fs.sg_doom_due >= 0 and more else -1,
 	}
