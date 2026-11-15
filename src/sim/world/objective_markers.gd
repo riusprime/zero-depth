@@ -25,6 +25,8 @@ const JUDGE_ORB := &"judge_orb"
 const TIDE_DRY := &"tide_dry"
 ## The violet Warden while the amber one winds up the charge that can break its ward (BossWard).
 const TWINS_WARD := &"twins_ward"
+## The Siege Engine's cover (BossSiege): each boulder standing while a blast that needs cover comes.
+const SIEGE_BOULDER := &"siege_boulder"
 const CAP := 8
 ## A fixed point's entity id.
 const NO_ENTITY := -1

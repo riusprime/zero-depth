@@ -296,7 +296,7 @@ static func _choose(w: World, i: int, b: int, t: BossTable, dist: float) -> int:
 			continue
 		if atk.move == M.BROOD and _alive_of(w, atk.enemy_kind) >= atk.max_alive:
 			continue
-		if BossTide.on_cadence(t, atk) or not BossGreatJavelin.may_use(w, i, atk):  # NB1; O5: moveset, F9: one out
+		if BossTide.on_cadence(t, atk) or not BossSiege.may_use(w, i, atk):  # Cadence; one javelin out; cover
 			continue
 		if t.mimic and not BossNemesis.allowed(w, atk):  # The run's weapon, the cards held
 			continue
@@ -575,7 +575,7 @@ static func resolve(w: World, i: int) -> void:
 	match atk.move:
 		M.SLAM_RING, M.PULL:
 			var r := ring_of(w, i)
-			if st == 0 and AttackShapes.ring_touches(r[0], r[1], r[2], p, pr):
+			if st == 0 and BossSiege.ring_hits(w, i, atk, r, p, pr):  # The cover rule decides from its phase
 				hit_player(w, i, atk, SimEvent.TAG_AREA, r[0])
 		M.LANES:
 			if st < atk.active_ticks:
@@ -727,8 +727,7 @@ static func hit_player(w: World, i: int, atk: BossAttackTable, tags: int, from: 
 
 ## [center, inner, outer] of a spike ring.
 static func ring_of(w: World, i: int) -> Array:
-	var atk := attack_of(w, i)
-	return [Vector2(w.actors.lock_x[i], w.actors.lock_y[i]), atk.inner_radius_m, atk.radius_m]
+	return BossSiege.ring(w, i, attack_of(w, i))  # Its inner radius 0 under the cover rule
 
 
 ## Lane k's angle in a fan of `count` centred on `aim`.

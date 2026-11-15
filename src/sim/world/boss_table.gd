@@ -220,6 +220,8 @@ var time: BossTimeTable = null
 var dance: BossDanceTable = null
 ## The Twin Wardens' own mechanics (null: none).
 var wardens: BossWardensTable = null
+## The Siege Engine's siege mechanics (null: none).
+var siege: BossSiegeTable = null
 
 
 ## The attack index with this id, or -1.

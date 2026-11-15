@@ -2366,6 +2366,80 @@ draws a stream (`ai`). No native change.
   `boss_charge_bursts()` (the armed bursts: boss, centre, radius, left, progress). The combo's arc, the overhead's
   arc and the swords' lanes are ordinary telegraphs; the swords' rifts are `boss_hazards()`.
   `MOVE_SWORD_COMBO`, `MOVE_MIRROR_WARD`, `MOVE_SHADOW_SWORDS`, `OBJECTIVE_TWINS_WARD`.
+## 10r. The Siege Engine's cover and Doom Shell (v0.12.0 step 9; brief rows SE1, SE2 and SG-SE, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+The Engine keeps its turrets, mortar grid, barrages, rails, deploys and falling rocks (§10d, §10f) and gains the pieces
+below. Its numbers are `BossTable.siege` (a `BossSiegeTable`, compiled from `BossDefinition.siege`; null for every
+other boss); its state is `BossStore.sg_*`. Code: `BossSiege` (Target Lock, boulders, the Shockwave's cover),
+`BossDoom` (the ammo cart, the Doom Shell). No stream is drawn; everything follows from the clock and the positions.
+No native change.
+
+- **The Target Lock** (from `lock_phase`; not an attack: the Engine goes on fighting). The first lock
+  `lock_first_ticks` into that phase, then one every `lock_every_ticks`, start to start; none begins while the
+  Engine kneels at a phase gate. Its circle (`lock_radius_m`) starts on the hero and each tick moves toward it by at
+  most `lock_follow` per mille of the hero's run speed now (`BossTide.run_speed`), so it lags; for its last
+  `lock_hold_ticks` it holds still; `lock_ticks` after it began the shell lands (tick phase 6): `lock_hit` per mille
+  of max HP to a hero touching the circle (`SafeArea` ONCE: armour and the dash's invulnerability apply). Every live
+  actor of `turret_kind` (the Engine's first `deploy` attack's enemy) touching it is destroyed without a kill.
+- **Boulders.** The shell leaves a square wall of half side `boulder_half` on the circle's centre
+  (`World.add_barrier`: bodies, both sides' shots, sight; the flow field goes round it through
+  `BossSignatures.set_nav_extra`) for `boulder_ticks`, at most `boulder_max` (the oldest crumbles when one more
+  lands). `BossSiege.fits`: inside the room by its half side plus the gap; the hero's width plus 0.15 m (the gap)
+  from every wall, every other boulder and the Engine's own body; 0.3 m from every other living body but the hero. A
+  hero under it is moved to `BossRewind.free_spot` from its shortest way out. Where it does not fit the shell lands
+  but leaves none. A 400-seed flood test checks that no boulder ever seals floor off.
+- **The Shockwave needs cover** (from `cover_phase`). A `slam_ring` attack of a boss with a siege hits the hero
+  wherever it stands unless `EnemyAi.sees_player` from the Engine's centre fails (a boulder, or any wall, on the
+  line): the attack's powered damage, at most `shock_cap` per mille of max HP, once, with the attack's own death
+  recap. Each blast shatters the boulders on the line that saved the hero. Its ring reads an inner radius of 0
+  (`BossSiege.ring`, which `BossAi.ring_of` returns). Before `cover_phase` the attack keeps its own ring (the punish
+  of the first phases). It is held (`BossSiege.may_use` in `BossAi._choose`, `unless_held` in
+  `BossChallenge.punish_due`) while a cart rolls or a Doom Shell is due, and while no boulder stands unless a shell
+  has landed since it was first held (`sg_held`, `sg_landed`). Its telegraph is 2.0 s (data).
+- **The Doom Shell** (from `doom_phase`; `carts_in(phase)`: `doom_count` a phase, `doom_late_count` from
+  `doom_late_phase`). The first cart `doom_first_ticks` into the phase, then one every `doom_every_ticks`; never
+  while one is out or a Doom Shell is due, at a phase gate, or while a Shockwave under the cover rule winds up. The
+  cart sets off from the middle of the room's wall farthest from the Engine (`BossDoom.way_of`; the next farthest
+  when a wall that is not a boulder stands on the way; none: tried again 1 s later) and rolls straight to the
+  Engine's edge in `cart_ticks`. It is an actor of `cart_kind` (a `warden` body) queued as an egg
+  (`World.queue_egg` with `[BossDoom.CART]`, made by `BossDoom.make_cart` from `BossSignatures.make_egg`) in the
+  script state `BossDoom.CART` (10, past `BossSignatures.EGG`, so the native kernels skip it), with HP `cart_hp` per
+  mille of the Engine's max HP and radius `cart_radius_m`, hittable at once; tick phase 6 sets it on its line
+  (nothing else moves it) and shatters every boulder it touches. **Arrived:** it goes without a kill and
+  `doom_ticks` later the shell fires: `doom_hit` per mille to a hero the Engine can see; a hero in cover takes
+  nothing and the boulders on the line shatter. **Destroyed first** (a kill like any; seen on the next tick's phase
+  6, where it stood): it blasts `cart_blast_m` round that point: `cart_blast_hit` per mille to a hero touching it;
+  an Engine touching it takes `strip_taken` per mille of every hit and damage tick (`BossChallenge.hit_mult`,
+  `Damage.tick_dot`) for `strip_ticks`.
+- **Markers.** `ObjectiveMarkers.SIEGE_BOULDER` points at every boulder standing while a Shockwave under the cover
+  rule winds up and while a Doom Shell comes (its cart's last 2 s and the wait after).
+- **Never a kill from full.** `SiegeRules.MAX_HIT` (400 per mille) bounds the shell, the Shockwave's cap, the Doom
+  Shell and the blast in content.
+- **The death recap.** The shell, the Doom Shell and the blast name the Engine's first `marks` attack (`shell_cause`:
+  the barrage, `CAUSE_SIEGE_BARRAGE`); the Shockwave keeps `CAUSE_SIEGE_SHOCKWAVE`. Damage effect ids:
+  `boss_siege_shell`, `boss_doom_shell`, `boss_cart_blast` (the Shockwave's hit has none, as before).
+- **Fight end.** With the hero dead or outside the room the lock running ends, every boulder crumbles, the cart
+  crumbles without a blast and a Doom Shell due goes (`BossSiege.cancel`); with the Engine gone, the same and the
+  clocks (`on_boss_gone`).
+- **Events** (`STATUS_APPLY`, source the Engine; never read back): `siege_lock` (target the hero, pos = the circle,
+  amount = ticks to the shell), `siege_shell` (pos, amount = the HP it cost, amount_applied = turrets destroyed),
+  `siege_boulder` (amount = its id, amount_applied = 1 when it moved the hero), `siege_boulder_down` (amount = its
+  id, amount_applied = `END_EXPIRED` 0, `END_CAP` 1, `END_SHATTERED` 2, `END_CLEARED` 3), `siege_turret_destroyed`
+  (target the turret), `siege_shockwave` (a Shockwave under the cover rule; amount = the HP it cost, amount_applied =
+  boulders shattered), `siege_cart` (sets off; pos, amount = its roll's ticks), `siege_cart_up` (its body arrived;
+  target the cart), `siege_cart_arrived` (amount = ticks to the Doom Shell), `siege_doom_shell` (target the hero,
+  amount = the HP it cost, amount_applied = boulders shattered, -1 in the open), `siege_cart_destroyed` (pos, amount
+  = the HP the blast cost, amount_applied = 1 when it stripped the armour), `siege_armour_stripped` (amount = its
+  ticks).
+- **Hash and save.** Hashed after a `-21` sentinel only while a boss runs a siege or a boulder stands
+  (`sg_boss >= 0 or sg_b_x not empty`); every world without one hashes as before. `BossStore` is a snapshot state
+  class, so the clocks, the lock and the boulders are saved; the restored boulders are walls again (a snapshot counts
+  them among the walls added in play) and the cart is an actor like any.
+- **Reads.** `WorldReader.boss_siege()`: `boss`, `room`, `lock` ({} or `centre`, `radius`, `locked`, `left`),
+  `lock_in`, `boulders` ([{id, centre, half, size, left, crumbling (its last 60 ticks)}]), `cover_rule`, `covered`,
+  `cart` ({} or `id`, `position`, `from`, `to`, `hp`, `max`, `progress` 0..1000, `left`, `state`), `doom` (ticks to
+  the Doom Shell, -1 none), `doom_in`, `stripped` (ticks left). A read after a step describes the tick about to run.
+  The markers: `objectives()` (`siege_boulder`).
 
 ## 11. Scaling and threat
 

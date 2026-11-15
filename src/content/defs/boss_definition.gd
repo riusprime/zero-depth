@@ -115,6 +115,9 @@ var arena_template := 0
 ## The Twin Wardens' own mechanics (WardensRules.SPEC; empty: none): the amber Warden's side dash and sword combo, the
 ## violet Warden's Mirror Ward and Shadow Swords, the last phase's ward and Through the Rift.
 @export var wardens := {}
+## The siege this boss fights with (SiegeRules.SPEC; empty: none): the Siege Engine's Target Lock and its boulders,
+## the Shockwave that needs cover, and the Doom Shell's ammo cart.
+@export var siege := {}
 
 
 func category() -> StringName:
@@ -152,6 +155,7 @@ func validate() -> Array[ValidationIssue]:
 	TimeRules.validate(self, issues)  # The Clockwork Judge's time mechanics
 	DanceRules.validate(self, issues)  # The Tidecaller's dance
 	WardensRules.validate(self, issues)  # The Twin Wardens' own mechanics
+	SiegeRules.validate(self, issues)  # The Siege Engine's cover and Doom Shell
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1

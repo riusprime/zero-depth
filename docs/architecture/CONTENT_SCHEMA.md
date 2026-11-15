@@ -852,6 +852,22 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   `damage` 8 every 0.5 s, `warn_seconds` 0.5, `look` "venom" until a view gives it its own) and `hazard_cause_key`.
   The brief's 0.3 s lock for the charge is under the telegraph minimum every lock keeps (24 ticks, 0.4 s): the
   charge ships with `lock_seconds` 0.4 until the owner decides (PROGRESS, step 6).
+- **v0.12.0 step 9 (brief rows SE1, SE2, SG-SE).** `BossDefinition.siege: Dictionary` (empty: none), the Siege
+  Engine's siege, checked by `SiegeRules` (`SPEC`: key → [default, min, max]; an unknown key or a value out of range
+  is an error) and compiled by `SiegeCompiler` into `BossTable.siege` (`BossSiegeTable`). Keys, with the Engine's
+  values: the Target Lock `lock_phase` 1, `lock_first_seconds` 6, `lock_every_seconds` 14, `lock_seconds` 4 (the
+  painted circle's whole life), `lock_hold_seconds` 0.6 (its still end), `lock_radius_m` 2.2,
+  `lock_follow_permille` 800 (of the hero's run speed), `lock_permille` 350 (of the hero's max HP); its boulders
+  `boulder_size_m` 3 (a square, side), `boulder_seconds` 30, `boulder_max` 4; the Shockwave's cover `cover_phase` 2,
+  `shockwave_cap_permille` 400; the Doom Shell `doom_phase` 1, `doom_first_seconds` 14, `doom_every_seconds` 35,
+  `doom_count` 1, `doom_late_phase` 2, `doom_late_count` 2, `cart_hp_permille` 60 (of the boss's max HP),
+  `cart_radius_m` 1, `cart_roll_seconds` 10, `doom_delay_seconds` 1, `doom_permille` 400, `cart_blast_m` 6,
+  `cart_blast_permille` 250, `strip_seconds` 8, `strip_taken_permille` 1500. Phases are indices from 0; one past the
+  boss's last phase means never. Every hit's share is at most 400 per mille. Also checked: the hold ends inside the
+  lock and the lock lasts the telegraph minimum; `lock_every_seconds` exceeds the lock and `doom_every_seconds` the
+  cart's roll plus the delay; a boss with a siege holds a `marks` attack (the death recap names its shells). The
+  Engine's `shockwave` telegraph is now 2.0 s. The cart's body is a `warden` (`SiegeCompiler.CART_ENEMY`); the
+  turrets a shell destroys are the boss's first `deploy` attack's enemy.
 
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 
