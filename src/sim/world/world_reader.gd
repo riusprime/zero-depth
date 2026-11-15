@@ -2479,6 +2479,17 @@ func boss_dance() -> Dictionary:
 	return BossDance.state(_w)
 
 
+## The Foundry's forge: {} with no boss running one; else "boss", "plate" ({"forging" (0..1000 through the forging
+## cast, -1 none), "on", "exposed_left" (ticks), "taken" (per mille of the hero's damage it takes now), "next_in"}),
+## "slabs" ([{"slab" (false: a pool still cooling), "id", "centre", "radius", "cooling" (0..1000; 1000 a slab),
+## "left" (ticks until it crumbles, -1 cooling), "shattered", "safe" (Overpressure counts it)}]), "overpressure" ({}
+## or "cast" (0..1000, -1 once the floor burns), "cast_left", "burn" (0..1000, -1 before), "burn_left", "on_slab"),
+## "overpressure_in", "scald" ({} before its phase; else "gauge", "max", "burning", "draining"). The marker on the
+## nearest safe slab: objectives() (`foundry_slab`). (BossForge.state)
+func boss_forge() -> Dictionary:
+	return BossForge.state(_w)
+
+
 ## The meltdowns, each {"centre", "radius" (molten beyond it; INF while it only glows: the melt
 ## attack's windup), "next" (the radius it melts to next), "warn" (0..1000 while the next step glows, else -1),
 ## "bound" (the room, Rect2), "bridge" (bool), "exit" (the bridge's far end), "half" (its half width)}.

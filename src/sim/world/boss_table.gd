@@ -228,6 +228,8 @@ var hazard: HazardTable = null
 var time: BossTimeTable = null
 ## The Tidecaller's dance (null: none).
 var dance: BossDanceTable = null
+## The Foundry's forge (null: none).
+var forge: BossForgeTable = null
 
 
 ## The attack index with this id, or -1.

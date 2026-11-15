@@ -326,4 +326,37 @@ hazard = {
 "warn_seconds": 0.8
 }
 hazard_cause_key = &"CAUSE_FOUNDRY_POOL"
+forge = {
+"drone_blast_m": 1.5,
+"drone_distance_m": 3.0,
+"drone_gap_seconds": 2.0,
+"exposed_seconds": 5.0,
+"exposed_taken_permille": 1250,
+"overpressure_cast_seconds": 3.0,
+"overpressure_cause": "firestorm",
+"overpressure_every_seconds": 22.0,
+"overpressure_first_seconds": 10.0,
+"overpressure_permille_per_second": 60,
+"overpressure_phase": 2,
+"overpressure_seconds": 4.0,
+"overpressure_tick_seconds": 0.5,
+"plate_cast_seconds": 1.5,
+"plate_every_seconds": 20.0,
+"plate_first_seconds": 8.0,
+"plate_phase": 1,
+"plate_taken_permille": 400,
+"scald_burn_permille_per_second": 50,
+"scald_cause": "molten_flood",
+"scald_drain_per_second": 250,
+"scald_hit": 200,
+"scald_lava": 60,
+"scald_max": 1000,
+"scald_open": 40,
+"scald_phase": 2,
+"scald_tick_seconds": 0.5,
+"slab_cool_seconds": 12.0,
+"slab_phase": 2,
+"slab_seconds": 8.0,
+"slag_drop_seconds": 6.0
+}
 id = &"foundry"

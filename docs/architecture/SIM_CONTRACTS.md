@@ -2283,6 +2283,73 @@ Maelstrom turns; everything else follows from the clock and the positions. No na
   centre, `grace`, `thrown`, `anchor` (the room's centre), `anchored` (the boss stands on it)). A read after a step describes the tick about to run. The pools: `boss_hazards()`;
   the circle's marker: `objectives()` (`tide_dry`).
 
+## 10s. The Foundry's forge (v0.12.0 step 10; owner brief rows FO1, FO2 and SG-FO, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+The Foundry keeps its lava, pools and meltdown (§10f, the arena hazards) and gains the pieces below. Its numbers are
+`BossTable.forge` (a `BossForgeTable`, compiled from `BossDefinition.forge`; null for every other boss); its state is
+`BossStore.fg_*` and `slab_*`. Code: `BossForge` (the plate, the scald gauge), `BossSlag` (slabs, Overpressure),
+`SafeArea` (§10p) for the burns. No stream is drawn; no native change. The forge's casts are beside the boss's
+attacks (no new move: it goes on fighting through them). The forge takes its clocks (and is hashed) only once its
+boss reaches the forge's first phase, so the first phase hashes as before.
+
+- **The Forged Plate** (from `plate_phase`). The first forging begins `plate_first_ticks` into that phase (not while
+  the boss kneels at a gate); its cast lasts `plate_cast_ticks`; then the boss wears the plate and takes `plate_taken`
+  per mille (400) of every hit and damage tick from the hero (`Damage.hit` beside the Wardens' share, tagged
+  ARMOURED; `Damage.tick_dot`). **The only way off is a drone's bomb**: on the tick a bomb drone's lobbed bomb lands
+  (its BURST pattern's `lob_ticks` into its ACTIVE state; the native strike lands it earlier in tick phase 6) at its
+  locked aim point within `drone_blast_m` of the boss's edge, the plate is blown: `exposed_ticks` at `exposed_taken`
+  (1250, tagged WEAK_SPOT), and the next forging is due `plate_every_ticks` after the blow. The drone aims its bomb at
+  the hero, so a hero beside the boss when a drone throws brings the bomb down on it. A drone the hero kills does not
+  explode (no drone ever did), so it counts for nothing. While plated, with no drone of `drone_kind` (the boss's first
+  `brood` attack's kind) alive or queued and `drone_gap_ticks` since its last, the boss queues one
+  `drone_distance_m` past its edge toward the hero (else the next of 8 angles clear of walls in the room).
+- **Cooling slag** (from `slab_phase`). One of the boss's DAMAGE pools `slab_cool_ticks` old (from its placing) is
+  removed and becomes a slab there (`slab_*` row: id, boss, cooled, crumbles at `+ slab_ticks`, broke, centre,
+  radius). A slab never hurts. The hero is on a slab when its centre is inside one. On the first active tick of the
+  boss's `slam_ring` attack (the vent blast), the slab under the hero breaks when its centre is inside the ring
+  (`slab_broke` = the tick; the row stays 30 ticks for the view and counts for nothing). **So the slabs never run
+  out:** from `slab_phase` a lane's pool goes on the spot of its piece nearest the room's centre where it still fits
+  along it (`BossSlag.pool_spot`, from `BossHazard.on_lanes`; the middle before), and with no pool of the boss's and no
+  slab that would serve an Overpressure on the floor the meltdown leaves, a pool drops where the hero stands (pulled
+  onto the floor the melt will leave once it has cooled), at most one every `drop_ticks` (`slag_drop`; warned as every
+  pool is, under the hazards' cap). A point outside the boss room is never safe (an outer lane's pool can lie
+  there).
+- **Overpressure** (from `over_phase`). Due `over_first_ticks` into that phase, then `over_every_ticks` start to
+  start; not while the boss kneels. It begins only when a slab is safe for its whole length (`BossSlag.safe_slabs`:
+  whole, crumbling no sooner than the cast and the burn's end, its centre the hero's width inside the cool floor the
+  meltdown will have left then); else it waits (the due tick stays). The cast (`over_cast_ticks`) points
+  `ObjectiveMarkers.FOUNDRY_SLAB` at the nearest safe slab, kept on the nearest one through the burn; then for
+  `over_ticks`, every `over_step_ticks`, a hero off every slab loses `over_hit` per mille (SafeArea STEP: neither
+  swallowed by nor giving the hurt invulnerability) and, in the scald phase, its gauge gains `scald_open`. The steps
+  keep their own beat (`fg_over_step`; the scald's `fg_scald_at`): a step that falls in a hit's freeze (the world
+  skips frozen ticks) is taken on the first tick after it, so none is lost.
+- **The scald gauge** (from `scald_phase`; boss-fight only, unrelated to the Overclock heat `World.heat`). 0..
+  `scald_max` on the hero: + `scald_hit` when one of the boss's own projectiles takes HP (`Damage._apply`,
+  `BossForge.on_hero_hurt`; DoT and area hits and what an invulnerability absorbs add nothing); every
+  `scald_step_ticks` + `scald_lava` standing in its molten lanes, an armed DAMAGE pool or its melt, and
+  - `scald_drain` on a whole slab. It never falls by itself. At `scald_max` (`fg_burning` 1) the hero loses
+  `scald_burn` per mille each step (STEP) until it is below.
+- **Never a kill from full.** `ForgeRules.MAX_HIT` (400 per mille) bounds each step; content also keeps
+  `slab_seconds` at least an Overpressure long and the cadence longer than one.
+- **The death recap.** Overpressure names `overpressure_cause` (the Foundry: `firestorm`, CAUSE_FOUNDRY_FIRESTORM),
+  the scald's burn `scald_cause` (`molten_flood`, CAUSE_FOUNDRY_FLOOD). Damage effect ids: `boss_overpressure`,
+  `boss_scald`.
+- **Fight end.** With the hero dead or outside the room the gauge empties, a burn ends and an Overpressure running
+  ends with its marker (`BossForge.cancel`; the plate and the slabs stay); with the boss gone everything goes
+  (`on_boss_gone`, `BossStore.clear_forge`).
+- **Events** (`STATUS_APPLY`, source the boss; never read back): `forge_cast` (amount = its ticks), `plate_forged`,
+  `plate_blown` (pos = where the bomb landed, target = the drone, amount = the exposed ticks), `plate_drone` (pos =
+  where), `slab_cooled` (pos, amount = slab id, amount_applied = the pool's id), `slab_crumbled`, `slab_shattered`
+  (amount = slab id), `slag_drop` (pos, amount = the pool's hazard id), `overpressure_cast` (pos = the nearest safe slab, amount = the cast's ticks), `overpressure`
+  (amount = the burn's ticks), `overpressure_end`, `scald_burn` / `scald_burn_end` (target the hero).
+- **Hash and save.** Hashed after a `-22` sentinel while a boss runs a forge or a slab lies (`fg_boss >= 0 or
+  slab_id not empty`). `BossStore` is a snapshot state class, so the clocks, the gauge and the slabs are saved.
+- **Reads.** `WorldReader.boss_forge()`: `boss`, `plate` ({`forging` 0..1000 or -1, `on`, `exposed_left`, `taken`,
+  `next_in`}), `slabs` ([{`slab` (false: a pool cooling), `id`, `centre`, `radius`, `cooling` 0..1000, `left` (-1
+  cooling), `shattered`, `safe`}]), `overpressure` ({} or `cast`, `cast_left`, `burn`, `burn_left`, `on_slab`),
+  `overpressure_in`, `scald` ({} before its phase, else `gauge`, `max`, `burning`, `draining`). The marker:
+  `objectives()` (`foundry_slab`).
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×

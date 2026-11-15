@@ -138,7 +138,7 @@ static func on_lanes(w: World, i: int, pieces: Array[Rect2]) -> void:
 	var done := 0
 	for step in n:
 		var r: Rect2 = pieces[(w.tick + step) % n]
-		var c := r.get_center()
+		var c := BossSlag.pool_spot(w, i, r, h.radius_m)  # The middle; a forge's slag nearer the centre
 		if done < h.per_attack and r.size.x * 0.5 >= h.radius_m and not _stacked(w, c, h.radius_m):
 			if place(w, i, c):
 				done += 1

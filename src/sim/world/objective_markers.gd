@@ -23,6 +23,8 @@ const TWINS_ACTIVE := &"twins_active"
 const JUDGE_ORB := &"judge_orb"
 ## The Tidecaller's High Tide (BossDance): its dry circle.
 const TIDE_DRY := &"tide_dry"
+## The Foundry's Overpressure (BossSlag): the nearest slab that is safe for it.
+const FOUNDRY_SLAB := &"foundry_slab"
 const CAP := 8
 ## A fixed point's entity id.
 const NO_ENTITY := -1

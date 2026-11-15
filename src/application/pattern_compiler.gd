@@ -160,6 +160,7 @@ static func compile_cadence(def: BossDefinition, t: BossTable) -> void:
 	HazardCompiler.compile_boss(def, t)  # The arena hazards
 	TimeCompiler.compile_boss(def, t)  # The Clockwork Judge's time mechanics
 	DanceCompiler.compile_boss(def, t)  # The Tidecaller's dance
+	ForgeCompiler.compile_boss(def, t)  # The Foundry's forge
 	for a in def.attacks:  # The Clockwork Judge records for its echo (its first echo's numbers)
 		if a != null and a.move == &"echo":
 			t.echo_gap_ticks = echo_gap(a)

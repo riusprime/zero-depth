@@ -157,6 +157,12 @@ static func hit(
 				m[0] * tw / 1000,
 				m[1] | (SimEvent.TAG_WEAK_SPOT if tw > 1000 else SimEvent.TAG_ARMOURED)
 			]
+		var fp := BossForge.taken_permille(w, target)  # The Foundry's plate, its blown-off hull
+		if fp != 1000:
+			m = [
+				m[0] * fp / 1000,
+				m[1] | (SimEvent.TAG_WEAK_SPOT if fp > 1000 else SimEvent.TAG_ARMOURED)
+			]
 	h.tags |= m[1]
 	var scaled := amount * m[0] / 1000
 	if mu[1] != 0 and owner_id == a.ids[0] and target != 0:
@@ -241,6 +247,7 @@ static func tick_dot(
 			amount = maxi(1, amount * sh[0] / 1000)
 			tags |= sh[1]
 		amount = amount * BossTwin.taken_permille(w, target) / 1000  # The Wardens' swap
+		amount = amount * BossForge.taken_permille(w, target) / 1000  # The Foundry's plate
 	var root := w.take_root()
 	return _apply(
 		w, target, amount, source_id, owner_id, root, tags, a.pos(target), -1, 0, effect_id
@@ -318,6 +325,7 @@ static func _apply(
 		BossTwin.on_hit(w, target, applied, owner_id)  # A hit on one Warden angers the other
 	if target == 0:
 		ItemProcs.on_player_hurt(w)  # Items: Thorn Mantle.
+		BossForge.on_hero_hurt(w, owner_id, tags, applied)  # The Foundry's shots fill the scald gauge
 		if applied > 0 and not (tags & SimEvent.TAG_DOT) and owner_id != a.ids[0]:
 			Curses.on_player_hit(w)  # Brittle
 		if saved:

@@ -122,6 +122,9 @@ var arena_template := 0
 ## The dance this boss fights with (DanceRules.SPEC; empty: none): the Tidecaller's stronger Pull, Riptide, High
 ## Tide and the Maelstrom.
 @export var dance := {}
+## The forge this boss fights with (ForgeRules.SPEC; empty: none): the Foundry's Forged Plate, its cooling slag,
+## Overpressure and the scald gauge.
+@export var forge := {}
 
 
 func category() -> StringName:
@@ -158,6 +161,7 @@ func validate() -> Array[ValidationIssue]:
 	HazardRules.validate(self, issues)  # The arena hazards
 	TimeRules.validate(self, issues)  # The Clockwork Judge's time mechanics
 	DanceRules.validate(self, issues)  # The Tidecaller's dance
+	ForgeRules.validate(self, issues)  # The Foundry's forge
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1
