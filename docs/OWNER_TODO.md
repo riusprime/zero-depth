@@ -270,6 +270,19 @@ Any boss: clips named like the code ones (`idle`, `walk`, `marks`, `pattern`, `l
 boss in [`roadmap/v0.8.0/evidence/BOSS_ANIMATIONS.md`](roadmap/v0.8.0/evidence/BOSS_ANIMATIONS.md)) in an
 AnimationPlayer inside the `.glb`; yours replace the code ones.
 
+**The Twin Wardens' new moves** (their files carry `idle`, `walk`, `cast` and `swipe`; until a clip of its own exists
+each new move borrows one). Clips the fight needs, in the rig's scripts (`scripts/assets/boss_anim/warden_anim.py`):
+
+| ✓ | Clip | Move | Plays today |
+|---|---|---|---|
+| ☐ | `sword_combo` | Amber's three-hit combo, a step in before each cut | the file's `swipe`, once per cut (stand-in) |
+| ☐ | `sweep` (an overhead) | Amber's overhead: a long wind-up, the sword high, a 170° cut down | the file's `swipe` (stand-in) |
+| ☐ | `dash` | Amber's side dash, 4 m sideways in 0.25 s | nothing: he slides in his walk or idle |
+| ☐ | `rift_dive` | Amber diving into a rift (Through the Rift) | nothing: he sinks into the floor as a burrowing boss does |
+| ☐ | `mirror_ward` | Violet raising the Mirror Ward | the file's `cast` (fits) |
+| ☐ | `shadow_swords` | Violet summoning the five blades | the file's `cast` (fits) |
+| ☐ | `stunned` | Violet stunned 5 s after her ward breaks | the code `stagger` clip (a dazed sway) |
+
 ---
 
 ## 4. 2D art and audio still owed
@@ -279,4 +292,5 @@ AnimationPlayer inside the `.glb`; yours replace the code ones.
 | ☐ | `fx_rail_streak` (P2) | The Siege Engine's rail shot (the only texture missing from the zips) | in [`art/requests/v0.8.0_textures.md`](art/requests/v0.8.0_textures.md) |
 | ☐ | final-boss music (P3) | A track for the final arena; today it uses the boss sounds | — |
 | ☐ | the Clockwork Judge's time sounds (P3) | The Time Wave landing, the Bell's toll, the throw back to your copy, the Judge's return, an hour orb taken: each borrows an existing sound re-pitched (`JudgeTimeCues`). A stopped gear rising and a slow field have none | — |
+| ☐ | the Twin Wardens' sounds | A charge's burst arming and going off, Amber's dash, a ward going up and the whole ward breaking, a shot turned back, a swing blocked, a shadow sword's cut, the rifts opening, him going in, the exit marked, him coming out: each borrows an existing sound re-pitched (`WardenCues`). The ward fading and the rifts closing have none | — |
 | ☐ | the Tidecaller's dance sounds | A Riptide warning and its wave, a High Tide's cast and its water rising, the Maelstrom beginning, the eye's throw: each borrows the Tidecaller's bell, its Pull's surge or the boss slam, re-pitched (`TideDanceCues`). The water draining has none | — |

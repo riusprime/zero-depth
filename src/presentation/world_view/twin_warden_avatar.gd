@@ -1,6 +1,6 @@
 class_name TwinWardenAvatar
 extends BossAvatar
-## BOSSES_4_5.md N2; art list §2: the Twin Wardens, floor 4's two stone knights joined by a burning chain.
+## BOSSES_4_5.md N2; art list §2: the Twin Wardens, floor 4's two stone knights, who fight apart.
 ## This is the amber one (the boss); TwinWardenVioletAvatar its violet twin. Both play TwinWardenClips. Each
 ## file is skinned to a full skeleton (spine, arms, legs, the sword, the shield, the shoulder plates, the cloak and
 ## the tabard) and carries its own animations: "idle" and "walk" replace the code clips of those names, and
@@ -10,10 +10,10 @@ extends BossAvatar
 ## amber's mirrored (its sword in the other hand), so driven alike the two move as a pair. On top of the clips
 ## (_pose_rig) the anger the sim reads out (WorldReader.boss_twin) drives it: an angry Warden leans forward, its cracks
 ## and visor blaze and its light flares, so the player sees which one is fast. With the file missing it is a code
-## stand-in of the same parts (a faceted body and cape, a slit helm with stone fins, a tower shield with its shackle,
-## a short sword) posed from the same inputs. the roles read out too: the Warden to hit
-## now glows brighter (phase 3's exposed one pulses), the one standing back dims and leans back behind its shield.
-## a short sword) posed from the same inputs. Presentation only (EI-07): it reads the sim and moves its own children.
+## stand-in of the same parts (a faceted body and cape, a slit helm with stone fins, a tower shield, a short sword)
+## posed from the same inputs. The roles read out too: the Warden to hit glows brighter (phase 3's exposed one
+## pulses), the one standing back dims and leans back behind its shield. Presentation only (EI-07): it reads the sim
+## and moves its own children.
 
 const HEIGHT := 2.2
 const WALK_SPEED := 1.6
@@ -21,19 +21,23 @@ const WALK_SPEED := 1.6
 const STRIDE := 1.17
 ## The two files' animations by the move that plays them, with the seconds of each one's strike pose and of the
 ## end of its active part. A new move that should cast or cut needs only a row here.
+## The sword combo plays the swipe once per cut (its active part cycles the strike); the overhead has no clip of its
+## own yet and plays the swipe too; the Mirror Ward and the Shadow Swords are casts.
 const OWNER_PLAYS := {
 	&"crossfire": {"anim": &"cast", "strike": 0.7, "recover": 1.8},
 	&"pattern": {"anim": &"cast", "strike": 0.7, "recover": 1.8},
 	&"chain_sweep": {"anim": &"swipe", "strike": 0.55, "recover": 0.73},
+	&"sword_combo": {"anim": &"swipe", "strike": 0.55, "recover": 0.73},
+	&"sweep": {"anim": &"swipe", "strike": 0.55, "recover": 0.73},
+	&"mirror_ward": {"anim": &"cast", "strike": 0.7, "recover": 1.8},
+	&"shadow_swords": {"anim": &"cast", "strike": 0.7, "recover": 1.8},
 }
 
 const STONE := Color("#8A8378")
 const STONE_DARK := Color("#5A544C")
 const IRON := Color("#3A3836")
-## Points on the owner's model at rest (metres, model frame +X front): the visor, the shield's shackle (the chain's
-## end), the chest (the weak point).
+## Points on the owner's model at rest (metres, model frame +X front): the visor, the chest (the weak point).
 const MODEL_VISOR := Vector3(0.3, 1.95, 0.0)
-const MODEL_SHACKLE := Vector3(0.35, 1.0, -0.55)
 const MODEL_CHEST := Vector3(0.35, 1.35, 0.0)
 const LIGHT_ENERGY := 1.0
 
@@ -95,22 +99,14 @@ func _weak_point_at() -> Vector3:
 
 
 func anchor_names() -> Array[StringName]:
-	return [&"weak", &"visor", &"shackle"]
+	return [&"weak", &"visor"]
 
 
 func _anchor(point: StringName) -> Vector3:
-	var side := shield_side()
 	if imported == null:
-		var code := {
-			&"visor": helm.position + Vector3(0.28, 0.05, 0),
-			&"shackle": shield.position + Vector3(0.1, -0.35, 0),
-		}
-		return code.get(point, weak_core.position)
-	match point:
-		&"visor":
-			return _riding(&"head", MODEL_VISOR)
-		&"shackle":
-			return _riding(&"shield", MODEL_SHACKLE * Vector3(1, 1, side))
+		return helm.position + Vector3(0.28, 0.05, 0) if point == &"visor" else weak_core.position
+	if point == &"visor":
+		return _riding(&"head", MODEL_VISOR)
 	return weak_core.position
 
 
@@ -197,7 +193,7 @@ func _build() -> void:
 			3.0
 		)
 	)
-	# The tower shield on its arm with the iron shackle round the wrist; the short broad sword in the other hand.
+	# The tower shield on its arm with an iron band round the wrist; the short broad sword in the other hand.
 	shield.name = "Shield"
 	shield.position = Vector3(0.3, 1.05, -0.55 * side)
 	model.add_child(shield)

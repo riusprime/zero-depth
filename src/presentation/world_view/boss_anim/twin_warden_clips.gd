@@ -6,13 +6,12 @@ extends RefCounted
 ## whole figure through BODY (the model's pivot), the same on both models, and add small accents on three bones of
 ## the files' skeleton, laid over the file's idle: the head, the shield and the sword. The violet twin carries its
 ## shield on the other arm, so its library is the amber's with those accents mirrored (library(true)). Parameters
-## the avatar maps: glow (the cracks' and visor's light) and chain (how hard the shackle hand pulls on the chain,
-## for the chain's view).
+## the avatar maps: glow (the cracks' and visor's light).
 ## Looser: an idle weight shift and sway, a rolling
 ## stride, a counter-move before each wind-up, a recoil after each strike, and a real hit reaction.
 ## Stone sentinels: they stand planted and breathe slowly; they march in step, heavy and stiff; for Crossfire they set
-## their shields and lean in as the embers pour out (shielded); for the Chain Sweep they rear back on the chain and
-## heave it across; for the Shield Bash they lift and slam their weight down; a jolt, a dazed sway, a roar arms wide,
+## their shields and lean in as the embers pour out (shielded); for the Sword Lane they rear back and heave the sword
+## across; for the Shield Bash they lift and slam their weight down; a jolt, a dazed sway, a roar arms wide,
 ## rising out of the floor, and a toppling collapse.
 
 const X := Vector3(1, 0, 0)
@@ -122,7 +121,7 @@ static func _crossfire() -> BossClip:
 	return c
 
 
-## The Chain Sweep: they rear back, hauling the chain taut (tracking), then heave it across on the strike.
+## The Sword Lane: they rear back, sword drawn (tracking), then heave it across on the strike.
 static func _chain_sweep() -> BossClip:
 	var c := BossClip.new(&"chain_sweep")
 	c.turn(
@@ -152,7 +151,6 @@ static func _chain_sweep() -> BossClip:
 	)
 	c.shift(B, FWD, [[0, 0], [0.42, -0.15], [0.5, 0.25, IN3], [0.62, 0.15], [1, 0]])
 	c.turn(&"shield", Z, [[0, 0], [0.42, -0.4], [0.5, 0.5, IN3], [0.62, 0.3], [1, 0]])
-	c.param(&"chain", [[0, 0], [0.42, 1.0], [0.5, 1.4, IN3], [0.62, 0.6], [1, 0]])
 	c.param(&"glow", [[0, 0], [0.42, 0.8], [0.5, 1.4, IN3], [0.62, 0.6], [1, 0]])
 	return c
 

@@ -130,6 +130,27 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   (`render_priority` -2). Hint arrows: `ObjectiveMarkers.TIDE_DRY`, drawn as the pillars' arrow, no text. The tide
   pools (data look `venom`) draw as water while the Tidecaller fights (`HazardViews`: the frost ring, then the
   pack's `tc_pool`). Sounds: `TideDanceCues`. The pack rows are `data/vfx/pack_fx_tc.tres`.
+- **The Twin Wardens fight apart** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10q). Read from
+  `WorldReader.boss_wardens`, `boss_charge_bursts`, `boss_twin`, `telegraph`, `boss_hazards` and the `STATUS_APPLY`
+  events only. Nothing is drawn between the two bodies (`TwinViews` keeps Crossfire's gap lanes and safe spot and the
+  Sword Lane's slash). `ChargeBurstViews` (any boss whose charge bursts): a red-orange circle of the telegraph's
+  `burst` radius at its `center`, dull while the aim tracks and flashing once `locked`, the pack's `tw_burst_rim` on
+  it; an armed burst's circle stays put and fills with `progress`; when it goes the pack's `tw_burst`, sized to the
+  radius. `WardenWardViews`: the resting Warden's dome (the pack's forcefield in its colour, `tw_dome_amber` /
+  `tw_dome_violet`, each wearing its own material copy); the Mirror Ward a curved wall on the reader's `centre` /
+  `half_arc` round the violet Warden (a sheet of violet light) with the pack's ripple at its foot, rising through the cast toward the hero and
+  sinking over its last 0.3 s; `warden_reflect` the pack's hit where it struck, `warden_block` its pulse on the hero;
+  the whole ward a larger brighter dome (`tw_dome_full`) and a floor rim; the charge's lane glowing under it,
+  white-hot while `breaks`; on `warden_ward_break` the pack's shatter and stun flash, stars while `stun_left`, a
+  ring filling to `return_in` and the pack's rising light for its last 2 s. `WardenBladeViews`: a dark blade over
+  each sword's `from`, pointing down its line, flying it on `cut` with a slash and the pack's hit; the side dash an
+  amber streak while `dash` runs; the rifts the pack's violet ripple at each `centre`, the exit's light pillar only
+  while the reader marks it `exit`, its `lane` on the floor, a flash on `warden_rift_enter` / `warden_rift_exit` (the
+  amber Warden sinks while `boss_hidden`). The swords' rifts (data look `venom`) draw violet while the Wardens fight
+  (`HazardViews`: the pack's rim, then `tw_rift`). The bar shows `HUD_BOSS_STUNNED` while the violet Warden is
+  stunned. Hint arrow: `ObjectiveMarkers.TWINS_WARD`, drawn as the pillars' arrow, no text. Clips: the sword combo
+  and the overhead play the files' swipe, the Mirror Ward and the Shadow Swords their cast (`OWNER_PLAYS`). Sounds:
+  `WardenCues`. The pack rows are `data/vfx/pack_fx_tw.tres`.
 
 - **The player's attacks are drawn from their final specs** (v0.6.0 MX1; design
   [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §4): `AttackView` reads `WorldReader.attack_spec`

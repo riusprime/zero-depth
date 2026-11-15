@@ -69,6 +69,9 @@ const MOVE_CLIPS := {
 	WorldReader.MOVE_WAVE: &"wave",  # Its crossing wave
 	WorldReader.MOVE_CROSSFIRE: &"crossfire",  # The Twin Wardens
 	WorldReader.MOVE_CHAIN_SWEEP: &"chain_sweep",
+	WorldReader.MOVE_SWORD_COMBO: &"sword_combo",
+	WorldReader.MOVE_MIRROR_WARD: &"mirror_ward",
+	WorldReader.MOVE_SHADOW_SWORDS: &"shadow_swords",
 	WorldReader.MOVE_ECHO: &"echo",  # The Clockwork Judge
 	WorldReader.MOVE_VERDICT: &"verdict",
 	WorldReader.MOVE_TIME_WAVE: &"time_wave",

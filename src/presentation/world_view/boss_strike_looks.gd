@@ -86,17 +86,19 @@ const LOOKS := {
 	# off the water, both over swirling water.
 	&"tc_undertow": {"pattern": Pattern.WATER, "strike": &"eruption"},
 	&"tc_slam": {"pattern": Pattern.WATER, "strike": &"steam_ring"},
-	# The Twin Wardens. The Chain Sweep's lane scorches where the burning chain lashed (the chain itself is
-	# TwinViews'), the Shield Bash cracks a shock ring out of the stone.
-	&"tw_sweep": {"pattern": Pattern.MOLTEN, "strike": &"skid"},
+	# The Twin Wardens. The Sword Lane's strip scorches where his blade cut (the slash itself is TwinViews'), the
+	# Shield Bash cracks a shock ring out of the stone.
+	&"tw_sweep": {"pattern": Pattern.BLADE, "strike": &"skid"},
 	&"tw_bash": {"pattern": Pattern.STONE, "strike": &"shock_ring"},
 	&"tw_charge": {"pattern": Pattern.STONE, "strike": &"skid"},  # The amber's Charge, Ground Slam
 	&"tw_slam": {"pattern": Pattern.STONE, "strike": &"crater"},
 	&"tw_runes": {"pattern": Pattern.VOID, "strike": &"light_ring"},  # The violet's Rune Ring, Blink
 	&"tw_blink": {"pattern": Pattern.VOID, "strike": &"light_burst"},
-	# The amber Warden's sword (its combo's first cut, its overhead) and the violet one's Shadow Swords: stand-ins
-	# from the Warlord's bash and a beam until the Wardens' own strikes are drawn.
+	# The amber Warden's sword: each cut of his combo a steel arc over scratched steel; the overhead's wide arc
+	# smashes into the stone (cracks, a dust arc). The violet one's Shadow Swords: each line torn dark violet, a
+	# violet beam down it as the blade cuts (the blades and their slash are WardenBladeViews').
 	&"tw_sword": {"pattern": Pattern.BLADE, "strike": &"steel_arc"},
+	&"tw_overhead": {"pattern": Pattern.STONE, "strike": &"dust_arc"},
 	&"tw_swords": {"pattern": Pattern.VOID, "strike": &"beam"},
 	# The Clockwork Judge. The Verdict's square takes a column of gold light where the pendulum drops (the
 	# pendulum itself is JudgeViews'); the Gavel Slam rings a light shockwave out over the floor.
@@ -177,7 +179,7 @@ const BY_KIND := {
 		WorldReader.MOVE_CHARGE: &"tw_charge",  # Each Warden's own moveset
 		WorldReader.MOVE_MARKS: &"tw_slam",
 		WorldReader.MOVE_LEAP: &"tw_blink",
-		WorldReader.MOVE_SWEEP: &"tw_sword",
+		WorldReader.MOVE_SWEEP: &"tw_overhead",
 		WorldReader.MOVE_SWORD_COMBO: &"tw_sword",
 		WorldReader.MOVE_SHADOW_SWORDS: &"tw_swords",
 	},
