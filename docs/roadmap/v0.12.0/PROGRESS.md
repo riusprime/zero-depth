@@ -10,9 +10,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0120`, cut from `main` at `feedd802`
   mechanics. Head `dd601909` plus this docs commit, on `claude/v0120`, **not pushed** (owner, V2: nothing goes to
   GitHub before the playtest). The sheet: [`PLAYTEST.md`](PLAYTEST.md).
 - **Seams on `dd601909`** (clean worktree, owner's PC, 2026-11-15): **731 of 731, 1,213 s of tests, exit 0.**
-- **Held back, waiting on the owner:** The Fallen's card theft (step 7b, branch `v0120-h7b`, commit `fdfe2661`,
-  worktree `wt-h7b`, unmerged). With it `test_final_pace.gd` fails: the strong Blade build's Fallen lasts 229.4 s
-  and 225.6 s against the 185 s ceiling (213.3 s on the mean against the base build's 140.0 s). Nothing retuned.
+- **The Fallen's card theft is merged** (step 7b; owner, asked what to do with it after an explanation of why it was held back: "Merge it"). **One test is red on purpose, `test_final_pace.gd`:** the strong Blade build's Fallen lasts 229.4 s and 225.6 s against the 185 s ceiling (212.3 s on the mean against the base build's 140.0 s). Nothing retuned; it waits for the owner's playtest. Merged tree `f1b96ce5` (clean worktree): lint clean, 2,061 of 2,064, that one test failing, the rest pending bot lines. `seams.sh` was not run again after this merge; if it includes the pace test it will be red for the same reason.
 - **Bot targets missed, nothing retuned** (each a `pending` line that prints its numbers; evidence in
   `evidence/*_BOTS.md`): Tidecaller (both weapons), Twin Wardens (Blade), Siege Engine (Blade), Foundry (Blade),
   Warlord (Gun), Hive Lens (both: ignoring the drones is faster), The Fallen (both). The owner judges by playing.
@@ -36,6 +34,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0120`, cut from `main` at `feedd802`
   goes.
 - "Yes, stand still" (asked: should the Tidecaller stand still at the centre during the Maelstrom?): it does, so the
   whirlpool's eye no longer travels onto the dry circle (step 4b).
+- "Merge it" (2026-11-15, The Fallen's card theft, after the lead explained it breaks the final boss's pace test): merged;
+  the pace test stays red until the theft is tuned or the rule changed after the playtest.
 - "push it locally, i'll test all the bosses at the same time, then after playtest we decide if they are ready for main
   at github" (after the Judge was built): no push to GitHub before the playtest; all bosses are built first (PLAN V2).
 - "missing some signature mechanics that make it difficult and rememberable" → BOSS_BRIEF §5b; then, asked whether

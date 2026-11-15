@@ -30,7 +30,7 @@ full.
 | Foundry | A plate only its own bombs blow off; lava that cools into slabs you stand on for Overpressure; a scald gauge by your health in phase 3 |
 | Warlord | A faster, bursting charge; a War Banner (inside it both of you hit harder or faster); a javelin cage where its shield is down |
 | Hive Lens | Drones feed it (it takes less damage); its own beam can cut them; the Lattice of light you open a gap in |
-| The Fallen (Hollow Crown, third body) | It no longer vanishes. It casts a mechanic of a boss you killed this run. (Its card theft is built on branch `v0120-h7b` but **not in this build**: it breaks the final boss's pace rule, see "Known before you play") |
+| The Fallen (Hollow Crown, third body) | It no longer vanishes. It casts a mechanic of a boss you killed this run, and at 66 % and 33 % it takes your best card: the slot goes dark, and eight hits on the mark on its back win it back |
 
 Unchanged: Gatekeeper, Brood Mother, Lantern Shade, the Colossus and the Prism.
 
@@ -54,10 +54,7 @@ Unchanged: Gatekeeper, Brood Mother, Lantern Shade, the Colossus and the Prism.
   (Blade), Siege Engine (Blade), Foundry (Blade), Warlord (Gun), Hive Lens (both: ignoring its drones is faster),
   The Fallen (both: its mechanics are a small share of the fight). The bots take every ordinary attack without
   dodging, which hides part of what a mechanic costs a player.
-- **The Fallen's card theft is held back** (step 7b, commit `fdfe2661`, unmerged). With it, `test_final_pace.gd`
-  fails: the strong Blade build's Fallen lasts 229.4 s and 225.6 s (seeds 21, 22) against the 185 s ceiling, and
-  213.3 s on the mean against the base build's 140.0 s, because the scripted hero never wins its cards back. That
-  breaks the owner's rule that a stronger build is no slower on the final boss. Waiting on the owner.
+- **One test is red on purpose: the final boss's pace** (`test_final_pace.gd`, with the card theft merged by the owner's decision, "Merge it", 2026-11-15). The strong Blade build's Fallen lasts 229.4 s and 225.6 s (seeds 21, 22) against the 185 s ceiling, and 212.3 s on the mean against the base build's 140.0 s: the scripted hero never goes behind The Fallen to win its cards back. It stays red until the theft is tuned or the rule is changed, after the owner has played it.
 - **Stand-ins:** the Judge's clock and cogs, the Siege Engine's cart and boulders, the Foundry's slab and plate, the
   Warlord's banner, The Fallen's emblems and shade, the Hive Lens's glass; borrowed sounds everywhere. Several new
   attacks reuse an old animation clip or none (OWNER_TODO §3.5, §3.7).
