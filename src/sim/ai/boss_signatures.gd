@@ -402,6 +402,7 @@ static func advance(w: World) -> void:
 	BossTime.advance(w)  # The Clockwork Judge's gears, Bell and fields
 	BossGreatJavelin.advance(w)  # The Warlord's great javelin flies, quakes and flies back
 	BossDance.advance(w)  # The Tidecaller's Riptide, High Tide and Maelstrom
+	BossWarlord.advance(w)  # The Warlord's banner and duel (its cage cuts a charge short before it bursts)
 	BossChargeBurst.advance(w)  # A charge's burst where it ended
 	BossWardens.advance(w)  # The Twin Wardens' wards and Through the Rift
 	BossSiege.advance(w)  # The Siege Engine's Target Lock, boulders and ammo cart
@@ -434,6 +435,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	BossChargeBurst.on_boss_gone(w, boss_id)  # Its pending bursts go
 	BossSiege.on_boss_gone(w, boss_id)  # The Siege Engine's boulders and cart
 	BossForge.on_boss_gone(w, boss_id)  # The Foundry's forge and its slabs
+	BossWarlord.on_boss_gone(w, boss_id)  # The Warlord's banner and duel
 	BossRemembered.on_boss_gone(w, boss_id)  # The Fallen's remembered mechanics
 
 

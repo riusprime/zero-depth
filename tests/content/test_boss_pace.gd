@@ -40,7 +40,8 @@ const KEPT_SLOW := {
 const SPED_UP := {
 	&"gatekeeper":
 	[[&"fist_slam", 1.6, 1.1], [&"fist_slam_2", 1.6, 1.1], [&"fist_slam_3", 1.6, 1.1]],
-	&"warlord": [[&"lunge_dash", 1.4, 1.0]],  # v0.9.5 BH2 (B2): the javelins wind up 0.6 s again (the hard spells' rule)
+	# The owner found the charge "too predictable and too slow": 0.6 s, locked its last 0.4 s, and it bursts
+	&"warlord": [[&"lunge_dash", 1.4, 0.6, 0.4]],
 	&"brood_mother": [[&"leap", 1.6, 1.0], [&"leap_chain", 1.4, 1.0], [&"pounce_chain", 1.2, 0.95]],
 	&"hive_lens": [[&"dive", 1.4, 1.0], [&"focus_beam", 1.6, 1.5], [&"focus_beam_3", 1.6, 1.5]],
 	&"siege_engine": [[&"rail", 1.5, 1.1], [&"rail_3", 1.5, 1.1]],
@@ -182,9 +183,10 @@ func test_each_boss_is_faster_in_places_and_keeps_slow_readable_attacks() -> voi
 			assert_lt(float(row[2]), float(row[1]), String(row[0]))
 			assert_almost_eq(atk.telegraph_seconds, float(row[2]), 0.001, "%s sped up" % row[0])
 			if atk.lock_seconds > 0.0:  # owner N15 "Track, then lock 0.8 s" (the Colossus's 0.5): the lock stays
+				var lock := 0.5 if def.id == &"colossus" else 0.8
 				assert_almost_eq(
 					atk.lock_seconds,
-					0.5 if def.id == &"colossus" else 0.8,
+					float(row[3]) if row.size() > 3 else lock,  # A row's own lock when it has one
 					0.001,
 					"%s keeps its dodge window" % row[0]
 				)

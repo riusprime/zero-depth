@@ -76,8 +76,11 @@ static func anchor(w: World, i: int) -> Vector2:
 
 ## Tick phase 5 (BossAi.move, before anything else moves it): true from mael_phase on, when boss i moves itself.
 ## Each tick, whatever it does but kneel at a phase gate, it steps its phase's speed straight toward the anchor,
-## landing on it exactly, never past it; once there nothing it does moves it.
+## landing on it exactly, never past it; once there nothing it does moves it. Also true (no step) while the Warlord
+## casts its banner or its duel: it stands for them.
 static func holds(w: World, i: int, slow: float) -> bool:
+	if BossWarlord.stands(w, i):
+		return true
 	var t := BossAi.table_of(w, i)
 	if t.dance == null:
 		return false

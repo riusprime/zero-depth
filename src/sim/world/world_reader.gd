@@ -4743,3 +4743,15 @@ func boss_wardens() -> Dictionary:
 ## "burst" {center, radius}. (BossChargeBurst.rows)
 func boss_charge_bursts() -> Array:
 	return BossChargeBurst.rows(_w)
+
+
+## The Warlord's banner and duel: {} with no Warlord running them (before its second phase); else "boss", "running"
+## and "next" (BossWarlord.NONE, BANNER, DUEL), "next_in" (ticks until the next is due, 0 due and waiting for the
+## Warlord to be free, -1 while one runs), "held" (it casts and starts nothing), "banner" ({} or "cast" (0..1000, -1
+## once planted), "centre", "radius", "left", "boss_inside", "hero_inside", "cooldown", "damage" (per mille)) and
+## "duel" ({} or "stage" (BossDuel.CAST, CAGE, RECALL), "cast" (0..1000, -1 after), "centre", "radius" (the fence
+## now), "from_radius", "to_radius", "left", "progress", "zone" ({} or "centre", "radius", "warn" 0..1000),
+## "shield_down", "touch_m", "touching", "in_zone"). A charge's end circle is its telegraph's "burst".
+## (BossWarlord.state)
+func boss_warlord() -> Dictionary:
+	return BossWarlord.state(_w)

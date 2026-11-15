@@ -83,7 +83,9 @@ static func signature_of(t: BossTable, phase: int) -> int:
 ## With no signature due, the Clockwork Judge's Time Wave by the same rule on its own clock (BossTime.wave_due).
 static func due(w: World, i: int, b: int, t: BossTable, cd: int = 0) -> int:
 	var sig := _signature_due(w, i, b, t, cd)
-	return sig if sig != -1 else BossTime.wave_due(w, i, b, t, cd)
+	if sig == -1:
+		sig = BossTime.wave_due(w, i, b, t, cd)
+	return sig if sig != -1 else BossWarlord.due(w, i)  # The Warlord holds for its banner's and duel's casts
 
 
 static func _signature_due(w: World, i: int, b: int, t: BossTable, cd: int) -> int:
