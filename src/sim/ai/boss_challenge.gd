@@ -128,7 +128,8 @@ static func dash_landing(w: World) -> Vector2:
 static func gap_close_due(w: World, b: int, t: BossTable) -> int:
 	if t.gap_attack < 0 or t.gap_ticks <= 0 or w.player_dead():
 		return -1
-	return BossTwin.own(w, b, t.gap_attack) if w.bosses.gap_t[b] >= t.gap_ticks else -1
+	var k := BossTwin.own(w, b, t.gap_attack) if w.bosses.gap_t[b] >= t.gap_ticks else -1
+	return BossLens.unless_held(w, b, k)  # The Hive Lens dives in no Lattice
 
 
 ## The punish attack's index when it is due now (the player stayed far long enough), else -1.
@@ -136,6 +137,7 @@ static func punish_due(w: World, b: int, t: BossTable) -> int:
 	if t.punish_attack < 0 or t.punish_ticks <= 0 or w.player_dead():
 		return -1
 	var k := BossTwin.own(w, b, t.punish_attack) if w.bosses.far_t[b] >= t.punish_ticks else -1
+	k = BossLens.unless_held(w, b, k)  # The Hive Lens's Focus Beam waits out a Lattice
 	return BossSiege.unless_held(w, b, k)  # The Siege Engine's Shockwave waits for cover
 
 

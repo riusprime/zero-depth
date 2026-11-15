@@ -165,6 +165,7 @@ static func compile_cadence(def: BossDefinition, t: BossTable) -> void:
 	SiegeCompiler.compile_boss(def, t)  # The Siege Engine's cover and Doom Shell
 	ForgeCompiler.compile_boss(def, t)  # The Foundry's forge
 	WarlordCompiler.compile_boss(def, t)  # The Warlord's banner and duel
+	LatticeCompiler.compile_boss(def, t)  # The Hive Lens's drones, burnt glass and Lattice
 	for a in def.attacks:  # The Clockwork Judge records for its echo (its first echo's numbers)
 		if a != null and a.move == &"echo":
 			t.echo_gap_ticks = echo_gap(a)

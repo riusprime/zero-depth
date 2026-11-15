@@ -932,6 +932,21 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   from 0. Also checked: every hit at most 400 per mille; both casts and the recall's warning last the telegraph
   minimum; the banner and the duel never share a phase; the cage only closes; the centre zone plus the touch reach
   is smaller than the last ring.
+- **v0.12.0 step 11 (brief HL1, HL2, SG-HL; SIM_CONTRACTS §10v).** `BossDefinition.lattice: Dictionary` (empty:
+  none), the Hive Lens's drones, glass and Lattice, checked by `LatticeRules` (`SPEC`: key → [default, min, max]; an
+  unknown key or a value out of range is an error) and compiled by `LatticeCompiler` into `BossTable.lens`
+  (`BossLensTable`). Keys, with the Hive Lens's values: feeding `feed_phase` 1, `feed_cut_permille` 150 (a living
+  drone), `feed_cap_permille` 450, `resend_seconds` 12; the glass `strip_phase` 2, `strip_length_m` 8,
+  `strip_width_m` 1, `strip_seconds` 6, `strip_damage` 6 (HP, the boss's power applies), `strip_tick_seconds` 0.5,
+  `strip_max` 3; the Lattice `lattice_phase` 1, `lattice_first_seconds` 10, `lattice_every_seconds` 45,
+  `lattice_cast_seconds` 2, `lattice_seconds` 10, `lattice_min_drones` 2, `strand_width_m` 0.6,
+  `strand_hit_permille` 200, `strand_lockout_seconds` 0.5, `orbit_dps` 20, `orbit_min_m` 6, `orbit_max_m` 12,
+  `calm_seconds` 3 (round the Gaze); attack ids (required): `split_attack` "split" (a `deploy` or `brood` attack
+  with an `enemy_id`: its enemy is the drone that feeds), `strand_cause` "lens_flare", `strip_cause` "focus_beam";
+  lists of attack ids (required): `beam_attacks` ["focus_beam", "focus_beam_3"], `lattice_holds` (the Gaze, the
+  Focus Beams, the dive and the Prism Spirals, fast ones included). Also checked: the cast lasts the telegraph
+  minimum; `lattice_every_seconds` exceeds the cast, the web and the calm; `orbit_min_m` ≤ `orbit_max_m`; a strand
+  takes at most 400 per mille.
 
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 

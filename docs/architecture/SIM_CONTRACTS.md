@@ -2706,6 +2706,70 @@ cage). Hooks: `BossSignatures.advance` (before `BossChargeBurst`), `BossTide.due
   or `stage`, `cast`, `centre`, `radius`, `from_radius`, `to_radius`, `left`, `progress`, `zone` ({} or `centre`,
   `radius`, `warn`), `shield_down`, `touch_m`, `touching`, `in_zone`). The end circle: the charge's telegraph and
   `boss_charge_bursts()`. A read after a step describes the tick about to run.
+## 10v. The Hive Lens's drones and its Lattice (v0.12.0 step 11; brief rows HL1, HL2 and SG-HL, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+The Hive Lens keeps its attacks (spirals, blooms, the Gaze, the Focus Beams, the flare, the dive, the split) and
+gains the pieces below. Its numbers are `BossTable.lens` (a `BossLensTable`, compiled from `BossDefinition.lattice`;
+null for every other boss); its state is `BossFightStore.hl_*`. Code: `BossLens` (feeding, the cut, the drones sent
+again, the rhythm, the read), `BossGlass` (the burnt glass), `BossLattice` (the web). No native change. The lattice
+takes its clocks (and is hashed) only once its boss reaches its first phase (the second), so the first phase hashes
+as before.
+
+- **Feeding** (from `feed_phase`). Each living actor of `drone_kind` (the split's enemy) takes `feed_cut` per mille
+  (150) off every hit and damage tick from the hero on the boss, at most `feed_cap` (450): `Damage.hit` beside the
+  Foundry's share (tagged ARMOURED), `Damage.tick_dot`. With none alive nothing changes.
+- **The cut.** While one of the boss's `beams` (its Focus Beams) is ACTIVE, every drone whose body its lane touches
+  (`BossAi.lane_slice`, the very test the hero is hit by; a burning beam is its whole lane) is killed by the boss
+  (`Damage.hit`, owner the boss, effect `lens_beam_cut`; a kill like any, its shards included) and `hl_cuts` counts
+  it.
+- **Sent again.** `hl_empty_at` is the tick since which no drone is alive, queued or being split off (the split in
+  its windup or active time); `resend_ticks` (12 s) after it the boss casts `split_attack` again, through
+  `BossTide.due` (after the signature and the Judge's Time Wave; HOLD while its cooldown runs, so the punish and the
+  gap-closer wait too). A Lattice due with fewer than `lat_min` drones asks for the split the same way. The split
+  always sends its three: with one drone alive when a Lattice asks for it, four live.
+- **The burnt glass** (from `strip_phase`). On a Focus Beam's last ACTIVE tick (`state_t = active_ticks - 1`; a hit's
+  freeze holds that clock) each lane leaves a strip: its far `strip_len_m` (8 m; all of a shorter lane),
+  `strip_half_m` each side of its line, for `strip_ticks`. At most `strip_max` (3): a new one past it removes the
+  oldest first. A hero whose body touches one loses `strip_damage` HP (`BossAi.powered`) every `strip_step_ticks`, as
+  a DoT step whose hurt invulnerability is neither needed nor given (SafeArea's STEP, a flat amount). The death recap
+  names `strip_cause` (`focus_beam`, CAUSE_HIVE_FOCUS); effect `lens_glass`.
+- **The Lattice** (from `lat_phase`). Due `lat_first_ticks` (10 s) after the first tick the boss stands in a phase,
+  then `lat_every_ticks` (45 s) after each cast began. It is cast only while the boss is between attacks (MOVE: an
+  attack under way finishes first), not kneeling, not winding up or burning a Gaze, more than `calm_ticks` after the
+  Gaze's last such tick, and with `lat_min` drones alive. The cast (`lat_cast_ticks`, 2 s) draws its turn (+1 or -1)
+  from the ai stream. At its end, with fewer than `lat_min` drones alive, no web rises (END amount 0); else the web
+  stands `lat_ticks` (10 s): the drones alive, in the order of their angle round the boss (ties by id), go into
+  `BossLattice.ORBIT` (11, a script row: the native kernels skip a row in that state or past it, and
+  `BossSignatures.egg_think` leaves it), and every tick (phase 6) each steps `orbit_step` thousandths of 1/4096 turn
+  round the boss's centre (20 degrees a second; integer angles, `Kin.dir`), its distance eased at its own walk speed
+  toward the distance it had, held to `orbit_min_m..orbit_max_m`, its spot clamped inside the room. A strand joins
+  the boss's centre to the first drone, each drone to the next, the last to the boss (`BossLattice.strands`, read and
+  hit alike). A dead drone takes the two strands at it for the rest of this web; no strand joins its neighbours until
+  the next cast. With no drone of the web left, it ends. A hero within `strand_half_m` plus its radius of a strand's
+  segment pays `strand_hit` per mille of max HP (SafeArea ONCE: armour and the dash's invulnerability apply) and no
+  strand hurts it again for `strand_lock_ticks`. The death recap names `strand_cause` (`lens_flare`,
+  CAUSE_HIVE_GLARE); effect `lens_strand`. A gate or the end of the fight ends the web; the drones go back to MOVE.
+- **One big mechanic at a time.** While a Lattice is cast or stands the boss starts none of `holds`
+  (`BossLens.may_use` in `BossAi._choose`, chained before the Siege Engine's; `BossLens.unless_held` on the punish and
+  the gap-closer): the Gaze, the Focus Beams, the dive and the Prism Spirals; the Petal Bloom, the Lens Flare and the
+  split stay. A Gaze starts only with no Lattice cast or standing, at least `calm_ticks` after the last one ended, and
+  when the next is not due before the Gaze's windup, its active time and `calm_ticks` have passed. So the two never
+  overlap and at least 3 s of calm separates them.
+- **Fight end.** With the hero dead or outside the room (checked before and after the tick's lattice work) the web
+  ends and the glass goes (`BossLens.cancel`; the feeding stays with the drones); with the boss gone everything goes
+  (`on_boss_gone`, `BossFightStore.clear_lens`).
+- **Events** (`STATUS_APPLY`, source the boss; never read back): `lens_drone_cut` (target the drone, pos where it
+  was, amount its HP), `lattice_cast` (amount = its ticks, amount_applied = its turn), `lattice_start` (amount = the
+  web's ticks, amount_applied = its drones), `lattice_end` (amount = its drones left), `lattice_strand_hit` (pos = the
+  strand's nearest point, amount = the HP), `lens_glass_laid` (pos = its centre, amount = its ticks),
+  `lens_glass_gone`.
+- **Hash and save.** Hashed after a `-25` sentinel while a boss runs a lattice or glass lies (`hl_boss >= 0 or
+  hl_s_x not empty`). `BossFightStore` is a snapshot state class and `BossLensTable` a loadout class.
+- **Reads.** `WorldReader.boss_lens()`: `boss`, `drones` ([{`id`, `position`}], those that feed it), `taken`, `cut`,
+  `cuts`, `resend_in` (-1 none counting), `lattice` ({} or `casting` 0..1000 or -1, `cast_left`, `running`, `left`,
+  `spin`, `half_width`, `strands` ([{`from`, `to`, `a`, `b`}]: the actor ids at its ends, the boss's own at the boss),
+  `drones` (the web's, in order)), `lattice_in` (-1 not in its phase), `gazing`, `calm_left`, `glass` ([{`from`,
+  `to`, `half_width`, `left`, `progress`}]).
 
 ## 11. Scaling and threat
 

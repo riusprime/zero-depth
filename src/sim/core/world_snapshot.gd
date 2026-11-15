@@ -116,6 +116,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"BossSiegeTable",  # The Siege Engine's siege mechanics (BossTable.siege, content)
 	&"BossForgeTable",  # The Foundry's forge (BossTable.forge, content)
 	&"BossWarlordTable",  # The Warlord's banner and duel (BossTable.warlord, content)
+	&"BossLensTable",  # The Hive Lens's lattice (BossTable.lens, content)
 	&"FallenDashTable",  # The Fallen's dash between moves (BossTable.reposition, content)
 	&"FallenRememberedTable",  # The Fallen's remembered mechanics (BossTable.remembered, content)
 	&"SwingStep",

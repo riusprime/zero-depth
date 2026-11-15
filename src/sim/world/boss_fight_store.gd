@@ -164,6 +164,25 @@ const WARLORD_FLOAT_FIELDS: Array[StringName] = [
 const RIP_FIELDS: Array[StringName] = [
 	&"dance_rip_from", &"dance_rip_n", &"dance_rip_mirror", &"dance_rip_hit", &"dance_rip_warn"
 ]
+## The Hive Lens's lattice clocks (BossLens, BossLattice, BossGlass), with the value each takes when it is forgotten.
+const LENS_FIELDS := {
+	&"hl_boss": -1,
+	&"hl_phase": -1,
+	&"hl_due": -1,
+	&"hl_cast_from": -1,
+	&"hl_run_from": -1,
+	&"hl_end": -1,
+	&"hl_spin": 0,
+	&"hl_hit_at": 0,
+	&"hl_gaze_end": -1,
+	&"hl_empty_at": -1,
+	&"hl_strip_at": 0,
+	&"hl_cuts": 0,
+}
+const LENS_DRONE_INT_FIELDS: Array[StringName] = [&"hl_d_id", &"hl_d_a"]
+const LENS_DRONE_FLOAT_FIELDS: Array[StringName] = [&"hl_d_r"]
+const GLASS_INT_FIELDS: Array[StringName] = [&"hl_s_from", &"hl_s_until", &"hl_s_a"]
+const GLASS_FLOAT_FIELDS: Array[StringName] = [&"hl_s_x", &"hl_s_y", &"hl_s_len"]
 
 ## The Clockwork Judge's time mechanics (BossTime, BossRewind). time_boss is the Judge that runs them (-1 = none);
 ## time_wave_due the tick its next Time Wave may be cast (-1 = not set yet) and time_field_due its next slow field's
@@ -400,6 +419,38 @@ var wl_du_x := 0.0
 var wl_du_y := 0.0
 var wl_du_r0 := 0.0
 var wl_du_r1 := 0.0
+## The Hive Lens's lattice (BossLens, BossLattice, BossGlass). hl_boss is the boss that runs it (-1 = none). The
+## Lattice: hl_phase the phase its clock was set for (-1 = none yet), hl_due the tick the next is due (-1 = not in its
+## phase yet), hl_cast_from the tick the cast running began and hl_run_from the tick its strands rose (-1 = none),
+## hl_end the tick the last one ended (-1 = none yet), hl_spin its turn (+1 or -1, 0 before the first), hl_hit_at the
+## first tick a strand may hurt again. hl_gaze_end the last tick the Gaze winded up or burned (-1 = never). hl_empty_at
+## the tick since which no drone lives, arrives or is being split off (-1 = some do). hl_strip_at the first tick the
+## burnt glass may hurt again. hl_cuts the drones its own Focus Beam has cut down.
+var hl_boss := -1
+var hl_phase := -1
+var hl_due := -1
+var hl_cast_from := -1
+var hl_run_from := -1
+var hl_end := -1
+var hl_spin := 0
+var hl_hit_at := 0
+var hl_gaze_end := -1
+var hl_empty_at := -1
+var hl_strip_at := 0
+var hl_cuts := 0
+## The drones of the Lattice running, in the web's order: [actor id, angle round the boss (1/4096000 turns), the
+## distance it is held at (m)].
+var hl_d_id := PackedInt32Array()
+var hl_d_a := PackedInt32Array()
+var hl_d_r := PackedFloat32Array()
+## The burnt glass, oldest first: [the tick it was laid, the tick it goes, its angle (1/4096 turns), its start (x, y)
+## and length].
+var hl_s_from := PackedInt32Array()
+var hl_s_until := PackedInt32Array()
+var hl_s_a := PackedInt32Array()
+var hl_s_x := PackedFloat32Array()
+var hl_s_y := PackedFloat32Array()
+var hl_s_len := PackedFloat32Array()
 
 
 func hash_into(h: StateHasher) -> void:
@@ -462,6 +513,14 @@ func hash_into(h: StateHasher) -> void:
 			h.add_int(get(f))
 		for f: StringName in WARLORD_FLOAT_FIELDS:
 			h.add_f32(get(f))
+	if hl_boss >= 0 or not hl_s_x.is_empty():  # Only while a boss runs its lattice or burnt glass lies
+		h.add_int(-25)
+		for f: StringName in LENS_FIELDS:
+			h.add_int(get(f))
+		for f: StringName in LENS_DRONE_INT_FIELDS + GLASS_INT_FIELDS:
+			h.add_ints(get(f))
+		for f: StringName in LENS_DRONE_FLOAT_FIELDS + GLASS_FLOAT_FIELDS:
+			h.add_f32s(get(f))
 
 
 ## Removes stopped gear k (the arrays stay oldest first).
@@ -567,3 +626,32 @@ func clear_warlord() -> void:
 		set(f, WARLORD_FIELDS[f])
 	for f: StringName in WARLORD_FLOAT_FIELDS:
 		set(f, 0.0)
+
+
+## Removes burnt glass strip k (the arrays stay oldest first).
+func remove_glass(k: int) -> void:
+	BossStore.remove_row(self, GLASS_INT_FIELDS, GLASS_FLOAT_FIELDS, k)
+
+
+## Forgets the Lattice's drones (it ended).
+func clear_lattice_drones() -> void:
+	for f: StringName in LENS_DRONE_INT_FIELDS:
+		set(f, PackedInt32Array())
+	for f: StringName in LENS_DRONE_FLOAT_FIELDS:
+		set(f, PackedFloat32Array())
+
+
+## Forgets the burnt glass.
+func clear_glass() -> void:
+	for f: StringName in GLASS_INT_FIELDS:
+		set(f, PackedInt32Array())
+	for f: StringName in GLASS_FLOAT_FIELDS:
+		set(f, PackedFloat32Array())
+
+
+## Forgets the lattice's clocks, its drones and its glass (its boss gone).
+func clear_lens() -> void:
+	for f: StringName in LENS_FIELDS:
+		set(f, LENS_FIELDS[f])
+	clear_lattice_drones()
+	clear_glass()

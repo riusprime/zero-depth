@@ -80,12 +80,15 @@ static func signature_of(t: BossTable, phase: int) -> int:
 ## Tick phase 3, boss i pursuing: its signature's index when the cadence says it is due now and its cooldown `cd` is
 ## over, else -1. The first call starts the clock (the first one sig_first_ticks on). HOLD when it is
 ## due but the cooldown still runs: the punish and the gap-closer wait for it (a far player can't starve the cadence).
-## With no signature due, the Clockwork Judge's Time Wave by the same rule on its own clock (BossTime.wave_due).
+## With no signature due, the Clockwork Judge's Time Wave by the same rule on its own clock (BossTime.wave_due), then
+## the Hive Lens's split sent again (BossLens.due).
 static func due(w: World, i: int, b: int, t: BossTable, cd: int = 0) -> int:
 	var sig := _signature_due(w, i, b, t, cd)
 	if sig == -1:
 		sig = BossTime.wave_due(w, i, b, t, cd)
-	return sig if sig != -1 else BossWarlord.due(w, i)  # The Warlord holds for its banner's and duel's casts
+	if sig == -1:
+		sig = BossWarlord.due(w, i)  # The Warlord holds for its banner's and duel's casts
+	return sig if sig != -1 else BossLens.due(w, i, b, t, cd)
 
 
 static func _signature_due(w: World, i: int, b: int, t: BossTable, cd: int) -> int:

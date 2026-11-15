@@ -2522,6 +2522,16 @@ func boss_forge() -> Dictionary:
 	return BossForge.state(_w)
 
 
+## The Hive Lens's lattice: {} with no boss running one; else "boss", "drones" ([{"id", "position"}]: those that feed
+## it), "taken" (per mille of the hero's damage it takes now), "cut" (1000 - taken), "cuts" (drones its own beam has
+## cut down), "resend_in" (ticks until its split is sent again, -1 none counting), "lattice" ({} or "casting" (0..1000,
+## -1 once the web stands), "cast_left", "running", "left", "spin" (+1 or -1), "half_width", "strands" ([{"from",
+## "to", "a", "b"}]: the actor ids at its ends), "drones"), "lattice_in" (-1 not in its phase), "gazing", "calm_left",
+## "glass" ([{"from", "to", "half_width", "left", "progress"}]). (BossLens.state)
+func boss_lens() -> Dictionary:
+	return BossLens.state(_w)
+
+
 ## The meltdowns, each {"centre", "radius" (molten beyond it; INF while it only glows: the melt
 ## attack's windup), "next" (the radius it melts to next), "warn" (0..1000 while the next step glows, else -1),
 ## "bound" (the room, Rect2), "bridge" (bool), "exit" (the bridge's far end), "half" (its half width)}.

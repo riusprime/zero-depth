@@ -304,6 +304,8 @@ static func egg_think(w: World, i: int) -> void:
 		return
 	if a.state[i] == BossDoom.CART:  # The Siege Engine's ammo cart: BossDoom rolls it (tick phase 6)
 		return
+	if a.state[i] == BossLattice.ORBIT:  # A Hive Lens drone in its Lattice: BossLattice turns it (tick phase 6)
+		return
 	if a.state[i] == EGG_BURST:
 		var pat := _egg_attack(w, i, boss).pattern
 		if pat == null or a.state_t[i] >= pat.duration_ticks() - pat.lob_ticks:
@@ -407,6 +409,7 @@ static func advance(w: World) -> void:
 	BossWardens.advance(w)  # The Twin Wardens' wards and Through the Rift
 	BossSiege.advance(w)  # The Siege Engine's Target Lock, boulders and ammo cart
 	BossForge.advance(w)  # The Foundry's plate, its cooling slag, Overpressure and the scald gauge
+	BossLens.advance(w)  # The Hive Lens's drones, burnt glass and Lattice
 	BossRemembered.advance(w)  # The Fallen's remembered mechanics (after the orbs are taken and the pillars pulse)
 
 
@@ -436,6 +439,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	BossSiege.on_boss_gone(w, boss_id)  # The Siege Engine's boulders and cart
 	BossForge.on_boss_gone(w, boss_id)  # The Foundry's forge and its slabs
 	BossWarlord.on_boss_gone(w, boss_id)  # The Warlord's banner and duel
+	BossLens.on_boss_gone(w, boss_id)  # The Hive Lens's Lattice and its burnt glass
 	BossRemembered.on_boss_gone(w, boss_id)  # The Fallen's remembered mechanics
 
 

@@ -293,7 +293,7 @@ static func _choose(w: World, i: int, b: int, t: BossTable, dist: float) -> int:
 			continue
 		if atk.move == M.BROOD and _alive_of(w, atk.enemy_kind) >= atk.max_alive:
 			continue
-		if BossTide.on_cadence(t, atk) or not BossSiege.may_use(w, i, atk):  # Cadence; one javelin out; cover
+		if BossTide.on_cadence(t, atk) or not BossLens.may_use(w, i, atk):  # Cadence; javelin; cover; Lattice
 			continue
 		if t.mimic and not BossNemesis.allowed(w, atk):  # The run's weapon, the cards held
 			continue

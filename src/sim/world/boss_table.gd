@@ -228,6 +228,8 @@ var siege: BossSiegeTable = null
 var forge: BossForgeTable = null
 ## The Warlord's banner and duel (null: none).
 var warlord: BossWarlordTable = null
+## The Hive Lens's drones, burnt glass and Lattice (null: none).
+var lens: BossLensTable = null
 
 
 ## The attack index with this id, or -1.

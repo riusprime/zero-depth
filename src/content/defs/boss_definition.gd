@@ -123,6 +123,9 @@ var arena_template := 0
 @export var forge := {}
 ## The Warlord's own mechanics (WarlordRules.SPEC; empty: none): the War Banner and the Duel's javelin cage.
 @export var warlord := {}
+## The lattice this boss fights with (LatticeRules.SPEC; empty: none): the Hive Lens fed by its drones, its Focus Beam
+## cutting them, the burnt glass and the Lattice of light.
+@export var lattice := {}
 
 
 func category() -> StringName:
@@ -163,6 +166,7 @@ func validate() -> Array[ValidationIssue]:
 	SiegeRules.validate(self, issues)  # The Siege Engine's cover and Doom Shell
 	ForgeRules.validate(self, issues)  # The Foundry's forge
 	WarlordRules.validate(self, issues)  # The Warlord's banner and duel
+	LatticeRules.validate(self, issues)  # The Hive Lens's drones, burnt glass and Lattice
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1
