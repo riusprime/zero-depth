@@ -1110,7 +1110,7 @@ func set_items_owned(owned: PackedInt32Array) -> void:
 
 ## The item modifiers plus the engine numbers the owned abilities borrow (ElementAbilities).
 func _build_mods() -> void:
-	item_mods = ItemMods.build(item_tables, items_owned)
+	item_mods = ItemMods.build(item_tables, WandLock.lit(self, items_owned))  # Not a card The Fallen holds
 	ElementAbilities.fold_engines(self, item_mods)
 	Modifiers.invalidate(self)  # The specs compile again on their next read
 

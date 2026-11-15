@@ -451,6 +451,15 @@ var hl_s_a := PackedInt32Array()
 var hl_s_x := PackedFloat32Array()
 var hl_s_y := PackedFloat32Array()
 var hl_s_len := PackedFloat32Array()
+## The Fallen's theft (FallenTheft). fl_tk_boss the Fallen that runs it (-1 = none), fl_tk_gates a bit for each theft
+## gate already met, fl_tk_from the tick its cast began (-1 = none casting). The cards it holds, oldest first: their
+## codes (fl_tk_code; each one's wand slot is dark while it is here) and the hits on its back each still needs
+## (fl_tk_hits). Hashed only while a Fallen runs it or holds a card.
+var fl_tk_boss := -1
+var fl_tk_gates := 0
+var fl_tk_from := -1
+var fl_tk_code := PackedInt32Array()
+var fl_tk_hits := PackedInt32Array()
 
 
 func hash_into(h: StateHasher) -> void:
@@ -521,6 +530,11 @@ func hash_into(h: StateHasher) -> void:
 			h.add_ints(get(f))
 		for f: StringName in LENS_DRONE_FLOAT_FIELDS + GLASS_FLOAT_FIELDS:
 			h.add_f32s(get(f))
+	if fl_tk_boss >= 0 or not fl_tk_code.is_empty():  # Only while a Fallen runs its theft or holds a card
+		h.add_int(-26)
+		h.add_ints(PackedInt32Array([fl_tk_boss, fl_tk_gates, fl_tk_from]))
+		h.add_ints(fl_tk_code)
+		h.add_ints(fl_tk_hits)
 
 
 ## Removes stopped gear k (the arrays stay oldest first).
@@ -655,3 +669,12 @@ func clear_lens() -> void:
 		set(f, LENS_FIELDS[f])
 	clear_lattice_drones()
 	clear_glass()
+
+
+## Forgets The Fallen's theft (its body gone; FallenTheft gives the cards back first).
+func clear_theft() -> void:
+	fl_tk_boss = -1
+	fl_tk_gates = 0
+	fl_tk_from = -1
+	fl_tk_code = PackedInt32Array()
+	fl_tk_hits = PackedInt32Array()

@@ -231,6 +231,7 @@ static func _card(w: World, code: int, level: int) -> Dictionary:
 		"remnant": remnant_of(w, code),  # What its remnant does (REMNANT_*)
 		"form_dead": not AttackSlots.compiles(w, code),  # The form fired now does not use it
 		"slot": AttackSlots.tag(w, code),  # Its slot tag on this run (AttackSlots; 0 none)
+		"taken": WandLock.off(w, code),  # The Fallen holds it: its slot is dark, it does nothing
 	}
 
 

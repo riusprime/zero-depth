@@ -394,3 +394,58 @@ func test_the_fallen_casts_a_remembered_mechanic_and_never_vanishes() -> void:
 	assert_false(reader.boss_invulnerable(i), "it can be hit meanwhile")
 	assert_false(w.player_dead(), "the hero stands (God mode)")
 	assert_eq(get_errors().size(), 0, "no engine or script error")
+
+
+## The Fallen takes your best card at 66 % of its HP and the card is back once it dies. TEST HELPER: the body's HP is
+## set to 65 % and its remembered mechanics' HP gates are marked as cast (so the theft is the next beat, not one after
+## a 15 s mechanic); everything else is the game: the Playground's wand card, God mode and Phase 3, real frames, the
+## dev panel's Kill boss. The card's pip goes dark on the HUD, the mark glows on its back with a pip per hit needed, no
+## word anywhere.
+func test_the_fallen_takes_your_card_and_gives_it_back_when_it_dies() -> void:
+	_e = E2e.new(self)
+	var main := await _e.boot()
+	_scale = await _e._mouse_scale()
+	var code := await _playground_phase_3(main, &"gun")
+	var reader := main.driver.reader
+	var w := _e.world()
+	var i := await _risen(main)
+	w.actors.hp[i] = w.actors.max_hp[i] * 650 / 1000  # TEST HELPER (see above)
+	w.boss_fight.fl_gates = 3  # TEST HELPER (see above)
+	var cast := false
+	var taken: Array = []
+	for k in LIMIT:
+		await _e.frames(1)
+		var st := reader.boss_fallen()
+		if st.is_empty():
+			continue
+		cast = cast or int(st["theft_cast"]) >= 0
+		taken = st["taken"]
+		if not taken.is_empty():
+			break
+	assert_true(cast, "a cast first")
+	assert_eq(taken.size(), 1, "it took a card")
+	if taken.is_empty():
+		return
+	assert_eq(int(taken[0]["code"]), code, "your card")
+	await _e.frames(3)
+	var hud: Hud = main.get_node("UI/Hud")
+	var slot := int(taken[0]["slot"])
+	assert_eq(hud.theft_hud.dark_slots(), PackedInt32Array([slot]), "its pip is dark")
+	var mark := main.view.fallen_remembered.mark
+	assert_true(mark.shown(), "the mark glows on its back")
+	assert_eq(mark.pips(), 8, "a pip per hit needed")
+	assert_true(w.items_owned.has(code), "the card is still yours, in its slot")
+	await _e.tap(KEY_QUOTELEFT)
+	await _e.frames(2)
+	await _click(main, "KillBoss")
+	for k in 120:
+		await _e.frames(1)
+		if w.final_fight.won:
+			break
+	await _e.frames(3)
+	assert_true(w.final_fight.won, "The Fallen is beaten")
+	for c: Dictionary in reader.wand()["cards"]:
+		assert_false(bool(c["taken"]), "every slot is lit again")
+	assert_true(hud.theft_hud.dark_slots().is_empty(), "no dark pip")
+	assert_false(mark.shown(), "no mark")
+	assert_eq(get_errors().size(), 0, "no engine or script error")

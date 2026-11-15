@@ -194,6 +194,15 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   Judge gold, the Tidecaller sea blue, the Gatekeeper stone amber, the Twins amber over violet. No text. Sounds:
   `FallenCues` (the cast plays the remembered boss's own telegraph cue; the ward and the shade borrow the Wardens').
   No hint arrow to The Fallen during the ward: the sim sets no marker for it.
+  **The theft** (§10t "The theft"), no word and no tooltip change: `FallenTheftHud` (HUD, over the build row's still)
+  draws the pip of each card in `boss_fallen().taken` dark under a breathing violet glow (drawn rings, as the HUD's
+  other glows; the 3D packs are not HUD art) and flies the card's icon (`CardFly`) from its pip to The Fallen's
+  screen point as it is taken and back as it returns; the Build page's `WandRow` darkens the tile of a card whose
+  `wand()` entry says `taken` (`TAKEN_TINT`) under a violet rim. `FallenMarkView` (owned and synced by
+  `FallenRememberedViews`) puts the pack's orb flare (`hl_glow`, recoloured violet) on The Fallen's back at
+  `mark.dir`, one small `hl_glow` per hit still needed in a ring round it (8 down to 0), an `hl_flash` and a swell on
+  each `fallen_mark_hit`, and grows the glow through the theft's cast (`theft_cast`). Reduced motion stills the
+  breathing and the swell; nothing flies.
 - **The Foundry's forge** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10s). Read from
   `WorldReader.boss_forge`, `telegraph` (the bomb drones' `lob`), `boss_hazards`, `objectives` and the `STATUS_APPLY`
   events only; shared looks in `ForgeLooks`; no word anywhere. `ForgePlateViews`: through the forging cast the pack's

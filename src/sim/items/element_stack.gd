@@ -115,7 +115,7 @@ static func _card_of(w: World, e: int) -> int:
 	idx = -1
 	var id := ElementPairs.CARDS[e]
 	for k in w.items_owned:
-		if w.item_tables[k].id == id and CardLevels.is_card(w, k):
+		if w.item_tables[k].id == id and CardLevels.is_card(w, k) and not WandLock.off(w, k):
 			idx = k
 			break
 	if cacheable:

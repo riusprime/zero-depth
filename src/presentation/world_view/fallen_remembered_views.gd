@@ -50,7 +50,10 @@ var pack_fx: PackFx = null:
 	set(v):
 		pack_fx = v
 		hold.pack = v
+		mark.pack_fx = v
 var hold := FormPackHold.new()
+## The mark on its back while it holds a card of yours (FallenMarkView).
+var mark := FallenMarkView.new()
 ## True once a frame with nothing to show drew it all hidden: later frames return at once.
 var quiet := false
 var _st := {}
@@ -75,6 +78,7 @@ func _init() -> void:
 	name = "FallenRememberedViews"
 	_line = WardenLooks.floor_mesh(self, false, FallenLooks.colours(&"gatekeeper")[0])
 	_hot = WardenLooks.floor_mesh(self, false, HOT)
+	add_child(mark)
 
 
 func sync(reader: WorldReader) -> void:
@@ -83,6 +87,7 @@ func sync(reader: WorldReader) -> void:
 	if not _built and (reader.final_arena() or reader.final_fight()):
 		build()
 	_st = reader.boss_fallen()
+	mark.sync(reader, _st)
 	_pillars = []
 	if _st.is_empty():
 		return

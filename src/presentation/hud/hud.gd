@@ -96,6 +96,8 @@ var forge_burn := ForgeBurnEdge.new()
 var build_hud := BuildHud.new()
 ## The picked cards' icons fly over everything to their HUD slots.
 var flights := CardFlights.new()
+## The Fallen's theft on the wand row: a held card's pip dark under a violet glow, its flight to The Fallen and back.
+var theft_hud := FallenTheftHud.new()
 ## Draws the parts below from a texture while they do not change (HudStill).
 var still := HudStill.new()
 var swap := SwapPanel.new()
@@ -244,6 +246,8 @@ func _init() -> void:
 	flights.plate = _hp_frame
 	add_child(flights)
 	add_child(still)
+	theft_hud.build = build_hud
+	add_child(theft_hud)  # Over the build row's still
 	# deferred: the HUD's slots sync after the pick panel
 	_pick.card_taken.connect(
 		func(code: int, from: Rect2) -> void: flights.launch.call_deferred(_reader, code, from)
@@ -367,6 +371,7 @@ func sync(reader: WorldReader) -> void:
 	PerfMarks.add(&"hud.prompts", t)
 	t = PerfMarks.start()
 	build_hud.sync(reader)  # v0.6.0 MX2
+	theft_hud.sync(reader)
 	PerfMarks.add(&"hud.build", t)
 	t = PerfMarks.start()
 	swap.sync(reader)

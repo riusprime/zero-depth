@@ -35,6 +35,8 @@ const NAME_SIZE := 15
 const SOCKET := 48.0
 const SMALL_SIZE := 13
 const BRACKET_SIZE := 14
+## A tile The Fallen holds: darkened toward its violet.
+const TAKEN_TINT := Color(0.42, 0.3, 0.55, 0.85)
 ## A press that moves this far (px) before its release is a drag.
 const DRAG_PX := 8.0
 ## How long a tile takes to reach its place (s), how far a carried card rises and tilts and grows, and how
@@ -635,11 +637,16 @@ func _style(k: int) -> void:
 		fb.backing = true
 	if k == fresh:
 		fb.rim = AstralCardArt.RARITY[3]
+	var taken := k < card_count() and bool((_wand["cards"][k] as Dictionary).get("taken", false))
+	if taken:  # The Fallen holds it: a violet lock rim round a dark tile, no word
+		fb.rim = FallenTheftHud.VIOLET
 	t.add_theme_stylebox_override("panel", fb)
 	_medals[k].focused = lit
 	t.modulate = Color(1, 1, 1, 0.42) if k == leaving else Color.WHITE
 	if k != leaving and dead_reason(k) != &"":  # A card that can't act here is dimmed
 		t.modulate = Color(0.62, 0.6, 0.58, 0.78)
+	if taken:
+		t.modulate = TAKEN_TINT
 	if only_slot != 0 and k < card_count() and k != fresh and not selectable(k):  # Not a choice
 		t.modulate = Color(0.5, 0.47, 0.45, 0.5)
 

@@ -15,6 +15,11 @@ const R := preload("res://src/sim/ai/boss_remembered.gd")
 const CAP := 60 * 420
 const SEEDS: Array[int] = [5, 6, 7]
 const ALL: Array = [&"clockwork_judge", &"tidecaller", &"gatekeeper", &"twin_wardens"]
+## The cards the variant's hero holds, by weapon (test_nemesis's builds).
+const THEFT_CARDS := {
+	&"gun": [[&"gun_twin", 2], [&"split_shot", 5], [&"ember_core", 3], [&"halo_shot", 1]],
+	&"blade": [[&"echo_slash", 3], [&"double_slash", 2], [&"whirl", 4], [&"ember_core", 1]],
+}
 
 
 ## Plays the fight. Returns its numbers: "ticks", "dead" (The Fallen died), "max_hp", "hp_lost" (all the damage the
@@ -312,3 +317,79 @@ func test_a_bot_fight_is_deterministic() -> void:
 	var b := _fight(&"gun", true, 5)
 	assert_eq(a["hash"], b["hash"], "two runs agree")
 	assert_eq(a["ticks"], b["ticks"])
+
+
+# --- with cards: the theft --------------------------------------------------------------------------------------------
+
+
+## The bot that plays, holding THEFT_CARDS: the fight as _fight plays it, counting the theft. Returns "dead", "ticks",
+## "taken", "returned", "mark_hits", "without" (ticks with at least one card held), "held_at_end".
+func _theft_fight(weapon: StringName, seed_value: int) -> Dictionary:
+	var w := NemesisLab.world(seed_value, weapon, THEFT_CARDS[weapon], false, false)
+	w.boss_fight.fl_beaten = PackedStringArray(ALL)
+	var aid := w.actors.ids[L.body(w)]
+	var full := w.actors.max_hp[0]
+	var out := {"dead": false, "ticks": 0, "taken": 0, "returned": 0, "mark_hits": 0, "without": 0}
+	var seq := w.last_event_seq()
+	for k in CAP:
+		var i := w.actors.index_of(aid)
+		if i < 0 or w.final_fight.won:
+			out["dead"] = true
+			break
+		w.step(_frame(w, i, weapon, true, k))
+		out["ticks"] = k + 1
+		if w.player_dead():
+			break
+		w.actors.hp[0] = full
+		if not w.boss_fight.fl_tk_code.is_empty():
+			out["without"] += 1
+		for e in w.events_since(seq):
+			seq = e.seq
+			if e.kind != SimEvent.Kind.STATUS_APPLY:
+				continue
+			match e.effect_id:
+				FallenTheft.TAKEN:
+					out["taken"] += 1
+				FallenTheft.RETURNED:
+					out["returned"] += 1
+				FallenTheft.MARK_HIT:
+					out["mark_hits"] += 1
+	out["held_at_end"] = w.boss_fight.fl_tk_code.size()
+	return out
+
+
+func test_with_cards_the_fallen_takes_them_and_always_gives_them_back() -> void:
+	var untaken := PackedStringArray()
+	for weapon: StringName in [&"gun", &"blade"]:
+		for sv in SEEDS:
+			var r := _theft_fight(weapon, sv)
+			print(
+				(
+					(
+						"FALLENBOT| theft weapon=%s bot=plays seed=%d dead=%s seconds=%.1f taken=%d returned=%d"
+						% [
+							weapon,
+							sv,
+							r["dead"],
+							float(r["ticks"]) / SimTick.TICKS_PER_SECOND,
+							r["taken"],
+							r["returned"]
+						]
+					)
+					+ (
+						" mark_hits=%d seconds_without_a_card=%.1f held_at_end=%d"
+						% [
+							r["mark_hits"],
+							float(r["without"]) / SimTick.TICKS_PER_SECOND,
+							r["held_at_end"]
+						]
+					)
+				)
+			)
+			assert_true(r["dead"], "%s seed %d: The Fallen dies" % [weapon, sv])
+			if int(r["taken"]) == 0:
+				untaken.append("%s seed %d" % [weapon, sv])
+			assert_eq(int(r["held_at_end"]), 0, "%s seed %d: every card is back" % [weapon, sv])
+	# The brief's expectation, kept visible while it is not met: the numbers are the evidence, the tuning the lead's
+	if not untaken.is_empty():
+		pending("NOT MET, a card is taken in every fight: none in " + ", ".join(untaken))

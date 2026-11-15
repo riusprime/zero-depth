@@ -31,6 +31,7 @@ static func card(w: World, venom: bool) -> ItemTable:
 		if (
 			(t.poison_max_stacks if venom else t.bleed_max_stacks) > 0
 			and CardLevels.is_card(w, idx)
+			and not WandLock.off(w, idx)
 		):
 			return t
 	return null
@@ -43,6 +44,7 @@ static func held(w: World, venom: bool) -> bool:
 		if (
 			(t.poison_max_stacks if venom else t.bleed_max_stacks) > 0
 			and CardLevels.is_card(w, idx)
+			and not WandLock.off(w, idx)
 		):
 			return true
 	return false
@@ -55,6 +57,7 @@ static func level(w: World, venom: bool) -> int:
 		if (
 			(t.poison_max_stacks if venom else t.bleed_max_stacks) > 0
 			and CardLevels.is_card(w, idx)
+			and not WandLock.off(w, idx)
 		):
 			return CardLevels.base_level(w, idx)  # Overlevels grow the damage, not the rules
 	return 1
