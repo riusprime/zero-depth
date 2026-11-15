@@ -241,6 +241,7 @@ The biome variants (Rubble Warden, Dim Needle, Ember Charger, Frost Charger, Spl
 | ☐ | `siege_boulder` | 3 × 3, 1.1 tall | the crater wall a Siege Engine shell leaves: a squat heap of broken grey-brown rock filling a 3 m square, flat-topped, low enough to see a person behind it, with a crack pattern that can glow orange. Today the kit's `rock_large` stretched to the square stands in |
 | ☐ | `foundry_slab` | 4.0 across (radius 2), 0.15 tall | a cooled lava slab the Foundry's pools leave: a flat round plate of dark cracked basalt, its top lightly faceted, a thin cool blue-grey rim round its edge, hairline cracks that can glow dull orange (the game scales it to the pool). Today a shader disc on the floor stands in |
 | ☐ | `foundry_plate` | fits the Foundry's model | the Forged Plate: riveted steel armour plates over the Foundry's furnace body and hood (a separate mesh worn over the model, so it can come off). Today a lit metallic shell grown off the model's own skin stands in |
+| ☐ | `war_banner` | 3.2 tall, its cloth 1.1 × 1.5 | the Warlord's War Banner, planted in the floor: a tall grey steel pole with a red leaf spearhead, a crossbar near the top, and a red cloth with a gold hem and the Warlord's glowing red emblem hanging from it (its cloth a separate mesh, so it can wave, burn and fly off when the pole snaps). Today a pole, a bar and a waving quad built in code stand in |
 
 ### 3.6 Room pieces (P2–P3)
 Still to come (the rest of the list arrived 2026-10-18, §3.0). All after the kit prefix.
@@ -289,6 +290,16 @@ each new move borrows one). Clips the fight needs, in the rig's scripts (`script
 | ☐ | `shadow_swords` | Violet summoning the five blades | the file's `cast` (fits) |
 | ☐ | `stunned` | Violet stunned 5 s after her ward breaks | the code `stagger` clip (a dazed sway) |
 
+**The Warlord's new moves** (its file carries `idle`, `walk`, `thrust`, `throw`, `bash`, `kneel` and `lunge`; the
+rig's scripts are `scripts/assets/boss_anim/warlord/warlord_anim.py`):
+
+| ✓ | Clip | Move | Plays today |
+|---|---|---|---|
+| ☐ | `banner_plant` | The War Banner's 1.0 s cast: it raises the banner and drives the pole into the floor | the file's `idle` (it stands; the banner rises by itself) |
+| ☐ | `duel_call` | The Duel's 1.2 s cast: it lifts its spear to call the javelins down round you both | the file's `idle` |
+| ☐ | `duel_stance` | Through the 12 s cage: on guard with the shield lowered at its side, its front open | the file's `idle` and `walk` with the shield arm turned down in code |
+| ☐ | `enraged` (or a faster `idle`) | While it stands in its own banner (its attacks come 30 % faster) | the file's `idle`, the body glowing hot |
+
 ---
 
 ## 4. 2D art and audio still owed
@@ -303,3 +314,4 @@ each new move borrows one). Clips the fight needs, in the rig's scripts (`script
 | ☐ | the Siege Engine's sounds | The Target Lock taking you, its shell landing, a boulder rising and one breaking, a turret crushed, the cart setting off, arriving and blown up, the Doom Shell, the armour stripped: each borrows an existing sound re-pitched (`SiegeCues`). The Shockwave keeps its attack's own; the cart's body arriving has none | — |
 | ☐ | The Fallen's remembered mechanics' sounds | Its cast plays the remembered boss's own telegraph sound; the ward going up and breaking and the shade's wind-up borrow the Twin Wardens' (`FallenCues`); the mechanics' own pieces sound as on their bosses | — |
 | ☐ | the Foundry's forge sounds | The plate's forging, it going on and being blown off, a pool cooling into a slab, a slab crumbling and one shattered, a slag drop coming, the Overpressure's cast, the floor catching and its end, your scald burning and its end: each borrows an existing sound re-pitched (`ForgeCues`), never the Overclock heat's. The drone the plate calls has none of its own | — |
+| ☐ | the Warlord's banner and duel sounds | The banner's cast, it being planted, snapped by its charge or burnt down by its time, the duel's cast, the cage closing, a touch of the fence, the recall's warning and the recall: each borrows an existing sound re-pitched (`WarlordCues`). A banner falling as the fight ends, and the cage's end, have none | — |
