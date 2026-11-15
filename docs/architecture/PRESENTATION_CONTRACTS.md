@@ -221,13 +221,29 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   shape and colour family). `ForgeBurnEdge` (a `LowHpVignette` in fire orange) while `burn` ≥ 0 and not `on_slab`.
   Hint arrows: `ObjectiveMarkers.FOUNDRY_SLAB` (`MechanicHints.FOUNDRY_SLAB`). Sounds: `ForgeCues` (no `heat_*` cue).
   The pack rows are `data/vfx/pack_fx_fo.tres`.
+- **The Hive Lens's drones, Lattice and burnt glass** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10v). Read from
+  `WorldReader.boss_lens`, `boss_move` and `telegraph` (a Focus Beam's `lanes`) and the `STATUS_APPLY` events only; shared looks in
+  `LensLooks`; no word anywhere. `LensFeedViews`: each feeding drone's thread, the pack's beam (`hl_thread`, the strand's scene in a dim
+  rose, 0.06 m drawn radius) from the drone's body into the Lens's; one floating ring (`hl_layer`) per feeding drone round the
+  Lens, the outermost gone with a flash (`hl_flash`) as the count drops; a drone a drawn Focus Beam lane touches wears a gold
+  glow (`hl_glow`); `lens_drone_cut` bursts in the beam's gold (`hl_cut`, `hl_flash`) and its thread snaps back into the Lens
+  over 0.25 s; the threads hide while the web stands. The hero's hits keep HitFeel's ARMOURED spark (the sim tags them).
+  `BossBarTones.FED` (a muted rose, still) with a pink pip per feeding drone. `LensLatticeViews`: through the cast the pack's
+  big orb (`hl_charge`) grows on the Lens and each drone brightens (`hl_glow`); each listed strand a pack beam (`hl_strand`) from
+  its `from` to its `to` at 0.8 m, its drawn radius the reader's `half_width`, keyed by its two actor ids, so a strand the reader
+  drops is gone the same frame; each web drone trails a world-space ember (`hl_orbit`); `lattice_strand_hit` sparks on the hero
+  (`hl_spark`). Each glass row a floor strip (`GLASS_SHADER`) on its exact rectangle (`from`, `to`, `half_width`), its heat going
+  from 1 to 0.35 with `progress`, a smoke (`hl_sizzle`) on `lens_glass_laid`. A beam the pack refuses is a plain glowing rod; a refused key tries again the next frame
+  (`LensPackHold`).
+  Reduced motion: the glass's shimmer holds still; nothing pulses. Sounds: `LensCues`. The pack rows are
+  `data/vfx/pack_fx_hl.tres`.
 - **Boss mechanics carry no words** (owner, 2026-11-15: "too much text … we need to make it subtle so the player
   discovers it while playing, with arrows or glows"). `ObjectiveHints` draws arrows only (a small arrow over the
   target on screen, an edge arrow off it) for every reason, never a line of text, and draws nothing for
   `OBJECTIVE_TWINS_ACTIVE` (the sim still sets it; its exposed-twin rule is gone). The boss bar keeps the boss's
   name and its phase line ("Phase 2 / 3"; the final boss's body names) and shows every state as a tone of its fill
   (`BossBarTones`): the phase gate breathes pale, a boss taking more damage (a quake stun, the violet Warden's broken
-  ward, the Engine's stripped armour) shimmers gold, an invulnerable boss is steel blue with a pip per shield left,
+  ward, the Engine's stripped armour) shimmers gold, an invulnerable boss is steel blue with a pip per shield left, the Hive Lens fed by its drones a muted rose with a pip per drone,
   the Lantern Shade's bar dims in the dark and turns lantern gold in a lit pool, The Fallen's window breathes and then
   shimmers violet. `AttackSlowHud` shows its clock and pips only. Names, the death recap, sound captions, the Codex
   and Options keep their words.

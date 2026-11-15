@@ -7,6 +7,8 @@ extends RefCounted
 ## - vulnerable: the boss takes more damage now (a broken quake pillar's stun, the violet Warden's broken ward, the
 ##   Siege Engine's armour stripped by its cart, the Foundry's plate blown off by a bomb): a hot gold shimmer.
 ## - plated: the Foundry wears its Forged Plate (it takes less damage): dull iron, still.
+## - fed: the Hive Lens fed by its drones (it takes less damage): a muted rose, still, with a pip under the bar for
+##   each drone feeding it (BossBar).
 ## - invulnerable: cold steel blue, still (a shield, the final body shattering); the shields still to pass are pips
 ##   under the bar (BossBar).
 ## - dark / lit: the Lantern Shade in the dark (the fill darkened) or in a lit lantern's pool (lantern gold).
@@ -22,6 +24,7 @@ const LIT := &"lit"
 const FALLEN_WARN := &"fallen_warn"
 const FALLEN_OPEN := &"fallen_open"
 const PLATED := &"plated"
+const FED := &"fed"
 
 const STEEL := Color("#8FB8E8")
 const GOLD := Color("#FFC15A")
@@ -29,6 +32,9 @@ const HOT := Color("#FFD27A")
 const VIOLET := Color("#C59BFF")
 const PALE := Color("#E8E4F0")
 const IRON := Color("#8A9099")
+const ROSE := Color("#B0708C")
+## The fed tone's pips: the Lens's pink.
+const LENS_PIP := Color("#FF4AA8")
 const DIM := 0.55
 ## Pulses per second: a shimmer and a breath.
 const SHIMMER_HZ := 3.0
@@ -44,6 +50,7 @@ const LOOKS := {
 	FALLEN_WARN: [VIOLET, BREATH_HZ, 0.3, 0.0],
 	FALLEN_OPEN: [VIOLET, SHIMMER_HZ, 0.5, 0.0],
 	PLATED: [IRON, 0.0, 0.0, 0.0],
+	FED: [ROSE, 0.0, 0.0, 0.0],
 }
 
 
@@ -57,6 +64,8 @@ static func tone_of(reader: WorldReader, i: int, final: bool) -> StringName:
 		return VULNERABLE
 	if not final and plated(reader, i):
 		return PLATED
+	if not final and feeders(reader, i) > 0:
+		return FED
 	if final:
 		match int(reader.final_pace().get("window", WorldReader.FALLEN_OFF)):
 			WorldReader.FALLEN_WARN:
@@ -94,6 +103,14 @@ static func vulnerable(reader: WorldReader, i: int, final: bool) -> bool:
 static func plated(reader: WorldReader, i: int) -> bool:
 	var forge := reader.boss_forge()
 	return int(forge.get("boss", -1)) == i and bool(forge["plate"]["on"])
+
+
+## The drones feeding boss i now (0 for any boss but the Hive Lens).
+static func feeders(reader: WorldReader, i: int) -> int:
+	var lens := reader.boss_lens()
+	if int(lens.get("boss", -1)) != i:
+		return 0
+	return (lens["drones"] as Array).size()
 
 
 ## The fill's colour in `tone` at clock `t` (s) over the HP colour `base`; reduced motion holds the pulse at its middle.

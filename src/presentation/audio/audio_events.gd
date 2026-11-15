@@ -529,7 +529,7 @@ func _events(reader: WorldReader, out: Array) -> void:
 					out.append([&"boss_twin_chain", e.pos, 0.75])
 				elif not JudgeTimeCues.add(e, out) and not TideDanceCues.add(e, out):
 					if not WardenCues.add(e, out) and not SiegeCues.add(e, out):
-						if not ForgeCues.add(e, out):
+						if not ForgeCues.add(e, out) and not LensCues.add(e, out):
 							FallenCues.add(e, out)
 			SimEvent.Kind.BOSS_PICKUP_TAKEN:  # An hour orb taken
 				out.append([JudgeTimeCues.ORB_TAKEN, e.pos, JudgeTimeCues.ORB_PITCH])
