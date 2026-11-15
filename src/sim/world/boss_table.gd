@@ -226,6 +226,8 @@ var wardens: BossWardensTable = null
 var siege: BossSiegeTable = null
 ## The Foundry's forge (null: none).
 var forge: BossForgeTable = null
+## The Hive Lens's drones, burnt glass and Lattice (null: none).
+var lens: BossLensTable = null
 
 
 ## The attack index with this id, or -1.

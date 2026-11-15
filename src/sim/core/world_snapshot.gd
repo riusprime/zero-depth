@@ -115,6 +115,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"BossWardensTable",  # The Twin Wardens' own mechanics (BossTable.wardens, content)
 	&"BossSiegeTable",  # The Siege Engine's siege mechanics (BossTable.siege, content)
 	&"BossForgeTable",  # The Foundry's forge (BossTable.forge, content)
+	&"BossLensTable",  # The Hive Lens's lattice (BossTable.lens, content)
 	&"FallenDashTable",  # The Fallen's dash between moves (BossTable.reposition, content)
 	&"FallenRememberedTable",  # The Fallen's remembered mechanics (BossTable.remembered, content)
 	&"SwingStep",

@@ -341,6 +341,42 @@ func _siege_hit(w: World, e: SimEvent) -> void:
 	violations.append(v)
 
 
+## The Hive Lens's strands and burnt glass are no attack of their own: a strand warns with the Lattice's cast (its
+## ticks), the glass with the Focus Beam that leaves it (that beam's windup); the recap lines are the lattice's
+## strand_cause and strip_cause.
+func _lens_hit(w: World, e: SimEvent) -> void:
+	var bi := w.actors.index_of(e.owner_id)
+	var f: BossLensTable = BossAi.table_of(w, bi).lens if bi >= 0 else null
+	var key := ""
+	var warned := 0
+	if f != null:
+		var t := BossAi.table_of(w, bi)
+		var strand := e.effect_id == BossLattice.EFFECT
+		var cause := f.strand_cause if strand else f.strip_cause
+		if cause >= 0:
+			key = String(t.attacks[cause].cause_key)
+		if strand:
+			warned = f.lat_cast_ticks
+		elif not f.beams.is_empty():
+			warned = t.attacks[f.beams[0]].windup_ticks
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	if warned < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("a Hive Lens strand or strip warns shorter than the telegraph minimum")
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)
+
+
 func _quake_hit(w: World, e: SimEvent) -> void:
 	var bi := w.actors.index_of(e.owner_id)
 	var q: QuakeTable = BossAi.table_of(w, bi).quake if bi >= 0 else null
@@ -451,6 +487,8 @@ func _no_actor_hit(w: World, e: SimEvent) -> bool:
 			_canyon_shore_hit(w, e)
 		BossSiege.SHELL_EFFECT, BossDoom.DOOM_EFFECT, BossDoom.BLAST_EFFECT:  # The Siege Engine's shells
 			_siege_hit(w, e)
+		BossLattice.EFFECT, BossGlass.EFFECT:  # The Hive Lens's strands and burnt glass
+			_lens_hit(w, e)
 		_:
 			return false
 	return true

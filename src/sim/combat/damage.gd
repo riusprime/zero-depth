@@ -170,6 +170,9 @@ static func hit(
 				m[0] * fp / 1000,
 				m[1] | (SimEvent.TAG_WEAK_SPOT if fp > 1000 else SimEvent.TAG_ARMOURED)
 			]
+		var lp := BossLens.taken_permille(w, target)  # The Hive Lens fed by its drones
+		if lp != 1000:
+			m = [m[0] * lp / 1000, m[1] | SimEvent.TAG_ARMOURED]
 	h.tags |= m[1]
 	var scaled := amount * m[0] / 1000
 	if mu[1] != 0 and owner_id == a.ids[0] and target != 0:
@@ -256,6 +259,7 @@ static func tick_dot(
 			tags |= sh[1]
 		amount = amount * BossTwin.taken_permille(w, target) / 1000  # The stunned violet Warden
 		amount = amount * BossForge.taken_permille(w, target) / 1000  # The Foundry's plate
+		amount = amount * BossLens.taken_permille(w, target) / 1000  # The Hive Lens fed by its drones
 	var root := w.take_root()
 	return _apply(
 		w, target, amount, source_id, owner_id, root, tags, a.pos(target), -1, 0, effect_id

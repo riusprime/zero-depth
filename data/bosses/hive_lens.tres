@@ -325,4 +325,35 @@ dash_read_seconds = 0.5
 gap_close_attack = &"dive"
 gap_close_distance_m = 5.0
 gap_close_seconds = 2.0
+lattice = {
+"beam_attacks": ["focus_beam", "focus_beam_3"],
+"calm_seconds": 3.0,
+"feed_cap_permille": 450,
+"feed_cut_permille": 150,
+"feed_phase": 1,
+"lattice_cast_seconds": 2.0,
+"lattice_every_seconds": 45.0,
+"lattice_first_seconds": 10.0,
+"lattice_holds": ["gaze", "gaze_fast", "focus_beam", "focus_beam_3", "dive", "prism_spiral", "prism_spiral_fast"],
+"lattice_min_drones": 2,
+"lattice_phase": 1,
+"lattice_seconds": 10.0,
+"orbit_dps": 20.0,
+"orbit_max_m": 12.0,
+"orbit_min_m": 6.0,
+"resend_seconds": 12.0,
+"split_attack": "split",
+"strand_cause": "lens_flare",
+"strand_hit_permille": 200,
+"strand_lockout_seconds": 0.5,
+"strand_width_m": 0.6,
+"strip_cause": "focus_beam",
+"strip_damage": 6,
+"strip_length_m": 8.0,
+"strip_max": 3,
+"strip_phase": 2,
+"strip_seconds": 6.0,
+"strip_tick_seconds": 0.5,
+"strip_width_m": 1.0
+}
 id = &"hive_lens"

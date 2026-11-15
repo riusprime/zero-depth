@@ -121,6 +121,9 @@ var arena_template := 0
 ## The forge this boss fights with (ForgeRules.SPEC; empty: none): the Foundry's Forged Plate, its cooling slag,
 ## Overpressure and the scald gauge.
 @export var forge := {}
+## The lattice this boss fights with (LatticeRules.SPEC; empty: none): the Hive Lens fed by its drones, its Focus Beam
+## cutting them, the burnt glass and the Lattice of light.
+@export var lattice := {}
 
 
 func category() -> StringName:
@@ -160,6 +163,7 @@ func validate() -> Array[ValidationIssue]:
 	WardensRules.validate(self, issues)  # The Twin Wardens' own mechanics
 	SiegeRules.validate(self, issues)  # The Siege Engine's cover and Doom Shell
 	ForgeRules.validate(self, issues)  # The Foundry's forge
+	LatticeRules.validate(self, issues)  # The Hive Lens's drones, burnt glass and Lattice
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1
