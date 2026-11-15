@@ -76,6 +76,8 @@ static var parts: Array[GDScript] = [
 	ForgeHeroViews,
 	WarBannerViews,
 	DuelCageViews,
+	LensFeedViews,
+	LensLatticeViews,
 	JudgeViews,  # v0.9.0 NB3
 	JudgeTimeViews,
 	JudgeRewindViews,
@@ -256,6 +258,9 @@ var forge_hero: ForgeHeroViews = _part(ForgeHeroViews)
 ## The Warlord's War Banner and its Duel's javelin cage.
 var war_banner: WarBannerViews = _part(WarBannerViews)
 var duel_cage: DuelCageViews = _part(DuelCageViews)
+## The Hive Lens's feeding drones (their threads, its shield rings, the cut) and its Lattice and burnt glass.
+var lens_feed: LensFeedViews = _part(LensFeedViews)
+var lens_lattice: LensLatticeViews = _part(LensLatticeViews)
 ## The Clockwork Judge's echo (its recording, path and ghost trail) and its Verdict's pendulum.
 var judges: JudgeViews = _part(JudgeViews)
 ## Its Time Wave, hour orbs, stopped gears and slow fields; the Rewind's pale copy, the Bell and the throw.
@@ -578,6 +583,8 @@ func _setup_effects() -> void:
 		forge_hero,
 		war_banner,
 		duel_cage,
+		lens_feed,
+		lens_lattice,
 	]:
 		add_child(v)
 		v.set(&"pack_fx", pack_fx)
@@ -863,6 +870,8 @@ func sync() -> void:
 	_sync_view(&"forge_hero", forge_hero)
 	_sync_view(&"war_banner", war_banner)
 	_sync_view(&"duel_cage", duel_cage)
+	_sync_view(&"lens_feed", lens_feed)
+	_sync_view(&"lens_lattice", lens_lattice)
 	_sync_view(&"judges", judges)  # v0.9.0 NB3
 	_sync_view(&"judge_time", judge_time)
 	_sync_view(&"judge_rewind", judge_rewind)

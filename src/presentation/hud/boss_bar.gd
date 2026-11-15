@@ -5,8 +5,9 @@ extends Control
 ## No state in words (the owner: a fight's mechanics are found by playing, from arrows, glows, colour and motion): each
 ## state the sim reports is a tone of the fill (BossBarTones): the phase gate breathes pale, a boss that takes more
 ## damage now shimmers hot gold, one that can't be hurt turns steel blue with a pip under the bar's right end for each
-## shield still to pass, the Lantern Shade's bar darkens in the dark and turns lantern gold in a lit pool, The Fallen's
-## mimic window breathes violet as it comes and shimmers violet while open.
+## shield still to pass, the Hive Lens fed by its drones turns a muted rose with a pink pip for each drone feeding it,
+## the Lantern Shade's bar darkens in the dark and turns lantern gold in a lit pool, The Fallen's mimic window breathes
+## violet as it comes and shimmers violet while open.
 ## While the boss rises the bar fills from empty to full over exactly its intro ticks
 ## (WorldReader.boss_intro_permille), then shows its real HP.
 ## The HP is a HudBar (HealthBarTrail: the damage chunk that holds from the burst's first
@@ -81,9 +82,12 @@ func sync(reader: WorldReader) -> void:
 		return
 	var final := reader.final_fight()
 	_sync_hp(reader, i, final)
+	var was := _tone
 	_tone = BossBarTones.tone_of(reader, i, final)
 	var pips := reader.boss_shields_left(i) if _invulnerable else 0
-	if pips != _pips:
+	if _tone == BossBarTones.FED:
+		pips = BossBarTones.feeders(reader, i)
+	if pips != _pips or (was != _tone and pips > 0):
 		_pips = pips
 		queue_redraw()
 	_paint()
@@ -146,7 +150,7 @@ func tone() -> StringName:
 	return _tone
 
 
-## The shield pips drawn under the bar (0 when the boss can be hurt; tests).
+## The pips drawn under the bar: the shields still to pass, or the drones feeding the Hive Lens (0 otherwise; tests).
 func shield_pips() -> int:
 	return _pips
 
@@ -206,8 +210,9 @@ func _draw() -> void:
 		AstralChrome.star4(self, Vector2(ox, y), 6.0, HudStyle.A_METAL, 0.2)
 		AstralChrome.rule1(self, ox + sx * 12.0, 13.0, sx * 96.0, Color(HudStyle.A_METAL, 0.6))
 	AstralChrome.crescent(self, Vector2(cx + 0.5, -6.0), 5.0, Color(HudStyle.A_METAL, 0.85))
-	# A pip for each shield still to pass, right-aligned under the bar
+	# A pip for each shield still to pass (or each drone feeding the Hive Lens), right-aligned under the bar
+	var pip := BossBarTones.LENS_PIP if _tone == BossBarTones.FED else BossBarTones.STEEL
 	for k in _pips:
 		var p := Vector2(BAR.x - PIP_R - k * (PIP_R * 2.0 + PIP_GAP), 26 + BAR.y + 10 + PIP_R)
-		draw_circle(p, PIP_R, BossBarTones.STEEL)
+		draw_circle(p, PIP_R, pip)
 		draw_arc(p, PIP_R + 1.5, 0.0, TAU, 16, Color(HudStyle.A_INK, 0.8), 1.0, true)
