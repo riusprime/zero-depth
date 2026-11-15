@@ -3,27 +3,30 @@
 Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0120`, cut from `main` at `feedd802`.
 
 ## Where we are
-(The lead keeps this block current at every push. Updated 2026-11-14, evening.)
+(The lead keeps this block current at every push. Updated 2026-11-15.)
 
-- **The Clockwork Judge's new fight is built and waits for the owner to play it** (steps 1–3d, head `f4a4d2ab`,
-  not pushed): the Time Wave and three hour orbs, the stopped gears and slow fields from phase 2, the Rewind with
-  the Bell's own Verdict, the Judge's one return. Nobody has watched it move: stills, bots and tests only.
-- **Seams on `92c51874`** (clean worktree, owner's PC, 2026-11-14): **729 of 730, 1,180 s of tests, exit 1.** The
-  one failure, `test_readable_cause.gd` `test_every_cause_line_exists_in_both_languages`, was the Time Wave having
-  no cause-of-death line; a cast that never hits needs none (CONTENT_SCHEMA), and the test now says so (`f4a4d2ab`).
-  Re-run of that file with `test_attack_visuals_2.gd`: 15 of 15, exit 0. The whole seams set was not run again.
-- **For the owner to judge on the Judge** (`OWNER ONLY`): whether it is "difficult but learnable"; 0.45 s to leave
-  the Bell's Verdict (the bot that plays is still hit on 7 of 26 throws, not traced); the gears' height (1.64 m, so
-  the hero shows over them); the hint arrows (first two runs only); the faint rings on the Ruins floor; the stand-in
-  clock and cogs; the borrowed sounds. Bot numbers: [`evidence/JUDGE_BOTS.md`](evidence/JUDGE_BOTS.md).
-- **Not measured:** the Judge at floor-5 scaling (the bots fight it unscaled).
-- **Next (owner, V2):** every other boss is built before the playtest: Tidecaller, Twin Wardens, Siege Engine and
-  Foundry first, then the Warlord and Hive Lens, The Fallen last. Nothing is pushed to GitHub until the owner has
-  played them all.
-- **Not approved yet:** the lead's rows for the Warlord, Siege Engine, Foundry and Hive Lens (asked when each
-  boss's step starts), and the lead's default answers listed in the PLAN.
-- **The owner's folder** is on `claude/v0120`. `project.godot` has an uncommitted change that is not the lead's
-  (the editor re-saved it); left alone.
+- **Every reworked boss is built, sim and views, and waits for the owner's playtest:** the Clockwork Judge,
+  Tidecaller (with its rhythm), Twin Wardens, Siege Engine, Foundry, Warlord, Hive Lens, and The Fallen's remembered
+  mechanics. Head `dd601909` plus this docs commit, on `claude/v0120`, **not pushed** (owner, V2: nothing goes to
+  GitHub before the playtest). The sheet: [`PLAYTEST.md`](PLAYTEST.md).
+- **Seams on `dd601909`** (clean worktree, owner's PC, 2026-11-15): **731 of 731, 1,213 s of tests, exit 0.**
+- **Held back, waiting on the owner:** The Fallen's card theft (step 7b, branch `v0120-h7b`, commit `fdfe2661`,
+  worktree `wt-h7b`, unmerged). With it `test_final_pace.gd` fails: the strong Blade build's Fallen lasts 229.4 s
+  and 225.6 s against the 185 s ceiling (213.3 s on the mean against the base build's 140.0 s). Nothing retuned.
+- **Bot targets missed, nothing retuned** (each a `pending` line that prints its numbers; evidence in
+  `evidence/*_BOTS.md`): Tidecaller (both weapons), Twin Wardens (Blade), Siege Engine (Blade), Foundry (Blade),
+  Warlord (Gun), Hive Lens (both: ignoring the drones is faster), The Fallen (both). The owner judges by playing.
+- **Owner rules that came in during the build** (PLAN): one big mechanic at a time with calm between (R1–R7); no
+  text for mechanics, arrows and glows only (X1); at most two Opus agents, the lead writes the full spec.
+- **Nobody has watched any of it move.** Tests, bots and stills only. Not measured: any boss at its floor's
+  scaling; frame time in the new fights.
+- **Not done:** the release step (version bump, patch notes en/es, What's New, tour, README); the lead's default
+  answers BQ1, BQ2, BQ5, BQ6, BQ8, BQ10 and BQ12's details are still not the owner's words; stand-ins and clips
+  listed in OWNER_TODO §3.5 and §3.7.
+- **The owner's folder** is on `claude/v0120`, imported after the last merge; rebuild the library after any pull
+  that touches `native/` (none in this version so far). `project.godot` has an uncommitted change that is not the
+  lead's; left alone.
+- **Next:** the owner's playtest and their call on the card theft; then tuning from it, and the release step.
 
 ## Owner decisions (2026-11-14)
 - "v0.12.0 (Recommended)": the boss rework is its own version on a new branch from `main`.
