@@ -15,6 +15,8 @@ extends Node3D
 ##   HUD's edge glow, flooding()).
 ## - The cast on the Tidecaller: the pack's rising water (tc_cast) under it through a Riptide warning or a High Tide
 ##   cast (its avatar tolls the bell meanwhile, TidecallerAvatar).
+## - The Fallen's remembered Riptide: the same strips and walls on the square the sim cuts round the final arena's
+##   centre, drawn only inside the round floor (the circle that square is drawn round).
 ## The floor layers draw under every telegraph (render_priority) and never hide the hero. Every slot is built hidden
 ## at the start (the floor's shader warm-up draws it). Reduced motion stills the streaks, the pulse and the caustics.
 ## Nothing here decides an outcome.
@@ -64,9 +66,17 @@ uniform float length_m = 24.0;
 uniform float width_m = 6.0;
 uniform float alpha = 1.0;
 uniform float clock = 0.0;
+uniform vec2 clip_at = vec2(0.0, 0.0);  // a round floor's centre (x, z); clip_r 0: no clip
+uniform float clip_r = 0.0;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
+varying vec2 world_xz;
+
+void vertex() {
+	world_xz = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
+}
 
 void fragment() {
+	float inside = clip_r > 0.0 ? smoothstep(clip_r + 0.05, clip_r - 0.35, length(world_xz - clip_at)) : 1.0;
 	float u = along_x > 0.5 ? UV.x : 1.0 - UV.y;  // along the strip, 0 at the room's low end
 	float v = along_x > 0.5 ? UV.y : UV.x;        // across it
 	float side_m = min(v, 1.0 - v) * width_m;
@@ -82,13 +92,13 @@ void fragment() {
 		vec3 col = mix(deep.rgb, sea.rgb, 0.3 + 0.45 * n + 0.35 * streak);
 		col = mix(col, foam.rgb, clamp(border * 0.7 + streak * 0.4, 0.0, 1.0));
 		ALBEDO = col * (1.0 + 0.3 * level);
-		ALPHA = clamp(alpha * (0.1 + 0.4 * level + 0.2 * streak * level + 0.45 * border), 0.0, 0.66);
+		ALPHA = clamp(alpha * (0.1 + 0.4 * level + 0.2 * streak * level + 0.45 * border), 0.0, 0.66) * inside;
 	} else {
 		float pulse = 0.72 + 0.28 * sin(clock * 5.0);
 		float border = max(smoothstep(0.45, 0.0, side_m), smoothstep(0.3, 0.0, end_m));
 		float inner = smoothstep(0.9, 0.55, side_m) * smoothstep(0.35, 0.55, side_m);
 		ALBEDO = mix(dry.rgb, vec3(1.0, 0.98, 0.9), border) * (1.0 + 1.2 * border);
-		ALPHA = clamp(alpha * (0.1 + 0.8 * border * pulse + 0.25 * inner), 0.0, 0.9);
+		ALPHA = clamp(alpha * (0.1 + 0.8 * border * pulse + 0.25 * inner), 0.0, 0.9) * inside;
 	}
 }
 """
@@ -176,6 +186,9 @@ var _level := 0.0
 var _drain := 0.0
 ## The flood's last time left, to splash the hero once each sim step it spends outside.
 var _flood_left := -1
+## A round floor the strips are clipped to (sim plane centre, radius; 0: none).
+var _clip_at := Vector2.ZERO
+var _clip_r := 0.0
 
 
 func _init() -> void:
@@ -245,8 +258,10 @@ func sync(reader: WorldReader) -> void:
 		pack_fx = GapPack.pack_of(self)
 	_dance = reader.boss_dance()
 	_hero_at = SimPlane.to_3d(reader.actor_pos(0))
+	_clip_r = 0.0
 	if not _dance.is_empty():
 		_boss_at = SimPlane.to_3d(reader.actor_pos(int(_dance["boss"])))
+		_read_round_floor(reader)
 	if not _primed:
 		_primed = true
 		for e in reader.events_since(0):
@@ -260,6 +275,18 @@ func sync(reader: WorldReader) -> void:
 		elif e.effect_id == EFFECT_TIDE_END:
 			_drain = DRAIN_S
 	_splash_in_flood()
+
+
+## The Fallen's remembered Riptide cuts the square round the final arena's centre, whose corners lie past its round
+## floor: the strips and the walls are drawn only inside the circle the square is drawn round (its half side is the
+## clear run to the nearest wall, BossRemembered's room).
+func _read_round_floor(reader: WorldReader) -> void:
+	var f := reader.boss_fallen()
+	if f.is_empty() or int(f["boss"]) != int(_dance["boss"]):
+		return
+	var room: Rect2 = f["room"]
+	_clip_at = room.get_center()
+	_clip_r = minf(room.size.x, room.size.y) * 0.5
 
 
 ## The hero outside the dry circle in the flood: a splash on it each sim step it pays for.
@@ -340,6 +367,9 @@ func _draw_riptide() -> void:
 		m.set_shader_parameter("length_m", length)
 		m.set_shader_parameter("width_m", r.size.y if along_x else r.size.x)
 		m.set_shader_parameter("clock", _clock)
+		var clip := SimPlane.to_3d(_clip_at)
+		m.set_shader_parameter("clip_at", Vector2(clip.x, clip.z))
+		m.set_shader_parameter("clip_r", _clip_r)
 		if not hit:
 			continue
 		var width := r.size.y if along_x else r.size.x
@@ -347,6 +377,11 @@ func _draw_riptide() -> void:
 		var at := mid
 		if wave >= 0.0:
 			at = _front_point(r, along_x, front)
+			var chord := wall_chord(at, along_x, width, _clip_at, _clip_r)
+			if chord.y <= 0.05:
+				continue  # The front runs past the round floor's edge
+			at = chord_point(at, along_x, chord.x)
+			width = chord.y
 			_draw_wall(k, at, along_x, width, wave)
 		var grow := 1.0 if wave >= 0.0 else 0.5 + 0.5 * clampf(warn, 0.0, 1.0)
 		hold.put(
@@ -355,6 +390,27 @@ func _draw_riptide() -> void:
 			&"area",
 			_at(SimPlane.to_3d(at, 0.06), width * 0.5 * RIPPLE_PER_M * grow)
 		)
+
+
+## The part of a wall across a strip at `at` (`width` m across, centred on `at`) that lies inside the circle at `c`
+## of radius `r` (0: no circle): Vector2(its centre's offset across from `at`, its width); width 0 when none does.
+static func wall_chord(at: Vector2, along_x: bool, width: float, c: Vector2, r: float) -> Vector2:
+	if r <= 0.0:
+		return Vector2(0.0, width)
+	var along := at.x - c.x if along_x else at.y - c.y
+	var across := at.y - c.y if along_x else at.x - c.x
+	if absf(along) >= r:
+		return Vector2.ZERO
+	var half := sqrt(r * r - along * along)
+	var lo := maxf(across - width * 0.5, -half)
+	var hi := minf(across + width * 0.5, half)
+	if hi <= lo:
+		return Vector2.ZERO
+	return Vector2((lo + hi) * 0.5 - across, hi - lo)
+
+
+static func chord_point(at: Vector2, along_x: bool, offset: float) -> Vector2:
+	return at + (Vector2(0.0, offset) if along_x else Vector2(offset, 0.0))
 
 
 ## The point on strip `r`'s centre line `front` metres from the room's low end.
@@ -459,6 +515,15 @@ func strip_rect(k: int) -> Rect2:
 
 func strip_struck(k: int) -> bool:
 	return float(_strip_mats[k].get_shader_parameter("struck")) > 0.5
+
+
+## The round floor the strips are drawn inside: [centre (sim plane), radius (0: none)].
+func clip() -> Array:
+	return [_clip_at, _clip_r]
+
+
+func wall_width(k: int) -> float:
+	return _walls[k].scale.z / 0.98
 
 
 func strip_param(k: int, param: StringName) -> float:

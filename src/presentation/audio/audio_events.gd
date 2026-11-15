@@ -527,13 +527,9 @@ func _events(reader: WorldReader, out: Array) -> void:
 					out.append([&"frost_nova", e.pos, 1.0])
 				elif e.effect_id == WorldReader.EFFECT_TWIN_ANGER:  # A Warden turns angry
 					out.append([&"boss_twin_chain", e.pos, 0.75])
-				elif (
-					not JudgeTimeCues.add(e, out)
-					and not TideDanceCues.add(e, out)
-					and not WardenCues.add(e, out)
-					and not SiegeCues.add(e, out)
-				):
-					_fallen_cue(e, out)
+				elif not JudgeTimeCues.add(e, out) and not TideDanceCues.add(e, out):
+					if not WardenCues.add(e, out) and not SiegeCues.add(e, out):
+						FallenCues.add(e, out)
 			SimEvent.Kind.BOSS_PICKUP_TAKEN:  # An hour orb taken
 				out.append([JudgeTimeCues.ORB_TAKEN, e.pos, JudgeTimeCues.ORB_PITCH])
 			SimEvent.Kind.BLAST:  # A bomb bursts
@@ -544,27 +540,6 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"combo_unlock", null, 1.0])
 			SimEvent.Kind.STRESS_BREAK:  # A Stress Mark side broken, a metallic ting
 				out.append([&"stress_break", e.pos, 1.0])
-
-
-## The Fallen's interphase: it vanishes with the phase cue, the beams open with the laser's, an eruption
-## strikes with the spikes' floor burst, the dark falls with the Shade's snuff, the rain with the mortar's, and the
-## slam back down with the heavy slam.
-func _fallen_cue(e: SimEvent, out: Array) -> void:
-	match e.effect_id:
-		WorldReader.EFFECT_FALLEN_VANISH:
-			out.append([&"boss_phase", null, 1.0])
-		WorldReader.EFFECT_FALLEN_BEAMS:
-			out.append([&"boss_laser", e.pos, 1.0])
-		WorldReader.EFFECT_FALLEN_ERUPT:
-			out.append([&"boss_floor_burst", e.pos, 0.9])
-		WorldReader.EFFECT_FALLEN_DARK:
-			out.append([&"boss_shade_snuff", null, 1.0])
-		WorldReader.EFFECT_FALLEN_RAIN:
-			out.append([&"boss_mortar", e.pos, 0.8])
-		WorldReader.EFFECT_FALLEN_LINE:
-			out.append([&"boss_floor_burst", e.pos, 0.7])
-		WorldReader.EFFECT_FALLEN_RETURN:
-			out.append([&"boss_slam", e.pos, 1.0])
 
 
 ## Mines: a beep as one arms, the blast when an armed one goes off the floor.

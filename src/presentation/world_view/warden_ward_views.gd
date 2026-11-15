@@ -14,6 +14,10 @@ extends Node3D
 ##   she stands on it. The break: the pack's shatter and stun flash on her, stars over her while she is stunned (her
 ##   avatar slumps in its stagger clip, his staggers too), then a ring on the floor counting down to the ward's return
 ##   and, for its last RETURN_GLOW_S, the pack's rising light as it re-forms.
+## - The Fallen remembering the ward (WorldReader.boss_fallen): the same whole dome and rim on The Fallen, the
+##   amber Warden's shade's lane under it (white-hot while it would run through The Fallen), the same shatter and stun
+##   flash on it when it breaks. Its stars are BossVulnerableViews' (the stun is a quake table's), the shade itself
+##   FallenRememberedViews'.
 ## Every slot is built hidden at the start. Reduced motion stills the pulses. Nothing here decides an outcome.
 
 const AMBER := WardenLooks.AMBER
@@ -64,6 +68,12 @@ var _st := {}
 var _resting: Array = []  # [body position (sim), colour key]
 var _violet_at := Vector2.ZERO
 var _hero_at := Vector2.ZERO
+## The whole ward drawn now (the violet Warden's, or The Fallen's remembered one), where, and the charge whose lane
+## shows under it ({} none: the reader's lane, progress and whether it breaks the ward).
+var _full := false
+var _full_at := Vector2.ZERO
+var _charge := {}
+var _fallen_at := Vector2.ZERO
 ## The Mirror Ward as drawn: its centre angle, half width (1/4096 turns), 0..1 height and whether it is the cast.
 var _wall_centre := 0
 var _wall_half := 0
@@ -101,6 +111,8 @@ func sync(reader: WorldReader) -> void:
 	_hero_at = reader.player_pos()
 	_resting = []
 	_casting = false
+	_full = false
+	_charge = {}
 	if not _st.is_empty():
 		var j := int(_st["violet"])
 		_violet_at = reader.actor_pos(j)
@@ -108,7 +120,33 @@ func sync(reader: WorldReader) -> void:
 			if bool(reader.boss_twin(body).get("resting", false)):
 				_resting.append([reader.actor_pos(body), &"violet" if body == j else &"amber"])
 		_read_cast(reader, j)
+		_full = (_st["ward"] as Dictionary).get("kind", &"") == &"full"
+		_full_at = _violet_at
+		_charge = _st.get("charge", {})
+	_read_fallen(reader)
 	_events(reader)
+
+
+## The Fallen remembering the ward: the same whole ward on it, and the amber Warden's shade's lane, white-hot while
+## it would run through The Fallen.
+func _read_fallen(reader: WorldReader) -> void:
+	var f := reader.boss_fallen()
+	if f.is_empty():
+		return
+	var i := int(f["boss"])
+	_fallen_at = reader.actor_pos(i)
+	var ward: Dictionary = f["ward"]
+	if ward.is_empty() or not bool(ward["up"]):
+		return
+	_full = true
+	_full_at = _fallen_at
+	var sh: Dictionary = f["shade"]
+	if not sh.is_empty():
+		_charge = {
+			"lane": sh["lane"],
+			"progress": sh["progress"],
+			"breaks": FallenLooks.lane_crosses(sh["lane"], _full_at, reader.actor_radius(i)),
+		}
 
 
 ## The Mirror Ward's cast: the violet Warden winds it up; the wall rises toward the hero.
@@ -149,6 +187,9 @@ func _events(reader: WorldReader) -> void:
 			EFFECT_BREAK:
 				_spawn(SHATTER_ID, &"impact", SimPlane.to_3d(_violet_at, 1.1), 1.4)
 				_spawn(STUN_ID, &"hit", SimPlane.to_3d(_violet_at, 2.4), 0.9)
+			WorldReader.EFFECT_FALLEN_WARD_BREAK:
+				_spawn(SHATTER_ID, &"impact", SimPlane.to_3d(e.pos, 1.1), 1.4)
+				_spawn(STUN_ID, &"hit", SimPlane.to_3d(e.pos, 2.4), 0.9)
 
 
 func _spawn(id: StringName, family: StringName, at: Vector3, scale: float) -> void:
@@ -162,7 +203,7 @@ func _process(delta: float) -> void:
 
 ## Frame-time animation (the tests and the shot scripts call it too).
 func advance(delta: float) -> void:
-	var idle := _st.is_empty() and _wall_up <= 0.0 and hold.count() == 0
+	var idle := _st.is_empty() and not _full and _wall_up <= 0.0 and hold.count() == 0
 	if idle:
 		if quiet:
 			return
@@ -228,19 +269,15 @@ func _draw_wall(delta: float) -> void:
 
 func _draw_full() -> void:
 	var ward: Dictionary = _st.get("ward", {})
-	var full: bool = ward.get("kind", &"") == &"full"
+	var full := _full
 	if full:
-		var n := hold.put(
-			&"full", DOME_IDS[&"full"], DOME_FAMILY, _dome_at(_violet_at, FULL_R, 1.15)
-		)
+		var n := hold.put(&"full", DOME_IDS[&"full"], DOME_FAMILY, _dome_at(_full_at, FULL_R, 1.15))
 		var hot := VIOLET.lightened(0.25)
 		WardenLooks.wear(
 			n, WardenLooks.field_material(&"full", hot, Color(1, 0.9, 1), Color.WHITE), &"full"
 		)
-		hold.put(
-			&"full_rim", RIM_ID, &"area", WardenLooks.at(SimPlane.to_3d(_violet_at, 0.05), 1.3)
-		)
-	var charge: Dictionary = _st.get("charge", {})
+		hold.put(&"full_rim", RIM_ID, &"area", WardenLooks.at(SimPlane.to_3d(_full_at, 0.05), 1.3))
+	var charge := _charge
 	_lane.visible = full and not charge.is_empty()
 	if _lane.visible:
 		var o: Obb = charge["lane"]
@@ -303,7 +340,17 @@ func wall_up() -> float:
 
 
 func full_shown() -> bool:
-	return _st.get("ward", {}).get("kind", &"") == &"full"
+	return _full
+
+
+## Where the whole ward stands (sim plane).
+func full_at() -> Vector2:
+	return _full_at
+
+
+## Whether the lane under it glows white-hot (the charge would break it).
+func lane_breaks() -> bool:
+	return _lane.visible and bool(_charge.get("breaks", false))
 
 
 func lane_shown() -> bool:

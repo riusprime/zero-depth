@@ -23,7 +23,6 @@ const FAMILY := {
 	&"bx_smoke_thin": &"cloud",
 	&"bx_smoke_dust": &"cloud",
 	&"bx_pillar_light": &"area",
-	&"bx_pillar_fallen": &"area",
 	&"bx_pulse_light": &"area",
 	&"bx_pulse_shock": &"area",
 	&"bx_pulse_steam": &"area",

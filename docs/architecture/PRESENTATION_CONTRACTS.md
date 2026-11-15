@@ -174,6 +174,26 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   round the body and the stun stars (`o13d_star_ring`) over it while `boss_stunned` or the siege's `stripped` runs.
   Hint arrows: `ObjectiveMarkers.SIEGE_BOULDER` (`MechanicHints.SIEGE_BOULDER`). Sounds: `SiegeCues`. The pack rows
   are `data/vfx/pack_fx_se.tres`.
+- **The Fallen remembers the run** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10t). Each remembered
+  mechanic is drawn by its source boss's own views, which read the same readers: the Time Wave by `JudgeTimeViews`
+  (the `time_wave` ring from The Fallen, the orbs and their clocks from `boss_pickups`), `AttackSlowHud` and the
+  `JUDGE_ORB` arrows; the Riptide by `TideDanceViews` (`boss_dance`), its strips and walls drawn only inside the
+  circle round `boss_fallen().room` (the final floor is round; the square's corners lie past it); the pillars by
+  `StoneSpikeViews` (`boss_quake_pillars`: rings, pulses, the shatter when one goes) and the stun by
+  `BossVulnerableViews` (`boss_stunned`: The Fallen's table carries a quake table); the ward by `WardenWardViews`
+  (the whole dome and rim on The Fallen while `ward.up`, the shade's `lane` under it, white-hot when the lane touches
+  The Fallen (`FallenLooks.lane_crosses`: the reader has no `breaks` for the shade), the shatter and stun flash on
+  `fallen_ward_break`) and `ChargeBurstViews` (the end circle at `shade.end`, then `burst` armed and going off).
+  `FallenRememberedViews` adds what has no source view: through the cast (`cast` ≥ 0) a ghost of the remembered boss
+  (`FallenLooks.ghost`: its own model from `BossModels`, unshaded light in its colours, the Twins as a pair) rising
+  over The Fallen and fading out, with the pack's `tw_portal_exit` in those colours at its feet; while it runs
+  (`stage` 2) the pack's `tw_ward_rim` in those colours at its feet (not under the ward's dome); while
+  `pillar_dash` shows, a strip along it in the Gatekeeper's colour, and from where it enters a pillar (grown by the
+  body's radius) to the pillar's middle a white-hot strip when `through`; the shade a ghost of the amber Warden's
+  model at `shade.position`, facing its lane, brightening through its wind-up. Colours (`FallenLooks.COLOURS`): the
+  Judge gold, the Tidecaller sea blue, the Gatekeeper stone amber, the Twins amber over violet. No text. Sounds:
+  `FallenCues` (the cast plays the remembered boss's own telegraph cue; the ward and the shade borrow the Wardens').
+  No hint arrow to The Fallen during the ward: the sim sets no marker for it.
 - **Boss mechanics carry no words** (owner, 2026-11-15: "too much text … we need to make it subtle so the player
   discovers it while playing, with arrows or glows"). `ObjectiveHints` draws arrows only (a small arrow over the
   target on screen, an edge arrow off it) for every reason, never a line of text, and draws nothing for

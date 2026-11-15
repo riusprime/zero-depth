@@ -63,7 +63,7 @@ static var parts: Array[GDScript] = [
 	TideWaveViews,  # v0.9.5 BH4
 	TideDanceViews,
 	MaelstromViews,
-	InterphaseViews,  # v0.9.5 BH6
+	FallenRememberedViews,
 	TwinViews,  # v0.9.0 NB2
 	WardenWardViews,
 	WardenBladeViews,
@@ -230,8 +230,9 @@ var tide_waves: TideWaveViews = _part(TideWaveViews)
 ## Its dance: the Riptide strips and their walls of water, the High Tide's flood and dry circle; the Maelstrom.
 var tide_dance: TideDanceViews = _part(TideDanceViews)
 var maelstrom: MaelstromViews = _part(MaelstromViews)
-## The Fallen's interphase (the vanish, rays, eruptions, rain and spike lines, the return ring and slam).
-var interphase: InterphaseViews = _part(InterphaseViews)
+## The Fallen remembering a boss the run killed: the ghost of that boss rising through the cast, the ring of its
+## colour while the mechanic runs, the dash line through a quake pillar, the amber Warden's shade.
+var fallen_remembered: FallenRememberedViews = _part(FallenRememberedViews)
 ## The Twin Wardens' Crossfire gap lanes and safe spot, the Sword Lane's slash.
 var twins: TwinViews = _part(TwinViews)
 ## Their shields (the resting dome, the Mirror Ward, the whole ward and its break), their shadow swords, his dash
@@ -550,7 +551,8 @@ func _setup_effects() -> void:
 	add_child(maelstrom)
 	tide_dance.pack_fx = pack_fx
 	maelstrom.pack_fx = pack_fx
-	add_child(interphase)  # v0.9.5 BH6
+	add_child(fallen_remembered)
+	fallen_remembered.pack_fx = pack_fx
 	add_child(twins)  # v0.9.0 NB2
 	for v: Node3D in [
 		warden_wards, warden_blades, charge_bursts, siege_field, siege_cart, boss_vulnerable
@@ -826,7 +828,7 @@ func sync() -> void:
 	_sync_view(&"tide_waves", tide_waves)  # v0.9.5 BH4
 	_sync_view(&"tide_dance", tide_dance)
 	_sync_view(&"maelstrom", maelstrom)
-	_sync_view(&"interphase", interphase)  # v0.9.5 BH6
+	_sync_view(&"fallen_remembered", fallen_remembered)
 	_sync_view(&"twins", twins)  # v0.9.0 NB2
 	_sync_view(&"warden_wards", warden_wards)
 	_sync_view(&"warden_blades", warden_blades)
