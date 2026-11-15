@@ -296,7 +296,7 @@ warlord = {
 "banner_pole_m": 0.8,
 "banner_radius_m": 6.0,
 "banner_seconds": 20.0,
-"duel_attacks": ["shield_bash", "lunge_dash", "spear_lines", "spear_wall"],
+"duel_attacks": ["shield_bash", "lunge_dash", "spear_lines"],
 "duel_cast_seconds": 1.2,
 "duel_end_radius_m": 5.0,
 "duel_first_seconds": 8.0,

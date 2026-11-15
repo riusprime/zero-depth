@@ -17,6 +17,10 @@ extends BossAvatar
 ## are laid over the file's animation (BossAvatar), as is the one layer this adds after them (_pose_rig): the
 ## shield lifted up and aside while the weak point is open. The spear's tip and the shield's face ride the spear's
 ## and the shield's own bones, which turn in the hand and on the fist.
+## Its War Banner and Duel (WorldReader.boss_warlord), wordless: while it stands in its own banner its body glows hot
+## and pulses (the glow overlay; WarBannerViews adds the embers at its feet), and while its Duel's cage stands it
+## carries its shield low at its side, off its front (the sim lets its front be hurt then), so a hit on the front lands
+## as a plain hit, not a block.
 
 const HEIGHT := 2.7
 const WALK_SPEED := 2.1
@@ -61,6 +65,11 @@ var shield := Node3D.new()
 var spear := Node3D.new()
 var legs: Array[Node3D] = []
 var _lift := 0.0
+## How low the shield hangs for the Duel (0..1) and how hot the banner's glow is (0..1), and what the sim says now.
+var _lower := 0.0
+var _rage := 0.0
+var _shield_down := false
+var _enraged := false
 
 
 ## The owner's model: assets/models/bosses/warlord.glb (posed from its own bones).
@@ -84,6 +93,34 @@ func _weak_bone() -> StringName:
 ## 0..1: how far the shield is lifted (tests).
 func shield_lift() -> float:
 	return _lift
+
+
+## 0..1: how low the shield hangs for the Duel, and how hot the banner's glow is (tests and the shots).
+func shield_lowered() -> float:
+	return _lower
+
+
+func rage() -> float:
+	return _rage
+
+
+## Reads this Warlord's banner and duel (WorldReader.boss_warlord) beside the base state.
+func sync(reader: WorldReader, i: int) -> void:
+	super(reader, i)
+	var wl := reader.boss_warlord()
+	var mine := int(wl.get("boss", -1)) == i
+	_enraged = mine and bool(wl.get("banner", {}).get("boss_inside", false))
+	_shield_down = mine and bool(wl.get("duel", {}).get("shield_down", false))
+
+
+## The shield's drop and the banner's heat ease in and out.
+func _ease_duel(dt: float) -> void:
+	_lower = lerpf(_lower, 1.0 if _shield_down else 0.0, _rate(6.0, dt))
+	_rage = lerpf(_rage, 1.0 if _enraged else 0.0, _rate(4.0, dt))
+
+
+func _extra_glow() -> float:
+	return _rage * (0.03 + 0.015 * sin(_t * 7.0))
 
 
 func anchor_names() -> Array[StringName]:
@@ -258,6 +295,7 @@ func _pose(dt: float) -> void:
 	# The shield lifts up and aside while the weak point is open (and as the spear is planted).
 	var lift_target := maxf(_weak_shown, plant * 0.6)
 	_lift = lerpf(_lift, lift_target, _rate(8.0, dt))
+	_ease_duel(dt)
 	var stag := _stagger
 	torso.position = Vector3(
 		0.12 * couch - 0.06 * stag, HIP_Y + absf(s) * 0.05 * walk + breath * 0.01 - plant * 0.12, 0
@@ -279,7 +317,8 @@ func _pose(dt: float) -> void:
 	guard = lerpf(guard, 1.1, maxf(bash, 0.0))
 	guard = lerpf(guard, 2.6, _lift)
 	guard = lerpf(guard, 0.0, stag)
-	shield_arm.rotation = Vector3(-0.15 - _lift * 0.6, 0, guard)
+	guard = lerpf(guard, -0.25, _lower * (1.0 - _lift))
+	shield_arm.rotation = Vector3(-0.15 - _lift * 0.6 - 0.7 * _lower * (1.0 - _lift), 0, guard)
 	shield.rotation = Vector3(_lift * 0.5, 0, -guard * 0.55 + _lift * 0.4)
 	# The spear arm: low at its side, raised overhead and driven down to plant, couched for the lunge, drawn
 	# back for the throw.
@@ -331,6 +370,15 @@ func _pose_rig(dt: float) -> void:
 		poser.turn(&"L_Upperarm", Vector3.RIGHT, 1.55 * k)
 		poser.turn(&"L_Upperarm", Vector3.BACK, 0.25 * k)
 		poser.turn(&"L_Forearm", Vector3.BACK, 0.35 * k)
+	_ease_duel(dt)
+	var d := _lower * (1.0 - maxf(_stagger, _death)) * (1.0 - _lift)
+	if d > 0.001:
+		# Lowered to its side for the Duel, from the carry: turned back from across its front, out to the left,
+		# swung back and the forearm hanging.
+		poser.turn(&"L_Upperarm", Vector3.UP, 0.9 * d)
+		poser.turn(&"L_Upperarm", Vector3.RIGHT, 0.35 * d)
+		poser.turn(&"L_Upperarm", Vector3.BACK, -0.45 * d)
+		poser.turn(&"L_Forearm", Vector3.BACK, -0.5 * d)
 	# A shoulder plate hangs from its upper arm: the file's animations let it follow only part of the arm's swing,
 	# so a code clip's turn of the arm (a roar's raised spear, the lifted shield) is partly taken back out of it.
 	for side: StringName in PLATES:

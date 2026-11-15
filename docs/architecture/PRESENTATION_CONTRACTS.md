@@ -221,6 +221,33 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   shape and colour family). `ForgeBurnEdge` (a `LowHpVignette` in fire orange) while `burn` ≥ 0 and not `on_slab`.
   Hint arrows: `ObjectiveMarkers.FOUNDRY_SLAB` (`MechanicHints.FOUNDRY_SLAB`). Sounds: `ForgeCues` (no `heat_*` cue).
   The pack rows are `data/vfx/pack_fx_fo.tres`.
+- **The Warlord's charge, War Banner and Duel** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10u). Read
+  from `WorldReader.boss_warlord`, the charge's telegraph (`"burst"`), `boss_charge_bursts` and the `STATUS_APPLY`
+  and `DAMAGE` events only; shared looks in `WarlordLooks`; no word anywhere. The charge: `ChargeBurstViews` draws its
+  end circle and burst (any boss whose lane telegraph carries `"burst"`; nothing in it is the Twins'); the lane, the
+  lock flash and the owner's `lunge` clip follow the sim's wind-up, which BossAnimator maps onto the clip's own strike
+  time (its 0.93 s couch plays in the 0.6 s wind-up). `WarBannerViews`: through `cast` the code-made banner (a
+  stand-in, `WarlordLooks.banner`) is raised from lying to upright in the pack's warm lift (`wl_banner_cast`), its
+  circle fading in; standing, a quiet ring of `radius` on `centre` (`RING_SHADER`: a thin band, a 7 % warm wash) and
+  the pack's warm rim (`wl_banner_rim`, flattened to stay low); `boss_inside` lays the pack's red embers
+  (`wl_rage`) at the Warlord's feet and `WarlordAvatar` glows hot (the glow overlay's `_extra_glow`); `hero_inside`
+  holds a warm flare (`wl_hand`) at the hero's casting hand (HeroCastFx's hand point) and each of the hero's hits on
+  the Warlord then also bursts in the pack's warm hit (`wl_hit`). The cloth begins to burn over the last 90 ticks of
+  `left`; `warlord_banner_fallen` with `FELL_TIME` burns it away in the pack's flames (`status_burn_b`) as it sinks,
+  with `FELL_CHARGE` bursts the pack's shards (`wl_snap`) at the pole while its top and cloth fly off; `FELL_CLEARED`
+  just goes. `DuelCageViews`: `DuelCageViews.SHAFTS` (28) of the Warlord's javelins (`BossSignatureViews.javelin_mesh`
+  and its shader, one MultiMesh) at fixed angles; through the cast they rain in one after another onto the circle the
+  cage would close on now, a third landing in the pack's dust (`bx_smoke_dust`); through the cage they stand on the
+  fence's exact `radius` round `centre`, leaning outward, and slide in as it closes, dust kicked up at one shaft every
+  0.3 s; a faint breathing danger rim (`RING_SHADER`) under them and no glow inside (a pack rim there drowned the
+  recall's circle in the shots);
+  `warlord_fence_touch` sparks at the hero (`wl_fence`). Through the recall's warning the shafts glow hotter with
+  `warn` and the centre's `zone` is the charge burst's floor circle (`WardenLooks`, with `tw_burst_rim`) filling to
+  `warn`, flashing locked from 70 %; `warlord_recall` flies every shaft inward through the centre (0.32 s, frame
+  time, after the cage is gone) and bursts the pack's impact (`wl_recall`) there. `WarlordAvatar` lowers its shield to
+  its side while `shield_down` (a layer over the owner's animations; the sim then tags a front hit as a plain one, so
+  HitFeel shows no block spark). The boss bar keeps its plain tone through the duel. Sounds: `WarlordCues`. The pack
+  rows are `data/vfx/pack_fx_wl.tres`.
 - **Boss mechanics carry no words** (owner, 2026-11-15: "too much text … we need to make it subtle so the player
   discovers it while playing, with arrows or glows"). `ObjectiveHints` draws arrows only (a small arrow over the
   target on screen, an edge arrow off it) for every reason, never a line of text, and draws nothing for
