@@ -95,7 +95,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 			issues.append(ValidationIssue.new(&"duration", path, where + "%s is invalid" % pair[0]))
 	if shield_seconds >= 0.0 and not shielded:
 		issues.append(ValidationIssue.new(&"range", path, where + "shield_seconds needs shielded"))
-	if BossSchemas.CAST_MOVES.has(move):
+	if BossSchemas.CAST_MOVES.has(move) or move == &"remembered":  # A carrier names a cause only
 		if damage != 0:
 			issues.append(ValidationIssue.new(&"range", path, where + "a cast deals no damage"))
 	elif damage <= 0:

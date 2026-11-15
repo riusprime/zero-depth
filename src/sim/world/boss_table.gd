@@ -208,8 +208,10 @@ var phase_ring_ticks := PackedInt32Array()
 var phase_wave_atk := PackedInt32Array()
 var phase_wave_ticks := PackedInt32Array()
 var phase_wave_n := PackedInt32Array()
-## HC4-HC6: The Fallen's interphases and dashes between moves (null: none).
-var interphase: InterphaseTable = null
+## The Fallen's dash to a new spot between two moves (null: none).
+var reposition: FallenDashTable = null
+## The Fallen's remembered mechanics (null: none). A body with them also holds the quake pillars it raises (quake).
+var remembered: FallenRememberedTable = null
 ## The Gatekeeper's quake pillars (null: none).
 var quake: QuakeTable = null
 ## The boss's arena hazards, in sim units (null: none).

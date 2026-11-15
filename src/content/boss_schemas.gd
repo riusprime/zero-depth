@@ -337,11 +337,8 @@ const MOVES := {
 	## across the room after the telegraph (a foam line at the wall); shove_m along its travel when it hits; clear_m: it
 	## never forms within that of the hero's projection on its wall.
 	&"wave":
-	## BOSSES_HARD.md HC5; BossInterphase: a carrier of the Fallen's interphase hits, in no attack list: its
-	## damage, telegraph and recap cause belong to the hazards (fallen_rays, fallen_rain, fallen_dark, fallen_erupt,
 	{"shape": 2, "params": ["lengths_m", "thickness_m", "speed_mps", "shove_m", "clear_m"]},
-	## fallen_return).
-	&"interphase": {"shape": 2, "params": []},
+	&"remembered": {"shape": 2, "params": []},  # The Fallen's recap carriers (FallenRules): a cause key, no damage
 	## The Prism's Facet Lances: `count`
 	## lances stagger_seconds apart, each from a rim spot distance_m from her (spread_degrees apart round her, the first
 	## on the player's side) through the player: it follows them for track_seconds, holds for the attack's lock, then

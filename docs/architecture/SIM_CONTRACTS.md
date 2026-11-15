@@ -1915,7 +1915,7 @@ below) and FB3's cap of a fifth of max HP (D36).
   `FinalPace.cap_hit`: owner 0 (the world's own hit) passes; else, in a mimic window, `× nerf_permille`; then
   `min(amount, pace_budget / 1000)`, paid from the bucket. The meter (§10g `note_damage`) still records the hit's
   damage before the clamp.
-- **The Fallen's windows (`BossTable.window_ticks` > 0).** `u = tick − phase_tick − boss_intro_ticks −
+- **The Fallen's windows (`BossTable.window_ticks` > 0).** `u = tick − phase_tick − fl_delay (§10t) − boss_intro_ticks −
   window_first_ticks + window_warn_ticks`; OFF for u < 0; else `c = u mod window_every_ticks`: WARN for c <
   `window_warn_ticks`, ON for c < warn + `window_ticks`, else OFF; OFF while shattering, rising, dead or won. No state
   of its own (a function of the tick and the rise). One `STATUS_APPLY` on the tick each state begins (`fallen_warn`,
@@ -2544,6 +2544,109 @@ boss reaches the forge's first phase, so the first phase hashes as before.
   cooling), `shattered`, `safe`}]), `overpressure` ({} or `cast`, `cast_left`, `burn`, `burn_left`, `on_slab`),
   `overpressure_in`, `scald` ({} before its phase, else `gauge`, `max`, `burning`, `draining`). The marker:
   `objectives()` (`foundry_slab`).
+
+## 10t. The Fallen remembers the run (v0.12.0 step 7a; owner direction HC-A, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md) §5)
+
+Supersedes the v0.9.5 interphase (The Fallen vanishing for 15 s at 66 % and 33 % with RAYS / RAIN / LIGHTS OUT):
+`BossInterphase`, `InterphaseTable`, `FinalFight.ip_*`, the five `interphase` carriers and their data are gone. The
+Fallen never becomes untargetable or freezes its HP for a mechanic, and the pace no longer leaves time out. Its dash
+between moves stays (`FinalBossDefinition.reposition`, `FallenDashTable`, `BossTable.reposition`; the same numbers).
+Its numbers are `BossTable.remembered` (a `FallenRememberedTable`, compiled by `FallenCompiler` from
+`FinalBossDefinition.remembered`, `FallenRules`); its state is `BossFightStore.fl_*`. Code: `BossRemembered` (the
+director, the pool, the window hold, the read), `FallenTime`, `FallenRiptide`, `FallenQuake`, `FallenWard`. Only the
+pick and the pieces' own spots draw a stream (`ai`). No native change.
+
+- **The record of the run.** `RunState.bosses_beaten` (content ids, each once, in order): `finish_floor` adds the
+  floor's boss (`BossFlow.boss_index`) once its portal opened. Saved (`RunSaver` key `beaten`; a save without it is
+  not usable). `RunState.prepare` hands it to the world (`BossFightStore.fl_beaten`, setup).
+- **The pool** (`BossRemembered.pool`): of `SOURCES` (TIME `clockwork_judge`, RIPTIDE `tidecaller`, QUAKE
+  `gatekeeper`, WARD `twin_wardens`) the kinds whose boss is in `fl_beaten`, in that order; none: `FALLBACK` (TIME,
+  RIPTIDE: a start straight at the final boss, the Playground). The pick is one `ai` draw among them, the last kind
+  left out when more than one remains.
+- **The clocks.** The current final body with `remembered` takes them (`fl_boss`) the first tick it is not rising:
+  `fl_open` = `fl_next` = that tick + `first_ticks`; `fl_r` = the shortest clear run of 16 ways from `FinalFight.home`
+  (12 m with no wall within 50 m, at most 20 m). Its room (`room_of`) is the square of half side `fl_r` round `home`
+  (Riptide's strips); `inner_of` the square inside the circle (half side `fl_r` x 0.7071: the orbs and the pillars).
+- **The rhythm** (`may_cast`; tick phase 6, `BossSignatures.advance`, after every other mechanic). A cast begins when
+  (a) none is cast or runs, the tick is at least `fl_open`, the hero lives, and `calm_ticks` have passed since the
+  last ended (`fl_end`); (b) the clock is due (`tick >= fl_next`) or an HP gate (`gates`, per mille of max HP,
+  highest first) is reached and not yet cast; (c) the mimic windows leave room: none is on or warning, the next
+  warning is at least `calm_ticks` away and the last closed at least `calm_ticks` ago (`window_clear`, from
+  `FinalPace.window_clock`); (d) the body stands between attacks (`MOVE`) and is not dashing. A cast marks the first
+  gate pending (one cast, one gate). It lasts `cast_ticks` (the body stands still, `holds_still`), then the mechanic
+  runs (`fl_stage` 2); when it ends `fl_end` = the tick and `fl_next` = the tick + `every_ticks`. One that cannot
+  begin (nothing fits the room) ends on the tick it began.
+- **The hold.** From the tick one may be cast until it ends, `BossRemembered.think` (BossAi.think, after
+  `BossNemesis.think`) keeps the body's cooldown at least 1, so it starts no attack of its own; its dash between
+  moves stays (the quake asks for it). `FinalPace.advance`: while a mechanic is cast or runs, or the next tick is less
+  than `calm_ticks` after one ended (`holds_window`), a window that would begin its warning on the next tick waits:
+  `fl_delay` += 1 (the window's clock subtracts `fl_delay` where it subtracted `ip_total`), so every later window moves
+  by as much. Never a mechanic during a window or its warning (a 4-minute scripted fight checks it every tick).
+- **Time Wave** (`FallenTime`). As it begins the hero's weapon loses `time_cut` per mille (`BossSlow.apply`, owned by
+  The Fallen; event `time_wave`) and `BossTime.place_orbs` places `time.orb_count` hour orbs (`BossPickups`, each
+  `time.orb.amount`, radius `time.orb.radius_m`, life `time_ticks`) inside `inner_of`, `time.orb_gap_m` from the hero
+  and from each other (halved at most twice when none fits), with The Fallen's numbers and no Judge (`place_orbs`
+  gained a `room` parameter). `JUDGE_ORB` points at them. It ends when none lies (taken or run out); the cut still
+  held then comes back (`BossSlow.clear`). No gears, no Rewind.
+- **Riptide** (`FallenRiptide`). One row of `dance` (a `BossDanceTable`: `rip_casts` 3, `rip_warn_ticks` =
+  `rip_last_warn_ticks` 150, `rip_wave_ticks` 36, `rip_run_margin` 1300, `rip_hit` 300; High Tide and the Maelstrom
+  at a phase no body reaches) on `room_of`'s four strips, run by the Tidecaller's own code (`BossDance.start_row` and
+  `run_row`, which now take the room; the Tidecaller passes `room_of(w, i)` as before): the written safe order (1, 2,
+  0) or its mirror, the walk rule's warnings, a hit through `SafeArea` once a cast. It ends on the row's last wave
+  step. The row's fields are the dance's (`dance_rip_*`); The Fallen's block hashes them.
+- **Quake pillars** (`FallenQuake`). The body's `BossTable.quake` is a `QuakeTable` from these numbers (`from_phase`
+  never reached), so `BossQuake` pulses and shatters them as the Gatekeeper's. As it begins `BossQuake.raise`
+  (on_phase's rise, with an area and a hero gap: `pillar_hero_m` from the hero's edge; its stun count starts again)
+  raises `count` inside `inner_of`. Every `pillar_dash_ticks` it sets `FinalFight.rd_pending` (the body free), and
+  while the pillars stand `BossNemesis._reposition` aims the dash at the hero (`FallenQuake.dash_spot`: straight at
+  it, at most `dash_max_m`, 1 m short of its edge; a wall that is no pillar on the way: the usual spot). As the dash
+  leaves (`on_dash`) the first pillar its sweep runs into is marked (`fl_hit_x/y`, `fl_hit_at` = now + the share x
+  its ticks); on that tick it shatters (`BossQuake.shatter`, lifted out of `lanes_strike`), the dash stops, and for
+  the first `stuns_per_phase` (2) of the mechanic the body is stunned `stun_ticks` (`STAGGERED`), taking
+  `stun_permille` (1500) through the Gatekeeper's path (`BossQuake.stunned`: `BossChallenge.hit_mult`,
+  `Damage.tick_dot`). It ends after `pillar_ticks` or when no pillar stands; the pillars sink (`BossQuake.drop`).
+- **The ward** (`FallenWard`). The body stands still (`holds_still`) and takes nothing (`Damage._blocked`:
+  `FallenWard.blocks` while `fl_ward`) for at most `ward_ticks`. The amber Warden's shade (no actor: `fl_sh_*`) stands
+  `ward_edge_m` in from the circle's edge farthest from the hero (across `home`) and winds a charge up for
+  `ward_windup_ticks`, its aim and length (`ward_overshoot_m` past the hero, cut by walls) following the hero until
+  `ward_lock_ticks` before the end; then it runs at `ward_speed`. Its swept segment touching the hero costs
+  `ward_hit` once a charge; the lane it has swept touching the body (its radius + the body's + 0.02 m) breaks the
+  ward: no burst, the body is `STAGGERED` `ward_stun_ticks` (`fl_stun_until`) taking the quake table's
+  `stun_permille`, and the mechanic ends with the stun. A run that ends arms a burst there (`fl_bu_*`):
+  `ward_burst_ticks` later `ward_burst_hit` to a hero touching `ward_burst_m`. A missed charge is followed
+  `ward_gap_ticks` after its end by the next (the shade at the farthest edge again) until `ward_charges`; after the
+  last one's burst the ward ends. Hits through `SafeArea.hurt` (`ONCE`).
+- **Never a kill from full.** `FallenRules.MAX_HIT` (400 per mille) bounds `riptide_permille`, `pillar_permille`,
+  `ward_permille` and `ward_burst_permille`. **The pace** is unchanged (§10i): the ward's blocked hits and the stuns'
+  x1.5 go through `Damage` before `FinalPace.cap_hit`, so the bucket caps them; The Fallen hit for 999,999 every tick
+  through a fight with all four kinds dies no sooner than `pace_min_ticks` after its rise (a test).
+- **The death recap.** Riptide names the carrier `fallen_riptide` (`dance.rip_cause`: `CAUSE_TIDECALLER_WAVE`), the
+  shade and its burst `fallen_shade` (`ward_cause`: `CAUSE_TWIN_CHARGE`), a pulse the quake table's cause
+  (`CAUSE_GATEKEEPER_PILLAR`). The carriers are move `remembered` (`BossAttackTable.Move.REMEMBERED`, the enum slot
+  the interphase's move held), in no phase, damage 0. Damage effect ids: `boss_riptide`, `quake_pulse`,
+  `fallen_shade`, `fallen_shade_burst`.
+- **The end.** With the hero dead the mechanic running ends at once (`stop`: its orbs and cut, strips, pillars, ward
+  and shade); with the body gone (`on_boss_gone`) everything and the clocks go (`fl_beaten` stays).
+- **Events** (`STATUS_APPLY`, source The Fallen; never read back): `fallen_remembered_cast` (amount = the cast's
+  ticks, amount_applied = the kind; its source boss is `SOURCES[kind]`), `fallen_remembered` (it runs;
+  amount_applied = the kind), `fallen_remembered_end` (amount_applied = the kind), `fallen_ward_up` (amount =
+  `ward_ticks`), `fallen_ward_down`, `fallen_ward_break` (amount = the stun's ticks), `fallen_shade_charge` (pos = the
+  shade, amount = its wind-up, amount_applied = which charge), `fallen_shade_hit` (target the hero, amount = the HP it
+  cost); and the pieces' own: `time_wave`, the pickups' events, `riptide_cast` / `riptide_wave` / `riptide_hit`,
+  `quake_shatter`, `quake_stun`, `charge_burst_armed`, `charge_burst`.
+- **Hash and save.** Hashed after a `-23` sentinel only while a Fallen runs them (`fl_boss >= 0`): `FALLEN_FIELDS`,
+  the `dance_rip_*` row, `FALLEN_FLOAT_FIELDS`, `fl_beaten`. `FinalFight` hashes its dash fields only while one is
+  due or shown (`rd_pending`, `rd_t`; the interphase's block is gone), so a Fallen fight hashes differently from
+  before this step. `BossFightStore` is a snapshot state class; the pillars are S1 pillars (walls again on restore).
+- **Reads.** `WorldReader.boss_fallen()` (`BossRemembered.state`): `boss`, `running` (`FALLEN_NONE`, `FALLEN_TIME`,
+  `FALLEN_RIPTIDE`, `FALLEN_QUAKE`, `FALLEN_WARD`), `source` (its boss id), `stage`, `cast` (0..1000, -1),
+  `cast_left`, `left`, `ended`, `count`, `next_in`, `gate`, `pool`, `room`, `ward` ({} or `up`, `stun_left`, `left`),
+  `shade` ({} or `position`, `radius`, `stage`, `charge`, `charges`, `lane` (Obb), `locked`, `progress`, `end`,
+  `burst_radius`), `burst` ({} or `centre`, `radius`, `left`, `progress`), `pillar_dash` ({} or `from`, `to`,
+  `through`). Each piece's own read reports it too: `boss_attack_slow()`, `boss_pickups()`, `boss_dance()` (The
+  Fallen's row in BossDance's shape when no Tidecaller dances: `FallenRiptide.dance_state`), `boss_quake_pillars()`;
+  `boss_invulnerable(i)` is true under the ward. `final_interphase()` is always {}; `EFFECT_FALLEN_VANISH` ..
+  `EFFECT_FALLEN_RETURN` are kept as plain names no event carries (a view still names them).
 
 ## 11. Scaling and threat
 

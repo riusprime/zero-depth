@@ -81,7 +81,7 @@ const BOSS_MOVES := {
 	&"mirror_ward": BossAttackTable.Move.MIRROR_WARD,
 	&"shadow_swords": BossAttackTable.Move.SHADOW_SWORDS,
 	&"wave": BossAttackTable.Move.WAVE,  # v0.9.5 BH4
-	&"interphase": BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6
+	&"remembered": BossAttackTable.Move.REMEMBERED,
 	&"lances": BossAttackTable.Move.LANCES,  # v0.10.5 O3 (the Prism's last phase)
 	&"kneel": BossAttackTable.Move.KNEEL,
 }

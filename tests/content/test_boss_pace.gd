@@ -7,17 +7,14 @@ extends GutTest
 ## The attacks with no hit class of their own: the meltdown's burning ground (a hazard). v0.8.0 N2 (owner O27, D36
 ## superseded): The Fallen's attacks are classed too (its own hits outside its mimic windows).
 ## v0.9.5 BH4: the Tidecaller's crossing wave is one too (a hazard the owner set at 15 damage, seven hits: chip damage).
-## v0.9.5 BH6: so are the Fallen's five interphase carriers (owner-set 15 damage hits: chip damage, no class).
+## The Fallen's two remembered carriers name a death recap line only (no damage of their own, no class).
 ## v0.10.5 O3: and the Prism's Shattered Kneel (she is down: it never hits).
 ## And the Clockwork Judge's Time Wave (a cast: it slows the weapon and deals no damage).
 const UNCLASSED := [
 	&"meltdown",
 	&"crossing_wave",
-	&"fallen_rays",
-	&"fallen_rain",
-	&"fallen_dark",
-	&"fallen_erupt",
-	&"fallen_return",
+	&"fallen_riptide",
+	&"fallen_shade",
 	&"prism_kneel",
 	&"time_wave",
 	&"mirror_ward",

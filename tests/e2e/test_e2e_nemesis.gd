@@ -9,6 +9,7 @@ extends GutTest
 ##   boss bar (its fill breathing violet) and by the violet rings at the hero's and its feet, then opens
 ##   (the fill shimmering violet, the rings and the thread between them): in the window it copies the weapon, dash
 ##   and card.
+## - It stays in the room and casts a mechanic of a boss the run killed (Time Wave or Riptide in the Playground).
 ## - A run on its second loop (a labelled TEST HELPER sets the loop and the floor; F10's Restart floor rebuilds it):
 ##   God mode and Kill boss (the dev panel) through the Colossus and the Prism, the Ascension portal on the way; at the
 ##   Nemesis, its HP is the pace's (N2) and in its window it answers a dash; Kill boss beats it: the victory recap with
@@ -337,11 +338,11 @@ func test_beating_the_nemesis_on_a_later_loop_is_the_true_ending() -> void:
 	assert_eq(get_errors().size(), 0, "no engine or script error")
 
 
-## v0.9.5 BH6 (HC4, HC5): the Fallen vanishes at 66 % of its HP for an interphase and comes back. TEST HELPER: the
-## body's HP is set to 65 % (a real fight to that point is minutes long); everything else is the game: God mode, the
-## Playground's Phase 3, real frames. Vanished it is hidden and untouchable, a set is drawn, and after the return ring
-## it slams back down in the centre with its HP as it left.
-func test_the_fallen_vanishes_for_an_interphase_and_slams_back() -> void:
+## The Fallen stays in the room and casts a remembered mechanic at 66 % of its HP. TEST HELPER: the body's HP is
+## set to 65 % (a real fight to that point is minutes long); everything else is the game: God mode, the Playground's
+## Phase 3, real frames. The Playground killed no boss, so the pool is Time Wave and Riptide; it never vanishes, is
+## never untouchable for it, and its HP is never frozen for it.
+func test_the_fallen_casts_a_remembered_mechanic_and_never_vanishes() -> void:
 	_e = E2e.new(self)
 	var main := await _e.boot()
 	_scale = await _e._mouse_scale()
@@ -349,43 +350,32 @@ func test_the_fallen_vanishes_for_an_interphase_and_slams_back() -> void:
 	var reader := main.driver.reader
 	var w := _e.world()
 	var i := await _risen(main)
-	assert_true(reader.final_interphase().is_empty(), "no interphase at full HP")
+	assert_true(reader.final_interphase().is_empty(), "no vanishing interphase")
 	w.actors.hp[i] = w.actors.max_hp[i] * 650 / 1000  # TEST HELPER (see above)
-	var hp := w.actors.hp[i]
-	var gone := false
-	for k in 200:
+	var cast := false
+	var ran := -1
+	for k in 1800:
 		await _e.frames(1)
-		if not reader.final_interphase().is_empty():
-			gone = true
+		var st := reader.boss_fallen()
+		assert_false(st.is_empty(), "The Fallen runs its remembered mechanics")
+		if st.is_empty():
+			return
+		i = reader.boss_index()
+		assert_false(reader.boss_hidden(i), "it stays in the room")
+		cast = cast or int(st["cast"]) >= 0
+		if int(st["stage"]) == 2:
+			ran = int(st["running"])
 			break
-	assert_true(gone, "it vanishes")
-	i = reader.boss_index()
-	assert_true(reader.boss_hidden(i), "not drawn")
-	assert_true(reader.boss_invulnerable(i), "and untouchable")
-	var drawn := false
-	for k in 150:
-		await _e.frames(1)
-		var v := main.view.interphase
-		drawn = (
-			drawn
-			or v.bursts_alive() > 0
-			or v.beams_drawn() > 0
-			or v.discs_drawn() > 0
-			or v.lines_drawn() > 0
-		)
-		drawn = drawn or v.points_drawn() > 0
-	assert_true(drawn, "the interphase is drawn")
-	assert_eq(w.actors.hp[i], hp, "its HP is frozen")
-	var back := false
-	for k in 1100:
-		await _e.frames(1)
-		if reader.final_interphase().is_empty():
-			back = true
-			break
-	assert_true(back, "after 15 s and the return ring it is back")
-	await _e.frames(2)
-	i = reader.boss_index()
-	assert_false(reader.boss_hidden(i), "drawn again")
-	assert_eq(w.actors.hp[i], hp, "with the HP it left with")
-	assert_lt(w.actors.pos(i).distance_to(reader.final_home()), 1.0, "in the centre")
+	assert_true(cast, "a cast first")
+	assert_true(
+		[reader.FALLEN_TIME, reader.FALLEN_RIPTIDE].has(ran),
+		"a Time Wave or a Riptide (no boss killed in the Playground): %d" % ran
+	)
+	if ran == reader.FALLEN_TIME:
+		assert_gt(reader.boss_attack_slow(), 0, "the weapon is slowed")
+		assert_gt(reader.boss_pickups().size(), 0, "the hour orbs lie")
+	else:
+		assert_false((reader.boss_dance()["riptide"] as Dictionary).is_empty(), "the strips warn")
+	assert_false(reader.boss_invulnerable(i), "it can be hit meanwhile")
 	assert_false(w.player_dead(), "the hero stands (God mode)")
+	assert_eq(get_errors().size(), 0, "no engine or script error")

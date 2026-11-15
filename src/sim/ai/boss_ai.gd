@@ -79,12 +79,11 @@ static func think(w: World, i: int) -> void:
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
 	if a.state[i] != GATE and a.state[i] != FinalBoss.SHATTER and a.dead[i] == 0:
-		if t.interphase != null and BossInterphase.think(w, i, b, t):
-			return  # The Fallen is vanished, or vanishes now
 		_update_phase(w, i, b, t)  # A boss killed between ticks opens no gate (FB1: nor a shattering one)
 	BossChallenge.think(w, i, b, t)
 	if t.mimic and w.final_fight != null:  # The build read, a dash due, the stance's clock
 		BossNemesis.think(w, i, t)
+		BossRemembered.think(w, i)  # A remembered mechanic due or running holds its own attacks
 	BossJudge.record(w, i, t)  # The Clockwork Judge keeps your last 3 s for its echo
 	var to_player := w.player_pos() - a.pos(i)
 	var aim := Kin.angle_of(to_player)
@@ -98,8 +97,6 @@ static func think(w: World, i: int) -> void:
 			BossGates.advance(w, i, b)
 		FinalBoss.SHATTER:
 			pass  # FinalBoss runs the shatter (tick phase 9)
-		BossInterphase.STATE:
-			pass  # BossInterphase runs the interphase (tick phase 6)
 		STAGGERED:  # The sim never enters it now; a save made before it (and the tests' hold) runs out
 			bs.stagger_t[b] -= 1
 			if bs.stagger_t[b] <= 0:
@@ -546,8 +543,8 @@ static func passes_through(w: World, i: int) -> bool:
 
 ## Underground (a burrow before it erupts): the view hides the body.
 static func hidden(w: World, i: int) -> bool:
-	if w.actors.state[i] == BossInterphase.STATE or BossRift.inside(w, i):
-		return true  # The Fallen is vanished; the amber Warden is in the rifts
+	if BossRift.inside(w, i):
+		return true  # The amber Warden is in the rifts
 	var atk := attack_of(w, i)
 	return (
 		atk != null

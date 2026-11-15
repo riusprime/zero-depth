@@ -36,7 +36,7 @@ enum Move {
 	ECHO,  # BOSSES_4_5.md N3: the Clockwork Judge's echo of the player's path (BossJudge)
 	VERDICT,  # Its tracked square, locked, a pendulum strike dropping on it (BossJudge)
 	WAVE,  # BOSSES_HARD.md T3: the Tidecaller's crossing wave (BossStream; never a boss's own attack)
-	INTERPHASE,  # A carrier of the Fallen's interphase hits (BossInterphase; never picked)
+	REMEMBERED,  # A carrier of the death recap's line for The Fallen's remembered mechanics (never picked)
 	LANCES,  # The Prism's Facet Lances, her last phase (BossPrism)
 	KNEEL,  # The Prism's Shattered Kneel, her core open (BossPrism)
 	GREAT_JAVELIN,  # The Warlord's great javelin: thrown, it quakes in the floor, then flies back

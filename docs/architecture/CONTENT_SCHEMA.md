@@ -896,6 +896,26 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   `overpressure_cause` "firestorm", `scald_cause` "molten_flood". Also checked: both casts last the telegraph
   minimum; `overpressure_every_seconds` exceeds its cast plus its burn and `slab_seconds` lasts that long; a step of
   each burn takes 1..400 per mille; a boss with a forge holds a `brood` attack (its drones).
+- **v0.12.0 step 7a (owner direction HC-A; SIM_CONTRACTS §10t).** `FinalBossDefinition.interphase` and its five
+  `interphase` carriers are gone. Two dictionaries take its place, both checked by `FallenRules` (key → [default,
+  min, max]; an unknown key or a value out of range is an error) and compiled by `FallenCompiler`:
+  - `reposition` (empty: none; needs `mimic`): the dash between moves, `dash_telegraph_seconds` 0.4,
+    `dash_seconds` 0.2, `dash_min_m` 6 (≤ `dash_max_m`), `dash_max_m` 9, `dash_wall_m` 3 (`BossTable.reposition`).
+  - `remembered` (empty: none; needs `mimic` and `reposition`): The Fallen's values, the rhythm `first_permille` 660,
+    `second_permille` 330 (< first), `every_seconds` 30, `first_seconds` 12, `calm_seconds` 3, `cast_seconds` 1.5;
+    the Time Wave `time_cut_permille` 750, `time_orbs` 3, `time_orb_permille` 250, `time_orb_radius_m` 1.2,
+    `time_orb_gap_m` 8, `time_seconds` 12; Riptide `riptide_casts` 3, `riptide_warn_seconds` 2.5,
+    `riptide_wave_seconds` 0.6, `riptide_run_margin_permille` 1300, `riptide_permille` 300; the quake pillars
+    `pillar_count` 3, `pillar_seconds` 15, `pillar_m` 1.2 (side), `pillar_ring_m` 7, `pillar_pulse_seconds` 3,
+    `pillar_warn_seconds` 0.8, `pillar_permille` 60, `pillar_gap_m` 7, `pillar_wall_m` 1.5, `pillar_boss_m` 2,
+    `pillar_hero_m` 3, `pillar_dash_seconds` 3, `pillar_stun_seconds` 3, `pillar_stuns` 2; both stuns'
+    `stun_taken_permille` 1500; the ward `ward_seconds` 12, `ward_windup_seconds` 1.4, `ward_lock_seconds` 0.5 (<
+    the wind-up), `ward_speed_mps` 26, `ward_overshoot_m` 3, `ward_charges` 2, `ward_gap_seconds` 3, `ward_radius_m`
+    0.9, `ward_edge_m` 1.5, `ward_permille` 250, `ward_burst_m` 3.5, `ward_burst_seconds` 0.25, `ward_burst_permille`
+    300, `ward_stun_seconds` 4. Every hit's share is at most 400 per mille (`FallenRules.MAX_HIT`). The body must hold
+    the two carriers `fallen_riptide` and `fallen_shade`: move `remembered` (new; it takes the interphase move's
+    place), in no phase, `damage` 0 (a carrier names a death recap line only, like a cast), a `cause_key`
+    (`CAUSE_TIDECALLER_WAVE`, `CAUSE_TWIN_CHARGE`). The quake pillars' recap line is `CAUSE_GATEKEEPER_PILLAR`.
 
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 
