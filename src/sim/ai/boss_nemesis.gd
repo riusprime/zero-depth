@@ -109,7 +109,7 @@ static func think(w: World, i: int, t: BossTable) -> void:
 		f.dash_due = -1
 		if free and f.dash_t == 0 and f.rd_t == 0 and not w.player_dead() and FinalPace.copies(w):
 			_dash(w, i)  # In a window
-	if t.interphase != null:
+	if t.reposition != null:
 		_reposition(w, i, t)  # The dash to a new spot between two moves
 	if a.state[i] == S.MOVE and f.dash_t == 0:
 		f.stance_t -= 1
@@ -126,9 +126,11 @@ static func dashing(w: World, i: int) -> bool:
 ## move (after_attack) one is due; once it is free (moving) it picks its spot (RD_TRIES draws from the ai stream: 6-9 m
 ## away, a clear run, the end at least dash_wall_m from every wall, the line never through the hero), shows the line for
 ## dash_telegraph_ticks (0.4 s) standing still, then dashes along it in dash_ticks (the Nemesis's dash movement).
+## While it remembers the quake pillars the dash is aimed at the hero instead (FallenQuake: through a pillar, it
+## shatters it).
 static func _reposition(w: World, i: int, t: BossTable) -> void:
 	var f := w.final_fight
-	var ip := t.interphase
+	var ip := t.reposition
 	var a := w.actors
 	if f.rd_t > 0:
 		f.rd_t -= 1
@@ -136,18 +138,19 @@ static func _reposition(w: World, i: int, t: BossTable) -> void:
 			var v := (f.rd_to - a.pos(i)) / float(ip.dash_ticks)
 			f.dash_t = ip.dash_ticks
 			f.dash_vel = v
+			FallenQuake.on_dash(w, i, ip)  # A lane into a quake pillar shatters it on arrival
 		return
 	if f.rd_pending == 0 or a.state[i] != S.MOVE or f.dash_t > 0 or w.player_dead():
 		return
 	f.rd_pending = 0
-	var to := reposition_spot(w, i, ip)
+	var to := FallenQuake.dash_spot(w, i, ip) if FallenQuake.aims(w) else reposition_spot(w, i, ip)
 	if to.x < 1.0e8:
 		f.rd_to = to
 		f.rd_t = maxi(1, ip.dash_telegraph_ticks)
 
 
 ## Where the next dash goes: drawn from the ai stream, or (1e9, 1e9) when no draw fits.
-static func reposition_spot(w: World, i: int, ip: InterphaseTable) -> Vector2:
+static func reposition_spot(w: World, i: int, ip: FallenDashTable) -> Vector2:
 	var a := w.actors
 	var at := a.pos(i)
 	var r: float = a.radius[i]
@@ -217,7 +220,7 @@ static func _next_stance(w: World, t: BossTable) -> void:
 
 ## BossAi.think, as body i's attack ends (back to moving): after a combo it backs off.
 static func after_attack(w: World, i: int, atk: BossAttackTable) -> void:
-	if is_mimic(w, i) and BossAi.table_of(w, i).interphase != null:
+	if is_mimic(w, i) and BossAi.table_of(w, i).reposition != null:
 		w.final_fight.rd_pending = 1  # A dash to a new spot before the next move
 	if atk.move == M.MIMIC_COMBO and is_mimic(w, i):
 		w.final_fight.stance = BossTable.STANCE_BACK
@@ -269,8 +272,9 @@ static func moves(w: World, i: int, slow: float) -> bool:
 	if s == S.SPAWN or s == BossAi.GATE or s == FinalBoss.SHATTER or s == BossAi.STAGGERED:
 		f.dash_t = 0
 		return true
-	if s == BossInterphase.STATE:
-		return true  # Vanished
+	if BossRemembered.holds_still(w, i):
+		f.dash_t = 0
+		return true  # It casts a remembered mechanic, or stands under its ward
 	if f.dash_t > 0:
 		f.dash_t -= 1
 		var v := f.dash_vel
@@ -692,9 +696,9 @@ static func state(w: World, i: int) -> Dictionary:
 				"from": w.actors.pos(i),
 				"to": f.rd_to,
 				"progress":
-				clampi(1000 - f.rd_t * 1000 / maxi(1, t.interphase.dash_telegraph_ticks), 0, 1000),
+				clampi(1000 - f.rd_t * 1000 / maxi(1, t.reposition.dash_telegraph_ticks), 0, 1000),
 			}
-			if f.rd_t > 0 and t.interphase != null
+			if f.rd_t > 0 and t.reposition != null
 			else {}
 		),
 		"echo": f.echo_at(t.echo_ticks, w.player_pos()),

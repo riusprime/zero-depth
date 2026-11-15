@@ -39,7 +39,8 @@ const RUN_KEYS: Array[String] = [
 	"marked",
 	"loop_rules",
 	"loop_rule_loop",
-	"heart_room"
+	"heart_room",
+	"beaten"
 ]
 ## Today's run (Main).
 const RUN_ID := &"five_floors"
@@ -212,6 +213,7 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.loop_rules = _names(r["loop_rules"])
 	run.loop_rule_loop = int(r["loop_rule_loop"])
 	run.heart_room = bool(r["heart_room"])
+	run.bosses_beaten = _names(r["beaten"])
 	return run
 
 
@@ -260,6 +262,7 @@ static func payload_of(
 			"loop_rules": _ids(run.loop_rules),
 			"loop_rule_loop": run.loop_rule_loop,
 			"heart_room": run.heart_room,  # The final approach holds the heart room
+			"beaten": _ids(run.bosses_beaten),  # The bosses killed: The Fallen remembers them
 		},
 		"rooms": p_rooms.duplicate(),
 		"tick": w.tick,

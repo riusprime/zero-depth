@@ -2,9 +2,10 @@ class_name BossFightStore
 extends RefCounted
 ## The state of the bosses' fight mechanics, one self-contained block per mechanic, each owned by that mechanic's
 ## code: the Clockwork Judge's time and gears, the Tidecaller's dance, the charge bursts, the Twin Wardens' clocks,
-## the Siege Engine's siege and boulders, and the Foundry's forge and slabs. BossStore keeps the live bosses' own
-## entries and the older signature pieces; these blocks live apart because none of them is per boss entry and each
-## is read and written by one mechanic only, so a new boss's mechanic adds its block here without growing BossStore.
+## the Siege Engine's siege and boulders, the Foundry's forge and slabs, and The Fallen's remembered mechanics.
+## BossStore keeps the live bosses' own entries and the older signature pieces; these blocks live apart because
+## none of them is per boss entry and each is read and written by one mechanic only, so a new boss's mechanic adds its
+## block here without growing BossStore.
 ## Hashed (World.state_hash) right after BossStore, each block only while its mechanic runs.
 
 ## The stopped gears' parallel arrays (BossGears), by type.
@@ -107,6 +108,46 @@ const SLAB_INT_FIELDS: Array[StringName] = [
 	&"slab_id", &"slab_boss", &"slab_from", &"slab_until", &"slab_broke"
 ]
 const SLAB_FLOAT_FIELDS: Array[StringName] = [&"slab_x", &"slab_y", &"slab_r"]
+## The Fallen's remembered mechanics (BossRemembered, FallenTime, FallenRiptide, FallenQuake, FallenWard), with the
+## value each takes when they are forgotten; the Riptide row they share with the dance is hashed with them too.
+const FALLEN_FIELDS := {
+	&"fl_boss": -1,
+	&"fl_kind": 0,
+	&"fl_stage": 0,
+	&"fl_from": -1,
+	&"fl_end": -1,
+	&"fl_open": -1,
+	&"fl_next": -1,
+	&"fl_gates": 0,
+	&"fl_last": 0,
+	&"fl_n": 0,
+	&"fl_delay": 0,
+	&"fl_dash_at": -1,
+	&"fl_hit_at": -1,
+	&"fl_ward": 0,
+	&"fl_stun_until": -1,
+	&"fl_sh_stage": 0,
+	&"fl_sh_at": -1,
+	&"fl_sh_n": 0,
+	&"fl_sh_a": 0,
+	&"fl_sh_hit": 0,
+	&"fl_bu_at": -1,
+}
+const FALLEN_FLOAT_FIELDS: Array[StringName] = [
+	&"fl_r",
+	&"fl_hit_x",
+	&"fl_hit_y",
+	&"fl_sh_x",
+	&"fl_sh_y",
+	&"fl_sh_ox",
+	&"fl_sh_oy",
+	&"fl_sh_len",
+	&"fl_bu_x",
+	&"fl_bu_y"
+]
+const RIP_FIELDS: Array[StringName] = [
+	&"dance_rip_from", &"dance_rip_n", &"dance_rip_mirror", &"dance_rip_hit", &"dance_rip_warn"
+]
 
 ## The Clockwork Judge's time mechanics (BossTime, BossRewind). time_boss is the Judge that runs them (-1 = none);
 ## time_wave_due the tick its next Time Wave may be cast (-1 = not set yet) and time_field_due its next slow field's
@@ -276,6 +317,51 @@ var slab_broke := PackedInt32Array()
 var slab_x := PackedFloat32Array()
 var slab_y := PackedFloat32Array()
 var slab_r := PackedFloat32Array()
+## The Fallen's remembered mechanics (BossRemembered). fl_boss is The Fallen that runs them (-1 = none); fl_r the
+## radius of the room it fights in (m, measured as it took them). The rhythm: fl_kind the mechanic cast or running
+## (BossRemembered.NONE, TIME, RIPTIDE, QUAKE, WARD), fl_stage 0 none, 1 its cast, 2 it runs, since fl_from; fl_end
+## the tick the last one ended (-1 = none yet), fl_open the first tick one may be cast, fl_next the tick the next is
+## due by the clock, fl_gates a bit for each HP gate already cast, fl_last the last kind cast, fl_n the mechanics
+## begun; fl_delay the ticks the mimic windows have waited for them. The quake: fl_dash_at the tick the next dash at
+## the hero is asked for, fl_hit_at the tick a dash reaches the pillar at fl_hit_x/fl_hit_y (-1 = none). The ward:
+## fl_ward 1 while it stands, fl_stun_until the tick the stun of its break ends (-1 = none); the shade: fl_sh_stage
+## (0 none, 1 winding up, 2 running, 3 waiting) since fl_sh_at, fl_sh_n its charges begun, fl_sh_x/fl_sh_y where it
+## stands, fl_sh_ox/fl_sh_oy where its run began, fl_sh_a its aim (1/4096 turns), fl_sh_len its run's length, fl_sh_hit
+## 1 once its touch hit this charge; its burst at fl_bu_x/fl_bu_y on tick fl_bu_at (-1 = none armed). fl_beaten: the
+## bosses (content ids) killed in the run before this world (RunState.bosses_beaten; setup). Hashed only while a Fallen
+## runs them.
+var fl_boss := -1
+var fl_kind := 0
+var fl_stage := 0
+var fl_from := -1
+var fl_end := -1
+var fl_open := -1
+var fl_next := -1
+var fl_gates := 0
+var fl_last := 0
+var fl_n := 0
+var fl_delay := 0
+var fl_dash_at := -1
+var fl_hit_at := -1
+var fl_ward := 0
+var fl_stun_until := -1
+var fl_sh_stage := 0
+var fl_sh_at := -1
+var fl_sh_n := 0
+var fl_sh_a := 0
+var fl_sh_hit := 0
+var fl_bu_at := -1
+var fl_r := 0.0
+var fl_hit_x := 0.0
+var fl_hit_y := 0.0
+var fl_sh_x := 0.0
+var fl_sh_y := 0.0
+var fl_sh_ox := 0.0
+var fl_sh_oy := 0.0
+var fl_sh_len := 0.0
+var fl_bu_x := 0.0
+var fl_bu_y := 0.0
+var fl_beaten := PackedStringArray()
 
 
 func hash_into(h: StateHasher) -> void:
@@ -321,6 +407,17 @@ func hash_into(h: StateHasher) -> void:
 			h.add_ints(get(f))
 		for f: StringName in SLAB_FLOAT_FIELDS:
 			h.add_f32s(get(f))
+	if fl_boss >= 0:  # Only while a Fallen runs its remembered mechanics
+		h.add_int(-23)
+		for f: StringName in FALLEN_FIELDS:
+			h.add_int(get(f))
+		for f: StringName in RIP_FIELDS:
+			h.add_int(get(f))
+		for f: StringName in FALLEN_FLOAT_FIELDS:
+			h.add_f32(get(f))
+		h.add_int(fl_beaten.size())
+		for id in fl_beaten:
+			h.add_string(id)
 
 
 ## Removes stopped gear k (the arrays stay oldest first).
@@ -410,3 +507,11 @@ func clear_forge() -> void:
 		set(f, PackedInt32Array())
 	for f: StringName in SLAB_FLOAT_FIELDS:
 		set(f, PackedFloat32Array())
+
+
+## Forgets The Fallen's remembered mechanics (its body gone); the bosses beaten stay (the run's).
+func clear_fallen() -> void:
+	for f: StringName in FALLEN_FIELDS:
+		set(f, FALLEN_FIELDS[f])
+	for f: StringName in FALLEN_FLOAT_FIELDS:
+		set(f, 0.0)

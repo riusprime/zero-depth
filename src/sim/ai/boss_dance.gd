@@ -107,40 +107,54 @@ static func room_of(w: World, i: int) -> Rect2:
 
 
 static func _riptide(w: World, i: int, t: BossTable, d: BossDanceTable, phase: int) -> void:
-	var bs := w.boss_fight
-	if bs.dance_rip_from < 0:
+	if w.boss_fight.dance_rip_from < 0:
 		if not BossTideBeats.may_begin(w, i, t, d, phase, BossTideBeats.RIPTIDE):
 			return
 		BossTideBeats.begin(w, t, d, phase, BossTideBeats.RIPTIDE)
-		bs.dance_rip_mirror = w.rng_ai.range_int(0, 1)
-		_cast(w, i, d, 0)
+		start_row(w, i, d, room_of(w, i))
 		return
+	if run_row(w, i, d, room_of(w, i)):
+		BossTideBeats.end(w, d, phase)
+
+
+## A row of Riptide begins on `room` for boss i (whoever casts it: the Tidecaller, or The Fallen remembering it): its
+## mirror is drawn (ai) and its first cast's warning begins.
+static func start_row(w: World, i: int, d: BossDanceTable, room: Rect2) -> void:
+	w.boss_fight.dance_rip_mirror = w.rng_ai.range_int(0, 1)
+	_cast(w, i, d, 0, room)
+
+
+## One tick of the row running on `room` (start_row): its wave, its hits, its next cast. True on the tick its last
+## wave ends (the row is over).
+static func run_row(w: World, i: int, d: BossDanceTable, room: Rect2) -> bool:
+	var bs := w.boss_fight
 	var s := w.tick - bs.dance_rip_from - bs.dance_rip_warn
 	if s < 0:
-		return
+		return false
 	if s == 0:
 		var e := _event(w, i, RIP_WAVE, w.actors.pos(i))
 		e.amount = d.rip_wave_ticks
 		e.amount_applied = d.safe_strip(bs.dance_rip_n, bs.dance_rip_mirror)
-		return
-	_sweep(w, i, d, s)
-	if s >= d.rip_wave_ticks:
-		if bs.dance_rip_n + 1 >= d.rip_casts:
-			bs.dance_rip_from = -1
-			BossTideBeats.end(w, d, phase)
-		else:
-			_cast(w, i, d, bs.dance_rip_n + 1)
+		return false
+	_sweep(w, i, d, s, room)
+	if s < d.rip_wave_ticks:
+		return false
+	if bs.dance_rip_n + 1 >= d.rip_casts:
+		bs.dance_rip_from = -1
+		return true
+	_cast(w, i, d, bs.dance_rip_n + 1, room)
+	return false
 
 
 ## Cast n of the row begins its warning.
-static func _cast(w: World, i: int, d: BossDanceTable, n: int) -> void:
+static func _cast(w: World, i: int, d: BossDanceTable, n: int, room: Rect2) -> void:
 	var bs := w.boss_fight
 	bs.dance_rip_n = n
 	bs.dance_rip_from = w.tick
 	bs.dance_rip_hit = 0
-	bs.dance_rip_warn = warn_of(w, i, d, n)
+	bs.dance_rip_warn = warn_of(w, d, n, room)
 	var safe := d.safe_strip(n, bs.dance_rip_mirror)
-	var e := _event(w, i, RIP_CAST, SafeArea.strips(room_of(w, i), STRIPS)[safe].get_center())
+	var e := _event(w, i, RIP_CAST, SafeArea.strips(room, STRIPS)[safe].get_center())
 	e.amount = bs.dance_rip_warn
 	e.amount_applied = safe
 
@@ -148,8 +162,8 @@ static func _cast(w: World, i: int, d: BossDanceTable, n: int) -> void:
 ## Cast n's warning (ticks): the written one (BossDanceTable.warn_ticks), or the hero's walk to its safe strip when
 ## that is longer: from the last cast's safe strip (the first cast: from where the hero stands), the gap between the
 ## two plus WALK_EXTRA_M, at the hero's run speed now, times rip_run_margin per mille (at most WALK_MAX_TICKS).
-static func warn_of(w: World, i: int, d: BossDanceTable, n: int) -> int:
-	var strips := SafeArea.strips(room_of(w, i), STRIPS)
+static func warn_of(w: World, d: BossDanceTable, n: int, room: Rect2) -> int:
+	var strips := SafeArea.strips(room, STRIPS)
 	var to := strips[d.safe_strip(n, w.boss_fight.dance_rip_mirror)]
 	var gap := 0.0
 	if n == 0:
@@ -171,11 +185,10 @@ static func rect_gap(a: Rect2, b: Rect2) -> float:
 
 
 ## The wave's step s (1..rip_wave_ticks): the hero in a warned strip the front passes this tick is hit, once a cast.
-static func _sweep(w: World, i: int, d: BossDanceTable, s: int) -> void:
+static func _sweep(w: World, i: int, d: BossDanceTable, s: int, room: Rect2) -> void:
 	var bs := w.boss_fight
 	if bs.dance_rip_hit == 1 or w.player_dead():
 		return
-	var room := room_of(w, i)
 	var p := w.player_pos()
 	var along_x := SafeArea.runs_along_x(room)
 	var length := room.size.x if along_x else room.size.y
@@ -360,7 +373,7 @@ static func state(w: World) -> Dictionary:
 		"room": room,
 		"along_x": SafeArea.runs_along_x(room),
 		"strips": SafeArea.strips(room, STRIPS),
-		"riptide": _riptide_state(w, d, room),
+		"riptide": riptide_state(w, d, room),
 		"riptide_in": int(beats["in"]) if rip_next else -1,
 		"high_tide": _tide_state(w, d),
 		"high_tide_in": int(beats["in"]) if ht_next else -1,
@@ -369,7 +382,8 @@ static func state(w: World) -> Dictionary:
 	}
 
 
-static func _riptide_state(w: World, d: BossDanceTable, room: Rect2) -> Dictionary:
+## The row running on `room` for the view (state's "riptide"; {} when none runs).
+static func riptide_state(w: World, d: BossDanceTable, room: Rect2) -> Dictionary:
 	var bs := w.boss_fight
 	if bs.dance_rip_from < 0:
 		return {}

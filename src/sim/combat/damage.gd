@@ -343,8 +343,11 @@ static func _apply(
 
 ## A boss's signature shield holds. (the dark round a Lantern Shade no longer blocks; it
 ## scales the hit instead, BossShade.hit_mult.) A Twin Warden standing back blocks (BossTwin.resting: "not now", the
-## other leads), and so does the violet one under her whole ward (BossWard.full).
+## other leads), and so does the violet one under her whole ward (BossWard.full), and The Fallen under the ward it
+## remembers (FallenWard.blocks).
 static func _blocked(w: World, target: int) -> bool:
 	if BossDodge.shielded(w, target) or BossTwin.resting(w, target):
+		return true
+	if w.boss_fight.fl_ward == 1 and FallenWard.blocks(w, target):
 		return true
 	return w.boss_fight.wd_full == 1 and BossWard.full(w, target)

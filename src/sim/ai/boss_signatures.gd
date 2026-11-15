@@ -394,7 +394,6 @@ static func advance(w: World) -> void:
 	BossLava.advance(w)
 	BossShade.advance(w)  # The Lantern Shade's dark and its lanterns
 	BossStream.advance(w)  # The Tidecaller's ring stream and crossing waves
-	BossInterphase.advance(w)  # The Fallen's interphase hazards and its return
 	BossQuake.advance(w)  # The Gatekeeper's quake pillars pulse
 	BossHazard.advance(w)  # The arena hazards arm, burn and go
 	BossSlow.advance(w)  # The attack speed a boss took comes back when its fight ends
@@ -407,6 +406,7 @@ static func advance(w: World) -> void:
 	BossWardens.advance(w)  # The Twin Wardens' wards and Through the Rift
 	BossSiege.advance(w)  # The Siege Engine's Target Lock, boulders and ammo cart
 	BossForge.advance(w)  # The Foundry's plate, its cooling slag, Overpressure and the scald gauge
+	BossRemembered.advance(w)  # The Fallen's remembered mechanics (after the orbs are taken and the pillars pulse)
 
 
 ## World._remove_dead: boss `boss_id` is gone: its pillars sink and its javelins go (its eggs crumble on their own).
@@ -434,6 +434,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	BossChargeBurst.on_boss_gone(w, boss_id)  # Its pending bursts go
 	BossSiege.on_boss_gone(w, boss_id)  # The Siege Engine's boulders and cart
 	BossForge.on_boss_gone(w, boss_id)  # The Foundry's forge and its slabs
+	BossRemembered.on_boss_gone(w, boss_id)  # The Fallen's remembered mechanics
 
 
 ## The recap's death line for a cause past LATE_CAUSE (a late part): its attack's late_cause_key (its own cause_key

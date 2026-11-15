@@ -69,6 +69,9 @@ var loop_rule_loop := 0
 ## so its final approach holds the hidden room under the throne (FinalArena.add_heart_room). Saved (RunSaver; a run
 ## without it: false).
 var heart_room := false
+## The floors' bosses the run has killed (their content ids, in order, each once): The Fallen casts their mechanics
+## (BossRemembered; RunState.prepare hands them to the world). Saved (RunSaver).
+var bosses_beaten: Array[StringName] = []
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
@@ -257,6 +260,7 @@ func prepare(w: World) -> void:
 		w.boss_flow.ascension = is_last_floor()  # The loop's last floor has the Ascension portal
 		w.boss_flow.door = BossFlow.Door.SET  # Shut until pressed
 		w.boss_flow.final_next = is_last_floor() and _has_final()  # End leads to the final boss
+	w.boss_fight.fl_beaten = PackedStringArray(bosses_beaten)  # The bosses The Fallen remembers
 	w.deep_threat = routes.count(Routes.Route.DEEP)  # v0.5.0 RT + EV: +1 threat T per Deep floor taken
 	w.floor_hp_bonus = _hp_bonus()  # Before the carry, so its max HP includes it
 	if not carry.is_empty():
@@ -294,6 +298,7 @@ func finish_floor(w: World) -> void:
 	marked_done += Collectibles.marked(w)  # The Rune Rubbing counts the run's marked secrets
 	if w.purple != null and not purple_floors.has(run_floor()):  # One purple room a loop
 		purple_floors.append(run_floor())
+	_note_boss(w)
 	ShardDrops.collect_all(w)  # The shards left lying on the floor are taken with you
 	carry = RunCarry.take(w, table.heal_permille, table.shard_carry_permille)
 	var grown_from := _hp_bonus()
@@ -313,6 +318,16 @@ func finish_floor(w: World) -> void:
 	var taken := w.boss_flow.route_taken if w.boss_flow != null else -1
 	routes.resize(run_floor() - 1)  # The next floor's route, the one walked into
 	routes.append(taken if taken >= 0 else Routes.Route.NORMAL)
+
+
+## The floor's boss, once its portal opened (it died), joins the bosses beaten.
+func _note_boss(w: World) -> void:
+	var f := w.boss_flow
+	if f == null or f.opened_tick < 0 or f.boss_index < 0 or f.boss_index >= w.boss_tables.size():
+		return
+	var id := w.boss_tables[f.boss_index].id
+	if id != &"" and not bosses_beaten.has(id):
+		bosses_beaten.append(id)
 
 
 ## The loops the run cleared, with `w` the current floor's world (null: the finished floors only): the

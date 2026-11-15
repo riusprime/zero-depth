@@ -19,7 +19,7 @@ const NOT_GROUND := [
 	WorldReader.MOVE_CROSSFIRE,  # v0.9.0 NB2: the Wardens' fans (their gaps: TwinViews), not a marker
 	WorldReader.MOVE_ECHO,  # v0.9.0 NB3: the Judge's echo, its path and ghost strikes drawn by JudgeViews
 	BossAttackTable.Move.WAVE,  # v0.9.5 BH4: the crossing waves, drawn by TideWaveViews (never a boss's own strike)
-	BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6: the Fallen's interphase carriers, drawn by InterphaseViews
+	BossAttackTable.Move.REMEMBERED,  # The Fallen's remembered carriers: a death recap line, never cast
 	BossAttackTable.Move.GREAT_JAVELIN,  # v0.11.0 F9: the throw, ring and recall, drawn by GreatJavelinViews
 	WorldReader.MOVE_TIME_WAVE,  # the Judge's Time Wave strikes nothing: its cast and ring are drawn by JudgeTimeViews
 	WorldReader.MOVE_MIRROR_WARD,  # the violet Warden's Mirror Ward is a cast: nothing strikes the ground

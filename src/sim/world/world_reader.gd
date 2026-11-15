@@ -242,14 +242,31 @@ const TIDE_MAX_MPS := BossTide.MAX_MPS
 const EFFECT_NEMESIS_DASH := BossNemesis.EFFECT_DASH
 ## A final boss's body shattering (FinalBoss.SHATTER).
 const STATE_SHATTER := FinalBoss.SHATTER
-## The Fallen's interphase (BossInterphase): its views' events.
-const EFFECT_FALLEN_VANISH := BossInterphase.EFFECT_VANISH
-const EFFECT_FALLEN_BEAMS := BossInterphase.EFFECT_BEAMS
-const EFFECT_FALLEN_ERUPT := BossInterphase.EFFECT_ERUPT
-const EFFECT_FALLEN_DARK := BossInterphase.EFFECT_DARK
-const EFFECT_FALLEN_RAIN := BossInterphase.EFFECT_RAIN
-const EFFECT_FALLEN_LINE := BossInterphase.EFFECT_LINE
-const EFFECT_FALLEN_RETURN := BossInterphase.EFFECT_RETURN
+## The events of The Fallen's old vanishing interphase. No sim event carries them any more (it stays in the room and
+## casts remembered mechanics instead, BossRemembered); kept only while a view still names them.
+const EFFECT_FALLEN_VANISH := &"fallen_vanish"
+const EFFECT_FALLEN_BEAMS := &"fallen_rays"
+const EFFECT_FALLEN_ERUPT := &"fallen_erupt"
+const EFFECT_FALLEN_DARK := &"fallen_dark"
+const EFFECT_FALLEN_RAIN := &"fallen_rain"
+const EFFECT_FALLEN_LINE := &"fallen_line"
+const EFFECT_FALLEN_RETURN := &"fallen_return"
+## The Fallen's remembered mechanics (BossRemembered): the kinds (boss_fallen's "running", "pool"), the source boss of
+## each (a boss id of content) and their events.
+const FALLEN_NONE := BossRemembered.NONE
+const FALLEN_TIME := BossRemembered.TIME
+const FALLEN_RIPTIDE := BossRemembered.RIPTIDE
+const FALLEN_QUAKE := BossRemembered.QUAKE
+const FALLEN_WARD := BossRemembered.WARD
+const FALLEN_SOURCES := BossRemembered.SOURCES
+const EFFECT_FALLEN_CAST := BossRemembered.CAST
+const EFFECT_FALLEN_BEGIN := BossRemembered.BEGIN
+const EFFECT_FALLEN_END := BossRemembered.END
+const EFFECT_FALLEN_WARD_UP := FallenWard.UP
+const EFFECT_FALLEN_WARD_DOWN := FallenWard.DOWN
+const EFFECT_FALLEN_WARD_BREAK := FallenWard.BREAK
+const EFFECT_FALLEN_SHADE_CHARGE := FallenWard.CHARGE
+const EFFECT_FALLEN_SHADE_HIT := FallenWard.HIT
 ## Rewards: reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
@@ -2209,8 +2226,8 @@ func boss_invulnerable(i: int) -> bool:
 		or BossDodge.shielded(_w, i)
 		or s == BossAi.GATE
 		or s == FinalBoss.SHATTER
-		or s == BossInterphase.STATE
-	)  # The Fallen, vanished
+		or FallenWard.blocks(_w, i)
+	)  # The Fallen under the ward it remembers
 
 
 ## The shields boss i still has to pass before it can fall, derived from sim state (no store counts
@@ -2480,7 +2497,8 @@ func boss_time() -> Dictionary:
 ## "in" (ticks until the next may begin), "held", "order"; BossTideBeats.state). Its tide pools: boss_hazards.
 ## (BossDance.state)
 func boss_dance() -> Dictionary:
-	return BossDance.state(_w)
+	var d := BossDance.state(_w)
+	return d if not d.is_empty() else FallenRiptide.dance_state(_w)  # The Fallen's remembered Riptide
 
 
 ## The Siege Engine's siege: {} with no boss running one; else "boss", "room", "lock" ({} or "centre", "radius",
@@ -2583,11 +2601,26 @@ func final_shattering() -> bool:
 	return FinalBoss.shattering(_w)
 
 
-## BOSSES_HARD.md HC4, HC5: the Fallen's interphase while it is vanished or returning, else {}: "stage"
-## (2 vanished, 3 returning), "set" (0 rays, 1 rain, 2 lights out), "t", "ticks", "center", "radius", "beams", "erupts",
-## "lines", "points", "ret" (BossInterphase.state).
+## The Fallen's old vanishing interphase: always {} (it no longer vanishes: boss_fallen). Kept only while a view
+## still reads it.
 func final_interphase() -> Dictionary:
-	return BossInterphase.state(_w)
+	return {}
+
+
+## The Fallen's remembered mechanics: {} with no Fallen running them; else "boss" (its actor index), "running" (the
+## mechanic cast or running: FALLEN_NONE, FALLEN_TIME, FALLEN_RIPTIDE, FALLEN_QUAKE, FALLEN_WARD), "source" (its boss
+## id, &"" none), "stage" (0 none, 1 the cast, 2 it runs), "cast" (0..1000 through the cast, -1 none), "cast_left",
+## "left" (ticks until it ends by its own time, -1 none or open-ended), "ended" (the last one's kind, FALLEN_NONE none
+## yet), "count" (mechanics begun), "next_in" (ticks until the next may be cast, 0 due, -1 while one runs), "gate"
+## (the next HP gate, per mille of max HP, -1 none), "pool" (the kinds it draws from), "room" (Rect2: the floor its
+## mechanics cut), "ward" ({} or {"up", "stun_left", "left"}), "shade" ({} or the amber Warden's shade: "position",
+## "radius", "stage" (1 winding up, 2 running, 3 waiting), "charge", "charges", "lane" (Obb, from where it stood),
+## "locked", "progress" (0..1000 through its wind-up), "end" (where its run ends), "burst_radius"), "burst" ({} or
+## {"centre", "radius", "left", "progress"}), "pillar_dash" ({} or {"from", "to", "through"}: the dash shown aimed
+## at the hero, and whether it runs into a pillar). Each mechanic's own read reports it too: boss_attack_slow and
+## boss_pickups (the Time Wave), boss_dance (Riptide), boss_quake_pillars. (BossRemembered.state)
+func boss_fallen() -> Dictionary:
+	return BossRemembered.state(_w)
 
 
 ## The final fight's centre (where the first body rose; the Fallen slams back down here).

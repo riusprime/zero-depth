@@ -117,11 +117,14 @@ static func resolve_wave(w: World, i: int, b: int, atk: BossAttackTable) -> void
 	point_at_orbs(w)
 
 
-## Places the wave's orbs for boss i in `phase` (the class comment's rule). Returns where they lie.
-static func place_orbs(w: World, i: int, tt: BossTimeTable, phase: int) -> PackedVector2Array:
+## Places the wave's orbs for boss i in `phase` (the class comment's rule) inside `room` (none: room_of). Returns
+## where they lie.
+static func place_orbs(
+	w: World, i: int, tt: BossTimeTable, phase: int, room: Rect2 = Rect2()
+) -> PackedVector2Array:
 	var table := tt.orb_late if phase >= tt.orb_late_phase else tt.orb
 	var out := PackedVector2Array()
-	var area := room_of(w, i).grow(-(table.radius_m + EDGE_M))
+	var area := (room if room.has_area() else room_of(w, i)).grow(-(table.radius_m + EDGE_M))
 	if not area.has_area():
 		return out
 	for n in tt.orb_count:
