@@ -121,6 +121,8 @@ var arena_template := 0
 ## The forge this boss fights with (ForgeRules.SPEC; empty: none): the Foundry's Forged Plate, its cooling slag,
 ## Overpressure and the scald gauge.
 @export var forge := {}
+## The Warlord's own mechanics (WarlordRules.SPEC; empty: none): the War Banner and the Duel's javelin cage.
+@export var warlord := {}
 
 
 func category() -> StringName:
@@ -160,6 +162,7 @@ func validate() -> Array[ValidationIssue]:
 	WardensRules.validate(self, issues)  # The Twin Wardens' own mechanics
 	SiegeRules.validate(self, issues)  # The Siege Engine's cover and Doom Shell
 	ForgeRules.validate(self, issues)  # The Foundry's forge
+	WarlordRules.validate(self, issues)  # The Warlord's banner and duel
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1

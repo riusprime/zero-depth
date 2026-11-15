@@ -35,11 +35,12 @@ const LANDING_M := 0.9
 const RING_INNER_M := 0.4
 
 
-## BossAi._choose: boss i may start attack atk now: the Twin rule, and at most one great javelin out.
+## BossAi._choose: boss i may start attack atk now: the Twin rule, at most one great javelin out, and the Warlord's
+## rule (none while its banner or duel runs; only the duel's attacks in its cage).
 static func may_use(w: World, i: int, atk: BossAttackTable) -> bool:
 	if atk.move == BossAttackTable.Move.GREAT_JAVELIN and is_out(w, w.actors.ids[i]):
 		return false
-	return BossTwin.may_use(w, i, atk)
+	return BossTwin.may_use(w, i, atk) and BossWarlord.may_use(w, i, atk)
 
 
 ## True while boss `boss_id` has a great javelin out.

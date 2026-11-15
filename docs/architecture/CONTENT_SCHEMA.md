@@ -916,6 +916,22 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
     the two carriers `fallen_riptide` and `fallen_shade`: move `remembered` (new; it takes the interphase move's
     place), in no phase, `damage` 0 (a carrier names a death recap line only, like a cast), a `cause_key`
     (`CAUSE_TIDECALLER_WAVE`, `CAUSE_TWIN_CHARGE`). The quake pillars' recap line is `CAUSE_GATEKEEPER_PILLAR`.
+- **v0.12.0 step 8 (owner brief WL1-WL3, SG-WL; SIM_CONTRACTS §10u).** The Warlord's `lunge_dash` is now 0.6 s
+  (locked its last 0.4 s), 26 m/s over 16 m, with `burst_radius_m` 3.5 and `burst_seconds` 0.25 (the charge
+  burst any boss may take, §10q). `BossDefinition.warlord: Dictionary` (empty: none), checked by `WarlordRules`
+  (`SPEC`: key → [default, min, max]; an unknown key or a value out of range is an error) and compiled by
+  `WarlordCompiler` into `BossTable.warlord` (`BossWarlordTable`). Keys, with the Warlord's values: the banner
+  `banner_phase` 1, `banner_first_seconds` 8, `banner_gap_seconds` 12 (after the last is gone), `banner_cast_seconds`
+  1.0, `banner_radius_m` 6, `banner_seconds` 20, `banner_cooldown_permille` 700, `banner_damage_permille` 1400,
+  `banner_pole_m` 0.8; the duel `duel_phase` 2, `duel_first_seconds` 8, `duel_gap_seconds` 25 (after the last
+  ended), `duel_cast_seconds` 1.2, `duel_radius_m` 9, `duel_end_radius_m` 5, `duel_seconds` 12, `fence_touch_m` 0.3,
+  `fence_permille` 100, `fence_every_seconds` 0.6, `recall_warn_seconds` 1.0, `recall_radius_m` 2.5,
+  `recall_permille` 400; `duel_attacks` (required; ids of the boss's attacks, no `great_javelin`): `shield_bash`,
+  `lunge_dash`, `spear_lines`; and two attack ids the death recap names (required): `fence_cause` "javelin_fan"
+  (`CAUSE_WARLORD_FAN`) and `recall_cause` "javelin_fan" (its late part, `CAUSE_WARLORD_RECALL`). Phases are indices
+  from 0. Also checked: every hit at most 400 per mille; both casts and the recall's warning last the telegraph
+  minimum; the banner and the duel never share a phase; the cage only closes; the centre zone plus the touch reach
+  is smaller than the last ring.
 
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 

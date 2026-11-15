@@ -19,6 +19,7 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 		var bt := BossAi.table_of(w, target)
 		var off := Kin.angle_diff(to_attacker, a.facing[target])
 		var lifted := bt.weak_drops_armour and w.bosses.exposed_t[BossAi.entry_of(w, target)] > 0
+		lifted = lifted or BossDuel.shield_down(w, target)  # The Warlord's shield is down in its cage
 		if bt.front_half_arc > 0 and off <= bt.front_half_arc and not lifted:  # Shield up
 			# A 0 multiplier is a shield that blocks the hit outright (the Warlord's).
 			var tag := (
@@ -256,6 +257,7 @@ static func tick_dot(
 			tags |= sh[1]
 		amount = amount * BossTwin.taken_permille(w, target) / 1000  # The stunned violet Warden
 		amount = amount * BossForge.taken_permille(w, target) / 1000  # The Foundry's plate
+		amount = amount * BossWarlord.taken_permille(w, target) / 1000  # The Warlord's banner
 	var root := w.take_root()
 	return _apply(
 		w, target, amount, source_id, owner_id, root, tags, a.pos(target), -1, 0, effect_id

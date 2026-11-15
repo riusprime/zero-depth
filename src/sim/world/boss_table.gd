@@ -226,6 +226,8 @@ var wardens: BossWardensTable = null
 var siege: BossSiegeTable = null
 ## The Foundry's forge (null: none).
 var forge: BossForgeTable = null
+## The Warlord's banner and duel (null: none).
+var warlord: BossWarlordTable = null
 
 
 ## The attack index with this id, or -1.

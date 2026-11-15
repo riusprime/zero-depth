@@ -2,7 +2,8 @@ class_name BossFightStore
 extends RefCounted
 ## The state of the bosses' fight mechanics, one self-contained block per mechanic, each owned by that mechanic's
 ## code: the Clockwork Judge's time and gears, the Tidecaller's dance, the charge bursts, the Twin Wardens' clocks,
-## the Siege Engine's siege and boulders, the Foundry's forge and slabs, and The Fallen's remembered mechanics.
+## the Siege Engine's siege and boulders, the Foundry's forge and slabs, The Fallen's remembered mechanics, and the
+## Warlord's banner and duel.
 ## BossStore keeps the live bosses' own entries and the older signature pieces; these blocks live apart because
 ## none of them is per boss entry and each is read and written by one mechanic only, so a new boss's mechanic adds its
 ## block here without growing BossStore.
@@ -144,6 +145,21 @@ const FALLEN_FLOAT_FIELDS: Array[StringName] = [
 	&"fl_sh_len",
 	&"fl_bu_x",
 	&"fl_bu_y"
+]
+## The Warlord's banner and duel (BossWarlord, BossDuel), with the value each takes when they are forgotten.
+const WARLORD_FIELDS := {
+	&"wl_boss": -1,
+	&"wl_phase": -1,
+	&"wl_next": -1,
+	&"wl_bn_stage": 0,
+	&"wl_bn_from": -1,
+	&"wl_du_stage": 0,
+	&"wl_du_from": -1,
+	&"wl_fence_at": -1,
+	&"wl_cd_acc": 0,
+}
+const WARLORD_FLOAT_FIELDS: Array[StringName] = [
+	&"wl_bn_x", &"wl_bn_y", &"wl_du_x", &"wl_du_y", &"wl_du_r0", &"wl_du_r1"
 ]
 const RIP_FIELDS: Array[StringName] = [
 	&"dance_rip_from", &"dance_rip_n", &"dance_rip_mirror", &"dance_rip_hit", &"dance_rip_warn"
@@ -362,6 +378,28 @@ var fl_sh_len := 0.0
 var fl_bu_x := 0.0
 var fl_bu_y := 0.0
 var fl_beaten := PackedStringArray()
+## The Warlord's banner and duel (BossWarlord, BossDuel). wl_boss is the Warlord that runs them (-1 = none). The
+## rhythm: wl_phase the phase its clock is for (-1 = none yet), wl_next the tick the next big mechanic of that phase
+## may begin (-1 = after the one running). The banner: wl_bn_stage 0 none, 1 its cast, 2 it stands, since wl_bn_from;
+## its pole at wl_bn_x/wl_bn_y. The duel: wl_du_stage 0 none, 1 its cast, 2 the cage closes, 3 the recall's warning,
+## since wl_du_from; the cage's centre wl_du_x/wl_du_y, its fence from wl_du_r0 to wl_du_r1 (m); wl_fence_at the
+## first tick the fence may hurt again. wl_cd_acc: the per mille of a cooldown tick the banner has run ahead.
+## Hashed only while a Warlord runs them.
+var wl_boss := -1
+var wl_phase := -1
+var wl_next := -1
+var wl_bn_stage := 0
+var wl_bn_from := -1
+var wl_du_stage := 0
+var wl_du_from := -1
+var wl_fence_at := -1
+var wl_cd_acc := 0
+var wl_bn_x := 0.0
+var wl_bn_y := 0.0
+var wl_du_x := 0.0
+var wl_du_y := 0.0
+var wl_du_r0 := 0.0
+var wl_du_r1 := 0.0
 
 
 func hash_into(h: StateHasher) -> void:
@@ -418,6 +456,12 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(fl_beaten.size())
 		for id in fl_beaten:
 			h.add_string(id)
+	if wl_boss >= 0:  # Only while a Warlord runs its banner and duel
+		h.add_int(-24)
+		for f: StringName in WARLORD_FIELDS:
+			h.add_int(get(f))
+		for f: StringName in WARLORD_FLOAT_FIELDS:
+			h.add_f32(get(f))
 
 
 ## Removes stopped gear k (the arrays stay oldest first).
@@ -514,4 +558,12 @@ func clear_fallen() -> void:
 	for f: StringName in FALLEN_FIELDS:
 		set(f, FALLEN_FIELDS[f])
 	for f: StringName in FALLEN_FLOAT_FIELDS:
+		set(f, 0.0)
+
+
+## Forgets the Warlord's banner and duel (its body gone).
+func clear_warlord() -> void:
+	for f: StringName in WARLORD_FIELDS:
+		set(f, WARLORD_FIELDS[f])
+	for f: StringName in WARLORD_FLOAT_FIELDS:
 		set(f, 0.0)

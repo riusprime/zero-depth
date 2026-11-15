@@ -2648,6 +2648,65 @@ pick and the pieces' own spots draw a stream (`ai`). No native change.
   `boss_invulnerable(i)` is true under the ward. `final_interphase()` is always {}; `EFFECT_FALLEN_VANISH` ..
   `EFFECT_FALLEN_RETURN` are kept as plain names no event carries (a view still names them).
 
+## 10u. The Warlord's charge, War Banner and Duel (v0.12.0 step 8; owner brief rows WL1-WL3 and SG-WL, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+The Warlord keeps its front shield, javelins, great javelin, walls and spears (§10d, §10f). Its numbers are
+`BossTable.warlord` (a `BossWarlordTable`, compiled from `BossDefinition.warlord`; null for every other boss); its
+state is `BossFightStore.wl_*`. Code: `BossWarlord` (the rhythm, the banner, the hooks, the read), `BossDuel` (the
+cage). Hooks: `BossSignatures.advance` (before `BossChargeBurst`), `BossTide.due` (HOLD), `BossGreatJavelin.may_use`,
+`BossMaelstrom.holds` (it stands), `BossChallenge.hit_mult` and `Damage.tick_dot` (the banner's share),
+`Damage.target_mult` (the shield). `BossAi` gained no line. No stream is drawn; no native change.
+
+- **The faster charge (every phase).** `lunge_dash`: 36 ticks of wind-up, the aim locked the last 24, 26 m/s over 16
+  m (walls cut it short), the weak point after it, and a burst (§10q) of 3.5 m, 15 ticks after its run stops, for
+  the charge's damage; its telegraph carries the end circle (`"burst"`).
+- **The rhythm: one big mechanic at a time.** The banner's phase and the duel's are different (content). In each,
+  the first is due `*_first_ticks` after the phase's gate (the first tick the boss stands in it), each next one
+  `banner_gap_ticks` after the last banner is gone / `duel_gap_ticks` after the last duel ended. A due one begins in
+  tick phase 6 when the boss is in `MOVE` (an attack, its follow-up and its recovery finish first) and no great
+  javelin of its is out (`BossGreatJavelin.is_out`); it waits otherwise. From the tick it may begin through its cast
+  the boss takes no step and `BossTide.due` answers HOLD (its cooldown kept at 1 at least): no pick, no punish, no
+  gap-closer. While a banner or a duel runs no `great_javelin` is picked. A banner standing as its phase ends falls.
+- **War Banner** (`banner_phase`). A `banner_cast_ticks` cast, then a circle of `banner_radius_m` on the boss's spot
+  (its pole) for `banner_ticks`, or until a `charge` of the boss's sweeps a lane (from where its run began to its body,
+  its radius plus the contact slop each side) within `banner_pole_m` of the pole (the charge goes on). While the
+  boss's centre is inside, each tick its running cooldown gains `1000000 / banner_cooldown - 1000` per mille of a tick
+  (`wl_cd_acc`; a whole tick off per 1000): cooldowns at 70 %. While the hero's centre is inside, its hits and damage
+  ticks on the boss are ×`banner_damage` per mille (untagged).
+- **The Duel** (`duel_phase`). A `duel_cast_ticks` cast; then the cage: centre the midpoint of the boss and the hero
+  as the cast ends, moved inward so the whole circle is `BossDuel.ROOM_GAP_M` inside `w.bosses.arena` (a room
+  narrower than the cage gets a smaller one); its fence closes linearly from `duel_radius_m` to `duel_end_radius_m`
+  over `duel_ticks` (`radius = r0 + (r1 - r0) × t / duel_ticks`, `t` = ticks since it closed), then stays through the
+  recall's warning. Each tick phase 6 the boss's body is set back inside it on its line to the centre, the hero's by
+  `BossTide.shift` (the Pull's rule), and a charge's remaining lane is cut at the fence (a locked one still runs
+  `BossDuel.MIN_RUN_M`, so its burst arms). A hero whose body is within `fence_touch_m` of the fence loses
+  `fence_hit` per mille (`SafeArea` ONCE), at most once every `fence_every_ticks`, the first such span after the
+  cage closes free. The front shield is down (`BossDuel.shield_down`; the front arc takes the normal share) from the
+  cage's close to its end. Inside it the pick is only `duel_attacks`. `duel_ticks` after the close: `recall_warn_ticks`
+  of warning on the centre's `recall_radius_m`, then a hero touching it loses `recall_hit` per mille (ONCE); the
+  cage is gone.
+- **Never a kill from full.** `WarlordRules.MAX_HIT` (400 per mille) bounds the fence and the recall. The charge's
+  burst is the charge's own damage (50, a `big` hit).
+- **The death recap.** The fence names `fence_cause` (`javelin_fan`, `CAUSE_WARLORD_FAN`); the recall `recall_cause`'s
+  late part (`LATE_CAUSE` + its index: `CAUSE_WARLORD_RECALL`). Damage effect ids `boss_warlord_fence`,
+  `boss_warlord_recall`.
+- **Fight end.** With the hero dead or outside the room the banner falls (`FELL_CLEARED`) and the duel ends without
+  its recall (`BossWarlord.cancel`; the clocks stay); with the boss gone everything goes (`clear_warlord`).
+- **Events** (`STATUS_APPLY`, source the boss; never read back): `warlord_banner_cast` (amount = ticks),
+  `warlord_banner_planted` (pos = the pole, amount = ticks), `warlord_banner_fallen` (amount = `FELL_TIME` 0,
+  `FELL_CHARGE` 1, `FELL_CLEARED` 2), `warlord_duel_cast` (amount = ticks), `warlord_duel_start` (pos = the centre,
+  amount = ticks), `warlord_recall_warn` (pos, amount = ticks), `warlord_recall` (target the hero, amount = the HP it
+  cost, 0 a miss), `warlord_duel_end` (amount_applied 1 after the recall, 0 cut short), `warlord_fence_touch` (target
+  the hero, amount = the HP it cost).
+- **Hash and save.** Hashed after a `-24` sentinel only while a Warlord runs them (`wl_boss >= 0`, from its second
+  phase), so its first phase hashes as before (the charge's new numbers change it anyway). `BossFightStore` is a
+  snapshot state class; `BossWarlordTable` is a content class of the snapshot.
+- **Reads.** `WorldReader.boss_warlord()` (`BossWarlord.state`): `boss`, `running`, `next`, `next_in`, `held`,
+  `banner` ({} or `cast`, `centre`, `radius`, `left`, `boss_inside`, `hero_inside`, `cooldown`, `damage`), `duel` ({}
+  or `stage`, `cast`, `centre`, `radius`, `from_radius`, `to_radius`, `left`, `progress`, `zone` ({} or `centre`,
+  `radius`, `warn`), `shield_down`, `touch_m`, `touching`, `in_zone`). The end circle: the charge's telegraph and
+  `boss_charge_bursts()`. A read after a step describes the tick about to run.
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×

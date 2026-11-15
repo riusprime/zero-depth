@@ -132,6 +132,8 @@ func test_the_two_fights_follow_the_design() -> void:
 			assert_eq(atk.shielded, sig, "%s %s: only the signature is shielded" % [id, atk.id])
 			if atk.move in [&"marks", &"row_lanes", &"flood", &"charge", &"barrage"]:
 				var want := 0.55 if atk.move == &"row_lanes" else 0.8  # v0.9.5 BH2 (B1): the Shock Lanes lock 0.55 s
+				if atk.id == &"lunge_dash":
+					want = 0.4  # The Warlord's faster charge (owner: "too predictable and too slow")
 				assert_almost_eq(
 					atk.lock_seconds, want, 0.001, "%s %s locks %.2f s" % [id, atk.id, want]
 				)

@@ -131,7 +131,9 @@ func test_the_warlords_lunge_and_spears_lock_on_your_exact_position() -> void:
 		var aid: int = s[1]
 		BossLab.start(w, w.actors.index_of(aid), attack_id)
 		var atk := _atk(w, aid)
-		assert_eq(atk.lock_ticks, 48, "%s: locks 0.8 s" % attack_id)
+		# The charge is faster now (0.6 s, locked its last 0.4 s); the spears keep 0.8 s
+		var lock := 24 if attack_id == &"lunge_dash" else 48
+		assert_eq(atk.lock_ticks, lock, "%s: locks %d ticks" % [attack_id, lock])
 		var aims := []
 		for t in atk.windup_ticks - 1:
 			w.actors.set_pos(0, Vector2(8, 0) + Vector2(0, 0.08) * t)

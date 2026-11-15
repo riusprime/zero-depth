@@ -41,6 +41,7 @@ static func hit_mult(w: World, i: int) -> Array[int]:
 	var sg := BossSiege.taken_permille(w, i)  # The Siege Engine's armour blown off by its own cart
 	if sg != 1000:
 		m = [m[0] * sg / 1000, m[1] | SimEvent.TAG_EXPOSED]
+	m[0] = m[0] * BossWarlord.taken_permille(w, i) / 1000  # The hero fights from inside the Warlord's banner
 	return m
 
 
