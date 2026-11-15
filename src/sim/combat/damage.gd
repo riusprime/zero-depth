@@ -236,6 +236,7 @@ static func tick_dot(
 		amount = Constellations.scale(amount, Constellations.hunt_permille(w, target))  # C8
 		if BossQuake.stunned(w, target):  # Q9 a: the stunned Gatekeeper takes +50 % ticks too
 			amount = amount * BossQuake.taken_permille(w, target) / 1000
+		amount = amount * BossSiege.taken_permille(w, target) / 1000  # The Siege Engine's armour stripped
 		var sh := BossShade.hit_mult(w, target)  # The Lantern Shade's light scales its ticks too
 		if sh[1] != 0:
 			amount = maxi(1, amount * sh[0] / 1000)

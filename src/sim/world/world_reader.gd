@@ -2479,6 +2479,16 @@ func boss_dance() -> Dictionary:
 	return BossDance.state(_w)
 
 
+## The Siege Engine's siege: {} with no boss running one; else "boss", "room", "lock" ({} or "centre", "radius",
+## "locked", "left" (ticks to the shell)), "lock_in", "boulders" ([{id, centre, half, size, left, crumbling}]),
+## "cover_rule" (a Shockwave needs cover now), "covered" (the boss cannot see the hero now), "cart" ({} or "id",
+## "position", "from", "to", "hp", "max", "progress" (0..1000), "left", "state"), "doom" (ticks to the Doom Shell, -1
+## none due), "doom_in", "stripped" (ticks of armour stripped left). The markers: objectives() (`siege_boulder`).
+## (BossSiege.state)
+func boss_siege() -> Dictionary:
+	return BossSiege.state(_w)
+
+
 ## The meltdowns, each {"centre", "radius" (molten beyond it; INF while it only glows: the melt
 ## attack's windup), "next" (the radius it melts to next), "warn" (0..1000 while the next step glows, else -1),
 ## "bound" (the room, Rect2), "bridge" (bool), "exit" (the bridge's far end), "half" (its half width)}.

@@ -27,7 +27,8 @@ const KEPT_SLOW := {
 	&"warlord": [[&"shield_wall", 0.8], [&"spear_lines", 1.6]],
 	&"brood_mother": [[&"egg_storm", 1.6], [&"burrow", 1.0]],
 	&"hive_lens": [[&"prism_spiral", 0.9], [&"gaze", 0.8]],
-	&"siege_engine": [[&"turret_cross", 0.9], [&"mortar_grid", 1.6]],
+	# The Shockwave is 2.0 s since it needs cover: the hero runs to a boulder through its telegraph
+	&"siege_engine": [[&"turret_cross", 0.9], [&"mortar_grid", 1.6], [&"shockwave", 2.0]],
 	&"foundry": [[&"slag_fountain", 1.0], [&"molten_flood", 1.6]],
 	&"colossus": [[&"spike_chase", 0.9], [&"fist_combo", 0.8]],
 	&"prism": [[&"cross_ring", 1.0]],
@@ -44,7 +45,7 @@ const SPED_UP := {
 	&"warlord": [[&"lunge_dash", 1.4, 1.0]],  # v0.9.5 BH2 (B2): the javelins wind up 0.6 s again (the hard spells' rule)
 	&"brood_mother": [[&"leap", 1.6, 1.0], [&"leap_chain", 1.4, 1.0], [&"pounce_chain", 1.2, 0.95]],
 	&"hive_lens": [[&"dive", 1.4, 1.0], [&"focus_beam", 1.6, 1.5], [&"focus_beam_3", 1.6, 1.5]],
-	&"siege_engine": [[&"rail", 1.5, 1.1], [&"rail_3", 1.5, 1.1], [&"shockwave", 1.2, 0.9]],
+	&"siege_engine": [[&"rail", 1.5, 1.1], [&"rail_3", 1.5, 1.1]],
 	&"foundry":
 	[[&"vent_blast", 0.8, 0.6], [&"bomb_launch", 1.0, 0.7], [&"bomb_launch_3", 1.0, 0.7]],
 	&"colossus":

@@ -112,6 +112,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"BossPickupTable",  # Its hour orbs (BossTimeTable.orb, content)
 	&"ShotFieldTable",  # Its slow fields (BossTimeTable.field, content)
 	&"BossDanceTable",  # The Tidecaller's dance (BossTable.dance, content)
+	&"BossSiegeTable",  # The Siege Engine's siege mechanics (BossTable.siege, content)
 	&"SwingStep",
 	&"SkillTable",
 	&"OverrunTable",  # v0.4.0 AB
@@ -260,6 +261,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 	# so only the wall grid is rebuilt for them.
 	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # Pillars too
 	barriers += base.bosses.gear_x.size()  # The Clockwork Judge's stopped gears
+	barriers += base.bosses.sg_b_x.size()  # The Siege Engine's boulders
 	barriers += Secrets.slabs_up(base)  # v0.9.0 TD, RA: the secret rooms' slabs while they stand
 	barriers += base.ruins_rocks.rock_count() + base.ruins_rocks.hide_count()  # Rocks, boulders
 	if base.lockdown != null:  # A sealed Lockdown's bars, as an arena's

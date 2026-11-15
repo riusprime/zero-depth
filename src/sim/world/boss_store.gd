@@ -51,6 +51,30 @@ const DANCE_FIELDS: Array[StringName] = [
 	&"dance_grace",
 	&"dance_throw"
 ]
+## The siege mechanics' clocks (BossSiege, BossDoom).
+const SIEGE_FIELDS: Array[StringName] = [
+	&"sg_boss",
+	&"sg_lock_due",
+	&"sg_lock_from",
+	&"sg_landed",
+	&"sg_held",
+	&"sg_doom_phase",
+	&"sg_doom_n",
+	&"sg_doom_due",
+	&"sg_cart",
+	&"sg_cart_from",
+	&"sg_doom_at",
+	&"sg_strip_until",
+	&"sg_next"
+]
+const SIEGE_FLOAT_FIELDS: Array[StringName] = [
+	&"sg_lock_x", &"sg_lock_y", &"sg_cart_ax", &"sg_cart_ay", &"sg_cart_bx", &"sg_cart_by"
+]
+## The boulders' parallel arrays (BossSiege), by type.
+const BOULDER_INT_FIELDS: Array[StringName] = [
+	&"sg_b_id", &"sg_b_from", &"sg_b_until", &"sg_b_boss"
+]
+const BOULDER_FLOAT_FIELDS: Array[StringName] = [&"sg_b_x", &"sg_b_y", &"sg_b_h"]
 const INT_FIELDS: Array[StringName] = [
 	&"ids",
 	&"table",
@@ -358,6 +382,43 @@ var dance_grace := 0
 var dance_throw := 0
 var dance_ht_x := 0.0
 var dance_ht_y := 0.0
+## The Siege Engine's siege (BossSiege, BossDoom). sg_boss is the boss that runs it (-1 = none). The Target Lock:
+## sg_lock_due the tick the next may begin (-1 = not in its phase yet), sg_lock_from the tick the one running began
+## (-1 = none) and sg_lock_x/sg_lock_y its circle's centre now; sg_landed the tick a shell last landed (-1 = none yet).
+## sg_held the tick a Shockwave was first held for want of cover (-1 = none held). The Doom Shell: sg_doom_phase the
+## phase its carts are counted in (-1 = none yet), sg_doom_n the carts sent in it, sg_doom_due the tick the next may
+## roll; sg_cart the cart's actor id (-1 = none, or queued this tick), sg_cart_from the tick it set off (-1 = no cart
+## out), sg_cart_ax/ay where it set off and sg_cart_bx/by where it arrives; sg_doom_at the tick the Doom Shell fires
+## (-1 = none pending); sg_strip_until the tick the boss's armour comes back (0 = never stripped). sg_next: the next
+## boulder id. Hashed only while a boss runs it or a boulder stands.
+var sg_boss := -1
+var sg_lock_due := -1
+var sg_lock_from := -1
+var sg_landed := -1
+var sg_held := -1
+var sg_doom_phase := -1
+var sg_doom_n := 0
+var sg_doom_due := -1
+var sg_cart := -1
+var sg_cart_from := -1
+var sg_doom_at := -1
+var sg_strip_until := 0
+var sg_next := 0
+var sg_lock_x := 0.0
+var sg_lock_y := 0.0
+var sg_cart_ax := 0.0
+var sg_cart_ay := 0.0
+var sg_cart_bx := 0.0
+var sg_cart_by := 0.0
+## The boulders, oldest first (BossSiege): each a wall while it stands (World.walls, as a barrier): its id, the tick
+## it landed, the tick it crumbles and its boss, its centre and half side (m).
+var sg_b_id := PackedInt32Array()
+var sg_b_from := PackedInt32Array()
+var sg_b_until := PackedInt32Array()
+var sg_b_boss := PackedInt32Array()
+var sg_b_x := PackedFloat32Array()
+var sg_b_y := PackedFloat32Array()
+var sg_b_h := PackedFloat32Array()
 
 
 func size() -> int:
@@ -494,6 +555,16 @@ func hash_into(h: StateHasher) -> void:
 		for f: StringName in DANCE_FIELDS:
 			h.add_int(get(f))
 		h.add_f32s(PackedFloat32Array([dance_ht_x, dance_ht_y]))
+	if sg_boss >= 0 or not sg_b_x.is_empty():  # Only while a boss runs its siege or a boulder stands
+		h.add_int(-21)
+		for f: StringName in SIEGE_FIELDS:
+			h.add_int(get(f))
+		for f: StringName in SIEGE_FLOAT_FIELDS:
+			h.add_f32(get(f))
+		for f: StringName in BOULDER_INT_FIELDS:
+			h.add_ints(get(f))
+		for f: StringName in BOULDER_FLOAT_FIELDS:
+			h.add_f32s(get(f))
 
 
 ## Removes arena hazard k (the arrays stay oldest first).
@@ -538,6 +609,22 @@ func clear_dance() -> void:
 		set(f, -1)
 	dance_ht_x = 0.0
 	dance_ht_y = 0.0
+
+
+## Removes boulder k (the arrays stay oldest first).
+func remove_boulder(k: int) -> void:
+	_remove_row(BOULDER_INT_FIELDS, BOULDER_FLOAT_FIELDS, k)
+
+
+## Forgets the siege's clocks (its boss gone); the boulders and the cart go through BossSiege and BossDoom.
+func clear_siege() -> void:
+	for f: StringName in SIEGE_FIELDS:
+		set(f, -1)
+	sg_doom_n = 0
+	sg_strip_until = 0
+	sg_next = 0
+	for f: StringName in SIEGE_FLOAT_FIELDS:
+		set(f, 0.0)
 
 
 ## Row k out of the parallel arrays named by `ints` and `floats`.

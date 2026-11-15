@@ -146,16 +146,18 @@ static func _drop_pillars(w: World, boss_id: int = -1) -> void:
 static func set_nav_extra(w: World, flood: bool = true) -> void:
 	var boxes := pillar_obbs(w)
 	boxes.append_array(BossGears.obbs(w))  # The Clockwork Judge's stopped gears
+	boxes.append_array(BossSiege.boulder_obbs(w))  # The Siege Engine's boulders
 	boxes.append_array(BossLava.lava_obbs(w))
 	w.nav.set_extra(boxes, BossLava.melt_shapes(w))
 	if flood and not w.enemy_tables.is_empty():
 		w.flood_nav()  # The world's flood (bounded, stopped past the enemies)
 
 
-## True while any piece the flow field goes round is down (pillars, gears, lava, a meltdown).
+## True while any piece the flow field goes round is down (pillars, gears, lava, a meltdown, boulders).
 static func has_extra(w: World) -> bool:
 	var bs := w.bosses
-	return bs.pillar_x.size() + bs.gear_x.size() + bs.lava_x.size() + bs.melt_boss.size() > 0
+	var n := bs.pillar_x.size() + bs.gear_x.size() + bs.lava_x.size() + bs.melt_boss.size()
+	return n + bs.sg_b_x.size() > 0  # The Siege Engine's boulders too
 
 
 # --- S2: the Warlord's javelins -----------------------------------------------------------------------------------
@@ -268,6 +270,8 @@ static func lay_egg(w: World, b: int, atk: BossAttackTable, c: Vector2, k: int =
 ## with egg_hp at the kind's base HP scaled as the hatchling's own HP was (EnemyAi fields: windup = its ticks, pick =
 ## the HP it hatches with, lock_a = the attack that laid it).
 static func make_egg(w: World, i: int, egg: Array) -> void:
+	if BossDoom.make_cart(w, i, egg):  # The Siege Engine's ammo cart
+		return
 	var a := w.actors
 	var base := maxi(1, w.enemy_table(a.kinds[i]).hp)
 	var hatch := a.max_hp[i]
@@ -296,6 +300,8 @@ static func egg_think(w: World, i: int) -> void:
 	var boss := w.actors.index_of(w.boss_id)
 	if boss < 0 or a.dead[boss] == 1:
 		_gone(w, i)
+		return
+	if a.state[i] == BossDoom.CART:  # The Siege Engine's ammo cart: BossDoom rolls it (tick phase 6)
 		return
 	if a.state[i] == EGG_BURST:
 		var pat := _egg_attack(w, i, boss).pattern
@@ -396,6 +402,7 @@ static func advance(w: World) -> void:
 	BossTime.advance(w)  # The Clockwork Judge's gears, Bell and fields
 	BossGreatJavelin.advance(w)  # The Warlord's great javelin flies, quakes and flies back
 	BossDance.advance(w)  # The Tidecaller's Riptide, High Tide and Maelstrom
+	BossSiege.advance(w)  # The Siege Engine's Target Lock, boulders and ammo cart
 
 
 ## World._remove_dead: boss `boss_id` is gone: its pillars sink and its javelins go (its eggs crumble on their own).
@@ -420,6 +427,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	BossShotFields.on_boss_gone(w, boss_id)  # Its shot fields go
 	BossGreatJavelin.on_boss_gone(w, boss_id)  # Its great javelin goes with it
 	BossDance.on_boss_gone(w, boss_id)  # The Tidecaller's dance
+	BossSiege.on_boss_gone(w, boss_id)  # The Siege Engine's boulders and cart
 
 
 ## The recap's death line for a cause past LATE_CAUSE (a late part): its attack's late_cause_key (its own cause_key

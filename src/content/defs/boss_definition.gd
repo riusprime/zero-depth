@@ -122,6 +122,9 @@ var arena_template := 0
 ## The dance this boss fights with (DanceRules.SPEC; empty: none): the Tidecaller's stronger Pull, Riptide, High
 ## Tide and the Maelstrom.
 @export var dance := {}
+## The siege this boss fights with (SiegeRules.SPEC; empty: none): the Siege Engine's Target Lock and its boulders,
+## the Shockwave that needs cover, and the Doom Shell's ammo cart.
+@export var siege := {}
 
 
 func category() -> StringName:
@@ -158,6 +161,7 @@ func validate() -> Array[ValidationIssue]:
 	HazardRules.validate(self, issues)  # The arena hazards
 	TimeRules.validate(self, issues)  # The Clockwork Judge's time mechanics
 	DanceRules.validate(self, issues)  # The Tidecaller's dance
+	SiegeRules.validate(self, issues)  # The Siege Engine's cover and Doom Shell
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1

@@ -38,6 +38,9 @@ static func hit_mult(w: World, i: int) -> Array[int]:
 	var m := _base_mult(w, i)
 	if BossQuake.stunned(w, i):
 		m = [m[0] * BossQuake.taken_permille(w, i) / 1000, m[1] | SimEvent.TAG_EXPOSED]
+	var sg := BossSiege.taken_permille(w, i)  # The Siege Engine's armour blown off by its own cart
+	if sg != 1000:
+		m = [m[0] * sg / 1000, m[1] | SimEvent.TAG_EXPOSED]
 	return m
 
 
@@ -131,7 +134,8 @@ static func gap_close_due(w: World, b: int, t: BossTable) -> int:
 static func punish_due(w: World, b: int, t: BossTable) -> int:
 	if t.punish_attack < 0 or t.punish_ticks <= 0 or w.player_dead():
 		return -1
-	return BossTwin.own(w, b, t.punish_attack) if w.bosses.far_t[b] >= t.punish_ticks else -1
+	var k := BossTwin.own(w, b, t.punish_attack) if w.bosses.far_t[b] >= t.punish_ticks else -1
+	return BossSiege.unless_held(w, b, k)  # The Siege Engine's Shockwave waits for cover
 
 
 ## Where an attack aims: the player, led by the boss's lead time at the player's velocity for aimed moves; for

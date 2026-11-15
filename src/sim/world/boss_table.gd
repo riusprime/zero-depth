@@ -228,6 +228,8 @@ var hazard: HazardTable = null
 var time: BossTimeTable = null
 ## The Tidecaller's dance (null: none).
 var dance: BossDanceTable = null
+## The Siege Engine's siege mechanics (null: none).
+var siege: BossSiegeTable = null
 
 
 ## The attack index with this id, or -1.

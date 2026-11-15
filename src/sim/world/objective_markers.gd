@@ -23,6 +23,8 @@ const TWINS_ACTIVE := &"twins_active"
 const JUDGE_ORB := &"judge_orb"
 ## The Tidecaller's High Tide (BossDance): its dry circle.
 const TIDE_DRY := &"tide_dry"
+## The Siege Engine's cover (BossSiege): each boulder standing while a blast that needs cover comes.
+const SIEGE_BOULDER := &"siege_boulder"
 const CAP := 8
 ## A fixed point's entity id.
 const NO_ENTITY := -1

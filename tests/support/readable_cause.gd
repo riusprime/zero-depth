@@ -311,6 +311,36 @@ func _boss_hazard_hit(w: World, e: SimEvent) -> void:
 	violations.append(v)
 
 
+## The Siege Engine's shells are no attack of their own: a Target Lock's shell warns with its painted circle (the
+## lock's ticks), the Doom Shell with its cart's roll and the second after, the cart's blast with the cart the hero
+## blew up (its roll so far: the same warning); the recap line is the Engine's first `marks` attack's.
+func _siege_hit(w: World, e: SimEvent) -> void:
+	var bi := w.actors.index_of(e.owner_id)
+	var st: BossSiegeTable = BossAi.table_of(w, bi).siege if bi >= 0 else null
+	var key := ""
+	if st != null and st.shell_cause >= 0:
+		key = String(BossAi.table_of(w, bi).attacks[st.shell_cause].cause_key)
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	var warned := 0
+	if st != null:
+		warned = st.lock_ticks if e.effect_id == BossSiege.SHELL_EFFECT else st.cart_ticks
+	if warned < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("a siege shell warns shorter than the telegraph minimum")
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)
+
+
 func _quake_hit(w: World, e: SimEvent) -> void:
 	var bi := w.actors.index_of(e.owner_id)
 	var q: QuakeTable = BossAi.table_of(w, bi).quake if bi >= 0 else null
@@ -419,6 +449,8 @@ func _no_actor_hit(w: World, e: SimEvent) -> bool:
 			_cable_hit(w, e)
 		CanyonShore.BURST_EFFECT, CanyonShore.VENT_EFFECT, CanyonShore.CHUNK_EFFECT:  # v0.11.0 O13c
 			_canyon_shore_hit(w, e)
+		BossSiege.SHELL_EFFECT, BossDoom.DOOM_EFFECT, BossDoom.BLAST_EFFECT:  # The Siege Engine's shells
+			_siege_hit(w, e)
 		_:
 			return false
 	return true
