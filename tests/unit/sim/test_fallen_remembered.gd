@@ -370,13 +370,18 @@ func test_a_charge_through_the_fallen_breaks_the_ward_and_stuns_it() -> void:
 	var line := (w.actors.pos(i) - shade).normalized()
 	var hero := w.actors.pos(i) + line * 4.0  # The Fallen on the shade's line
 	var broke := -1
+	var flagged := false
 	for k in 300:
 		w.actors.set_pos(0, hero)
 		w.step(InputFrame.new())
 		if w.boss_fight.fl_ward == 0:
 			broke = w.tick - 1
 			break
+		var sh: Dictionary = WorldReader.new(w).boss_fallen()["shade"]
+		flagged = flagged or (not sh.is_empty() and bool(sh["breaks"]))
 	assert_gt(broke, -1, "the ward breaks")
+	assert_true(flagged, "the reader said the lane runs through The Fallen")
+	assert_false(w.objectives.has(ObjectiveMarkers.TWINS_WARD), "the ward is down: no marker")
 	var breaks := L.events(w, FallenWard.BREAK, seq)
 	assert_eq(breaks.size(), 1)
 	assert_eq(breaks[0].amount, 240, "a 4 s stun")
@@ -433,6 +438,35 @@ func test_a_missed_charge_comes_again_then_the_ward_ends_by_itself() -> void:
 	for c in hit_costs:
 		assert_lte(c, full * 400 / 1000, "never over 40 %")
 		assert_true(c == _part(w, 250) or c == _part(w, 300), "the touch or the burst: %d" % c)
+
+
+func test_the_hint_marker_is_on_the_fallen_while_the_shade_winds_up_under_the_ward() -> void:
+	var r := _ward_world()
+	var w: World = r[0]
+	var i: int = r[1]
+	var fid := w.actors.ids[i]
+	var marked := 0
+	var winding := 0
+	for k in 900:
+		w.actors.set_pos(0, w.final_fight.home + Vector2(4.0, 0.0))  # Never on The Fallen's line
+		w.actors.hp[0] = w.actors.max_hp[0]
+		var fs := w.boss_fight
+		var want := fs.fl_ward == 1 and fs.fl_sh_stage == FallenWard.WINDUP
+		var got := w.objectives.has(ObjectiveMarkers.TWINS_WARD)
+		assert_eq(got, want, "tick %d: the marker is up exactly while the shade winds up" % w.tick)
+		if want:
+			winding += 1
+			var o := WorldReader.new(w).objectives()
+			assert_eq(o.size(), 1)
+			assert_eq(o[0]["entity"], fid, "on The Fallen")
+			assert_false(bool(WorldReader.new(w).boss_fallen()["shade"]["breaks"]), "off its line")
+		marked += 1 if got else 0
+		if fs.fl_stage == R.STAGE_NONE:
+			break
+		w.step(InputFrame.new())
+	assert_gt(winding, 0, "the shade wound up")
+	assert_eq(marked, winding)
+	assert_false(w.objectives.has(ObjectiveMarkers.TWINS_WARD), "gone with the ward")
 
 
 # --- the rhythm against the mimic windows ----------------------------------------------------------------------------
@@ -666,7 +700,6 @@ func test_it_never_vanishes() -> void:
 	var w: World = r[2]
 	var i := L.body(w)
 	assert_false(BossAi.hidden(w, i), "it stays in the room")
-	assert_true(WorldReader.new(w).final_interphase().is_empty())
 
 
 func test_the_death_recap_names_each_mechanic() -> void:

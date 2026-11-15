@@ -240,6 +240,97 @@ func test_a_shell_destroys_the_engines_turrets_under_it_without_a_kill() -> void
 	assert_eq(w.kills, kills, "no kill for the hero")
 
 
+## Steps a lock in `w` to the tick before its shell lands, puts the hero 0.9 m off the circle's centre and an enemy of
+## `kind` at `offset` from it (on the floor the boulder will stand on). Returns [the lock's event, the enemy's id].
+func _to_landing(w: World, st: BossSiegeTable, kind: int, offset: Vector2) -> Array:
+	var lock := _until(w, BossSiege.LOCK, 400)
+	_idle(w, st.lock_ticks - 1)
+	var c := BossSiege.lock_centre(w)
+	w.actors.set_pos(0, c + Vector2(0, -0.9))
+	var id := w.add_enemy(kind, c + offset)
+	w.actors.invuln[w.actors.index_of(id)] = 0  # Past its spawn-in, as one that walked there
+	return [lock, id]
+
+
+func test_an_enemy_by_the_hero_no_longer_denies_a_boulder_the_shell_kills_it() -> void:
+	var s := SiegeLab.only(Vector2(-6, 0), Vector2(6, 0), 1, ["lock"])
+	var w: World = s[0]
+	var st := SiegeLab.siege(w, s[1])
+	var r := _to_landing(w, st, ActorStore.Kind.CHARGER, Vector2(0, 0.6))
+	var lock: SimEvent = r[0]
+	var add: int = r[1]
+	var j := w.actors.index_of(add)
+	w.actors.hp[j] = SafeArea.cost(w, st.lock_hit)  # An ordinary add: the shell's hit is all its HP
+	_idle(w, 1)
+	assert_eq(_fx(w, BossSiege.SHELL)[0].tick, lock.tick + st.lock_ticks, "it lands on time")
+	j = w.actors.index_of(add)
+	assert_true(j < 0 or w.actors.dead[j] == 1, "the add hugging the hero died under the shell")
+	var up := _fx(w, BossSiege.BOULDER_UP)
+	assert_eq(up.size(), 1, "and the boulder stands")
+	assert_eq(up[0].tick, lock.tick + st.lock_ticks)
+	assert_eq(up[0].amount_applied, 1, "the hero under it is still pushed out")
+	var box := BossSiege.boulder_obb(w.boss_fight, 0)
+	assert_eq(Collide.circle_vs_obb(w.player_pos(), w.player.radius_m, box), Vector2.ZERO)
+	var hits: Array[SimEvent] = []
+	for e in w.events_since(lock.seq):
+		if e.kind == SimEvent.Kind.DAMAGE and e.target_id == add:
+			hits.append(e)
+	assert_eq(hits.size(), 1, "the shell's hit")
+	assert_eq(
+		[hits[0].source_id, hits[0].effect_id], [s[1], BossSiege.SHELL_EFFECT], "the Engine's"
+	)
+
+
+func test_a_tough_enemy_under_a_shell_is_hurt_and_pushed_out_beside_the_boulder() -> void:
+	var s := SiegeLab.only(Vector2(-6, 0), Vector2(6, 0), 1, ["lock"])
+	var w: World = s[0]
+	var st := SiegeLab.siege(w, s[1])
+	var r := _to_landing(w, st, ActorStore.Kind.CHARGER, Vector2(0.6, 0))
+	var lock: SimEvent = r[0]
+	var add: int = r[1]
+	var j := w.actors.index_of(add)
+	var hp := SafeArea.cost(w, st.lock_hit) * 10
+	w.actors.max_hp[j] = hp
+	w.actors.hp[j] = hp
+	_idle(w, 1)
+	j = w.actors.index_of(add)
+	assert_gt(j, 0, "it lives")
+	assert_eq(w.actors.dead[j], 0)
+	assert_lt(w.actors.hp[j], hp, "hurt by the shell")
+	var up := _fx(w, BossSiege.BOULDER_UP)
+	assert_eq(up.size(), 1, "the boulder stands")
+	assert_eq(up[0].tick, lock.tick + st.lock_ticks)
+	var box := BossSiege.boulder_obb(w.boss_fight, 0)
+	assert_eq(
+		Collide.circle_vs_obb(w.actors.pos(j), w.actors.radius[j], box),
+		Vector2.ZERO,
+		"pushed out beside it"
+	)
+	assert_lt(w.actors.pos(j).distance_to(box.center), 3.5, "to the nearest free spot")
+	assert_eq(Collide.circle_vs_obb(w.player_pos(), w.player.radius_m, box), Vector2.ZERO)
+
+
+func test_the_ammo_cart_and_the_engine_still_deny_a_boulder() -> void:
+	var s := SiegeLab.only(Vector2(-6, 0), Vector2(6, 0), 1, ["lock"])
+	var w: World = s[0]
+	var st := SiegeLab.siege(w, s[1])
+	var r := _to_landing(w, st, st.cart_kind, Vector2(0, 0.6))
+	var lock: SimEvent = r[0]
+	var cart: int = r[1]
+	w.actors.state[w.actors.index_of(cart)] = BossDoom.CART
+	_idle(w, 1)
+	assert_eq(_fx(w, BossSiege.SHELL)[0].tick, lock.tick + st.lock_ticks, "it lands")
+	assert_eq(_fx(w, BossSiege.BOULDER_UP).size(), 0, "but the cart under it denies the boulder")
+	var k := w.actors.index_of(cart)
+	assert_eq(w.actors.dead[k], 0, "and the cart takes no hit")
+	var at := w.actors.pos(k)
+	var i := _i(w, s[1])
+	assert_false(BossSiege.fits(w, i, at, st.boulder_half), "the cart")
+	w.actors.state[k] = S.MOVE
+	assert_true(BossSiege.fits(w, i, at, st.boulder_half), "the same body as an add does not deny")
+	assert_false(BossSiege.fits(w, i, w.actors.pos(i), st.boulder_half), "the Engine's body")
+
+
 func test_a_shell_by_a_wall_leaves_no_boulder() -> void:
 	var s := SiegeLab.only(Vector2(-11.4, 0), Vector2(6, 0), 1, ["lock"])
 	var w: World = s[0]

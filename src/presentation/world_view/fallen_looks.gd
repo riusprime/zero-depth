@@ -25,8 +25,6 @@ const MODELS := {
 }
 ## The shade is the amber Warden's model.
 const SHADE_MODEL := &"boss_twin_warden_amber"
-## The sim's contact slack: a lane within this of a body touches it (EnemyAi.CONTACT_SLOP_M).
-const CONTACT_M := 0.02
 const GHOST_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, cull_back, shadows_disabled, fog_disabled;
@@ -107,15 +105,6 @@ static func ghost(id: StringName, mat: ShaderMaterial, height: float) -> Node3D:
 	for n: Node in root.find_children("*", "AnimationPlayer", true, false):
 		(n as AnimationPlayer).autoplay = ""
 	return root
-
-
-## Whether lane `o` touches a body of `radius` at `at` (the lane's half width is the charger's own radius).
-static func lane_crosses(o: Obb, at: Vector2, radius: float) -> bool:
-	var d := at - o.center
-	var u := clampf(d.dot(o.axis_u), -o.half.x, o.half.x)
-	var v := clampf(d.dot(o.axis_v), -o.half.y, o.half.y)
-	var near := o.center + o.axis_u * u + o.axis_v * v
-	return near.distance_to(at) <= radius + CONTACT_M
 
 
 ## Where the line `from` → `to` first enters a square pillar of half side `half` at `c` grown by `grow`, as a share

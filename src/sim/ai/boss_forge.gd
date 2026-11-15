@@ -307,7 +307,8 @@ static func event(w: World, i: int, effect: StringName, at: Vector2) -> SimEvent
 
 ## {} with no boss running a forge; else "boss" (its actor index), "plate" ({"forging" (0..1000 through the forging
 ## cast, -1 none), "on" (worn), "exposed_left" (ticks of exposure left, 0 none), "taken" (the share of the hero's
-## damage it takes now, per mille), "next_in" (ticks until the next forging may begin, -1 not in its phase yet)}),
+## damage it takes now, per mille), "next_in" (ticks until the next forging may begin, -1 not in its phase yet),
+## "blast" (how far from the boss's edge a drone's bomb may land and still blow the plate off, m)}),
 ## "slabs" (BossSlag.rows: the cooling pools and the slabs), "overpressure" (BossSlag.over_state), "overpressure_in",
 ## "scald" ({} before its phase; else "gauge", "max", "burning", "draining" (the hero stands on a slab and the gauge
 ## is above 0)).
@@ -339,6 +340,7 @@ static func state(w: World) -> Dictionary:
 			"exposed_left": maxi(0, fs.fg_exposed_until - w.tick),
 			"taken": taken_permille(w, i),
 			"next_in": maxi(0, fs.fg_plate_due - w.tick) if fs.fg_plate_due >= 0 else -1,
+			"blast": f.drone_blast_m,
 		},
 		"slabs": BossSlag.rows(w, i, f),
 		"overpressure": BossSlag.over_state(w, f),

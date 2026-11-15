@@ -21,8 +21,8 @@ extends RefCounted
 ##   table's twin_bolt) every twin_bolt_ticks, and can be hit but takes nothing: the hit sparks off (Damage._blocked,
 ##   TAG_BLOCKED: "not now"). Phase 3: the amber Warden takes hits as ever and the violet one stands under a whole
 ##   ward until his charge breaks it (BossWard); once, Through the Rift (BossRift). The body to hit now (twin_focus:
-##   the leader; in phase 3 the amber Warden, or the violet one while she is stunned) is the hint arrow's
-##   (ObjectiveMarkers.TWINS_ACTIVE) and gets STATUS_APPLY EFFECT_FOCUS when it changes.
+##   the leader; in phase 3 the amber Warden, or the violet one while she is stunned) gets STATUS_APPLY
+##   EFFECT_FOCUS when it changes.
 ## - Anger: a hit from the player on one body angers the other for anger_ticks (its steps × anger_permille); at most
 ##   one is angry at a time (a hit on the angry one calms it and angers the other).
 ## - Steps: the leading boss pursues the player as any boss; the leading twin keeps flank_m from the player at a right
@@ -166,13 +166,12 @@ static func leaves(w: World, i: int) -> bool:
 	return true
 
 
-## BossSignatures.on_boss_gone: the pair goes with either body (and its hint).
+## BossSignatures.on_boss_gone: the pair goes with either body.
 static func on_boss_gone(w: World, boss_id: int) -> void:
 	var k := w.bosses.twin_of(boss_id) if not w.bosses.twin_lead.is_empty() else -1
 	if k >= 0:
 		BossWardens.on_boss_gone(w, boss_id)  # Its wards, its set piece
 		w.bosses.remove_twin(k)
-		w.objectives.clear(ObjectiveMarkers.TWINS_ACTIVE)
 
 
 ## Damage._apply: a hit from the player on one body angers the other (the only angry one; STATUS_APPLY when it turns).
@@ -274,7 +273,7 @@ static func focus_id(w: World, k: int) -> int:
 
 
 ## The boss's turn (tick phase 3): the roles' clocks. A new phase resets the clock (phase 3 opens on the twin's turn);
-## the body to hit is followed by the hint (and flagged when it changes).
+## the body to hit is flagged when it changes.
 static func _roles(w: World, i: int, k: int) -> void:
 	var bs := w.bosses
 	var ph := bs.phase[BossAi.entry_of(w, i)]
@@ -288,8 +287,6 @@ static func _roles(w: World, i: int, k: int) -> void:
 	if focus == bs.twin_focus[k]:
 		return
 	bs.twin_focus[k] = focus
-	w.objectives.clear(ObjectiveMarkers.TWINS_ACTIVE)
-	w.objectives.follow(ObjectiveMarkers.TWINS_ACTIVE, focus)
 	var j := w.actors.index_of(focus)
 	if j >= 0:
 		var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, focus, focus, focus, w.actors.pos(j))

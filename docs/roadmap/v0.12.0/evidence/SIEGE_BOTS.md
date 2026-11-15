@@ -69,3 +69,10 @@ SIEGEBOT| weapon=blade over 3 seeds: plays { "ticks": 10579, "hp_lost": 1647, "s
     ticks against 8,497) and so more of everything else.
   - The Gun that ignores takes 37 % longer, mostly through more locks (7 against 5) and HP lost to everything else.
 - **Not measured:** the fight at floor-3 scaling.
+
+## After step 12 (2026-11-15)
+Enemies no longer deny a boulder (`v0.12.0 Step 12`, built on `d456a21c` in `wt-x12`, the same machine and Godot).
+Same command's file, run on the step's tree before its commit inside a 21-file GUT run (that run exited 1 for three
+tests in other files, fixed and re-run after; `test_siege_bots.gd` itself: 2 tests, 1 passing, 1 pending, no
+failure). Every `SIEGEBOT|` line and the pending line are **identical** to the raw output above; why no bot fight
+changed was not traced. Nothing was retuned. The Result table stands.

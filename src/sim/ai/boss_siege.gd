@@ -12,9 +12,11 @@ extends RefCounted
 ## - A boulder is a square wall of half side boulder_half (World.add_barrier: bodies, both sides' shots, sight; the
 ##   flow field goes round it) standing boulder_ticks, boulder_max at most (the oldest crumbles when one more lands).
 ##   Fair (fits): it keeps the hero's width plus PASS_SLACK_M from every wall, every other boulder and the boss's own
-##   body, and BODY_MARGIN_M from every other living body, so it is an island in the free floor and seals nobody in;
-##   a hero it lands on is pushed out to the nearest free spot. Where it does not fit the shell still lands but
-##   leaves none.
+##   body, and BODY_MARGIN_M from the ammo cart, every other boss and every body that is not an enemy, so it is an
+##   island in the free floor and seals nobody in. Other enemies do not stop it (one hugging the hero would deny every
+##   boulder): each one the boulder stands on takes the shell's hit (lock_hit per mille of the hero's max HP, from the
+##   boss), and one that lives is pushed out to the nearest free spot as a hero it lands on is. Where it does not fit
+##   the shell still lands but leaves none.
 ## - The Shockwave needs cover, from cover_phase: the boss's `slam_ring` attack hits the hero wherever it stands unless
 ##   the boss cannot see it (EnemyAi.sees_player from the boss's centre: a boulder, or any wall, on the line), at most
 ##   shock_cap per mille of max HP; each blast shatters the boulders on that line. Before cover_phase it keeps its
@@ -47,7 +49,7 @@ const END_SHATTERED := 2
 const END_CLEARED := 3
 ## The reader's "crumbling": a boulder this close to its end.
 const CRUMBLE_TICKS := 60
-## A boulder keeps this clear of every living body but the hero and the boss.
+## A boulder keeps this clear of the ammo cart, every other boss and every body that is not an enemy.
 const BODY_MARGIN_M := 0.3
 ## It keeps the hero's width plus this from every wall, every other boulder and the boss's body.
 const PASS_SLACK_M := 0.15
@@ -190,8 +192,8 @@ static func boulder_obbs(w: World) -> Array[Obb]:
 	return out
 
 
-## A boulder of boss i at c where it fits; the oldest crumbles first when the cap is reached; a hero under it is
-## pushed out.
+## A boulder of boss i at c where it fits; the oldest crumbles first when the cap is reached; the enemies under it
+## take the shell's hit, and the hero and the enemies that live are pushed out.
 static func _raise(w: World, i: int, st: BossSiegeTable, c: Vector2) -> void:
 	var h := st.boulder_half
 	if not fits(w, i, c, h):
@@ -199,6 +201,7 @@ static func _raise(w: World, i: int, st: BossSiegeTable, c: Vector2) -> void:
 	var bs := w.boss_fight
 	if bs.sg_b_x.size() >= st.boulder_max:
 		_remove(w, [0], END_CAP)
+	var under := _crush(w, i, st, Obb.make(c, Vector2(h, h), 0))
 	bs.sg_b_id.append(bs.sg_next)
 	bs.sg_b_from.append(w.tick)
 	bs.sg_b_until.append(w.tick + st.boulder_ticks)
@@ -212,7 +215,50 @@ static func _raise(w: World, i: int, st: BossSiegeTable, c: Vector2) -> void:
 	BossSignatures.set_nav_extra(w)
 	var e := _event(w, i, BOULDER_UP, c)
 	e.amount = bs.sg_b_id[bs.sg_b_id.size() - 1]
-	e.amount_applied = 1 if _push_out(w, i, box) else 0
+	e.amount_applied = 1 if _push_out(w, i, box, 0) else 0
+	for j: int in under:
+		if w.actors.dead[j] == 0:
+			_push_out(w, i, box, j)
+
+
+## The enemies the boulder `sq` stands on (the ones fits() lets it land on) take the shell's hit from boss i, through
+## the enemies' damage path. Returns the indices of those it hit.
+static func _crush(w: World, i: int, st: BossSiegeTable, sq: Obb) -> Array[int]:
+	var a := w.actors
+	var under: Array[int] = []
+	for j in range(1, a.size()):
+		if a.dead[j] == 1 or _denies(w, i, j):
+			continue
+		if Collide.circle_vs_obb(a.pos(j), a.radius[j], sq) == Vector2.ZERO:
+			continue
+		under.append(j)
+		var id := a.ids[i]
+		var at := a.pos(j)
+		Damage.hit(
+			w,
+			j,
+			SafeArea.cost(w, st.lock_hit),
+			id,
+			id,
+			w.take_root(),
+			SimEvent.TAG_AREA,
+			sq.center,
+			at,
+			SHELL_EFFECT
+		)
+	return under
+
+
+## True when actor j (not the hero) keeps a boulder of boss i off: the boss itself, its ammo cart, another boss, or a
+## body that is not an enemy.
+static func _denies(w: World, i: int, j: int) -> bool:
+	var a := w.actors
+	return (
+		j == i
+		or a.state[j] == BossDoom.CART
+		or BossAi.entry_of(w, j) >= 0
+		or not EnemyAi.is_enemy_kind(a.kinds[j])
+	)
 
 
 ## True when a boulder of half side h fits at c for boss i: the rule in the class comment. The closest points of two
@@ -225,11 +271,10 @@ static func fits(w: World, i: int, c: Vector2, h: float) -> bool:
 		return false
 	var a := w.actors
 	for j in range(1, a.size()):
+		if a.dead[j] == 1 or not _denies(w, i, j):
+			continue
 		var margin := gap if j == i else BODY_MARGIN_M
-		if (
-			a.dead[j] == 0
-			and Collide.circle_vs_obb(a.pos(j), a.radius[j] + margin, sq) != Vector2.ZERO
-		):
+		if Collide.circle_vs_obb(a.pos(j), a.radius[j] + margin, sq) != Vector2.ZERO:
 			return false
 	var mine := BossSignatures.corners(sq)
 	for k in w.walls_near(sq.bounds().grow(gap + 0.01)):
@@ -245,20 +290,25 @@ static func fits(w: World, i: int, c: Vector2, h: float) -> bool:
 	return true
 
 
-## A hero the new boulder `box` stands on goes to the nearest free spot outside it (BossRewind.free_spot from the
-## shortest way out). Returns true when it was moved.
-static func _push_out(w: World, i: int, box: Obb) -> bool:
-	var p := w.player_pos()
-	var pr := w.player.radius_m
-	var push := Collide.circle_vs_obb(p, pr, box)
+## Actor j (the hero, or an enemy that lived through the shell) the new boulder `box` stands on goes to the nearest
+## free spot outside it (BossRewind.free_spot from the shortest way out; an enemy with no free spot found stays at
+## the way out, where the collision pass takes it). Returns true when it was moved.
+static func _push_out(w: World, i: int, box: Obb, j: int) -> bool:
+	var a := w.actors
+	var p := a.pos(j)
+	var r := w.player.radius_m if j == 0 else a.radius[j]
+	var push := Collide.circle_vs_obb(p, r, box)
 	if push == Vector2.ZERO:
 		return false
 	var off := p - box.center
 	if Kin.length(off) < 0.001:
-		off = w.actors.pos(i) - box.center  # Dead centre: out toward the boss
+		off = a.pos(i) - box.center  # Dead centre: out toward the boss
 	var out := push if Kin.length(push) > 0.001 else off
 	var to := p + out + out / maxf(Kin.length(out), 0.001) * PUSH_SLACK_M
-	w.actors.set_pos(0, BossRewind.free_spot(w, i, to))
+	var spot := BossRewind.free_spot(w, i, to)
+	if j != 0 and not BossRewind.is_free(w, i, spot):
+		spot = to
+	a.set_pos(j, spot)
 	return true
 
 
@@ -470,8 +520,9 @@ static func _event(w: World, i: int, effect: StringName, at: Vector2) -> SimEven
 ## {} with no boss running a siege; else "boss" (its actor index), "room" (Rect2), "lock" ({} or "centre", "radius",
 ## "locked" (it holds still now), "left" (ticks to the shell)), "lock_in" (ticks until the next may begin, -1 not in
 ## its phase yet), "boulders" ([{id, centre, half, size (m across), left (ticks), crumbling}], oldest first),
-## "cover_rule" (a Shockwave now needs cover), "covered" (the boss cannot see the hero now), "cart" and "doom" and
-## "doom_in" (BossDoom.state), "stripped" (ticks of armour stripped left, 0 none).
+## "cover_rule" (a Shockwave now needs cover), "covered" (the boss cannot see the hero now), "cart", "cart_blast"
+## (the cart's blast radius, m), "doom" and "doom_in" (BossDoom.state), "stripped" (ticks of armour stripped left, 0
+## none).
 static func state(w: World) -> Dictionary:
 	var bs := w.bosses
 	var fs := w.boss_fight

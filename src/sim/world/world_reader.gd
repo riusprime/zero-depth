@@ -8,7 +8,6 @@ const KIND_PLAYER := ActorStore.Kind.PLAYER
 ## The objective markers' reasons (objectives(); ObjectiveMarkers), for the view's lines.
 const OBJECTIVE_GATEKEEPER_PILLAR := ObjectiveMarkers.GATEKEEPER_PILLAR
 const OBJECTIVE_SHADE_LANTERN := ObjectiveMarkers.SHADE_LANTERN
-const OBJECTIVE_TWINS_ACTIVE := ObjectiveMarkers.TWINS_ACTIVE
 const OBJECTIVE_TWINS_WARD := ObjectiveMarkers.TWINS_WARD
 ## The final approach's states (approach_state).
 const APPROACH_WALK := FinalApproach.State.WALK
@@ -242,15 +241,6 @@ const TIDE_MAX_MPS := BossTide.MAX_MPS
 const EFFECT_NEMESIS_DASH := BossNemesis.EFFECT_DASH
 ## A final boss's body shattering (FinalBoss.SHATTER).
 const STATE_SHATTER := FinalBoss.SHATTER
-## The events of The Fallen's old vanishing interphase. No sim event carries them any more (it stays in the room and
-## casts remembered mechanics instead, BossRemembered); kept only while a view still names them.
-const EFFECT_FALLEN_VANISH := &"fallen_vanish"
-const EFFECT_FALLEN_BEAMS := &"fallen_rays"
-const EFFECT_FALLEN_ERUPT := &"fallen_erupt"
-const EFFECT_FALLEN_DARK := &"fallen_dark"
-const EFFECT_FALLEN_RAIN := &"fallen_rain"
-const EFFECT_FALLEN_LINE := &"fallen_line"
-const EFFECT_FALLEN_RETURN := &"fallen_return"
 ## The Fallen's remembered mechanics (BossRemembered): the kinds (boss_fallen's "running", "pool"), the source boss of
 ## each (a boss id of content) and their events.
 const FALLEN_NONE := BossRemembered.NONE
@@ -2504,15 +2494,17 @@ func boss_dance() -> Dictionary:
 ## The Siege Engine's siege: {} with no boss running one; else "boss", "room", "lock" ({} or "centre", "radius",
 ## "locked", "left" (ticks to the shell)), "lock_in", "boulders" ([{id, centre, half, size, left, crumbling}]),
 ## "cover_rule" (a Shockwave needs cover now), "covered" (the boss cannot see the hero now), "cart" ({} or "id",
-## "position", "from", "to", "hp", "max", "progress" (0..1000), "left", "state"), "doom" (ticks to the Doom Shell, -1
-## none due), "doom_in", "stripped" (ticks of armour stripped left). The markers: objectives() (`siege_boulder`).
+## "position", "from", "to", "hp", "max", "progress" (0..1000), "left", "state"), "cart_blast" (the cart's blast
+## radius, m), "doom" (ticks to the Doom Shell, -1 none due), "doom_in", "stripped" (ticks of armour stripped left).
+## The markers: objectives() (`siege_boulder`).
 ## (BossSiege.state)
 func boss_siege() -> Dictionary:
 	return BossSiege.state(_w)
 
 
 ## The Foundry's forge: {} with no boss running one; else "boss", "plate" ({"forging" (0..1000 through the forging
-## cast, -1 none), "on", "exposed_left" (ticks), "taken" (per mille of the hero's damage it takes now), "next_in"}),
+## cast, -1 none), "on", "exposed_left" (ticks), "taken" (per mille of the hero's damage it takes now), "next_in",
+## "blast" (m from the boss's edge a drone's bomb may land and blow the plate off)}),
 ## "slabs" ([{"slab" (false: a pool still cooling), "id", "centre", "radius", "cooling" (0..1000; 1000 a slab),
 ## "left" (ticks until it crumbles, -1 cooling), "shattered", "safe" (Overpressure counts it)}]), "overpressure" ({}
 ## or "cast" (0..1000, -1 once the floor burns), "cast_left", "burn" (0..1000, -1 before), "burn_left", "on_slab"),
@@ -2611,12 +2603,6 @@ func final_shattering() -> bool:
 	return FinalBoss.shattering(_w)
 
 
-## The Fallen's old vanishing interphase: always {} (it no longer vanishes: boss_fallen). Kept only while a view
-## still reads it.
-func final_interphase() -> Dictionary:
-	return {}
-
-
 ## The Fallen's remembered mechanics: {} with no Fallen running them; else "boss" (its actor index), "running" (the
 ## mechanic cast or running: FALLEN_NONE, FALLEN_TIME, FALLEN_RIPTIDE, FALLEN_QUAKE, FALLEN_WARD), "source" (its boss
 ## id, &"" none), "stage" (0 none, 1 the cast, 2 it runs), "cast" (0..1000 through the cast, -1 none), "cast_left",
@@ -2625,7 +2611,8 @@ func final_interphase() -> Dictionary:
 ## (the next HP gate, per mille of max HP, -1 none), "pool" (the kinds it draws from), "room" (Rect2: the floor its
 ## mechanics cut), "ward" ({} or {"up", "stun_left", "left"}), "shade" ({} or the amber Warden's shade: "position",
 ## "radius", "stage" (1 winding up, 2 running, 3 waiting), "charge", "charges", "lane" (Obb, from where it stood),
-## "locked", "progress" (0..1000 through its wind-up), "end" (where its run ends), "burst_radius"), "burst" ({} or
+## "locked", "progress" (0..1000 through its wind-up), "end" (where its run ends), "burst_radius", "breaks" (the
+## ward is up and the lane would run through The Fallen)), "burst" ({} or
 ## {"centre", "radius", "left", "progress"}), "pillar_dash" ({} or {"from", "to", "through"}: the dash shown aimed
 ## at the hero, and whether it runs into a pillar). Each mechanic's own read reports it too: boss_attack_slow and
 ## boss_pickups (the Time Wave), boss_dance (Riptide), boss_quake_pillars. (BossRemembered.state)

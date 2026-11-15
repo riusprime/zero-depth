@@ -17,9 +17,6 @@ const BOB_PX := 6.0
 const ARROW := &"arrow"
 ## On screen (the arrow above the target).
 const PING := &"ping"
-## Reasons the sim still marks that nothing on screen points at: the old "hit the glowing twin" focus (the Wardens'
-## exposed-twin swap is gone; the ward broken by the charge replaced it and has its own arrow, TWINS_WARD).
-const HIDDEN: Array[StringName] = [WorldReader.OBJECTIVE_TWINS_ACTIVE]
 const DOWN_GAP_PX := 54.0
 ## A reason whose target carries something above it has its arrow that much higher
 ## (an hour orb's clock; the violet Warden's 2.2 m and her ward's dome; a boulder's 1.1 m).
@@ -52,7 +49,7 @@ func sync(reader: WorldReader) -> void:
 		var screen := _screen()
 		var inner := screen.grow(-EDGE_PX * _k(screen))
 		for m: Dictionary in reader.objectives():
-			if m["reason"] in HIDDEN or not gate.call(m["reason"]):
+			if not gate.call(m["reason"]):
 				continue
 			var at := _to_screen(m["pos"], screen)
 			var on := inner.has_point(at)

@@ -8,7 +8,7 @@ extends Node3D
 ## - Plated: the Foundry's model wears a steel shell (FoundryAvatar's plate overlay) and the hero's hits on it give the
 ##   dull grey spark of an ARMOURED hit (HitFeel). While a bomb drone's lob is in the air, its bomb carries the pack's
 ##   ember flare (fo_bomb), and a faint ring (fo_reach) lies round the Foundry where a landing bomb blows the plate:
-##   its edge plus the blast distance (ForgeLooks.DRONE_BLAST_M). The ring turns gold (fo_reach_on) while the bomb
+##   its edge plus the blast distance (the reader's plate "blast"). The ring turns gold (fo_reach_on) while the bomb
 ##   is aimed inside it. Nothing of this shows while no bomb flies.
 ## - Blown: the plate bursts in steel shards (fo_shards) where the bomb landed and on the Foundry; the exposed time is
 ##   BossVulnerableViews' gold pulse and stars, and the bar's shimmer.
@@ -42,6 +42,8 @@ var quiet := false
 var _plate := {}
 var _boss_at := Vector3.ZERO
 var _boss_r := 1.6
+## How far from the boss's edge a bomb still blows the plate off (m), as the reader gives it.
+var _blast_m := 0.0
 var _bombs: Array = []
 var _last_seq := 0
 var _primed := false
@@ -66,8 +68,9 @@ func sync(reader: WorldReader) -> void:
 		var b := int(forge["boss"])
 		_boss_at = SimPlane.to_3d(reader.actor_pos(b))
 		_boss_r = reader.actor_radius(b)
+		_blast_m = float(_plate.get("blast", 0.0))
 		if bool(_plate.get("on", false)):
-			_bombs = bombs_in_flight(reader, reader.actor_pos(b), _boss_r)
+			_bombs = bombs_in_flight(reader, reader.actor_pos(b), _boss_r + _blast_m)
 	if not _primed:
 		_primed = true
 		for e in reader.events_since(0):
@@ -80,8 +83,8 @@ func sync(reader: WorldReader) -> void:
 
 
 ## The bomb drones' lobs in the air: [bomb position (3D, on the arc FireballViews draws it on), whether it is aimed
-## within the plate's reach of a boss at `boss` of radius `r`].
-static func bombs_in_flight(reader: WorldReader, boss: Vector2, r: float) -> Array:
+## within `reach` of a boss at `boss` (its radius plus the plate's blast distance)].
+static func bombs_in_flight(reader: WorldReader, boss: Vector2, reach: float) -> Array:
 	var out := []
 	if not reader.any_kind(WorldReader.KIND_BOMB_DRONE):
 		return out
@@ -95,7 +98,7 @@ static func bombs_in_flight(reader: WorldReader, boss: Vector2, r: float) -> Arr
 		var to: Vector2 = tg["to"]
 		var at := (tg["from"] as Vector2).lerp(to, p)
 		var y := FireballViews.HEIGHT + FireballViews.LOB_RISE * 4.0 * p * (1.0 - p)
-		out.append([SimPlane.to_3d(at, y), to.distance_to(boss) <= r + ForgeLooks.DRONE_BLAST_M])
+		out.append([SimPlane.to_3d(at, y), to.distance_to(boss) <= reach])
 	return out
 
 
@@ -157,7 +160,7 @@ func _draw_reach() -> void:
 		var b: Array = _bombs[k]
 		inside = inside or bool(b[1])
 		hold.put([&"bomb", k], BOMB_ID, &"projectile", SiegeLooks.at(b[0], BOMB_SCALE))
-	var r := (_boss_r + ForgeLooks.DRONE_BLAST_M) * RIM_PER_M
+	var r := (_boss_r + _blast_m) * RIM_PER_M
 	var at := _boss_at + Vector3(0, 0.06, 0)
 	var key := [&"reach_on" if inside else &"reach", _ring_try]
 	if hold.put(key, REACH_ON_ID if inside else REACH_ID, &"area", SiegeLooks.at(at, r)) == null:

@@ -13,9 +13,6 @@ const WHITE_HOT := Color("#FFE2B0")
 ## blue-grey, far from the lava's oranges.
 const BASALT := Color("#5A534E")
 const COOL := Color("#7FC4E8")
-## How far (m) a drone's bomb may land from the Foundry's edge and still blow its plate off: data/bosses/foundry.tres
-## forge "drone_blast_m" (the reader does not give it; BossForge._blasts reads it from BossForgeTable).
-const DRONE_BLAST_M := 1.5
 ## Sorts under the telegraphs and the bodies (as the Tidecaller's water does).
 const UNDER := -2
 ## The most slabs the burning floor cuts out at once.

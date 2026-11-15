@@ -361,7 +361,7 @@ static func state(w: World) -> Dictionary:
 		"pool": pool(w),
 		"room": room_of(w),
 		"ward": FallenWard.ward_state(w, m),
-		"shade": FallenWard.shade_state(w, m),
+		"shade": FallenWard.shade_state(w, m, i),
 		"burst": FallenWard.burst_state(w, m),
 		"pillar_dash": FallenQuake.dash_state(w, i),
 	}

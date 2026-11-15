@@ -14,11 +14,10 @@ extends RefCounted
 ## - `w.objectives.clear(reason)`: every marker of that reason; `clear_all()`: every marker.
 ## A reason may hold several markers (each lantern), at most CAP in all (a point past the cap is ignored, so the
 ## outcome is the same every run). Pointing again at the same place or the same actor for the same reason changes
-## nothing. The reasons O3-O5 use are the constants below (their lines: ObjectiveHints.LABELS).
+## nothing. The reasons boss code uses are the constants below.
 
 const GATEKEEPER_PILLAR := &"gatekeeper_pillar"
 const SHADE_LANTERN := &"shade_lantern"
-const TWINS_ACTIVE := &"twins_active"
 ## The Clockwork Judge's hour orbs (BossTime): each one lying on the floor.
 const JUDGE_ORB := &"judge_orb"
 ## The Tidecaller's High Tide (BossDance): its dry circle.

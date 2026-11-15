@@ -14,6 +14,8 @@ extends RefCounted
 ##   the mechanic ends with the stun.
 ## A charge that misses is followed ward_gap_ticks after its end by the next (the shade stands at the farthest edge
 ## again) until ward_charges were run; after the last one's burst the ward ends by itself.
+## While the ward stands and the shade winds a charge up, ObjectiveMarkers.TWINS_WARD follows The Fallen (the hint
+## arrow the Twin Wardens' violet Warden gets for the same moment).
 ## Pure: no stream is drawn.
 
 const S := EnemyAi.State
@@ -48,6 +50,7 @@ static func begin(w: World, i: int, m: FallenRememberedTable) -> bool:
 	fs.fl_sh_n = 0
 	_tell(w, i, UP, w.actors.pos(i)).amount = m.ward_ticks
 	_appear(w, i, m)
+	_mark(w, i)
 	return true
 
 
@@ -84,8 +87,24 @@ static func _shade(w: World) -> Vector2:
 
 
 ## One tick of the ward; true when it is over (the stun of its break ended, the last charge's burst went off, or its
-## time ran out).
+## time ran out). The marker follows what the tick left.
 static func step(w: World, i: int, m: FallenRememberedTable) -> bool:
+	var over := _step(w, i, m)
+	_mark(w, i)
+	return over
+
+
+## The marker on The Fallen: up while the ward stands and the shade winds a charge up.
+static func _mark(w: World, i: int) -> void:
+	var fs := w.boss_fight
+	var aimed := fs.fl_ward == 1 and fs.fl_sh_stage == WINDUP
+	if aimed != w.objectives.has(ObjectiveMarkers.TWINS_WARD):
+		w.objectives.clear(ObjectiveMarkers.TWINS_WARD)
+		if aimed:
+			w.objectives.follow(ObjectiveMarkers.TWINS_WARD, w.actors.ids[i])
+
+
+static func _step(w: World, i: int, m: FallenRememberedTable) -> bool:
 	var fs := w.boss_fight
 	if fs.fl_stun_until >= 0:
 		return w.tick >= fs.fl_stun_until
@@ -190,8 +209,9 @@ static func finish(w: World, i: int) -> void:
 	clear(w)
 
 
-## The ward, the shade and its burst are gone (a stun under way runs out by itself).
+## The ward, the shade, its burst and its marker are gone (a stun under way runs out by itself).
 static func clear(w: World) -> void:
+	w.objectives.clear(ObjectiveMarkers.TWINS_WARD)
 	var fs := w.boss_fight
 	fs.fl_ward = 0
 	fs.fl_sh_stage = 0
@@ -229,20 +249,23 @@ static func ward_state(w: World, m: FallenRememberedTable) -> Dictionary:
 
 ## {} with no shade; else its "position", "radius", "stage", "charge", "charges", "lane" (Obb from where its run
 ## starts), "locked", "progress" (0..1000 through the wind-up, 1000 running), "end" (where the run ends),
-## "burst_radius".
-static func shade_state(w: World, m: FallenRememberedTable) -> Dictionary:
+## "burst_radius", "breaks" (the ward is up and the lane touches The Fallen, actor i, within the contact slop).
+static func shade_state(w: World, m: FallenRememberedTable, i: int) -> Dictionary:
 	var fs := w.boss_fight
 	if not _running(w) or fs.fl_sh_stage == 0 or fs.fl_sh_stage == WAIT:
 		return {}
 	var from := _shade(w) if fs.fl_sh_stage == WINDUP else Vector2(fs.fl_sh_ox, fs.fl_sh_oy)
 	var t := w.tick - fs.fl_sh_at
+	var lane := AttackShapes.lane(from, fs.fl_sh_a, fs.fl_sh_len, m.ward_radius_m)
+	var a := w.actors
+	var reach := a.radius[i] + EnemyAi.CONTACT_SLOP_M
 	return {
 		"position": _shade(w),
 		"radius": m.ward_radius_m,
 		"stage": fs.fl_sh_stage,
 		"charge": fs.fl_sh_n,
 		"charges": m.ward_charges,
-		"lane": AttackShapes.lane(from, fs.fl_sh_a, fs.fl_sh_len, m.ward_radius_m),
+		"lane": lane,
 		"locked": fs.fl_sh_stage == RUN or t > m.ward_windup_ticks - m.ward_lock_ticks,
 		"progress":
 		(
@@ -252,6 +275,7 @@ static func shade_state(w: World, m: FallenRememberedTable) -> Dictionary:
 		),
 		"end": from + Kin.dir(fs.fl_sh_a) * fs.fl_sh_len,
 		"burst_radius": m.ward_burst_m,
+		"breaks": fs.fl_ward == 1 and Collide.circle_vs_obb(a.pos(i), reach, lane) != Vector2.ZERO,
 	}
 
 
