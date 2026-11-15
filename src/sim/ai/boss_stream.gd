@@ -8,6 +8,9 @@ extends RefCounted
 ##   leaves the boss. Ring n is turned on from ring n - 1 by the pattern's turn (alternating sides with `alternate`).
 ##   It aims at nothing: a fixed heading, so the gaps are read, not chased. None while the boss rises or kneels at a
 ##   phase change (the gate), the next a full period after.
+## - A boss with a dance holds both while its rhythm does (BossTideBeats.holds: a big mechanic due or running, and
+##   resume_ticks after it): no ring leaves and no wave forms; the first comes as the hold lifts. Waves already
+##   formed run on.
 ## - The crossing waves: every wave_every ticks, wave_n short waves form, each at a wall of the boss room
 ##   (BossStore.arena; without one, round where the boss stands), the walls and the lengths drawn from the `ai`
 ##   stream (two waves at once come from different walls, opposite or adjacent). A wave is shown as a foam line on
@@ -19,7 +22,7 @@ extends RefCounted
 ##   (BossHazard.lays_on) leaves one where it ends: a tide pool lying against the far wall.
 ## Pure: integer-valued draws from the `ai` stream (wall, length, place), no trig.
 
-## The room's half-size round the boss when there is no sealed boss room (a test world).
+## The room's half-size round the boss when there is no room at all (a test world).
 const FALLBACK_HALF_M := 7.0
 ## The walls, and the way a wave travels away from each (1/4096 turns): north (travels +y), east (-x), south (-y), west
 ## (+x). The wall index is also the wave's "wall" in the reader.
@@ -76,17 +79,18 @@ static func _boss(w: World, i: int, b: int, t: BossTable) -> void:
 		)
 	if w.player_dead():
 		return
+	var held := BossTideBeats.holds(w, i)
 	if rk >= 0:
 		if rising or kneeling:  # none while it rises or kneels: the next a full period after
 			bs.str_ring_due[k] = w.tick + t.phase_ring_ticks[ph]
-		elif w.tick >= bs.str_ring_due[k]:
+		elif w.tick >= bs.str_ring_due[k] and not held:
 			ring(w, i, t.attacks[rk], rk, bs.str_ring_n[k])
 			bs.str_ring_n[k] += 1
 			bs.str_ring_due[k] = w.tick + t.phase_ring_ticks[ph]
 	if wk >= 0:
 		if rising:
 			bs.str_wave_due[k] = w.tick + t.phase_wave_ticks[ph]
-		elif w.tick >= bs.str_wave_due[k]:
+		elif w.tick >= bs.str_wave_due[k] and not held:
 			form(w, i, b, wk, t.phase_wave_n[ph])
 			bs.str_wave_due[k] = w.tick + t.phase_wave_ticks[ph]
 
@@ -108,10 +112,15 @@ static func ring(w: World, i: int, atk: BossAttackTable, rk: int, n: int) -> int
 # --- the waves ------------------------------------------------------------------------
 
 
-## The room waves form in: the boss room's interior, or a square round boss i when there is none.
+## The room waves form in: the sealed boss room's interior; without one, the floor's room boss i stands in; else a
+## square round boss i.
 static func room_of(w: World, i: int) -> Rect2:
 	if w.bosses.arena.has_area():
 		return w.bosses.arena
+	var f := w.floor_layout
+	var r := f.room_of(w.actors.pos(i)) if f != null else -1
+	if r >= 0:
+		return f.rooms[r]
 	var half := Vector2(FALLBACK_HALF_M, FALLBACK_HALF_M)
 	return Rect2(w.actors.pos(i) - half, half * 2.0)
 

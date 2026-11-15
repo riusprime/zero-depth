@@ -1,8 +1,8 @@
 class_name BossMaelstrom
 extends RefCounted
 ## The Tidecaller's Maelstrom (BossDanceTable.mael_*; BossStore.dance_spin, dance_grace, dance_throw): from
-## mael_phase to the end of the fight the whole room is a whirlpool round the boss, and no Pull is cast
-## (BossDance.holds_pull).
+## mael_phase to the end of the fight the whole room is a whirlpool round the boss, and no Pull is cast (its phase's
+## rhythm has none: BossTideBeats.order).
 ## - Each tick the hero is carried round the boss (mael_spin per mille of its own run speed now, along the
 ##   perpendicular of the line to the boss; one way for the whole fight, drawn once from the ai stream) and toward it
 ##   (mael_in per mille, stopping BossTide.BODY_GAP_M short of its body), through BossTide.shift's wall rule. A

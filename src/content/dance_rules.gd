@@ -2,32 +2,42 @@ class_name DanceRules
 extends RefCounted
 ## The content rules of a boss's dance (BossDefinition.dance: the Tidecaller's stronger Pull, Riptide, High Tide and
 ## the Maelstrom; its own file, as the time mechanics' rules). Every key is known and within its bounds, so no single
-## hit takes more than MAX_HIT per mille of the hero's max HP; each cast's warning lasts the telegraph minimum; a
-## row of Riptide and a High Tide each end before the next begins; the boss holds a `tide` and a `wave` attack (the
-## death recap names them).
+## hit takes more than MAX_HIT per mille of the hero's max HP; each cast's warning lasts the telegraph minimum; the
+## stream and the attacks resume before the calm between two big mechanics is over; the boss holds a `tide` and a
+## `wave` attack (the death recap names them).
 
 ## The most one hit of the dance may take, per mille of the hero's max HP: never a kill from full HP by one mistake.
 const MAX_HIT := 400
 ## The casts a row of Riptide may hold: the written order's length.
 const MAX_CASTS := 4
+## The phases whose rhythm the data sets (beat_*_seconds, beat_*_2_seconds, beat_*_3_seconds); a later phase plays the
+## last one's.
+const BEAT_PHASES := 3
 ## key: [default, min, max]. Starting values (the owner's brief: three strips of four at 35 %, a dry circle 12 m away
-## with 6 % a second outside it; the rest the lead's). A phase index past the boss's last phase means never.
+## with 6 % a second outside it; one big mechanic at a time with calm between; the rest the lead's). A phase index
+## past the boss's last phase means never.
 const SPEC := {
 	"pull_permille": [750, 0, 950],
 	"pull_late_permille": [850, 0, 950],
 	"pull_late_phase": [2, 0, 9],
-	"push_m": [6.0, 0.0, 12.0],
+	"push_m": [4.0, 0.0, 12.0],
+	"push_clear_m": [3.0, 0.0, 6.0],
+	"calm_seconds": [3.0, 0.5, 30.0],
+	"resume_seconds": [1.5, 0.0, 30.0],
+	"beat_first_seconds": [6.0, 0.5, 120.0],
+	"beat_gap_seconds": [12.0, 0.0, 120.0],
+	"beat_first_2_seconds": [6.0, 0.5, 120.0],
+	"beat_gap_2_seconds": [8.0, 0.0, 120.0],
+	"beat_first_3_seconds": [8.0, 0.5, 120.0],
+	"beat_gap_3_seconds": [10.0, 0.0, 120.0],
 	"riptide_phase": [1, 0, 9],
-	"riptide_first_seconds": [10.0, 1.0, 120.0],
-	"riptide_every_seconds": [20.0, 5.0, 120.0],
 	"riptide_casts": [4, 1, MAX_CASTS],
-	"riptide_warn_seconds": [2.0, 0.4, 10.0],
-	"riptide_last_warn_seconds": [2.5, 0.4, 10.0],
+	"riptide_warn_seconds": [2.5, 0.4, 10.0],
+	"riptide_last_warn_seconds": [3.0, 0.4, 10.0],
+	"riptide_run_margin_permille": [1300, 1000, 3000],
 	"riptide_wave_seconds": [0.6, 0.1, 3.0],
 	"riptide_permille": [350, 1, MAX_HIT],
 	"high_tide_phase": [2, 0, 9],
-	"high_tide_first_seconds": [8.0, 1.0, 120.0],
-	"high_tide_every_seconds": [25.0, 5.0, 120.0],
 	"high_tide_cast_seconds": [2.5, 0.4, 10.0],
 	"high_tide_seconds": [6.0, 1.0, 30.0],
 	"high_tide_tick_seconds": [0.5, 0.1, 2.0],
@@ -50,14 +60,9 @@ static func value(dance: Dictionary, key: String) -> float:
 	return float(dance.get(key, (SPEC[key] as Array)[0]))
 
 
-## How long a row of Riptide lasts, seconds: its warnings and its waves.
-static func row_seconds(dance: Dictionary) -> float:
-	var casts := value(dance, "riptide_casts")
-	return (
-		(casts - 1.0) * value(dance, "riptide_warn_seconds")
-		+ value(dance, "riptide_last_warn_seconds")
-		+ casts * value(dance, "riptide_wave_seconds")
-	)
+## The key of phase k's (an index) beat value `what` ("first" or "gap").
+static func beat_key(what: String, k: int) -> String:
+	return "beat_%s_seconds" % what if k == 0 else "beat_%s_%d_seconds" % [what, k + 1]
 
 
 static func _has_move(def: BossDefinition, move: StringName) -> bool:
@@ -90,14 +95,9 @@ static func validate(def: BossDefinition, issues: Array[ValidationIssue]) -> voi
 			issues.append(
 				ValidationIssue.new(&"telegraph_short", p, "dance.%s is under the minimum" % k)
 			)
-	if value(d, "riptide_every_seconds") <= row_seconds(d):
+	if value(d, "resume_seconds") >= value(d, "calm_seconds"):
 		issues.append(
-			ValidationIssue.new(&"duration", p, "dance.riptide_every_seconds must exceed its row")
-		)
-	var tide := value(d, "high_tide_cast_seconds") + value(d, "high_tide_seconds")
-	if value(d, "high_tide_every_seconds") <= tide:
-		issues.append(
-			ValidationIssue.new(&"duration", p, "dance.high_tide_every_seconds must exceed it")
+			ValidationIssue.new(&"duration", p, "dance.resume_seconds must be under calm_seconds")
 		)
 	var step := value(d, "high_tide_permille_per_second") * value(d, "high_tide_tick_seconds")
 	if step < 1.0 or step > MAX_HIT:

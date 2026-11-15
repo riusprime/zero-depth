@@ -2,9 +2,9 @@
 extends GutTest
 ## The Tidecaller's dance (BossDance, BossMaelstrom, SafeArea; BossTide's stronger Pull; the tide pools), in
 ## TideLab's walled 24 m room: the Pull as a share of the hero's run speed and the push as a throw; Riptide's row
-## of four casts over three strips of four in the written order; High Tide's dry circle and what standing outside it
-## costs; the Maelstrom's drag, its eye and its throw; the tide pools the crossing waves leave; what ends with the
-## fight; determinism and a save.
+## of four casts over three strips of four in the written order (when each comes is its rhythm's:
+## test_tide_beats.gd); High Tide's dry circle and what standing outside it costs; the Maelstrom's drag, its eye
+## and its throw; the tide pools the crossing waves leave; what ends with the fight; determinism and a save.
 
 const S := EnemyAi.State
 const TICK := 1.0 / 60.0
@@ -59,19 +59,22 @@ func test_the_data_is_valid_and_compiles_to_the_brief() -> void:
 	var d := t.dance
 	assert_not_null(d)
 	assert_eq([d.pull, d.pull_late, d.pull_late_phase], [750, 850, 2], "the Pull's share")
-	assert_almost_eq(d.push_m, 6.0, 0.0001)
+	assert_almost_eq(d.push_m, 4.0, 0.0001)
+	assert_almost_eq(d.push_clear_m, 3.0, 0.0001, "shots within 3 m pop where it sets you down")
 	assert_eq(t.attacks[t.attack_index(&"the_pull")].tide_push_ticks, 30, "thrown in 0.5 s")
+	assert_eq([d.rip_phase, d.rip_casts, d.rip_run_margin], [1, 4, 1300], "Riptide")
 	assert_eq(
-		[d.rip_phase, d.rip_first_ticks, d.rip_every_ticks, d.rip_casts],
-		[1, 600, 1200, 4],
-		"Riptide"
+		[d.rip_warn_ticks, d.rip_last_warn_ticks, d.rip_wave_ticks, d.rip_hit], [150, 180, 36, 350]
 	)
-	assert_eq(
-		[d.rip_warn_ticks, d.rip_last_warn_ticks, d.rip_wave_ticks, d.rip_hit], [120, 150, 36, 350]
-	)
-	assert_eq(
-		[d.ht_phase, d.ht_every_ticks, d.ht_cast_ticks, d.ht_flood_ticks], [2, 1500, 150, 360]
-	)
+	assert_eq([d.ht_phase, d.ht_cast_ticks, d.ht_flood_ticks], [2, 150, 360])
+	assert_eq([d.calm_ticks, d.resume_ticks], [180, 90], "3 s of calm, the stream back after 1.5 s")
+	assert_eq(d.beat_first_ticks, PackedInt32Array([360, 360, 480]), "the first beats: 6, 6, 8 s")
+	assert_eq(d.beat_gap_ticks, PackedInt32Array([720, 480, 600]), "then 12, 8, 10 s between")
+	assert_eq(t.phase_ring_ticks, PackedInt32Array([156, 144, 132]), "a ring every 2.6, 2.4, 2.2 s")
+	assert_eq(t.phase_ring_atk[2], t.attack_index(&"ring_stream"), "the plain stream in phase 3")
+	assert_eq([t.phase_wave_ticks[0], t.phase_wave_ticks[1]], [300, 300], "a wave every 5 s")
+	assert_eq(t.phase_wave_n, PackedInt32Array([1, 1, 0]), "one at a time, none in the Maelstrom")
+	assert_eq(t.phase_wave_atk[2], -1)
 	assert_eq([d.ht_step_ticks, d.ht_hit], [30, 30], "6 % a second in 0.5 s steps")
 	assert_almost_eq(d.ht_radius_m, 4.0, 0.0001)
 	assert_almost_eq(d.ht_gap_m, 12.0, 0.0001)
@@ -98,8 +101,8 @@ func test_the_rules_refuse_a_bad_dance() -> void:
 		"an unknown key": {"riptide_strength": 3},
 		"a hit over 40 %": {"riptide_permille": 401},
 		"an eye over 40 %": {"maelstrom_permille": 500},
-		"a row longer than its period": {"riptide_every_seconds": 9.0},
-		"a tide longer than its period": {"high_tide_every_seconds": 8.0},
+		"a resume as long as the calm": {"resume_seconds": 3.0},
+		"the old cadence's key": {"riptide_every_seconds": 20.0},
 		"a warning under the minimum": {"riptide_warn_seconds": 0.3},
 		"a pull you cannot walk out of": {"pull_permille": 1000},
 	}
@@ -164,7 +167,7 @@ func test_the_last_phases_pull_takes_85_percent() -> void:
 	assert_almost_eq(x - w.player_pos().x, w.player.move_speed * 0.85, 0.0001)
 
 
-func test_the_push_is_a_throw_of_6_m_in_half_a_second() -> void:
+func test_the_push_is_a_throw_of_4_m_in_half_a_second() -> void:
 	var s := _pulling(Vector2(8, 0))
 	var w: World = s[0]
 	var aid: int = s[1]
@@ -182,7 +185,7 @@ func test_the_push_is_a_throw_of_6_m_in_half_a_second() -> void:
 		if tide["phase"] == WorldReader.TIDE_PUSH:
 			push_ticks += 1
 		w.step(InputFrame.new())
-	assert_almost_eq(far - nearest, 6.0, 0.25, "thrown about 6 m out")
+	assert_almost_eq(far - nearest, 4.0, 0.25, "thrown about 4 m out")
 	assert_between(push_ticks, 29, 31, "over 0.5 s, then nothing")
 	var here := w.player_pos()
 	_idle(w, 30)
@@ -226,7 +229,7 @@ func test_a_row_is_four_casts_three_strips_each_tick_exact() -> void:
 	var d := TideLab.dance(w, s[1])
 	var first: SimEvent = s[2]
 	assert_not_null(first, "the first row begins")
-	assert_between(first.tick - int(s[3]), 600, 601, "10 s into the phase")
+	assert_between(first.tick - int(s[3]), 360, 361, "6 s into the phase")
 	var st := _state(w)
 	assert_eq((st["strips"] as Array).size(), 4)
 	assert_eq(st["strips"][0], Rect2(-12, -12, 24, 6), "strips along the room, 6 m wide")
@@ -236,7 +239,7 @@ func test_a_row_is_four_casts_three_strips_each_tick_exact() -> void:
 	var edge := _edge_strip(w)
 	var cost := TideLab.LONG * 350 / 1000
 	var lost := 0
-	for k in 700:
+	for k in 1000:
 		w.actors.set_pos(0, TideLab.in_strip(edge))
 		w.step(InputFrame.new())
 		lost += TideLab.take_lost(w)
@@ -251,7 +254,7 @@ func test_a_row_is_four_casts_three_strips_each_tick_exact() -> void:
 	var order: Array[int] = []
 	for k in casts.size():
 		order.append(casts[k].amount_applied)
-		assert_eq(casts[k].amount, 150 if k == 3 else 120, "2.0 s of warning, the last 2.5 s")
+		assert_eq(casts[k].amount, 180 if k == 3 else 150, "2.5 s of warning, the last 3.0 s")
 		assert_eq(waves[k].tick - casts[k].tick, casts[k].amount, "then its wave")
 		if k > 0:
 			assert_eq(casts[k].tick - waves[k - 1].tick, 36, "the next warning as the wave ends")
@@ -265,18 +268,17 @@ func test_a_row_is_four_casts_three_strips_each_tick_exact() -> void:
 	assert_eq(lost, cost * 3)
 	assert_eq(w.tick - waves[3].tick, 37, "the row ends with its last wave")
 	assert_eq(_state(w)["riptide"], {})
-	assert_eq(
-		w.bosses.dance_rip_due, first.tick + d.rip_every_ticks, "the next row 20 s after this began"
-	)
-	var again := JudgeLab.until_effect(w, BossDance.RIP_CAST, 700, casts[3].seq)
-	assert_eq(again.tick, first.tick + 1200)
+	var gap := d.calm_ticks + d.gap_ticks(1)
+	assert_eq(w.bosses.dance_beat_at, w.tick - 1 + gap, "the next beat 3 s and 8 s after it ended")
+	var again := JudgeLab.until_effect(w, BossDance.RIP_CAST, 900, casts[3].seq)
+	assert_eq(again.tick, waves[3].tick + 36 + gap)
 
 
 func test_the_dry_strip_costs_nothing() -> void:
 	var s := _to_riptide(Vector2(0, 0))
 	var w: World = s[0]
 	var lost := 0
-	for k in 700:
+	for k in 1000:
 		var rip: Dictionary = _state(w)["riptide"]
 		if rip.is_empty():
 			break
@@ -332,7 +334,8 @@ func test_the_safe_order_is_one_of_the_two_written_over_seeds() -> void:
 		var s := _only(Vector2(0, 0), 1, ["riptide"], sv + 1)
 		var w: World = s[0]
 		var d := TideLab.dance(w, s[1])
-		d.rip_first_ticks = 1
+		d.beat_first_ticks = PackedInt32Array([1, 1, 1])
+		d.rip_run_margin = 0  # The written warnings alone
 		d.rip_warn_ticks = 2
 		d.rip_last_warn_ticks = 3
 		d.rip_wave_ticks = 2
@@ -357,7 +360,7 @@ func test_the_pull_and_a_row_never_run_together_before_the_maelstrom() -> void:
 	var pulls := 0
 	var rows := 0
 	var both := 0
-	for k in 60 * 50:
+	for k in 60 * 70:
 		w.step(InputFrame.new())
 		TideLab.take_lost(w)
 		var i := _i(w, aid)
@@ -370,7 +373,7 @@ func test_the_pull_and_a_row_never_run_together_before_the_maelstrom() -> void:
 	assert_gt(pulls, 0, "it pulled")
 	assert_gt(rows, 0, "it cast a row")
 	assert_eq(both, 0, "never both")
-	assert_gte(_fx(w, BossDance.RIP_CAST).size(), 8, "two rows in 50 s")
+	assert_gte(_fx(w, BossDance.RIP_CAST).size(), 8, "two rows in 70 s")
 
 
 # --- High Tide ------------------------------------------------------------------------------------------------
@@ -434,7 +437,7 @@ func test_outside_the_circle_costs_6_percent_a_second_for_6_s() -> void:
 	assert_eq(done[0].tick - flood[0].tick, 360)
 	assert_false(w.objectives.has(ObjectiveMarkers.TIDE_DRY), "the marker goes")
 	assert_eq(_state(w)["high_tide"], {})
-	assert_eq(w.bosses.dance_ht_due, cast.tick + 1500, "the next 25 s after this began")
+	assert_eq(w.bosses.dance_beat_at, done[0].tick + 780, "the next 3 s and 10 s after it ended")
 	assert_eq(_idle(w, 120), 0, "and nothing after it")
 
 
@@ -871,6 +874,7 @@ func test_everything_goes_when_the_tidecaller_dies() -> void:
 	assert_gte(aid, 0)
 	assert_gte(w.bosses.dance_ht_from, 0, "a High Tide runs")
 	assert_true(w.objectives.has(ObjectiveMarkers.TIDE_DRY))
+	assert_true(BossHazard.place(w, _i(w, aid), Vector2(-9, -9)))  # The Maelstrom forms no wave
 	assert_gt(WorldReader.new(w).boss_hazards().size(), 0, "tide pools lie")
 	var me := w.actors.ids[0]
 	for k in 1200:
@@ -967,7 +971,7 @@ func test_deterministic_hashed_and_a_save_mid_fight_restores() -> void:
 	a.bosses.dance_ht_x += 0.5
 	assert_ne(a.state_hash(), before, "and the dry circle")
 	# A save with a High Tide running, then one with a row running
-	for ticks: int in [60 * 12, 60 * 26]:
+	for ticks: int in [60 * 12, 60 * 33]:
 		var c := _mid_fight(7, ticks)
 		var bs := c.bosses
 		assert_true(bs.dance_ht_from >= 0 or bs.dance_rip_from >= 0, "a cast runs at %d" % ticks)

@@ -2205,32 +2205,67 @@ The Judge keeps its echo, Verdict, Gear Spiral and Gavel Slam (§10l) and gains 
 
 The Tidecaller keeps its Pull, Undertow, ring stream and crossing waves (§10j) and gains the pieces below. Its
 numbers are `BossTable.dance` (a `BossDanceTable`, compiled from `BossDefinition.dance`; null for every other boss);
-its state is `BossStore.dance_*`. Code: `BossDance` (Riptide, High Tide), `BossMaelstrom`, `SafeArea`, and
-`BossTide.rate_of` / `run_speed`. The `ai` stream is drawn for a row's mirror, the dry circle's spot and the way the
+its state is `BossStore.dance_*`. Code: `BossDance` (Riptide, High Tide), `BossMaelstrom`, `SafeArea`,
+`BossTideBeats` (the rhythm), and `BossTide.rate_of` / `run_speed` / `pop_near`. The `ai` stream is drawn for a row's mirror, the dry circle's spot and the way the
 Maelstrom turns; everything else follows from the clock and the positions. No native change.
 
 - **A pull you feel.** For a boss with a dance the Pull moves the hero `pull` per mille (`pull_late` from
   `pull_late_phase`) of **the hero's own run speed now** a tick (`BossTide.run_speed`: `ItemProcs.move_speed` times
   the heat, curse, beam and hazard factors and the guard's, as `World`'s walk computes a full push of the stick), not
   held to `TIDE_MAX_MPS`; the body gap and the wall rule (`shift`) stay, and a dashing hero is still not moved. The
-  push is a throw: `push_m` over the attack's `tide_push_ticks`. A boss without a dance keeps `tide_pull` /
-  `tide_push` under its cap, and the Undertow and the waves' shove are unchanged.
+  push is a throw: `push_m` (4 m) over the attack's `tide_push_ticks`. **Where it sets the hero down** (the throw's
+  last tick, `tide_pull_ticks + tide_push_ticks - 1` of the attack's active time, tick phase 5) every hostile shot
+  whose centre is within `push_clear_m` (3 m) plus its radius of the hero is removed without damage
+  (`BossTide.pop_near`; event `tide_push_pop`, amount = how many, sent only when one popped), so a push never lands
+  the hero in a ring. A boss without a dance keeps `tide_pull` / `tide_push` under its cap and pops nothing, and the
+  Undertow and the waves' shove are unchanged.
+- **One big mechanic at a time (`BossTideBeats`; owner, 2026-11-15: "space mechanics a bit a give it a good fight
+  rythm not everything happening at the same time").** The big mechanics are the Pull (its bell, pull and push), a
+  row of Riptide (all its casts) and a High Tide (its cast and its flood). They no longer run on clocks of their own
+  (`signature_every_seconds`, `riptide_first/every_seconds`, `high_tide_first/every_seconds` are gone from the
+  Tidecaller and from `DanceRules`): each phase plays the ones it has, the latest first, round and round
+  (`order`: High Tide from `ht_phase`, Riptide from `rip_phase`, the Pull before `mael_phase` when the phase has a
+  `tide` attack). So phase 1 is Pull, Pull, ...; phase 2 is Riptide, Pull, Riptide, ...; phase 3 (the Maelstrom) is
+  High Tide, Riptide, ... The first beat of a phase comes `beat_first_ticks[phase]` after it begins (the first tick
+  the boss stands after its gate; the first phase: the first tick the dance runs); each next one `calm_ticks` and
+  then `beat_gap_ticks[phase]` after the last one **ended** (a Pull ends the tick after its push's last tick, a row
+  on its last wave's last step, a High Tide when its flood ends). Never two at once, never one sooner than
+  `calm_ticks` after the last. A beat begins only with the boss between attacks (`MOVE`): one under way finishes
+  first. **The hold:** from the tick the next beat is due, through it, until `resume_ticks` after it ends
+  (`BossTideBeats.holds`), the ring stream emits no ring and no crossing wave forms (`BossStream`; waves already
+  formed run on, and the first ring comes as the hold lifts) and the boss starts no other attack (`BossTide.due`
+  answers `HOLD` and keeps its cooldown at least 1, so the pick, the punish and the gap-closer all wait). The Pull
+  starts through `BossTide.due` when its beat may begin and the cooldown is over; a Pull started any other way (a
+  test, the dev panel) is still taken as the beat running. A High Tide with no dry floor is passed (the next beat
+  after the calm). `BossDance.cancel` ends the beat running. Starting values: calm 3 s, resume 1.5 s; first beat
+  6 / 6 / 8 s; gaps 12 / 8 / 10 s. The Pull is never picked by weight (`BossTide.on_cadence` counts a dance as a
+  cadence).
 - **`SafeArea`: inside this area or hurt.** Boss-agnostic. `strips(room, n)` cuts a room into n strips along its
   longer side (x for a square); `inside(p, rects, discs)` tests the hero's **centre**; `check` / `hurt` take a share
   of the hero's max HP (never scaled by the boss's power): `ONCE` through `Damage.hit` (`TAG_AREA`; armour and the
   dash's invulnerability apply, as for any boss strike on the ground), `STEP` through `Damage.tick_dot`, which
   neither waits for the hurt invulnerability nor gives any.
-- **Riptide** (from `rip_phase`; not an attack: the boss goes on fighting). The first row `rip_first_ticks` into
-  that phase, then one every `rip_every_ticks`, start to start. A row is `rip_casts` casts. Each warns three of the
-  four strips for `rip_warn_ticks` (the last cast `rip_last_warn_ticks`), then a wave runs down them from the
+- **Riptide** (from `rip_phase`; not an attack: the boss goes on fighting between beats). When a row begins is
+  the rhythm's. A row is `rip_casts` casts. Each warns three of the four strips for its warning, then a wave runs
+  down them from the
   room's low end to its high end in `rip_wave_ticks`: on wave step s (1..`rip_wave_ticks`) a hero whose centre is in
   a warned strip and within its radius of the stretch the front crossed this tick takes `rip_hit` per mille, once a
   cast (a hero entering a strip behind the front is not hit). The next warning begins on the wave's last step. The
-  safe strips are `BossDanceTable.SAFE_ORDER` (1, 2, 0, 3) or its mirror (2, 1, 3, 0), one `ai` draw a row. Before
-  the Maelstrom a row does not begin while the Pull runs and the Pull is not cast while a row or a High Tide runs
-  (`BossDance.holds_pull`, asked by `BossTide`).
-- **High Tide** (from `ht_phase`). The first `ht_first_ticks` into that phase, then every `ht_every_ticks`; never
-  while a row runs, and no row begins while it runs (the later one waits). The cast (`ht_cast_ticks`) shows one dry
+  safe strips are `BossDanceTable.SAFE_ORDER` (1, 2, 0, 3) or its mirror (2, 1, 3, 0), one `ai` draw a row.
+  **A cast's warning** (`BossDance.warn_of`, fixed as the cast begins, `BossStore.dance_rip_warn`) is the written
+  `rip_warn_ticks` (the last cast `rip_last_warn_ticks`), or the hero's walk to this cast's safe strip when that is
+  longer: `ceil((gap + 1 m) / run_speed × rip_run_margin / 1000)` ticks, where gap is the distance between the
+  previous cast's safe strip and this one's nearest edges (the first cast: from the hero's centre to the strip), at
+  most 600 ticks (`WALK_MAX_TICKS`; also a hero that cannot move). The `riptide_cast` event's amount and the
+  reader's `warn` / `warn_left` are this length.
+- **The room** (owner, 2026-11-15: "the wave dance is smaller than the room so you can always walk out of it").
+  `BossDance.room_of` is the sealed boss room's interior (`BossStore.arena`, wall face to wall face; in a real run
+  the four strips cover every cell of the boss room a hero can stand on, `tests/unit/sim/test_tide_beats.gd`);
+  **without a sealed room** (the Playground, the dev panel's boss) it is the floor room the boss stands in
+  (`FloorLayout.room_of`, its interior), and only with no layout at all the 24 m square round the boss it was
+  before. `BossStream.room_of` (the crossing waves) follows the same rule (its last resort the 14 m square). The
+  arena itself keeps its meaning (the closing band and the other bosses read it).
+- **High Tide** (from `ht_phase`; when it begins is the rhythm's). The cast (`ht_cast_ticks`) shows one dry
   circle of `ht_radius_m` and points `ObjectiveMarkers.TIDE_DRY` at it; then for `ht_flood_ticks` a hero whose
   centre is outside it takes `ht_hit` per mille every `ht_step_ticks`. `dry_spot`: the first of 32 `ai` draws inside
   the room (less the radius and 1 m) that is `ht_gap_m` from the hero, clear of walls, and whose centre keeps
@@ -2239,7 +2274,8 @@ Maelstrom turns; everything else follows from the clock and the positions. No na
   whole circle stays the hero's width and a metre clear of the eye wherever the boss is on its walk; with none, the
   farthest such spot on a 1 m grid; with none, the gap is halved, twice at most; with none, no High Tide this time.
   The circle does not move afterwards.
-- **The Maelstrom** (from `mael_phase` to the end of the fight). No Pull is cast. The way it turns is one `ai` draw
+- **The Maelstrom** (from `mael_phase` to the end of the fight). No Pull is cast (its phase's order has none), and
+  the phase forms no crossing waves (data: its `wave_attack` is empty). The way it turns is one `ai` draw
   as it begins. Each tick (phase 6; not while the boss kneels at a phase gate) a hero neither dashing nor dead is
   moved by `BossTide.shift` (the wall rule) `mael_spin` per mille of its run speed along the perpendicular
   `(-y, x)` of its unit line to the boss times the turn, plus `mael_in` per mille toward it (stopping `BODY_GAP_M`
@@ -2273,8 +2309,10 @@ Maelstrom turns; everything else follows from the clock and the positions. No na
 - **Reads.** `WorldReader.boss_dance()`: `boss`, `room`, `along_x`, `strips` (4 × Rect2), `riptide` ({} or `cast`,
   `casts`, `safe`, `struck`, `warn` 0..1000 or -1, `warn_left`, `wave` 0..1000 or -1, `front` m, `hit`),
   `riptide_in`, `high_tide` ({} or `centre`, `radius`, `cast` 0..1000 or -1, `flood` 0..1000 or -1, `left`,
-  `inside`), `high_tide_in`, `maelstrom` ({} or `centre`, `spin`, `around`, `inward` m/s, `eye` m from the boss's
-  centre, `grace`, `thrown`, `anchor` (the room's centre), `anchored` (the boss stands on it)). A read after a step describes the tick about to run. The pools: `boss_hazards()`;
+  `inside`), `high_tide_in` (`riptide_in` / `high_tide_in`: ticks until it may begin when it is the next beat, else
+  -1), `maelstrom` ({} or `centre`, `spin`, `around`, `inward` m/s, `eye` m from the boss's centre, `grace`,
+  `thrown`, `anchor` (the room's centre), `anchored` (the boss stands on it)), `beats` (`running`, `next`: 0 none,
+  1 Pull, 2 Riptide, 3 High Tide; `in`: ticks until the next may begin, 0 due, -1 while one runs; `held`; `order`). A read after a step describes the tick about to run. The pools: `boss_hazards()`;
   the circle's marker: `objectives()` (`tide_dry`).
 
 ## 10q. The Twin Wardens fight apart (v0.12.0 step 6; owner brief rows TW1-TW8 and SG-TW, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
