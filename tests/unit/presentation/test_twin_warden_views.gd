@@ -260,10 +260,10 @@ func test_no_chain_is_drawn_and_the_crossfire_and_sword_lane_views_follow_the_re
 	assert_true(lashed, "the slash ran on the strike")
 
 
-## v0.11.0 O5 (owner L7, Q11 a, Q29): the roles read out. The bar names whose bar it is (amber, violet, both) and in
-## phase 3 which Warden is exposed; the Warden to hit glows brighter than the one standing back, and the exposed
-## one brightest.
-func test_the_bar_names_the_phase_s_warden_and_the_one_to_hit_glows() -> void:
+## v0.11.0 O5 (owner L7, Q11 a, Q29): the roles read out without words. The bar shows the phase only (no words for
+## whose bar it is, no "exposed" tag: the exposed-twin swap is gone); the Warden to hit glows brighter than the one
+## standing back, and the exposed (stunned) one brightest.
+func test_the_bar_shows_the_phase_only_and_the_one_to_hit_glows() -> void:
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, &"twin_wardens")
 	var bid := w.actors.ids[i]
@@ -273,7 +273,7 @@ func test_the_bar_names_the_phase_s_warden_and_the_one_to_hit_glows() -> void:
 	w.step(InputFrame.new())
 	bar.sync(r)
 	var line := bar.get_node("PhaseLine") as Label
-	assert_string_contains(line.text, tr("HUD_TWIN_LEADS_AMBER"), "phase 1: the amber's bar")
+	assert_eq(line.text, tr("HUD_BOSS_PHASE") % [1, 3], "phase 1: the phase alone")
 	for p in [1, 2]:
 		i = w.actors.index_of(bid)
 		var hp := BossAi.table_of(w, i).phase_threshold[p] * w.actors.max_hp[i] / 1000
@@ -282,10 +282,9 @@ func test_the_bar_names_the_phase_s_warden_and_the_one_to_hit_glows() -> void:
 		w.step(InputFrame.new())
 		BossLab.through_gate(w, bid)
 		bar.sync(r)
-		var key := "HUD_TWIN_LEADS_VIOLET" if p == 1 else "HUD_TWIN_LEADS_BOTH"
-		assert_string_contains(line.text, tr(key), "phase %d" % (p + 1))
+		assert_eq(line.text, tr("HUD_BOSS_PHASE") % [p + 1, 3], "phase %d" % (p + 1))
 	assert_eq(bar.hp_fraction(), 1.0, "a new full bar")
-	assert_eq(bar.status_line(), tr("HUD_TWIN_EXPOSED_AMBER"), "the amber exposed first")
+	assert_eq(bar.tone(), BossBarTones.NONE, "no tag while her ward stands")
 	var focus := _avatar(false)
 	var rest := _avatar(true)
 	var exposed := _avatar(false)

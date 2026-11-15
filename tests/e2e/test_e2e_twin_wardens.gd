@@ -4,9 +4,9 @@ extends GutTest
 ## is the first that draws them) continued from the menu (Enter); God from the dev panel (clicked); the stick walks to
 ## the boss door, E opens it, the stick walks in and the door seals; the two Wardens rise (both owner models, one bar
 ## with their name) with nothing drawn between them; v0.11.0 O5: phase 1 is the amber Warden's (the hint points
-## at it, the bar's line names it); the stick walks up to it and the mouse's attack lands: the one shared HP drops (the
-## bar's, both bodies') and the other Warden turns angry. Stepping back, the stick waits for his charge: its lane is
-## drawn with the burst's circle at its end (the reader's radius and spot). Brought to phase 2 (a test helper sets the
+## at it; the bar shows the phase only); the stick walks up to it and the mouse's attack lands: the one shared HP
+## drops (the bar's, both bodies') and the other Warden turns angry. Back off: the stick waits for his charge, its lane
+## is drawn with the burst's circle at its end (the reader's radius, spot). Brought to phase 2 (a test helper sets the
 ## shared HP; real frames after), the violet Warden casts her Mirror Ward and its wall stands on the reader's arc.
 
 const FLOOR := 4
@@ -120,10 +120,12 @@ func test_continue_floor_4_and_fight_the_twin_wardens() -> void:
 	)
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_true(hud.boss_bar.visible, "one bar")
-	# v0.11.0 O5: phase 1, the amber leads: the hint points at it and the bar names it.
+	# v0.11.0 O5: phase 1, the amber leads: the sim points at it; the bar shows the phase, no words.
 	var pointed := reader.objectives().map(func(o: Dictionary) -> int: return int(o["entity"]))
 	assert_eq(pointed, [bid], "the hint points at the amber Warden")
-	assert_string_contains(hud.boss_bar.get_node("PhaseLine").text, tr("HUD_TWIN_LEADS_AMBER"))
+	assert_eq(
+		hud.boss_bar.phase_text(), tr("HUD_BOSS_PHASE") % [1, 3], "the bar shows the phase only"
+	)
 	# Up to the amber Warden, then the mouse's attack.
 	var near := func() -> bool:
 		var j := w.actors.index_of(bid)

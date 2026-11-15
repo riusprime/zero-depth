@@ -154,10 +154,9 @@ func _process(_delta: float) -> bool:
 				"c_hud_slowed.png",
 				corner,
 				(
-					"cut %d line '%s' pips %d won %d"
+					"cut %d pips %d won %d"
 					% [
 						_reader.boss_attack_slow(),
-						_hud.attack_slow.line(),
 						_hud.attack_slow.pips(),
 						_hud.attack_slow.pips_won()
 					]

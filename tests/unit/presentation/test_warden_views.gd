@@ -5,7 +5,7 @@ extends GutTest
 ## resting Warden's dome, the Mirror Ward's wall rising through the cast and standing on the reader's arc, the whole
 ## ward, the long lane glowing under it, the break and the ring to its return), WardenBladeViews (the shadow blades on
 ## their spots and their slashes, the dash's streak, the rift portals on the reader's spots with only the marked exit
-## glowing), the violet rifts, the bar's stun line, the hint arrow without text, the clips, the borrowed sounds and
+## glowing), the violet rifts, the bar's gold shimmer, the hint arrow without text, the clips, the borrowed sounds and
 ## the reduced-motion path. Nothing stays once the pair is gone.
 
 const DT := 1.0 / 60.0
@@ -197,7 +197,7 @@ func test_the_long_lane_glows_under_the_ward_and_its_break_reads() -> void:
 	assert_true(view.return_shown(), "a ring counts down to its return")
 	assert_true(view.hold.has(&"stars"), "stars over her while she is stunned")
 	bar.sync(r)
-	assert_eq(bar.status_line(), tr("HUD_BOSS_STUNNED"), "the bar's stun line")
+	assert_eq(bar.tone(), BossBarTones.VULNERABLE, "the bar shimmers gold while she is stunned")
 	assert_eq(
 		r.actor_state(_i(w, s[2])), WorldReader.STATE_STAGGERED, "her avatar's stagger clip plays"
 	)
@@ -275,7 +275,7 @@ func test_the_side_dash_leaves_a_streak() -> void:
 	var view: WardenBladeViews = _view(WardenBladeViews)
 	var wt := TwinsLab.wardens(w, s[1])
 	wt.dash_every_ticks = 180
-	w.bosses.wd_dash_cd = 0
+	w.boss_fight.wd_dash_cd = 0
 	w.actors.cd[_i(w, s[1])] = 60  # between two attacks
 	var streaked := false
 	for k in 60:
@@ -337,8 +337,9 @@ func test_reduced_motion_builds_every_view() -> void:
 
 func test_the_hint_on_the_warded_violet_is_an_arrow_without_text() -> void:
 	assert_eq(MechanicHints.TWINS_WARD, ObjectiveMarkers.TWINS_WARD)
-	assert_true(ObjectiveHints.DOWN_ARROW.has(MechanicHints.TWINS_WARD), "a small arrow over her")
-	assert_false(ObjectiveHints.LABELS.has(MechanicHints.TWINS_WARD), "no text")
+	assert_eq(
+		ObjectiveHints.DOWN_GAPS[MechanicHints.TWINS_WARD], 150.0, "a small arrow over her dome"
+	)
 	assert_false(MechanicHints.TWINS_WARD in MechanicHints.ALWAYS, "the first two runs only")
 
 

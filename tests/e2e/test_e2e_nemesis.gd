@@ -6,8 +6,9 @@ extends GutTest
 ##   run's combo or crescents, a Gun run's own shots in its look), answers the hero's dash (Space) with its own, and
 ##   casts the card, its name over its head.
 ## - v0.8.0 N2 (owner O42, O52: "The Fallen", "on and off"): it rises in its own kit; its mimic window is warned on the
-##   boss bar's line (HUD_FALLEN_WARN) and by the violet rings at the hero's and its feet, then opens
-##   (HUD_FALLEN_WINDOW, the rings and the thread between them): in the window it copies the weapon, dash and card.
+##   boss bar (its fill breathing violet) and by the violet rings at the hero's and its feet, then opens
+##   (the fill shimmering violet, the rings and the thread between them): in the window it copies the weapon, dash
+##   and card.
 ## - A run on its second loop (a labelled TEST HELPER sets the loop and the floor; F10's Restart floor rebuilds it):
 ##   God mode and Kill boss (the dev panel) through the Colossus and the Prism, the Ascension portal on the way; at the
 ##   Nemesis, its HP is the pace's (N2) and in its window it answers a dash; Kill boss beats it: the victory recap with
@@ -134,16 +135,11 @@ func _window_shows(main: Main) -> void:
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_true(await _until_window(main, WorldReader.FALLEN_WARN), "a window is warned")
 	await _e.frames(2)
-	assert_eq(hud.boss_bar.fallen_text(), tr("HUD_FALLEN_WARN"), "the warning's line")
+	assert_eq(hud.boss_bar.tone(), BossBarTones.FALLEN_WARN, "the bar breathes violet")
 	assert_eq(main.view.nemesis_views.cue_shown(), 1, "the warning's rings")
 	assert_true(await _until_window(main, WorldReader.FALLEN_ON), "the window opens")
 	await _e.frames(2)
-	# v0.8.0 N18 (owner O76): the line is shortened to "Mirrored · %d s" (its timer kept)
-	assert_true(
-		hud.boss_bar.fallen_text().begins_with(tr("HUD_FALLEN_WINDOW").get_slice("%", 0)),
-		"the window's line"
-	)
-	assert_true(hud.boss_bar.fallen_text().ends_with(" s"), "with its seconds")
+	assert_eq(hud.boss_bar.tone(), BossBarTones.FALLEN_OPEN, "the bar shimmers violet, no words")
 	assert_eq(main.view.nemesis_views.cue_shown(), 2, "the rings and the thread")
 
 

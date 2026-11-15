@@ -205,8 +205,6 @@ func test_the_dry_circle_carries_a_hint_arrow_without_a_line() -> void:
 	var dry := MechanicHints.TIDE_DRY
 	assert_eq(dry, ObjectiveMarkers.TIDE_DRY)
 	assert_true(hints.showing(dry, ObjectiveHints.PING), "on screen")
-	assert_true(dry in ObjectiveHints.DOWN_ARROW, "the pillars' small arrow above it")
-	assert_eq(hints.line(dry), "", "no line of text")
 	hints.project = func(sim: Vector2) -> Vector2: return centre + sim * 1000.0
 	hints.sync(r)
 	assert_true(hints.showing(dry, ObjectiveHints.ARROW), "off screen: an arrow at the edge")

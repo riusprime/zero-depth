@@ -160,7 +160,7 @@ func test_continue_floor_5_and_fight_the_judge_through_its_echo() -> void:
 	assert_eq(jt.orbs_shown(), reader.boss_pickups().size(), "an orb view per orb")
 	assert_true(hud.attack_slow.visible, "the HUD shows the slowed state")
 	assert_eq(hud.attack_slow.percent(), reader.boss_attack_slow() / 10, "and how much is lost")
-	assert_string_contains(hud.attack_slow.line(), "Attacks slowed")
+	assert_gt(hud.attack_slow.pips(), 0, "a pip per orb, no words")
 	assert_true(hud.objective_hints.showing(MechanicHints.JUDGE_ORB), "hint arrows on the orbs")
 	var won := hud.attack_slow.pips_won()
 	var near: Vector2 = orbs[0]["centre"]

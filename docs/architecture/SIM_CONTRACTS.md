@@ -2080,7 +2080,7 @@ PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and t
   and the light `light_hold_ticks` (240, from `light_lasts_seconds`; 0 keeps the NB4b rule), so a later Lights Out
   only plays its wisps. While dark the hint marker `ObjectiveMarkers.SHADE_LANTERN` points at every unlit lantern,
   cleared in the light and when the Shade goes. Reads: `boss_light()` adds `light_left` and `boss_mult`;
-  `WorldReader.boss_light_permille(i)` for the boss bar's dim/bright tag (`HUD_SHADE_DARK` / `HUD_SHADE_LIT`).
+  `WorldReader.boss_light_permille(i)` for the boss bar's dim / lantern-gold fill (`BossBarTones`; no words).
 - **The Snuff (`marks` with `snuff`).** A tracked circle (it follows the player's exact position, locks 0.8 s); on
   its strike (`BossDodge.resolve_marks` → `BossShade.snuff`) the lit lantern nearest its centre goes out (`lamp_t` 0),
   in the dark only. Phase 3's Snuff lays two.
