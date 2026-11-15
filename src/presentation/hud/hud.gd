@@ -89,6 +89,9 @@ var objective_hints := ObjectiveHints.new()
 var attack_slow := AttackSlowHud.new()
 ## The low-HP edge glow's look while the High Tide's water hurts the hero outside the dry circle.
 var tide_flood := LowHpVignette.new()
+## The Foundry's scald gauge over the HP plate, and the burning edge while its Overpressure burns the hero off a slab.
+var scald := ScaldHud.new()
+var forge_burn := ForgeBurnEdge.new()
 ## The weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
 var build_hud := BuildHud.new()
 ## The picked cards' icons fly over everything to their HUD slots.
@@ -166,6 +169,7 @@ func _init() -> void:
 	add_child(_vignette)
 	tide_flood.name = "TideFlood"
 	add_child(tide_flood)
+	add_child(forge_burn)
 	add_child(objective_hints)  # Under every panel and plate
 	_build_corner()
 	_build_top()
@@ -208,6 +212,8 @@ func _init() -> void:
 	add_child(boss_bar)
 	attack_slow.above = _corner
 	add_child(attack_slow)
+	scald.above = _corner
+	add_child(scald)
 	add_child(heat_meter)
 	add_child(minimap)
 	_build_rewards()
@@ -325,6 +331,8 @@ func sync(reader: WorldReader) -> void:
 	boss_bar.sync(reader)
 	attack_slow.sync(reader)
 	tide_flood.active = TideDanceViews.flooding(reader)
+	scald.sync(reader)
+	forge_burn.active = ForgeBurnEdge.burning(reader)
 	heat_meter.sync(reader)
 	PerfMarks.add(&"hud.top", t)
 	t = PerfMarks.start()

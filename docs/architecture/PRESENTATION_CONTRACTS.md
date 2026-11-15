@@ -194,6 +194,33 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   Judge gold, the Tidecaller sea blue, the Gatekeeper stone amber, the Twins amber over violet. No text. Sounds:
   `FallenCues` (the cast plays the remembered boss's own telegraph cue; the ward and the shade borrow the Wardens').
   No hint arrow to The Fallen during the ward: the sim sets no marker for it.
+- **The Foundry's forge** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10s). Read from
+  `WorldReader.boss_forge`, `telegraph` (the bomb drones' `lob`), `boss_hazards`, `objectives` and the `STATUS_APPLY`
+  events only; shared looks in `ForgeLooks`; no word anywhere. `ForgePlateViews`: through the forging cast the pack's
+  hot lift (`fo_forge`) round the Foundry's feet and hammer sparks (`fo_spark`) on its body, faster as `forging`
+  fills; while `on`, each drone's bomb in the air carries the pack's ember flare (`fo_bomb`) on FireballViews' arc,
+  and a faint ring (`fo_reach`) of the Foundry's radius plus `ForgeLooks.DRONE_BLAST_M` (1.5, copied from the data's
+  `drone_blast_m`: the reader does not carry it) lies round it, gold (`fo_reach_on`) while a bomb is aimed inside;
+  none while no bomb flies; `plate_blown` bursts steel shards (`fo_shards`) where it landed and on the Foundry.
+  `FoundryAvatar` wears a steel shell while plated (a lit metallic pass grown 3.5 cm off the owner's model, the glow
+  overlay's `next_pass`; it builds glowing orange through the cast and drops at once when blown; none on the
+  code-built body); the hero's hits on the plate keep HitFeel's dull grey ARMOURED spark. `exposed_left` > 0 is
+  `BossVulnerableViews`' gold pulse and stars and `BossBarTones.VULNERABLE`; plated is `BossBarTones.PLATED` (dull
+  iron, still). `ForgeSlagViews`: a cooling pool (`slab` false) a crust disc of its `centre` and `radius` whose dark
+  patches grow with `cooling` over HazardViews' lava; a slab a basalt disc of its `centre` and `radius` with a cool
+  blue rim, cracks spreading as `left` runs out (against the most `left` seen), fading over its last 45 ticks, dust
+  (`vx1_impact_other`, dark) on `slab_crumbled` and `slab_shattered`, not drawn once `shattered`; a `slag_drop` a
+  molten blob (`fo_drop`) falling into its pool's warning ring with `warn`, landing in `vx1_impact_ember`; the
+  Overpressure a room plane (`HEAT_SHADER`, under the bodies and telegraphs, at most half opaque) rising to 0.75 with
+  `cast`, full and flickering once `burn` ≥ 0, fading 0.5 s after, with every whole slab cut out and ringed cool, the
+  `safe` ones also carrying the pack's cool rim (`fo_safe`). `ForgeHeroViews`: `scald` share ≥ 0.15 an ember lift
+  (`fo_ember`) growing on the hero, `burning` the burning status's flames (`status_burn_a`), `draining` turning on a
+  white steam puff (`bx_smoke_thin`). HUD: `ScaldHud` over the HP plate's right end, a dark thermometer whose fill is
+  `gauge / max` (orange to white-hot), its rim and bulb pulsing red while `burning`, a blue down tick and a blue top
+  edge while `draining`, hidden while `scald` is {}; it is not `HeatMeter` (the Overclock heat: another class, place,
+  shape and colour family). `ForgeBurnEdge` (a `LowHpVignette` in fire orange) while `burn` ≥ 0 and not `on_slab`.
+  Hint arrows: `ObjectiveMarkers.FOUNDRY_SLAB` (`MechanicHints.FOUNDRY_SLAB`). Sounds: `ForgeCues` (no `heat_*` cue).
+  The pack rows are `data/vfx/pack_fx_fo.tres`.
 - **Boss mechanics carry no words** (owner, 2026-11-15: "too much text … we need to make it subtle so the player
   discovers it while playing, with arrows or glows"). `ObjectiveHints` draws arrows only (a small arrow over the
   target on screen, an edge arrow off it) for every reason, never a line of text, and draws nothing for

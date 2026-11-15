@@ -14,6 +14,10 @@ extends BossAvatar
 ## mortar, crouches and blows for the vent ring, rocks back for the launch, flinches, lurches when staggered, and the
 ## "shielded" hook hunkers it down on splayed legs. The grate's glow is a light at the door (its energy follows the
 ## heat and the open door); the door, the chimneys and the launcher are anchors.
+## The Forged Plate (WorldReader.boss_forge "plate"): the owner's model wears a steel shell, a lit metallic pass a
+## little outside its skin (the glow overlay's next pass), so a plated Foundry reads as harder to hurt at a glance;
+## through the forging cast the shell builds up glowing forge-orange and cools to steel once it is on; it goes at once
+## when a bomb blows it off. The code-built body has no shell.
 
 const HEIGHT := 2.6
 const WALK_SPEED := 1.5
@@ -32,6 +36,11 @@ const MODEL_DOOR := Vector3(0.95, 0.9, 0)
 const MODEL_CHIMNEYS := [Vector3(-0.55, 2.55, -0.27), Vector3(-0.58, 2.5, 0.26)]
 const MODEL_LAUNCHER := Vector3(0.53, 2.45, -0.16)
 const GRATE_ENERGY := 1.4
+## The plate's shell: its steel, how far it stands off the skin (m), its alpha when on, and its rate in and out.
+const PLATE_STEEL := Color("#A7B1BD")
+const PLATE_GROW := 0.035
+const PLATE_ALPHA := 0.62
+const PLATE_RATE := 10.0
 
 var body := Node3D.new()
 var grate: MeshInstance3D
@@ -41,9 +50,15 @@ var launcher := Node3D.new()
 var legs: Array[Node3D] = []
 ## The light in the model's grate (the code body's grate glows by emission instead).
 var grate_light: OmniLight3D
+## The plate's steel shell (null with the code-built body).
+var plate_shell: StandardMaterial3D
 var _chimney_glow: Array[MeshInstance3D] = []
 var _launcher_glow: MeshInstance3D
 var _door_open := 0.0
+## How much of the plate's shell shows (0..1), and the plate's read last tick.
+var _plate_shown := 0.0
+var _plated := false
+var _forging := -1.0
 
 
 ## Its dodge-first moves pose as the old ones: the Molten Flood's tracked rows as its pour, the Slag
@@ -56,6 +71,17 @@ func apply_state(s: Dictionary) -> void:
 			_move = WorldReader.MOVE_FLOOD
 		WorldReader.MOVE_PATTERN:
 			_move = WorldReader.MOVE_BARRAGE
+
+
+## Reads the Forged Plate of this Foundry (WorldReader.boss_forge) beside the base state.
+func sync(reader: WorldReader, i: int) -> void:
+	super(reader, i)
+	var forge := reader.boss_forge()
+	var plate: Dictionary = forge.get("plate", {}) if int(forge.get("boss", -1)) == i else {}
+	_plated = bool(plate.get("on", false))
+	_forging = (
+		float(plate.get("forging", -1)) / 1000.0 if int(plate.get("forging", -1)) >= 0 else -1.0
+	)
 
 
 ## The owner's model: assets/models/bosses/foundry.glb (its legs cut in code, BossRig).
@@ -88,6 +114,24 @@ func _build_body() -> void:
 	grate_light.shadow_enabled = false
 	grate_light.position = MODEL_DOOR + Vector3(0.25, 0, 0)
 	model.add_child(grate_light)
+	plate_shell = StandardMaterial3D.new()
+	plate_shell.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	plate_shell.albedo_color = Color(PLATE_STEEL, 0.0)
+	plate_shell.metallic = 0.9
+	plate_shell.roughness = 0.32
+	plate_shell.grow = true
+	plate_shell.grow_amount = PLATE_GROW
+	plate_shell.emission_enabled = true
+	plate_shell.emission = HOT
+	plate_shell.emission_energy_multiplier = 0.0
+	plate_shell.rim_enabled = true
+	plate_shell.rim = 0.6
+	glow_overlay.next_pass = plate_shell
+
+
+## 0..1: how much of the plate's shell shows (tests).
+func plate_amount() -> float:
+	return _plate_shown
 
 
 func anchor_names() -> Array[StringName]:
@@ -291,6 +335,19 @@ func _pose_rig(dt: float) -> void:
 		var heat := maxf(0.0, 1.0 + 0.6 * an.param(&"heat") + _door_open + 0.6 * _late)
 		grate_light.light_energy = GRATE_ENERGY * heat * (1.0 - 0.7 * _stagger)
 		grate_light.position = _on_bone(&"body", MODEL_DOOR) + Vector3(0.25, 0, 0)
+	_pose_plate(dt)
+
+
+## The shell builds with the forging cast (glowing), stays steel while plated, and drops at once when blown.
+func _pose_plate(dt: float) -> void:
+	if plate_shell == null:
+		return
+	var want := 1.0 if _plated else (_forging if _forging >= 0.0 else 0.0)
+	_plate_shown = lerpf(_plate_shown, want, _rate(PLATE_RATE, dt)) if want > _plate_shown else want
+	plate_shell.albedo_color.a = PLATE_ALPHA * _plate_shown
+	plate_shell.emission_energy_multiplier = (
+		2.5 * _forging if _forging >= 0.0 and not _plated else 0.0
+	)
 
 
 ## Each leg from the clips' parameters: its diagonal pair's lift and swing (front left with back right), the front
