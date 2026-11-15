@@ -122,3 +122,13 @@ fight rythm not everything happening at the same time, because every single play
 
 Agent rule from the same message (owner): "just deploy 2 opus subagents at max now, no more fable subagents, you can
 do some thinking and then send the request to the opus agent".
+
+## No text for mechanics (owner, 2026-11-15)
+
+On a still of the Twin Wardens that showed the hint label "Hit the glowing twin" and the boss-bar tag "AMBER
+EXPOSED", the owner: "too much text ai slop would ship we need to make it subtle so the player discovers it while
+playing, whit arrows or glows, making it showcase with text makes it lose the discovery feeling".
+
+| # | Owner line | Finding | Decision | Step |
+|---|---|---|---|---|
+| X1 | "we need to make it subtle so the player discovers it while playing, whit arrows or glows" | Text that explains or labels a mechanic exists in: objective-hint labels; boss-bar state tags ("STUNNED · VULNERABLE", the Twins' exposed tags, others); descriptive phase lines ("· Both Wardens fight"); the Judge's "Attacks slowed 75 %"; and the brief for the Siege Engine's views asked for "ARMOUR STRIPPED · VULNERABLE" | **No explanatory or state text for a boss mechanic.** Hints are arrows only; a state shows as a glow or colour on the boss and a shimmer of its bar; the Judge's mark keeps its clock icon and pips, no words. Every later view brief says so. The lead's reading of the scope (not the owner's words): boss names, the death recap's cause lines, sound captions, the Codex and Options are not covered | 9v (the sweep), and every view step after it |
