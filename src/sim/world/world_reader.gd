@@ -2476,7 +2476,8 @@ func boss_time() -> Dictionary:
 ## (0..1000, -1 once the wave runs), "warn_left", "wave" (0..1000, -1 before), "front" (metres from the room's low
 ## end), "hit"), "riptide_in", "high_tide" ({} or "centre", "radius", "cast" (0..1000, -1 once the water is up),
 ## "flood" (0..1000, -1 before), "left", "inside"), "high_tide_in", "maelstrom" ({} or "centre", "spin", "around",
-## "inward" (m/s), "eye" (m from the boss's centre), "grace", "thrown"). Its tide pools: boss_hazards.
+## "inward" (m/s), "eye" (m from the boss's centre), "grace", "thrown"), "beats" (its rhythm: "running", "next",
+## "in" (ticks until the next may begin), "held", "order"; BossTideBeats.state). Its tide pools: boss_hazards.
 ## (BossDance.state)
 func boss_dance() -> Dictionary:
 	return BossDance.state(_w)

@@ -7,14 +7,17 @@ extends RefCounted
 ##   rip_wave_ticks; as its front passes a hero standing in a warned strip that hero loses rip_hit per mille of max
 ##   HP, once a cast (a hero that steps into a strip behind the front is not hit). The safe strips follow the written
 ##   order (BossDanceTable.SAFE_ORDER) or its mirror, one draw a row. The next cast's warning begins as the wave
-##   ends. The first row begins rip_first_ticks into rip_phase, then one every rip_every_ticks (start to start).
-##   Before the Maelstrom a row waits for the Pull to end, and the Pull waits for a row (holds_pull).
+##   ends. A warning is never shorter than the hero's walk to its safe strip (warn_of), so a wide room is as fair as
+##   a small one.
 ## - High Tide, from ht_phase: its cast shows one dry circle (dry_spot: at least ht_gap_m from the hero, inside the
 ##   room, clear of walls, the whole circle clear of the Maelstrom's eye by the hero's width and a metre), which the
 ##   objective markers point at (ObjectiveMarkers.TIDE_DRY); then for ht_flood_ticks a hero outside it loses ht_hit
-##   per mille of max HP every ht_step_ticks. A row of Riptide and a High Tide never run together: the later one waits.
-## - Neither begins while the boss rises or kneels at a phase change; one running goes on. Both end with the boss
-##   (on_boss_gone) and when the hero is dead or has left the room (cancel).
+##   per mille of max HP every ht_step_ticks.
+## - When each begins is the rhythm's (BossTideBeats: one big mechanic at a time, the Pull's beats among them, with
+##   calm between); neither begins while the boss rises, kneels at a phase change or is in an attack; one running
+##   goes on. Both end with the boss (on_boss_gone) and when the hero is dead or has left the room (cancel).
+## - The floor they cut is the sealed boss room's interior, wall face to wall face (room_of); a Tidecaller fought
+##   without one (the Playground, the dev panel) dances over the room it stands in.
 ## Pure: the ai stream only (a row's mirror, the dry circle's spot, the Maelstrom's way).
 
 const M := BossAttackTable.Move
@@ -43,6 +46,10 @@ const EYE_MARGIN_M := 1.0
 const SCAN_M := 1.0
 ## Round the boss when the fight has no room (a test world): this far each way.
 const NO_ROOM_HALF_M := 12.0
+## A Riptide warning's walk: this much farther than the gap between the two safe strips.
+const WALK_EXTRA_M := 1.0
+## The longest a warning's walk may make it (a hero that barely moves gets this).
+const WALK_MAX_TICKS := 600
 
 
 ## Tick phase 6 (BossSignatures.advance): the boss with a dance runs its casts and its Maelstrom.
@@ -53,10 +60,12 @@ static func advance(w: World) -> void:
 	if BossSlow.fight_over(w):
 		cancel(w)
 		return
-	var d := BossAi.table_of(w, i).dance
+	var t := BossAi.table_of(w, i)
+	var d := t.dance
 	var phase := w.bosses.phase[BossAi.entry_of(w, i)]
-	_riptide(w, i, d, phase)
-	_high_tide(w, i, d, phase)
+	BossTideBeats.advance(w, i, t, d, phase)
+	_riptide(w, i, t, d, phase)
+	_high_tide(w, i, t, d, phase)
 	BossMaelstrom.advance(w, i, d, phase)
 
 
@@ -79,51 +88,33 @@ static func _dancer(w: World) -> int:
 	return -1
 
 
-## The floor the dance is on: the boss room's interior, or a square round the boss without one.
+## The floor the dance is on: the sealed boss room's interior (BossStore.arena); without one, the floor's room boss i
+## stands in (its interior, wall face to wall face); else a square round the boss.
 static func room_of(w: World, i: int) -> Rect2:
 	var room := w.bosses.arena
 	if room.has_area():
 		return room
+	var f := w.floor_layout
+	var k := f.room_of(w.actors.pos(i)) if f != null else -1
+	if k >= 0:
+		return f.rooms[k]
 	var h := Vector2(NO_ROOM_HALF_M, NO_ROOM_HALF_M)
 	return Rect2(w.actors.pos(i) - h, h * 2.0)
-
-
-## True while boss i may begin no cast: it kneels at a phase change, or (before the Maelstrom) its Pull runs.
-static func _held(w: World, i: int, d: BossDanceTable, phase: int) -> bool:
-	if w.actors.state[i] == BossAi.GATE:
-		return true
-	return phase < d.mael_phase and not BossTide.state(w, i).is_empty()
-
-
-## BossTide: true while boss i (entry b) casts no Pull: from the Maelstrom's phase on, and while a row of Riptide
-## or a High Tide runs.
-static func holds_pull(w: World, i: int, b: int) -> bool:
-	var d := BossAi.table_of(w, i).dance
-	if d == null:
-		return false
-	var bs := w.bosses
-	if bs.phase[b] >= d.mael_phase:
-		return true
-	return bs.dance_boss == w.actors.ids[i] and (bs.dance_rip_from >= 0 or bs.dance_ht_from >= 0)
 
 
 # --- Riptide ------------------------------------------------------------------------------------------------------
 
 
-static func _riptide(w: World, i: int, d: BossDanceTable, phase: int) -> void:
+static func _riptide(w: World, i: int, t: BossTable, d: BossDanceTable, phase: int) -> void:
 	var bs := w.bosses
-	if phase >= d.rip_phase and bs.dance_rip_due < 0:
-		bs.dance_rip_due = w.tick + d.rip_first_ticks
 	if bs.dance_rip_from < 0:
-		if bs.dance_rip_due < 0 or w.tick < bs.dance_rip_due:
+		if not BossTideBeats.may_begin(w, i, t, d, phase, BossTideBeats.RIPTIDE):
 			return
-		if bs.dance_ht_from >= 0 or _held(w, i, d, phase):
-			return
-		bs.dance_rip_due = w.tick + d.rip_every_ticks
+		BossTideBeats.begin(w, t, d, phase, BossTideBeats.RIPTIDE)
 		bs.dance_rip_mirror = w.rng_ai.range_int(0, 1)
 		_cast(w, i, d, 0)
 		return
-	var s := w.tick - bs.dance_rip_from - d.warn_ticks(bs.dance_rip_n)
+	var s := w.tick - bs.dance_rip_from - bs.dance_rip_warn
 	if s < 0:
 		return
 	if s == 0:
@@ -135,6 +126,7 @@ static func _riptide(w: World, i: int, d: BossDanceTable, phase: int) -> void:
 	if s >= d.rip_wave_ticks:
 		if bs.dance_rip_n + 1 >= d.rip_casts:
 			bs.dance_rip_from = -1
+			BossTideBeats.end(w, d, phase)
 		else:
 			_cast(w, i, d, bs.dance_rip_n + 1)
 
@@ -145,10 +137,36 @@ static func _cast(w: World, i: int, d: BossDanceTable, n: int) -> void:
 	bs.dance_rip_n = n
 	bs.dance_rip_from = w.tick
 	bs.dance_rip_hit = 0
+	bs.dance_rip_warn = warn_of(w, i, d, n)
 	var safe := d.safe_strip(n, bs.dance_rip_mirror)
 	var e := _event(w, i, RIP_CAST, SafeArea.strips(room_of(w, i), STRIPS)[safe].get_center())
-	e.amount = d.warn_ticks(n)
+	e.amount = bs.dance_rip_warn
 	e.amount_applied = safe
+
+
+## Cast n's warning (ticks): the written one (BossDanceTable.warn_ticks), or the hero's walk to its safe strip when
+## that is longer: from the last cast's safe strip (the first cast: from where the hero stands), the gap between the
+## two plus WALK_EXTRA_M, at the hero's run speed now, times rip_run_margin per mille (at most WALK_MAX_TICKS).
+static func warn_of(w: World, i: int, d: BossDanceTable, n: int) -> int:
+	var strips := SafeArea.strips(room_of(w, i), STRIPS)
+	var to := strips[d.safe_strip(n, w.bosses.dance_rip_mirror)]
+	var gap := 0.0
+	if n == 0:
+		gap = Kin.length(w.player_pos() - w.player_pos().clamp(to.position, to.end))
+	else:
+		gap = rect_gap(strips[d.safe_strip(n - 1, w.bosses.dance_rip_mirror)], to)
+	var speed := BossTide.run_speed(w)
+	var walk := WALK_MAX_TICKS
+	if speed > 0.0:
+		walk = mini(WALK_MAX_TICKS, ceili((gap + WALK_EXTRA_M) / speed * d.rip_run_margin / 1000.0))
+	return maxi(d.warn_ticks(n), walk)
+
+
+## The distance between two rectangles' nearest edges (0 when they touch or overlap).
+static func rect_gap(a: Rect2, b: Rect2) -> float:
+	var dx := maxf(0.0, maxf(a.position.x - b.end.x, b.position.x - a.end.x))
+	var dy := maxf(0.0, maxf(a.position.y - b.end.y, b.position.y - a.end.y))
+	return Kin.length(Vector2(dx, dy))
 
 
 ## The wave's step s (1..rip_wave_ticks): the hero in a warned strip the front passes this tick is hit, once a cast.
@@ -186,19 +204,16 @@ static func front_m(d: BossDanceTable, length: float, s: int) -> float:
 # --- High Tide ----------------------------------------------------------------------------------------------------
 
 
-static func _high_tide(w: World, i: int, d: BossDanceTable, phase: int) -> void:
+static func _high_tide(w: World, i: int, t: BossTable, d: BossDanceTable, phase: int) -> void:
 	var bs := w.bosses
-	if phase >= d.ht_phase and bs.dance_ht_due < 0:
-		bs.dance_ht_due = w.tick + d.ht_first_ticks
 	if bs.dance_ht_from < 0:
-		if bs.dance_ht_due < 0 or w.tick < bs.dance_ht_due:
+		if not BossTideBeats.may_begin(w, i, t, d, phase, BossTideBeats.HIGH_TIDE):
 			return
-		if bs.dance_rip_from >= 0 or _held(w, i, d, phase):
-			return
-		bs.dance_ht_due = w.tick + d.ht_every_ticks
 		var c := dry_spot(w, i, d)
-		if not c.is_finite():
-			return  # No dry floor to give: none this time
+		if not c.is_finite():  # No dry floor to give: none this time
+			BossTideBeats.skip(w, t, d, phase, BossTideBeats.HIGH_TIDE)
+			return
+		BossTideBeats.begin(w, t, d, phase, BossTideBeats.HIGH_TIDE)
 		bs.dance_ht_from = w.tick
 		bs.dance_ht_x = c.x
 		bs.dance_ht_y = c.y
@@ -216,6 +231,7 @@ static func _high_tide(w: World, i: int, d: BossDanceTable, phase: int) -> void:
 		SafeArea.check(w, i, [], dry, d.ht_hit, SafeArea.Mode.STEP, d.tide_cause, HT_EFFECT)
 	if s >= d.ht_flood_ticks:
 		_end_tide(w, i)
+		BossTideBeats.end(w, d, phase)
 
 
 ## The dry circle's centre (of the High Tide running).
@@ -286,9 +302,10 @@ static func eye_keep_m(w: World, i: int, d: BossDanceTable) -> float:
 # --- the end of a fight -----------------------------------------------------------------------------------------
 
 
-## The hero is dead or outside the room: the casts running end and a throw stops (the clocks stay).
+## The hero is dead or outside the room: the casts running end and a throw stops (the rhythm's beat running ends).
 static func cancel(w: World) -> void:
 	var bs := w.bosses
+	BossTideBeats.cancel(w)
 	bs.dance_rip_from = -1
 	bs.dance_throw = 0
 	if bs.dance_ht_from >= 0:
@@ -321,27 +338,32 @@ static func _event(w: World, i: int, effect: StringName, at: Vector2) -> SimEven
 ## x), "strips" (the four, Rect2, from the room's low side), "riptide" ({} or the cast running: "cast" (its place in
 ## the row), "casts", "safe" (a strip's index), "struck" (the other three), "warn" (0..1000 through the warning, -1
 ## once the wave runs), "warn_left" (ticks), "wave" (0..1000 down the strips, -1 before), "front" (metres from the
-## room's low end), "hit"), "riptide_in" (ticks until the next row may begin, -1 not in its phase yet), "high_tide"
-## ({} or "centre", "radius", "cast" (0..1000, -1 once the water is up), "flood" (0..1000, -1 before), "left" (ticks
-## of the flood left), "inside" (the hero stands in the dry circle)), "high_tide_in", and "maelstrom"
-## (BossMaelstrom.state).
+## room's low end), "hit"), "riptide_in" (ticks until the next row may begin when it is the next beat, else -1),
+## "high_tide" ({} or "centre", "radius", "cast" (0..1000, -1 once the water is up), "flood" (0..1000, -1 before),
+## "left" (ticks of the flood left), "inside" (the hero stands in the dry circle)), "high_tide_in" (as riptide_in),
+## "maelstrom" (BossMaelstrom.state) and "beats" (the rhythm: BossTideBeats.state).
 static func state(w: World) -> Dictionary:
 	var bs := w.bosses
 	var i := w.actors.index_of(bs.dance_boss) if bs.dance_boss >= 0 else -1
 	if i < 0:
 		return {}
-	var d := BossAi.table_of(w, i).dance
+	var t := BossAi.table_of(w, i)
+	var d := t.dance
 	var room := room_of(w, i)
+	var beats := BossTideBeats.state(w, i, t, d, bs.phase[BossAi.entry_of(w, i)])
+	var rip_next := int(beats["next"]) == BossTideBeats.RIPTIDE
+	var ht_next := int(beats["next"]) == BossTideBeats.HIGH_TIDE
 	return {
 		"boss": i,
 		"room": room,
 		"along_x": SafeArea.runs_along_x(room),
 		"strips": SafeArea.strips(room, STRIPS),
 		"riptide": _riptide_state(w, d, room),
-		"riptide_in": maxi(0, bs.dance_rip_due - w.tick) if bs.dance_rip_due >= 0 else -1,
+		"riptide_in": int(beats["in"]) if rip_next else -1,
 		"high_tide": _tide_state(w, d),
-		"high_tide_in": maxi(0, bs.dance_ht_due - w.tick) if bs.dance_ht_due >= 0 else -1,
+		"high_tide_in": int(beats["in"]) if ht_next else -1,
 		"maelstrom": BossMaelstrom.state(w, i, d),
+		"beats": beats,
 	}
 
 
@@ -349,7 +371,7 @@ static func _riptide_state(w: World, d: BossDanceTable, room: Rect2) -> Dictiona
 	var bs := w.bosses
 	if bs.dance_rip_from < 0:
 		return {}
-	var warn := d.warn_ticks(bs.dance_rip_n)
+	var warn := bs.dance_rip_warn
 	var t := w.tick - bs.dance_rip_from
 	var s := t - warn
 	var safe := d.safe_strip(bs.dance_rip_n, bs.dance_rip_mirror)

@@ -828,6 +828,19 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   The Tidecaller also gains `hazard` (its tide pools: `kind` slow, `attack_ids` its `crossing_wave`, `radius_m` 2,
   `life_seconds` 10, `max_count` 5, `slow_permille` 600, `warn_seconds` 0.8, `look` "venom" until a view gives it
   its own), and its last phase has no `entry_attack` (no Pull is cast in the Maelstrom).
+- **v0.12.0 step 4c (owner, 2026-11-15, PLAN rows R1-R7: one big mechanic at a time).** `dance` loses
+  `riptide_first_seconds`, `riptide_every_seconds`, `high_tide_first_seconds` and `high_tide_every_seconds` (an
+  unknown key now) and gains the rhythm (`BossTideBeats`): `calm_seconds` 3 (0.5..30), `resume_seconds` 1.5 (0..30,
+  less than `calm_seconds`), `beat_first_seconds` 6 and `beat_gap_seconds` 12 (phase 1), `beat_first_2_seconds` 6
+  and `beat_gap_2_seconds` 8 (phase 2), `beat_first_3_seconds` 8 and `beat_gap_3_seconds` 10 (phase 3 and later;
+  first 0.5..120, gap 0..120); `push_clear_m` 3 (0..6: hostile shots within it pop where the push sets the hero
+  down); `riptide_run_margin_permille` 1300 (1000..3000: a warning lasts at least the walk to its safe strip times
+  this). Changed values: `push_m` 4 (was 6), `riptide_warn_seconds` 2.5 (was 2), `riptide_last_warn_seconds` 3 (was
+  2.5). The Tidecaller drops `signature_every_seconds` / `signature_first_seconds` (a dance's rhythm brings its
+  Pull; other bosses keep theirs); its phase 2 has no `entry_attack` (its first beat is a Riptide row); its phases'
+  streams: a ring every 2.6 / 2.4 / 2.2 s, phase 3 on the plain `ring_stream` (`ring_stream_3` stays defined but
+  unused), crossing waves one every 5 s in phases 1 and 2 and none in phase 3 (`wave_attack` empty,
+  `wave_every_seconds` 0, `wave_count` 0).
 - **v0.12.0 step 6 (owner brief TW1-TW8, SG-TW).** The chain is gone from `BossDefinition` (`chain_min_m`,
   `chain_max_m`, `chain_burn`, `chain_burn_seconds`, `chain_width_m`) and so is phase 3's swap (`twin_expose_seconds`,
   `twin_expose_permille`, `twin_guard_permille`); a `chain_sweep` needs no `late_cause_key`. New:

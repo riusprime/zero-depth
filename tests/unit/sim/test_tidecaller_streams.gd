@@ -2,13 +2,15 @@
 extends GutTest
 ## v0.9.5 BH4 (owner, 2026-10-25: "tidescaller tides shouuld be stronger and keep the ball patter all times, we should
 ## add spawning waves crossing the room, small like 2-4 meters that the player has to dodge during all fight";
-## docs/roadmap/v0.9.5/BOSSES_HARD.md T2, T3; BossStream): the Tidecaller's ring stream (a ring of bubbles every 2.2 s,
-## 1.9 s in phase 2, 1.6 s in phase 3, none while it rises or kneels) and its crossing waves (every 3.5 s, 2 / 3 / 4 m
-## long, a 0.7 s foam line then 4.5 m/s across the room, 15 damage once and a 1.5 m shove, never within 3 m of
-## the hero's projection on the wall, two at once from phase 2), and their saves, determinism and death line.
+## docs/roadmap/v0.9.5/BOSSES_HARD.md T2, T3; BossStream): the Tidecaller's ring stream (a ring of bubbles every 2.6 s,
+## 2.4 s in phase 2, 2.2 s in phase 3, none while it rises or kneels) and its crossing waves (every 5 s in phases 1
+## and 2, none in the Maelstrom; 2 / 3 / 4 m long, a 0.7 s foam line then 4.5 m/s across the room, 15 damage once
+## and a 1.5 m shove, never within 3 m of the hero's projection on the wall; a phase may form two at once), and
+## their saves, determinism and death line. The dance's rhythm, which holds both, is off here (test_tide_beats.gd).
 
 const LONG := 1 << 20
-const PERIODS := [132, 114, 96]  # 2.2 s, 1.9 s, 1.6 s in ticks
+const PERIODS := [156, 144, 132]  # 2.6 s, 2.4 s, 2.2 s in ticks
+const WAVE_TICKS := 300  # 5 s
 
 
 func _fight(player_at := Vector2(-9, 0), seed_value := 11) -> Array:
@@ -29,6 +31,7 @@ func _hush(w: World, aid: int) -> void:
 	t.punish_ticks = 0
 	t.gap_ticks = 0
 	t.sig_every_ticks = 0
+	t.dance = null  # The streams alone: no rhythm holds them
 
 
 func _table(w: World, aid: int) -> BossTable:
@@ -58,9 +61,11 @@ func test_the_data_is_the_approved_rows() -> void:
 	assert_eq(def.validate(), [], "valid")
 	var t := ContentCompiler.compile_boss(def, repo)
 	assert_true(t.streams)
-	assert_eq(t.phase_ring_ticks, PackedInt32Array(PERIODS), "rings every 2.2 / 1.9 / 1.6 s")
-	assert_eq(t.phase_wave_ticks, PackedInt32Array([210, 210, 210]), "a wave every 3.5 s")
-	assert_eq(t.phase_wave_n, PackedInt32Array([1, 2, 2]), "two at once from phase 2")
+	assert_eq(t.phase_ring_ticks, PackedInt32Array(PERIODS), "rings every 2.6 / 2.4 / 2.2 s")
+	assert_eq(
+		t.phase_wave_ticks, PackedInt32Array([300, 300, 0]), "a wave every 5 s, none in phase 3"
+	)
+	assert_eq(t.phase_wave_n, PackedInt32Array([1, 1, 0]), "one at a time")
 	var ring1 := t.attacks[t.phase_ring_atk[0]].pattern
 	assert_eq(ring1.kind, BulletPatternTable.Kind.RING)
 	assert_eq(
@@ -72,9 +77,7 @@ func test_the_data_is_the_approved_rows() -> void:
 	)
 	assert_false(ring1.alternate)
 	assert_eq(t.phase_ring_atk[0], t.phase_ring_atk[1], "phase 2 keeps the ring")
-	var ring3 := t.attacks[t.phase_ring_atk[2]].pattern
-	assert_true(ring3.alternate, "phase 3's gaps alternate sides")
-	assert_eq(ring3.turn_per_wave, 1024, "a quarter turn between the two sets of gaps")
+	assert_eq(t.phase_ring_atk[2], t.phase_ring_atk[0], "phase 3 keeps the plain ring")
 	var wave := t.attacks[t.phase_wave_atk[0]]
 	assert_eq(wave.move, BossAttackTable.Move.WAVE)
 	assert_eq(wave.wave_lengths, PackedFloat32Array([2.0, 3.0, 4.0]), "2, 3 or 4 m long")
@@ -85,7 +88,8 @@ func test_the_data_is_the_approved_rows() -> void:
 	assert_almost_eq(wave.wave_shove_m, 1.5, 0.0001)
 	assert_almost_eq(wave.wave_clear_m, 3.0, 0.0001)
 	for ph in 3:
-		assert_eq(t.phase_wave_atk[ph], t.attack_index(&"crossing_wave"), "a wave in every phase")
+		var wk := t.attack_index(&"crossing_wave") if ph < 2 else -1
+		assert_eq(t.phase_wave_atk[ph], wk, "a wave in phases 1 and 2 only")
 		assert_false(
 			t.phase_attacks[ph].has(t.attack_index(&"ring_stream")), "the stream isn't in the pick"
 		)
@@ -141,7 +145,7 @@ func test_rings_leave_every_2_2_1_9_and_1_6_seconds_per_phase() -> void:
 			)
 
 
-func test_each_ring_turns_20_degrees_and_phase_3_alternates() -> void:
+func test_each_ring_turns_20_degrees_and_the_alternating_ring_alternates() -> void:
 	var s := _fight()
 	var w: World = s[0]
 	var t := _table(w, s[1])
@@ -151,7 +155,7 @@ func test_each_ring_turns_20_degrees_and_phase_3_alternates() -> void:
 	assert_eq(
 		b - a, ContentCompiler.degrees_to_units(20.0), "ring 1 is turned 20 degrees on ring 0"
 	)
-	var pat3 := t.attacks[t.phase_ring_atk[2]].pattern
+	var pat3 := t.attacks[t.attack_index(&"ring_stream_3")].pattern  # Defined, no phase fires it now
 	assert_eq(
 		[
 			BulletPatterns.base_angle(pat3, 0, 0),
@@ -159,7 +163,7 @@ func test_each_ring_turns_20_degrees_and_phase_3_alternates() -> void:
 			BulletPatterns.base_angle(pat3, 2, 0)
 		],
 		[0, 1024, 0],
-		"phase 3: the gaps alternate between two sets"
+		"its gaps alternate between two sets"
 	)
 
 
@@ -177,7 +181,7 @@ func test_no_ring_while_it_rises_or_kneels() -> void:
 	w.actors.state[i] = EnemyAi.State.MOVE
 	var first := _ring_ticks(w, 200)
 	assert_eq(first.size(), 1, "the first ring a full period after the rise")
-	assert_between(first[0] - risen, PERIODS[0], PERIODS[0] + 2, "2.2 s on")
+	assert_between(first[0] - risen, PERIODS[0], PERIODS[0] + 2, "2.6 s on")
 	# A phase change: the boss kneels (the gate); the stream rests, and the next ring is a full period after it ends.
 	w.actors.hp[i] = w.actors.max_hp[i] * 650 / 1000
 	var in_gate := 0
@@ -201,14 +205,14 @@ func test_no_ring_while_it_rises_or_kneels() -> void:
 	assert_gt(rung - gate_end, PERIODS[1] - 10, "the next ring a period after the kneel")
 
 
-func test_a_wave_forms_every_3_5_seconds_with_a_drawn_length() -> void:
+func test_a_wave_forms_every_5_seconds_with_a_drawn_length() -> void:
 	var s := _fight()
 	var w: World = s[0]
 	_table(w, s[1]).phase_ring_atk[0] = -1  # no rings in the way
 	var seen := {}
 	var formed := PackedInt32Array()
 	var lengths := {}
-	for k in 210 * 12 + 5:
+	for k in WAVE_TICKS * 12 + 5:
 		w.step(InputFrame.new())
 		for j in w.bosses.wv_from.size():
 			var f := w.bosses.wv_from[j]
@@ -216,9 +220,9 @@ func test_a_wave_forms_every_3_5_seconds_with_a_drawn_length() -> void:
 				seen[f] = true
 				formed.append(f)
 				lengths[snappedf(w.bosses.wv_len[j], 0.01)] = true
-	assert_gte(formed.size(), 12, "a wave every 3.5 s")
+	assert_gte(formed.size(), 12, "a wave every 5 s")
 	for k in range(1, formed.size()):
-		assert_eq(formed[k] - formed[k - 1], 210, "3.5 s apart")
+		assert_eq(formed[k] - formed[k - 1], WAVE_TICKS, "5 s apart")
 	for ln: float in lengths:
 		assert_has([2.0, 3.0, 4.0], ln, "2, 3 or 4 m")
 	assert_gte(lengths.size(), 2, "the length is drawn")
@@ -325,10 +329,11 @@ func test_a_wave_never_forms_within_3_m_of_the_hero_on_its_wall() -> void:
 	assert_gt(made, 700, "nearly every try finds a place")
 
 
-func test_from_phase_2_two_waves_form_at_once_from_different_walls() -> void:
+func test_a_phase_with_two_waves_forms_them_at_once_from_different_walls() -> void:
 	var s := _fight()
 	var w: World = s[0]
 	var t := _table(w, s[1])
+	t.phase_wave_n[1] = 2  # The Tidecaller's data forms one at a time now; the rule for two stays
 	var i := w.actors.index_of(s[1])
 	var b := BossAi.entry_of(w, i)
 	var opposite := 0
@@ -349,8 +354,9 @@ func test_from_phase_2_two_waves_form_at_once_from_different_walls() -> void:
 	var w2: World = s2[0]
 	_phase(w2, s2[1], 1)
 	_table(w2, s2[1]).phase_ring_atk[1] = -1
-	CombatLab.idle(w2, 215)
-	assert_eq(w2.bosses.wv_boss.size(), 2, "live: phase 2 forms two at the 3.5 s mark")
+	_table(w2, s2[1]).phase_wave_n[1] = 2
+	CombatLab.idle(w2, WAVE_TICKS + 5)
+	assert_eq(w2.bosses.wv_boss.size(), 2, "live: two at the 5 s mark")
 
 
 func test_waves_ignore_bodies_props_and_shots() -> void:
@@ -372,7 +378,7 @@ func test_streams_are_deterministic_by_seed() -> void:
 		var w: World = s[0]
 		_phase(w, s[1], 1)
 		var out: Array = []
-		for k in 900:
+		for k in WAVE_TICKS * 8:
 			w.step(InputFrame.new())
 			for j in w.bosses.wv_boss.size():
 				if w.bosses.wv_from[j] == w.tick - 1:
@@ -392,8 +398,8 @@ func test_the_streams_are_in_the_state_and_a_save_restores() -> void:
 	var make := func() -> World:
 		var s := _fight(Vector2(-6, 2))
 		var w: World = s[0]
-		_phase(w, s[1], 2)
-		CombatLab.idle(w, 380)  # rings fired, waves in flight
+		_phase(w, s[1], 1)
+		CombatLab.idle(w, 380)  # rings fired, a wave in flight
 		return w
 	var a: World = make.call()
 	var b: World = make.call()

@@ -2,11 +2,11 @@
 extends GutTest
 ## v0.9.0 NB1 (owner Q24 "ok go for those"; docs/roadmap/v0.9.0/BOSSES_4_5.md row N1): The Tidecaller, floor 4's boss.
 ## The Pull (shielded): after the bell's windup the room pulls the player toward it for 3 s at 75 % of the hero's
-## own run speed, then throws them 6 m out in 0.5 s, every 8 s (its dance: tests/unit/sim/test_tide_dance.gd; a boss
-## without a dance keeps its attack's own speeds under its data's 2.2 m/s cap); never pressing the player into a wall
-## or a corner; its rings (BH4: a stream all fight, BossStream) bend toward it in the
-## pull. The Undertow: a tracked circle that drags the player 1 m toward its centre when it strikes. Phases at 66 %
-## and 33 %, determinism, a mid-pull save, and the death lines.
+## own run speed, then throws them 4 m out in 0.5 s, on its rhythm (one big mechanic at a time: its dance,
+## tests/unit/sim/test_tide_dance.gd and test_tide_beats.gd; a boss without a dance keeps its attack's own speeds under
+## its data's 2.2 m/s cap); never pressing the player into a wall or a corner; its ring stream stops for the Pull and
+## the rings already flying bend toward it in the pull. The Undertow: a tracked circle that drags the player 1 m
+## toward its centre when it strikes. Phases at 66 % and 33 %, determinism, a mid-pull save, and the death lines.
 
 const S := EnemyAi.State
 const LONG := 1 << 20
@@ -65,7 +65,8 @@ func test_the_data_is_the_approved_row() -> void:
 	var t := ContentCompiler.compile_boss(def, repo)
 	assert_eq(t.kind, ActorStore.Kind.TIDECALLER)
 	assert_eq(t.phase_threshold, PackedInt32Array([1000, 660, 330]), "phases at 66 % and 33 %")
-	assert_eq(t.sig_every_ticks, 480, "every 8 s")
+	assert_eq(t.sig_every_ticks, 0, "no fixed cadence: its rhythm brings the Pull")
+	assert_eq(t.dance.gap_ticks(0), 720, "12 s of ordinary fighting after a Pull and its calm")
 	var pull := t.attacks[t.attack_index(&"the_pull")]
 	assert_eq(pull.move, BossAttackTable.Move.TIDE)
 	assert_true(pull.shielded, "shielded during the signature")
@@ -80,7 +81,7 @@ func test_the_data_is_the_approved_row() -> void:
 	assert_almost_eq(late.tide_push * 60.0, 1.7, 0.0001, "phase 3 push 1.7")
 	assert_null(late.pattern)
 	assert_eq(BossTide.signature_of(t, 2), t.attack_index(&"the_pull_3"), "phase 3's signature")
-	assert_eq(t.phase_entry[1], t.attack_index(&"the_pull"), "phase 2 opens with the Pull")
+	assert_eq(t.phase_entry[1], -1, "phase 2 opens with its Riptide (the rhythm), not a Pull")
 	assert_eq(t.phase_entry[2], -1, "the last phase is the Maelstrom: it opens with no Pull")
 	var under := t.attacks[t.attack_index(&"undertow")]
 	assert_almost_eq(under.drag_m, 1.0, 0.0001, "the Undertow drags 1 m")
@@ -127,7 +128,7 @@ func test_the_pull_draws_you_in_then_the_push_drives_you_out() -> void:
 	assert_eq(BossTide.phase_of(w, i), BossTide.PUSH, "the throw lasts 0.5 s")
 	CombatLab.idle(w, 1)
 	var d3 := w.player_pos().distance_to(w.actors.pos(i))
-	assert_almost_eq(d3 - d2, 6.0, 0.25, "thrown 6 m out")
+	assert_almost_eq(d3 - d2, 4.0, 0.25, "thrown 4 m out")
 	assert_eq(BossTide.phase_of(w, i), BossTide.NONE, "over after 0.5 s")
 	var d4 := w.player_pos().distance_to(w.actors.pos(i))
 	CombatLab.idle(w, 30)
@@ -168,26 +169,32 @@ func test_the_push_never_drives_you_into_a_corner_or_onto_a_wall() -> void:
 		assert_lte(worst, before + 0.0001, "%s: never pressed closer to a wall" % start)
 
 
-func test_the_rings_never_stop_and_bend_toward_it_in_the_pull() -> void:
+func test_the_stream_stops_for_the_pull_and_the_rings_in_flight_bend_toward_it() -> void:
 	var s := _fight(Vector2(-9, 0))
 	var w: World = s[0]
-	_start_pull(w, s[1], &"the_pull", true)
-	var i := _i(w, s[1])
+	var aid: int = s[1]
+	_hush(w, aid, true)
+	CombatLab.idle(w, 200)  # The stream runs: rings in flight
+	var i := _i(w, aid)
 	var id := w.actors.ids[i]
-	var pull := BossAi.attack_of(w, i).tide_pull_ticks
+	assert_gt(_shots_of(w, id), 0, "rings in flight before the bell")
+	BossLab.start(w, i, &"the_pull")
+	var atk := BossAi.attack_of(w, i)
+	var span := atk.windup_ticks + atk.tide_pull_ticks + atk.tide_push_ticks
 	var fired_in_pull := 0
-	var fired_in_push := 0
+	var fired_after := 0
 	var turned := 0
 	var headings := {}
-	for k in pull + 120:
-		var before := _shots_of(w, id)
+	var resume := BossAi.table_of(w, i).dance.resume_ticks
+	for k in span + resume + 240:
+		var before := w.bosses.str_ring_n[0]
 		w.step(InputFrame.new())
-		var born := _shots_of(w, id) - before
-		if k < pull:
-			fired_in_pull += maxi(born, 0)
+		var born := w.bosses.str_ring_n[0] - before
+		if k < span - 1 + resume:  # The bell rang a tick before the first step
+			fired_in_pull += born
 		else:
-			fired_in_push += maxi(born, 0)
-		if k < pull:
+			fired_after += born
+		if k >= atk.windup_ticks and k < atk.windup_ticks + atk.tide_pull_ticks:
 			for j in w.projectiles.size():
 				if w.projectiles.owner[j] != id:
 					continue
@@ -196,9 +203,9 @@ func test_the_rings_never_stop_and_bend_toward_it_in_the_pull() -> void:
 				if headings.has(key) and headings[key] != a:
 					turned += 1
 				headings[key] = a
-	assert_gt(fired_in_pull, 9, "its rings fly in the pull")
-	assert_gt(fired_in_push, 9, "and in the push: the stream never stops")
-	assert_gt(turned, 0, "and bend toward it")
+	assert_eq(fired_in_pull, 0, "no ring leaves from the bell to 1.5 s after the push")
+	assert_gt(fired_after, 0, "then the stream resumes")
+	assert_gt(turned, 0, "the rings already flying bend toward it in the pull")
 
 
 func _shots_of(w: World, id: int) -> int:
@@ -269,32 +276,34 @@ func test_shielded_through_the_pull() -> void:
 	assert_false(BossDodge.shielded(w, _i(w, aid)), "open after")
 
 
-func test_the_pull_comes_every_8_s_and_never_by_the_pick() -> void:
+func test_the_pull_comes_on_its_rhythm_and_never_by_the_pick() -> void:
 	var s := _fight(Vector2(-7, 0))
 	var w: World = s[0]
 	var aid: int = s[1]
 	var t := BossAi.table_of(w, _i(w, aid))
 	t.punish_ticks = 0
 	var starts := PackedInt32Array()
+	var ends := PackedInt32Array()
 	var was := false
-	for k in 60 * 30:
+	for k in 60 * 60:
 		w.step(InputFrame.new())
-		var atk := BossAi.attack_of(w, _i(w, aid))
-		var now := atk != null and atk.move == BossAttackTable.Move.TIDE
+		var now := BossTideBeats.pulling(w, _i(w, aid))
 		if now and not was:
 			starts.append(w.tick)
+		elif was and not now:
+			ends.append(w.tick)
 		was = now
-	assert_gte(starts.size(), 3, "three Pulls in 30 s")
-	assert_between(starts[0], 170, 260, "the first about 3 s in")
+	assert_gte(starts.size(), 3, "three Pulls in 60 s")
+	# Due 6 s in, then 3 s of calm and 12 s after each one ends; it starts at the boss's first free moment.
+	assert_between(starts[0], 361, 480, "the first about 6 s in")
 	for k in range(1, starts.size()):
-		# Due 8 s after the last start; it starts at the boss's first free moment (another attack may be running).
-		assert_between(starts[k] - starts[k - 1], 480, 720, "every 8 s, start to start")
+		assert_between(starts[k] - ends[k - 1], 900, 1020, "15 s after the last one ended")
 	for k in t.attacks.size():
 		if t.attacks[k].move == BossAttackTable.Move.TIDE:
 			assert_true(BossTide.on_cadence(t, t.attacks[k]), "the pick leaves it out")
 
 
-func test_the_phases_open_with_the_pull_and_phase_3_pulls_harder() -> void:
+func test_phase_2_opens_with_its_riptide_and_phase_3_with_no_pull() -> void:
 	var s := _fight(Vector2(-7, 0))
 	var w: World = s[0]
 	var aid: int = s[1]
@@ -303,7 +312,17 @@ func test_the_phases_open_with_the_pull_and_phase_3_pulls_harder() -> void:
 	w.step(InputFrame.new())
 	BossLab.through_gate(w, aid)
 	assert_eq(w.bosses.phase[BossAi.entry_of(w, _i(w, aid))], 1)
-	assert_eq(BossAi.attack_of(w, _i(w, aid)).id, &"the_pull", "phase 2 opens with the Pull")
+	var opens := BossAi.attack_of(w, _i(w, aid))
+	assert_true(opens == null or opens.move != BossAttackTable.Move.TIDE, "no Pull opens phase 2")
+	CombatLab.idle(w, 1)
+	assert_eq(w.bosses.dance_beat_phase, 1)
+	assert_eq(
+		BossTideBeats.next_of(
+			w, BossAi.table_of(w, _i(w, aid)), BossAi.table_of(w, _i(w, aid)).dance, 1
+		),
+		BossTideBeats.RIPTIDE,
+		"its first beat is the Riptide it brings"
+	)
 	w.actors.hp[_i(w, aid)] = w.actors.max_hp[_i(w, aid)] * 320 / 1000
 	CombatLab.until(
 		w, func(x: World) -> bool: return x.actors.state[_i(x, aid)] == BossAi.GATE, 700
@@ -321,7 +340,7 @@ func test_deterministic_and_a_mid_pull_save_restores() -> void:
 	var make := func() -> World:
 		var s := _fight(Vector2(-7, 2), Vector2.ZERO, 10.0)
 		var w: World = s[0]
-		CombatLab.idle(w, 240)  # past the first Pull's start (the cadence's entry exists)
+		CombatLab.idle(w, 460)  # into the first Pull
 		return w
 	var a: World = make.call()
 	var b: World = make.call()
@@ -329,11 +348,11 @@ func test_deterministic_and_a_mid_pull_save_restores() -> void:
 		a.step(InputFrame.new())
 		b.step(InputFrame.new())
 	assert_eq(a.state_hash(), b.state_hash(), "two runs agree mid-fight")
-	assert_false(a.bosses.sig_boss.is_empty(), "the cadence is in the state")
+	assert_gte(a.bosses.dance_beat_k, 1, "the rhythm is in the state")
 	var before := a.state_hash()
-	a.bosses.sig_due[0] += 1
+	a.bosses.dance_beat_end += 1
 	assert_ne(a.state_hash(), before, "and in the hash")
-	a.bosses.sig_due[0] -= 1
+	a.bosses.dance_beat_end -= 1
 	var snap := WorldSnapshot.take(a)
 	var restored := World.from_snapshot(bytes_to_var(var_to_bytes(snap)), make.call())
 	assert_not_null(restored, "restores")
