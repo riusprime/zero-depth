@@ -553,6 +553,18 @@ func test_a_tide_pool_slows_and_never_hurts() -> void:
 # --- the end of a fight, determinism, a save --------------------------------------------------------------------
 
 
+## A fight in the Maelstrom alone (no Riptide, no High Tide), the Tidecaller at boss_at.
+func _whirl(hero_at: Vector2, boss_at := Vector2.ZERO, seed_value: int = 11) -> Array:
+	var s := TideLab.fight(hero_at, boss_at, seed_value)
+	var w: World = s[0]
+	TideLab.hush(w, s[1])
+	var d := TideLab.dance(w, s[1])
+	d.rip_phase = NEVER
+	d.ht_phase = NEVER
+	TideLab.set_phase(w, s[1], 2)
+	return s
+
+
 func _mid_fight(seed_value: int, ticks: int = 60 * 40) -> World:
 	var s := TideLab.fight(Vector2(-6, 0), Vector2(6, 0), seed_value)
 	var w: World = s[0]
