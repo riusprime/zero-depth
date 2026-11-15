@@ -262,6 +262,11 @@ const FALLEN_SOURCES := BossRemembered.SOURCES
 const EFFECT_FALLEN_CAST := BossRemembered.CAST
 const EFFECT_FALLEN_BEGIN := BossRemembered.BEGIN
 const EFFECT_FALLEN_END := BossRemembered.END
+## The Fallen's theft's events (FallenTheft): its cast, a card taken, a hit on its marked back, a card returned.
+const EFFECT_FALLEN_THEFT_CAST := FallenTheft.CAST
+const EFFECT_FALLEN_CARD_TAKEN := FallenTheft.TAKEN
+const EFFECT_FALLEN_MARK_HIT := FallenTheft.MARK_HIT
+const EFFECT_FALLEN_CARD_RETURNED := FallenTheft.RETURNED
 const EFFECT_FALLEN_WARD_UP := FallenWard.UP
 const EFFECT_FALLEN_WARD_DOWN := FallenWard.DOWN
 const EFFECT_FALLEN_WARD_BREAK := FallenWard.BREAK
@@ -2629,6 +2634,9 @@ func final_interphase() -> Dictionary:
 ## {"centre", "radius", "left", "progress"}), "pillar_dash" ({} or {"from", "to", "through"}: the dash shown aimed
 ## at the hero, and whether it runs into a pillar). Each mechanic's own read reports it too: boss_attack_slow and
 ## boss_pickups (the Time Wave), boss_dance (Riptide), boss_quake_pillars. (BossRemembered.state)
+## Its theft (FallenTheft.state): "taken" (the cards it holds, oldest first: {"slot", "card", "code", "hits_left",
+## "hits"}), "mark" ({} with none held, else {"on", "dir" (unit vector from the body to its back), "half_arc",
+## "hits_left", "hits"}), "theft_cast" (0..1000 through the cast, -1 none). wand()'s cards say "taken" too.
 func boss_fallen() -> Dictionary:
 	return BossRemembered.state(_w)
 

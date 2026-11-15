@@ -916,6 +916,10 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
     the two carriers `fallen_riptide` and `fallen_shade`: move `remembered` (new; it takes the interphase move's
     place), in no phase, `damage` 0 (a carrier names a death recap line only, like a cast), a `cause_key`
     (`CAUSE_TIDECALLER_WAVE`, `CAUSE_TWIN_CHARGE`). The quake pillars' recap line is `CAUSE_GATEKEEPER_PILLAR`.
+    The theft (v0.12.0 step 7b, SIM_CONTRACTS §10t "The theft"), in the same dictionary: `theft_first_permille`
+    660, `theft_second_permille` 330 (< first), `theft_cast_seconds` 1.5, `theft_held` 2 (1..2), `theft_hits` 8
+    (1..30), `theft_arc_deg` 120 (30..240, the whole rear arc); compiled to `FallenRememberedTable.theft_*`
+    (`theft_half_arc` in 1/4096 turns: 683).
 - **v0.12.0 step 8 (owner brief WL1-WL3, SG-WL; SIM_CONTRACTS §10u).** The Warlord's `lunge_dash` is now 0.6 s
   (locked its last 0.4 s), 26 m/s over 16 m, with `burst_radius_m` 3.5 and `burst_seconds` 0.25 (the charge
   burst any boss may take, §10q). `BossDefinition.warlord: Dictionary` (empty: none), checked by `WarlordRules`

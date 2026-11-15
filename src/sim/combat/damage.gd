@@ -194,6 +194,8 @@ static func hit(
 			return 0
 	var got := 0
 	if scaled > 0:
+		if owner_id == a.ids[0] and target != 0:  # Landed on The Fallen's marked back: it counts, whatever the pace
+			FallenTheft.on_hit(w, target, from)
 		got = _apply(
 			w, target, scaled, source_id, owner_id, root_id, h.tags, at, h.seq, 1, effect_id
 		)

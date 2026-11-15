@@ -330,7 +330,13 @@ remembered = {
 "ward_burst_m": 3.5,
 "ward_burst_seconds": 0.25,
 "ward_burst_permille": 300,
-"ward_stun_seconds": 4.0
+"ward_stun_seconds": 4.0,
+"theft_first_permille": 660,
+"theft_second_permille": 330,
+"theft_cast_seconds": 1.5,
+"theft_held": 2,
+"theft_hits": 8,
+"theft_arc_deg": 120.0
 }
 echo_seconds = 0.5
 dash_reaction_seconds = 0.25

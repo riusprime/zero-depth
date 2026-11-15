@@ -2647,6 +2647,44 @@ pick and the pieces' own spots draw a stream (`ai`). No native change.
   Fallen's row in BossDance's shape when no Tidecaller dances: `FallenRiptide.dance_state`), `boss_quake_pillars()`;
   `boss_invulnerable(i)` is true under the ward. `final_interphase()` is always {}; `EFFECT_FALLEN_VANISH` ..
   `EFFECT_FALLEN_RETURN` are kept as plain names no event carries (a view still names them).
+- **The theft** (v0.12.0 step 7b; brief row SG-HC; `FallenTheft`, `WandLock`; numbers `theft_*` in the same
+  `remembered` dictionary; state `BossFightStore.fl_tk_*`). No stream is drawn; no native change.
+  - *When.* Each of `theft_gates` (660, 330 per mille of max HP) once. It is a big beat of the rhythm: a cast may begin
+    when a gate is reached and not met, a card can be taken and fewer than `theft_held` (2) are held, no remembered
+    mechanic is cast or runs, the tick is at least `fl_open`, `calm_ticks` have passed since `fl_end`, no remembered
+    HP gate is waiting (that mechanic goes first), `window_clear` holds, and the body is in `MOVE` and not dashing.
+    A gate reached with nothing to take or two held is met at once with no cast and no event. While the theft may be
+    cast or is cast, `BossRemembered._due` is false (no mechanic by its clock), `think` holds the body's own attacks,
+    `holds_window` is true (no window begins), and during the cast `holds_still` stands the body still and no dash
+    leaves. The cast lasts `theft_cast_ticks` (90); its end sets `fl_end` (the calm follows it as after a mechanic).
+  - *What.* The first card of `NemesisBuild.pick_cards` (the mimic's ranking: level, rarity, slot) not already held
+    is appended to `fl_tk_code` with `theft_hits` (8) in `fl_tk_hits`. The wand is not written: `mod_slots`,
+    `items_owned`, the levels and the order stay; `WandLock.off` makes the card do nothing where held cards are read
+    (`Modifiers.build_modifiers` compiles `WandLock.lit(mod_slots)`, `World._build_mods` folds
+    `WandLock.lit(items_owned)`, and `ElementLevels`, `ElementLevelsFsf._scan`, `ElementStack._card_of`,
+    `StressMarks.card`, `Modifiers._engine_outside_wand`, `AttackSlots.form_row` skip it); taking and returning call
+    `World.refresh_build(false)`. Forecasts of a wand not held (`build_modifiers_of`) and the Nemesis's own copies are
+    not filtered. The card is among the first `card_casts` of `FinalFight.casts` (if the ranking moved since the rise,
+    its copy replaces the last one that is not another held card): its mimic windows cast it; nothing is cast outside
+    them.
+  - *Back.* `Damage.hit`: a hero hit on the holder whose final amount is above 0 (before `_apply`, so the pace's cap
+    and the window's pull do not change the count) arriving from `from` with `angle_diff(angle_of(from - pos),
+    facing) >= 2048 - theft_half_arc` (the rear 120 degrees) takes one from the oldest card's count; at 0 that card
+    returns. Front and side hits, DoT ticks and hits from its own position do not count.
+  - *Always back.* `BossRemembered.on_boss_gone` (its death, `FinalBoss.jump`, any removal) gives every card back
+    and clears the block; on the next `advance` a holder no longer alive (any other path) or a dead hero does the same.
+    The run's carry, the room-entry and body-start saves never hold the theft (they save `mod_slots` and
+    `items_owned`, which it never writes); a new floor or loop is a new World with none.
+  - *Events* (`STATUS_APPLY`, source The Fallen): `fallen_theft_cast` (amount = its ticks), `fallen_card_taken`
+    (amount = the slot, amount_applied = the card's code), `fallen_mark_hit` (amount = the hits still needed,
+    amount_applied = the code), `fallen_card_returned` (amount = the slot, amount_applied = the code; at the hero
+    when the body is gone).
+  - *Hash and save.* After a `-26` sentinel while `fl_tk_boss >= 0` or a card is held: `fl_tk_boss`, `fl_tk_gates`,
+    `fl_tk_from`, `fl_tk_code`, `fl_tk_hits`. `BossFightStore` is a snapshot class and `ItemMods` is snapshotted, so a
+    snapshot mid-theft restores it exactly (the book compiles again on its next read, through the lock).
+  - *Reads.* `boss_fallen()` gains `taken` ([{`slot`, `card` (id), `code`, `hits_left`, `hits`}], oldest first),
+    `mark` ({} with none held, else `on`, `dir` (unit vector from the body to its back), `half_arc`, `hits_left`,
+    `hits`) and `theft_cast` (0..1000, -1); `wand()`'s cards gain `taken`.
 
 ## 10u. The Warlord's charge, War Banner and Duel (v0.12.0 step 8; owner brief rows WL1-WL3 and SG-WL, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
 

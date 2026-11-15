@@ -27,7 +27,7 @@ static func side_dir(side: int) -> Vector2:
 ## The item index of the held Stress Mark card, or -1.
 static func card(w: World) -> int:
 	for idx in w.items_owned:
-		if w.item_tables[idx].mark_radius_m > 0.0:
+		if w.item_tables[idx].mark_radius_m > 0.0 and not WandLock.off(w, idx):
 			return idx
 	return -1
 

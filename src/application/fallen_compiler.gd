@@ -101,4 +101,11 @@ static func _remembered(d: Dictionary, t: BossTable) -> void:
 	m.ward_burst_hit = _int(d, "ward_burst_permille")
 	m.ward_stun_ticks = _ticks(d, "ward_stun_seconds")
 	m.ward_cause = t.attack_index(FallenRules.SHADE_CARRIER)
+	m.theft_gates = PackedInt32Array(
+		[_int(d, "theft_first_permille"), _int(d, "theft_second_permille")]
+	)
+	m.theft_cast_ticks = _ticks(d, "theft_cast_seconds")
+	m.theft_held = _int(d, "theft_held")
+	m.theft_hits = _int(d, "theft_hits")
+	m.theft_half_arc = roundi(FallenRules.value(d, "theft_arc_deg") * 2048.0 / 360.0)
 	t.remembered = m

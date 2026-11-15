@@ -75,6 +75,13 @@ const SPEC := {
 	"ward_burst_seconds": [0.25, 0.1, 1.0],
 	"ward_burst_permille": [300, 1, MAX_HIT],
 	"ward_stun_seconds": [4.0, 0.5, 8.0],
+	# The theft: at each gate a cast, then the hero's strongest card goes dark until enough hits land on its back
+	"theft_first_permille": [660, 100, 900],
+	"theft_second_permille": [330, 50, 800],
+	"theft_cast_seconds": [1.5, 0.5, 4.0],
+	"theft_held": [2, 1, 2],
+	"theft_hits": [8, 1, 30],
+	"theft_arc_deg": [120.0, 30.0, 240.0],
 }
 
 
@@ -106,6 +113,12 @@ static func validate(def: FinalBossDefinition, issues: Array[ValidationIssue]) -
 	if value(d, "second_permille") >= value(d, "first_permille"):
 		issues.append(
 			ValidationIssue.new(&"range", p, "remembered: second_permille < first_permille")
+		)
+	if value(d, "theft_second_permille") >= value(d, "theft_first_permille"):
+		issues.append(
+			ValidationIssue.new(
+				&"range", p, "remembered: theft_second_permille < theft_first_permille"
+			)
 		)
 	if value(d, "ward_lock_seconds") >= value(d, "ward_windup_seconds"):
 		issues.append(

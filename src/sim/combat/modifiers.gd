@@ -92,7 +92,7 @@ static func skill(w: World) -> AttackSpec:
 ## A Form card's (the Laser) come first, wherever it sits, so it makes the Gun's shot itself, never a
 ## trigger's cast, and every Pattern, Secondary and Element card shapes the form.
 static func build_modifiers(w: World) -> Array[ModifierTable]:
-	return build_modifiers_of(w, w.mod_slots)
+	return build_modifiers_of(w, WandLock.lit(w, w.mod_slots))  # A card The Fallen holds does nothing
 
 
 ## build_modifiers for the card codes `codes` in this order (a wand the player hasn't made yet: the Build
@@ -324,7 +324,7 @@ static func _engine_outside_wand(w: World, burn: bool) -> bool:
 	var from_item := false
 	for idx in w.items_owned:
 		var t := w.item_tables[idx]
-		if (t.burn_max_stacks if burn else t.slow_ticks) <= 0:
+		if (t.burn_max_stacks if burn else t.slow_ticks) <= 0 or WandLock.off(w, idx):
 			continue
 		if not CardLevels.is_card(w, idx):
 			return true

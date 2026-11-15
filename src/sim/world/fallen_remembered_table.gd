@@ -48,3 +48,11 @@ var ward_burst_ticks := 15
 var ward_burst_hit := 300
 var ward_stun_ticks := 240
 var ward_cause := -1
+## The theft (FallenTheft): at each theft gate (per mille of max HP, highest first) a theft_cast_ticks cast, then the
+## hero's strongest card goes dark, at most theft_held at once; theft_hits hits landing in the rear arc of half width
+## theft_half_arc (1/4096 turns) give the oldest one back.
+var theft_gates := PackedInt32Array([660, 330])
+var theft_cast_ticks := 90
+var theft_held := 2
+var theft_hits := 8
+var theft_half_arc := 683

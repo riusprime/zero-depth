@@ -112,3 +112,38 @@ slower and loses 0.3 % and 2.9 % more HP. Why, from these numbers only (not trac
 The tuning (more mechanics, a costlier miss, a pillar ring that leaves a safe spot behind it, a ward the shade's start
 cannot break by itself) is the lead's and the owner's call. `OWNER ONLY`: whether the fight is fun, readable and
 "difficult but learnable".
+
+## After step 7b (2026-11-15): the theft
+
+Build: worktree `v0120-h7b` on `b1548436` plus the uncommitted step 7b change (Windows, owner's PC; no timing taken).
+Command (one Godot process with the step's other sim and save tests):
+
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=<...>,res://tests/unit/sim/test_fallen_bots.gd,<...> -gexit
+```
+
+The existing lines (no cards) are unchanged: the sums are the same as above (Gun plays 21982 ticks, ignores 22656;
+Blade plays 18755, ignores 19847), and the `pending` is the same. A new variant, the bot that plays, holding four
+wand cards (test_nemesis's Gun and Blade builds), raw:
+
+```
+FALLENBOT| theft weapon=gun bot=plays seed=5 dead=true seconds=71.9 taken=0 returned=0 mark_hits=0 seconds_without_a_card=0.0 held_at_end=0
+FALLENBOT| theft weapon=gun bot=plays seed=6 dead=true seconds=73.0 taken=0 returned=0 mark_hits=0 seconds_without_a_card=0.0 held_at_end=0
+FALLENBOT| theft weapon=gun bot=plays seed=7 dead=true seconds=98.6 taken=2 returned=2 mark_hits=4 seconds_without_a_card=33.0 held_at_end=0
+FALLENBOT| theft weapon=blade bot=plays seed=5 dead=true seconds=88.3 taken=1 returned=1 mark_hits=0 seconds_without_a_card=5.0 held_at_end=0
+FALLENBOT| theft weapon=blade bot=plays seed=6 dead=true seconds=80.7 taken=0 returned=0 mark_hits=0 seconds_without_a_card=0.0 held_at_end=0
+FALLENBOT| theft weapon=blade bot=plays seed=7 dead=true seconds=82.5 taken=0 returned=0 mark_hits=0 seconds_without_a_card=0.0 held_at_end=0
+```
+
+- **The theft seldom gets its turn in these fights.** In 4 of 6 fights no card was taken: the theft waits behind the
+  remembered mechanic of the same HP gate, its calm and the mimic windows, and these bots kill The Fallen in 72–99 s,
+  so by the time the rhythm is free the fight is over (a likely reason, not traced tick by tick). The variant keeps
+  this visible as a `pending` ("NOT MET, a card is taken in every fight").
+- **Every card came back.** `held_at_end` is 0 in every fight; with these bots the cards come back by The Fallen's
+  death (Blade seed 5: 0 mark hits), or after a few hits on its back (Gun seed 7: 4 counted hits, 33 s with a card
+  held). The bots never try to get behind it.
+- **The pace's scripted fights** (`tests/unit/sim/test_final_pace.gd`, the same run): the strong Blade build's
+  Fallen now lasts 229.4 s and 225.6 s (seeds 21, 22; the test's ceiling is 185 s) and 213.3 s on the mean against
+  the base build's 140.0 s: the theft takes its best cards and the scripted hero never wins them back. FAILED, not
+  retuned.
+Nothing was retuned. `OWNER ONLY`: whether the theft is felt, learnable and fair.

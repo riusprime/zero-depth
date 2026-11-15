@@ -120,10 +120,17 @@ static func _gate_due(w: World, i: int, m: FallenRememberedTable) -> int:
 	return -1
 
 
+## A remembered HP gate is reached and not yet cast (the theft waits for it).
+static func gate_pending(w: World, i: int, m: FallenRememberedTable) -> bool:
+	return _gate_due(w, i, m) >= 0
+
+
 ## True when a mechanic is due now (its clock or a gate) and the calm since the last is over.
 static func _due(w: World, i: int, m: FallenRememberedTable) -> bool:
 	var fs := w.boss_fight
 	if fs.fl_stage != STAGE_NONE or w.tick < fs.fl_open or w.player_dead():
+		return false
+	if FallenTheft.holds(w, i, m):  # The theft goes first, unless a remembered gate waits
 		return false
 	if fs.fl_end >= 0 and w.tick < fs.fl_end + m.calm_ticks:
 		return false
@@ -154,7 +161,7 @@ static func holds_window(w: World) -> bool:
 	var m := table_of(w)
 	if fs.fl_boss < 0 or m == null:
 		return false
-	if fs.fl_stage != STAGE_NONE:
+	if fs.fl_stage != STAGE_NONE or FallenTheft.casting(w):
 		return true
 	return fs.fl_end >= 0 and w.tick + 1 < fs.fl_end + m.calm_ticks
 
@@ -166,7 +173,7 @@ static func think(w: World, i: int) -> void:
 	if fs.fl_boss != w.actors.ids[i]:
 		return
 	var m := table_of(w)
-	if m != null and (fs.fl_stage != STAGE_NONE or may_cast(w, i, m)):
+	if m != null and (fs.fl_stage != STAGE_NONE or may_cast(w, i, m) or FallenTheft.holds(w, i, m)):
 		w.actors.cd[i] = maxi(w.actors.cd[i], 1)
 
 
@@ -175,6 +182,8 @@ static func holds_still(w: World, i: int) -> bool:
 	var fs := w.boss_fight
 	if fs.fl_boss < 0 or fs.fl_boss != w.actors.ids[i]:
 		return false
+	if FallenTheft.casting(w):
+		return true
 	return fs.fl_stage == STAGE_CAST or (fs.fl_stage == STAGE_RUN and fs.fl_kind == WARD)
 
 
@@ -184,13 +193,11 @@ static func holds_still(w: World, i: int) -> bool:
 ## BossSignatures.advance: the cast begins when due, ends into its mechanic, and the mechanic runs to its end.
 static func advance(w: World) -> void:
 	var i := _fallen(w)
-	if i < 0:
+	var t := BossAi.table_of(w, i) if i >= 0 else null
+	var m := t.remembered if t != null else null
+	if FallenTheft.advance(w, i if m != null else -1, m) or m == null:  # Its theft first (it gives cards back)
 		return
 	var fs := w.boss_fight
-	var t := BossAi.table_of(w, i)
-	var m := t.remembered
-	if m == null:
-		return
 	if w.player_dead():
 		stop(w, i)
 		return
@@ -308,6 +315,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	FallenRiptide.finish(w)
 	FallenQuake.finish_for(w, boss_id)
 	FallenWard.clear(w)
+	FallenTheft.on_boss_gone(w, boss_id)  # The cards it holds come back
 	fs.clear_fallen()
 
 
@@ -346,7 +354,7 @@ static func state(w: World) -> Dictionary:
 		if fs.fl_gates & (1 << g) == 0:
 			gate = m.gates[g]
 			break
-	return {
+	var out := {
 		"boss": i,
 		"running": fs.fl_kind,
 		"source": SOURCES.get(fs.fl_kind, &""),
@@ -365,6 +373,8 @@ static func state(w: World) -> Dictionary:
 		"burst": FallenWard.burst_state(w, m),
 		"pillar_dash": FallenQuake.dash_state(w, i),
 	}
+	out.merge(FallenTheft.state(w, i, m))  # Its theft
+	return out
 
 
 ## Ticks until the mechanic running ends by its own time (-1 none, or one that ends by what the hero does).
