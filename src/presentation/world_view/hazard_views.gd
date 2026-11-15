@@ -11,6 +11,9 @@ extends Node3D
 ## - The Tidecaller's tide pools: its boss data names them `venom` (the slow disc's look), so a pool laid while the
 ##   Tidecaller fights is drawn as water instead: its warning the frost ring (blue), armed the pack's water ripple
 ##   (tc_pool), or the frost field when PackFx has no room for the ripple.
+## - The Twin Wardens' rifts (the Shadow Swords' marks): their data names them `venom` too, so one laid while the
+##   Wardens fight is a violet rift: its warning the pack's rim in violet, armed the pack's dark violet ripple
+##   (tw_rift), or the venom field when PackFx has no room for it.
 ## - Each fades over its last FADE_TICKS: the pack zones shrink through VfxLayer.field's fade, the rubble sinks into the
 ##   floor.
 
@@ -54,12 +57,22 @@ const CRACK_COLOR := Color(0.09, 0.07, 0.06, 0.9)
 const CRACK_KEY := 0x5B000000
 const POOL_ID := &"tc_pool"
 const POOL_PER_M := 0.6
+const RIFT_WARN_ID := &"tw_ward_rim"
+const RIFT_ID := &"tw_rift"
+const RIFT_PER_M := 0.6
+const RIFT_COLORS := {
+	&"primary": Color(0.75, 0.5, 1.0),
+	&"secondary": Color(0.42, 0.16, 0.8),
+	&"tertiary": Color(0.12, 0.03, 0.25)
+}
 
 var vfx: VfxCore = null
 var pack_fx: PackFx = null
 var _rows: Array = []
 ## The pools on the floor are the Tidecaller's (kept while they last, though the boss may be gone).
 var _tide := false
+## The marks on the floor are the Twin Wardens' rifts (likewise kept while they last).
+var _twins := false
 var _holds := PackHold.new()
 ## hazard id -> its meshes (the falling rock, or the rubble).
 var _meshes := {}
@@ -75,9 +88,14 @@ func sync(reader: WorldReader) -> void:
 	_rows = reader.boss_hazards()
 	var bi := reader.boss_index()
 	if bi >= 0:
-		_tide = reader.actor_kind(bi) == WorldReader.KIND_TIDECALLER
+		var kind := reader.actor_kind(bi)
+		_tide = kind == WorldReader.KIND_TIDECALLER
+		_twins = (
+			kind == WorldReader.KIND_TWIN_WARDEN or kind == WorldReader.KIND_TWIN_WARDEN_VIOLET
+		)
 	elif _rows.is_empty():
 		_tide = false
+		_twins = false
 	var alive := {}
 	for r: Dictionary in _rows:
 		alive[r["id"]] = true
@@ -109,6 +127,8 @@ func draw_fx(layer: VfxCore) -> void:
 			_draw_rock(r, c, radius, fade)
 		elif _tide and look == &"venom":
 			_draw_pool(vl, r, c, radius, fade, age, sd)
+		elif _twins and look == &"venom":
+			_draw_rift(vl, r, c, radius, fade, age, sd)
 		elif not r["armed"]:
 			vl.ring(RING_KIND[look], c, radius, 1.0, age, sd)
 		else:
@@ -128,6 +148,26 @@ func _draw_pool(
 	)
 	if n == null:
 		vl.field(&"frost", c, radius, fade, age, sd)
+
+
+## A Wardens' rift: a violet rim while it warns, then the pack's dark violet ripple (the venom field without room).
+func _draw_rift(
+	vl: VfxLayer, r: Dictionary, c: Vector3, radius: float, fade: float, age: float, sd: int
+) -> void:
+	if not r["armed"]:
+		if _holds.touch(r["id"] * 2, RIFT_WARN_ID, &"area", c, radius * 0.55, RIFT_COLORS) == null:
+			vl.ring(&"venom", c, radius, 1.0, age, sd)
+		return
+	var n := _holds.touch(
+		r["id"] * 2 + 1, RIFT_ID, &"area", c + Vector3(0, 0.05, 0), radius * RIFT_PER_M * fade
+	)
+	if n == null:
+		vl.field(&"venom", c, radius, fade, age, sd)
+
+
+## Whether the marks drawn now are the Twin Wardens' violet rifts (tests).
+func twin_rifts() -> bool:
+	return _twins
 
 
 ## Whether the pools drawn now are the Tidecaller's water (tests).

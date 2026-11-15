@@ -2,9 +2,9 @@ extends GutTest
 ## v0.9.0 NB2: The Twin Wardens' look. The owner's two models load at the art list's 2.2 m each, the same size: the
 ## two are skinned to the same skeleton and play the animations in their files (idle, walk, cast, swipe; the
 ## violet's are the amber's mirrored) for the clips they stand for, so driven alike they move as a pair. The
-## angry one shows it; without the files code stand-ins of the same parts pose from the same inputs. The chain view
-## draws the chain between the two from the reader, hot while it burns, its embers thinned on Low; Crossfire's two gap
-## lanes and its safe spot through the windup; the Chain Sweep's lash on its strike. Presentation only.
+## angry one shows it; without the files code stand-ins of the same parts pose from the same inputs. Nothing is drawn
+## between the two; Crossfire's gap lane and its safe spot show through the windup, the Sword Lane's slash on its
+## strike. Presentation only.
 
 const DT := 1.0 / 60.0
 
@@ -57,7 +57,7 @@ func test_the_two_play_their_files_animations() -> void:
 	assert_gt(arm, -1, "the sword arm's bone")
 	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1}, 30)
 	var idle_pose := a.skeleton.get_bone_pose_rotation(arm)
-	var shackle := a.anchor(&"shackle")
+	var visor := a.anchor(&"visor")
 	var cast := {
 		"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_CROSSFIRE, "windup": 0.95
 	}
@@ -74,7 +74,8 @@ func test_the_two_play_their_files_animations() -> void:
 		"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_CHAIN_SWEEP, "windup": 0.95
 	}
 	_drive(a, sweep, 30)
-	assert_gt(a.anchor(&"shackle").distance_to(shackle), 0.02, "the chain's end rides the shield")
+	assert_gt(a.anchor(&"visor").distance_to(visor), 0.02, "the visor rides the head")
+	assert_false(a.anchor_names().has(&"shackle"), "no chain's end: nothing joins the two")
 	# The violet's sword is in its other hand: the same cast raises its left arm, the amber's mirror image.
 	var v_arm := v.skeleton.find_bone("upper_arm_L")
 	assert_gt(v_arm, -1, "the violet's sword arm")
@@ -230,7 +231,11 @@ func test_no_chain_is_drawn_and_the_crossfire_and_sword_lane_views_follow_the_re
 			view.sync(r)
 			view.advance(DT)
 	step.call(30)
-	assert_eq(view.links_drawn(), 0, "nothing joins the two Wardens: no chain is drawn")
+	assert_eq(
+		view.find_children("*", "MultiMeshInstance3D", true, false).size(),
+		0,
+		"no links: nothing joins the two Wardens"
+	)
 	assert_eq(r.boss_twin(i).get("chain", []), [], "the reader has none")
 	# Crossfire (v0.11.0 O5: the violet's alone): its lane and the spot through the windup.
 	var vid := w.actors.ids[BossTwin.partner_of(w, i)]
@@ -245,23 +250,14 @@ func test_no_chain_is_drawn_and_the_crossfire_and_sword_lane_views_follow_the_re
 		step.call(1)
 	step.call(10)
 	assert_eq(view.lanes_shown(), 0, "gone after it")
-	# The Sword Lane: the lash on its strike.
+	# The Sword Lane: the slash on its strike.
 	BossLab.start(w, w.actors.index_of(w.actors.ids[i]), &"chain_sweep")
 	step.call(40)
 	var lashed := false
 	for k in 120:
 		step.call(1)
 		lashed = lashed or view.lashing()
-	assert_true(lashed, "the lash ran on the strike")
-	# Standing between them burns nothing and flashes nothing.
-	CombatLab.idle(w, 120)
-	var flashed := false
-	for k in 40:
-		w.actors.set_pos(0, Vector2(0, 0.2))
-		step.call(1)
-		flashed = flashed or view.burn_flashing()
-	assert_false(flashed, "no burn")
-	assert_eq(view.links_drawn(), 0)
+	assert_true(lashed, "the slash ran on the strike")
 
 
 ## v0.11.0 O5 (owner L7, Q11 a, Q29): the roles read out. The bar names whose bar it is (amber, violet, both) and in

@@ -169,17 +169,17 @@ func test_the_judge_view_waits_for_its_fades_then_idles() -> void:
 func test_the_twin_view_waits_for_its_fades_then_idles() -> void:
 	var view: TwinViews = add_child_autofree(TwinViews.new())
 	view.set_process(false)
-	for k in 30:  # the chain's heat settles to its cold level
+	for k in 2:
 		view.advance(DT)
-	assert_true(view.quiet, "no chain: quiet")
-	view._chain = [Vector2(-3, 0), Vector2(3, 0)]
+	assert_true(view.quiet, "no lane: quiet")
+	view._gaps = [[Vector2(-3, 0), Vector2(3, 0)]]
 	view.advance(DT)
-	assert_false(view.quiet, "a chain wakes it")
-	assert_gt(view._links.multimesh.visible_instance_count, 0, "its links show")
-	view._chain = []
+	assert_false(view.quiet, "a Crossfire lane wakes it")
+	assert_eq(view.lanes_shown(), 1, "its lane shows")
+	view._gaps = []
 	for k in 30:
 		view.advance(DT)
-	assert_eq(view._links.multimesh.visible_instance_count, 0, "hidden when it goes")
+	assert_eq(view.lanes_shown(), 0, "hidden when it goes")
 	assert_true(view.quiet, "then quiet")
 
 

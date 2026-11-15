@@ -65,6 +65,9 @@ static var parts: Array[GDScript] = [
 	MaelstromViews,
 	InterphaseViews,  # v0.9.5 BH6
 	TwinViews,  # v0.9.0 NB2
+	WardenWardViews,
+	WardenBladeViews,
+	ChargeBurstViews,
 	JudgeViews,  # v0.9.0 NB3
 	JudgeTimeViews,
 	JudgeRewindViews,
@@ -226,8 +229,13 @@ var tide_dance: TideDanceViews = _part(TideDanceViews)
 var maelstrom: MaelstromViews = _part(MaelstromViews)
 ## The Fallen's interphase (the vanish, rays, eruptions, rain and spike lines, the return ring and slam).
 var interphase: InterphaseViews = _part(InterphaseViews)
-## The Twin Wardens' burning chain, Crossfire's gap lanes and safe spot, the Chain Sweep's lash.
+## The Twin Wardens' Crossfire gap lanes and safe spot, the Sword Lane's slash.
 var twins: TwinViews = _part(TwinViews)
+## Their shields (the resting dome, the Mirror Ward, the whole ward and its break), their shadow swords, his dash
+## and the rifts; any boss's charge burst (its end circle and the explosion).
+var warden_wards: WardenWardViews = _part(WardenWardViews)
+var warden_blades: WardenBladeViews = _part(WardenBladeViews)
+var charge_bursts: ChargeBurstViews = _part(ChargeBurstViews)
 ## The Clockwork Judge's echo (its recording, path and ghost trail) and its Verdict's pendulum.
 var judges: JudgeViews = _part(JudgeViews)
 ## Its Time Wave, hour orbs, stopped gears and slow fields; the Rewind's pale copy, the Bell and the throw.
@@ -537,6 +545,9 @@ func _setup_effects() -> void:
 	maelstrom.pack_fx = pack_fx
 	add_child(interphase)  # v0.9.5 BH6
 	add_child(twins)  # v0.9.0 NB2
+	for v: Node3D in [warden_wards, warden_blades, charge_bursts]:
+		add_child(v)
+		v.set(&"pack_fx", pack_fx)
 	add_child(judges)  # v0.9.0 NB3
 	add_child(judge_time)
 	add_child(judge_rewind)
@@ -808,6 +819,9 @@ func sync() -> void:
 	_sync_view(&"maelstrom", maelstrom)
 	_sync_view(&"interphase", interphase)  # v0.9.5 BH6
 	_sync_view(&"twins", twins)  # v0.9.0 NB2
+	_sync_view(&"warden_wards", warden_wards)
+	_sync_view(&"warden_blades", warden_blades)
+	_sync_view(&"charge_bursts", charge_bursts)
 	_sync_view(&"judges", judges)  # v0.9.0 NB3
 	_sync_view(&"judge_time", judge_time)
 	_sync_view(&"judge_rewind", judge_rewind)

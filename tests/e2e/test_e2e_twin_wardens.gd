@@ -5,7 +5,9 @@ extends GutTest
 ## the boss door, E opens it, the stick walks in and the door seals; the two Wardens rise (both owner models, one bar
 ## with their name) with nothing drawn between them; v0.11.0 O5: phase 1 is the amber Warden's (the hint points
 ## at it, the bar's line names it); the stick walks up to it and the mouse's attack lands: the one shared HP drops (the
-## bar's, both bodies') and the other Warden turns angry.
+## bar's, both bodies') and the other Warden turns angry. Stepping back, the stick waits for his charge: its lane is
+## drawn with the burst's circle at its end (the reader's radius and spot). Brought to phase 2 (a test helper sets the
+## shared HP; real frames after), the violet Warden casts her Mirror Ward and its wall stands on the reader's arc.
 
 const FLOOR := 4
 const LEG_FRAMES := 900
@@ -111,7 +113,11 @@ func test_continue_floor_4_and_fight_the_twin_wardens() -> void:
 	assert_not_null(amber.imported, "the owner's amber model")
 	assert_not_null(violet.imported, "the owner's violet model")
 	await e.frames(90)  # past the rise
-	assert_eq(main.view.twins.links_drawn(), 0, "no chain between them: they fight apart")
+	assert_eq(
+		main.view.twins.find_children("*", "MultiMeshInstance3D", true, false).size(),
+		0,
+		"no chain between them: they fight apart"
+	)
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_true(hud.boss_bar.visible, "one bar")
 	# v0.11.0 O5: phase 1, the amber leads: the hint points at it and the bar names it.
@@ -155,3 +161,50 @@ func test_continue_floor_4_and_fight_the_twin_wardens() -> void:
 			break
 	assert_true(landed, "the hero's hits landed")
 	assert_true(angered, "a hit on one Warden angered the other")
+	await _charge_and_mirror(e, main, bid)
+
+
+## His charge's end circle, then (phase 2) her Mirror Ward, in the real boss room.
+func _charge_and_mirror(e: E2e, main: Main, bid: int) -> void:
+	var w := e.world()
+	var reader := main.driver.reader
+	var bursts: ChargeBurstViews = main.view.charge_bursts
+	var charge := {}
+	for k in 60 * 40:
+		var i := w.actors.index_of(bid)
+		if i < 0:
+			break
+		var away := w.player_pos() - w.actors.pos(i)
+		e.stick_toward(away.normalized() if away.length() < 7.0 else Vector2.ZERO)
+		await e.frames(1)
+		charge = reader.boss_wardens().get("charge", {})
+		if not charge.is_empty() and bursts.shown() > 0:
+			break
+	e.stick_toward(Vector2.ZERO)
+	assert_false(charge.is_empty(), "the amber Warden winds a charge up")
+	if charge.is_empty():
+		return
+	assert_gt(bursts.shown(), 0, "its burst circle is drawn")
+	var c: Array = bursts.circles()[0]
+	assert_almost_eq(float(c[1]), float(charge["radius"]), 0.01, "the burst's radius")
+	assert_lt((c[0] as Vector2).distance_to(charge["end"]), 0.6, "where the lane ends")
+	# Phase 2. TEST HELPER: the shared HP is set just under the phase's threshold (a real fight to it is minutes
+	# long); everything after is the game: the phase gate, the violet Warden's picks, real frames.
+	var i := w.actors.index_of(bid)
+	var j := int(reader.boss_twin(i)["partner"])
+	var hp := w.actors.max_hp[i] * 640 / 1000
+	w.actors.hp[i] = hp
+	w.actors.hp[j] = hp
+	var wards: WardenWardViews = main.view.warden_wards
+	var ward := {}
+	for k in 60 * 60:
+		await e.frames(1)
+		ward = reader.boss_wardens().get("ward", {})
+		if ward.get("kind", &"") == &"mirror" and wards.wall_shown():
+			break
+	assert_eq(ward.get("kind", &""), &"mirror", "the violet Warden's Mirror Ward stands")
+	if ward.get("kind", &"") != &"mirror":
+		return
+	assert_true(wards.wall_shown(), "its wall is drawn")
+	assert_eq(wards.wall_centre(), int(ward["centre"]), "on the side it faces")
+	assert_eq(wards.wall_half(), int(ward["half_arc"]), "as wide")

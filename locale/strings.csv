@@ -440,10 +440,9 @@ CAUSE_TIDECALLER_SLAM,The Tidecaller's shell crushed you.,El caparazón de The T
 CAUSE_TIDECALLER_WAVE,The Tidecaller's wave swept you off your feet.,La ola de The Tidecaller te arrolló.
 CAPTION_TELEGRAPH_TIDECALLER,[Warning: the Tidecaller's bell tolls],[Aviso: la campana de The Tidecaller tañe]
 BOSS_TWIN_WARDENS,The Twin Wardens,The Twin Wardens
-BOSS_TWIN_WARDENS_DESC,"Two stone knights, one life, one burning chain.","Dos caballeros de piedra, una sola vida, una cadena ardiente."
+BOSS_TWIN_WARDENS_DESC,"Two stone knights, one life, each fighting its own way.","Dos caballeros de piedra, una sola vida, cada uno lucha a su manera."
 CAUSE_TWIN_CROSSFIRE,The Twin Wardens' crossfire caught you between them.,El fuego cruzado de The Twin Wardens te atrapó entre ellos.
-CAUSE_TWIN_SWEEP,The Twin Wardens' chain lashed you down.,La cadena de The Twin Wardens te derribó de un latigazo.
-CAUSE_TWIN_CHAIN,The Twin Wardens' burning chain seared you.,La cadena ardiente de The Twin Wardens te abrasó.
+CAUSE_TWIN_SWEEP,The amber Warden's sword lane cut you down.,El tajo en línea del Twin Warden ámbar te derribó.
 CAUSE_TWIN_BASH,A Twin Warden's shield crushed you.,El escudo de un Twin Warden te aplastó.
 CAUSE_TWIN_CHARGE,The amber Warden's charge ran you down.,La carga del Twin Warden ámbar te arrolló.
 CAUSE_TWIN_SLAM,The amber Warden's ground slam crushed you.,El golpe al suelo del Twin Warden ámbar te aplastó.
@@ -451,13 +450,19 @@ CAUSE_TWIN_ORBS,The violet Warden's orb volley struck you.,La salva de orbes del
 CAUSE_TWIN_RUNES,The violet Warden's rune ring burned you.,El anillo de runas del Twin Warden violeta te quemó.
 CAUSE_TWIN_BLINK,The violet Warden blinked onto you.,El Twin Warden violeta apareció sobre ti.
 CAUSE_TWIN_BOLT,A Twin Warden's bolt hit you from afar.,Un rayo de un Twin Warden te alcanzó de lejos.
+CAUSE_TWIN_MIRROR,"Your own shot, returned by the violet Warden's Mirror Ward, struck you.","Tu propio disparo, devuelto por el Escudo Espejo del Twin Warden violeta, te alcanzó."
+CAUSE_TWIN_RIFT,A rift left by the violet Warden's shadow swords burned you.,Una grieta de las espadas sombrías del Twin Warden violeta te quemó.
+CAUSE_TWIN_RIFT_CHARGE,The amber Warden burst out of a rift and ran you down.,El Twin Warden ámbar salió de una grieta y te arrolló.
+CAUSE_TWIN_COMBO,The amber Warden's sword combo cut you down.,El combo de espada del Twin Warden ámbar te derribó.
+CAUSE_TWIN_OVERHEAD,The amber Warden's overhead blow crushed you.,El golpe por lo alto del Twin Warden ámbar te aplastó.
+CAUSE_TWIN_SWORDS,The violet Warden's shadow swords cut you down.,Las espadas sombrías del Twin Warden violeta te derribaron.
 HUD_TWIN_LEADS_AMBER,The amber Warden fights,Lucha el Twin Warden ámbar
 HUD_TWIN_LEADS_VIOLET,The violet Warden fights,Lucha el Twin Warden violeta
 HUD_TWIN_LEADS_BOTH,Both Wardens fight,Luchan los dos Twin Wardens
 HUD_TWIN_EXPOSED_AMBER,AMBER EXPOSED,ÁMBAR EXPUESTO
 HUD_TWIN_EXPOSED_VIOLET,VIOLET EXPOSED,VIOLETA EXPUESTO
-CAPTION_TELEGRAPH_TWIN_WARDENS,[Warning: the Wardens' chain rattles],[Aviso: la cadena de The Twin Wardens resuena]
-CAPTION_TWIN_CHAIN_BURN,[Chain sizzles],[La cadena chisporrotea]
+CAPTION_TELEGRAPH_TWIN_WARDENS,[Warning: the Wardens' steel rings],[Aviso: el acero de The Twin Wardens resuena]
+CAPTION_TWIN_CHAIN_BURN,[Steel sizzles],[El acero chisporrotea]
 BOSS_CLOCKWORK_JUDGE,The Clockwork Judge,The Clockwork Judge
 BOSS_CLOCKWORK_JUDGE_DESC,A brass judge that sentences your own footsteps.,Un juez de latón que condena tus propios pasos.
 CAUSE_JUDGE_ECHO,The Clockwork Judge's verdict caught your old steps.,El veredicto de The Clockwork Judge alcanzó tus viejos pasos.
