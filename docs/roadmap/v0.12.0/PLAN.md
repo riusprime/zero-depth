@@ -100,3 +100,25 @@ starting value.
 - Per boss: two scripted bots (plays the mechanic / ignores it), numbers in `evidence/`. Goldens that pin boss
   fights change on purpose and are named in PROGRESS.
 - "Difficult but learnable" (B3) is `OWNER ONLY`, per boss, then the owner's playtest of the version.
+
+## The owner's first play of the Tidecaller (2026-11-15)
+
+The owner's words, verbatim: "one thing i NOTICED PLAYING THE TIDES CALLER yesterday is that there is too much going
+on and too frequently so it is very difficult to pay attention to everything, for example the pull and pussh happens
+to often and you are pushed into balls that cant be dodged because dash is still on cooldown, and the wave dance
+happens a bit too quick and somethimes where there is also a pull so it makes it ver hard, the wave dance is smaller
+than the room so you can always walk out of it and ignore it, TDLR we have to space mechanics a bit a give it a good
+fight rythm not everything happening at the same time, because every single player will die here".
+
+| # | Owner line | Finding (data at `a9ba965d`) | Decision | Step |
+|---|---|---|---|---|
+| R1 | "too much going on and too frequently … not everything happening at the same time" | The Pull, the ring stream (a ring every 2.2 / 1.9 / 1.6 s), the crossing waves (every 3.5 s), Riptide and High Tide each run on their own clock and overlap freely | **One big mechanic at a time.** A single order of beats per phase; while a big mechanic runs (the Pull, a Riptide row, a High Tide) the ring stream and the crossing waves stop and the Tidecaller starts no other attack; at least 3 s of calm between two big mechanics | 4c |
+| R2 | "the pull and pussh happens to often" | Every 8 s (`signature_every_seconds`) | Every 18 s in phase 1, every 30 s in phase 2 (it shares the cycle with Riptide) | 4c |
+| R3 | "you are pushed into balls that cant be dodged because dash is still on cooldown" | Rings keep leaving the boss through the Pull and the push; the dash's cooldown is 10 s | The stream stops when the Pull's bell starts and resumes 1.5 s after the push lands; the push throws 4 m, not 6 m; no hostile shot is within 3 m of where the push sets you down (those pop) | 4c |
+| R4 | "the wave dance happens a bit too quick" | 2.0 s of warning a cast (2.5 s the last), whatever the room's size | 2.5 s (3.0 s the last), and never less than the time to walk from the last safe strip to the next one plus 30 % | 4c |
+| R5 | "sometimes where there is also a pull" | Nothing stops the Pull during a Riptide row | Covered by R1: never together | 4c |
+| R6 | "the wave dance is smaller than the room so you can always walk out of it and ignore it" | The strips are cut from `w.bosses.arena`; to be traced: that rectangle against the room's walkable floor | The four strips cover the whole walkable floor of the boss room, wall to wall | 4c |
+| R7 | "every single player will die here" | — | The owner judges again after 4c (`OWNER ONLY`). The Maelstrom's strengths are not changed in 4c; phase 3 gets the same "one at a time" order and no crossing waves | 4c |
+
+Agent rule from the same message (owner): "just deploy 2 opus subagents at max now, no more fable subagents, you can
+do some thinking and then send the request to the opus agent".
