@@ -1,6 +1,6 @@
 class_name BossWardens
 extends RefCounted
-## The Twin Wardens' own mechanics, held together: which pair runs them (BossStore.wd_boss, the amber Warden's id,
+## The Twin Wardens' own mechanics, held together: which pair runs them (BossFightStore.wd_boss, the amber Warden's id,
 ## set as the pair rises when its table has `wardens`), their tick, their end and what the view reads. The pieces:
 ## BossWardenAmber (the sword combo, the side dash), BossWard (the Mirror Ward, the last phase's ward and its break),
 ## BossShadowSwords, BossRift (Through the Rift) and BossChargeBurst (the charge's burst, any boss's). They end with
@@ -11,20 +11,21 @@ extends RefCounted
 static func begin(w: World, i: int) -> void:
 	if BossAi.table_of(w, i).wardens == null:
 		return
-	w.bosses.clear_wardens()
-	w.bosses.wd_boss = w.actors.ids[i]
-	w.bosses.wd_dash_cd = BossAi.table_of(w, i).wardens.dash_every_ticks
+	w.boss_fight.clear_wardens()
+	w.boss_fight.wd_boss = w.actors.ids[i]
+	w.boss_fight.wd_dash_cd = BossAi.table_of(w, i).wardens.dash_every_ticks
 
 
 ## The amber Warden's actor index while a pair runs the mechanics, else -1.
 static func lead(w: World) -> int:
-	return w.actors.index_of(w.bosses.wd_boss) if w.bosses.wd_boss >= 0 else -1
+	return w.actors.index_of(w.boss_fight.wd_boss) if w.boss_fight.wd_boss >= 0 else -1
 
 
 ## The violet Warden's actor index while a pair runs the mechanics, else -1.
 static func violet(w: World) -> int:
 	var bs := w.bosses
-	var k := bs.twin_lead.find(bs.wd_boss) if bs.wd_boss >= 0 else -1
+	var fs := w.boss_fight
+	var k := bs.twin_lead.find(fs.wd_boss) if fs.wd_boss >= 0 else -1
 	return w.actors.index_of(bs.twin_body[k]) if k >= 0 else -1
 
 
@@ -51,12 +52,13 @@ static func advance(w: World) -> void:
 ## BossTwin.on_boss_gone: the pair is gone and its clocks with it.
 static func on_boss_gone(w: World, boss_id: int) -> void:
 	var bs := w.bosses
-	if bs.wd_boss < 0:
+	var fs := w.boss_fight
+	if fs.wd_boss < 0:
 		return
-	var k := bs.twin_lead.find(bs.wd_boss)
-	if bs.wd_boss != boss_id and (k < 0 or bs.twin_body[k] != boss_id):
+	var k := bs.twin_lead.find(fs.wd_boss)
+	if fs.wd_boss != boss_id and (k < 0 or bs.twin_body[k] != boss_id):
 		return
-	bs.clear_wardens()
+	fs.clear_wardens()
 	w.objectives.clear(ObjectiveMarkers.TWINS_WARD)
 
 
@@ -77,7 +79,7 @@ static func state(w: World) -> Dictionary:
 		"ward": BossWard.state(w, j),
 		"swords": BossShadowSwords.rows(w, j),
 		"rift": BossRift.state(w, i, wt),
-		"dash": w.bosses.wd_dash_t,
+		"dash": w.boss_fight.wd_dash_t,
 	}
 	var a := w.actors
 	var atk := BossAi.attack_of(w, i)

@@ -139,7 +139,7 @@ func _process(_delta: float) -> bool:
 			var d := TideLab.dance(_world, _boss)
 			d.rip_phase = NEVER
 			d.ht_phase = 2
-			_world.bosses.dance_rip_from = -1
+			_world.boss_fight.dance_rip_from = -1
 			TideLab.set_phase(_world, _boss, 2)
 			_hero = Vector2(7.0, -6.0)
 			_until(BossDance.HT_FLOOD, 900)
@@ -163,7 +163,7 @@ func _process(_delta: float) -> bool:
 					]
 				)
 			)
-			_world.bosses.dance_ht_from = -1
+			_world.boss_fight.dance_ht_from = -1
 			_world.objectives.clear(ObjectiveMarkers.TIDE_DRY)
 			var d := TideLab.dance(_world, _boss)
 			d.ht_phase = NEVER

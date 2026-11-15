@@ -168,7 +168,7 @@ func test_a_shell_hurts_a_hero_inside_and_leaves_a_boulder_it_is_pushed_out_of()
 	assert_eq(up.size(), 1, "a boulder stands")
 	assert_eq(up[0].pos, lock.pos, "on the circle (the hero stood still under it)")
 	assert_eq(up[0].amount_applied, 1, "the hero was pushed out")
-	var box := BossSiege.boulder_obb(w.bosses, 0)
+	var box := BossSiege.boulder_obb(w.boss_fight, 0)
 	assert_eq(Collide.circle_vs_obb(w.player_pos(), w.player.radius_m, box), Vector2.ZERO)
 	assert_true(EnemyAi.clear_of_walls(w, w.player_pos(), w.player.radius_m), "on free floor")
 	var rows: Array = _state(w)["boulders"]
@@ -198,18 +198,18 @@ func test_boulders_are_capped_at_four_and_crumble_after_their_time() -> void:
 		seq = lock.seq
 		_until(w, BossSiege.SHELL, st.lock_ticks + 2, seq)
 	assert_eq(_fx(w, BossSiege.BOULDER_UP).size(), 5, "five shells, five boulders")
-	assert_eq(w.bosses.sg_b_x.size(), st.boulder_max, "four at most")
+	assert_eq(w.boss_fight.sg_b_x.size(), st.boulder_max, "four at most")
 	var down := _fx(w, BossSiege.BOULDER_DOWN)
 	assert_eq(down.size(), 1)
 	assert_eq([down[0].amount, down[0].amount_applied], [0, BossSiege.END_CAP], "the oldest went")
 	# Its time
 	var walls := w.walls.size()
-	var left := w.bosses.sg_b_until[0] - w.tick
+	var left := w.boss_fight.sg_b_until[0] - w.tick
 	st.lock_phase = NEVER
 	_idle(w, left)
-	assert_eq(w.bosses.sg_b_x.size(), 4)
+	assert_eq(w.boss_fight.sg_b_x.size(), 4)
 	_idle(w, 1)
-	assert_eq(w.bosses.sg_b_x.size(), 3, "30 s after it landed")
+	assert_eq(w.boss_fight.sg_b_x.size(), 3, "30 s after it landed")
 	assert_eq(_fx(w, BossSiege.BOULDER_DOWN).back().amount_applied, BossSiege.END_EXPIRED)
 	assert_eq(w.walls.size(), walls - 1, "its wall goes with it")
 
@@ -281,8 +281,8 @@ func test_boulders_never_trap_or_seal_anyone_in() -> void:
 			pushed += e.amount_applied
 		var hero := w.player_pos()
 		var pr := w.player.radius_m
-		for k in w.bosses.sg_b_x.size():
-			var o := BossSiege.boulder_obb(w.bosses, k)
+		for k in w.boss_fight.sg_b_x.size():
+			var o := BossSiege.boulder_obb(w.boss_fight, k)
 			for j in w.actors.size():
 				if w.actors.dead[j] == 0:
 					var hit := Collide.circle_vs_obb(w.actors.pos(j), w.actors.radius[j], o)
@@ -325,11 +325,11 @@ func test_behind_a_boulder_is_safe_beside_it_is_hit_and_hugging_the_engine_no_lo
 	var blast := _fx(w, BossSiege.SHOCKWAVE)
 	assert_eq(blast.size(), 1)
 	assert_eq([blast[0].amount, blast[0].amount_applied], [0, 1], "and the boulder that saved it")
-	assert_eq(w.bosses.sg_b_x.size(), 0, "shattered")
+	assert_eq(w.boss_fight.sg_b_x.size(), 0, "shattered")
 	assert_eq(_fx(w, BossSiege.BOULDER_DOWN)[0].amount_applied, BossSiege.END_SHATTERED)
 	var beside: Array = _shockwave(Vector2(5, 4), 2, true)
 	assert_gt(beside[0], 0, "beside it: hit")
-	assert_eq((beside[1] as World).bosses.sg_b_x.size(), 1, "a boulder off the line stands")
+	assert_eq((beside[1] as World).boss_fight.sg_b_x.size(), 1, "a boulder off the line stands")
 	var hug: Array = _shockwave(Vector2(0, 3.4), 2, false)
 	assert_gt(hug[0], 0, "hugging the Engine is no longer safe")
 	var old: Array = _shockwave(Vector2(0, 3.4), 1, false)
@@ -364,13 +364,13 @@ func test_a_shockwave_waits_for_cover_or_a_landed_shell() -> void:
 	var b := BossAi.entry_of(w, _i(w, aid))
 	_idle(w, 300)
 	assert_eq(w.bosses.last_attack[b], -1, "no boulder, no Shockwave")
-	assert_gte(w.bosses.sg_held, 0, "held since then")
+	assert_gte(w.boss_fight.sg_held, 0, "held since then")
 	# A lock lands by the wall: no boulder, but a shell has landed since
 	var st := SiegeLab.siege(w, aid)
 	st.lock_phase = 2
 	st.lock_first_ticks = 1
 	_until(w, BossSiege.SHELL, st.lock_ticks + 5)
-	assert_eq(w.bosses.sg_b_x.size(), 0)
+	assert_eq(w.boss_fight.sg_b_x.size(), 0)
 	CombatLab.until(w, func(x: World) -> bool: return x.bosses.last_attack[b] == k, 30)
 	assert_eq(w.bosses.last_attack[b], k, "then it may come")
 	# With a boulder it comes at once
@@ -442,7 +442,7 @@ func test_behind_a_boulder_the_doom_shell_misses_and_breaks_it() -> void:
 	var doom := _until(w, BossDoom.DOOM, 900 + 700)
 	assert_not_null(doom)
 	assert_eq([doom.amount, doom.amount_applied], [0, 1], "covered; the boulder breaks")
-	assert_eq(w.bosses.sg_b_x.size(), 0)
+	assert_eq(w.boss_fight.sg_b_x.size(), 0)
 
 
 func test_a_boulder_on_the_carts_way_is_shattered() -> void:
@@ -519,7 +519,7 @@ func test_carts_come_once_in_phase_2_and_twice_in_phase_3_never_with_a_shockwave
 		if BossDoom.busy(w) and w.bosses.attack[b] == shock and w.actors.state[i] == S.WINDUP:
 			assert_true(false, "a Shockwave wound up while a cart was out")
 			break
-		if w.bosses.sg_b_x.is_empty():
+		if w.boss_fight.sg_b_x.is_empty():
 			SiegeLab.boulder(w, s[1], Vector2(-2, 6))
 	assert_eq(_fx(w, BossDoom.SENT, seq).size(), 2, "two in phase 3")
 
@@ -533,14 +533,14 @@ func test_everything_clears_when_the_hero_dies_and_when_the_engine_dies() -> voi
 	SiegeLab.boulder(w, s[1], Vector2(-2, 6))
 	_until(w, BossDoom.SENT, 900)
 	_idle(w, 2)
-	var walls := w.walls.size() - w.bosses.sg_b_x.size()
+	var walls := w.walls.size() - w.boss_fight.sg_b_x.size()
 	assert_gt(SiegeLab.cart(w), 0)
 	w.actors.dead[0] = 1
 	w.actors.hp[0] = 0
 	w.step(InputFrame.new())
-	assert_eq(w.bosses.sg_b_x.size(), 0, "the boulders crumble")
+	assert_eq(w.boss_fight.sg_b_x.size(), 0, "the boulders crumble")
 	assert_eq(w.walls.size(), walls, "their walls too")
-	assert_eq(w.bosses.sg_cart_from, -1, "the cart goes")
+	assert_eq(w.boss_fight.sg_cart_from, -1, "the cart goes")
 	assert_eq(_fx(w, BossDoom.DESTROYED).size(), 0, "without a blast")
 	# The Engine dies mid-siege
 	var s2 := SiegeLab.only(Vector2(-6, 6), Vector2(6, 0), 1, ["doom", "lock"])
@@ -548,7 +548,7 @@ func test_everything_clears_when_the_hero_dies_and_when_the_engine_dies() -> voi
 	SiegeLab.boulder(w2, s2[1], Vector2(-2, 6))
 	_until(w2, BossDoom.SENT, 900)
 	_idle(w2, 2)
-	var cart_id := w2.bosses.sg_cart
+	var cart_id := w2.boss_fight.sg_cart
 	assert_gte(cart_id, 0)
 	var i := _i(w2, s2[1])
 	w2.actors.dead[i] = 1
@@ -556,8 +556,8 @@ func test_everything_clears_when_the_hero_dies_and_when_the_engine_dies() -> voi
 	w2.step(InputFrame.new())
 	w2.step(InputFrame.new())
 	assert_eq(_state(w2), {}, "the siege goes with it")
-	assert_eq(w2.bosses.sg_boss, -1)
-	assert_eq(w2.bosses.sg_b_x.size(), 0)
+	assert_eq(w2.boss_fight.sg_boss, -1)
+	assert_eq(w2.boss_fight.sg_b_x.size(), 0)
 	assert_eq(w2.actors.index_of(cart_id), -1, "the cart crumbles")
 	assert_false(w2.objectives.has(ObjectiveMarkers.SIEGE_BOULDER))
 
@@ -566,7 +566,7 @@ func test_a_world_without_a_siege_keeps_no_siege_state() -> void:
 	var s := JudgeLab.fight(Vector2(-6, 0), Vector2(6, 0))
 	var w: World = s[0]
 	CombatLab.idle(w, 120)
-	assert_eq(w.bosses.sg_boss, -1)
+	assert_eq(w.boss_fight.sg_boss, -1)
 	assert_eq(WorldReader.new(w).boss_siege(), {})
 
 
@@ -590,14 +590,14 @@ func test_deterministic_hashed_and_a_save_mid_fight_restores() -> void:
 	assert_gt(_fx(a, BossSiege.LOCK).size(), 0, "a lock began")
 	assert_gt(_fx(a, BossDoom.SENT).size(), 0, "a cart rolled")
 	var before := a.state_hash()
-	a.bosses.sg_doom_n += 1
+	a.boss_fight.sg_doom_n += 1
 	assert_ne(a.state_hash(), before, "the clocks are hashed")
-	a.bosses.sg_doom_n -= 1
-	a.bosses.sg_lock_x += 0.5
+	a.boss_fight.sg_doom_n -= 1
+	a.boss_fight.sg_lock_x += 0.5
 	assert_ne(a.state_hash(), before, "and the lock")
-	a.bosses.sg_lock_x -= 0.5
-	assert_gt(a.bosses.sg_b_x.size(), 0, "a boulder stands at 20 s")
-	assert_gte(a.bosses.sg_cart_from, 0, "and a cart rolls")
+	a.boss_fight.sg_lock_x -= 0.5
+	assert_gt(a.boss_fight.sg_b_x.size(), 0, "a boulder stands at 20 s")
+	assert_gte(a.boss_fight.sg_cart_from, 0, "and a cart rolls")
 	var snap := WorldSnapshot.take(a)
 	var restored := World.from_snapshot(bytes_to_var(var_to_bytes(snap)), JudgeLab.world(7))
 	assert_not_null(restored, "restores")

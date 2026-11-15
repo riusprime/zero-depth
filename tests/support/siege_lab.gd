@@ -63,7 +63,7 @@ static func take_lost(w: World) -> int:
 
 ## A boulder of the Engine's at c, as a landed shell leaves it (the tests' shortcut past the lock). Returns its row.
 static func boulder(w: World, aid: int, c: Vector2) -> int:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var st := siege(w, aid)
 	bs.sg_b_id.append(bs.sg_next)
 	bs.sg_b_from.append(w.tick)
@@ -80,7 +80,7 @@ static func boulder(w: World, aid: int, c: Vector2) -> int:
 
 ## The cart's actor index, or -1.
 static func cart(w: World) -> int:
-	return w.actors.index_of(w.bosses.sg_cart) if w.bosses.sg_cart >= 0 else -1
+	return w.actors.index_of(w.boss_fight.sg_cart) if w.boss_fight.sg_cart >= 0 else -1
 
 
 ## The hero destroys the cart with one hit.

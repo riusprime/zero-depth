@@ -254,7 +254,7 @@ static func may_start(w: World, i: int, k: int) -> bool:
 ## Damage.hit and tick_dot: the per-mille body i takes from the player: the violet Warden stunned by her broken ward
 ## BossWardensTable.stun_permille; 1000 otherwise (and for every other actor).
 static func taken_permille(w: World, i: int) -> int:
-	if w.bosses.wd_break_at < 0 or not BossWard.stunned(w, i):
+	if w.boss_fight.wd_break_at < 0 or not BossWard.stunned(w, i):
 		return 1000
 	return BossAi.table_of(w, i).wardens.stun_permille
 
@@ -330,18 +330,19 @@ static func think(w: World, i: int, aim: int) -> bool:
 		return false
 	var a := w.actors
 	var bs := w.bosses
+	var fs := w.boss_fight
 	if bs.twin_lead[k] == a.ids[i]:
 		if bs.twin_anger_t[k] > 0:
 			bs.twin_anger_t[k] -= 1
 			if bs.twin_anger_t[k] == 0:
 				bs.twin_angry[k] = 0
 		_roles(w, i, k)
-		if bs.wd_boss == a.ids[i] and leads(w, i) and not BossRift.holds(w):
+		if fs.wd_boss == a.ids[i] and leads(w, i) and not BossRift.holds(w):
 			BossWardenAmber.dash_think(w, i, BossAi.table_of(w, i).wardens)
 	if a.state[i] != S.MOVE:
 		return false
 	var rest := resting(w, i)
-	var held := bs.wd_boss >= 0 and (BossRift.holds(w) or (lead_body(w, i) and bs.wd_dash_t > 0))
+	var held := fs.wd_boss >= 0 and (BossRift.holds(w) or (lead_body(w, i) and fs.wd_dash_t > 0))
 	if not rest and not held and may_start(w, i, k):
 		return false
 	var t := BossAi.table_of(w, i)
@@ -492,7 +493,7 @@ static func moves(w: World, i: int, slow: float) -> bool:
 		* slow
 		* (t.anger_permille / 1000.0 if angry(w, i) else 1.0)
 	)
-	if t.wardens != null and w.bosses.wd_boss >= 0:
+	if t.wardens != null and w.boss_fight.wd_boss >= 0:
 		if (
 			BossRift.moves(w, i, t.wardens, slow)
 			or (lead and BossWardenAmber.dash_move(w, i, slow))
@@ -577,7 +578,7 @@ static func resolve(w: World, i: int) -> bool:
 		return false
 	var a := w.actors
 	var lead := w.bosses.twin_lead[k] == a.ids[i]
-	if lead and w.bosses.wd_boss == a.ids[i]:
+	if lead and w.boss_fight.wd_boss == a.ids[i]:
 		BossWard.charge_check(w, i, partner_of(w, i))
 	var atk := BossAi.attack_of(w, i)
 	if a.state[i] != S.ACTIVE or atk == null or not is_move(atk.move) or w.player_dead():

@@ -1,6 +1,6 @@
 class_name BossRewind
 extends RefCounted
-## The Clockwork Judge's signature, the Rewind, and its own return (BossTimeTable; BossStore.time_*).
+## The Clockwork Judge's signature, the Rewind, and its own return (BossTimeTable; BossFightStore.time_*).
 ## - The trails: while the Judge lives, where the hero stood and where the Judge stood are kept, a point every
 ##   step_ticks (on ticks that are a multiple of it), the last `points` of them. A dead hero leaves no point.
 ## - The pale copy (copy_of): from rewind_phase on, where the hero stood trail_ticks ago (late_trail_ticks from
@@ -43,7 +43,7 @@ const DIRS := 16
 ## True while boss i's Rewind is on: its copy follows the hero and its Bell tolls.
 static func active(w: World, i: int) -> bool:
 	var tt := BossAi.table_of(w, i).time
-	if tt == null or w.bosses.time_boss != w.actors.ids[i]:
+	if tt == null or w.boss_fight.time_boss != w.actors.ids[i]:
 		return false
 	return w.bosses.phase[BossAi.entry_of(w, i)] >= tt.rewind_phase
 
@@ -56,7 +56,10 @@ static func trail_of(tt: BossTimeTable, phase: int) -> int:
 ## Where the pale copy stands in `phase` (the hero itself before any point was kept).
 static func copy_of(w: World, tt: BossTimeTable, phase: int) -> Vector2:
 	return _back(
-		w.bosses.time_px, w.bosses.time_py, trail_of(tt, phase) / tt.step_ticks, w.player_pos()
+		w.boss_fight.time_px,
+		w.boss_fight.time_py,
+		trail_of(tt, phase) / tt.step_ticks,
+		w.player_pos()
 	)
 
 
@@ -81,7 +84,7 @@ static func _back(
 
 ## Tick phase 3 (BossTime.think), boss i in `phase`: the trails gain their point, and the Bell's cast begins when due.
 static func think(w: World, i: int, tt: BossTimeTable, phase: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if w.tick % tt.step_ticks == 0:
 		if not w.player_dead():
 			_keep(bs.time_px, bs.time_py, w.player_pos(), tt.points)
@@ -109,7 +112,7 @@ static func _keep(xs: PackedFloat32Array, ys: PackedFloat32Array, p: Vector2, mo
 
 ## The Bell tolls `ticks` from now.
 static func _wait(w: World, i: int, ticks: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var id := w.actors.ids[i]
 	bs.time_bell_from = w.tick
 	bs.time_bell_at = w.tick + ticks
@@ -123,19 +126,20 @@ static func _wait(w: World, i: int, ticks: int) -> void:
 ## hero and locks its Verdict's square on the copy; the Judge's return.
 static func advance(w: World, i: int, t: BossTable) -> void:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var tt := t.time
 	var phase := bs.phase[BossAi.entry_of(w, i)]
-	if bs.time_bv_at >= 0 and w.tick >= bs.time_bv_at:
+	if fs.time_bv_at >= 0 and w.tick >= fs.time_bv_at:
 		_drop(w, i, t)
-	if bs.time_bell_at >= 0 and w.tick >= bs.time_bell_at:
+	if fs.time_bell_at >= 0 and w.tick >= fs.time_bell_at:
 		var at := copy_of(w, tt, phase)
 		snap(w, i, at)
 		if verdict_attack(t) >= 0:
-			bs.time_bv_x = at.x
-			bs.time_bv_y = at.y
-			bs.time_bv_at = w.tick + tt.bell_verdict_ticks
-		if bs.time_tolls > 0:
-			bs.time_tolls -= 1
+			fs.time_bv_x = at.x
+			fs.time_bv_y = at.y
+			fs.time_bv_at = w.tick + tt.bell_verdict_ticks
+		if fs.time_tolls > 0:
+			fs.time_tolls -= 1
 			_wait(w, i, tt.toll_gap_ticks)
 		else:
 			_no_toll(w)
@@ -144,7 +148,7 @@ static func advance(w: World, i: int, t: BossTable) -> void:
 
 ## The locked Bell's Verdict of boss i drops: the hero touching its square takes the `verdict` attack's damage, once.
 static func _drop(w: World, i: int, t: BossTable) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var c := Vector2(bs.time_bv_x, bs.time_bv_y)
 	bs.time_bv_at = -1
 	var k := verdict_attack(t)
@@ -167,21 +171,21 @@ static func _drop(w: World, i: int, t: BossTable) -> void:
 
 ## No toll is awaited (the next cast keeps its own clock).
 static func _no_toll(w: World) -> void:
-	w.bosses.time_bell_at = -1
-	w.bosses.time_bell_from = -1
-	w.bosses.time_tolls = 0
+	w.boss_fight.time_bell_at = -1
+	w.boss_fight.time_bell_from = -1
+	w.boss_fight.time_tolls = 0
 
 
 ## The fight ended: no toll is awaited and no Bell's Verdict hangs.
 static func cancel(w: World) -> void:
 	_no_toll(w)
-	w.bosses.time_bv_at = -1
+	w.boss_fight.time_bv_at = -1
 
 
 ## The Bell's Verdict squares of boss i, the locked one first: each {"center", "half", "locked" (false while it
 ## follows the copy toward the toll), "left" (ticks until it drops)}.
 static func squares(w: World, i: int, tt: BossTimeTable, phase: int) -> Array[Dictionary]:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var out: Array[Dictionary] = []
 	var t := BossAi.table_of(w, i)
 	var k := verdict_attack(t)
@@ -239,7 +243,7 @@ static func is_free(w: World, i: int, p: Vector2) -> bool:
 
 ## The Judge's own return (the class comment's rule), once.
 static func _return(w: World, i: int, t: BossTable, phase: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var tt := t.time
 	var a := w.actors
 	if bs.time_back == 1 or phase != tt.return_phase or tt.return_hp_permille <= 0:
@@ -272,6 +276,7 @@ static func _return(w: World, i: int, t: BossTable, phase: int) -> void:
 ## "bell_squares" (the Bell's Verdict squares: `squares`).
 static func state(w: World, i: int) -> Dictionary:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	if not active(w, i):
 		return {"rewind": false}
 	var tt := BossAi.table_of(w, i).time
@@ -282,12 +287,12 @@ static func state(w: World, i: int) -> Dictionary:
 		"trail": trail_of(tt, phase),
 		"bell": -1,
 		"bell_left": -1,
-		"tolls": bs.time_tolls,
-		"bell_in": maxi(0, bs.time_bell_due - w.tick),
+		"tolls": fs.time_tolls,
+		"bell_in": maxi(0, fs.time_bell_due - w.tick),
 		"bell_squares": squares(w, i, tt, phase),
 	}
-	if bs.time_bell_at >= 0:
-		var span := maxi(1, bs.time_bell_at - bs.time_bell_from)
-		out["bell"] = clampi((w.tick - bs.time_bell_from) * 1000 / span, 0, 1000)
-		out["bell_left"] = maxi(0, bs.time_bell_at - w.tick)
+	if fs.time_bell_at >= 0:
+		var span := maxi(1, fs.time_bell_at - fs.time_bell_from)
+		out["bell"] = clampi((w.tick - fs.time_bell_from) * 1000 / span, 0, 1000)
+		out["bell_left"] = maxi(0, fs.time_bell_at - w.tick)
 	return out

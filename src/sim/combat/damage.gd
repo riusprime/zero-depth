@@ -138,7 +138,7 @@ static func hit(
 		return 0
 	if (
 		target != 0
-		and w.bosses.wd_mirror_on == 1
+		and w.boss_fight.wd_mirror_on == 1
 		and BossWard.turns(w, target, from, tags, owner_id)
 	):
 		h.tags |= SimEvent.TAG_BLOCKED  # The violet Warden's Mirror Ward turns it
@@ -347,4 +347,4 @@ static func _apply(
 static func _blocked(w: World, target: int) -> bool:
 	if BossDodge.shielded(w, target) or BossTwin.resting(w, target):
 		return true
-	return w.bosses.wd_full == 1 and BossWard.full(w, target)
+	return w.boss_fight.wd_full == 1 and BossWard.full(w, target)

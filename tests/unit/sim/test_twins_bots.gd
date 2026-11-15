@@ -49,7 +49,7 @@ func _fight(weapon: StringName, plays: bool, seed_value: int) -> Dictionary:
 		for p in w.projectiles.size():
 			if w.projectiles.cause_of(p) == BossWard.MIRROR_CAUSE:
 				mirrored[w.projectiles.ids[p]] = true
-		var rift_out := w.bosses.wd_rift_stage == BossRift.OUT or _rift_burst(w, i)
+		var rift_out := w.boss_fight.wd_rift_stage == BossRift.OUT or _rift_burst(w, i)
 		out["phase_ticks"][w.bosses.phase[BossAi.entry_of(w, i)]] += 1
 		w.step(_frame(w, r, s, weapon, plays, k))
 		out["ticks"] = k + 1
@@ -83,7 +83,7 @@ func _fight(weapon: StringName, plays: bool, seed_value: int) -> Dictionary:
 ## True while a burst of the rift's exit charge is pending.
 func _rift_burst(w: World, i: int) -> bool:
 	var rift := BossAi.table_of(w, i).wardens.rift_attack
-	return w.bosses.cb_attack.has(rift)
+	return w.boss_fight.cb_attack.has(rift)
 
 
 ## The bot's input this tick.

@@ -1,6 +1,6 @@
 class_name BossSlag
 extends RefCounted
-## The Foundry's cooling slag and its Overpressure (BossTable.forge; BossStore.slab_*, fg_over_*), run by BossForge.
+## The Foundry's cooling slag and Overpressure (BossTable.forge; BossFightStore.slab_*, fg_over_*), run by BossForge.
 ## - Cooling slag, from slab_phase: one of the boss's burning pools (BossHazard) that is slab_cool_ticks old cools
 ##   into a slab where it lay: the pool goes (it burns no more and frees its place under the hazards' cap) and the slab
 ##   stays slab_ticks, then crumbles. A slab never hurts. The hero stands on one when its centre is inside it. So the
@@ -51,6 +51,7 @@ static func advance(w: World, i: int, f: BossForgeTable, phase: int) -> void:
 ## Boss i's burning pools slab_cool_ticks old become slabs.
 static func _cool(w: World, i: int, f: BossForgeTable) -> void:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var id := w.actors.ids[i]
 	for k in range(bs.hz_x.size() - 1, -1, -1):
 		if bs.hz_boss[k] != id or bs.hz_kind[k] != HazardTable.Kind.DAMAGE:
@@ -59,19 +60,19 @@ static func _cool(w: World, i: int, f: BossForgeTable) -> void:
 			continue
 		var c := Vector2(bs.hz_x[k], bs.hz_y[k])
 		var pool := bs.hz_id[k]
-		bs.slab_id.append(bs.fg_slab_next)
-		bs.slab_boss.append(id)
-		bs.slab_from.append(w.tick)
-		bs.slab_until.append(w.tick + f.slab_ticks)
-		bs.slab_broke.append(0)
-		bs.slab_x.append(c.x)
-		bs.slab_y.append(c.y)
-		bs.slab_r.append(bs.hz_r[k])
+		fs.slab_id.append(fs.fg_slab_next)
+		fs.slab_boss.append(id)
+		fs.slab_from.append(w.tick)
+		fs.slab_until.append(w.tick + f.slab_ticks)
+		fs.slab_broke.append(0)
+		fs.slab_x.append(c.x)
+		fs.slab_y.append(c.y)
+		fs.slab_r.append(bs.hz_r[k])
 		bs.remove_hazard(k)
 		var e := BossForge.event(w, i, SLAB_COOL, c)
-		e.amount = bs.fg_slab_next
+		e.amount = fs.fg_slab_next
 		e.amount_applied = pool
-		bs.fg_slab_next += 1
+		fs.fg_slab_next += 1
 
 
 ## With no pool of boss i's and no slab that will serve an Overpressure on the floor the meltdown leaves, and
@@ -79,10 +80,11 @@ static func _cool(w: World, i: int, f: BossForgeTable) -> void:
 ## melt), warned as every pool is: the slag that becomes the next slab, so the slabs never run out.
 static func _drop(w: World, i: int, f: BossForgeTable) -> void:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var h := BossAi.table_of(w, i).hazard
 	if f.drop_ticks <= 0 or h == null or w.player_dead() or w.actors.state[i] == BossAi.GATE:
 		return
-	if bs.fg_drop_at >= 0 and w.tick - bs.fg_drop_at < f.drop_ticks:
+	if fs.fg_drop_at >= 0 and w.tick - fs.fg_drop_at < f.drop_ticks:
 		return
 	var id := w.actors.ids[i]
 	var margin := w.player.radius_m
@@ -104,14 +106,14 @@ static func _drop(w: World, i: int, f: BossForgeTable) -> void:
 		var off := p - c
 		if Kin.length(off) > keep:
 			p = c + off / maxf(Kin.length(off), 0.001) * keep
-	bs.fg_drop_at = w.tick
+	fs.fg_drop_at = w.tick
 	if BossHazard.place(w, i, p):
 		BossForge.event(w, i, SLAG_DROP, p).amount = bs.hz_id[bs.hz_id.size() - 1]
 
 
 ## Slabs past their time crumble; a shattered slab's row goes after SHATTER_SHOW_TICKS.
 static func _crumble(w: World) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	for k in range(bs.slab_id.size() - 1, -1, -1):
 		var broke := bs.slab_broke[k]
 		if broke > 0:
@@ -137,7 +139,7 @@ static func _shatter(w: World, i: int) -> void:
 	if k < 0:
 		return
 	var r := BossAi.ring_of(w, i)
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var off := Kin.length(slab_centre(bs, k) - (r[0] as Vector2))
 	if off < float(r[1]) or off > float(r[2]):
 		return
@@ -161,13 +163,13 @@ static func pool_spot(w: World, i: int, piece: Rect2, r: float) -> Vector2:
 	return Vector2(x, y)
 
 
-static func slab_centre(bs: BossStore, k: int) -> Vector2:
+static func slab_centre(bs: BossFightStore, k: int) -> Vector2:
 	return Vector2(bs.slab_x[k], bs.slab_y[k])
 
 
 ## The whole slab p stands on (its centre inside it; the oldest first), or -1.
 static func slab_under(w: World, p: Vector2) -> int:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	for k in bs.slab_id.size():
 		if bs.slab_broke[k] == 0 and Kin.length(slab_centre(bs, k) - p) <= bs.slab_r[k]:
 			return k
@@ -177,7 +179,7 @@ static func slab_under(w: World, p: Vector2) -> int:
 ## The whole slabs safe to stand on until `ahead` ticks from now: lasting that long, and their centre the hero's
 ## width inside the cool floor every meltdown will have left then.
 static func safe_slabs(w: World, ahead: int) -> PackedInt32Array:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var out := PackedInt32Array()
 	for k in bs.slab_id.size():
 		if bs.slab_broke[k] != 0 or bs.slab_until[k] < w.tick + ahead:
@@ -223,7 +225,7 @@ static func nearest(w: World, ks: PackedInt32Array) -> int:
 	var best_d := INF
 	var p := w.player_pos()
 	for k in ks:
-		var d := Kin.length(slab_centre(w.bosses, k) - p)
+		var d := Kin.length(slab_centre(w.boss_fight, k) - p)
 		if d < best_d:
 			best = k
 			best_d = d
@@ -234,7 +236,7 @@ static func nearest(w: World, ks: PackedInt32Array) -> int:
 
 
 static func _overpressure(w: World, i: int, f: BossForgeTable, phase: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if phase < f.over_phase:
 		return
 	if bs.fg_over_due < 0:
@@ -277,13 +279,13 @@ static func _point(w: World, ks: PackedInt32Array) -> Vector2:
 	var k := nearest(w, ks)
 	if k < 0:
 		return w.player_pos()
-	var c := slab_centre(w.bosses, k)
+	var c := slab_centre(w.boss_fight, k)
 	w.objectives.point(ObjectiveMarkers.FOUNDRY_SLAB, c)
 	return c
 
 
 static func _end(w: World, i: int) -> void:
-	w.bosses.fg_over_from = -1
+	w.boss_fight.fg_over_from = -1
 	w.objectives.clear(ObjectiveMarkers.FOUNDRY_SLAB)
 	if i >= 0:
 		BossForge.event(w, i, OVER_END, w.actors.pos(i))
@@ -291,7 +293,7 @@ static func _end(w: World, i: int) -> void:
 
 ## BossForge.cancel: an Overpressure running ends (its clock stays).
 static func cancel(w: World, i: int) -> void:
-	if w.bosses.fg_over_from >= 0:
+	if w.boss_fight.fg_over_from >= 0:
 		_end(w, i)
 
 
@@ -303,6 +305,7 @@ static func cancel(w: World, i: int) -> void:
 ## until it crumbles; -1 while cooling), "shattered", "safe" (a whole slab Overpressure counts now)}.
 static func rows(w: World, i: int, f: BossForgeTable) -> Array:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var out := []
 	var phase := bs.phase[BossAi.entry_of(w, i)]
 	var id := w.actors.ids[i]
@@ -327,21 +330,21 @@ static func rows(w: World, i: int, f: BossForgeTable) -> Array:
 				)
 			)
 	var ahead := f.over_cast_ticks + f.over_ticks  # A whole Overpressure; the rest of one running
-	if bs.fg_over_from >= 0:
-		ahead = maxi(0, bs.fg_over_from + ahead - w.tick)
+	if fs.fg_over_from >= 0:
+		ahead = maxi(0, fs.fg_over_from + ahead - w.tick)
 	var safe := safe_slabs(w, ahead)
-	for k in bs.slab_id.size():
+	for k in fs.slab_id.size():
 		(
 			out
 			. append(
 				{
 					"slab": true,
-					"id": bs.slab_id[k],
-					"centre": slab_centre(bs, k),
-					"radius": bs.slab_r[k],
+					"id": fs.slab_id[k],
+					"centre": slab_centre(fs, k),
+					"radius": fs.slab_r[k],
 					"cooling": 1000,
-					"left": maxi(0, bs.slab_until[k] - w.tick),
-					"shattered": bs.slab_broke[k] != 0,
+					"left": maxi(0, fs.slab_until[k] - w.tick),
+					"shattered": fs.slab_broke[k] != 0,
 					"safe": safe.has(k),
 				}
 			)
@@ -352,7 +355,7 @@ static func rows(w: World, i: int, f: BossForgeTable) -> Array:
 ## {} with no Overpressure running; else "cast" (0..1000 through the cast, -1 once the floor burns), "cast_left"
 ## (ticks), "burn" (0..1000 through the burn, -1 before), "burn_left" (ticks), "on_slab" (the hero stands on one).
 static func over_state(w: World, f: BossForgeTable) -> Dictionary:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.fg_over_from < 0:
 		return {}
 	var t := w.tick - bs.fg_over_from

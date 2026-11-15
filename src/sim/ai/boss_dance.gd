@@ -1,6 +1,6 @@
 class_name BossDance
 extends RefCounted
-## The Tidecaller's dance (BossTable.dance, a BossDanceTable; BossStore.dance_*): two casts of the room itself,
+## The Tidecaller's dance (BossTable.dance, a BossDanceTable; BossFightStore.dance_*): two casts of the room itself,
 ## beside the boss's attacks (they are not attacks: it goes on fighting), and the Maelstrom (BossMaelstrom).
 ## - Riptide, from rip_phase: the room is cut into four strips along its longer side (SafeArea.strips). A row is
 ##   rip_casts casts: each warns three strips, then a wave runs down them from the room's low end to its high end in
@@ -73,17 +73,18 @@ static func advance(w: World) -> void:
 ## has risen; one at a time.
 static func _dancer(w: World) -> int:
 	var bs := w.bosses
+	var fs := w.boss_fight
 	var a := w.actors
-	if bs.dance_boss >= 0:
-		var i := a.index_of(bs.dance_boss)
+	if fs.dance_boss >= 0:
+		var i := a.index_of(fs.dance_boss)
 		return i if i >= 0 and a.dead[i] == 0 else -1
 	for b in bs.size():
 		var t: BossTable = w.boss_tables[bs.table[b]]
 		var i := a.index_of(bs.ids[b])
 		if t.dance == null or i < 0 or a.dead[i] == 1 or a.state[i] == EnemyAi.State.SPAWN:
 			continue
-		bs.clear_dance()
-		bs.dance_boss = bs.ids[b]
+		fs.clear_dance()
+		fs.dance_boss = bs.ids[b]
 		return i
 	return -1
 
@@ -106,7 +107,7 @@ static func room_of(w: World, i: int) -> Rect2:
 
 
 static func _riptide(w: World, i: int, t: BossTable, d: BossDanceTable, phase: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.dance_rip_from < 0:
 		if not BossTideBeats.may_begin(w, i, t, d, phase, BossTideBeats.RIPTIDE):
 			return
@@ -133,7 +134,7 @@ static func _riptide(w: World, i: int, t: BossTable, d: BossDanceTable, phase: i
 
 ## Cast n of the row begins its warning.
 static func _cast(w: World, i: int, d: BossDanceTable, n: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	bs.dance_rip_n = n
 	bs.dance_rip_from = w.tick
 	bs.dance_rip_hit = 0
@@ -149,12 +150,12 @@ static func _cast(w: World, i: int, d: BossDanceTable, n: int) -> void:
 ## two plus WALK_EXTRA_M, at the hero's run speed now, times rip_run_margin per mille (at most WALK_MAX_TICKS).
 static func warn_of(w: World, i: int, d: BossDanceTable, n: int) -> int:
 	var strips := SafeArea.strips(room_of(w, i), STRIPS)
-	var to := strips[d.safe_strip(n, w.bosses.dance_rip_mirror)]
+	var to := strips[d.safe_strip(n, w.boss_fight.dance_rip_mirror)]
 	var gap := 0.0
 	if n == 0:
 		gap = Kin.length(w.player_pos() - w.player_pos().clamp(to.position, to.end))
 	else:
-		gap = rect_gap(strips[d.safe_strip(n - 1, w.bosses.dance_rip_mirror)], to)
+		gap = rect_gap(strips[d.safe_strip(n - 1, w.boss_fight.dance_rip_mirror)], to)
 	var speed := BossTide.run_speed(w)
 	var walk := WALK_MAX_TICKS
 	if speed > 0.0:
@@ -171,7 +172,7 @@ static func rect_gap(a: Rect2, b: Rect2) -> float:
 
 ## The wave's step s (1..rip_wave_ticks): the hero in a warned strip the front passes this tick is hit, once a cast.
 static func _sweep(w: World, i: int, d: BossDanceTable, s: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.dance_rip_hit == 1 or w.player_dead():
 		return
 	var room := room_of(w, i)
@@ -205,7 +206,7 @@ static func front_m(d: BossDanceTable, length: float, s: int) -> float:
 
 
 static func _high_tide(w: World, i: int, t: BossTable, d: BossDanceTable, phase: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.dance_ht_from < 0:
 		if not BossTideBeats.may_begin(w, i, t, d, phase, BossTideBeats.HIGH_TIDE):
 			return
@@ -236,12 +237,12 @@ static func _high_tide(w: World, i: int, t: BossTable, d: BossDanceTable, phase:
 
 ## The dry circle's centre (of the High Tide running).
 static func dry_centre(w: World) -> Vector2:
-	return Vector2(w.bosses.dance_ht_x, w.bosses.dance_ht_y)
+	return Vector2(w.boss_fight.dance_ht_x, w.boss_fight.dance_ht_y)
 
 
 static func _end_tide(w: World, i: int) -> void:
 	_event(w, i, HT_END, dry_centre(w))
-	w.bosses.dance_ht_from = -1
+	w.boss_fight.dance_ht_from = -1
 	w.objectives.clear(ObjectiveMarkers.TIDE_DRY)
 
 
@@ -304,7 +305,7 @@ static func eye_keep_m(w: World, i: int, d: BossDanceTable) -> float:
 
 ## The hero is dead or outside the room: the casts running end and a throw stops (the rhythm's beat running ends).
 static func cancel(w: World) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	BossTideBeats.cancel(w)
 	bs.dance_rip_from = -1
 	bs.dance_throw = 0
@@ -318,9 +319,9 @@ static func cancel(w: World) -> void:
 
 ## BossSignatures.on_boss_gone: the boss that ran the dance takes it and its marker with it.
 static func on_boss_gone(w: World, boss_id: int) -> void:
-	if w.bosses.dance_boss != boss_id:
+	if w.boss_fight.dance_boss != boss_id:
 		return
-	w.bosses.clear_dance()
+	w.boss_fight.clear_dance()
 	w.objectives.clear(ObjectiveMarkers.TIDE_DRY)
 
 
@@ -344,7 +345,8 @@ static func _event(w: World, i: int, effect: StringName, at: Vector2) -> SimEven
 ## "maelstrom" (BossMaelstrom.state) and "beats" (the rhythm: BossTideBeats.state).
 static func state(w: World) -> Dictionary:
 	var bs := w.bosses
-	var i := w.actors.index_of(bs.dance_boss) if bs.dance_boss >= 0 else -1
+	var fs := w.boss_fight
+	var i := w.actors.index_of(fs.dance_boss) if fs.dance_boss >= 0 else -1
 	if i < 0:
 		return {}
 	var t := BossAi.table_of(w, i)
@@ -368,7 +370,7 @@ static func state(w: World) -> Dictionary:
 
 
 static func _riptide_state(w: World, d: BossDanceTable, room: Rect2) -> Dictionary:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.dance_rip_from < 0:
 		return {}
 	var warn := bs.dance_rip_warn
@@ -394,7 +396,7 @@ static func _riptide_state(w: World, d: BossDanceTable, room: Rect2) -> Dictiona
 
 
 static func _tide_state(w: World, d: BossDanceTable) -> Dictionary:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	if bs.dance_ht_from < 0:
 		return {}
 	var t := w.tick - bs.dance_ht_from

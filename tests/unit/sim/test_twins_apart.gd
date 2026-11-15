@@ -203,7 +203,7 @@ func test_a_charge_without_the_option_does_not_burst() -> void:
 	_until_state(w, s[1], S.RECOVER, 200)
 	TwinsLab.idle(w, 30)
 	assert_eq(TwinsLab.effects(w, BossChargeBurst.ARMED), [], "nothing armed")
-	assert_true(w.bosses.cb_boss.is_empty())
+	assert_true(w.boss_fight.cb_boss.is_empty())
 
 
 # --- the sword combo and the dash ---------------------------------------------------------------------------------
@@ -275,7 +275,7 @@ func test_the_amber_dashes_sideways_between_attacks() -> void:
 	var i := _i(w, s[1])
 	var wt := TwinsLab.wardens(w, s[1])
 	wt.dash_every_ticks = 180
-	w.bosses.wd_dash_cd = 0
+	w.boss_fight.wd_dash_cd = 0
 	w.actors.cd[i] = 0
 	TwinsLab.idle(w, 5)
 	assert_eq(TwinsLab.effects(w, BossWardenAmber.DASH), [], "not while it could attack")
@@ -293,7 +293,7 @@ func test_the_amber_dashes_sideways_between_attacks() -> void:
 	assert_almost_eq(moved.length(), 4.0, 0.01, "4 m")
 	assert_almost_eq(moved.x, 0.0, 0.01, "to the side of the line to the hero")
 	assert_eq(w.actors.hp[0], hp, "no damage")
-	assert_eq(w.bosses.wd_dash_t, 0)
+	assert_eq(w.boss_fight.wd_dash_t, 0)
 	w.actors.cd[i] = 600
 	TwinsLab.idle(w, 150)
 	assert_eq(TwinsLab.effects(w, BossWardenAmber.DASH).size(), 1, "once every 3 s")
@@ -576,7 +576,7 @@ func test_the_long_charge_through_the_violet_breaks_her_ward() -> void:
 	assert_eq([w.actors.state[i], w.actors.state[j]], [BossAi.STAGGERED, BossAi.STAGGERED])
 	assert_eq(w.bosses.stagger_t[BossAi.entry_of(w, i)], 120, "he is staggered 2 s")
 	assert_eq(w.bosses.stagger_t[BossAi.entry_of(w, j)], 300, "she is stunned 5 s")
-	assert_true(w.bosses.cb_boss.is_empty(), "the charge ended on her: no burst")
+	assert_true(w.boss_fight.cb_boss.is_empty(), "the charge ended on her: no burst")
 	var ward: Dictionary = r.boss_wardens()["ward"]
 	assert_eq([ward["kind"], ward["broken"]], [&"", true])
 	assert_eq(ward["stun_left"], broke.tick + 300 - w.tick)
@@ -770,8 +770,8 @@ func test_the_exit_is_drawn_from_the_ai_stream() -> void:
 		TwinsLab.wardens(w, s[1]).rift_hp_permille = 500
 		TwinsLab.set_hp(w, s[1], 166)
 		assert_not_null(TwinsLab.until_effect(w, BossRift.ENTER, 400), "seed %d" % sv)
-		assert_ne(w.bosses.wd_rift_out, w.bosses.wd_rift_in)
-		exits[w.bosses.wd_rift_out] = true
+		assert_ne(w.boss_fight.wd_rift_out, w.boss_fight.wd_rift_in)
+		exits[w.boss_fight.wd_rift_out] = true
 	assert_eq(exits.size(), 2, "either of the other two, by the seed")
 
 
@@ -802,16 +802,16 @@ func test_the_whole_fight_is_deterministic_and_its_state_is_hashed() -> void:
 	var a := _free_fight(21, 3000)
 	var b := _free_fight(21, 3000)
 	assert_eq(a.state_hash(), b.state_hash(), "two runs agree through the three phases")
-	assert_gte(a.bosses.wd_boss, 0, "the Wardens run their mechanics")
+	assert_gte(a.boss_fight.wd_boss, 0, "the Wardens run their mechanics")
 	for f: StringName in [&"wd_mirror_until", &"wd_break_at", &"wd_dash_cd", &"wd_rift_stage"]:
 		var before := a.state_hash()
-		var was: int = a.bosses.get(f)
-		a.bosses.set(f, was + 7)
+		var was: int = a.boss_fight.get(f)
+		a.boss_fight.set(f, was + 7)
 		assert_ne(a.state_hash(), before, "%s is hashed" % f)
-		a.bosses.set(f, was)
+		a.boss_fight.set(f, was)
 	var plain := BossLab.world()
 	var h := plain.state_hash()
-	plain.bosses.wd_dash_cd = 5
+	plain.boss_fight.wd_dash_cd = 5
 	assert_eq(plain.state_hash(), h, "a world without the Wardens hashes as before")
 
 
@@ -825,10 +825,10 @@ func test_a_save_mid_fight_restores_every_piece() -> void:
 		if restored == null:
 			return
 		assert_eq(restored.state_hash(), a.state_hash(), "same hash restored")
-		for f: StringName in BossStore.WD_FIELDS:
-			assert_eq(restored.bosses.get(f), a.bosses.get(f), String(f))
-		assert_eq(restored.bosses.wd_rift_x, a.bosses.wd_rift_x)
-		assert_eq(restored.bosses.cb_at, a.bosses.cb_at)
+		for f: StringName in BossFightStore.WD_FIELDS:
+			assert_eq(restored.boss_fight.get(f), a.boss_fight.get(f), String(f))
+		assert_eq(restored.boss_fight.wd_rift_x, a.boss_fight.wd_rift_x)
+		assert_eq(restored.boss_fight.cb_at, a.boss_fight.cb_at)
 		for k in 400:
 			var f := (
 				InputFrame.make(Vector2i(60, 40), 0, 300, 0, 0) if k % 90 < 45 else InputFrame.new()
@@ -847,17 +847,18 @@ func test_everything_goes_when_the_fight_ends() -> void:
 	BossChargeBurst.arm(
 		w, _i(w, s[1]), TwinsLab.table(w, s[1]).attack_index(&"warden_charge"), Vector2(2, 2)
 	)
-	w.bosses.wd_mirror_until = w.tick + 100
-	w.bosses.wd_mirror_on = 1
-	assert_false(w.bosses.wd_rift_x.is_empty())
+	w.boss_fight.wd_mirror_until = w.tick + 100
+	w.boss_fight.wd_mirror_on = 1
+	assert_false(w.boss_fight.wd_rift_x.is_empty())
 	TwinsLab.set_hp(w, s[1], 1)
 	TwinsLab.hit(w, s[1], 50, Vector2(-9, 3))
 	w.step(InputFrame.new())
 	assert_false(w.boss_alive(), "the pair fell")
 	var bs := w.bosses
-	assert_eq(bs.wd_boss, -1)
-	assert_eq([bs.wd_rift_stage, bs.wd_mirror_on, bs.wd_full, bs.wd_dash_t], [0, 0, 0, 0])
-	assert_true(bs.wd_rift_x.is_empty() and bs.cb_boss.is_empty() and bs.hz_x.is_empty())
+	var fs := w.boss_fight
+	assert_eq(fs.wd_boss, -1)
+	assert_eq([fs.wd_rift_stage, fs.wd_mirror_on, fs.wd_full, fs.wd_dash_t], [0, 0, 0, 0])
+	assert_true(fs.wd_rift_x.is_empty() and fs.cb_boss.is_empty() and bs.hz_x.is_empty())
 	assert_true(bs.twin_lead.is_empty())
 	assert_eq(w.objectives.size(), 0, "no hint left")
 	var r := WorldReader.new(w)
@@ -876,6 +877,6 @@ func test_the_hero_s_death_ends_the_set_piece_and_the_bursts() -> void:
 	w.actors.hp[0] = 0
 	w.actors.dead[0] = 1
 	w.step(InputFrame.new())
-	assert_eq(w.bosses.wd_rift_stage, BossRift.NONE)
-	assert_true(w.bosses.cb_boss.is_empty())
+	assert_eq(w.boss_fight.wd_rift_stage, BossRift.NONE)
+	assert_true(w.boss_fight.cb_boss.is_empty())
 	assert_false(BossAi.hidden(w, _i(w, s[1])), "he is back")

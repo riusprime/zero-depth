@@ -1,7 +1,7 @@
 class_name BossGears
 extends RefCounted
 ## The Clockwork Judge's stopped gears: with a Time Wave, walls across the straight lines from the hero to the hour
-## orbs, so the way to an orb goes round (BossStore.gear_*; BossTimeTable.gear_*).
+## orbs, so the way to an orb goes round (BossFightStore.gear_*; BossTimeTable.gear_*).
 ## - Each is a wall while it stands (World.add_barrier: bodies, both sides' shots, sight; the flow field goes round
 ##   it, BossSignatures.set_nav_extra), long across its line and thin along it.
 ## - Where: gear g crosses the line to orb g (the fourth, the first orb's line again), half-way along it or, when it
@@ -31,7 +31,7 @@ const ALL := -2
 
 
 ## Gear k as the wall it is.
-static func obb(bs: BossStore, k: int) -> Obb:
+static func obb(bs: BossFightStore, k: int) -> Obb:
 	return Obb.make(
 		Vector2(bs.gear_x[k], bs.gear_y[k]), Vector2(bs.gear_hx[k], bs.gear_hy[k]), bs.gear_a[k]
 	)
@@ -40,8 +40,8 @@ static func obb(bs: BossStore, k: int) -> Obb:
 ## Every standing gear as a wall.
 static func obbs(w: World) -> Array[Obb]:
 	var out: Array[Obb] = []
-	for k in w.bosses.gear_x.size():
-		out.append(obb(w.bosses, k))
+	for k in w.boss_fight.gear_x.size():
+		out.append(obb(w.boss_fight, k))
 	return out
 
 
@@ -107,7 +107,7 @@ static func seg_dist(p: Vector2, a: Vector2, b: Vector2) -> float:
 
 
 static func _add(w: World, boss_id: int, c: Vector2, half: Vector2, along: int, ticks: int) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	bs.gear_x.append(c.x)
 	bs.gear_y.append(c.y)
 	bs.gear_hx.append(half.x)
@@ -121,7 +121,7 @@ static func _add(w: World, boss_id: int, c: Vector2, half: Vector2, along: int, 
 
 ## Removes the gears whose time is up (DUE), every gear (ALL) or every gear of boss `which`, walls and all.
 static func drop(w: World, which: int = DUE) -> void:
-	var bs := w.bosses
+	var bs := w.boss_fight
 	var gone: Array[Obb] = []
 	for k in range(bs.gear_x.size() - 1, -1, -1):
 		var due := bs.gear_until[k] <= w.tick
@@ -137,7 +137,7 @@ static func drop(w: World, which: int = DUE) -> void:
 ## width), "angle" (1/4096 turns, along its length), "age" (ticks since it rose), "left" (ticks until it goes)}.
 static func rows(w: World) -> Array:
 	var out := []
-	var bs := w.bosses
+	var bs := w.boss_fight
 	for k in bs.gear_x.size():
 		(
 			out

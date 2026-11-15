@@ -19,7 +19,7 @@ static func apply(
 	if best_t <= 1.0:
 		var mirrored := (
 			best_actor > 0
-			and w.bosses.wd_mirror_on == 1
+			and w.boss_fight.wd_mirror_on == 1
 			and BossWard.reflect(w, i, best_actor, a, v, best_t)
 		)  # The Mirror Ward sent it back: it ends here without a hit
 		if best_actor >= 0 and not mirrored and not Bomb.touches(w, i):  # A bomb's touch bursts it, no hit
