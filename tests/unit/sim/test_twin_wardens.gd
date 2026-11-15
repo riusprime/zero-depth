@@ -424,8 +424,10 @@ func test_the_death_lines_name_the_wardens() -> void:
 	w.killer_kind = ActorStore.Kind.TWIN_WARDEN
 	w.killer_attack = t.attack_index(&"chain_sweep")
 	assert_eq(BossAi.cause_key(w), &"CAUSE_TWIN_SWEEP")
-	for id: StringName in [&"warden_charge", &"warden_charge_long", &"rift_charge"]:
+	for id: StringName in [&"warden_charge", &"warden_charge_long"]:
 		w.killer_attack = t.attack_index(id)
 		assert_eq(BossAi.cause_key(w), &"CAUSE_TWIN_CHARGE", "%s and its burst" % id)
+	w.killer_attack = t.attack_index(&"rift_charge")
+	assert_eq(BossAi.cause_key(w), &"CAUSE_TWIN_RIFT_CHARGE", "the charge out of the rift")
 	var en := TranslationServer.get_translation_object("en")
 	assert_eq(String(en.get_message(&"BOSS_TWIN_WARDENS")), "The Twin Wardens")

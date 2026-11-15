@@ -275,7 +275,7 @@ func test_the_side_dash_leaves_a_streak() -> void:
 	var view: WardenBladeViews = _view(WardenBladeViews)
 	var wt := TwinsLab.wardens(w, s[1])
 	wt.dash_every_ticks = 180
-	w.bosses.wd_dash_cd = 0
+	w.boss_fight.wd_dash_cd = 0
 	w.actors.cd[_i(w, s[1])] = 60  # between two attacks
 	var streaked := false
 	for k in 60:
