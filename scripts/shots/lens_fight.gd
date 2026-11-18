@@ -15,6 +15,8 @@ const BIOME := &"red_canyon"
 const FEEDERS := [Vector2(5, 0), Vector2(-3, 6), Vector2(-5, -5)]
 const WEB := [Vector2(4, 0), Vector2(0, 8), Vector2(-7.07, -7.07)]
 
+## Another biome's floor (biome=<id>: the darkest floors' readability check), its shots in lens_fight_<id>/.
+var _biome := BIOME
 var _vp: SubViewport
 var _world: World
 var _view: LensFightRig
@@ -29,7 +31,11 @@ var _run := 0
 
 
 func _initialize() -> void:
-	_dir = "res://build/shots/%s/lens_fight/" % GameVersion.label()
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("biome="):
+			_biome = StringName(a.substr(6))
+	var tail := "" if _biome == BIOME else "_%s" % _biome
+	_dir = "res://build/shots/%s/lens_fight%s/" % [GameVersion.label(), tail]
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	TranslationServer.set_locale("en")
 	_vp = SubViewport.new()
@@ -62,7 +68,7 @@ func _begin(phase: int, lattice: bool) -> void:
 	_gap = []
 	if _view != null:
 		_view.free_all()
-	_view = LensFightRig.new(_vp, _world, BIOME)
+	_view = LensFightRig.new(_vp, _world, _biome)
 
 
 func _lens() -> Dictionary:

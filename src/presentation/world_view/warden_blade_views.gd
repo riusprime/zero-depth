@@ -2,9 +2,10 @@ class_name WardenBladeViews
 extends Node3D
 ## The Twin Wardens' blades and rifts, drawn from WorldReader.boss_wardens (EI-07: where the swords stand, when each
 ## cuts, where the rifts open and which one he leaves by are the sim's, BossShadowSwords, BossWardenAmber, BossRift).
-## - Shadow Swords: a dark blade hangs over each sword's spot, pointing along its line (the line itself is the
-##   ordinary telegraph, in the tw_swords look), with the pack's violet flare at its hilt. On its cut it flies down its
-##   line, a dark slash with a violet edge runs along the line and fades, and the pack's hit bursts where it cut.
+## - Shadow Swords: a dark violet blade (matte and lit like the Wardens themselves, a faint violet glow its only light)
+##   hangs over each sword's spot, pointing along its line (the line itself is the ordinary telegraph, in the tw_swords
+##   look). On its cut the blade itself flies down its line and a dim violet slash runs along it and fades: no beam, no
+##   burst.
 ## - The side dash: a short amber afterimage streak from where the dash began to where he is, fading
 ##   after it (no smoke at his feet).
 ## - Through the Rift: three violet portals (the pack's ripple) at the reader's spots, opening as they appear; he sinks
@@ -18,16 +19,19 @@ const PORTALS := 3
 const VIOLET := WardenLooks.VIOLET
 const AMBER := WardenLooks.AMBER
 const FLARE_ID := &"tw_rift_flash"
-const SLASH_ID := &"tw_slash"
 const PORTAL_ID := &"tw_portal"
 const EXIT_ID := &"tw_portal_exit"
-const EFFECT_CUT := &"warden_sword_cut"
 const EFFECT_ENTER := &"warden_rift_enter"
 const EFFECT_EXIT := &"warden_rift_exit"
 ## The blades hang this high (m) and their slash fades over SLASH_S; a blade flies its line in FLY_S.
 const BLADE_H := 1.3
 const SLASH_S := 0.4
 const FLY_S := 0.12
+## The blade: a deep violet, not black, so it catches the room's light; its glow and the slash it leaves, both dim.
+const BLADE := Color("#4B2C7A")
+const BLADE_GLOW := 0.6
+const SLASH := Color(0.42, 0.22, 0.72)
+const SLASH_GLOW := 0.5
 ## The dash streak's fade (s) and width (m).
 const STREAK_S := 0.35
 const STREAK_W := 1.2
@@ -67,22 +71,22 @@ func _init() -> void:
 	var blade := PrismMesh.new()
 	blade.size = Vector3(0.22, 1.7, 0.05)
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = WardenLooks.SHADOW
+	mat.albedo_color = BLADE
+	mat.roughness = 1.0
+	mat.metallic = 0.0
+	mat.metallic_specular = 0.5
 	mat.emission_enabled = true
 	mat.emission = VIOLET
-	mat.emission_energy_multiplier = 0.9
-	mat.rim_enabled = true
-	mat.rim = 1.0
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.emission_energy_multiplier = BLADE_GLOW
 	blade.material = mat
 	for k in BLADES:
 		var mi := MeshInstance3D.new()
 		mi.mesh = blade
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		mi.visible = false
 		add_child(mi)
 		_blades.append(mi)
-		_slashes.append(WardenLooks.floor_mesh(self, false, Color(0.55, 0.2, 1.0)))
+		_slashes.append(WardenLooks.floor_mesh(self, false, SLASH))
 		_cut_t.append(-1.0)
 		_lines.append([Vector2.ZERO, Vector2.ZERO, 0.5])
 	_streak = WardenLooks.floor_mesh(self, false, AMBER)
@@ -129,8 +133,6 @@ func _events(reader: WorldReader) -> void:
 		if e.kind != SimEvent.Kind.STATUS_APPLY:
 			continue
 		match e.effect_id:
-			EFFECT_CUT:
-				_spawn(SLASH_ID, &"hit", SimPlane.to_3d(e.pos, 0.6), 0.8)
 			EFFECT_ENTER, EFFECT_EXIT:
 				_spawn(
 					FLARE_ID,
@@ -199,18 +201,12 @@ func _draw_swords(delta: float) -> void:
 			blade.transform = Transform3D(
 				Basis(side, tip, side.cross(tip)), SimPlane.to_3d(at, BLADE_H + bob)
 			)
-			hold.put(
-				[&"flare", k],
-				FLARE_ID,
-				&"hit",
-				WardenLooks.at(SimPlane.to_3d(at - along * 0.6, BLADE_H + bob), 0.35)
-			)
 		var slash := _slashes[k]
 		slash.visible = t >= 0.0 and t < SLASH_S
 		if slash.visible:
 			WardenLooks.lay_strip(slash, from, to, float(line[2]) * 2.0, 0.08 + 0.002 * k)
-			WardenLooks.param(slash, &"alpha", 1.0 - t / SLASH_S)
-			WardenLooks.param(slash, &"glow", 1.8)
+			WardenLooks.param(slash, &"alpha", 0.8 * (1.0 - t / SLASH_S))
+			WardenLooks.param(slash, &"glow", SLASH_GLOW)
 			WardenLooks.param(slash, &"clock", _clock)
 
 

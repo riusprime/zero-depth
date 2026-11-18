@@ -23,6 +23,11 @@ const ACID_POOL := Color(0.3, 0.36, 0.1)
 ## The Siege Engine's rail shot: a dull orange core in a dull ember haze (a cannon's streak, not a white-hot laser).
 const RAIL_CORE := Color(0.95, 0.5, 0.22)
 const RAIL_HAZE := Color(0.72, 0.3, 0.14)
+## The Focus Beam: a rose-gold core and a thin rose glow at a low brightness, no smoky strip (its glassy shards are
+## BossStrikeImpacts'). The Shadow Swords' cut draws no beam at all: the blade flies its line (WardenBladeViews).
+const FOCUS_CORE := Color(1.0, 0.82, 0.62)
+const FOCUS_GLOW := Color(0.95, 0.5, 0.52)
+const NO_BEAM: Array[StringName] = [&"tw_swords"]
 
 ## The views' pools (id -> {mm, used, cap, drawn}) and the swooshes' triangles ([position, colour]) this draw.
 var pools := {}
@@ -74,6 +79,8 @@ func strike(s: Dictionary, age: float, after: float, dens: float, still: bool) -
 			for k in (s["lanes"] as Array).size():
 				_spears(s["lanes"][k], age, after, life, sd + k * 97, still)
 		&"beam", &"rail":
+			if NO_BEAM.has(s.get("look", &"")):
+				return
 			for k in (s["lanes"] as Array).size():
 				_beam(s, s["lanes"][k], age, after, life, sd + k * 97)
 		&"molten", &"fire_lanes":
@@ -415,9 +422,14 @@ func _beam(s: Dictionary, o: Obb, age: float, after: float, life: float, sd: int
 	var reach := clampf(age / 3.0, 0.0, 1.0)  # the beam ignites down the line
 	var tip := a.lerp(b, reach)
 	var flick := 0.85 + 0.15 * _h(sd, int(age))
+	var focus: bool = s.get("look", &"") == &"hl_beam"
 	if fade > 0.0 and rail:
 		_tube(a, tip, 0.12, Color(RAIL_CORE, fade), 1.3 * flick, sd)
 		_tube(a, tip, 0.26, Color(RAIL_HAZE, 0.4 * fade), 0.9 * flick, sd + 1)
+	elif fade > 0.0 and focus:
+		var fc := o.half.y * 0.36
+		_tube(a, tip, fc, Color(FOCUS_CORE, fade), 1.6 * flick, sd)
+		_tube(a, tip, fc * 1.9, Color(FOCUS_GLOW, 0.3 * fade), 0.9 * flick, sd + 1)
 	elif fade > 0.0:
 		var core := o.half.y * 0.45
 		_tube(a, tip, core, Color(1.0, 0.97, 0.9, fade), 2.6 * flick, sd, true)

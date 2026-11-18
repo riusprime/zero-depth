@@ -4,8 +4,8 @@ extends RefCounted
 ## stone (GroundSlamViews, as the amber Warden's charge slams; PD-13: a physical hit on stone): the craters, the
 ## landings, the eruptions, the shells and the drops slam into the floor sized to the hit, each boss with only its own
 ## small touch (STYLES); the swings that scrape the floor kick grit and dust along their arc; the light pulses that
-## hit the floor kick a ring of chips. Presentation only: where and when are the strike's (the telegraph's geometry on
-## the tick the sim resolves it).
+## hit the floor kick a ring of chips; the Focus Beam leaves a line of glass chips along its lane. Presentation only:
+## where and when are the strike's (the telegraph's geometry on the tick the sim resolves it).
 
 const ORANGE_FLASH := Color(1.0, 0.5, 0.2, 0.75)
 const GOLD_FLASH := Color(1.0, 0.8, 0.38, 0.8)
@@ -36,18 +36,22 @@ const STYLES := {
 	&"cj_gavel": {"parts": CHIPS},
 	&"hl_flare": {"parts": CHIPS},
 }
+## The lanes whose shot rakes the floor, each with the style of what it kicks up: the Siege Engine's rail kicks
+## stone chips, the Focus Beam leaves rose-gold glass. A point every LANE_GAP_M, kicked down the lane as the shot
+## ignites (BossStrikeShapes._beam's 3 ticks).
+const LANE_KICKS := {
+	&"se_rail": {"parts": CHIPS},
+	&"hl_beam": {"flecks": Color(0.95, 0.66, 0.6)},
+}
+const LANE_GAP_M := 1.1
+const LANE_SIZE := 0.3
+const IGNITE_S := 0.05
 ## The swings whose arc scrapes the floor: grit and dust along it as the swing passes.
 const ARC_KICKS: Array[StringName] = [&"gk_sweep", &"cl_fists", &"wl_bash"]
 ## A swing's sweep (ticks: BossStrikeShapes._arc's), the points kicked along it, their size.
 const SWEEP_TICKS := 7.0
 const ARC_POINTS := 7
 const ARC_SIZE := 0.32
-## The lanes whose shot rakes the floor: chips kicked up along the lane, each point as the streak reaches it (its
-## ignition: BossStrikeShapes._beam's 3 ticks), a point every LANE_STEP_M.
-const LANE_KICKS: Array[StringName] = [&"se_rail"]
-const LANE_STEP_M := 1.4
-const LANE_SIZE := 0.3
-const IGNITE_TICKS := 3.0
 ## A light pulse's chips: how far out (share of its reach) and how many points.
 const RING_AT := 0.4
 const RING_POINTS := 16
@@ -64,7 +68,7 @@ static func spawn(slams: GroundSlamViews, s: Dictionary) -> void:
 		return
 	if LANE_KICKS.has(look) and s.has("lanes"):
 		for o: Obb in s["lanes"]:
-			_lane(slams, o)
+			_lane(slams, o, LANE_KICKS[look])
 		return
 	if not STYLES.has(look):
 		return
@@ -98,16 +102,16 @@ static func _arc(slams: GroundSlamViews, g: Array) -> void:
 	slams.kick(points, ARC_SIZE, delays)
 
 
-## Chips kicked up along lane `o` from its near end, each point as the streak reaches it.
-static func _lane(slams: GroundSlamViews, o: Obb) -> void:
-	var n := maxi(2, int(o.half.x * 2.0 / LANE_STEP_M))
+## What lane `o`'s shot kicks up (`style`), from its near end to its far one, each point as the shot reaches it.
+static func _lane(slams: GroundSlamViews, o: Obb, style: Dictionary) -> void:
+	var n := clampi(int(o.half.x * 2.0 / LANE_GAP_M), 2, 24)
 	var points := []
 	var delays := []
 	for k in n:
 		var t := (k + 0.5) / n
 		points.append(SimPlane.to_3d(o.center + o.axis_u * o.half.x * (t * 2.0 - 1.0), 0.0))
-		delays.append(t * IGNITE_TICKS / 60.0)
-	slams.kick(points, LANE_SIZE, delays, {"parts": CHIPS})
+		delays.append(t * IGNITE_S)
+	slams.kick(points, LANE_SIZE, delays, style)
 
 
 ## A ring of chips kicked out round `c` at `r` m.

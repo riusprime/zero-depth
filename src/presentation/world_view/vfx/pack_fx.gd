@@ -9,7 +9,8 @@ extends Node3D
 ## - Caps per family (CAPS, I5), scaled by Effects density (ViewPrefs.effects_density, I9). Past a cap the family's
 ##   oldest live instance is reused.
 ## - Lights are off on every instance: a family that should glow asks VfxCore for its merged light.
-## - Colours: the table's, or the caller's (`primary`, `secondary`, `tertiary`); an alpha of 0 keeps the scene's.
+## - Colours: the table's, or the caller's (`primary`, `secondary`, `tertiary`); an alpha of 0 keeps the scene's. A
+##   beam scene's glow strength is its own unless the caller asks for an `emission` (a float) in the same dictionary.
 ## - Pause: while the sim holds (follow() sees no tick for HOLD_S), every live instance's speed_scale is 0.
 ## - warm(id): the id once, in front of the camera, for WARM_FRAMES frames, so its shaders compile before the first
 ##   fight. v0.10.0 VX-W: once a session, at the main menu (PackFxSessionWarm), never one spawn an id on every floor
@@ -100,8 +101,9 @@ const LOOK := {
 }
 
 ## The children spawn()'s `hide` may switch off (and back on for the next user of a pooled instance).
-## Also an impact's white Core puff and its Ground_Impact disc (Blood Thorns' eruptions keep the sparks).
-const HIDE_PER_SPAWN: Array[String] = ["Smoke", "Core", "Ground_Impact"]  # Blood Thorns keeps the sparks
+## Also an impact's white Core puff and its Ground_Impact disc (Blood Thorns' eruptions keep the sparks), and a beam's
+## ball where it strikes (BeamEndPivot: a held beam's caller hides it, BossPackHold.no_end_ball).
+const HIDE_PER_SPAWN: Array[String] = ["Smoke", "Core", "Ground_Impact", "BeamEndPivot"]
 
 static var _shared: PackFxDefinition
 ## How floor loads warm the pack (VX-W): &"menu" (PackFxSessionWarm warms at the main menu; a load warms what is
@@ -448,6 +450,8 @@ func _make(scene_path: String) -> Node3D:
 	for key in [&"primary_color", &"secondary_color", &"tertiary_color"]:
 		if key in node:
 			(info["colors"] as Dictionary)[key] = node.get(key)
+	if "emission" in node:  # a beam's own glow strength, which a caller may lower per spawn
+		info["emission"] = float(node.get("emission"))
 	if "speed_scale" in node:
 		info["speed"] = float(node.get("speed_scale"))
 	node.visible = false
@@ -521,6 +525,8 @@ func _colour(node: Node3D, info: Dictionary, colors: Dictionary, row: int, dark 
 		if dark > 0.0 and key != &"primary_color":
 			c = Color(c.darkened(dark), c.a)
 		node.set(key, c)
+	if info.has("emission"):
+		node.set("emission", float(colors.get(&"emission", info["emission"])))
 
 
 ## The emitters (child name -> true) whose `emitting` the scene's animation first turns on after its start (an

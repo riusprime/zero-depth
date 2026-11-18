@@ -26,6 +26,16 @@ const SEA := Color(0.42, 0.86, 1.0)
 const DEEP := Color(0.04, 0.22, 0.5)
 const FOAM := Color(0.9, 0.98, 1.0)
 const DRY := Color(1.0, 0.86, 0.5)
+## The Fallen's remembered Riptide in the Hollow arena's own dark teal-violet (Frozen Shore's sky-blue flooded its dark
+## stone), the foam edges kept pale so the strips still read; its ripple in the same tones.
+const HOLLOW_SEA := Color(0.17, 0.3, 0.38)
+const HOLLOW_DEEP := Color(0.08, 0.08, 0.19)
+const HOLLOW_FOAM := Color(0.6, 0.66, 0.8)
+const HOLLOW_RIPPLE := {
+	&"primary": Color(0.5, 0.66, 0.78),
+	&"secondary": Color(0.22, 0.32, 0.5),
+	&"tertiary": Color(0.12, 0.1, 0.26)
+}
 const WATER_ID := &"tc_rip_water"
 const SPLASH_ID := &"tc_splash"
 const DRY_ID := &"tc_dry"
@@ -183,6 +193,8 @@ var _flood_left := -1
 ## A round floor the strips are clipped to (sim plane centre, radius; 0: none).
 var _clip_at := Vector2.ZERO
 var _clip_r := 0.0
+## The palette the strips and walls wear now (true: the Hollow's).
+var _hollow := false
 
 
 func _init() -> void:
@@ -255,6 +267,7 @@ func sync(reader: WorldReader) -> void:
 	if not _dance.is_empty():
 		_boss_at = SimPlane.to_3d(reader.actor_pos(int(_dance["boss"])))
 		_read_round_floor(reader)
+	_wear(_clip_r > 0.0)
 	if not _primed:
 		_primed = true
 		for e in reader.events_since(0):
@@ -268,6 +281,17 @@ func sync(reader: WorldReader) -> void:
 		elif e.effect_id == EFFECT_TIDE_END:
 			_drain = DRAIN_S
 	_splash_in_flood()
+
+
+## The strips' and walls' water in the Hollow's palette (`hollow`) or the Tidecaller's own.
+func _wear(hollow: bool) -> void:
+	if hollow == _hollow:
+		return
+	_hollow = hollow
+	for m: ShaderMaterial in _strip_mats + _wall_mats:
+		m.set_shader_parameter("sea", HOLLOW_SEA if hollow else SEA)
+		m.set_shader_parameter("deep", HOLLOW_DEEP if hollow else DEEP)
+		m.set_shader_parameter("foam", HOLLOW_FOAM if hollow else FOAM)
 
 
 ## The Fallen's remembered Riptide cuts the square round the final arena's centre, whose corners lie past its round
@@ -381,7 +405,8 @@ func _draw_riptide() -> void:
 			[&"strip", k],
 			WATER_ID,
 			&"area",
-			_at(SimPlane.to_3d(at, 0.06), width * 0.5 * RIPPLE_PER_M * grow)
+			_at(SimPlane.to_3d(at, 0.06), width * 0.5 * RIPPLE_PER_M * grow),
+			HOLLOW_RIPPLE if _hollow else {}
 		)
 
 
