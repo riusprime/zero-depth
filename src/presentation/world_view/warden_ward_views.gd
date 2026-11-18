@@ -9,11 +9,12 @@ extends Node3D
 ##   cast it rises toward the hero (the side it will face); it stands at full height through the ward and sinks over
 ##   its last FADE_S. A shot it turns back flashes where it struck (the pack's hit); the returned shot is the hostile
 ##   violet look the data names. A swing it blocks rings the pack's pulse on the hero, pushed back.
-## - The whole ward (the last phase): a larger, brighter dome on the violet Warden (its own forcefield scene) with a
-##   rim on the floor. While the amber Warden winds a charge up under it, his lane glows on the floor, white-hot when
-##   she stands on it. The break: the pack's shatter and stun flash on her, stars over her while she is stunned (her
-##   avatar slumps in its stagger clip, his staggers too), then a ring on the floor counting down to the ward's return
-##   and, for its last RETURN_GLOW_S, the pack's rising light as it re-forms.
+## - The whole ward (the last phase): cast first, the pack's re-forming light rising on her through the cast; then a
+##   larger, brighter dome on the violet Warden (its own forcefield scene) with a rim on the floor. While the amber
+##   Warden winds a charge up under it, his lane glows on the floor, white-hot when she stands on it. The break:
+##   the pack's shatter and stun flash on her, stars over her while she is stunned (her avatar slumps in its stagger
+##   clip, his staggers too), then a ring on the floor counting down to the ward's return and, for its last
+##   RETURN_GLOW_S, the pack's rising light as it re-forms.
 ## - The Fallen remembering the ward (WorldReader.boss_fallen): the same whole dome and rim on The Fallen, the
 ##   amber Warden's shade's lane under it (white-hot while it would run through The Fallen), the same shatter and stun
 ##   flash on it when it breaks. Its stars are BossVulnerableViews' (the stun is a quake table's), the shade itself
@@ -79,6 +80,8 @@ var _wall_centre := 0
 var _wall_half := 0
 var _wall_up := 0.0
 var _casting := false
+## The whole ward cast now (the violet Warden's cast): the re-forming light on her, no wall.
+var _raising := false
 var _cast_share := 0.0
 var _left_s := 0.0
 ## The ward's whole wait to return, as first read after the break (the ring's full turn).
@@ -111,6 +114,7 @@ func sync(reader: WorldReader) -> void:
 	_hero_at = reader.player_pos()
 	_resting = []
 	_casting = false
+	_raising = false
 	_full = false
 	_charge = {}
 	if not _st.is_empty():
@@ -156,6 +160,9 @@ func _read_cast(reader: WorldReader, j: int) -> void:
 		_wall_centre = int(ward["centre"])
 		_wall_half = int(ward["half_arc"])
 		_left_s = float(ward["left"]) / 60.0
+		return
+	if bool(ward.get("raising", false)):
+		_raising = true
 		return
 	if (
 		reader.boss_move(j) != WorldReader.MOVE_MIRROR_WARD
@@ -277,6 +284,8 @@ func _draw_full() -> void:
 			n, WardenLooks.field_material(&"full", hot, Color(1, 0.9, 1), Color.WHITE), &"full"
 		)
 		hold.put(&"full_rim", RIM_ID, &"area", WardenLooks.at(SimPlane.to_3d(_full_at, 0.05), 1.3))
+	if _raising:
+		hold.put(&"reform", REFORM_ID, &"status", WardenLooks.at(SimPlane.to_3d(_violet_at), 1.2))
 	var charge := _charge
 	_lane.visible = full and not charge.is_empty()
 	if _lane.visible:
@@ -359,3 +368,8 @@ func lane_shown() -> bool:
 
 func return_shown() -> bool:
 	return _return_ring.visible
+
+
+## Whether the whole ward's cast shows (the re-forming light on her).
+func raising_shown() -> bool:
+	return _raising

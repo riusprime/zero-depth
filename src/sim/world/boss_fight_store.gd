@@ -63,6 +63,8 @@ const WD_FIELDS: Array[StringName] = [
 	&"wd_rift_out",
 	&"wd_rift_done"
 ]
+## The Wardens' own attack clocks, hashed only while a pair runs them (not with another boss's pending burst).
+const WD_CLOCK_FIELDS: Array[StringName] = [&"wd_charge_due", &"wd_ward_due"]
 const WD_FLOAT_FIELDS: Array[StringName] = [&"wd_dash_vx", &"wd_dash_vy", &"wd_aim_x", &"wd_aim_y"]
 ## The siege mechanics' clocks (BossSiege, BossDoom).
 const SIEGE_FIELDS: Array[StringName] = [
@@ -260,7 +262,9 @@ var cb_y := PackedFloat32Array()
 ## wd_dash_vx/wd_dash_vy its step a tick. Through the Rift: wd_rift_stage (BossRift's stages, 0 = none), wd_rift_at
 ## the tick the stage began, wd_rift_in and wd_rift_out the rifts it enters and leaves by (-1 = not chosen),
 ## wd_rift_done 1 once it has been cast, wd_rift_x/wd_rift_y the rifts' centres, wd_aim_x/wd_aim_y where the hero
-## stood when the exit was marked. Hashed only while a pair of Wardens runs them.
+## stood when the exit was marked. The clocks: wd_charge_due the tick the amber Warden's next charge on its own clock
+## may start (-1 = no such clock running), wd_ward_due the tick the violet Warden's next whole-ward cast may start
+## (-1 = none due). Hashed only while a pair of Wardens runs them.
 var wd_boss := -1
 var wd_mirror_until := -1
 var wd_break_at := -1
@@ -276,6 +280,8 @@ var wd_rift_at := 0
 var wd_rift_in := -1
 var wd_rift_out := -1
 var wd_rift_done := 0
+var wd_charge_due := -1
+var wd_ward_due := -1
 var wd_dash_vx := 0.0
 var wd_dash_vy := 0.0
 var wd_aim_x := 0.0
@@ -487,6 +493,9 @@ func hash_into(h: StateHasher) -> void:
 			h.add_ints(get(f))
 		for f: StringName in CB_FLOAT_FIELDS + [&"wd_rift_x", &"wd_rift_y"]:
 			h.add_f32s(get(f))
+		if wd_boss >= 0:
+			for f: StringName in WD_CLOCK_FIELDS:
+				h.add_int(get(f))
 	if sg_boss >= 0 or not sg_b_x.is_empty():  # Only while a boss runs its siege or a boulder stands
 		h.add_int(-21)
 		for f: StringName in SIEGE_FIELDS:
@@ -571,7 +580,9 @@ func clear_wardens() -> void:
 		&"wd_break_at",
 		&"wd_push_tick",
 		&"wd_rift_in",
-		&"wd_rift_out"
+		&"wd_rift_out",
+		&"wd_charge_due",
+		&"wd_ward_due"
 	]:
 		set(f, -1)
 	wd_rift_x = PackedFloat32Array()

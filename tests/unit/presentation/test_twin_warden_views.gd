@@ -294,3 +294,29 @@ func test_the_bar_shows_the_phase_only_and_the_one_to_hit_glows() -> void:
 	_drive(exposed, idle.merged({"exposed": true}), 60)
 	assert_gt(focus.role_glow(), rest.role_glow(), "the one to hit outshines the one standing back")
 	assert_gt(exposed.role_glow(), focus.role_glow(), "the exposed one brightest")
+
+
+func test_the_phase_one_charge_flashes_his_body_and_her_ward_gives_him_a_violet_sheen() -> void:
+	var a := _avatar(false)
+	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1}, 20)
+	var calm := a.crack_light.light_energy
+	var glow := a.glow_amount()
+	var windup := {"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_CHARGE}
+	windup["flash"] = 0.6
+	_drive(a, windup, 8)
+	assert_gt(a.flash_amount(), 0.9, "a white-hot flash through the short wind-up")
+	assert_gt(a.crack_light.light_energy, calm * 2.0, "his light flares")
+	if a.glow_overlay != null:
+		assert_gt(a.glow_amount(), glow + 0.2, "his whole body glows")
+		assert_almost_eq(a.glow_overlay.albedo_color.b, TwinWardenAvatar.FLASH_COLOR.b, 0.001)
+	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1, "flash": 0.0}, 10)
+	assert_eq(a.flash_amount(), 0.0, "gone as it runs")
+	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1, "sheltered": true}, 30)
+	assert_gt(a.sheen_amount(), 0.9, "sheltered by her ward: a faint sheen")
+	if a.glow_overlay != null:
+		assert_almost_eq(
+			a.glow_overlay.albedo_color.b, TwinWardenAvatar.SHEEN_COLOR.b, 0.001, "violet"
+		)
+		assert_lt(a.glow_amount(), 0.2, "faint")
+	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1, "sheltered": false}, 30)
+	assert_eq(a.sheen_amount(), 0.0, "and gone with the ward")

@@ -30,8 +30,11 @@ static func end_of(w: World, i: int) -> Vector2:
 	return Vector2(a.lock_x[i], a.lock_y[i]) + Kin.dir(a.lock_a[i]) * maxf(a.lock_len[i], 0.0)
 
 
-## BossAi.telegraph for a charge: its lane, and for one that bursts "burst" {center, radius}.
+## BossAi.telegraph for a charge: its lane, and for one that bursts "burst" {center, radius}; nothing on the ground
+## for the amber Warden's phase-1 clock charge (his body's flash is its only tell).
 static func telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionary:
+	if BossWardenAmber.flashing(w, i):
+		return {"shape": &"signature", "ground": false}
 	var out := {"shape": &"lane", "obb": EnemyAi.charge_lane(w, i)}
 	if bursts(atk):
 		out["burst"] = {"center": end_of(w, i), "radius": atk.burst_radius_m}

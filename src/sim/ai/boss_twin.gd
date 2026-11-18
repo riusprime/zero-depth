@@ -216,13 +216,22 @@ static func resting(w: World, i: int) -> bool:
 	return pair_of(w, i) >= 0 and not leads(w, i)
 
 
-## BossAi._choose and its punish and gap-closer: true when body i may use attack `atk` (its own moveset; any attack for
-## every other boss).
+## BossAi._choose and its punish and gap-closer: true when body i may use attack `atk` (its own moveset, never one its
+## clock starts, and the amber Warden's close attacks only within ranged_beyond_m, his ranged ones only beyond it; any
+## attack for every other boss).
 static func may_use(w: World, i: int, atk: BossAttackTable) -> bool:
 	if pair_of(w, i) < 0:
 		return true
 	if atk.move == M.MIRROR_WARD and (BossWard.mirror_up(w) or BossWard.full(w, i)):
 		return false  # One ward at a time
+	var t := BossAi.table_of(w, i)
+	var wt := t.wardens
+	if wt != null and BossWardenAmber.on_clock(wt, t.attacks.find(atk)):
+		return false  # Only its clock starts it
+	if wt != null and wt.ranged_beyond_m > 0.0 and not is_twin(w, i):
+		var far := Kin.length(w.player_pos() - w.actors.pos(i)) > wt.ranged_beyond_m
+		if far == (atk.max_range_m <= wt.ranged_beyond_m):
+			return false  # Close attacks up close, ranged ones only at range
 	return atk.twin_body == is_twin(w, i)
 
 
@@ -251,11 +260,24 @@ static func may_start(w: World, i: int, k: int) -> bool:
 
 
 ## Damage.hit and tick_dot: the per-mille body i takes from the player: the violet Warden stunned by her broken ward
-## BossWardensTable.stun_permille; 1000 otherwise (and for every other actor).
+## BossWardensTable.stun_permille; the amber Warden while her whole ward stands amber_warded_permille; 1000 otherwise
+## (and for every other actor).
 static func taken_permille(w: World, i: int) -> int:
+	if w.boss_fight.wd_boss < 0:
+		return 1000
+	if warded_lead(w, i):
+		return BossAi.table_of(w, i).wardens.amber_warded_permille
 	if w.boss_fight.wd_break_at < 0 or not BossWard.stunned(w, i):
 		return 1000
 	return BossAi.table_of(w, i).wardens.stun_permille
+
+
+## True while body i is the amber Warden sheltered by the violet one's whole ward (taking amber_warded_permille).
+static func warded_lead(w: World, i: int) -> bool:
+	if w.boss_fight.wd_boss != w.actors.ids[i]:
+		return false
+	var wt := BossAi.table_of(w, i).wardens
+	return wt.amber_warded_permille < 1000 and BossWard.full(w, partner_of(w, i))
 
 
 ## The body to hit now (an actor id): the leader; in phase 3 the amber Warden, or the violet one while her broken
@@ -338,6 +360,8 @@ static func think(w: World, i: int, aim: int) -> bool:
 			BossWardenAmber.dash_think(w, i, BossAi.table_of(w, i).wardens)
 	if a.state[i] != S.MOVE:
 		return false
+	if fs.wd_boss >= 0 and not BossRift.holds(w) and _clocks(w, i):
+		return true  # A clock started its attack
 	var rest := resting(w, i)
 	var held := fs.wd_boss >= 0 and (BossRift.holds(w) or (lead_body(w, i) and fs.wd_dash_t > 0))
 	if not rest and not held and may_start(w, i, k):
@@ -347,6 +371,14 @@ static func think(w: World, i: int, aim: int) -> bool:
 	if rest and not held:
 		_bolt(w, i, k, t, aim)
 	return true
+
+
+## The attacks on their own clocks, body i free: the amber Warden's clock charges, the violet one's whole-ward cast
+## (true: one started now).
+static func _clocks(w: World, i: int) -> bool:
+	if lead_body(w, i):
+		return BossWardenAmber.charge_think(w, i, BossAi.table_of(w, i).wardens)
+	return BossWard.cast_think(w, i)
 
 
 ## True for the pair's boss body (the amber Warden).
@@ -366,14 +398,17 @@ static func on_start(w: World, i: int, k: int) -> void:
 	if w.bosses.twin_phase[pk] >= P_BOTH:
 		var j := partner_of(w, i)
 		w.bosses.twin_turn[pk] = a.ids[j] if j >= 0 else 0
+	var wt := BossAi.table_of(w, i).wardens
 	if atk.move == M.CROSSFIRE:
 		var safe := w.player_pos() if atk.lines_turn_milli > 0 else safe_spot(w, i, atk)
+		var shelter := wt != null and k == wt.shelter_attack
 		for body in [i, partner_of(w, i)]:
 			if body < 0 or BossAi.attack_of(w, body) != atk:
 				continue
 			w.bosses.set_pt(BossAi.entry_of(w, body), 0, safe)
 			w.bosses.pts_y[BossAi.entry_of(w, body) * BossStore.MAX_PTS + BossHard.REM_SLOT] = 0.0
-			a.lock_a[body] = Kin.angle_of(w.player_pos() - a.pos(body))  # The fan flies at the player
+			# The fan flies at the player; a shelter's ring is aimed through its shelter (its own gap there)
+			a.lock_a[body] = Kin.angle_of((safe if shelter else w.player_pos()) - a.pos(body))
 			a.facing[body] = a.lock_a[body]
 	elif atk.move == M.CHAIN_SWEEP:
 		track_sweep(w, i, atk)
@@ -426,6 +461,9 @@ static func crossing_point(p1: Vector2, a1: int, p2: Vector2, a2: int, p: Vector
 ## distance_m); the player's own spot for a body alone, or when the two stand on one spot.
 static func safe_spot(w: World, i: int, atk: BossAttackTable) -> Vector2:
 	var p := w.player_pos()
+	var wt := BossAi.table_of(w, i).wardens
+	if wt != null and BossAi.table_of(w, i).attacks.find(atk) == wt.shelter_attack:
+		return shelter_spot(w, i, wt.shelter_m)
 	var j := partner_of(w, i)
 	if j < 0 or w.actors.dead[j] == 1:
 		return p
@@ -435,6 +473,25 @@ static func safe_spot(w: World, i: int, atk: BossAttackTable) -> Vector2:
 	if d < 0.0001:
 		return p
 	return at + away / d * maxf(Kin.length(p - at), atk.distance_m)
+
+
+## A sheltering Crossfire's spot: `away` from the hero at a right angle to the line from caster i, on the side away
+## from the other Warden (the other side when a wall leaves less than half of it), never past a wall.
+static func shelter_spot(w: World, i: int, away: float) -> Vector2:
+	var p := w.player_pos()
+	var at := w.actors.pos(i)
+	var side := Kin.angle_of(p - at) + 1024
+	var j := partner_of(w, i)
+	if j >= 0 and w.actors.dead[j] == 0 and Kin.dir(side).dot(w.actors.pos(j) - at) > 0.0:
+		side += 2048
+	var best := p
+	for turn: int in [0, 2048]:
+		var spot := BossAi.spot(w, p, (side + turn) & 4095, away)
+		if Kin.length(spot - p) >= away * 0.5:
+			return spot
+		if Kin.length(spot - p) > Kin.length(best - p):
+			best = spot
+	return best
 
 
 ## Tick phase 3, a Sword Lane's windup: the boss's line follows the player (from its body, through them, reach_m on,
@@ -649,7 +706,9 @@ static func telegraph(w: World, i: int, atk: BossAttackTable, progress: int) -> 
 ## WorldReader.boss_twin: {} for a body that isn't a Warden; else "lead" (the boss's body), "partner" (the other's
 ## index), "angry", "anger" (0..1000 of its anger left), "phase" (the roles': P_YELLOW, P_VIOLET, P_BOTH), "resting"
 ## (standing back), "focus" (the body to hit now), "exposed" (the violet Warden stunned by her broken ward, taking
-## more), "warded" (under her whole ward, taking nothing), and while a Crossfire runs "safe" (the spot) and "gap"
+## more), "warded" (under her whole ward, taking nothing), "sheltered" (the amber Warden while her whole ward stands,
+## taking less), "flash" (0..1000 through the wind-up of the amber Warden's phase-1 clock charge, its only tell),
+## and while a Crossfire runs "safe" (the spot) and "gap"
 ## ([from, to]: this body's gap lane through the spot), while the boss's Sword Lane runs "sweep" ({"from", "to",
 ## "half_width", "locked", "progress", "struck"}).
 static func state(w: World, i: int) -> Dictionary:
@@ -671,12 +730,15 @@ static func state(w: World, i: int) -> Dictionary:
 		"focus": bs.twin_focus[k] == a.ids[i],
 		"exposed": BossWard.stunned(w, i),
 		"warded": BossWard.full(w, i),
+		"sheltered": warded_lead(w, i),
 	}
 	var atk := BossAi.attack_of(w, i)
 	var busy := a.state[i] == S.WINDUP or a.state[i] == S.ACTIVE
 	if atk == null or not busy:
 		return out
 	var progress := clampi(a.state_t[i] * 1000 / maxi(1, atk.windup_ticks), 0, 1000)
+	if BossWardenAmber.flashing(w, i):
+		out["flash"] = progress
 	if atk.move == M.CROSSFIRE:
 		var safe := bs.pt(BossAi.entry_of(w, i), 0)
 		out["safe"] = safe

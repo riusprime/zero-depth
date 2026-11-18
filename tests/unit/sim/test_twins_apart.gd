@@ -22,6 +22,8 @@ func _stage(hero: Vector2, amber: Vector2, violet: Vector2, phase := 0, seed_val
 	TwinsLab.hush(w, s[1])
 	if phase > 0:
 		TwinsLab.set_phase(w, s[1], phase)
+	if phase >= TwinsLab.wardens(w, s[1]).ward_phase:
+		TwinsLab.raise_ward(w, s[1])  # As her cast would, at once
 	w.actors.set_pos(_i(w, s[1]), amber)
 	w.actors.set_pos(_i(w, s[2]), violet)
 	w.actors.set_pos(0, hero)
@@ -46,14 +48,14 @@ func test_the_data_is_the_brief_s_numbers() -> void:
 	var charge := t.attacks[t.attack_index(&"warden_charge")]
 	assert_eq(
 		[charge.windup_ticks, charge.lock_ticks],
-		[36, 24],
-		"0.6 s wind-up, the aim locks at the floor"
+		[24, 0],
+		"phase 1's charge: 0.4 s (the floor), no lock: it leads the hero until it commits"
 	)
 	assert_almost_eq(charge.speed * 60.0, 26.0, 0.001, "26 m/s")
 	assert_eq([charge.length_m, charge.burst_radius_m, charge.burst_ticks], [12.0, 3.5, 15])
 	var long := t.attacks[t.attack_index(&"warden_charge_long")]
 	assert_eq(
-		[long.windup_ticks, long.lock_ticks], [84, 30], "1.4 s wind-up, locked the last 0.5 s"
+		[long.windup_ticks, long.lock_ticks], [144, 30], "2.4 s wind-up, locked the last 0.5 s"
 	)
 	var combo := t.attacks[t.attack_index(&"sword_combo")]
 	assert_eq([combo.windup_ticks, combo.gap_ticks, combo.count], [30, 21, 3])
@@ -75,6 +77,21 @@ func test_the_data_is_the_brief_s_numbers() -> void:
 	assert_eq(wt.rift_attack, t.attack_index(&"rift_charge"))
 	assert_eq(t.attacks[wt.rift_attack].damage, 40, "40 % of the base hero's HP at most")
 	assert_eq(wt.mirror_cause_key, &"CAUSE_TWIN_MIRROR")
+	assert_eq(wt.ranged_beyond_m, 7.0, "close attacks within 7 m, ranged ones past it")
+	var ix := func(id: StringName) -> int: return t.attack_index(id)
+	assert_eq(
+		[wt.charge_attack, wt.charge_min_ticks, wt.charge_max_ticks],
+		[ix.call(&"warden_charge"), 600, 900],
+		"phase 1's charge every 10-15 s"
+	)
+	assert_eq(
+		[wt.ward_charge_attack, wt.ward_charge_min_ticks, wt.ward_charge_max_ticks],
+		[ix.call(&"warden_charge_long"), 600, 720],
+		"the ward-breaking charge every 10-12 s"
+	)
+	assert_eq([wt.ward_attack, wt.ward_first_ticks], [ix.call(&"whole_ward"), 240], "cast 4 s in")
+	assert_eq(wt.amber_warded_permille, 250, "he takes a quarter under her ward")
+	assert_eq([wt.shelter_attack, wt.shelter_m], [ix.call(&"crossfire"), 3.0])
 	assert_eq(t.hazard.radius_m, 1.5, "a sword's rift")
 	assert_eq([t.hazard.life_ticks, t.hazard.max_count], [480, 5])
 
@@ -119,7 +136,7 @@ func test_the_charge_tracks_then_locks_runs_at_26_and_bursts_where_it_ends() -> 
 	var s := _stage(Vector2(6, 0), Vector2(-8, 0), Vector2(-8, 9))
 	var w: World = s[0]
 	var i := _i(w, s[1])
-	BossLab.start(w, i, &"warden_charge")
+	BossLab.start(w, i, &"warden_charge_long")
 	var atk := BossAi.attack_of(w, i)
 	var r := WorldReader.new(w)
 	# It follows the hero until the lock
@@ -133,7 +150,7 @@ func test_the_charge_tracks_then_locks_runs_at_26_and_bursts_where_it_ends() -> 
 	assert_eq(w.actors.lock_a[i], want, "aimed at where the hero is")
 	w.actors.set_pos(0, Vector2(6, 4))
 	w.step(InputFrame.new())
-	assert_true(r.telegraph(i).get("locked", false), "locked for the last 0.4 s")
+	assert_true(r.telegraph(i).get("locked", false), "locked for the last 0.5 s")
 	assert_eq(w.actors.lock_a[i], want, "and the aim holds")
 	var seen: Dictionary = r.telegraph(i)["burst"]
 	var end := BossChargeBurst.end_of(w, i)
@@ -174,7 +191,7 @@ func test_the_burst_misses_outside_its_circle_and_a_wall_cuts_the_run_short() ->
 	var s := _stage(Vector2(11, 0), Vector2(4, 0), Vector2(-8, 9))
 	var w: World = s[0]
 	var i := _i(w, s[1])
-	BossLab.start(w, i, &"warden_charge")
+	BossLab.start(w, i, &"warden_charge_long")
 	var atk := BossAi.attack_of(w, i)
 	TwinsLab.idle(w, atk.windup_ticks - atk.lock_ticks + 1)  # locked on the hero by the wall
 	var end := BossChargeBurst.end_of(w, i)
@@ -195,8 +212,8 @@ func test_a_charge_without_the_option_does_not_burst() -> void:
 	var w: World = s[0]
 	var i := _i(w, s[1])
 	var t := TwinsLab.table(w, s[1])
-	t.attacks[t.attack_index(&"warden_charge")].burst_radius_m = 0.0
-	BossLab.start(w, i, &"warden_charge")
+	t.attacks[t.attack_index(&"warden_charge_long")].burst_radius_m = 0.0
+	BossLab.start(w, i, &"warden_charge_long")
 	w.step(InputFrame.new())
 	assert_false(WorldReader.new(w).telegraph(i).has("burst"))
 	w.actors.set_pos(0, Vector2(-11, 11))
@@ -519,7 +536,7 @@ func test_a_sword_cuts_30_and_its_rift_burns_then_goes() -> void:
 # --- phase 3: the ward only his charge breaks ---------------------------------------------------------------------
 
 
-func test_in_phase_three_the_violet_takes_nothing_and_the_amber_takes_hits() -> void:
+func test_in_phase_three_the_violet_takes_nothing_and_the_amber_a_quarter() -> void:
 	var s := _stage(Vector2(6, 0), Vector2(-9, 0), Vector2(0, 6), 2)
 	var w: World = s[0]
 	var i := _i(w, s[1])
@@ -539,7 +556,7 @@ func test_in_phase_three_the_violet_takes_nothing_and_the_amber_takes_hits() -> 
 	for e in w.bosses.exposed_t.size():
 		w.bosses.exposed_t[e] = 0
 	w.actors.set_pos(0, Vector2(-7, 2))  # close: no ranged armour
-	assert_eq(TwinsLab.hit(w, s[1], 100, Vector2(-7, 2)), 100, "the amber Warden: as ever")
+	assert_eq(TwinsLab.hit(w, s[1], 100, Vector2(-7, 2)), 25, "her ward shelters him: a quarter")
 	assert_false(
 		BossTwin.may_use(w, j, TwinsLab.table(w, s[1]).attacks[13]), "no Mirror Ward under it"
 	)

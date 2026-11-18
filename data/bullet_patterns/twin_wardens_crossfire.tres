@@ -4,13 +4,15 @@
 
 [resource]
 script = ExtResource("1_pat")
-kind = 2
 look = &"warden_amber_ember"
 speed_mps = 3.0
 radius_m = 0.2
 range_m = 16.0
 waves = 3
 wave_gap_seconds = 0.7
-count = 17
-spread_degrees = 150.0
+turn_per_wave_degrees = 3.75
+alternate = true
+count = 48
+gap_count = 1
+gap_width = 2
 id = &"twin_wardens_crossfire"

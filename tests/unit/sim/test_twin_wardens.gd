@@ -266,9 +266,10 @@ func test_a_hit_on_one_angers_the_other_one_at_a_time() -> void:
 	assert_almost_eq(steps[1] / steps[0], 1.4, 0.01, "+40 % angry")
 
 
-## Crossfire is the violet Warden's (phase 2 on): its fan flies at the player and its gap faces directly away from the
-## amber Warden, through the safe spot on the far side of her from him; he stands back and fires none.
-func test_crossfire_s_gap_faces_away_from_the_other_warden() -> void:
+## Phase 2's Crossfire is the violet Warden's shelter: its ring sweeps the whole room but the marked spot, 3 m from
+## the hero at a right angle to the line from her, on the side away from the amber Warden, reached on foot well inside
+## its warning; stepping out of it is what gets the hero hit. He stands back and fires none.
+func test_crossfire_s_marked_spot_is_the_only_shelter() -> void:
 	var run := func(at: Vector2, steps: int) -> Array:
 		var s2 := _fight(Vector2(6, -4))
 		var w2: World = s2[0]
@@ -292,10 +293,18 @@ func test_crossfire_s_gap_faces_away_from_the_other_warden() -> void:
 	var safe: Vector2 = r[2]
 	assert_null(BossAi.attack_of(w, _i(w, s[1])), "the amber fires none")
 	assert_false(BossDodge.shielded(w, _i(w, s[2])), "not shielded")
-	# The hero stood 5 m from her: the spot is 5 m out on the far side from the amber Warden (straight along +x)
-	assert_almost_eq(safe, Vector2(8, 0), Vector2(0.001, 0.001), "on the far side of her from him")
-	assert_eq(run.call(Vector2.INF, 360)[3], 0, "on the safe spot no shot lands")
-	assert_gt(run.call(Vector2(6, -4), 360)[3], 0, "off it the fan finds you")
+	# The hero at (6, -4), she at (3, 0): the spot is 3 m on, square to her line, away from him (at -x)
+	assert_almost_eq(
+		safe, Vector2(8.4, -2.2), Vector2(0.01, 0.01), "beside the hero, away from him"
+	)
+	var wt := BossAi.table_of(w, _i(w, s[2])).wardens
+	var cross := BossAi.table_of(w, _i(w, s[2])).attacks[wt.shelter_attack]
+	assert_eq(cross.id, &"crossfire", "phase 2's Crossfire is the shelter")
+	var walk := wt.shelter_m / 6.0 * 1.3 * 60.0
+	assert_lte(walk, float(cross.windup_ticks), "walked to (+30 %) inside its warning")
+	assert_eq(run.call(Vector2.INF, 360)[3], 0, "on the marked spot no shot lands")
+	for out: Vector2 in [Vector2(6, -4), Vector2(3, 5), Vector2(0, -6), Vector2(8, 3)]:
+		assert_gt(run.call(out, 360)[3], 0, "at %s, out of it, the ring finds you" % out)
 	CombatLab.until(w, func(x: World) -> bool: return x.projectiles.size() > 5, 200)
 	assert_gt(w.projectiles.size(), 5, "the fan flies")
 	for k in w.projectiles.size():

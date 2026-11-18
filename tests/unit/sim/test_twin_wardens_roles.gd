@@ -28,7 +28,8 @@ const VIOLET := [
 	&"rune_ring",
 	&"blink",
 	&"mirror_ward",
-	&"shadow_swords"
+	&"shadow_swords",
+	&"whole_ward"
 ]
 
 
@@ -80,6 +81,7 @@ func _to_phase(w: World, boss_id: int, phase: int) -> void:
 func _starts(w: World, ids: Array, ticks: int, at: Vector2) -> Array:
 	var out := [[], []]
 	var last := [-1, -1]
+	var last_t := [-1, -1]  # A hit's stop holds a wind-up's first tick: one start, counted once
 	var both := 0
 	for k in ticks:
 		w.actors.set_pos(0, at)
@@ -94,9 +96,10 @@ func _starts(w: World, ids: Array, ticks: int, at: Vector2) -> Array:
 			var s := w.actors.state[j]
 			if now >= 0 and (s == S.WINDUP or s == S.ACTIVE):
 				busy += 1
-				if s == S.WINDUP and w.actors.state_t[j] == 1:
+				if s == S.WINDUP and w.actors.state_t[j] == 1 and last_t[n] != 1:
 					out[n].append(BossAi.table_of(w, j).attacks[now].id)
 			last[n] = now
+			last_t[n] = w.actors.state_t[j] if s == S.WINDUP else -1
 		if busy == 2:
 			both += 1
 	return [out[0], out[1], both]
@@ -215,12 +218,20 @@ func test_phase_three_the_amber_takes_hits_and_the_violet_is_warded() -> void:
 	var i := _i(w, s[1])
 	for e in w.bosses.exposed_t.size():
 		w.bosses.exposed_t[e] = 0  # no weak point open (its own ×2)
+	var j := _i(w, s[2])
+	if not BossWard.full(w, j):  # A charge may have broken it: the ward as it stands again
+		w.boss_fight.wd_break_at = -1
+		BossWard.raise(w, j)
 	var hp := w.actors.hp[i]
 	_hit(w, s[1], 100)
-	assert_eq(hp - w.actors.hp[i], 100, "the amber Warden takes hits as ever")
+	assert_eq(hp - w.actors.hp[i], 25, "her whole ward shelters him: a quarter")
 	hp = w.actors.hp[i]
 	_hit(w, s[2], 100)
 	assert_eq(hp - w.actors.hp[i], 0, "the violet one takes nothing under her ward")
+	w.boss_fight.wd_full = 0  # The ward down: both open
+	hp = w.actors.hp[i]
+	_hit(w, s[1], 100)
+	assert_eq(hp - w.actors.hp[i], 100, "with the ward down he takes hits as ever")
 	assert_eq(w.bosses.twin_focus[0], s[1], "the amber one is the body to hit")
 
 

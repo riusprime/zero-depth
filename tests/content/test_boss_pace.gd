@@ -18,6 +18,7 @@ const UNCLASSED := [
 	&"prism_kneel",
 	&"time_wave",
 	&"mirror_ward",
+	&"whole_ward",
 ]
 ## Per boss, the slow readable attacks BP left as they were: [id, telegraph seconds].
 const KEPT_SLOW := {
