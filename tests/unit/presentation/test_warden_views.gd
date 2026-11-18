@@ -99,7 +99,8 @@ func test_the_end_circle_is_the_bursts_and_flashes_locked_then_fills_and_explode
 	assert_gt(c[3], 0.0, "and fills as the burst comes")
 	assert_not_null(_until(w, r, [view], BossChargeBurst.BURST, 30))
 	_run(w, r, [view], 1)
-	assert_eq(fx.live_count(&"impact"), 1, "the pack's debris slam where it burst")
+	assert_eq(view.slams.live(), 1, "the ground slam where it burst")
+	assert_eq(fx.live_count(&"impact"), 0, "no pack impact")
 	assert_eq(fx.live_count(&"explosion"), 0, "no explosion")
 	assert_eq(view.shown(), 0, "the circle is gone")
 
@@ -132,6 +133,7 @@ func test_each_amber_charge_ends_in_one_ground_slam_and_no_explosion() -> void:
 		if armed == null:
 			continue
 		var before := fx.spawned_in.duplicate()
+		var slams_before := root.charge_bursts.slams.started()
 		var spawned := func(fam: StringName) -> int:
 			return int(fx.spawned_in.get(fam, 0)) - int(before.get(fam, 0))
 		var burst: SimEvent = null
@@ -142,21 +144,29 @@ func test_each_amber_charge_ends_in_one_ground_slam_and_no_explosion() -> void:
 				burst = got[0]
 				break
 		assert_not_null(burst, "%s: it burst" % attack)
-		assert_eq(spawned.call(&"impact"), 1, "%s: one slam on the burst's tick" % attack)
-		var slams := fx._live.filter(
-			func(e: Dictionary) -> bool: return e["id"] == ChargeBurstViews.SLAM_ID
-		)
-		assert_eq(slams.size(), 1, "%s: and it is the debris slam" % attack)
-		if slams.size() == 1:
-			var at := SimPlane.to_sim((slams[0]["node"] as Node3D).global_position)
-			assert_almost_eq(at, burst.pos, Vector2(0.01, 0.01), "%s: at the burst's spot" % attack)
+		var slams := root.charge_bursts.slams
+		assert_eq(slams.started() - slams_before, 1, "%s: one slam on the burst's tick" % attack)
+		var spots := slams.spots()
+		assert_eq(spots.size(), 1, "%s: one slam playing" % attack)
+		if spots.size() == 1:
+			assert_almost_eq(
+				spots[0][0], burst.pos, Vector2(0.01, 0.01), "%s: at the burst's spot" % attack
+			)
+			assert_eq(spots[0][1], 3.5, "%s: sized to the burst" % attack)
 		for k in 90:
 			_step_root(w, root)
 		var total := 0
 		for fam: StringName in fx.spawned_in:
 			total += spawned.call(fam)
 		assert_eq(spawned.call(&"explosion"), 0, "%s: no explosion" % attack)
-		assert_eq(total, 1, "%s: nothing else played at its end" % attack)
+		assert_eq(total, 0, "%s: no pack effect played at its end" % attack)
+		assert_eq(
+			root.charge_bursts.slams.started() - slams_before, 1, "%s: and no second slam" % attack
+		)
+		root.charge_bursts.advance(GroundSlamViews.LIFE_S)
+		assert_eq(
+			root.charge_bursts.slams.live(), 0, "%s: the slam is over within its life" % attack
+		)
 
 
 func _step_root(w: World, root: WorldViewRoot) -> void:
@@ -458,7 +468,6 @@ func test_the_pack_rows_are_in_the_table() -> void:
 		[
 			ChargeBurstViews.RIM_ID,
 			ChargeBurstViews.BURST_ID,
-			ChargeBurstViews.SLAM_ID,
 			WardenWardViews.RIM_ID,
 			WardenWardViews.REFLECT_ID,
 			WardenWardViews.PUSH_ID,
@@ -523,3 +532,25 @@ func test_the_whole_ward_is_cast_with_the_re_forming_light_not_a_wall() -> void:
 	assert_true(seen, "she cast it")
 	assert_true(view.full_shown(), "then her whole ward stands")
 	assert_false(view.raising_shown())
+
+
+## The ground slam alone: stone pieces thrown up off the floor and a crack under them at once, everything back down
+## and gone within its life, sized to the radius, from one pooled MultiMesh.
+func test_a_ground_slam_throws_stone_up_and_is_gone_within_its_life() -> void:
+	var g := GroundSlamViews.new()
+	add_child_autofree(g)
+	g.floor_palette({"ground": Color(0.8, 0.7, 0.6), "cover": Color(0.3, 0.3, 0.3)})
+	g.slam(Vector3(2, 0, -1), 3.5)
+	g.advance(1.0 / 60.0)
+	assert_gt(g.pieces_shown(), 0, "pieces at once")
+	assert_eq(g.cracks_shown(), 1, "the floor cracked at once")
+	g.advance(0.2)
+	assert_gt(g.highest(), 0.5, "chunks kicked up off the floor")
+	assert_lte(g.pieces_shown(), GroundSlamViews.PIECES)
+	g.advance(0.5)
+	assert_lt(g.highest(), 0.35, "back down on the floor by 0.7 s")
+	g.advance(GroundSlamViews.LIFE_S - 0.7)
+	assert_eq(g.live(), 0, "over")
+	assert_eq(g.pieces_shown(), 0, "every piece gone")
+	assert_eq(g.cracks_shown(), 0, "the crack faded")
+	assert_false(g.busy())

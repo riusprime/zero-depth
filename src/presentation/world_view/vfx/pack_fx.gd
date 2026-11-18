@@ -82,11 +82,9 @@ const SHORT := {
 const ONCE: Array[StringName] = [&"explosion", &"impact"]
 
 ## The pack scene's child nodes an id never shows (the meteor's landing drops vfx_impact_01's white-hot Core sphere,
-## its smoke and its tall streaks; the amber Warden's slam keeps vfx_explosion_07's rock spikes and ground crack, not
-## its fireball, smoke or dark dust; the pack's files stay as they are).
+## its smoke and its tall streaks; the pack's files stay as they are).
 const HIDE := {
 	&"p10l_meteor_land": ["Core", "Smoke", "Impact_Streaks2"],
-	&"tw_slam": ["Core", "Smoke", "Dust"],
 }
 
 ## The children spawn()'s `hide` may switch off (and back on for the next user of a pooled instance).

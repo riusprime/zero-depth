@@ -432,6 +432,7 @@ func _queue_pack_warmup(q: ViewBuildQueue) -> void:
 
 func _setup_views(palette: Dictionary) -> void:
 	actors.outline_color = palette["outline"]
+	charge_bursts.slams.floor_palette(palette)  # The slams' chunks are the floor's stone
 	add_child(empty_cull)  # First, so it hears every pool the views add (EmptyDrawCull)
 	add_child(particle_shadows)  # First too, so it hears every particle system the views add
 	add_child(stage)
