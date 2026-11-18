@@ -22,6 +22,18 @@ const BEAM := Color(1.0, 0.16, 0.3)
 const BEAM_CORE := Color(1.0, 0.88, 0.92)
 const BOLT := Color(1.0, 0.25, 0.35)
 const OPEN := Color(1.0, 0.82, 0.36)
+## The Cross's beams as drawn: a solid core and a thin glow in her red crystal (PrismAvatar.CRYSTAL) at a low glow (the
+## pack beam's own white-pink and strength, with a light at every wall, washed the whole screen out); the same width.
+const CROSS_BEAM := {
+	&"primary": Color(0.94, 0.56, 0.6),
+	&"secondary": Color(0.78, 0.2, 0.3),
+	&"tertiary": Color(0.36, 0.05, 0.12),
+	&"emission": 1.25,
+}
+const CROSS_FLARE := Color(0.82, 0.3, 0.38)
+## The lights at her core and where each beam strikes a wall: a touch, not a wash.
+const WALL_LIGHT := 0.7
+const CORE_LIGHT := 1.0
 ## Heights (m): the beams leave her at BEAM_Y and reach the wall at END_Y; the shards fly at SHARD_Y.
 const BEAM_Y := 1.3
 const END_Y := 0.8
@@ -75,7 +87,7 @@ func _init() -> void:
 		FxTextures.texture_beam(
 			_mat_of(arm["aim"]), "fx_aim_lines", FxTextures.AIM_CHEVRONS, 7.0, false, 0.4
 		)
-		var imp := FxTextures.flare_material(BEAM, BEAM_CORE, k % 4)
+		var imp := FxTextures.flare_material(PrismAvatar.CRYSTAL, CROSS_FLARE, k % 4)
 		if imp != null:
 			(arm["impact"] as MeshInstance3D).mesh = FxTextures.flare_mesh()
 			(arm["impact"] as MeshInstance3D).material_override = imp
@@ -272,7 +284,7 @@ func _draw(now: float) -> void:
 	else:
 		_core_light.visible = true
 		_core_light.position = centre
-		_core_light.light_energy = (0.5 + 2.5 * p if c["winding"] else 3.0) * flicker
+		_core_light.light_energy = (0.3 + 0.7 * p if c["winding"] else CORE_LIGHT) * flicker
 		_draw_arms(c, p, now, still, flicker)
 	_draw_bolt(c)
 	_draw_shard(c, flicker)
@@ -303,9 +315,10 @@ func _draw_arms(c: Dictionary, p: float, now: float, still: bool, flicker: float
 		var glow: MeshInstance3D = arm["glow"]
 		var pack_beam: Node3D = null
 		if _hold != null:  # The pack's beam (the colour's nearest scene) in place of the two cylinders
-			pack_beam = _hold.hold(k, BossPackHold.beam_id(BEAM), a, 1.0, {}, false)
+			pack_beam = _hold.hold(k, BossPackHold.beam_id(BEAM), a, 1.0, CROSS_BEAM, false)
 		if pack_beam != null:
 			BossPackHold.beam_place(pack_beam, a, b, hw)
+			BossPackHold.no_end_ball(pack_beam)
 			arm["packed"] = true
 		else:
 			core.visible = true
@@ -326,9 +339,9 @@ func _draw_arms(c: Dictionary, p: float, now: float, still: bool, flicker: float
 			imp.visible = true
 			l.visible = true
 			imp.position = b
-			imp.scale = Vector3.ONE * (0.7 + (0.0 if still else 0.2 * sin(now * 2.3 + k)))
+			imp.scale = Vector3.ONE * (0.3 + (0.0 if still else 0.06 * sin(now * 2.3 + k)))
 			l.position = b + Vector3(0, 0.4, 0)
-			l.light_energy = 3.0 * flicker
+			l.light_energy = WALL_LIGHT * flicker
 
 
 func _draw_bolt(c: Dictionary) -> void:

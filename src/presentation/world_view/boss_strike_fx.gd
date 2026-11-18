@@ -148,6 +148,9 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 			&"beam", &"rail":
 				if s.get("look", &"") == &"cj_verdict":
 					continue  # The pendulum's drop is a stone slam with a gold flash (BossStrikeImpacts)
+				if BossStrikeShapes.NO_BEAM.has(s.get("look", &"")):
+					continue  # The swords' cut is the blade itself (WardenBladeViews): no sparks, no light
+				var focus: bool = s.get("look", &"") == &"hl_beam"  # its shards are BossStrikeImpacts'
 				var li := 0
 				for lane: Obb in s["lanes"]:
 					var on: bool = (after < 0.0 and s["kind"] == &"beam") or age < 10.0
@@ -160,7 +163,9 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 							BossPackHold.beam_place(
 								bn, near, far, lane.half.y, BossPackHold.RAIL_NATIVE_R
 							)
-					if on:
+					if on and focus:
+						layer.light_merged(near.lerp(far, 0.3), glow, 1.1, 6.0, 2.0)
+					elif on:
 						_sparks(layer, far, age, sd, 8, glow)
 						layer.light_merged(near.lerp(far, 0.3), glow, 4.0, 8.0, 3.0)
 					if s["kind"] == &"rail":

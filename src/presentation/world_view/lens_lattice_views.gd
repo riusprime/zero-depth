@@ -9,8 +9,9 @@ extends Node3D
 ##   wide as the sim's strand (its half width); a strand the reader no longer lists (its drone died) is gone the same
 ##   frame, so the gap is open at once. Each drone of the web trails a faint ember as it orbits (hl_orbit, a world-space
 ##   trail). A strand that hurts the hero sparks on the hero (hl_spark).
-## - The burnt glass: each strip is laid on its exact rectangle (its ends and half width) as dark glass with hot rose
-##   cracks and edge, cooling as its time runs but glowing until it goes; a thin smoke rises as it is laid (hl_sizzle).
+## - The burnt glass: each strip is laid on its exact rectangle (its ends and half width) as a bed of dark rose glass
+##   with a hot rose edge, cooling as its time runs but glowing until it goes, and faceted glass shards lying along it
+##   (LensLooks.lay_shards, lit like the room's stone, a rose glint on them). No smoke.
 ## A strand the pack has no room for is drawn as a plain glowing rod. Reduced motion: nothing here pulses or flickers
 ## (the glass holds its shimmer still). Nothing here decides.
 
@@ -19,7 +20,6 @@ const CHARGE_ID := &"hl_charge"
 const GLOW_ID := &"hl_glow"
 const ORBIT_ID := &"hl_orbit"
 const SPARK_ID := &"hl_spark"
-const SIZZLE_ID := &"hl_sizzle"
 const HIT_EVENT := &"lattice_strand_hit"
 const LAID_EVENT := &"lens_glass_laid"
 ## The most strips the sim lays at once (BossLensTable.strip_max) is far under this.
@@ -33,7 +33,6 @@ const BRIGHT_FROM := 0.3
 const BRIGHT_TO := 0.8
 const ORBIT_SCALE := 0.6
 const SPARK_SCALE := 0.8
-const SIZZLE_SCALE := 0.8
 const HERO_Y := 1.0
 
 var pack_fx: PackFx = null:
@@ -55,6 +54,8 @@ var _glass: Array = []
 var _drawn: Array = []
 var _rods: Array[MeshInstance3D] = []
 var _strips: Array[MeshInstance3D] = []
+var _shards: MultiMeshInstance3D = null
+var _shard_key := 0
 var _clock := 0.0
 var _last_seq := 0
 var _primed := false
@@ -96,10 +97,6 @@ func sync(reader: WorldReader) -> void:
 			continue
 		if e.effect_id == HIT_EVENT and pack_fx.has_id(SPARK_ID) and pack_fx.has_room(&"hit"):
 			pack_fx.spawn(SPARK_ID, _hero, SPARK_SCALE, LensLooks.GLOW_COLORS)
-		elif e.effect_id == LAID_EVENT and pack_fx.has_id(SIZZLE_ID) and pack_fx.has_room(&"cloud"):
-			pack_fx.spawn(
-				SIZZLE_ID, SimPlane.to_3d(e.pos, 0.2), SIZZLE_SCALE, LensLooks.SMOKE_COLORS
-			)
 
 
 func _process(delta: float) -> void:
@@ -112,6 +109,9 @@ func advance(delta: float) -> void:
 		if not quiet:
 			for n: MeshInstance3D in _rods + _strips:
 				n.visible = false
+			if _shards != null:
+				_shards.multimesh.visible_instance_count = 0
+				_shard_key = 0
 		quiet = true
 		return
 	quiet = false
@@ -181,6 +181,14 @@ func _draw_web() -> void:
 func _draw_glass() -> void:
 	while _strips.size() < mini(_glass.size(), GLASS_MAX):
 		_strips.append(LensLooks.glass_mesh(self))
+	if _shards == null and not _glass.is_empty():
+		_shards = LensLooks.shard_node(self, GLASS_MAX)
+	var laid := 0
+	var key := 1
+	for g: Dictionary in _glass:  # the shards are laid again only when a strip comes or goes
+		key = [key, g["from"], g["to"], g["half_width"]].hash()
+	var relay := key != _shard_key
+	_shard_key = key
 	for k in _strips.size():
 		var mi := _strips[k]
 		mi.visible = k < _glass.size()
@@ -196,6 +204,11 @@ func _draw_glass() -> void:
 		m.set_shader_parameter("size_m", Vector2(a.distance_to(b), hw * 2.0))
 		m.set_shader_parameter("clock", _clock)
 		m.set_shader_parameter("seed", fposmod(a.x * 0.37 + a.y * 0.61, 7.0))
+		if relay:
+			var sd := int(absf(a.x) * 131.0) + int(absf(a.y) * 71.0) + int(absf(b.x) * 37.0)
+			laid += LensLooks.lay_shards(_shards.multimesh, laid, a, b, hw, sd)
+	if _shards != null and relay:
+		_shards.multimesh.visible_instance_count = laid
 
 
 ## A strip's heat (1 just laid, 1 - COOL as it goes) from its progress through its life.
@@ -239,3 +252,8 @@ func strips() -> Array[MeshInstance3D]:
 		if mi.visible:
 			out.append(mi)
 	return out
+
+
+## The glass shards lying on the strips now.
+func shards_laid() -> int:
+	return _shards.multimesh.visible_instance_count if _shards != null else 0

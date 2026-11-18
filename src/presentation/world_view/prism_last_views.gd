@@ -3,7 +3,8 @@ extends Node3D
 ## v0.10.5 O3 (owner L6, 2026-11-01: "Needs something cooler while he's down and not on the dodging pattern"; "Boring
 ## pattern"; O3_PRISM.md): the Prism's last phase, read from the sim (WorldReader.boss_lances, boss_kneel; EI-07),
 ## never decided here. PrismViews owns it (one per fight) and draws it inside its own frame (its BossPackHold).
-## - The Facet Lances: a violet facet glowing at each lance's rim spot (brightening through the gather; gone once its
+## - The Facet Lances: a small faceted crystal of her own (BossParts.crystal, as her stand-in's, in her crystal red, lit
+##   like her model) floating at each lance's rim spot, its violet glint brightening through the gather (gone once its
 ##   lance has struck); a lance tracking: a thin chevron aim line from its facet across the room; locked: a bright
 ##   laser line and the lane's width burning faintly on the floor (where it will strike), tightening as it nears;
 ##   striking: the beam itself (the pack's beam, else two cylinders) and an impact flare at its far end (once).
@@ -15,6 +16,10 @@ extends Node3D
 
 const LANCE := Color(0.72, 0.4, 1.0)
 const LANCE_CORE := Color(0.96, 0.9, 1.0)
+## A facet's crystal: its height (m) and the violet glint's energy at the gather's start and end.
+const FACET_H := 0.75
+const GLINT_FROM := 0.35
+const GLINT_TO := 1.3
 const CORE := Color(1.0, 0.86, 0.5)
 const CORE_HOT := Color(1.0, 0.97, 0.88)
 const MAX_LANCES := 8
@@ -55,7 +60,7 @@ func _init() -> void:
 			"core": _cylinder(beam_sh, 1.2),
 			"glow": _cylinder(beam_sh, 0.4),
 			"floor": MeshInstance3D.new(),
-			"facet": _sphere(LANCE),
+			"facet": _facet(k),
 			"light": OmniLight3D.new(),
 		}
 		FxTextures.texture_beam(
@@ -166,6 +171,18 @@ func _sphere(c: Color) -> MeshInstance3D:
 	return mi
 
 
+## A facet: one of her crystals, matte and lit, a violet glint its only light (EnemyLooks.accent: its energy per
+## instance).
+func _facet(k: int) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = BossParts.crystal(FACET_H, 0.2, 30 + k)
+	mi.material_override = EnemyLooks.accent(PrismAvatar.CRYSTAL, LANCE, GLINT_FROM)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	mi.visible = false
+	add_child(mi)
+	return mi
+
+
 static func _mat_of(mi: MeshInstance3D) -> ShaderMaterial:
 	return mi.material_override as ShaderMaterial
 
@@ -251,9 +268,13 @@ func _draw_lances(now: float, still: bool, hold: BossPackHold) -> void:
 		if not spent and (lr.is_empty() or int(lr["phase"]) != WorldReader.LANCE_STRIKING):
 			var f: MeshInstance3D = r["facet"]
 			f.visible = true
-			f.position = SimPlane.to_3d(rims[k], FACET_Y)
-			var grow := (0.35 + 0.35 * p) if c["winding"] else 0.75
-			f.scale = Vector3(0.7, 1.4, 0.7) * grow * flicker
+			f.position = SimPlane.to_3d(rims[k], FACET_Y - FACET_H * 0.5)
+			var grow := (0.5 + 0.5 * p) if c["winding"] else 1.0
+			f.scale = Vector3.ONE * (0.6 + 0.4 * grow)
+			f.rotation = Vector3(0.0, TAU * k / MAX_LANCES, 0.25)
+			f.set_instance_shader_parameter(
+				EnemyLooks.GLOW, lerpf(GLINT_FROM, GLINT_TO, grow) * flicker
+			)
 		if lr.is_empty():
 			continue
 		var a := SimPlane.to_3d(lr["from"], BEAM_Y)

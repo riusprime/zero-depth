@@ -189,7 +189,9 @@ func test_the_nemesis_cast_sigil_is_a_blood_circle_while_it_casts() -> void:
 			if c is MagicArea:
 				area = c
 	assert_not_null(area, "a MagicArea at its feet")
-	assert_eq(area.element, "blood")
+	assert_eq(area.element, "arcane", "in The Fallen's violet, not the red-orange blood")
+	assert_eq(area.color, NemesisViews.SIGIL_COLOR)
+	assert_lt(area.intensity, NemesisViews.SIGIL_DIM + NemesisViews.SIGIL_RISE + 0.001, "dim")
 	assert_eq(area.kind, "circle")
 	assert_almost_eq(area.radius, NemesisViews.SIGIL_R, 0.001, "the radius as before")
 	assert_true(v.sigil_shown(), "the sigil flag the tests read")

@@ -5,18 +5,18 @@ extends Node3D
 ## - The resting Warden's immune shield: a clear dome in its own colour round it (the pack's forcefield, amber or
 ##   violet), up while it stands back; a hit on it sparks off (HitFeel's TAG_BLOCKED spark, unchanged).
 ## - The Mirror Ward: a curved violet wall on the reader's arc (its centre and half width) round the violet Warden,
-##   a sheet of violet light climbing it (WardenLooks.ARC_SHADER), with the pack's ripple at its foot. Through the
+##   made of faceted slabs of violet glass (WardenLooks.arc_wall), with the pack's ripple at its foot. Through the
 ##   cast it rises toward the hero (the side it will face); it stands at full height through the ward and sinks over
 ##   its last FADE_S. A shot it turns back flashes where it struck (the pack's hit); the returned shot is the hostile
 ##   violet look the data names. A swing it blocks rings the pack's pulse on the hero, pushed back.
 ## - The whole ward (the last phase): cast first, the pack's re-forming light rising on her through the cast; then a
 ##   larger, brighter dome on the violet Warden (its own forcefield scene) with a rim on the floor. While the amber
-##   Warden winds a charge up under it, his lane glows on the floor, white-hot when she stands on it. The break:
+##   Warden winds a charge up under it, his lane glows on the floor, a pale hot amber when she stands on it. The break:
 ##   the pack's shatter and stun flash on her, stars over her while she is stunned (her avatar slumps in its stagger
 ##   clip, his staggers too), then a ring on the floor counting down to the ward's return and, for its last
 ##   RETURN_GLOW_S, the pack's rising light as it re-forms.
 ## - The Fallen remembering the ward (WorldReader.boss_fallen): the same whole dome and rim on The Fallen, the
-##   amber Warden's shade's lane under it (white-hot while it would run through The Fallen), the same shatter and stun
+##   amber Warden's shade's lane under it (hot while it would run through The Fallen), the same shatter and stun
 ##   flash on it when it breaks. Its stars are BossVulnerableViews' (the stun is a quake table's), the shade itself
 ##   FallenRememberedViews'.
 ## Every slot is built hidden at the start. Reduced motion stills the pulses. Nothing here decides an outcome.
@@ -54,8 +54,12 @@ const CAST_HALF_DEG := 80.0
 ## The ward's return: the floor ring's radius and when the re-forming light starts (s before it returns).
 const RETURN_R := 2.4
 const RETURN_GLOW_S := 2.0
-## The long lane's width (m) and how bright it glows (white-hot while it would break the ward).
-const LANE_W := 2.2
+## The long lane's width (m) and how it glows: amber, a pale hot amber while it would break the ward (a white-hot
+## chevron band there washed out the dome and the hero beside it).
+const LANE_W := 1.3
+const LANE_HOT := Color(1.0, 0.84, 0.6)
+const LANE_GLOW := 1.0
+const LANE_HOT_GLOW := 1.45
 
 ## The pack's effects (WorldViewRoot hands them over; a view built alone draws its own meshes only).
 var pack_fx: PackFx = null:
@@ -87,7 +91,7 @@ var _left_s := 0.0
 ## The ward's whole wait to return, as first read after the break (the ring's full turn).
 var _return_total := 0.0
 var _wall: MeshInstance3D
-var _wall_mat: ShaderMaterial
+var _wall_mat: StandardMaterial3D
 var _lane: MeshInstance3D
 var _return_ring: MeshInstance3D
 var _last_seq := 0
@@ -98,9 +102,9 @@ var _clock := 0.0
 func _init() -> void:
 	name = "WardenWardViews"
 	_wall = MeshInstance3D.new()
-	_wall_mat = WardenLooks.arc_material(VIOLET)
+	_wall_mat = WardenLooks.arc_material()
+	_wall.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	_wall.material_override = _wall_mat
-	_wall.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_wall.visible = false
 	add_child(_wall)
 	_lane = WardenLooks.floor_mesh(self, false, AMBER)
@@ -131,7 +135,7 @@ func sync(reader: WorldReader) -> void:
 	_events(reader)
 
 
-## The Fallen remembering the ward: the same whole ward on it, and the amber Warden's shade's lane, white-hot while
+## The Fallen remembering the ward: the same whole ward on it, and the amber Warden's shade's lane, hot while
 ## it would run through The Fallen.
 func _read_fallen(reader: WorldReader) -> void:
 	var f := reader.boss_fallen()
@@ -264,11 +268,7 @@ func _draw_wall(delta: float) -> void:
 	_wall.position = SimPlane.to_3d(_violet_at, 0.0)
 	_wall.rotation = Vector3(0.0, SimPlane.yaw_of(_wall_centre), 0.0)
 	_wall.scale = Vector3(1.0, maxf(0.02, _wall_up), 1.0)
-	_wall_mat.set_shader_parameter("alpha", (0.45 if _casting else 1.0) * _wall_up)
-	_wall_mat.set_shader_parameter(
-		"arc_m", WALL_R * TAU * float(_wall_half) * 2.0 / WardenLooks.TURN
-	)
-	_wall_mat.set_shader_parameter("clock", _clock)
+	_wall_mat.albedo_color.a = (0.45 if _casting else 1.0) * WardenLooks.SLAB_ALPHA
 	if up:
 		var foot := _violet_at + WardenLooks.dir_of(_wall_centre) * WALL_R
 		hold.put(&"wall", RIPPLE_ID, &"area", WardenLooks.at(SimPlane.to_3d(foot, 0.06), 0.7))
@@ -294,8 +294,8 @@ func _draw_full() -> void:
 		WardenLooks.lay_strip(
 			_lane, o.center - o.axis_u * o.half.x, o.center + o.axis_u * o.half.x, LANE_W, 0.07
 		)
-		WardenLooks.param(_lane, &"tint", Color(1, 0.95, 0.8) if breaks else AMBER)
-		WardenLooks.param(_lane, &"glow", 2.2 if breaks else 1.3)
+		WardenLooks.param(_lane, &"tint", LANE_HOT if breaks else AMBER)
+		WardenLooks.param(_lane, &"glow", LANE_HOT_GLOW if breaks else LANE_GLOW)
 		WardenLooks.param(_lane, &"alpha", 0.55 + 0.45 * float(charge["progress"]) / 1000.0)
 		WardenLooks.param(_lane, &"clock", _clock)
 	var broken := bool(ward.get("broken", false))
@@ -357,7 +357,7 @@ func full_at() -> Vector2:
 	return _full_at
 
 
-## Whether the lane under it glows white-hot (the charge would break it).
+## Whether the lane under it glows hot (the charge would break it).
 func lane_breaks() -> bool:
 	return _lane.visible and bool(_charge.get("breaks", false))
 

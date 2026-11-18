@@ -302,7 +302,7 @@ func test_its_dash_leans_in_and_leaves_afterimages() -> void:
 	assert_eq(v.ghost_count(), 0, "they fade")
 
 
-func test_a_card_cast_names_the_card_and_draws_its_parts() -> void:
+func test_a_card_cast_shows_its_sigil_and_draws_its_parts_without_a_word() -> void:
 	var w := NemesisLab.world(404, &"gun", GUN_CARDS)
 	var reader := WorldReader.new(w)
 	var i := FinalLab.body(w)
@@ -317,7 +317,7 @@ func test_a_card_cast_names_the_card_and_draws_its_parts() -> void:
 	var sv := BossStrikeViews.new()
 	add_child_autofree(sv)
 	var atk := NemesisLab.start(w, StringName("nemesis_card_%d" % (k + 1)))
-	var named := ""
+	var cast := -1
 	var marks := 0
 	var cast_strikes := 0
 	for t in atk.windup_ticks + 4:
@@ -325,21 +325,21 @@ func test_a_card_cast_names_the_card_and_draws_its_parts() -> void:
 		v.sync(reader)
 		tv.sync(reader)
 		sv.sync(reader)
-		if v.card_shown() != "":
-			named = v.card_shown()
+		if v.casting_card() >= 0:
+			cast = v.casting_card()
 			assert_true(v.sigil_shown(), "its sigil at its feet")
 		marks = maxi(marks, tv.count())
 		for st: Array in sv.strikes():
 			if st[0] == &"nm_cast":
 				cast_strikes += 1
-	var info := reader.card_info(NemesisLab.card(w, &"ember_core"))
-	assert_eq(named, tr(StringName(info["name_key"])), "your card's own name")
+	assert_eq(cast, NemesisLab.card(w, &"ember_core"), "your own card")
+	assert_eq(v.find_children("*", "Label3D", true, false).size(), 0, "no word names it")
 	assert_gt(marks, 0, "its parts on the ground")
 	assert_gt(cast_strikes, 0, "its blast struck in its look")
 	for n in 40:
 		w.step(InputFrame.new())
 		v.sync(reader)
-	assert_eq(v.card_shown(), "", "gone once cast")
+	assert_eq(v.casting_card(), -1, "gone once cast")
 
 
 func test_its_swings_strike_in_its_own_look_on_the_sims_tick() -> void:

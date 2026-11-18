@@ -440,6 +440,7 @@ func _setup_views(palette: Dictionary) -> void:
 	siege_field.slams.floor_palette(palette)
 	twins.slams.floor_palette(palette)
 	judge_time.floor_palette(palette)
+	signatures.chips.floor_palette(palette)
 	add_child(empty_cull)  # First, so it hears every pool the views add (EmptyDrawCull)
 	add_child(particle_shadows)  # First too, so it hears every particle system the views add
 	add_child(stage)

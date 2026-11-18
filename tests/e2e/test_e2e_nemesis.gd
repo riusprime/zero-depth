@@ -170,7 +170,7 @@ func _mimics(main: Main, build: StringName) -> void:
 		else [&"nemesis_volley", &"nemesis_point_blank"]
 	)
 	var used_weapon := false
-	var named := ""
+	var cast := -1
 	var bolts := 0
 	for k in LIMIT:
 		await _e.frames(1)
@@ -194,13 +194,13 @@ func _mimics(main: Main, build: StringName) -> void:
 			atk != null and not copying and atk.move == BossAttackTable.Move.CARD_CAST,
 			"no card outside a window"
 		)
-		if main.view.nemesis_views.card_shown() != "":
-			named = main.view.nemesis_views.card_shown()
+		if main.view.nemesis_views.casting_card() >= 0:
+			cast = main.view.nemesis_views.casting_card()
 		bolts = maxi(bolts, main.view.fireballs.ball_count(NemesisCast.LOOK_BOLT))
-		if used_weapon and named != "" and (build == &"blade" or bolts > 0):
+		if used_weapon and cast >= 0 and (build == &"blade" or bolts > 0):
 			break
 	assert_true(used_weapon, "it fights with the run's weapon")
-	assert_eq(named, tr(StringName(reader.card_info(code)["name_key"])), "it casts your card")
+	assert_eq(cast, code, "it casts your card (its sigil, no word)")
 	if build == &"gun":
 		assert_gt(bolts, 0, "your shots, in its look")
 	assert_false(w.player_dead(), "the hero stands (God mode)")

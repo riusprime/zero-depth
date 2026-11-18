@@ -254,6 +254,7 @@ func test_each_glass_strip_lies_on_its_rectangle_and_cools_until_it_goes() -> vo
 	assert_true(_until(w, r, [lat], laid, 600), "three strips")
 	_tick(w, r, [lat])
 	assert_eq(lat.strips().size(), 3, "a strip drawn for each")
+	assert_gt(lat.shards_laid(), 6, "faceted shards lie along them")
 	var rows: Array = r.boss_lens()["glass"]
 	var heat0: Array[float] = []
 	for k in rows.size():
@@ -283,6 +284,7 @@ func test_each_glass_strip_lies_on_its_rectangle_and_cools_until_it_goes() -> vo
 	assert_true(_until(w, r, [lat], gone, 400))
 	_tick(w, r, [lat])
 	assert_eq(lat.strips().size(), 0, "gone with it")
+	assert_eq(lat.shards_laid(), 0, "and their shards")
 
 
 func test_nothing_stays_once_the_lens_is_gone() -> void:
@@ -365,7 +367,6 @@ func test_the_lens_effects_are_in_the_pack_table() -> void:
 		LensLatticeViews.CHARGE_ID,
 		LensLatticeViews.ORBIT_ID,
 		LensLatticeViews.SPARK_ID,
-		LensLatticeViews.SIZZLE_ID,
 	]:
 		assert_true(fx.has_id(id), String(id))
 

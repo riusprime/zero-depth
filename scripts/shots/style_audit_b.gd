@@ -7,7 +7,7 @@ extends SceneTree
 ## one file, <out>/<boss>/<nn>_<attack>.png.
 ## Needs a renderer (no --headless); run it off screen (only=: a comma-separated list of bosses or boss/file):
 ##   godot --path . --position -10000,-10000 --audio-driver Dummy --fixed-fps 60 \
-##     -s scripts/shots/style_audit_b.gd -- out=<folder> [only=<boss>]
+##     -s scripts/shots/style_audit_b.gd -- out=<folder> [only=<boss>] [biome=<id>]
 ## Prints each path with the ticks it was caught at.
 const SIZE := Vector2i(960, 540)
 ## The game's own camera size (IsoRig.view_size).
@@ -243,6 +243,8 @@ var _hud: Hud
 var _reader: WorldReader
 var _out := "res://build/style_audit/"
 var _only := ""
+## A biome every room boss is shot on in place of its own (biome=: the darkest floors' readability check).
+var _biome := &""
 var _k := -1
 var _boss := -1
 var _hero := Vector2.ZERO
@@ -259,6 +261,8 @@ func _initialize() -> void:
 			_out = a.substr(4).trim_suffix("/") + "/"
 		elif a.begins_with("only="):
 			_only = a.substr(5)
+		elif a.begins_with("biome="):
+			_biome = StringName(a.substr(6))
 	TranslationServer.set_locale("en")
 	_vp = SubViewport.new()
 	_vp.size = SIZE
@@ -305,7 +309,7 @@ func _build(c: Dictionary) -> void:
 		look = repo.get_def(&"final_arena", &"hollow_arena")
 		half = _reader.final_arena_radius() + 4.0
 	else:
-		look = repo.get_def(&"biomes", BIOMES[c["boss"]])
+		look = repo.get_def(&"biomes", _biome if _biome != &"" else BIOMES[c["boss"]])
 	_root = WorldViewRoot.new()
 	_vp.add_child(_root)
 	_root.stage.mood = look.mood

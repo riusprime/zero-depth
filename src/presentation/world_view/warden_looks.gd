@@ -1,8 +1,8 @@
 class_name WardenLooks
 extends RefCounted
-## What the Twin Wardens' views share: their colours, the shaders of the floor (a danger circle, a lane strip) and of
-## the Mirror Ward's curved wall, that wall's mesh, and the pack forcefield's material that the held domes wear
-## (PD-13: the pack's own effect, recoloured per body on a copy, never the vendor files). Looks only (EI-07).
+## What the Twin Wardens' views share: their colours, the shaders of the floor (a danger circle, a lane strip), the
+## Mirror Ward's curved wall of glass slabs (its mesh and material), and the pack forcefield's material that the held
+## domes wear (PD-13: the pack's own effect, recoloured per body on a copy, never the vendor files). Looks only (EI-07).
 
 const AMBER := Color("#FFB347")
 const VIOLET := Color("#B98CFF")
@@ -72,32 +72,16 @@ void fragment() {
 }
 """
 
-## The Mirror Ward's wall (the arc mesh: u along the arc, v 0 at the top and 1 at the foot): a sheet of violet light,
-## brightest at its foot, its top edge and its two ends, bands of light climbing it, a hexagon lattice over it.
-const ARC_SHADER := """
-shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
-
-uniform vec4 tint : source_color = vec4(0.73, 0.55, 1.0, 1.0);
-uniform float alpha = 1.0;
-uniform float arc_m = 5.0;
-uniform float clock = 0.0;
-
-void fragment() {
-	float u = UV.x;
-	float v = UV.y;
-	float foot = smoothstep(0.2, 1.0, v);
-	float top = smoothstep(0.06, 0.0, v);
-	float ends = smoothstep(0.04, 0.0, min(u, 1.0 - u));
-	float bands = smoothstep(0.75, 1.0, fract(v * 4.0 + clock * 0.8));
-	vec2 p = vec2(u * arc_m, v * 2.6) * 3.0;
-	vec2 h = abs(fract(vec2(p.x + 0.5 * floor(p.y), p.y)) - 0.5);
-	float hex = smoothstep(0.42, 0.5, max(h.x * 1.15, h.y));
-	float lit = 0.12 + 0.35 * foot + 0.25 * bands + 0.25 * hex + 0.9 * top + 0.8 * ends;
-	ALBEDO = mix(tint.rgb, vec3(1.0, 0.95, 1.0), clamp(top + ends * 0.6, 0.0, 1.0)) * (1.0 + lit);
-	ALPHA = clamp(alpha * lit, 0.0, 0.9);
-}
-"""
+## The Mirror Ward's wall: slabs of violet glass standing side by side on its arc, each a little different in height,
+## its top cut at a slant, so the wall reads as faceted crystal; matte and lit by the room like the Wardens (no glow
+## sheet, no grid), a faint violet glow its only light, a little see-through so the Warden behind it still shows.
+const SLAB := Color("#7A55C4")
+const SLAB_GLOW := 0.25
+const SLAB_ALPHA := 0.88
+## A slab's width along the arc (m, about), its thickness and the gap between two.
+const SLAB_W := 0.62
+const SLAB_T := 0.16
+const SLAB_GAP := 0.07
 
 static var _disc: Shader
 static var _strip: Shader
@@ -202,48 +186,77 @@ static func wear(node: Node3D, m: ShaderMaterial, tag: StringName) -> void:
 		(mi as MeshInstance3D).material_override = m
 
 
-## A curved wall `half_arc` (1/4096 turns) each side of +X, `radius` m out from the centre, `height` m tall, its UV
-## u along the arc and v 0 at the top, 1 at the foot.
+## A curved wall of glass slabs `half_arc` (1/4096 turns) each side of +X, `radius` m out from the centre, at most
+## `height` m tall: flat-shaded, each slab its own height and slanted top (the same for the same arc, built once).
 static func arc_wall(half_arc: int, radius: float, height: float) -> ArrayMesh:
 	var key := "%d:%.2f:%.2f" % [half_arc, radius, height]
 	if _arcs.has(key):
 		return _arcs[key]
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var segs := 28
+	st.set_smooth_group(-1)  # flat: every face its own normal
 	var half := TAU * float(half_arc) / TURN
-	for k in segs:
-		var a0 := -half + 2.0 * half * float(k) / segs
-		var a1 := -half + 2.0 * half * float(k + 1) / segs
-		var u0 := float(k) / segs
-		var u1 := float(k + 1) / segs
-		var p0 := Vector3(cos(a0), 0.0, -sin(a0)) * radius
-		var p1 := Vector3(cos(a1), 0.0, -sin(a1)) * radius
-		var up := Vector3(0.0, height, 0.0)
-		var quad := [
-			[p0, Vector2(u0, 1.0)],
-			[p1, Vector2(u1, 1.0)],
-			[p1 + up, Vector2(u1, 0.0)],
-			[p0, Vector2(u0, 1.0)],
-			[p1 + up, Vector2(u1, 0.0)],
-			[p0 + up, Vector2(u0, 0.0)],
-		]
-		for v: Array in quad:
-			st.set_normal(((v[0] as Vector3) * Vector3(1, 0, 1)).normalized())
-			st.set_uv(v[1])
-			st.add_vertex(v[0])
+	var n := maxi(3, roundi(2.0 * half * radius / SLAB_W))
+	var gap := SLAB_GAP / radius
+	for k in n:
+		var a0 := -half + 2.0 * half * float(k) / n + gap * 0.5
+		var a1 := -half + 2.0 * half * float(k + 1) / n - gap * 0.5
+		var h := height * lerpf(0.78, 1.0, _hash(k, 1))
+		var slant := height * lerpf(-0.12, 0.12, _hash(k, 2))
+		var lean := lerpf(-0.06, 0.1, _hash(k, 3))  # its top tipped a little in or out
+		_slab(st, a0, a1, radius, h, slant, lean)
+	st.generate_normals()
 	var mesh := st.commit()
 	_arcs[key] = mesh
 	return mesh
 
 
-## A material on the Mirror Ward's curved wall (ARC_SHADER) in `c`.
-static func arc_material(c: Color) -> ShaderMaterial:
-	var sh := Shader.new()
-	sh.code = ARC_SHADER
-	var m := ShaderMaterial.new()
-	m.shader = sh
-	m.set_shader_parameter("tint", c)
+## One slab from angle `a0` to `a1`, `h` tall at its middle, its top `slant` higher at a1's end than a0's.
+static func _slab(
+	st: SurfaceTool, a0: float, a1: float, r: float, h: float, slant: float, lean: float
+) -> void:
+	var ri := r - SLAB_T * 0.5
+	var ro := r + SLAB_T * 0.5
+	var d0 := Vector3(cos(a0), 0.0, -sin(a0))
+	var d1 := Vector3(cos(a1), 0.0, -sin(a1))
+	var h0 := h - slant * 0.5
+	var h1 := h + slant * 0.5
+	# Bottom (b) and top (t) corners: inner/outer at each end; the top moved out by `lean`.
+	var bi0 := d0 * ri
+	var bo0 := d0 * ro
+	var bi1 := d1 * ri
+	var bo1 := d1 * ro
+	var ti0 := d0 * (ri + lean) + Vector3(0, h0 - 0.06, 0)
+	var to0 := d0 * (ro + lean) + Vector3(0, h0, 0)
+	var ti1 := d1 * (ri + lean) + Vector3(0, h1 - 0.06, 0)
+	var to1 := d1 * (ro + lean) + Vector3(0, h1, 0)
+	for q: Array in [
+		[bo0, bo1, to1, to0],  # outer face
+		[bi1, bi0, ti0, ti1],  # inner face
+		[bi0, bo0, to0, ti0],  # the a0 end
+		[bo1, bi1, ti1, to1],  # the a1 end
+		[to0, to1, ti1, ti0],  # the slanted top
+	]:
+		for v: Vector3 in [q[0], q[1], q[2], q[0], q[2], q[3]]:
+			st.add_vertex(v)
+
+
+static func _hash(k: int, salt: int) -> float:
+	return VfxCore.h(k * 97 + 13, salt)
+
+
+## The Mirror Ward's slabs' material: matte violet glass lit by the room, a faint glow, a little see-through.
+static func arc_material() -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(SLAB, SLAB_ALPHA)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_DEPTH_PRE_PASS
+	m.roughness = 1.0
+	m.metallic = 0.0
+	m.metallic_specular = 0.5
+	m.emission_enabled = true
+	m.emission = SLAB
+	m.emission_energy_multiplier = SLAB_GLOW
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return m
 
 

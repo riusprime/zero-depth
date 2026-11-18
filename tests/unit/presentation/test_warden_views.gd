@@ -476,7 +476,6 @@ func test_the_pack_rows_are_in_the_table() -> void:
 			WardenWardViews.STUN_ID,
 			WardenWardViews.RIPPLE_ID,
 			WardenBladeViews.FLARE_ID,
-			WardenBladeViews.SLASH_ID,
 			WardenBladeViews.PORTAL_ID,
 			WardenBladeViews.EXIT_ID,
 			HazardViews.RIFT_ID,
