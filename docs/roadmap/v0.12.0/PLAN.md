@@ -191,3 +191,21 @@ lead's SHA and its own `APPDATA`. Every number below is a starting value; the ow
   **20. Minimap rooms and Blood Price weapon** (F25–F26), **21. Enemy look stills** (F27, G2; the owner picks).
 - **21b.** The picked enemy looks (Opus; owner: visual work goes to Opus). **23.** Night Rocks contact disc. **24.** Cross-step test fixes (and Amber's flash charge drew no run). **25.** Amber's charge end slam.
 - After each merge: the lead runs the touched tests; after the wave, `scripts/ci/seams.sh`; nothing pushed (V2).
+
+## The boss style pass (owner, 2026-11-18)
+
+The owner, on Amber's stone slam: "this matches a lot more the style, the little debris the colors, looks completely in place … let's throw that full analysis of all of them and then pick which ones could be reworked to actually fit the style". The audit: [`evidence/STYLE_AUDIT_A.md`](evidence/STYLE_AUDIT_A.md), [`evidence/STYLE_AUDIT_B.md`](evidence/STYLE_AUDIT_B.md). The owner then asked to "go over all of them 1 by 1 and see the proposed change" without losing "the core visuals" ("Prism's beam might have a little much too glow … but I think that visual matches, so that'd be a small tweak"). The lead wrote a keep-the-core proposal per item on a review page (64 items, ids `sh-*`, `cj-*`, `se-*`, `fd-*`, `wl-*`, `hl-*`, `gk-*`, `bm-*`, `ls-*`, `tc-*`, `tw-*`, `co-*`, `pr-*`, `fa-*`; the page: https://claude.ai/artifact/QBaBBH8uf2CGmzNxxaMxLT). Owner: **"Okay let's go for all of them"**: every proposal as written.
+
+**PD-13 refined (owner's approval of the proposals that reuse the slam):** a physical hit on stone (a landing, a slam, a crater, a thrown rock) may be drawn with the project's own code-made faceted stone (`GroundSlamViews`, the stone-spike style) instead of a pack effect; magic and energy effects keep using or modifying the premade packs.
+
+| Step | Items | Agent |
+|---|---|---|
+| 26 | Warning markers and aim strips: sh-cracks, sh-void, se-stripes, bm-marker, tc-net, fd-crust, wl-jav-aim, pr-bolt, fa-lanes | Opus |
+| 27 | Stone impacts: sh-craters, sh-dust, sh-spikes, gk-rings, se-shells, se-deploy, se-shock, fd-vent, fd-bombs, wl-jav-land, wl-bash, wl-lunge, tw-circle, co-leap, co-boulder, cj-verdict, cj-gavel, bm-acid, tw-lane | Opus |
+| 28 | Boss bodies and shells: sh-windup, sh-shield, sh-core, sh-pillar | Opus |
+| 29 | Hostile shots: sh-ember, fd-wisps, bm-globs, ls-wisps, tw-orbs, tw-bolt, pr-crown | Opus |
+| 30 | The Clockwork Judge: cj-gears, cj-echo, cj-pendulum, cj-dial, cj-wave, cj-orbs, cj-fields | Opus |
+| 31 | Siege, Foundry, Warlord set pieces: se-rail, se-cover, se-cart, fd-meltdown, fd-overpressure, fd-slabs, wl-banner, wl-cage | Opus |
+| 32 | Hive Lens, Prism, Tidecaller, Twins, The Fallen set pieces: hl-gaze, hl-focus, hl-feed, hl-lattice, hl-glass, pr-cross, pr-lances, tc-pull, tc-waves, tw-swords, tw-mirror, fa-label, fa-mimic, fa-riptide, fa-ward | Opus |
+
+Two Opus agents at a time (owner: visual work goes to Opus), in the order above; each shows before/after stills.
