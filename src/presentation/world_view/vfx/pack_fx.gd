@@ -77,6 +77,9 @@ const SHORT := {
 	&"p10l_meteor_land": [0.4, 27.0],
 	&"p10l_star_hit": [0.2, 15.0],
 }
+## Families whose animated scenes play their particles once (left looping, an explosion's 0.5 s sparks fire again and
+## again through its 1.2 s and it reads as two or three blasts).
+const ONCE: Array[StringName] = [&"explosion", &"impact"]
 
 ## The pack scene's child nodes an id never
 ## shows (the meteor's landing drops vfx_impact_01's white-hot Core sphere, its smoke and its tall streaks; the
@@ -102,6 +105,8 @@ static var _peak := {}
 var camera: Camera3D = null
 var spawned := 0
 var reused := 0
+## Family -> how many effects of it spawn() has played so far (tests count what one event plays).
+var spawned_in := {}
 
 var _def: PackFxDefinition
 ## id -> Array[Node3D]. v0.10.5 PC (owner PERF_PLAYLOG_2: the filled pools put ~2,300 idle nodes in the tree, paid
@@ -219,7 +224,9 @@ func spawn(
 	# its scene's one pass (an animation-less scene's particles fire once).
 	var short: Array = SHORT.get(effect_id, []) if life != 0.0 else []
 	for p in _particles(node):
-		p.one_shot = life != 0.0 and (info["anim"] == null or not short.is_empty())
+		p.one_shot = (
+			life != 0.0 and (info["anim"] == null or not short.is_empty() or ONCE.has(family))
+		)
 		p.local_coords = not WORLD_SPACE.has(family)
 	var left := float(info["life"]) / speed if life < 0.0 else (INF if life == 0.0 else life)
 	var entry := {"node": node, "id": effect_id, "family": family, "left": left}
@@ -239,6 +246,7 @@ func spawn(
 	if n_live > int(_peak.get(effect_id, 0)):
 		_peak[effect_id] = n_live
 	spawned += 1
+	spawned_in[family] = int(spawned_in.get(family, 0)) + 1
 	return node
 
 

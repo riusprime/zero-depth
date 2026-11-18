@@ -7,8 +7,8 @@ extends Node3D
 ## - a Frost Charger's slick: the pack's ice patch (VfxLayer.field &"frost": zone_frost_a-d, ice_area_vfx_01-04),
 ##   fading out over its last second;
 ## - a Rubble Warden's fallen crust: a scatter of the kit's small boulders and rubble (KitModels boulder_small as the
-##   crust it wore: VariantLooks; rubble_small) lying over the patch, sinking away over its last second, with a puff
-##   of the pack's dust (bx_smoke_dust, smoke_vfx_05) the first frame it shows. Flat on the floor: nothing solid;
+##   crust it wore: VariantLooks; rubble_small) lying over the patch, sinking away over its last second (no dust or
+##   smoke). Flat on the floor: nothing solid;
 ## - a Split Sniper's split: the pack's hit spark (vx1_hit_storm, vfx_hit_01, in violet) at the split point the tick
 ##   its shot fires (its four tracer lines are HordeVisuals').
 ## The patches are drawn by draw_fx (a VfxCore drawer); the rocks and the sparks by sync. Nothing here decides.
@@ -25,8 +25,6 @@ const PIECE_SIDE_SPREAD := 0.5
 const PIECE_HEIGHT := 0.3
 const PATCH_FILL := 1.0
 const RUBBLE_FADE_TICKS := 60.0
-const DUST_ID := &"bx_smoke_dust"
-const DUST_SCALE := 1.1
 const SPARK_ID := &"vx1_hit_storm"
 const SPARK_SCALE := 0.9
 const SPARK_COLORS := {
@@ -39,7 +37,7 @@ const FIRE_FADE_TICKS := 30.0
 const SLICK_FADE_TICKS := 60.0
 const UNLIT_FADE := 0.55
 
-## The effects layer (WorldViewRoot sets it; null: no patches) and the pack (null: no dust or spark).
+## The effects layer (WorldViewRoot sets it; null: no patches) and the pack (null: no spark).
 var vfx: VfxCore = null
 var pack_fx: PackFx = null
 var _trails := {}
@@ -104,8 +102,6 @@ func _sync_rubble() -> void:
 		if not _patches.has(sd):
 			var at := SimPlane.to_3d(_trails["pos"][k], 0.0)
 			_patches[sd] = _make_patch(at, _trails["r"][k], sd)
-			if pack_fx != null:
-				pack_fx.spawn(DUST_ID, at, DUST_SCALE)
 		var node: Node3D = _patches[sd]
 		# the pieces sink into the floor over the last second
 		node.position.y = -0.3 * (1.0 - clampf(left / RUBBLE_FADE_TICKS, 0.0, 1.0))
