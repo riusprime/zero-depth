@@ -301,9 +301,10 @@ static func _dust_ring(
 			)
 
 
-## The cracks a crater or a javelin leaves (the owner's fx_ground_cracks; the code's scorch without it).
+## The cracks a crater or a javelin leaves: fx_ground_cracks thinned to dark lines like the stone slam's (the code's
+## scorch without it).
 static func crack_mark() -> StringName:
-	return &"cracks" if VfxCore.has_tex("fx_ground_cracks") else &"scorch"
+	return &"crack_lines" if VfxCore.has_tex("fx_ground_cracks") else &"scorch"
 
 
 ## The owner's rock burst (fx_rock_burst, seen from the side) blasting up out of a crater `r` round: it
