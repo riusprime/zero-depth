@@ -50,7 +50,11 @@ func test_trails_pick_their_row_by_style() -> void:
 	assert_eq(FireballViews.trail_row(FireballViews.look_of(&"cannon_ember")), 1, "smoke")
 	assert_eq(FireballViews.trail_row(FireballViews.look_of(&"acid_glob")), 2, "drips")
 	assert_eq(FireballViews.trail_row(FireballViews.look_of(&"prism_orb")), 3, "crystal")
-	assert_eq(FireballViews.trail_row(FireballViews.look_of(&"ember_stone")), 0, "flame")
+	assert_eq(FireballViews.trail_row(FireballViews.look_of(&"warden_amber_ember")), 0, "flame")
+	var rock := FireballViews.trail_material(FireballViews.look_of(&"ember_stone"))
+	assert_ne(
+		rock.get_shader_parameter("tex_on"), 1.0, "a thrown rock's streak takes no painted strip"
+	)
 	var m := FireballViews.trail_material(FireballViews.look_of(&"acid_glob"))
 	assert_eq(m.get_shader_parameter("tex_on"), 1.0)
 	assert_eq(m.get_shader_parameter("tex_row"), 2.0)

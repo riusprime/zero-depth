@@ -82,7 +82,13 @@ const CELLS := [
 	{"boss": "twin_wardens", "file": "07_orb_volley", "attack": &"orb_volley", "who": 1},
 	{"boss": "twin_wardens", "file": "08_rune_ring", "attack": &"rune_ring", "who": 1},
 	{"boss": "twin_wardens", "file": "09_blink", "attack": &"blink", "who": 1},
-	{"boss": "twin_wardens", "file": "10_warden_bolt", "attack": &"warden_bolt", "who": 1},
+	{
+		"boss": "twin_wardens",
+		"file": "10_warden_bolt",
+		"attack": &"warden_bolt",
+		"who": 1,
+		"bolt": true
+	},
 	{"boss": "twin_wardens", "file": "11_shadow_swords", "attack": &"shadow_swords", "who": 1},
 	{
 		"boss": "colossus",
@@ -404,6 +410,13 @@ func _start() -> void:
 		return
 	if c.get("aim", "") == "pillar":
 		_aim_through_pillar(i)
+	if c.get("bolt", false):
+		# The bolt is never picked: the body standing back casts it on the pair's clock (BossTwin), in its own look
+		t.twin_bolt = a
+		_world.bosses.twin_clock[0] = t.twin_bolt_ticks - 1
+		if _at.is_empty():
+			_at = [2, 14]
+		return
 	BossLab.start(_world, i, c["attack"])
 	if _at.is_empty():
 		var at := t.attacks[a]
