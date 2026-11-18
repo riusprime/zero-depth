@@ -151,7 +151,7 @@ lead's SHA and its own `APPDATA`. Every number below is a starting value; the ow
 |---|---|---|---|
 | F1 | Twins P1: "ranged attacks can be avoided simply by standing outside their reach … pursue the player, stay in melee range … ranged attacks become relevant when the player retreats" | Amber chases and stays in melee range; his ranged attacks are used only while you stand beyond about 7 m | 13 |
 | F2 | Twins P1: the charge "triggers only when the player is nearby … approximately 10–15-second cooldown" | The charge runs on its own clock, every 10–15 s, at any distance | 13 |
-| F3 | Twins P1: "remove the visible aiming line / long tell, make it near-immediate and anticipate player movement so that dodging with the player dash is necessary" | **Q** "A brief body flash": no lane or end circle drawn in phase 1; a ~0.3 s glow on Amber, the aim leads your movement; the burst stays | 13 |
+| F3 | Twins P1: "remove the visible aiming line / long tell, make it near-immediate and anticipate player movement so that dodging with the player dash is necessary" | **Q** "A brief body flash": no lane or end circle drawn in phase 1; a ~0.3 s glow on Amber, the aim leads your movement; the burst stays. The wind-up is 0.4 s, the 24-tick minimum telegraph of LOCKED_DECISIONS 2026-10-06, not 0.3 s; owner, 2026-11-18, asked: "Keep the 0.4 for the twins" | 13 |
 | F4 | Twins: "Smoke appears at the boss's feet on every attack and does not look good" | Removed | 13 |
 | F5 | Twins P2: the ground zone + arc "is too easy to bypass by simply stepping outside" | **Q** "Zone is the shelter": the arc sweeps the whole room except the marked zone | 13 |
 | F6 | Twins P3: "Amber still relies too much on ranged attacks" | F1's chase rule in phase 3 too | 13 |
