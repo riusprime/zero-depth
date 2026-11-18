@@ -14,10 +14,10 @@ extends BossAvatar
 ## mortar, crouches and blows for the vent ring, rocks back for the launch, flinches, lurches when staggered, and the
 ## "shielded" hook hunkers it down on splayed legs. The grate's glow is a light at the door (its energy follows the
 ## heat and the open door); the door, the chimneys and the launcher are anchors.
-## The Forged Plate (WorldReader.boss_forge "plate"): the owner's model wears a steel shell, a lit metallic pass a
-## little outside its skin (the glow overlay's next pass), so a plated Foundry reads as harder to hurt at a glance;
-## through the forging cast the shell builds up glowing forge-orange and cools to steel once it is on; it goes at once
-## when a bomb blows it off. The code-built body has no shell.
+## The Forged Plate (WorldReader.boss_forge "plate"): the owner's model wears a faint matte grey shell, a pass a
+## little outside its skin (the glow overlay's next pass; no metal or shine, so the model keeps its own look);
+## through the forging cast the shell builds up with a faint forge glow and settles to grey once it is on;
+## it goes at once when a bomb blows it off. The code-built body has no shell.
 
 const HEIGHT := 2.6
 const WALK_SPEED := 1.5
@@ -37,10 +37,12 @@ const MODEL_CHIMNEYS := [Vector3(-0.55, 2.55, -0.27), Vector3(-0.58, 2.5, 0.26)]
 const MODEL_LAUNCHER := Vector3(0.53, 2.45, -0.16)
 const GRATE_ENERGY := 1.4
 ## The plate's shell: its steel, how far it stands off the skin (m), its alpha when on, and its rate in and out.
-const PLATE_STEEL := Color("#A7B1BD")
+const PLATE_STEEL := Color("#8A8F96")
 const PLATE_GROW := 0.035
-const PLATE_ALPHA := 0.62
+const PLATE_ALPHA := 0.22
 const PLATE_RATE := 10.0
+## The glow the shell shows while it is forged (a faint forge-orange: the model stays readable).
+const PLATE_FORGE_GLOW := 0.5
 
 var body := Node3D.new()
 var grate: MeshInstance3D
@@ -117,15 +119,13 @@ func _build_body() -> void:
 	plate_shell = StandardMaterial3D.new()
 	plate_shell.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	plate_shell.albedo_color = Color(PLATE_STEEL, 0.0)
-	plate_shell.metallic = 0.9
-	plate_shell.roughness = 0.32
+	plate_shell.metallic = 0.0
+	plate_shell.roughness = 1.0
 	plate_shell.grow = true
 	plate_shell.grow_amount = PLATE_GROW
 	plate_shell.emission_enabled = true
 	plate_shell.emission = HOT
 	plate_shell.emission_energy_multiplier = 0.0
-	plate_shell.rim_enabled = true
-	plate_shell.rim = 0.6
 	glow_overlay.next_pass = plate_shell
 
 
@@ -346,7 +346,7 @@ func _pose_plate(dt: float) -> void:
 	_plate_shown = lerpf(_plate_shown, want, _rate(PLATE_RATE, dt)) if want > _plate_shown else want
 	plate_shell.albedo_color.a = PLATE_ALPHA * _plate_shown
 	plate_shell.emission_energy_multiplier = (
-		2.5 * _forging if _forging >= 0.0 and not _plated else 0.0
+		PLATE_FORGE_GLOW * _forging if _forging >= 0.0 and not _plated else 0.0
 	)
 
 

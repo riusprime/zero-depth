@@ -65,24 +65,24 @@ func _pvel(w: World, k: int) -> Vector2:
 ## B6 ---------------------------------------------------------------------------------------------------------------
 
 
-func test_furnace_waves_come_as_two_walls_the_second_0_3_s_after_the_first() -> void:
+func test_furnace_waves_come_as_two_walls_the_second_0_65_s_after_the_first() -> void:
 	var t := _table(&"foundry")
 	var atk := _atk(t, &"furnace_waves")
 	var p := atk.pattern
 	assert_eq(p.kind, BulletPatternTable.Kind.WALL, "walls, not rings")
 	assert_true(p.crossing, "a second wall at right angles")
-	assert_eq(p.cross_delay_ticks, 18, "the second wall 0.3 s after the first")
+	assert_eq(p.cross_delay_ticks, 39, "the second wall 0.65 s after the first")
 	assert_gte(atk.windup_ticks, MIN_TICKS, "telegraph >= 0.55 s")
 	assert_eq(atk.windup_ticks, 48, "still 0.8 s")
 	assert_eq(atk.damage, 22, "damage unchanged")
-	assert_eq(p.waves, 4)
+	assert_eq(p.waves, 3)
 	var gap := p.wave_gap_ticks
 	assert_eq(BulletPatterns.wave_at(p, 0), 0, "the first wall leaves at once")
 	assert_eq(BulletPatterns.cross_wave_at(p, 0), -1, "the second does not")
-	assert_eq(BulletPatterns.wave_at(p, 18), -1)
-	assert_eq(BulletPatterns.cross_wave_at(p, 18), 0, "it leaves 18 ticks on")
-	assert_eq(BulletPatterns.cross_wave_at(p, 3 * gap + 18), 3, "every wave")
-	assert_eq(p.duration_ticks(), 3 * gap + 18 + 1, "the attack covers the last crossing wall")
+	assert_eq(BulletPatterns.wave_at(p, 39), -1)
+	assert_eq(BulletPatterns.cross_wave_at(p, 39), 0, "it leaves 39 ticks on")
+	assert_eq(BulletPatterns.cross_wave_at(p, 2 * gap + 39), 2, "every wave")
+	assert_eq(p.duration_ticks(), 2 * gap + 39 + 1, "the attack covers the last crossing wall")
 	assert_gte(atk.active_ticks, p.duration_ticks(), "and stays active for it")
 
 
@@ -163,12 +163,12 @@ func test_furnace_waves_live_the_walls_leave_apart_and_the_quadrant_is_safe() ->
 	assert_gt(w.projectiles.size(), 0, "the first wall is out")
 	for k in w.projectiles.size():
 		assert_almost_eq(_pvel(w, k).y, 0.0, 0.0001, "only wall A: along the aim")
-	_hold(w, Vector2(6, 0), 18)
+	_hold(w, Vector2(6, 0), 39)
 	var across := 0
 	for k in w.projectiles.size():
 		if absf(_pvel(w, k).y) > 0.01:
 			across += 1
-	assert_gt(across, 20, "0.3 s later wall B is out, at a right angle")
+	assert_gt(across, 20, "0.65 s later wall B is out, at a right angle")
 	# The hero behind the body, in the quadrant neither wall crosses, takes nothing through the whole attack.
 	var s2 := _fight(&"foundry", Vector2(6, 0))
 	var w2: World = s2[0]

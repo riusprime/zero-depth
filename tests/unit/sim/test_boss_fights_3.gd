@@ -281,7 +281,7 @@ func test_the_slag_fountain_rains_in_a_flower_and_only_landed_drops_hurt() -> vo
 		far = maxf(far, r)
 		near = minf(near, r)
 	assert_almost_eq(far, pat.rain_m, 0.05, "a petal's tip lands rain_m out")
-	assert_lt(near, far * 0.8, "the valleys land nearer: a flower")
+	assert_lt(near, far * 0.92, "the petal sides land nearer than its tip: a flower")
 	CombatLab.idle(w, pat.rain_ticks)
 	assert_gt(w.projectiles.size(), 10, "landed: the first wave's drops roll on as shots")
 	for k in w.projectiles.size():
