@@ -7,9 +7,9 @@ extends Node3D
 ##   aim locks it flashes white-hot and pulses fast, like every other telegraph's lock.
 ## - Armed (the run has stopped, WorldReader.boss_charge_bursts): the circle stays where it was armed and fills from
 ##   its middle out as the burst comes.
-## - The burst, once, where an armed circle went off, sized to the radius: the amber Warden's charge smashes into the
-##   ground (the pack's rock spikes thrown up and its crack under them, no fireball, smoke or dust); any other
-##   boss's charge explodes (the pack's explosion).
+## - The burst, once, where an armed circle went off, sized to the radius: the amber Warden's charge slams into the
+##   stone floor (GroundSlamViews: faceted chunks of the floor kicked up and falling back, a fractured floor, a brief
+##   dust kick; no fire or light); any other boss's charge explodes (the pack's explosion).
 ## - The amber Warden's shade (The Fallen remembering the ward, WorldReader.boss_fallen "shade" and "burst"): the same
 ##   circle at its run's end, locked as its aim locks, then armed and smashing down the same way.
 ## Every slot is built hidden at the start. Reduced motion stills the hatching and the pulse. Nothing here decides.
@@ -17,12 +17,9 @@ extends Node3D
 const SLOTS := 4
 const RIM_ID := &"tw_burst_rim"
 const BURST_ID := &"tw_burst"
-const SLAM_ID := &"tw_slam"
-## The pack scenes' size per metre of radius (the rim: 0.55; the explosion: about 2 m across at 1; the debris: its
-## rock spikes thrown about 2 m out at 1, so the slam fills the circle).
+## The pack scenes' size per metre of radius (the rim: 0.55; the explosion: about 2 m across at 1).
 const RIM_PER_M := 0.55
 const BURST_PER_M := 0.6
-const SLAM_PER_M := 0.9
 ## The lock's flash (s).
 const FLASH_S := 0.18
 
@@ -32,6 +29,8 @@ var pack_fx: PackFx = null:
 		pack_fx = v
 		hold.pack = v
 var hold := FormPackHold.new()
+## The amber Warden's ground slams.
+var slams := GroundSlamViews.new()
 ## True once a frame with nothing to show drew it all hidden: later frames return at once.
 var quiet := false
 ## The circles drawn this frame: [centre (sim), radius, locked, fill 0..1 (an armed one), its key].
@@ -48,6 +47,7 @@ func _init() -> void:
 	name = "ChargeBurstViews"
 	for k in SLOTS:
 		_discs.append(WardenLooks.floor_mesh(self, true, WardenLooks.DANGER))
+	add_child(slams)
 
 
 func sync(reader: WorldReader) -> void:
@@ -102,8 +102,7 @@ func _explode(centre: Vector2, radius: float) -> void:
 
 
 func _slam(centre: Vector2, radius: float) -> void:
-	if pack_fx != null and pack_fx.has_id(SLAM_ID):
-		pack_fx.spawn(SLAM_ID, SimPlane.to_3d(centre, 0.1), radius * SLAM_PER_M)
+	slams.slam(SimPlane.to_3d(centre, 0.0), radius)
 
 
 func _process(delta: float) -> void:
@@ -112,7 +111,8 @@ func _process(delta: float) -> void:
 
 ## Frame-time animation (the tests and the shot scripts call it too).
 func advance(delta: float) -> void:
-	if _circles.is_empty() and hold.count() == 0:
+	slams.advance(delta)
+	if _circles.is_empty() and hold.count() == 0 and not slams.busy():
 		if quiet:
 			return
 		quiet = true

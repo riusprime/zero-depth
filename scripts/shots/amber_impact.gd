@@ -2,7 +2,8 @@ extends SceneTree
 ## Renders the end of the amber Warden's charge for the owner, in the real game view (WorldViewRoot over TwinsLab's
 ## walled 24 m room, the iso camera) of a real World stepped one tick per frame: the run stopping, the armed circle,
 ## then the burst's ground impact. Both charges (phase 1's flash charge, then the long charge); for each, a sheet of
-## frames from two ticks before the burst to a second after it, and the burst's own frame alone.
+## frames from two ticks before the burst to a second after it, the burst's own frame alone, and the whole frame at the
+## game's own camera size as the thrown stone peaks (GAME_AT).
 ## Needs a renderer (no --headless); run it off screen:
 ##   godot --path . --position -10000,-10000 --audio-driver Dummy --fixed-fps 60 -s scripts/shots/amber_impact.gd
 ##   -- out=<folder>
@@ -13,6 +14,8 @@ const CROP := Vector2i(480, 300)
 ## Frames on the sheet: ticks after the burst (negative: before it).
 const SHEET_AT: Array[int] = [-2, 1, 3, 6, 10, 16, 24, 40]
 const ATTACKS: Array[StringName] = [&"warden_charge", &"warden_charge_long"]
+## The tick after the burst the whole game frame is saved.
+const GAME_AT := 10
 
 var _vp: SubViewport
 var _world: World
@@ -58,8 +61,7 @@ func _begin() -> void:
 	_root.stage.prop_style = biome.id
 	_root.stage.look = biome.look
 	_root.setup(WorldReader.new(_world), biome.palette, 14.0)
-	_root.rig.view_size = 16.0
-	_root.rig.camera.size = 16.0
+	_root.rig.camera.size = _root.rig.view_size  # the game's own camera size
 	_root.rig.snap_to(SimPlane.to_3d(Vector2(3.0, 0.0)))
 	_root.rig.set_process(false)
 	_root.rig.set_physics_process(false)
@@ -84,6 +86,10 @@ func _process(_delta: float) -> bool:
 			_frames.append(_crop())
 			if at == 1:
 				_save(_crop(), "%d_burst.png" % (_which + 1))
+			if at == GAME_AT:
+				var img := _vp.get_texture().get_image()
+				img.convert(Image.FORMAT_RGB8)
+				_save(img, "%d_game.png" % (_which + 1))
 		if at >= SHEET_AT[SHEET_AT.size() - 1]:
 			_sheet()
 			_which += 1
