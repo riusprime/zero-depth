@@ -306,14 +306,21 @@ func test_the_phase_one_charge_flashes_his_body_and_her_ward_gives_him_a_violet_
 	assert_gt(a.crack_light.light_energy, calm * 2.0, "his light flares")
 	if a.glow_overlay != null:
 		assert_gt(a.glow_amount(), glow + 0.2, "his whole body glows")
-		assert_almost_eq(a.glow_overlay.albedo_color.b, TwinWardenAvatar.FLASH_COLOR.b, 0.001)
+		assert_almost_eq(
+			(a.glow_overlay.get_shader_parameter("fill_color") as Color).b,
+			TwinWardenAvatar.FLASH_COLOR.b,
+			0.001
+		)
 	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1, "flash": 0.0}, 10)
 	assert_eq(a.flash_amount(), 0.0, "gone as it runs")
 	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1, "sheltered": true}, 30)
 	assert_gt(a.sheen_amount(), 0.9, "sheltered by her ward: a faint sheen")
 	if a.glow_overlay != null:
 		assert_almost_eq(
-			a.glow_overlay.albedo_color.b, TwinWardenAvatar.SHEEN_COLOR.b, 0.001, "violet"
+			(a.glow_overlay.get_shader_parameter("fill_color") as Color).b,
+			TwinWardenAvatar.SHEEN_COLOR.b,
+			0.001,
+			"violet"
 		)
 		assert_lt(a.glow_amount(), 0.2, "faint")
 	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1, "sheltered": false}, 30)

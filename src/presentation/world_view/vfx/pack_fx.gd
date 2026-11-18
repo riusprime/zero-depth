@@ -87,6 +87,16 @@ const HIDE := {
 	&"p10l_meteor_land": ["Core", "Smoke", "Impact_Streaks2"],
 }
 
+## The light pillars and pulses drawn quieter than their scenes were made, to sit with the flat-shaded floor (the
+## pack's files stay as they are): "glow" scales each material's emission_strength (less bloom, less additive),
+## "height" squashes the scene on Y (a shorter column), "dark" darkens the body colours (secondary, tertiary) while
+## the primary, the bright edge, stays: a pulse reads as a darker floor wave with a thin bright edge.
+const LOOK := {
+	&"bx_pillar_light": {"glow": 0.3, "height": 0.45, "dark": 0.35},
+	&"tw_portal_exit": {"glow": 0.3, "height": 0.45, "dark": 0.35},
+	&"bx_pulse_light": {"glow": 0.3, "dark": 0.6},
+}
+
 ## The children spawn()'s `hide` may switch off (and back on for the next user of a pooled instance).
 ## Also an impact's white Core puff and its Ground_Impact disc (Blood Thorns' eruptions keep the sparks).
 const HIDE_PER_SPAWN: Array[String] = ["Smoke", "Core", "Ground_Impact"]  # Blood Thorns keeps the sparks
@@ -216,11 +226,16 @@ func spawn(
 		if part_node != null:
 			part_node.visible = not hide.has(part)
 	node.scale = Vector3.ONE * scale * _def.scales[k]
+	var look: Dictionary = LOOK.get(effect_id, {})
+	node.scale.y *= float(look.get("height", 1.0))
+	if look.has("glow") and not info.has("quiet"):  # once per instance: its materials are its own
+		_quiet(node, float(look["glow"]))
+		info["quiet"] = true
 	if node.is_inside_tree():
 		node.global_position = pos
 	else:
 		node.position = pos
-	_colour(node, info, colors, k)
+	_colour(node, info, colors, k, float(look.get("dark", 0.0)))
 	# v0.10.0 lead (VX2-VX5's findings): a held effect keeps emitting and looping until release(); a timed one runs
 	# its scene's one pass (an animation-less scene's particles fire once).
 	var short: Array = SHORT.get(effect_id, []) if life != 0.0 else []
@@ -469,7 +484,19 @@ func _unlight(node: Node3D, info: Dictionary) -> void:
 	info["lights"] = found
 
 
-func _colour(node: Node3D, info: Dictionary, colors: Dictionary, row: int) -> void:
+## Scales the emission_strength of every material of `node`'s own (LOOK's "glow").
+static func _quiet(node: Node, k: float) -> void:
+	if node is GeometryInstance3D:
+		var m := (node as GeometryInstance3D).material_override as ShaderMaterial
+		if m != null and m.get_shader_parameter("emission_strength") != null:
+			var e := float(m.get_shader_parameter("emission_strength"))
+			m.set_shader_parameter("emission_strength", e * k)
+	for c in node.get_children():
+		_quiet(c, k)
+
+
+## `dark` darkens the body colours (secondary, tertiary) by that much; the primary stays (LOOK's "dark").
+func _colour(node: Node3D, info: Dictionary, colors: Dictionary, row: int, dark := 0.0) -> void:
 	var from_table := {
 		&"primary_color": _def.primary[row],
 		&"secondary_color": _def.secondary[row],
@@ -489,6 +516,8 @@ func _colour(node: Node3D, info: Dictionary, colors: Dictionary, row: int) -> vo
 			c = t
 		if colors.has(asked[key]):
 			c = colors[asked[key]]
+		if dark > 0.0 and key != &"primary_color":
+			c = Color(c.darkened(dark), c.a)
 		node.set(key, c)
 
 

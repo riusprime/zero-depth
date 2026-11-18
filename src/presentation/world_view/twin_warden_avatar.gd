@@ -43,14 +43,13 @@ const MODEL_VISOR := Vector3(0.3, 1.95, 0.0)
 const MODEL_CHEST := Vector3(0.35, 1.35, 0.0)
 const LIGHT_ENERGY := 1.0
 ## The phase-1 charge's flash: its cracks and light this many times brighter at its height, the body's overlay
-## white-hot at FLASH_ALPHA. The shelter of her whole ward: a faint violet sheen over the body at SHEEN_ALPHA.
+## fill white-hot at FLASH_ALPHA. The shelter of her whole ward: a faint violet sheen over the body at SHEEN_ALPHA.
+## (The ordinary windup is BossAvatar's accent rim; the fill is these two reads only.)
 const FLASH_GAIN := 3.0
 const FLASH_ALPHA := 0.35
 const FLASH_COLOR := Color(1.0, 0.85, 0.55)
 const SHEEN_ALPHA := 0.1
 const SHEEN_COLOR := Color(0.72, 0.55, 1.0)
-## BossAvatar's own overlay colour (the windup's red), back when neither shows.
-const WINDUP_COLOR := Color(1.0, 0.06, 0.03)
 
 var torso := Node3D.new()
 var helm := Node3D.new()
@@ -303,11 +302,8 @@ func _pose_rig(dt: float) -> void:
 		var pulse := 0.0 if not _exposed or ViewPrefs.reduced_motion else 0.35 * sin(_t * 6.0)
 		crack_light.light_energy = LIGHT_ENERGY * glow * (_role + pulse) * (1.0 - 0.6 * _stagger)
 		crack_light.light_energy *= 1.0 + FLASH_GAIN * _flash_shown
-	if glow_overlay != null:  # The flash white-hot, the sheltered sheen violet, else the windup's red
-		var c := WINDUP_COLOR
-		if maxf(_sheen, _flash_shown) > 0.01:
-			c = SHEEN_COLOR if _sheen > _flash_shown else FLASH_COLOR
-		glow_overlay.albedo_color = Color(c.r, c.g, c.b, glow_overlay.albedo_color.a)
+	if maxf(_sheen, _flash_shown) > 0.01:  # The fill: the flash white-hot, the sheltered sheen violet
+		_set_fill_color(SHEEN_COLOR if _sheen > _flash_shown else FLASH_COLOR)
 
 
 ## The overlay's share over the windup's (BossAvatar._pose_imported): the flash's, the sheen's.

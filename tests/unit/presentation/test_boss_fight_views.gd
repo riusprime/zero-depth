@@ -100,6 +100,12 @@ func test_the_shield_shell_stands_while_shielded_only() -> void:
 	w.step(InputFrame.new())
 	view.sync(reader)
 	assert_eq(view.count(), 1, "the shell rises with the signature pattern")
+	assert_eq(view.shell_opacity(aid), 1.0, "its edges and rim at full")
+	assert_eq(
+		float(BossShieldView.OPACITY[WorldReader.KIND_PRISM]),
+		0.5,
+		"the Prism's at half (her whole fight)"
+	)
 	view._process(0.2)
 	CombatLab.until(
 		w,
