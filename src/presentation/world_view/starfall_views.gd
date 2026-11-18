@@ -8,8 +8,9 @@ extends Node3D
 ##   ground tell);
 ## - the blink: a flash where it left and where it lands (o13d_blink: magic_orbs magic_orb_flash_vfx_01, violet);
 ## - the stun (the hero stood on the star): a gold ripple at its feet (o13d_stun: magic_areas ripple_area_vfx_01);
-## - the Gravity Node's swirl: a violet ripple the size of its pull's reach, held while it lives (o13d_swirl:
-##   magic_areas ripple_area_vfx_03).
+## - the Gravity Node's swirl: a faint violet ripple on the floor the size of its reach on the hero, held only while
+##   the hero is inside it and being drawn in (WorldReader.gravity_hero_pull; o13d_swirl: magic_areas
+##   ripple_area_vfx_03), one per node.
 ## Nothing here decides.
 
 ## The kinds this view draws something for.
@@ -47,12 +48,12 @@ func sync(reader: WorldReader) -> void:
 		var id := reader.actor_id(i)
 		if kind == WorldReader.KIND_STAR_WARPER:
 			_sync_warper(reader, i, id, live_stars)
-		elif kind == WorldReader.KIND_GRAVITY_NODE and not reader.actor_dead(i):
+		elif kind == WorldReader.KIND_GRAVITY_NODE and reader.gravity_hero_pull(i) > 0.0:
 			live_swirls[id] = true
 			var at := SimPlane.to_3d(reader.actor_pos(i), GROUND_Y)
 			if not _swirls.has(id) or not pack_fx.is_live(_swirls[id]):
 				_swirls[id] = pack_fx.spawn(
-					SWIRL, at, reader.gravity_reach(i) * RING_PER_M, {}, 0.0
+					SWIRL, at, reader.gravity_hero_reach(i) * RING_PER_M, {}, 0.0
 				)
 			elif _swirls[id] != null:
 				(_swirls[id] as Node3D).global_position = at

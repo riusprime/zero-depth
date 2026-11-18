@@ -275,6 +275,8 @@ static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) 
 			t.pull_accel = (
 				float(bp["pull_mps2"]) / float(SimTick.TICKS_PER_SECOND * SimTick.TICKS_PER_SECOND)
 			)
+			t.hero_pull_radius_m = float(bp["hero_pull_radius_m"])
+			t.hero_pull = float(bp["hero_pull_mps"]) / SimTick.TICKS_PER_SECOND
 
 
 ## The Arc Caster: its spells in schema order (bolt, spread, rune); bolt and spread are fans.

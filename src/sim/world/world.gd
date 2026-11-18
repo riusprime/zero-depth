@@ -1910,7 +1910,7 @@ func _move_and_collide() -> void:
 		if Kin.length(vel - target) < 0.0001:
 			vel = target
 		p += vel + PlayerKit.lunge_offset(self)  # a combo step's forward step
-		p += kick
+		p += kick + StarfallKinds.hero_drift(self)  # A Gravity Node near draws the walking hero in
 	actors.set_pos(0, p)
 	var pp := phase_probe  # v0.8.0 HS
 	if pp != null:

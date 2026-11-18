@@ -10,8 +10,9 @@ extends GutTest
 ##   Charger leaves a fire trail.
 ## - Frozen Shore: the Frost Spitter's arc is drawn and its blob leaves a slick; the Glacier Turtle's shell stands and
 ##   breaks under the shots before it dies; the Frost Charger leaves a slick trail.
-## - Starfall: the Star Warper's star mark is drawn; the Gravity Node's swirl is drawn and it bends a hero shot; the
-##   Split Sniper's line splits in three (its four lanes drawn).
+## - Starfall: the Star Warper's star mark is drawn; the Gravity Node draws the hero, standing with no input, toward
+##   it (its reach's ring drawn while the hero is inside) and bends a hero shot; the Split Sniper's line splits in
+##   three (its four lanes drawn).
 
 const KILL_FRAMES := 2400
 ## A hero shot whose heading turned more than this (radians) near a Gravity Node was bent.
@@ -164,10 +165,32 @@ func test_the_starfall_signatures_and_variant_on_a_starfall_floor() -> void:
 	)
 	assert_true(star, "the Warper's star mark is drawn")
 	assert_true(await s.shoot_dead(warper, KILL_FRAMES), "the Star Warper is shot dead")
-	# R10 Gravity Node: its swirl drawn; a hero shot aimed past it bends toward it.
+	# R10 Gravity Node: with no input the hero drifts toward it, its reach's ring drawn; a hero shot aimed past it
+	# bends toward it.
 	var node: int = await s.spawn(ActorStore.Kind.GRAVITY_NODE, "ENEMY_GRAVITY_NODE")
-	var swirl: bool = await s.until(func() -> bool: return sf.swirl_count() > 0, 120)
-	assert_true(swirl, "the Node's swirl is drawn")
+	var awake: bool = await s.until(
+		func() -> bool:
+			var j := w.actors.index_of(node)
+			return j >= 0 and w.actors.state[j] != EnemyAi.State.SPAWN,
+		240
+	)
+	assert_true(awake, "the Node spawned in")
+	var start := w.player_pos()
+	assert_true(
+		await s.e.walk_to(w.actors.pos(w.actors.index_of(node)), 3.0), "the hero walks up to it"
+	)
+	var d0 := w.player_pos().distance_to(w.actors.pos(w.actors.index_of(node)))
+	assert_lt(
+		d0,
+		reader.gravity_hero_reach(w.actors.index_of(node)),
+		"it came within its reach on the hero"
+	)
+	await s.e.frames(60)
+	var d1 := w.player_pos().distance_to(w.actors.pos(w.actors.index_of(node)))
+	assert_lt(d1, d0 - 0.2, "standing with no input, the hero drifts toward it")
+	assert_gt(sf.swirl_count(), 0, "its reach's ring is drawn while the hero is inside")
+	assert_true(await s.e.walk_to(start, 0.5), "the hero walks back out of its pull")
+	assert_eq(sf.swirl_count(), 0, "out of its reach: the ring is gone")
 	var ni := w.actors.index_of(node)
 	var at := w.actors.pos(ni)
 	var reach := reader.gravity_reach(ni)
