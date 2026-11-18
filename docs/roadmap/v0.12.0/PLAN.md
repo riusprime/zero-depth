@@ -176,6 +176,9 @@ lead's SHA and its own `APPDATA`. Every number below is a starting value; the ow
 | F25 | "the minimap shows the arrow but not the rooms, the small one in the corner" (owner's answer) | Fixed: the corner map draws the rooms; e2e proves it | 20 |
 | F26 | "A Blood Price interaction still displays the old Pulse Gun … cannot be picked up" | Fixed: no retired weapon is offered or shown | 20 |
 | F27 | Enemies per biome look the same; "Basic enemies and their spellcasting variants should be recognizable at a glance" | **Q** "Shots first, you pick": per-biome tints from each biome palette and a clear caster mark, shown as stills (G2); built only after the owner picks | 21 (G2), then 22 |
+| F27b | On the three option stills: "all are shit, and some images dont even show all enemies, can't we change the color of the enemies like we did with the priest for other enemies, can we just make a charger red, ice color, violet, depending on the zone, only for those versions that are specific to a biome? try again and send more photos before final decision"; then, on the new stills: "yep these new ones look better this is it" | Options A–C dropped. Each biome's own version (Ember Charger, Frost Charger, Split Sniper, Dim Needle, Rubble Warden) wears a full body colour of its biome (`EnemyPalettes.VERSIONS`); every base enemy keeps its look | 21b |
+| F28 | "night rocks enemies still have a white cirle under them, can we remove it so they look like the other biomes?" | The contact disc under every enemy is the dark `#1A1A22` in every biome (it took Night Rocks' near-white outline colour) | 23 |
+| F29 | "amber explosion explodes twice when ending the dash … more like hitting the gorund than exploding"; then "just remove the explosion VFX and change it for the debirs slam when reaching the end" | Amber's charge end: no explosion, one pack debris slam on the burst tick; the double removed | 25 |
 
 ### Steps (agent, in waves; one owner request = one step)
 - **13. Twin Wardens tweaks** (F1–F9): Opus A. Sim + data + views + bots.
@@ -186,5 +189,5 @@ lead's SHA and its own `APPDATA`. Every number below is a starting value; the ow
 - Wave 2, as wave 1's agents finish (files must not overlap a running agent's):
   **18. Enemy VFX cleanup** (F21–F23, not the Twins' or Foundry's files), **19. Void orb pull** (F24),
   **20. Minimap rooms and Blood Price weapon** (F25–F26), **21. Enemy look stills** (F27, G2; the owner picks).
-- **22.** The picked enemy looks, after 21.
+- **21b.** The picked enemy looks (Opus; owner: visual work goes to Opus). **23.** Night Rocks contact disc. **24.** Cross-step test fixes (and Amber's flash charge drew no run). **25.** Amber's charge end slam.
 - After each merge: the lead runs the touched tests; after the wave, `scripts/ci/seams.sh`; nothing pushed (V2).
