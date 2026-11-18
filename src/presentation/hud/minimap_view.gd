@@ -186,6 +186,14 @@ func layer_cached() -> bool:
 	return _cached
 
 
+## Where the static layer's picture sits in this view, in its pixels: empty while the layer is not in use. A picture
+## with no size is dropped by the view's clip once it has scrolled past the corner (tests read it).
+func layer_image_rect() -> Rect2:
+	if not _cached:
+		return Rect2()
+	return Rect2(_image.position, _image.size)
+
+
 ## W3-V3: screen pixels per unit of this view (the window's stretch and every parent's scale).
 func _screen_xf() -> Transform2D:
 	return get_viewport().get_final_transform() * get_global_transform_with_canvas()
@@ -268,6 +276,7 @@ func _place_image() -> void:
 	if not _cached or reader == null or not reader.has_floor():
 		return
 	var xf := get_viewport().get_final_transform() * get_global_transform_with_canvas()
+	_image.size = Vector2(_layer_vp.size) / _layer_px  # an item with a rect is not culled by the corner's clip
 	var at := xf.affine_inverse() * (_layer_screen_at() - _layer_sub).round()
 	if _image.position != at:
 		_image.position = at

@@ -264,3 +264,51 @@ func test_a_rolled_mod_that_no_longer_works_is_nothing_to_gain() -> void:
 	assert_gte(dead, 0, "a mod this build can't use (e.g. its ability was sold)")
 	w.ev.roll_card[0] = dead  # test setup: e.g. its ability was sold since the roll
 	assert_eq(Events.block(w, 0, 0), Events.NEED_NOTHING_TO_GAIN)
+
+
+func _ability_index(w: World, id: StringName) -> int:
+	for k in w.ability_tables.size():
+		if w.ability_tables[k].id == id:
+			return k
+	return -1
+
+
+func test_blood_price_never_offers_the_pulse_gun_and_levels_what_you_can_take() -> void:
+	var w := EventLab.world(SEED, 1, &"gun")
+	EventLab.set_event(w, &"blood_price")
+	var gun := _ability_index(w, &"pulse_gun")
+	assert_true(w.ability_owned.has(gun), "the gun build holds the Pulse Gun")
+	assert_false(Events.needs_met(w, Events.Need.ABILITY), "only the Pulse Gun: nothing to level")
+	EventLab.open(w)
+	assert_eq(w.ev.roll_card[0], -1, "the Pulse Gun is not rolled as the reward")
+	assert_ne(
+		Events.block(w, 0, 0), Events.OK, "so the choice is shown as blocked, and nothing is paid"
+	)
+	EventLab.pick(w, InputFrame.PICK_CANCEL)
+	var aegis := _ability_index(w, &"aegis")
+	assert_true(Abilities.grant(w, aegis), "test setup: the build gains Aegis")
+	assert_true(Events.needs_met(w, Events.Need.ABILITY), "now an ability can level")
+	w.ev.rolled[0] = 0
+	EventLab.open(w)
+	assert_eq(w.ev.roll_card[0], Offers.ability_code(aegis), "the reward is Aegis")
+	var level := Abilities.level_of(w, aegis)
+	EventLab.pick(w, 1)
+	assert_eq(Abilities.level_of(w, aegis), level + 1, "taking it levels Aegis up")
+	assert_eq(Abilities.level_of(w, gun), 1, "and the Pulse Gun stays as it was")
+
+
+func test_no_event_reward_is_a_card_that_cannot_be_taken() -> void:
+	for build: StringName in [&"blade", &"gun"]:
+		var w := EventLab.world(SEED, 1, build)
+		for t in w.ev.events.size():
+			EventLab.set_event(w, w.ev.events[t].id)
+			w.ev.rolled[0] = 0
+			Events.roll(w, 0)
+			for c in w.ev.events[t].choice_count():
+				var code: int = w.ev.roll_card[c]
+				if code < 0 or Offers.type_of(code) != Offers.ABILITY:
+					continue
+				assert_true(
+					Abilities.can_take(w, Offers.ability_of(code)),
+					"%s (%s): the ability card it rolled can be taken" % [w.ev.events[t].id, build]
+				)
