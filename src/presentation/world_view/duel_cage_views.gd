@@ -2,14 +2,15 @@ class_name DuelCageViews
 extends Node3D
 ## The Warlord's Duel as the player sees it, drawn from WorldReader.boss_warlord "duel" (EI-07: where the cage stands,
 ## its fence's radius, the recall's zone and its warning are the sim's, BossDuel). No word anywhere.
-## - The cast: the Warlord's javelins (BossSignatureViews' javelin and its hot shader, one MultiMesh) rain in from
-##   above, one after another, onto the circle the cage will close on, each landing in a puff of the pack's dust.
+## - The cast: the Warlord's javelins (WarlordLooks.javelin: the spear lines' faceted spear, matte steel lit like the
+##   walls, one MultiMesh) rain in from above, one after another, onto the circle the cage will close on, each landing
+##   in a puff of the pack's dust.
 ## - The cage: SHAFTS javelins planted on the fence's exact circle, leaning outward; as the fence closes they slide in
-##   with it, the pack's dust (bx_smoke_dust) kicked up at one of them after another. A faint danger rim lies on the
-##   floor under them (WarlordLooks.RING_SHADER), and no glow inside it: the recall's circle must stand out on a plain
-##   floor. A touch of the fence sparks at the hero (wl_fence).
+##   with it, the pack's dust (bx_smoke_dust) kicked up at one of them after another. A faint dull rust rim lies on
+##   the floor under them (WarlordLooks.RING_SHADER), and no glow inside it: the recall's circle must stand out on a
+##   plain floor. A touch of the fence sparks at the hero (wl_fence).
 ## - The recall: the centre's circle (the charge burst's own floor circle, WardenLooks, with the pack's rim
-##   tw_burst_rim) fills from its middle as the warning runs and the shafts glow hotter; then every shaft flies inward
+##   tw_burst_rim) fills from its middle as the warning runs and the shafts' heads heat; then every shaft flies inward
 ##   through the centre and the pack's impact (wl_recall) bursts there.
 ## The Warlord's lowered shield is WarlordAvatar's. Reduced motion stills the pulses. Nothing here decides.
 
@@ -35,7 +36,7 @@ const FALL_M := 9.0
 const LAST_LAND := 0.92
 ## The rim (m wide) and its look.
 const EDGE_M := 0.22
-const EDGE_ALPHA := 0.45
+const EDGE_ALPHA := 0.6
 const FILL_ALPHA := 0.0
 ## A dust puff at the next shaft this often while the fence closes (s), its size.
 const DUST_EVERY := 0.3
@@ -82,21 +83,22 @@ func _init() -> void:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_custom_data = true
-	mm.mesh = BossSignatureViews.javelin_mesh()
+	mm.mesh = WarlordLooks.javelin()
 	mm.instance_count = SHAFTS
 	mm.visible_instance_count = 0
 	_mm.multimesh = mm
 	var sh := Shader.new()
-	sh.code = BossSignatureViews.JAVELIN_SHADER
+	sh.code = WarlordLooks.JAVELIN_SHADER
 	_mat.shader = sh
-	_mat.set_shader_parameter("hot", BossSignatureViews.HOT)
+	_mat.set_shader_parameter("steel", WarlordLooks.JAVELIN_STEEL)
+	_mat.set_shader_parameter("hot", WarlordLooks.JAVELIN_HOT)
 	_mm.material_override = _mat
 	_mm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	_mm.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_mm.extra_cull_margin = 16384.0
 	_mm.set_meta(ShaderWarmup.WARM_META, true)
 	add_child(_mm)
-	_rim = WarlordLooks.ring(self, WarlordLooks.DANGER)
+	_rim = WarlordLooks.ring(self, WarlordLooks.CAGE_RIM)
 	_zone = WardenLooks.floor_mesh(self, true, WardenLooks.DANGER)
 	_heads.resize(SHAFTS)
 

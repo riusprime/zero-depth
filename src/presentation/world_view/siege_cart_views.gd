@@ -2,13 +2,14 @@ class_name SiegeCartViews
 extends Node3D
 ## The Siege Engine's ammo cart and its Doom Shell, drawn from WorldReader.boss_siege (EI-07: where the cart stands,
 ## its HP, its way, when the shell fires and whether the armour is stripped are the sim's, BossDoom).
-## - The cart: a code-made ammo wagon in the Engine's red (SiegeLooks.cart: a stand-in until the owner's model) on
-##   the cart's place, facing its way, its wheels turning as it rolls (the warden body the sim uses never shows:
+## - The cart: a small faceted wagon of wood and iron (SiegeCartModel, matte and lit like the kit's props) on the
+##   cart's place, facing its way, its wheels turning as it rolls (the warden body the sim uses never shows:
 ##   ActorViews hides it), with its own HP bar over it, shown from full.
-## - Its track: a rail on the floor from where it set off to the Engine's edge, dim ahead of it and lit behind it, so
-##   how far it has come reads at a glance; under the Engine a countdown ring fills with the roll.
-## - Its blast: a faint red circle of the blast's radius round it, stronger as its HP runs low, and turning gold once
-##   the Engine stands inside it (blowing it up now strips the armour).
+## - Its track: two wheel ruts in the floor from where it set off to the Engine's edge (SiegeLooks.RUT_SHADER), faint
+##   ahead of it and pressed deep behind it, so how far it has come reads at a glance; under the Engine a dull
+##   countdown ring fills with the roll.
+## - Its blast: a plain dull red circle of the blast's radius round it, stronger as its HP runs low, and turning a
+##   dull gold once the Engine stands inside it (blowing it up now strips the armour).
 ## - The Doom Shell: when the cart arrives the Engine's ring flashes white-hot and the pack's rising cast (se_cast)
 ##   and pillar (se_doom) stand on it until the shell fires; it fires in the pack's explosion on the Engine and, when
 ##   the hero stood in the open, on the hero. The cart destroyed: the pack's explosion of the blast's size where it
@@ -26,16 +27,22 @@ const CAST_SCALE := 1.4
 const DOOM_SCALE := 1.1
 ## The countdown ring under the Engine: this far past its edge (m).
 const RING_PAST_M := 0.9
-## The rail: its width (m) and its glow ahead of and behind the cart.
-const RAIL_W := 0.5
-const AHEAD_ALPHA := 0.22
-const BEHIND_ALPHA := 0.7
-## The blast circle's alpha at full HP and near death.
-const BLAST_FAINT := 0.18
-const BLAST_STRONG := 0.7
-const GOLD := Color("#FFC15A")
+## The track: its width (m, the wheels' span and their ruts' lips) and how strong its ruts lie ahead of and behind
+## the cart.
+const RAIL_W := 1.7
+const AHEAD_ALPHA := 0.4
+const BEHIND_ALPHA := 0.85
+## The blast circle's alpha at full HP and near death, and its band (m).
+const BLAST_FAINT := 0.35
+const BLAST_STRONG := 0.85
+const BLAST_EDGE_M := 0.16
+const GOLD := SiegeLooks.BLAST_GOLD
+## The countdown ring's band (m) and its alpha while the cart rolls and once the shell is due.
+const RING_EDGE_M := 0.14
+const RING_ALPHA := 0.45
+const RING_FIRING := 0.75
 ## The wheels' radius (m) and the HP bar (m: its width, its height over the floor).
-const WHEEL_R := 0.34
+const WHEEL_R := SiegeCartModel.WHEEL_R
 const BAR_W := 1.3
 const BAR_H := 0.12
 const BAR_Y := 1.9
@@ -72,16 +79,17 @@ var _cast_ring: MeshInstance3D
 
 func _init() -> void:
 	name = "SiegeCartViews"
-	var parts := SiegeLooks.cart(self)
+	var parts := SiegeCartModel.build(self)
 	_cart_root = parts[0]
 	_wheels.assign(parts[1])
 	_cart_root.visible = false
 	_cart_root.set_meta(ShaderWarmup.WARM_META, true)
 	_build_bar()
-	_ahead = WardenLooks.floor_mesh(self, false, SiegeLooks.DANGER)
-	_behind = WardenLooks.floor_mesh(self, false, SiegeLooks.GLOW)
-	_blast_ring = WardenLooks.floor_mesh(self, true, SiegeLooks.DANGER)
-	_cast_ring = WardenLooks.floor_mesh(self, true, SiegeLooks.GLOW)
+	_ahead = SiegeLooks.ruts(self)
+	_behind = SiegeLooks.ruts(self)
+	SiegeLooks.param(_behind, &"fresh", 1.0)
+	_blast_ring = SiegeLooks.plain_ring(self, SiegeLooks.BLAST)
+	_cast_ring = SiegeLooks.plain_ring(self, SiegeLooks.COUNTDOWN)
 
 
 ## The cart's HP bar: a dark back and a red fill facing the camera, the fill's mesh rebuilt to its share.
@@ -195,21 +203,19 @@ func _draw_cart(cart: Dictionary, still: bool) -> void:
 	var frac := clampf(float(cart["hp"]) / float(hp_max), 0.0, 1.0)
 	_set_bar(frac)
 	WardenLooks.lay_strip(_ahead, at, to, RAIL_W, 0.04)
-	WardenLooks.param(_ahead, &"alpha", AHEAD_ALPHA)
-	WardenLooks.param(_ahead, &"glow", 0.4)
-	WardenLooks.param(_ahead, &"clock", _clock)
+	SiegeLooks.param(_ahead, &"alpha", AHEAD_ALPHA)
 	_behind.visible = at.distance_to(from) > 0.05
 	WardenLooks.lay_strip(_behind, from, at, RAIL_W, 0.045)
-	WardenLooks.param(_behind, &"alpha", BEHIND_ALPHA)
-	WardenLooks.param(_behind, &"clock", _clock)
+	SiegeLooks.param(_behind, &"alpha", BEHIND_ALPHA)
 	var near_engine := at.distance_to(_engine) <= _blast_m + _engine_r
 	_blast_ring.position = SimPlane.to_3d(at, 0.03)
 	_blast_ring.scale = Vector3.ONE * _blast_m
-	WardenLooks.param(_blast_ring, &"tint", GOLD if near_engine else SiegeLooks.DANGER)
-	WardenLooks.param(_blast_ring, &"alpha", lerpf(BLAST_STRONG, BLAST_FAINT, frac))
-	WardenLooks.param(_blast_ring, &"locked", 1.0 if near_engine else 0.0)
-	WardenLooks.param(_blast_ring, &"fill", 0.0)
-	WardenLooks.param(_blast_ring, &"clock", _clock)
+	SiegeLooks.param(_blast_ring, &"tint", GOLD if near_engine else SiegeLooks.BLAST)
+	SiegeLooks.param(_blast_ring, &"alpha", lerpf(BLAST_STRONG, BLAST_FAINT, frac))
+	SiegeLooks.param(_blast_ring, &"locked", 1.0 if near_engine else 0.0)
+	SiegeLooks.param(_blast_ring, &"fill", 0.0)
+	SiegeLooks.param(_blast_ring, &"edge", BLAST_EDGE_M / maxf(_blast_m, 0.1))
+	SiegeLooks.param(_blast_ring, &"clock", _clock)
 
 
 func _draw_cast(cart: Dictionary, doom: int, delta: float) -> void:
@@ -224,14 +230,15 @@ func _draw_cast(cart: Dictionary, doom: int, delta: float) -> void:
 	var at := SimPlane.to_3d(_engine, 0.05)
 	_cast_ring.position = at
 	_cast_ring.scale = Vector3.ONE * (_engine_r + RING_PAST_M)
-	WardenLooks.param(_cast_ring, &"share", share)
-	WardenLooks.param(_cast_ring, &"locked", 1.0 if firing else 0.0)
-	WardenLooks.param(
+	SiegeLooks.param(_cast_ring, &"share", share)
+	SiegeLooks.param(_cast_ring, &"locked", 1.0 if firing else 0.0)
+	SiegeLooks.param(
 		_cast_ring, &"flash", 1.0 - clampf(_locked_for / 0.2, 0.0, 1.0) if firing else 0.0
 	)
-	WardenLooks.param(_cast_ring, &"fill", share if firing else 0.0)
-	WardenLooks.param(_cast_ring, &"alpha", 1.0 if firing else 0.75)
-	WardenLooks.param(_cast_ring, &"clock", _clock)
+	SiegeLooks.param(_cast_ring, &"fill", share if firing else 0.0)
+	SiegeLooks.param(_cast_ring, &"alpha", RING_FIRING if firing else RING_ALPHA)
+	SiegeLooks.param(_cast_ring, &"edge", RING_EDGE_M / (_engine_r + RING_PAST_M))
+	SiegeLooks.param(_cast_ring, &"clock", _clock)
 	if firing:
 		hold.put(&"cast", CAST_ID, &"status", SiegeLooks.at(at, _engine_r * 0.5 * CAST_SCALE))
 		hold.put(&"doom", DOOM_ID, &"area", SiegeLooks.at(at, _engine_r * 0.5 * DOOM_SCALE))

@@ -139,7 +139,7 @@ func test_the_banner_rises_through_its_cast_and_stands_on_the_readers_circle() -
 	assert_almost_eq(ring[0], banner["centre"], Vector2(0.001, 0.001), "on the circle's centre")
 	assert_almost_eq(float(ring[1]), float(banner["radius"]), 0.0001, "of its exact radius")
 	assert_almost_eq(float(ring[1]), 6.0, 0.0001)
-	assert_true(view.hold.has(&"rim"), "the pack's warm rim on it")
+	assert_false(view.hold.has(&"rim"), "no pack glow on it: a thin dull-gold rim of its own")
 	assert_false(view.hold.has(&"cast"), "the lift goes with the cast")
 
 
@@ -158,6 +158,11 @@ func test_who_stands_inside_shows_on_the_warlord_and_on_the_hero() -> void:
 	assert_true(bool(banner["boss_inside"]) and bool(banner["hero_inside"]))
 	assert_true(view.boss_enraged(), "the Warlord inside: its embers")
 	assert_gt(avatar.rage(), 0.9, "and its body glows hot")
+	if avatar.glow_overlay != null:  # the owner's model: its accent rim beats, the body keeps its colours
+		assert_gt(float(avatar.glow_overlay.get_shader_parameter("rim")), 0.2, "its accent rim")
+		assert_eq(
+			float(avatar.glow_overlay.get_shader_parameter("fill")), 0.0, "never a whole-body fill"
+		)
 	assert_true(view.hero_warmed(), "the hero inside: its warm hand")
 	var hits := view.warm_hits()
 	_hero_hit(w, i, 10, w.actors.pos(i) + Vector2(-3, 0))

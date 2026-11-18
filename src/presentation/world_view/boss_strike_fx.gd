@@ -18,6 +18,12 @@ const FLAME_SCALE := 0.4
 ## Looks whose strikes raise no dust at the body's feet (the Wardens' stone knights strike clean); an arc of these
 ## throws sparks instead.
 const NO_DUST: Array[StringName] = [&"tw_sweep", &"tw_charge", &"tw_overhead"]
+## The rail's blast (bx_rail) in dull embers, as its streak (BossStrikeShapes.RAIL_CORE).
+const RAIL_COLORS := {
+	&"primary": Color(0.95, 0.52, 0.24),
+	&"secondary": Color(0.7, 0.28, 0.12),
+	&"tertiary": Color(0.32, 0.12, 0.06)
+}
 
 
 static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void:
@@ -155,14 +161,19 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					var near := SimPlane.to_3d(lane.center - lane.axis_u * lane.half.x, 0.7)
 					li += 1
 					if on and hold != null and s["kind"] == &"rail":  # The rail's blast along its lane
-						var bn := hold.hold(_key(s, li, 6), &"bx_rail", near, 1.0, {}, false)
+						var bn := hold.hold(
+							_key(s, li, 6), &"bx_rail", near, 1.0, RAIL_COLORS, false
+						)
 						if bn != null:
 							BossPackHold.beam_place(
 								bn, near, far, lane.half.y, BossPackHold.RAIL_NATIVE_R
 							)
+					var rail: bool = s["kind"] == &"rail"
 					if on:
-						_sparks(layer, far, age, sd, 8, glow)
-						layer.light_merged(near.lerp(far, 0.3), glow, 4.0, 8.0, 3.0)
+						_sparks(layer, far, age, sd, 4 if rail else 8, glow)
+						layer.light_merged(
+							near.lerp(far, 0.3), glow, 2.0 if rail else 4.0, 8.0, 3.0
+						)
 					if s["kind"] == &"rail":
 						var n := int(lane.half.x * 2.0 / 3.0)
 						for k in n:
