@@ -56,6 +56,8 @@ const MARK_TEX := {
 	&"splat3": ["fx_splatter_mark", 3],
 	# The cracks a slam, a spike row or a crater leaves (one cell: one kind, so overlapping ones merge).
 	&"cracks": ["fx_ground_cracks", 0],
+	# The same cracks thinned to their dark cores, as the stone slam's cracks are drawn (BossStrikeFx.crack_mark).
+	&"crack_lines": ["fx_ground_cracks", 0, true],
 	# v0.9.0 VX V43: Fire's burning ground under its flames, once the owner's fire_patch is installed (else none).
 	&"fire_patch": ["fire_patch", -1],
 }
@@ -210,7 +212,7 @@ func _init() -> void:
 		add_child(l)
 		lights.append(l)
 	for id: StringName in MARK_TEX:
-		_mark_tex[id] = _mark_texture(MARK_TEX[id][0], int(MARK_TEX[id][1]))
+		_mark_tex[id] = _mark_of(MARK_TEX[id])
 	for k in DECALS:
 		var d := Decal.new()
 		d.albedo_mix = 1.0
@@ -260,7 +262,7 @@ static func warm() -> void:
 		_tex(POOLS[id][0])
 		_tex(POOLS[id][5])
 	for id: StringName in MARK_TEX:
-		_mark_texture(MARK_TEX[id][0], int(MARK_TEX[id][1]))
+		_mark_of(MARK_TEX[id])
 
 
 static func _tex(id: String) -> Texture2D:
@@ -298,6 +300,17 @@ static func _code_tex(id: String) -> Texture2D:
 	var t := ImageTexture.create_from_image(img)
 	_mark_cache[key] = t
 	return t
+
+
+## The floor-mark texture of a MARK_TEX entry ([texture, cell], or [texture, cell, true] for its thin crack lines).
+static func _mark_of(spec: Array) -> Texture2D:
+	var t := _mark_texture(spec[0], int(spec[1]))
+	if spec.size() < 3 or t == null:
+		return t
+	var key := "lines/%s/%d" % [spec[0], spec[1]]
+	if not _mark_cache.has(key):
+		_mark_cache[key] = BossStrikeLooks.crack_lines(t)
+	return _mark_cache[key]
 
 
 ## A floor-mark texture: the whole texture, or one cell of a 2 x 2 sheet cut out (a decal takes no atlas cell).

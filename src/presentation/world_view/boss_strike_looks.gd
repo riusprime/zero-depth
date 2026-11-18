@@ -8,8 +8,8 @@ extends RefCounted
 ## Presentation only: a look changes nothing the sim decides.
 
 ## Marker patterns (the MARK_SHADER's `pattern`).
-## VOID, the Nemesis's (dark rifts, a violet-red glow).
-## WATER, the Tidecaller's (swirling caustics and foam, sea green).
+## VOID, the void bosses' (a cracked dark violet stain); WATER, the Tidecaller's (ice cracks in the snow's colour).
+## The code patterns in MARK_SHADER stay as the fallback while the crack sheet is missing.
 enum Pattern { STONE, BLADE, ACID, LIGHT, HAZARD, MOLTEN, VOID, WATER }
 
 ## Strike kinds BossStrikeViews draws, by the geometry they take: discs (a marker's circles, a leap's landing, a
@@ -34,16 +34,89 @@ const PATTERN_COLORS := {
 	Pattern.WATER: [Color(0.02, 0.07, 0.05), Color(0.52, 1.0, 0.42)],  # sea-green, 80° from the hero's cyan
 }
 
-## Per pattern, the owner's texture that replaces the code pattern: [texture id, world scale (repeats a
-## metre), how much of its own colour shows as the ground under the hot part (0: the look's dark tint), flow]. The
-## void (the Nemesis) keeps its code rifts: no texture was asked for it.
+## Per pattern, the texture that replaces the code pattern: [texture id, world scale (repeats a metre), how much of
+## its own colour shows as the ground under the hot part (0: the look's dark tint), flow, and how opaque that ground is
+## (a factor of the marker's base alpha: under 1 the floor shows through)]. The ink patterns (INK) take only the
+## crack sheet's shape from fx_ground_cracks, none of its painted colour. The Foundry's crust is drawn in fewer,
+## larger plates with the floor showing through.
 const PATTERN_TEX := {
-	Pattern.STONE: ["fx_ground_cracks", 0.18, 0.0, 0.0],
-	Pattern.BLADE: ["tex_mark_steel", 0.25, 1.0, 0.0],
-	Pattern.ACID: ["tex_mark_acid", 0.25, 1.0, 1.0],
-	Pattern.LIGHT: ["tex_mark_light", 0.2, 1.0, 0.0],
-	Pattern.HAZARD: ["tex_mark_hazard", 0.3, 1.0, 0.0],
-	Pattern.MOLTEN: ["tex_lava_crust", 0.3, 1.0, 1.0],
+	Pattern.STONE: ["fx_ground_cracks", 0.3, 0.0, 0.0, 1.0],
+	Pattern.BLADE: ["tex_mark_steel", 0.25, 1.0, 0.0, 1.0],
+	Pattern.LIGHT: ["tex_mark_light", 0.2, 1.0, 0.0, 1.0],
+	Pattern.HAZARD: ["fx_ground_cracks", 0.25, 0.0, 0.0, 1.0],
+	Pattern.MOLTEN: ["tex_lava_crust", 0.1, 0.45, 1.0, 0.55],
+	Pattern.VOID: ["fx_ground_cracks", 0.3, 0.0, 0.0, 1.0],
+	Pattern.WATER: ["fx_ground_cracks", 0.3, 0.0, 0.0, 1.0],
+}
+
+## The patterns drawn in the floor's own style rather than as a painted texture: thin crack lines (the core of the
+## crack sheet's cracks, as the stone slam's cracks are drawn) over a stain of the ground. "line": the cracks' colour;
+## "hot": the colour they warm toward; "warm": [how warm while the marker shows, how warm in its last moments (the
+## lock's pulse, the end of a windup)]; "stain": the ground under them, its alpha a factor of the marker's base alpha;
+## "lines": 0 draws the stain alone (a flat fill). The lock's bright edge stays the dodge cue over all of them.
+const INK := {
+	# The slam's dark cracks over a slight darkening; a faint warm glow only as the hit comes.
+	Pattern.STONE:
+	{
+		"line": Color(0.09, 0.085, 0.09),
+		"hot": Color(1.0, 0.42, 0.18),
+		"warm": Vector2(0.0, 0.12),
+		"stain": Color(0.12, 0.11, 0.115, 0.8),
+		"lines": 1.0,
+	},
+	# A flat dark-green fill: the acid is told by its colour, not a painted slime.
+	Pattern.ACID:
+	{
+		"line": Color(0.07, 0.17, 0.05),
+		"hot": Color(0.62, 1.0, 0.22),
+		"warm": Vector2.ZERO,
+		"stain": Color(0.07, 0.17, 0.05, 1.5),
+		"lines": 0.0,
+	},
+	# Scorched dark ground, its cracks glowing the Siege Engine's red-orange.
+	Pattern.HAZARD:
+	{
+		"line": Color(0.32, 0.08, 0.03),
+		"hot": Color(1.0, 0.36, 0.1),
+		"warm": Vector2(0.3, 0.7),
+		"stain": Color(0.07, 0.05, 0.04, 1.3),
+		"lines": 1.0,
+	},
+	# A dark violet stain cracked like dark stone, the violet showing in the cracks as the hit comes.
+	Pattern.VOID:
+	{
+		"line": Color(0.05, 0.02, 0.08),
+		"hot": Color(0.62, 0.22, 0.85),
+		"warm": Vector2(0.05, 0.25),
+		"stain": Color(0.14, 0.05, 0.2, 1.5),
+		"lines": 1.0,
+	},
+	# Ice cracks in the snow's own pale blue-grey; no glow.
+	Pattern.WATER:
+	{
+		"line": Color(0.36, 0.46, 0.58),
+		"hot": Color(0.78, 0.86, 0.94),
+		"warm": Vector2(0.0, 0.3),
+		"stain": Color(0.5, 0.6, 0.7, 1.2),
+		"lines": 1.0,
+	},
+}
+## Looks whose ink differs from their pattern's. The Shockwave's warning can cover the whole room: a quieter dark
+## wash under its glowing edge, no cracks.
+const LOOK_INK := {
+	&"se_shock":
+	{
+		"line": Color(0.07, 0.05, 0.04),
+		"hot": Color(1.0, 0.36, 0.1),
+		"warm": Vector2.ZERO,
+		"stain": Color(0.07, 0.05, 0.04, 1.1),
+		"lines": 0.0,
+	},
+}
+## Boss moves drawn on the ground in a look but with no strike of BossStrikeViews' (the Great Javelin's aim lane takes
+## the spear lines' steel scratches; its landing is GreatJavelinViews').
+const MARK_ONLY := {
+	WorldReader.KIND_WARLORD: {WorldReader.MOVE_GREAT_JAVELIN: &"wl_spears"},
 }
 
 ## Look id -> {"pattern", "strike"}.
@@ -224,6 +297,14 @@ uniform float tex_on = 0.0;
 uniform float tex_scale = 0.25;
 uniform float tex_body = 1.0;
 uniform float tex_flow = 0.0;
+uniform float tex_body_alpha = 1.0;
+uniform float ink_on = 0.0;
+uniform vec4 ink_line : source_color = vec4(0.09, 0.085, 0.09, 1.0);
+uniform vec4 ink_hot : source_color = vec4(1.0, 0.42, 0.18, 1.0);
+uniform vec4 ink_stain : source_color = vec4(0.12, 0.11, 0.115, 1.0);
+uniform float ink_stain_k = 0.7;
+uniform float ink_lines = 1.0;
+uniform vec2 ink_warm = vec2(0.0, 0.4);
 
 varying vec3 wp;
 
@@ -260,56 +341,70 @@ void vertex() {
 void fragment() {
 	vec2 p = wp.xz;
 	float t = TIME * motion;
-	float n = texture(noise_tex, p * 0.12 + vec2(t * 0.02, 0.0)).r;
-	float m = 0.0;
-	if (pattern == 0) {  // stone: glowing cracks
-		vec2 c = cells(p * 1.4);
-		float w = mix(0.05, 0.14, heat);
-		m = 1.0 - smoothstep(w * 0.35, w, c.y - c.x);
-	} else if (pattern == 1) {  // blades: crossing scratches, a steel glint running along them
-		float a = abs(fract((p.x + p.y) * 1.6 + n * 0.6) - 0.5);
-		float b = abs(fract((p.x - p.y) * 1.1 - n * 0.5) - 0.5);
-		m = max(1.0 - smoothstep(0.03, 0.09, a), 0.7 * (1.0 - smoothstep(0.02, 0.06, b)));
-	} else if (pattern == 2) {  // acid: bubbling blobs
-		vec2 c = cells(p * 1.8 + vec2(0.0, t * 0.15));
-		m = 1.0 - smoothstep(0.18, 0.34 + 0.12 * heat, c.x);
-		m = max(m * 0.85, (1.0 - smoothstep(0.02, 0.06, abs(n - 0.5))) * 0.6);
-	} else if (pattern == 3) {  // light: shimmering caustic bands
-		float r1 = sin(length(p - floor(p / 6.0) * 6.0 - 3.0) * 7.0 - t * 4.0);
-		float r2 = sin((p.x * 0.7 - p.y * 0.7) * 5.0 + n * 6.0 + t * 2.0);
-		m = smoothstep(0.55, 1.0, max(r1, r2) * 0.5 + 0.5 + (n - 0.5) * 0.4);
-	} else if (pattern == 4) {  // hazard: diagonal warning stripes over a target grid
-		float s = fract((p.x + p.y) * 0.9);
-		float g = min(abs(fract(p.x * 0.5) - 0.5), abs(fract(p.y * 0.5) - 0.5));
-		m = max(step(0.5, s) * 0.8, 1.0 - smoothstep(0.015, 0.04, g));
-	} else if (pattern == 5) {  // molten: dark crust plates with hot seams, flowing
-		vec2 c = cells(p * 1.1 + vec2(t * 0.25, t * 0.1));
-		m = 1.0 - smoothstep(0.06, 0.2 + 0.15 * heat, c.y - c.x);
-		m = max(m, smoothstep(0.55, 0.8, n) * heat);
-	} else if (pattern == 7) {  // water (v0.9.0 NB1, the Tidecaller): caustic ripples swirling round, foam flecks
-		vec2 c = cells(p * 1.3 + vec2(sin(t * 0.6), cos(t * 0.5)) * 0.4);
-		float caustic = 1.0 - smoothstep(0.04, 0.16 + 0.1 * heat, c.y - c.x);
-		float swirl = sin(length(fract(p / 5.0) - 0.5) * 30.0 - t * 5.0 + n * 4.0) * 0.5 + 0.5;
-		m = max(caustic * 0.9, smoothstep(0.75, 1.0, swirl) * 0.7);
-		m = max(m, smoothstep(0.7, 0.9, n) * 0.5 * heat);
-	} else {  // void (v0.8.0 FB3, the Nemesis): thin rifts torn across the ground, a slow swirl in the dark
-		float a = abs(fract((p.x * 0.8 - p.y * 0.6) * 1.3 + n * 1.4 + t * 0.1) - 0.5);
-		m = 1.0 - smoothstep(0.02, 0.07 + 0.05 * heat, a);
-		m = max(m, smoothstep(0.62, 0.85, n) * 0.6 * heat);
+	if (ink_on > 0.5) {
+		// Ink: the crack sheet's thin cores (its alpha where its red is high; the sampler is linear) as lines over a
+		// stain of the ground, warming toward `ink_hot` only as the heat nears the hit.
+		vec4 tx = texture(pattern_tex, p * tex_scale);
+		float line = tx.a * smoothstep(0.3, 0.78, tx.r) * ink_lines;
+		float warm = mix(ink_warm.x, ink_warm.y, smoothstep(0.75, 1.0, heat));
+		vec3 lc = mix(ink_line.rgb, ink_hot.rgb * (1.0 + 0.6 * heat), warm);
+		ALBEDO = mix(ink_stain.rgb, lc, line);
+		float stain = base_alpha * ink_stain_k * mix(0.85, 1.0, heat);
+		ALPHA = clamp(max(stain, line * mix(0.6, 1.0, heat)), 0.0, 1.0);
+	} else {
+		float n = texture(noise_tex, p * 0.12 + vec2(t * 0.02, 0.0)).r;
+		float m = 0.0;
+		if (pattern == 0) {  // stone: glowing cracks
+			vec2 c = cells(p * 1.4);
+			float w = mix(0.05, 0.14, heat);
+			m = 1.0 - smoothstep(w * 0.35, w, c.y - c.x);
+		} else if (pattern == 1) {  // blades: crossing scratches, a steel glint running along them
+			float a = abs(fract((p.x + p.y) * 1.6 + n * 0.6) - 0.5);
+			float b = abs(fract((p.x - p.y) * 1.1 - n * 0.5) - 0.5);
+			m = max(1.0 - smoothstep(0.03, 0.09, a), 0.7 * (1.0 - smoothstep(0.02, 0.06, b)));
+		} else if (pattern == 2) {  // acid: bubbling blobs
+			vec2 c = cells(p * 1.8 + vec2(0.0, t * 0.15));
+			m = 1.0 - smoothstep(0.18, 0.34 + 0.12 * heat, c.x);
+			m = max(m * 0.85, (1.0 - smoothstep(0.02, 0.06, abs(n - 0.5))) * 0.6);
+		} else if (pattern == 3) {  // light: shimmering caustic bands
+			float r1 = sin(length(p - floor(p / 6.0) * 6.0 - 3.0) * 7.0 - t * 4.0);
+			float r2 = sin((p.x * 0.7 - p.y * 0.7) * 5.0 + n * 6.0 + t * 2.0);
+			m = smoothstep(0.55, 1.0, max(r1, r2) * 0.5 + 0.5 + (n - 0.5) * 0.4);
+		} else if (pattern == 4) {  // hazard: diagonal warning stripes over a target grid
+			float s = fract((p.x + p.y) * 0.9);
+			float g = min(abs(fract(p.x * 0.5) - 0.5), abs(fract(p.y * 0.5) - 0.5));
+			m = max(step(0.5, s) * 0.8, 1.0 - smoothstep(0.015, 0.04, g));
+		} else if (pattern == 5) {  // molten: dark crust plates with hot seams, flowing
+			vec2 c = cells(p * 1.1 + vec2(t * 0.25, t * 0.1));
+			m = 1.0 - smoothstep(0.06, 0.2 + 0.15 * heat, c.y - c.x);
+			m = max(m, smoothstep(0.55, 0.8, n) * heat);
+		} else if (pattern == 7) {  // water (v0.9.0 NB1, the Tidecaller): caustic ripples swirling round, foam flecks
+			vec2 c = cells(p * 1.3 + vec2(sin(t * 0.6), cos(t * 0.5)) * 0.4);
+			float caustic = 1.0 - smoothstep(0.04, 0.16 + 0.1 * heat, c.y - c.x);
+			float swirl = sin(length(fract(p / 5.0) - 0.5) * 30.0 - t * 5.0 + n * 4.0) * 0.5 + 0.5;
+			m = max(caustic * 0.9, smoothstep(0.75, 1.0, swirl) * 0.7);
+			m = max(m, smoothstep(0.7, 0.9, n) * 0.5 * heat);
+		} else {  // void (v0.8.0 FB3, the Nemesis): thin rifts torn across the ground, a slow swirl in the dark
+			float a = abs(fract((p.x * 0.8 - p.y * 0.6) * 1.3 + n * 1.4 + t * 0.1) - 0.5);
+			m = 1.0 - smoothstep(0.02, 0.07 + 0.05 * heat, a);
+			m = max(m, smoothstep(0.62, 0.85, n) * 0.6 * heat);
+		}
+		vec3 hot = glow.rgb * (1.0 + heat * 1.6);
+		vec3 body = dark.rgb;
+		float body_alpha = base_alpha;
+		if (tex_on > 0.5) {
+			// The owner's texture in place of the code pattern: its alpha is the part that heats (the scratches, the
+			// light's seams, the crust's seams), tinted toward the glow; a surface's own colour is the ground under it
+			// (tex_body), darkened so the hot part reads; tex_body_alpha under 1 lets the floor show through both.
+			vec4 tx = texture(pattern_tex, p * tex_scale + vec2(t * 0.01, 0.0) * tex_flow);
+			m = tx.a;
+			hot = mix(tx.rgb, glow.rgb, 0.45) * (1.0 + heat * 1.6);
+			body = mix(dark.rgb, tx.rgb * 0.5, tex_body);
+			body_alpha *= tex_body_alpha;
+		}
+		ALBEDO = mix(body, hot, m);
+		ALPHA = clamp(max(body_alpha, m * mix(0.45, 1.0, heat) * (0.5 + 0.5 * tex_body_alpha)), 0.0, 1.0);
 	}
-	vec3 hot = glow.rgb * (1.0 + heat * 1.6);
-	vec3 body = dark.rgb;
-	if (tex_on > 0.5) {
-		// v0.8.0 TX2: the owner's texture in place of the code pattern: its alpha is the part that heats (the cracks,
-		// the scratches, the stripes' paint, the acid, the light's seams, the crust's seams), tinted toward the glow;
-		// a surface's own colour is the ground under it (tex_body), darkened so the hot part reads.
-		vec4 tx = texture(pattern_tex, p * tex_scale + vec2(t * 0.01, 0.0) * tex_flow);
-		m = tx.a;
-		hot = mix(tx.rgb, glow.rgb, 0.45) * (1.0 + heat * 1.6);
-		body = mix(dark.rgb, tx.rgb * 0.5, tex_body);
-	}
-	ALBEDO = mix(body, hot, m);
-	ALPHA = clamp(max(base_alpha, m * mix(0.45, 1.0, heat)), 0.0, 1.0);
 }
 """
 
@@ -319,6 +414,15 @@ static var _shader: Shader
 ## The look of boss kind `kind`'s move `move` (WorldReader.MOVE_*), or &"" (drawn as before).
 static func look_for(kind: int, move: int) -> StringName:
 	var moves: Dictionary = BY_KIND.get(kind, {})
+	return moves.get(move, &"")
+
+
+## The look boss kind `kind`'s move `move` is drawn in on the ground: its strike's look, or a MARK_ONLY one.
+static func mark_look_for(kind: int, move: int) -> StringName:
+	var look := look_for(kind, move)
+	if look != &"":
+		return look
+	var moves: Dictionary = MARK_ONLY.get(kind, {})
 	return moves.get(move, &"")
 
 
@@ -358,10 +462,49 @@ static func mark_material(look: StringName, heat: float, base_alpha: float) -> S
 	m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
 	var spec: Array = PATTERN_TEX.get(pattern_of(look), [])
 	var tex := BossStrikeMeshes.texture(spec[0]) if not spec.is_empty() else null
-	m.set_shader_parameter("tex_on", 1.0 if tex != null else 0.0)
+	var ink := ink_of(look)
+	var inked := not ink.is_empty() and (tex != null or float(ink["lines"]) == 0.0)
+	m.set_shader_parameter("ink_on", 1.0 if inked else 0.0)
+	m.set_shader_parameter("tex_on", 1.0 if tex != null and not inked else 0.0)
 	if tex != null:
 		m.set_shader_parameter("pattern_tex", tex)
 		m.set_shader_parameter("tex_scale", spec[1])
 		m.set_shader_parameter("tex_body", spec[2])
 		m.set_shader_parameter("tex_flow", spec[3])
+		m.set_shader_parameter("tex_body_alpha", spec[4])
+	if inked:
+		var stain: Color = ink["stain"]
+		m.set_shader_parameter("ink_line", ink["line"])
+		m.set_shader_parameter("ink_hot", ink["hot"])
+		m.set_shader_parameter("ink_stain", Color(stain, 1.0))
+		m.set_shader_parameter("ink_stain_k", stain.a)
+		m.set_shader_parameter("ink_lines", ink["lines"])
+		m.set_shader_parameter("ink_warm", ink["warm"])
 	return m
+
+
+## The crack sheet `t` (fx_ground_cracks) as thin crack lines: white, only its cracks' cores (where its red is high)
+## in the alpha, none of its painted lava; a floor mark tints it dark. At most 256 px across (a mark is a few metres).
+static func crack_lines(t: Texture2D) -> Texture2D:
+	var img := t.get_image()
+	if img == null:
+		return t
+	img = img.duplicate()
+	if img.is_compressed():
+		img.decompress()
+	img.clear_mipmaps()
+	img.convert(Image.FORMAT_RGBA8)
+	var n := mini(256, img.get_width())
+	if img.get_width() != n:
+		img.resize(n, n * img.get_height() / img.get_width(), Image.INTERPOLATE_BILINEAR)
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			img.set_pixel(x, y, Color(1, 1, 1, c.a * smoothstep(0.6, 0.9, c.r)))
+	img.generate_mipmaps()
+	return ImageTexture.create_from_image(img)
+
+
+## The ink `look` is drawn in ({} for a painted or code pattern): its own, or its pattern's.
+static func ink_of(look: StringName) -> Dictionary:
+	return LOOK_INK.get(look, INK.get(pattern_of(look), {}))

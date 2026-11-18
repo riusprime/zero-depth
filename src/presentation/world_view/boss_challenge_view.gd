@@ -19,7 +19,8 @@ const VORTEX_STEPS := 24
 const MOTES := 10
 const MOTE_FRAMES := 45
 const BAND_COLOR := Color("#FF5A2A")
-const DISSOLVE_COLOR := Color("#8FE6FF")
+## A pale gold, kept off the hero's cyan: the ring and motes read as the boss's summoning, not the player's.
+const DISSOLVE_COLOR := Color("#F2CF8A")
 const GATE_COLOR := Color("#B48CFF")
 
 var band_mesh := MeshInstance3D.new()

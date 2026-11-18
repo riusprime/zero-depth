@@ -188,8 +188,14 @@ func test_the_floods_standing_lanes_are_drawn_styled() -> void:
 		tv.sync(reader)
 		assert_eq(tv.count(), 1)
 		var deco := tv.find_child("Deco", true, false) as MeshInstance3D
-		assert_not_null(deco, "with its marks")
-		assert_gt((deco.mesh as ImmediateMesh).get_surface_count(), 0)
+		assert_not_null(deco)
+		if spec[2] == &"spears":
+			assert_gt((deco.mesh as ImmediateMesh).get_surface_count(), 0, "spear heads down it")
+		else:  # The molten rows are their crust alone, under a dull ember edge
+			assert_eq((deco.mesh as ImmediateMesh).get_surface_count(), 0, "no bars over the crust")
+			var edge := tv.find_child("Edge", true, false) as MeshInstance3D
+			var mat := (edge.mesh as ImmediateMesh).surface_get_material(0) as StandardMaterial3D
+			assert_eq(mat.albedo_color, TelegraphViews.MOLTEN_EDGE, "a dull ember edge")
 
 
 ## Flood `attack_id` of `id` at the origin, aimed at `aim_at` (held through the windup); the player then stands at
