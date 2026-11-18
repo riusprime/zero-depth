@@ -348,8 +348,9 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
 - **Crowds (v0.4.0 SC):** projectile nodes are pooled per look (hidden and reused, at most
   `ActorViews.PROJECTILE_POOL_MAX` idle) and share one mesh and one kept material per look; an enemy's floating HP
   bar shows only once it is hurt (the hero's always); enemy models beyond `ActorViews.ANIMATE_RADIUS_M` (24 m, off
-  screen) stop their frame-time animation; no enemy carries a light (a boss has its weak-point light only). The
-  damage-lag rule stands: materials are built flashable (`ActorViews.flashable`), and nothing toggles
+  screen) stop their frame-time animation; no enemy carries a light (a boss has its weak-point light only; one
+  stage-wide `BossKeyLight`, cull-masked to the bosses' bodies, lights them from the camera's side so a boss never
+  reads as a black silhouette against a low sun). The damage-lag rule stands: materials are built flashable (`ActorViews.flashable`), and nothing toggles
   `emission_enabled` or another feature flag at runtime. Enemy models are not MultiMesh instances: each kind's model
   animates its own parts, so a crowd stays one node tree per enemy (measured in `docs/roadmap/v0.4.0/evidence/
   HORDES.md`).

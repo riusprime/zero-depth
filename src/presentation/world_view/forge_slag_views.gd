@@ -1,5 +1,5 @@
 class_name ForgeSlagViews
-extends Node3D
+extends RaisedGround
 ## The Foundry's cooling slag and its Overpressure, drawn from WorldReader.boss_forge (EI-07: which pool cools, where
 ## a slab lies, how long it lasts, which slabs are safe and when the floor burns are the sim's, BossSlag). No word
 ## anywhere.
@@ -8,7 +8,9 @@ extends Node3D
 ## - A slab: a low faceted basalt plinth of the pool's exact radius (ForgeLooks.slab: matte stone lit like the walls,
 ##   a faint cool rim on its top's edge), clearly not lava; its cracks glow dull orange as its time runs low, it sinks
 ##   into the floor over its last moments and crumbles in the pack's dust (vx1_impact_other, dark); shattered by the
-##   vent blast it bursts in the dust at once and goes.
+##   vent blast it bursts in the dust at once and goes. Whoever stands on it is drawn on its top (height_at, which
+##   ActorViews reads as it does an altar's), rising across its edge (STEP_BAND), so a step on or off eases over a
+##   few frames at a walk instead of popping.
 ## - A slag drop (a pool dropped at the hero's feet): a molten blob (fo_drop) falls into its warning ring and lands in
 ##   the pack's ember impact.
 ## - The Overpressure: through its cast the open floor heats (HEAT_SHADER: the floor's own tiles show, heat rising
@@ -34,6 +36,10 @@ const DROP_SCALE := 0.8
 const DROP_M := 9.0
 ## A slab's fade over its last ticks.
 const FADE_TICKS := 45.0
+## The band (m) across a slab's edge over which a body standing on it rises to its top: from just outside the edge
+## (STEP_OUT) to STEP_BAND inside it.
+const STEP_BAND := 0.35
+const STEP_OUT := 0.1
 ## The floor's level through the cast (it reaches this at the cast's end), and its fade at the end (s).
 const CAST_LEVEL := 0.75
 const FADE_S := 0.5
@@ -60,6 +66,8 @@ var _level := 0.0
 var _fade := 0.0
 var _crusts: Array[MeshInstance3D] = []
 var _slabs: Array[MeshInstance3D] = []
+## Each slab slot's top now (m): the plinth's height, lower as it sinks.
+var _tops := PackedFloat32Array()
 var _heat: MeshInstance3D
 
 
@@ -72,6 +80,7 @@ func _init() -> void:
 		ForgeLooks.param(_slabs[k], &"seed", float(k) * 0.61)
 		ForgeLooks.param(_slabs[k], &"basalt", ForgeLooks.BASALT)
 		ForgeLooks.param(_slabs[k], &"rim", ForgeLooks.COOL)
+	_tops.resize(SLOTS)
 	_heat = ForgeLooks.floor_mesh(self, ForgeLooks.HEAT_SHADER, 1.0, ForgeLooks.UNDER)
 	ForgeLooks.param(_heat, &"cool", ForgeLooks.COOL)
 	ForgeLooks.param(_heat, &"tile_m", StageView.TILE_M)
@@ -193,7 +202,12 @@ func _draw_rows() -> void:
 		s.scale = Vector3(r, 1.0, r)
 		var safe := not _over.is_empty() and bool(row["safe"])
 		ForgeLooks.param(s, &"crack", clampf(1.0 - left / maxf(1.0, float(_life[id])), 0.0, 1.0))
-		ForgeLooks.param(s, &"alpha", clampf(left / FADE_TICKS, 0.0, 1.0))
+		var alpha := clampf(left / FADE_TICKS, 0.0, 1.0)
+		ForgeLooks.param(s, &"alpha", alpha)
+		# SLAB_SHADER sinks the plinth by (1 - alpha) * (its height + 0.08)
+		_tops[slabs - 1] = maxf(
+			0.0, ForgeLooks.PLINTH_H - (1.0 - alpha) * (ForgeLooks.PLINTH_H + 0.08)
+		)
 		ForgeLooks.param(s, &"safe", 1.0 if safe else 0.0)
 		ForgeLooks.param(s, &"clock", _clock)
 	for k in range(pools, SLOTS):
@@ -258,6 +272,22 @@ func _draw_heat(delta: float) -> void:
 		n += 1
 	ForgeLooks.param(_heat, &"holes", holes)
 	ForgeLooks.param(_heat, &"hole_n", n)
+
+
+## The top of the slab under the floor point `at` (m), eased across its edge; 0 off every slab (RaisedGround).
+func height_at(at: Vector3) -> float:
+	var h := 0.0
+	for k in SLOTS:
+		var s := _slabs[k]
+		if not s.visible:
+			continue
+		var d := (
+			Vector2(at.x - position.x - s.position.x, at.z - position.z - s.position.z).length()
+		)
+		var on := clampf((s.scale.x + STEP_OUT - d) / STEP_BAND, 0.0, 1.0)
+		if on > 0.0:
+			h = maxf(h, _tops[k] * smoothstep(0.0, 1.0, on))
+	return h
 
 
 # --- tests and the shot scripts ----------------------------------------------------------------------------------

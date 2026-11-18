@@ -141,4 +141,13 @@ func test_the_hive_lens_is_reached_through_the_dev_panel() -> void:
 
 
 func test_the_foundry_is_reached_through_the_dev_panel() -> void:
-	await _reach(&"foundry", ActorStore.Kind.FOUNDRY, "FoundryAvatar")
+	var got: Array = await _reach(&"foundry", ActorStore.Kind.FOUNDRY, "FoundryAvatar")
+	var main: Main = got[0]
+	# Lit from the camera's side so it never reads as a black silhouette, and its slabs are stood on
+	var lights := main.view.get_children().filter(func(n: Node) -> bool: return n is BossKeyLight)
+	assert_eq(lights.size(), 1, "the game view carries the bosses' key light")
+	var avatar := main.view.actors.actor_node(got[1]).get_meta(&"enemy_avatar") as BossAvatar
+	assert_true(
+		avatar.imported.layers & BossKeyLight.LAYER != 0, "the Foundry's body is in its light"
+	)
+	assert_true(main.view.actors.grounds.has(main.view.forge_slag), "a slab's top is stood on")

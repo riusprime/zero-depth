@@ -161,6 +161,7 @@ func setup() -> void:
 	_build_body()
 	body_materials = parts.body_materials
 	_build_weak_point()
+	BossKeyLight.mark(model)  # Lit from the camera's side as well as by the room (BossKeyLight)
 	_pose_any(0.0)
 
 
