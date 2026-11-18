@@ -44,8 +44,8 @@ func test_every_look_but_the_crescent_has_a_pack_row() -> void:
 	add_child_autofree(pack)
 	assert_eq(
 		_looks().size(),
-		17,
-		"19 hostile looks (v0.11.0 O13a: the Dim Needle), the crescent and the wisp apart"
+		15,
+		"19 hostile looks, the crescent, the wisp, the thrown rock and the crown orb apart"
 	)
 	for key in _looks():
 		assert_true(pack.has_id(StringName("shot_%s" % key)), "%s has its shot_ row" % key)
@@ -100,14 +100,14 @@ func test_a_held_shot_outlives_the_scenes_own_animation() -> void:
 	var fb: FireballViews = r[1]
 	var pack: PackFx = r[2]
 	var n := 0
-	for key in [&"spear_ember", &"ember_stone", &"lens_orb"]:  # a projectile, a fire ball (no animation), an orb
+	for key in [&"spear_ember", &"molten_drop", &"lens_orb"]:  # a projectile, a fire ball (no animation), an orb
 		_shoot(w, 710 + n, key, Vector2(1, 1), Vector2(1, 0))
 		n += 1
 	fb.sync(r[3])
 	assert_eq(pack.live_count(&"enemy_shot"), 3)
 	await wait_seconds(1.4)
 	assert_eq(pack.live_count(&"enemy_shot"), 3, "none of them ended by itself")
-	for key in [&"spear_ember", &"ember_stone", &"lens_orb"]:
+	for key in [&"spear_ember", &"molten_drop", &"lens_orb"]:
 		var node := _the_live(pack, StringName("shot_%s" % key))
 		assert_true(node.visible, "%s is still showing" % key)
 
@@ -166,6 +166,31 @@ func test_the_looks_own_colours_reach_a_pack_scene_that_has_colours() -> void:
 	assert_eq(node.get("primary_color"), want, "primary is the look's core")
 	var trail: Color = FireballViews.look_of(&"nemesis_bolt")["trail"]
 	assert_eq(node.get("secondary_color"), trail, "secondary is its trail")
+
+
+func test_thrown_rocks_and_crown_orbs_are_faceted_bodies_not_pack_sprites() -> void:
+	var r := _rig()
+	_shoot(r[0], 740, &"ember_stone", Vector2(1, 1), Vector2(1, 0))
+	_shoot(r[0], 741, &"crown_orb", Vector2(2, 1), Vector2(1, 0))
+	r[1].sync(r[3])
+	var fb: FireballViews = r[1]
+	assert_eq((r[2] as PackFx).live_count(&"enemy_shot"), 0, "no fire ball, no flat orb")
+	for key: StringName in [&"ember_stone", &"crown_orb"]:
+		assert_eq(fb.core_count(key), 1, "%s: the MultiMesh body" % key)
+		assert_eq(fb.edge_count(key), 1, "%s: with its dark edge" % key)
+	assert_eq(FireballViews.look_of(&"ember_stone")["mesh"], &"rock")
+	assert_eq(FireballViews.look_of(&"crown_orb")["mesh"], &"gem")
+
+
+func test_the_molten_drop_keeps_its_fire_ball_without_the_wisps() -> void:
+	var r := _rig()
+	_shoot(r[0], 742, &"molten_drop", Vector2(1, 1), Vector2(1, 0))
+	r[1].sync(r[3])
+	var node := _the_live(r[2], &"shot_molten_drop")
+	assert_not_null(node, "the pack's fire ball")
+	assert_true((node.get_node("Tip") as Node3D).visible, "its core shows")
+	for part in ["GPUParticles3D", "sparks"]:
+		assert_false((node.get_node(part) as Node3D).visible, "%s left out" % part)
 
 
 func _the_live(pack: PackFx, pid: StringName) -> Node3D:

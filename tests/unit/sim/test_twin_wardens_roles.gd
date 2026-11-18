@@ -293,6 +293,9 @@ func test_the_one_standing_back_sparks_off_and_casts_a_bolt_every_4_s() -> void:
 	for k in w.projectiles.size():
 		if w.projectiles.owner[k] == s[2]:
 			shots += 1
+			assert_eq(
+				w.projectiles.look[k], "warden_violet_ember", "the violet's bolt in its colour"
+			)
 	assert_gt(shots, 0, "its bolt flies")
 	w.killer_kind = ActorStore.Kind.TWIN_WARDEN_VIOLET
 	w.killer_attack = t.twin_bolt

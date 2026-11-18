@@ -60,7 +60,7 @@ func test_every_fireball_source_has_its_own_3d_look() -> void:
 
 func test_each_look_keeps_its_identity() -> void:
 	var expect := {
-		&"ember_stone": [&"rock", &"glow"],
+		&"ember_stone": [&"rock", &"streak"],  # A thrown rock: a short dark streak, no flame
 		&"spear_ember": [&"spear", &"glow"],
 		&"prism_orb": [&"gem", &"glow"],
 		&"acid_glob": [&"glob", &"drips"],

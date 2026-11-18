@@ -32,24 +32,26 @@ const MIN_CORE_LUMINANCE := 0.4
 ## glints), "opacity" (< 1: translucent), and its trail: "trail_style" &"glow" (additive), &"smoke" (unlit, mixed,
 ## widening) or &"drips" (broken into drops), "tail" the strip's width at its end.
 const LOOKS := {
-	## Gatekeeper: rocky glowing chunks of stone, ember veins, tumbling.
+	## Gatekeeper (and the Colossus's thrown shards): a thrown rock, not a fireball. A dark faceted chunk of stone
+	## tumbling, hot ember veins and a bright heart inside so it still reads as danger, a short dark streak behind (no
+	## flame, no smoke).
 	&"ember_stone":
 	{
 		"core": Color("#FFBE85"),
-		"edge": Color("#2A211C"),
-		"trail": Color("#C0703A"),
-		"size": 1.0,
+		"edge": Color("#140E0A"),
+		"trail": Color("#2A211C"),
+		"size": 1.25,
 		"tip": 1.0,
-		"trail_m": 0.55,
+		"trail_m": 0.45,
 		"mesh": &"rock",
-		"body": Color("#54483F"),
-		"energy": 2.4,
+		"body": Color("#3A302A"),
+		"energy": 3.0,
 		"crack": 1.0,
 		"swirl": 0.6,
 		"spin": 2.2,
 		"tumble": 1.6,
-		"trail_style": &"glow",
-		"tail": 0.3,
+		"trail_style": &"streak",
+		"tail": 0.15,
 	},
 	## Warlord: red spear-tipped embers, long four-sided heads turning about their flight.
 	&"spear_ember":
@@ -116,17 +118,17 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.3,
 	},
-	## Brood Mother: sickly green acid globs (fat, wobbly, see-through; dripping).
+	## Brood Mother: sickly olive acid globs (fat, wobbly, see-through; a few short drips).
 	&"acid_glob":
 	{
-		"core": Color("#C8FF6A"),
-		"edge": Color("#142A08"),
-		"trail": Color("#6FA02A"),
+		"core": Color("#BCCC5C"),
+		"edge": Color("#1A2008"),
+		"trail": Color("#7A8A2E"),
 		"size": 1.1,
 		"tip": 1.0,
-		"trail_m": 0.4,
+		"trail_m": 0.22,
 		"mesh": &"glob",
-		"body": Color("#3A6A12"),
+		"body": Color("#4A5418"),
 		"energy": 1.7,
 		"swirl": 0.8,
 		"wobble": 0.12,
@@ -155,18 +157,18 @@ const LOOKS := {
 	},
 	## The Prism (the final boss's second body): her shards' orbs, deep red crystal gems turning as they
 	## drift, a crimson trail (redder and darker than the Hive Lens's magenta prism orbs). The core is a hot rose
-	## (a bright core, apart from the spear embers and the lens orbs; v0.8.0 fix).
+	## (a bright core, apart from the spear embers and the lens orbs), the glow low enough that the gem stays red.
 	&"crown_orb":
 	{
 		"core": Color("#FF729E"),
 		"edge": Color("#2A0610"),
 		"trail": Color("#B81C38"),
-		"size": 1.0,
+		"size": 1.45,
 		"tip": 1.0,
 		"trail_m": 0.6,
 		"mesh": &"gem",
 		"body": Color("#6A0E22"),
-		"energy": 2.8,
+		"energy": 2.0,
 		"crack": 0.2,
 		"swirl": 0.7,
 		"spin": 2.6,
@@ -258,7 +260,7 @@ const LOOKS := {
 		"trail": Color("#E0431A"),
 		"size": 1.05,
 		"tip": 1.3,
-		"trail_m": 0.45,
+		"trail_m": 0.3,
 		"mesh": &"drop",
 		"body": Color("#5A2A10"),
 		"energy": 2.4,
@@ -327,23 +329,25 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.45,
 	},
-	## The Lantern Shade's wisps: dim violet will-o'-wisps (BOSSES_4_5 N4), a soft wobbling orb, a thin
-	## dark smoke trail (they glow only inside light: ShadeViews' dark covers them; their outline is ShadeViews').
+	## The Lantern Shade's wisps: dim violet will-o'-wisps (BOSSES_4_5 N4), small faceted crystals with a dim glow
+	## and the dark edge, a thin dark smoke trail (they glow only inside light: ShadeViews' dark covers them; their
+	## outline is ShadeViews').
 	## The core is a pale ghost-violet (was #C38CFF, near the Nemesis' bolt and crescent): bright, 0.18 from every look.
 	&"shade_wisp":
 	{
 		"core": Color("#948CE4"),
 		"edge": Color("#10061E"),
 		"trail": Color("#2C1A46"),
-		"size": 1.0,
+		"size": 1.3,
 		"tip": 1.0,
 		"trail_m": 0.4,
-		"mesh": &"orb",
+		"mesh": &"gem",
 		"body": Color("#2A1648"),
-		"energy": 2.6,
-		"crack": 0.0,
+		"energy": 1.2,
+		"crack": 0.2,
 		"swirl": 1.6,
-		"wobble": 0.5,
+		"spin": 2.0,
+		"facets": 0.4,
 		"trail_style": &"smoke",
 		"tail": 0.4,
 	},
@@ -352,7 +356,7 @@ const LOOKS := {
 		"core": Color("#BB99CC"),
 		"edge": Color("#160A26"),
 		"trail": Color("#7A3ADB"),
-		"size": 1.1,
+		"size": 0.95,
 		"tip": 1.1,
 		"trail_m": 0.6,
 		"mesh": &"rock",
@@ -401,7 +405,6 @@ const DEFAULT_LOOK := {
 ## they draw its ember rock.
 const SPEAR_TURN := 2.356
 const TEX_CORES := {
-	&"ember_stone": ["fx_orb_cores", 0, 0.0],
 	&"acid_glob": ["fx_orb_cores", 1, 0.0],
 	&"prism_orb": ["fx_orb_cores", 2, 0.0],
 	&"molten_drop": ["fx_orb_cores", 3, 0.0],
@@ -418,7 +421,7 @@ const TEX_CORES := {
 	&"nemesis_bolt": ["fx_orb_cores_final", 3, 0.0],
 	&"nemesis_crescent": ["fx_orb_cores_final", 3, 0.0],
 }
-## The fx_trails rows: flame, smoke, acid drips, crystal sparkle.
+## The fx_trails rows: flame, smoke, acid drips, crystal sparkle (a "streak" trail takes none: a plain dark strip).
 const TRAIL_FLAME := 0
 const TRAIL_SMOKE := 1
 const TRAIL_DRIPS := 2
@@ -446,9 +449,10 @@ const PACK_FAMILY := &"enemy_shot"
 const PACK_REF_RADIUS := 0.18
 ## Parts of a pack scene a look leaves out: the big orbs' Flare is a star-shaped burst that draws at a fixed size (it
 ## ignores the node's scale), some 7 times a gem's; it would drown the shots around it.
+## The Foundry's molten drop keeps its fire ball (the core and its flame) without the flame wisps and sparks.
 const PACK_HIDE := {
 	&"prism_orb": ["Flare"],
-	&"crown_orb": ["Flare"],
+	&"molten_drop": ["GPUParticles3D", "sparks"],
 }
 ## The look a Dim Needle's shot draws with while it is dark (sync; look_of): a near-black core, a faint
 ## green edge, no trail, the MultiMesh only (PACK_SKIP). Not one of LOOKS (whose cores are all bright).
@@ -466,8 +470,12 @@ const DIM_DARK := {
 	"tail": 0.05,
 }
 ## Looks without a pack effect (they stay the MultiMesh). the Shade's wisp stays the MultiMesh so the
-## Shade's dark covers it (only its 4 m outline shows over the dark). a dark Dim Needle shot too.
-const PACK_SKIP: Array[StringName] = [&"nemesis_crescent", &"shade_wisp", DIM_DARK_LOOK]
+## Shade's dark covers it (only its 4 m outline shows over the dark). a dark Dim Needle shot too. A thrown rock is
+## stone, not fire (the faceted rock, no flame), and the Prism's crown orbs are her faceted red gems, not the pack's
+## flat glowing discs.
+const PACK_SKIP: Array[StringName] = [
+	&"nemesis_crescent", &"shade_wisp", DIM_DARK_LOOK, &"ember_stone", &"crown_orb"
+]
 ## VFX_PACK N4: the nemesis_crescent keeps its shape and takes a copy of the pack's rim_area_04 glow
 ## material in its own colours (a sheet of UVs cut from where each point lies); false: the shader core as before.
 const PACK_CRESCENT := true
@@ -1026,10 +1034,10 @@ static func edge_material(look: Dictionary) -> ShaderMaterial:
 
 
 ## The trail strip (FireballShaders.trail): glowing and additive, or smoke (mixed, no glow, widening), or
-## drips.
+## drips, or a streak (mixed, no glow and no painted strip: a short dark smear behind a thrown rock).
 static func trail_material(look: Dictionary) -> ShaderMaterial:
 	var style: StringName = look.get("trail_style", &"glow")
-	var smoke: bool = style == &"smoke" or bool(look.get("smoke", false))
+	var smoke: bool = style == &"smoke" or style == &"streak" or bool(look.get("smoke", false))
 	var translucent := float(look.get("opacity", 1.0)) < 1.0
 	var m := ShaderMaterial.new()
 	m.shader = FireballShaders.trail(not smoke and not translucent)
@@ -1043,7 +1051,7 @@ static func trail_material(look: Dictionary) -> ShaderMaterial:
 	m.set_shader_parameter("opacity", 0.6 if smoke else 0.85)
 	m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
 	var strip := FxTextures.get_tex("fx_trails")  # The owner's trail strip
-	if strip != null:
+	if strip != null and style != &"streak":
 		m.set_shader_parameter("trail_tex", strip)
 		m.set_shader_parameter("tex_on", 1.0)
 		m.set_shader_parameter("tex_row", float(trail_row(look)))
