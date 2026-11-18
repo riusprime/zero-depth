@@ -74,6 +74,17 @@ func test_whole_body_motion_and_glow_change_no_shader() -> void:
 		)
 		a.advance(DT)
 	assert_gt(a.glow_amount(), 0.025, "the windup glows")
+	if a.glow_overlay != null:
+		assert_eq(
+			float(a.glow_overlay.get_shader_parameter("fill")),
+			0.0,
+			"as a rim: the body keeps its colours"
+		)
+		assert_eq(
+			a.glow_overlay.get_shader_parameter("rim_color"),
+			BossShieldView.COLORS[WorldReader.KIND_GATEKEEPER],
+			"in its own accent"
+		)
 	assert_ne(a.pivot.transform, rest, "and leans")
 	a.apply_state(
 		{
@@ -142,3 +153,23 @@ func test_without_the_file_the_code_body_draws() -> void:
 	assert_null(a.imported)
 	assert_gt(a.body_materials.size(), 15, "the code-built pieces")
 	assert_eq(a.fists.size(), 2)
+
+
+func test_every_owner_model_is_matte() -> void:
+	for cls in [
+		GatekeeperAvatar,
+		HiveLensAvatar,
+		ClockworkJudgeAvatar,
+		LanternShadeAvatar,
+		TidecallerAvatar,
+		TwinWardenAvatar,
+		TwinWardenVioletAvatar,
+	]:
+		var a: BossAvatar = _avatar(cls)
+		for m: StandardMaterial3D in a.body_materials:
+			var who := String(a.get_script().get_global_name())
+			assert_eq(m.metallic, 0.0, "%s: not metallic" % who)
+			assert_null(m.metallic_texture, "%s: no metallic map" % who)
+			assert_eq(m.roughness, 1.0, "%s: rough" % who)
+			assert_null(m.roughness_texture, "%s: no roughness map" % who)
+			assert_lte(m.metallic_specular, 0.5, "%s: a soft specular" % who)

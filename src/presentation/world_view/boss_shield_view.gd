@@ -2,7 +2,8 @@ class_name BossShieldView
 extends Node3D
 ## While a boss fires its signature
 ## pattern (WorldReader.boss_shielded) a clear crystal shell in the boss's colour stands round it: low-poly facets that
-## turn slowly, a brighter rim, rising in over SHOW_S as the shield comes up and gone when it opens. The player's hits
+## turn slowly, drawn as their edges and a rim where they turn side-on, the inside nearly clear so the boss shows
+## through (SHELL_SHADER), rising in over SHOW_S as the shield comes up and gone when it opens. The player's hits
 ## spark off it (HitFeel already bursts on TAG_BLOCKED). Also the shell a burst pattern lobs (its telegraph's "lob",
 ## from the boss to its locked landing circle; an egg onto each locked circle of a marks attack with a
 ## pattern, the Brood Mother's Egg Storm). FINAL_BOSS.md F4: the Colossus's boulders, a code-made 3D
@@ -27,6 +28,33 @@ const COLORS := {
 	WorldReader.KIND_LANTERN_SHADE: Color("#F3DC9A"),  # Pale lantern gold
 }
 const DEFAULT_COLOR := Color("#E6E0FF")
+## The shell's opacity by boss kind (1 for the others): the Prism's, round her whole fight, at half.
+const OPACITY := {WorldReader.KIND_PRISM: 0.5}
+## The faceted shell: its facets' edges (the sphere's own bands, `cells` of them round and high) a line in its own
+## colour, a rim where a facet turns side-on, each facet a shade by how it faces up (a cut crystal, not a wire
+## cage), the inside nearly clear; the far side fainter. Unshaded, so it reads in every biome.
+const SHELL_SHADER := """
+shader_type spatial;
+render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
+uniform vec4 tint : source_color = vec4(1.0);
+uniform float opacity = 1.0;
+uniform vec2 cells = vec2(7.0, 3.0);
+void fragment() {
+	vec2 g = UV * cells;
+	vec2 d = abs(fract(g - 0.5) - 0.5) / max(fwidth(g), vec2(0.0001));
+	float line = 1.0 - smoothstep(0.8, 2.0, min(d.x, d.y));
+	vec3 facet = normalize(cross(dFdx(VERTEX), dFdy(VERTEX)));
+	float side = 1.0 - abs(dot(facet, normalize(VIEW)));
+	float rim = smoothstep(0.55, 0.95, side);
+	float lit = 0.5 + 0.5 * facet.y;
+	float far_side = FRONT_FACING ? 1.0 : 0.3;
+	ALBEDO = mix(tint.rgb * (0.75 + 0.35 * lit), mix(tint.rgb, vec3(1.0), 0.2), line);
+	ALPHA = clamp((0.03 + 0.06 * lit + 0.28 * rim + 0.4 * line) * far_side * opacity, 0.0, 1.0);
+}
+"""
+## The shell's facets: round and high (the SphereMesh's radial segments and rings, SHELL_SHADER's cells).
+const FACETS_ROUND := 7
+const FACETS_HIGH := 3
 const SHOW_S := 0.15
 const SPIN := 0.5
 ## Lobbed shells are keyed boss id × LOB_KEYS (a burst's), + 1 + k (marker k's egg).
@@ -46,10 +74,12 @@ var _boulder_mat := StandardMaterial3D.new()
 ## The lobs that are boulders (their keys).
 var _boulders := {}
 var _t := 0.0
+var _shell_shader := Shader.new()
 
 
 func _init() -> void:
 	name = "BossShieldView"
+	_shell_shader.code = SHELL_SHADER
 	_lob_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_lob_mat.albedo_color = Color("#2A2422")
 	_lob_mat.emission_enabled = true
@@ -77,7 +107,10 @@ func sync(reader: WorldReader) -> void:
 		if reader.boss_shielded(i):
 			seen[id] = true
 			if not _shells.has(id):
-				_shells[id] = _make_shell(COLORS.get(reader.actor_kind(i), DEFAULT_COLOR))
+				var kind := reader.actor_kind(i)
+				_shells[id] = _make_shell(
+					COLORS.get(kind, DEFAULT_COLOR), float(OPACITY.get(kind, 1.0))
+				)
 			_shells[id]["at"] = SimPlane.to_3d(reader.actor_pos(i))
 			_shells[id]["radius"] = reader.actor_radius(i)
 		var tg := reader.telegraph(i)
@@ -157,36 +190,32 @@ func _process(delta: float) -> void:
 		shell.rotation = Vector3(0, _t * SPIN, 0)
 
 
-func _make_shell(c: Color) -> Dictionary:
+func _make_shell(c: Color, opacity: float) -> Dictionary:
 	var root := Node3D.new()
 	root.name = "BossShield"
 	var facets := SphereMesh.new()
 	facets.radius = 1.0
 	facets.height = 2.0
-	facets.radial_segments = 7  # few facets: a cut crystal, not a bubble
-	facets.rings = 3
+	facets.radial_segments = FACETS_ROUND  # few facets: a cut crystal, not a bubble
+	facets.rings = FACETS_HIGH
 	var shell := MeshInstance3D.new()
+	shell.name = "Shell"
 	shell.mesh = facets
-	var m := StandardMaterial3D.new()
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m.cull_mode = BaseMaterial3D.CULL_DISABLED
-	m.albedo_color = Color(c, 0.24)
-	m.emission_enabled = true
-	m.emission = c
-	m.emission_energy_multiplier = 0.6
+	var m := ShaderMaterial.new()
+	m.shader = _shell_shader
+	m.set_shader_parameter("tint", c)
+	m.set_shader_parameter("opacity", opacity)
+	m.set_shader_parameter("cells", Vector2(FACETS_ROUND, FACETS_HIGH))
 	shell.material_override = m
-	var rim := MeshInstance3D.new()
-	rim.mesh = facets
-	var rm := StandardMaterial3D.new()
-	rm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	rm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	rm.cull_mode = BaseMaterial3D.CULL_FRONT  # the far side, brighter: the rim reads round the boss
-	rm.albedo_color = Color(c.lightened(0.35), 0.4)
-	rim.material_override = rm
-	rim.scale = Vector3.ONE * 1.04
-	for mi: MeshInstance3D in [shell, rim]:
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(mi)
+	shell.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	root.add_child(shell)
 	add_child(root)
 	return {"shell": root, "shown": 0.0, "at": Vector3.ZERO, "radius": 1.0}
+
+
+## The opacity of boss `id`'s shell now (tests), or -1 with none.
+func shell_opacity(id: int) -> float:
+	if not _shells.has(id):
+		return -1.0
+	var mi := (_shells[id]["shell"] as Node).get_node("Shell") as MeshInstance3D
+	return float((mi.material_override as ShaderMaterial).get_shader_parameter("opacity"))

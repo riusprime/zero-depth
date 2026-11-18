@@ -8,12 +8,13 @@ extends Node3D
 ## actor's feet under ActorViews' facing node.
 ## The owner's models: when assets/models/bosses/<model_id()>.glb exists (BossModels), it replaces the
 ## code-built body. It is one mesh, so it moves as a whole: breathing, a walk bob and sway, a lean and crouch with a
-## red glow for the windup, a lunge and squash (a recoil for a turret) for the attack, a sag in recovery, a wobble
-## when staggered, and a steady glow in the last phase. The glow is a material_overlay whose alpha changes, and the
-## body's material is flashable (emission on at energy 0), so no shader ever changes at run time.
-## The weak point: a glowing core on the boss's chest while it is open (WorldReader
-## .boss_weak_point_permille), a kept material with emission on from the start, so only its energy changes, and a
-## small light; hidden while shut.
+## rim of its accent colour for the windup, a lunge and squash (a recoil for a turret) for the attack, a sag in
+## recovery, a wobble when staggered, and a steady rim in the last phase. The rim is a material_overlay
+## (BossBodyGlow) whose uniforms change, and the body's material is flashable (emission on at energy 0), so no shader
+## ever changes at run time; the body keeps its own colours.
+## The weak point: a small faceted gem in the accent colour, inked like the model, on the boss's chest while it is open
+## (WorldReader.boss_weak_point_permille), a kept material with emission on from the start, so only its energy
+## changes, and a small light; hidden while shut.
 ## The owner's rigged models (the Warlord, the Hive Lens; BossModels "skinned") keep their own skeleton
 ## and skin, and the Foundry is cut in code (BossRig). Their bodies pose bone by bone through a BonePoser in the
 ## model frame, one function per pose layer (idle, walk, attack, guard, flinch, stagger, death, and a "shielded"
@@ -60,10 +61,9 @@ const FLINCH_ATTACK_WEIGHT := 0.5
 const RECALL_CLIP := &"recall"
 ## Where the owner's boss models go (PLAN v0.3.0 L10): assets/models/bosses/<model_id()>.glb.
 const MODEL_DIR := "res://assets/models/bosses/"
-## The weak point's core (BX): its colour and its glow at full.
-const WEAK_COLOR := Color("#FFD36A")
-const WEAK_ENERGY := 5.0
-const WEAK_LIGHT := 2.2
+## The weak point's gem: its glow and its light at full (its colour is the body's accent).
+const WEAK_ENERGY := 1.6
+const WEAK_LIGHT := 0.9
 
 ## Parts and materials, read by tests and by ActorViews (the hit flash).
 var body_materials: Array[StandardMaterial3D] = []
@@ -73,7 +73,7 @@ var model := Node3D.new()
 ## The owner's model, when it is used (null with the code-built body), its pivot, and its glow overlay.
 var imported: MeshInstance3D
 var pivot: Node3D
-var glow_overlay: StandardMaterial3D
+var glow_overlay: ShaderMaterial
 ## The owner's model's skeleton (rigged in code, BossRig) and its rig.
 var skeleton: Skeleton3D
 var rig: BossRig
@@ -164,42 +164,35 @@ func setup() -> void:
 	_pose_any(0.0)
 
 
-## The weak point's core: a bright gem on the chest with a halo ring, unshaded, emission on from the start.
+## The weak point: a small faceted gem on the chest in the body's accent colour (BossBodyGlow), flat-shaded, emission
+## on from the start, drawn over the body's own front so it is never hidden. It is opaque, so it writes depth: the ink
+## pass draws its outline like any model's, and a see-through body drawn after it never covers it.
 func _build_weak_point() -> void:
-	weak_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	weak_material.albedo_color = WEAK_COLOR
+	var c := _accent()
+	weak_material.albedo_color = c
+	weak_material.roughness = 1.0
 	weak_material.emission_enabled = true
-	weak_material.emission = WEAK_COLOR
+	weak_material.emission = c.darkened(0.45)  # a little glow: the gem stays its colour, not white
 	weak_material.emission_energy_multiplier = 0.0
 	weak_material.no_depth_test = true  # seen through the body's own front
 	weak_core.name = "WeakPoint"
-	var gem := SphereMesh.new()
-	gem.radius = 0.24
-	gem.height = 0.48
-	gem.radial_segments = 12
-	gem.rings = 6
-	weak_core.mesh = gem
+	weak_core.mesh = BossBodyGlow.gem_mesh()
 	weak_core.material_override = weak_material
 	weak_core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	weak_core.position = _weak_point_at()
 	weak_core.visible = false
 	model.add_child(weak_core)
-	var halo := MeshInstance3D.new()
-	halo.name = "Halo"
-	var torus := TorusMesh.new()
-	torus.inner_radius = 0.36
-	torus.outer_radius = 0.44
-	halo.mesh = torus
-	halo.material_override = weak_material
-	halo.rotation = Vector3(0, 0, PI * 0.5)
-	halo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	weak_core.add_child(halo)
 	weak_light.name = "WeakLight"
-	weak_light.light_color = WEAK_COLOR
+	weak_light.light_color = c
 	weak_light.light_energy = 0.0
-	weak_light.omni_range = 3.0
+	weak_light.omni_range = 2.0
 	weak_light.shadow_enabled = false
 	weak_core.add_child(weak_light)
+
+
+## The body's accent colour: its windup rim's and its weak point's (BossBodyGlow.accent_of).
+func _accent() -> Color:
+	return BossBodyGlow.accent_of(self)
 
 
 ## Where the weak point sits on the model (+X front, Y up); bodies override it.
@@ -393,7 +386,7 @@ func _pose_weak_point(dt: float) -> void:
 	weak_material.emission_energy_multiplier = WEAK_ENERGY * _weak_shown * fade * pulse
 	weak_light.light_energy = WEAK_LIGHT * _weak_shown * fade * pulse
 	weak_core.scale = Vector3.ONE * (0.6 + 0.4 * _weak_shown) * (0.92 + 0.08 * pulse)
-	(weak_core.get_node("Halo") as Node3D).rotation.x = _t * 3.0
+	weak_core.rotation.y = _t * 1.5  # the gem turns, so its facets catch the light
 
 
 ## 0..1: the attack's windup pose.
@@ -592,18 +585,15 @@ func _build_imported(m: Dictionary) -> void:
 	poser = BonePoser.new(skeleton)
 
 
-## Dresses the owner's skinned mesh: its own material kept (texture and all), duplicated, made flashable (no drawn
-## outline since v0.7.5), the glow overlay, shadows on.
+## Dresses the owner's skinned mesh: its own material kept (its albedo texture and normal map), duplicated, made
+## matte like every other body (BossBodyGlow.matte), made flashable (no drawn outline since v0.7.5), the windup's
+## rim overlay in its accent colour, shadows on.
 func _dress(mi: MeshInstance3D, material: StandardMaterial3D) -> void:
 	var mat: StandardMaterial3D = (
 		material.duplicate() as StandardMaterial3D if material != null else StandardMaterial3D.new()
 	)
-	mi.material_override = ActorViews.flashable(mat)
-	glow_overlay = StandardMaterial3D.new()
-	glow_overlay.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	glow_overlay.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	glow_overlay.blend_mode = BaseMaterial3D.BLEND_MODE_MIX
-	glow_overlay.albedo_color = Color(1.0, 0.06, 0.03, 0.0)
+	mi.material_override = ActorViews.flashable(BossBodyGlow.matte(mat))
+	glow_overlay = BossBodyGlow.overlay(_accent())
 	mi.material_overlay = glow_overlay
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	parts.body_materials.append(mat)
@@ -624,7 +614,7 @@ func _pose_any(dt: float) -> void:
 ## The owner's model: its clips in layers (BossAnimator), then what each body adds after them (_pose_rig); the
 ## bones its file's animations key are written from those animations (apply_owner), and the code's turns, shifts and
 ## stretches are written once on top of them, or over the rest pose on a bone no animation keys (BonePoser.commit);
-## then what a body places on its posed bones (_after_bones), and the windup glow.
+## then what a body places on its posed bones (_after_bones), and the windup's rim.
 func _pose_imported(dt: float) -> void:
 	_gait(dt, _walk_speed(), _stride())
 	var reduced := ViewPrefs.reduced_motion
@@ -641,10 +631,10 @@ func _pose_imported(dt: float) -> void:
 	poser.commit()
 	_after_bones()
 	var pulse := 0.5 + 0.5 * sin(_t * 6.0)
-	var extra := _extra_glow()  # A final boss's body cracking as it shatters
-	glow_overlay.albedo_color.a = clampf(
-		0.045 * _wind + 0.04 * _hit + _late * (0.02 + 0.01 * pulse) + extra, 0.0, 0.06 + extra
-	)
+	var rim := clampf(0.9 * _wind + 0.6 * _hit + _late * (0.3 + 0.15 * pulse), 0.0, 1.0)
+	glow_overlay.set_shader_parameter("rim", rim * BossBodyGlow.RIM_MAX)
+	# The whole-body fill: only a body's own extra read (a final boss's body cracking as it shatters).
+	glow_overlay.set_shader_parameter("fill", clampf(_extra_glow(), 0.0, 1.0))
 
 
 ## The boss kneels at a phase change (the sim's 1 s gate). A save made before BH1 may still hold a
@@ -831,9 +821,20 @@ func bone(
 	skeleton.set_bone_pose_position(k, skeleton.get_bone_rest(k).origin + offset)
 
 
-## The glow overlay's strength now (0..1), for tests.
+## The overlay's strength now (its rim plus its whole-body fill), for tests.
 func glow_amount() -> float:
-	return glow_overlay.albedo_color.a if glow_overlay != null else 0.0
+	if glow_overlay == null:
+		return 0.0
+	return (
+		float(glow_overlay.get_shader_parameter("rim"))
+		+ float(glow_overlay.get_shader_parameter("fill"))
+	)
+
+
+## Sets the whole-body fill's colour (a body's own extra read: a flash, a sheen).
+func _set_fill_color(c: Color) -> void:
+	if glow_overlay != null:
+		glow_overlay.set_shader_parameter("fill_color", Color(c, 1.0))
 
 
 ## Subclasses build their code-built body with `parts` under `model`.

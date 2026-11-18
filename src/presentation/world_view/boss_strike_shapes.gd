@@ -13,7 +13,6 @@ const DUST := Color(0.64, 0.58, 0.52)
 const STEAM := Color(0.86, 0.87, 0.9)
 ## Where the owner's rings sit in their quads (the ring's radius over the quad's side).
 const DUST_RING_R := 0.4
-const LIGHT_RING_R := 0.42
 ## The widest dust front (m) drawn with the owner's ring (_dust_front); wider ones keep the code band.
 const DUST_RING_MAX_M := 6.0
 
@@ -23,7 +22,6 @@ var arc_add := []
 var arc_mix := []
 ## Which owner textures are installed (the rings and steam draw their code bands without them).
 var _dust_tex := BossStrikeMeshes.textured("fx_dust_ring")
-var _light_tex := BossStrikeMeshes.textured("fx_light_ring")
 var _steam_tex := VfxCore.has_tex("fx_steam_puffs")
 var _skid_tex := BossStrikeMeshes.textured("fx_skid_marks")
 
@@ -378,10 +376,15 @@ func _light_burst(c2: Vector2, r: float, age: float, life: float, sd: int, glow:
 	var c := SimPlane.to_3d(c2)
 	var u := clampf(age / 12.0, 0.0, 1.0)
 	var fade := _fade(age, life, 18.0)
-	_band(&"band_add", c, r * (0.4 + 1.1 * u), 0.8, Color(glow, fade), 2.0, sd)
-	_band(&"band_add", c, r * (0.2 + 0.7 * u), 1.4, Color(0.85, 0.6, 1.0, fade * 0.8), 1.6, sd + 1)
+	# A low edge running out on the floor and a short, dim column: the pack's pillar carries the light.
+	_band(&"band_add", c, r * (0.4 + 1.1 * u), 0.2, Color(glow, fade * 0.5), 1.0, sd)
 	_tube(
-		c, c + Vector3.UP * 4.5 * (1.0 - u * 0.5), r * 0.3 * (1.0 - u), Color(glow, fade), 2.0, sd
+		c,
+		c + Vector3.UP * 2.0 * (1.0 - u * 0.5),
+		r * 0.22 * (1.0 - u),
+		Color(glow, fade * 0.55),
+		0.9,
+		sd
 	)
 	_ground(
 		c, Vector3.RIGHT, r * 2.0, r * 2.0, BossStrikeMeshes.G_CRATER, 1.0 - u, fade * 0.6, glow, sd
@@ -400,15 +403,12 @@ func _ring(s: Dictionary, age: float, life: float) -> void:
 		&"light_ring":
 			var u := clampf(age / 8.0, 0.0, 1.0)
 			var r := lerpf(r0, r1, 1.0 - (1.0 - u) * (1.0 - u))
-			if _light_tex:  # The owner's light ring flat on the floor, a low glow standing on it
-				var side := r / LIGHT_RING_R
-				_ground(
-					c, Vector3.RIGHT, side, side, BossStrikeMeshes.G_LIGHT_RING, 1.0, fade, glow, sd
-				)
-				_band(&"band_add", c, r, 0.35, Color(glow, fade * 0.6), 1.6, sd)
-			else:
-				_band(&"band_add", c, r, 0.9, Color(glow, fade), 2.2, sd)
-			_band(&"band_add", c, r * 0.85, 0.5, Color(0.85, 0.6, 1.0, fade * 0.7), 1.6, sd + 1)
+			# A darker wave on the floor with a thin bright edge: no standing walls of light, and no sparkling
+			# light-ring texture (it read as neon over the flat floor); the pack's pulse rolls under it.
+			_band(
+				&"band_mix", c, r * 0.9, 0.12, Color(glow.darkened(0.65), fade * 0.5), 1.0, sd + 1
+			)
+			_band(&"band_add", c, r, 0.1, Color(glow, fade * 0.55), 1.2, sd)
 		&"shock_ring":
 			var u := clampf(age / 24.0, 0.0, 1.0)
 			var r := lerpf(r0, r1, u)
