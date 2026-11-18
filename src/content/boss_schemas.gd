@@ -151,8 +151,9 @@ const MOVES := {
 			"snuff",  # The Snuff puts out the nearest lantern (BossShade)
 		],
 	},
-	## `count` crosses of two lanes (the player's row and column, length_m long), stagger_seconds apart,
-	## tracked then locked like `marks`; cut short by walls.
+	## `count` volleys of lanes out of the boss's edge toward the player (one through them and, with spread_degrees,
+	## one more each side), length_m long, stagger_seconds apart, tracked then locked like `marks`; cut short by walls.
+	## With speed_mps the lanes rise outward from the boss at that speed, each slice striking on its own tick.
 	## With pillar_seconds the struck lanes leave stone pillars (pillar_m a side,
 	## pillar_step_m apart) that stand as walls for pillar_seconds (the Gatekeeper's Stone Spikes that stay).
 	&"row_lanes":
@@ -160,7 +161,15 @@ const MOVES := {
 		"shape": 2,
 		"params": ["count", "length_m", "width_m", "stagger_seconds"],
 		"optional":
-		["pillar_seconds", "pillar_m", "pillar_step_m", "second_seconds", "second_offset_m"],  # BH2
+		[
+			"pillar_seconds",
+			"pillar_m",
+			"pillar_step_m",
+			"second_seconds",
+			"second_offset_m",
+			"spread_degrees",
+			"speed_mps",
+		],
 	},
 	## A checkerboard of `count` × `count` ground circles (count odd; radius_m each, cell_m apart) centred
 	## on the player's exact position until the attack's lock_seconds, then locked; `volleys` strikes stagger_seconds

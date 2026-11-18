@@ -4,7 +4,7 @@ extends Node3D
 ## the wave's front, the dry circle and every hit are the sim's, BossDance).
 ## - Riptide, the warning: each of the four strips is a floor quad of the reader's exact rectangle. The three struck
 ##   ones fill with clear water that rises with `warn` (streaks running along the strip, a foam edge) and the pack's
-##   water ripple (tc_rip_water) on each; the dry one stays clear, a warm tint inside a bright pulsing border.
+##   water ripple (tc_rip_water) on each; the dry one draws nothing: it is bare floor.
 ## - Riptide, the wave: a wall of water runs down each struck strip at `front` (the crossing waves' curling band,
 ##   TideWaveViews.wave_mesh, three times as tall and as wide as the strip), the strip behind it flooded, the ripple
 ##   riding the front; a hit (`riptide_hit`) bursts the pack's splash (tc_splash) on the hero.
@@ -57,7 +57,6 @@ render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabl
 uniform vec4 sea : source_color = vec4(0.42, 0.86, 1.0, 1.0);
 uniform vec4 deep : source_color = vec4(0.04, 0.22, 0.5, 1.0);
 uniform vec4 foam : source_color = vec4(0.9, 0.98, 1.0, 1.0);
-uniform vec4 dry : source_color = vec4(1.0, 0.86, 0.5, 1.0);
 uniform float struck = 1.0;
 uniform float warn = 0.0;    // 0..1 through the warning
 uniform float front = -1.0;  // 0..1 along the strip once the wave runs, -1 before
@@ -80,13 +79,12 @@ void fragment() {
 	float u = along_x > 0.5 ? UV.x : 1.0 - UV.y;  // along the strip, 0 at the room's low end
 	float v = along_x > 0.5 ? UV.y : UV.x;        // across it
 	float side_m = min(v, 1.0 - v) * width_m;
-	float end_m = min(u, 1.0 - u) * length_m;
 	vec2 p = vec2(u * length_m, v * width_m);
 	if (struck > 0.5) {
 		float n = texture(noise_tex, p * 0.07 + vec2(-clock * 0.06, clock * 0.02)).r;
 		float behind = front >= 0.0 ? smoothstep(front + 0.01, front - 0.01, u) : 0.0;
 		float level = max(warn, behind);
-		float flow = fract(p.x * 0.18 - clock * (0.5 + 1.2 * level) + n * 0.6);
+		float flow = fract(p.x * 0.18 - clock * 1.1 + n * 0.6);
 		float streak = smoothstep(0.7, 0.95, flow) * smoothstep(0.25, 0.75, n + 0.3);
 		float border = smoothstep(0.4, 0.0, side_m);
 		vec3 col = mix(deep.rgb, sea.rgb, 0.3 + 0.45 * n + 0.35 * streak);
@@ -94,11 +92,7 @@ void fragment() {
 		ALBEDO = col * (1.0 + 0.3 * level);
 		ALPHA = clamp(alpha * (0.1 + 0.4 * level + 0.2 * streak * level + 0.45 * border), 0.0, 0.66) * inside;
 	} else {
-		float pulse = 0.72 + 0.28 * sin(clock * 5.0);
-		float border = max(smoothstep(0.45, 0.0, side_m), smoothstep(0.3, 0.0, end_m));
-		float inner = smoothstep(0.9, 0.55, side_m) * smoothstep(0.35, 0.55, side_m);
-		ALBEDO = mix(dry.rgb, vec3(1.0, 0.98, 0.9), border) * (1.0 + 1.2 * border);
-		ALPHA = clamp(alpha * (0.1 + 0.8 * border * pulse + 0.25 * inner), 0.0, 0.9) * inside;
+		ALPHA = 0.0;  // the dry strip is bare floor
 	}
 }
 """
@@ -206,7 +200,6 @@ func _init() -> void:
 		sm.set_shader_parameter("sea", SEA)
 		sm.set_shader_parameter("deep", DEEP)
 		sm.set_shader_parameter("foam", FOAM)
-		sm.set_shader_parameter("dry", DRY)
 		_strips.append(_mesh(plane, sm))
 		_strip_mats.append(sm)
 		var wm := _material(band, noise)

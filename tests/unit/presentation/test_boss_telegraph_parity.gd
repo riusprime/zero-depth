@@ -70,8 +70,8 @@ func _in_any_lane(obbs: Array, p: Vector2, r: float) -> bool:
 func test_gatekeeper_lanes() -> void:
 	var pr := _pr()
 	var tg: Dictionary = _attack(&"gatekeeper", &"shock_lanes", Vector2(8, 0), Vector2(8, 0))[1]
-	var obbs: Array = tg["items"][0]["obbs"]  # v0.7.5 BF1: the player's row and column
-	assert_eq(obbs.size(), 2)
+	var obbs: Array = tg["items"][0]["obbs"]  # the lane through the player and one each side
+	assert_eq(obbs.size(), 3)
 	var side: Obb = obbs[0]
 	# Points across the row 3 m along it, and off it.
 	var c := side.center + side.axis_u * 3.0

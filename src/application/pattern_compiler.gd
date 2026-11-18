@@ -29,8 +29,12 @@ static func compile_boss_attack(
 	if sp.has("aim_degrees"):  # A fixed aim, 1/4096 turns
 		t.fixed_aim = int(round(float(sp["aim_degrees"]) * 4096.0 / 360.0)) & 4095
 	t.mark_gap_ticks = SimTick.seconds_to_ticks(float(sp.get("stagger_seconds", 0.0)))
-	if t.move == BossAttackTable.Move.MARKS or t.move == BossAttackTable.Move.ROW_LANES:
+	if t.move == BossAttackTable.Move.MARKS:
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 1)
+	if t.move == BossAttackTable.Move.ROW_LANES:  # Until its last lanes have run out
+		t.active_ticks = maxi(
+			t.active_ticks, (t.count - 1) * t.mark_gap_ticks + t.lane_wave_ticks()
+		)
 	if t.move == BossAttackTable.Move.GRID:  # Until its last volley strikes
 		t.active_ticks = maxi(t.active_ticks, (t.volleys - 1) * t.mark_gap_ticks + 1)
 	if t.move == BossAttackTable.Move.COMBO:  # Until the slam after its last swing
@@ -53,8 +57,10 @@ static func compile_boss_attack(
 	_compile_tide(def, t)
 	_compile_judge(def, t)
 	ShadeCompiler.compile_attack(def, t)  # Lights Out's dark, the Snuff
-	if t.pillar_ticks > 0:  # The last cross's pillars rise the tick after it strikes
-		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 2)
+	if t.pillar_ticks > 0:  # The last volley's pillars rise the tick after its lanes ran out
+		t.active_ticks = maxi(
+			t.active_ticks, (t.count - 1) * t.mark_gap_ticks + t.lane_wave_ticks() + 1
+		)
 	HardCompiler.compile_attack(def, t)  # The five harder spells (a second cross lengthens the active time)
 	WardensCompiler.compile_attack(def, t)  # A charge's burst, a sword combo's hits
 	if sp.has("pattern_id"):
