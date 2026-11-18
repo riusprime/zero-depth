@@ -38,8 +38,8 @@ const LAST := WorldReader.KIND_STAR_MOTE
 var enemy_tint := Color(0, 0, 0, 0)
 var role_glow := 0.0
 var outline := Color("#1A1A22")
-## Altars an actor stands on (ActorViews.grounds).
-var grounds: Array[AltarStage] = []
+## The raised tops an actor stands on (ActorViews.grounds).
+var grounds: Array[RaisedGround] = []
 ## The instances drawn by the last frame (bodies, shadows, bars; tests, probes).
 var drawn := 0
 var shadows_drawn := 0

@@ -59,9 +59,9 @@ var bolt_look := {}
 ## The heat tier (HeatLooks.TIER_*) read each sync; a new player bolt takes its colour
 ## (HeatLooks.attack_color: the bolt's own below Hot, orange at Hot, red at Overclock) and keeps it while it flies.
 var heat_tier := HeatLooks.TIER_COOL
-## The floor's altars (floor 1's arrival
-## altar, the final approach's); an actor on one is drawn on its stone (AltarStage.height_at), not sunk into it.
-var grounds: Array[AltarStage] = []
+## The floor's raised tops (floor 1's arrival altar, the final approach's, the Foundry's slabs); an actor over one
+## is drawn on its top (RaisedGround.height_at), not sunk into it.
+var grounds: Array[RaisedGround] = []
 ## The biome's cast on enemies (BiomeLook.enemy_tint): their grey and bone parts pulled toward its colour
 ## by its alpha (0: none). Red parts (the role-coloured parts, EnemyPalettes, all at or over
 ## GREY_SATURATION), rings and bars keep their colours, so identity never changes (PRESENTATION §3).

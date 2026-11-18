@@ -173,3 +173,27 @@ func test_every_owner_model_is_matte() -> void:
 			assert_eq(m.roughness, 1.0, "%s: rough" % who)
 			assert_null(m.roughness_texture, "%s: no roughness map" % who)
 			assert_lte(m.metallic_specular, 0.5, "%s: a soft specular" % who)
+
+
+func test_every_boss_body_is_lit_by_the_key_light_and_nothing_else_is() -> void:
+	for cls in [GatekeeperAvatar, FoundryAvatar, WarlordAvatar, SiegeEngineAvatar]:
+		var a: BossAvatar = _avatar(cls)
+		var who := String(a.get_script().get_global_name())
+		for g: Node in a.model.find_children("*", "GeometryInstance3D", true, false):
+			var layers := (g as GeometryInstance3D).layers
+			assert_true(
+				layers & BossKeyLight.LAYER != 0, "%s %s: on the key light's layer" % [who, g.name]
+			)
+			assert_true(layers & 1 != 0, "%s %s: still on its own layer" % [who, g.name])
+	var light := BossKeyLight.new()
+	add_child_autofree(light)
+	assert_eq(light.light_cull_mask, BossKeyLight.LAYER, "it lights the bosses' bodies only")
+	assert_false(light.shadow_enabled, "no shadow")
+	assert_eq(light.light_specular, 0.0, "no shine on the matte bodies")
+	var toward := -light.global_basis.z
+	assert_lt(toward.y, 0.0, "it shines down")
+	var cam_fwd := (
+		Basis.from_euler(Vector3(deg_to_rad(-35.26), deg_to_rad(IsoRig.YAW_DEG), 0.0))
+		* Vector3.FORWARD
+	)
+	assert_gt(toward.dot(cam_fwd), 0.6, "from the camera's side, onto the faces it sees")

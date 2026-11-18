@@ -447,6 +447,8 @@ func _setup_views(palette: Dictionary) -> void:
 	telegraphs.prepare()  # Its shapes and look materials made now, not at the first windup
 	add_child(challenge)
 	add_child(actors)
+	actors.grounds.append(forge_slag)  # The hero stands on a slab's plinth, not inside it
+	add_child(BossKeyLight.new())
 	add_child(kit)
 	add_child(utility)
 	add_child(rig)

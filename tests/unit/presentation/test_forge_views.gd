@@ -218,6 +218,39 @@ func test_a_shattered_slab_is_not_drawn() -> void:
 	assert_eq(slag.slabs().size(), 0, "broken: nothing to stand on")
 
 
+func test_a_body_on_a_slab_stands_on_its_top_rising_onto_it_across_the_edge() -> void:
+	var s := _only(Vector2(-3, 0), LAST, ["slab"])
+	var w: World = s[0]
+	var r := WorldReader.new(w)
+	var slag: ForgeSlagViews = _view(ForgeSlagViews, _pack())
+	ForgeLab.slab(w, s[1], Vector2(3, 0), 300)
+	_run(w, r, [slag], 2)
+	var c := SimPlane.to_3d(Vector2(3, 0))
+	var rad := float(slag.slabs()[0]["radius"])
+	assert_true(slag is RaisedGround, "ActorViews lifts whoever stands on it")
+	assert_almost_eq(slag.height_at(c), ForgeLooks.PLINTH_H, 0.001, "the centre: on the top")
+	var inner := c + Vector3(rad - ForgeSlagViews.STEP_BAND, 0, 0)
+	assert_almost_eq(
+		slag.height_at(inner), ForgeLooks.PLINTH_H, 0.001, "on the top inside the band"
+	)
+	assert_eq(slag.height_at(c + Vector3(rad + 0.3, 0, 0)), 0.0, "off it: the floor")
+	var last := -1.0
+	for k in 9:  # stepping on from just outside the edge: a smooth rise, no jump
+		var d := rad + ForgeSlagViews.STEP_OUT - ForgeSlagViews.STEP_BAND * float(k) / 8.0
+		var h := slag.height_at(c + Vector3(0, 0, d))
+		assert_gte(h, last, "it only rises")
+		assert_lt(h - maxf(last, 0.0), ForgeLooks.PLINTH_H * 0.4, "in steps, not a pop")
+		last = h
+	assert_almost_eq(last, ForgeLooks.PLINTH_H, 0.001)
+	var sinking := func() -> bool: return int(r.boss_forge()["slabs"][0]["left"]) <= 20
+	assert_true(_until(w, r, [slag], sinking, 600))
+	assert_lt(slag.height_at(c), ForgeLooks.PLINTH_H * 0.6, "lower as it sinks into the floor")
+	var gone := func() -> bool: return r.boss_forge()["slabs"].is_empty()
+	assert_true(_until(w, r, [slag], gone, 60))
+	_run(w, r, [slag], 1)
+	assert_eq(slag.height_at(c), 0.0, "crumbled: back on the floor")
+
+
 func test_overpressure_heats_the_floor_around_the_slabs_and_burns_the_edge_off_a_slab() -> void:
 	var s := _only(Vector2(-8, 0), LAST, ["over"])
 	var w: World = s[0]
