@@ -12,7 +12,8 @@ extends Node3D
 ## - The ghost trail: as each point strikes, a golden afterimage of the hero rises there (a translucent body and head
 ##   with a bright rim and an inner glow, fading up), a ring of light rolls out, gear filings spray, and a gold light
 ##   flashes on the newest strike.
-## - The Verdict: a brass pendulum (a long rod, a gavel weight with a hot seam) hangs over the tracked square and sways;
+## - The Verdict: an iron-and-brass pendulum (a long rod, a gavel weight with a hot seam that brightens as the square
+##   locks) hangs over the tracked square and sways;
 ##   as the square locks it is hauled back to its apex, and on the strike it swings down onto the square with a
 ##   shockwave and sparks.
 ## Effects density Low halves the filings and glints; reduced motion slows the turning and the sway. Nothing here
@@ -21,42 +22,57 @@ extends Node3D
 const MAX_POINTS := BossSchemas.ECHO_MAX_POINTS
 const GOLD := Color(1.0, 0.78, 0.3)
 const HOT := Color(1.0, 0.95, 0.72)
+## The dials' gold and ink, and the dark iron (a step over its model's texture's mean, so it catches the room's light
+## as the walls do) and brass of the pendulum and the stopped gears (the Judge's own).
+const DULL := Color(0.86, 0.66, 0.3)
+const DIAL_HOT := Color(0.98, 0.84, 0.5)
+const INK := Color(0.07, 0.06, 0.08)
+const IRON := Color("#6A5545")
+const BRASS := Color("#C8963F")
 const GHOST_S := 0.75
 const RING_S := 0.55
 const FILINGS_PER := 10
 const FILING_S := 0.6
 const PIVOT_H := 5.5
+## A clock dial drawn on the floor in dull gold lines edged in ink, with no light of its own: a toothed rim turning,
+## twelve ticks, a sweeping hand at `heat`'s turn, and a flat gold core that fills as `heat` nears 1 (the echo's
+## markers, the Time Wave's cast, the hour orbs).
 const ECHO_MARKER_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
+render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 
-uniform vec4 gold : source_color = vec4(1.0, 0.78, 0.3, 1.0);
-uniform vec4 hot : source_color = vec4(1.0, 0.95, 0.72, 1.0);
+uniform vec4 gold : source_color = vec4(0.86, 0.66, 0.3, 1.0);
+uniform vec4 hot : source_color = vec4(0.98, 0.84, 0.5, 1.0);
+uniform vec4 ink : source_color = vec4(0.07, 0.06, 0.08, 1.0);
 uniform float heat = 0.0;
 uniform float alpha = 0.0;
 uniform float clock = 0.0;
-uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
+
+float band(float d, float w) {
+	return smoothstep(w, w * 0.6, d);
+}
 
 void fragment() {
 	vec2 q = UV * 2.0 - 1.0;
 	float r = length(q);
-	float a = atan(q.y, q.x);
-	float turns = a / 6.2831853;
-	float n = texture(noise_tex, UV * 2.5 + vec2(clock * 0.04, -clock * 0.03)).r;
-	float rim = smoothstep(0.07, 0.0, abs(r - 0.88));
-	float teeth = step(0.5, fract(turns * 16.0 + clock * 0.25)) * smoothstep(0.09, 0.0, abs(r - 0.76));
-	float ticks = step(0.82, fract(turns * 12.0)) * smoothstep(0.1, 0.0, abs(r - 0.6));
+	float turns = atan(q.y, q.x) / 6.2831853;
+	float tooth = step(0.5, fract(turns * 16.0 + clock * 0.25));
+	float tick = step(0.82, fract(turns * 12.0));
 	float ang = 1.5707963 - heat * 6.2831853;
 	vec2 d = vec2(cos(ang), sin(ang));
 	float along = dot(q, d);
 	float off = abs(q.x * d.y - q.y * d.x);
-	float hand = step(0.0, along) * step(along, 0.62) * smoothstep(0.05, 0.0, off);
-	float core = smoothstep(0.62, 0.0, r) * heat * heat;
-	float fill = smoothstep(0.9, 0.2, r) * (0.12 + 0.18 * n);
-	float lit = max(rim, max(teeth * 0.75, max(ticks * 0.55, max(hand, core))));
-	vec3 col = mix(gold.rgb, hot.rgb, clamp(heat * 1.2 + lit * 0.3, 0.0, 1.0));
-	ALBEDO = col * (0.5 + 1.6 * lit + 0.6 * n * fill);
-	ALPHA = clamp(alpha * (lit + fill), 0.0, 1.0) * smoothstep(1.0, 0.93, r);
+	float on_hand = step(0.0, along) * step(along, 0.62);
+	float line = max(band(abs(r - 0.88), 0.035), tooth * band(abs(r - 0.76), 0.045));
+	line = max(line, max(tick * band(abs(r - 0.6), 0.05), on_hand * band(off, 0.03)));
+	float inked = max(band(abs(r - 0.88), 0.07), tooth * band(abs(r - 0.76), 0.08));
+	inked = max(inked, max(tick * band(abs(r - 0.6), 0.085), on_hand * band(off, 0.06)));
+	float core = smoothstep(0.52, 0.49, r) * heat * heat;
+	vec3 col = mix(gold.rgb * 0.85, ink.rgb, inked);
+	col = mix(col, mix(gold.rgb, hot.rgb, heat * 0.6), line);
+	float a = max(core * 0.5, max(inked * 0.75, line));
+	ALBEDO = col;
+	ALPHA = clamp(alpha * a, 0.0, 1.0) * smoothstep(1.0, 0.96, r);
 }
 """
 
@@ -85,8 +101,9 @@ var _clock := 0.0
 var _show := 0.0
 ## The Verdict's pendulum.
 var _pendulum := Node3D.new()
-var _pendulum_mat := StandardMaterial3D.new()
+var _pendulum_mat: StandardMaterial3D
 var _seam_mat := StandardMaterial3D.new()
+var _brass_mat: StandardMaterial3D
 var _verdict := {}
 var _verdict_at := Vector3.ZERO
 var _swing := 0.0
@@ -106,17 +123,15 @@ func _init() -> void:
 		m.mesh = plane
 		var mat := ShaderMaterial.new()
 		mat.shader = sh
-		mat.set_shader_parameter("gold", GOLD)
-		mat.set_shader_parameter("hot", HOT)
-		mat.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+		dial_colours(mat)
 		m.material_override = mat
 		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		m.visible = false
 		add_child(m)
 		_markers.append(m)
 		_marker_mats.append(mat)
-	_ribbon.multimesh = _segments(0.06, _glow_mat(HOT, 1.6, 0.9))
-	_halo.multimesh = _segments(0.32, _glow_mat(GOLD, 1.0, 0.28))
+	_ribbon.multimesh = _segments(0.06, _glow_mat(GOLD, 0.8, 0.8))
+	_halo.multimesh = _segments(0.24, _glow_mat(GOLD, 0.45, 0.2))
 	for mmi: MultiMeshInstance3D in [_ribbon, _halo]:
 		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(mmi)
@@ -125,14 +140,14 @@ func _init() -> void:
 	glint.height = 0.18
 	glint.radial_segments = 8
 	glint.rings = 4
-	glint.material = _glow_mat(GOLD, 2.2, 0.8)
+	glint.material = _glow_mat(GOLD, 1.0, 0.7)
 	_glints.multimesh = _multi(glint, MAX_POINTS)
 	_glints.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_glints)
 	_build_ghosts()
 	var filing := BoxMesh.new()
 	filing.size = Vector3(0.06, 0.02, 0.14)
-	filing.material = _glow_mat(HOT, 1.6, 1.0)
+	filing.material = _glow_mat(GOLD, 0.9, 0.9)
 	_filings.multimesh = _multi(filing, MAX_POINTS * FILINGS_PER)
 	_filings.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_filings)
@@ -142,6 +157,13 @@ func _init() -> void:
 	_light.shadow_enabled = false
 	add_child(_light)
 	_build_pendulum()
+
+
+## A dial material's colours (ECHO_MARKER_SHADER): dull gold lines, a warmer gold as its heat rises, ink edges.
+static func dial_colours(mat: ShaderMaterial) -> void:
+	mat.set_shader_parameter("gold", DULL)
+	mat.set_shader_parameter("hot", DIAL_HOT)
+	mat.set_shader_parameter("ink", INK)
 
 
 ## A strip mesh of up to MAX_POINTS segments `width` wide (a unit box stretched along each segment).
@@ -204,7 +226,7 @@ func _build_ghosts() -> void:
 		col.height = 2.2
 		inner.mesh = col
 		inner.position = Vector3(0, 1.1, 0)
-		var im := _glow_mat(HOT, 1.2, 0.0)
+		var im := _glow_mat(GOLD, 0.6, 0.0)
 		inner.material_override = im
 		_inner_mats.append(im)
 		for part: MeshInstance3D in [torso, head, inner]:
@@ -217,11 +239,11 @@ func _build_ghosts() -> void:
 		_ghost_t.append(1.0)
 		var ring := MeshInstance3D.new()
 		var torus := TorusMesh.new()
-		torus.inner_radius = 0.86
+		torus.inner_radius = 0.94
 		torus.outer_radius = 1.0
 		torus.rings = 40
 		ring.mesh = torus
-		var rm := _glow_mat(GOLD, 1.2, 0.0)
+		var rm := _glow_mat(GOLD, 0.7, 0.0)
 		ring.material_override = rm
 		ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		ring.visible = false
@@ -230,43 +252,35 @@ func _build_ghosts() -> void:
 		_ring_mats.append(rm)
 
 
-## The Verdict's pendulum: a long brass rod from a pivot high over the square, a gavel weight with a hot seam, and its
-## impact shockwave.
+## The Verdict's pendulum, in the Judge's own dark iron and brass, lit like its model (JudgeGearMesh.lit()) and opaque
+## (so the ink pass outlines it; it fades out dithered): a square iron rod from a pivot high over the square with brass
+## collars, an iron gavel weight with brass caps, a hot seam round the weight (the only part that glows), and its impact
+## shockwave.
 func _build_pendulum() -> void:
-	_pendulum_mat.albedo_color = Color("#B8862E")
-	_pendulum_mat.metallic = 0.85
-	_pendulum_mat.roughness = 0.3
-	_pendulum_mat.emission_enabled = true
-	_pendulum_mat.emission = GOLD
-	_pendulum_mat.emission_energy_multiplier = 0.4
-	_pendulum_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	var rod := MeshInstance3D.new()
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = 0.05
-	cyl.bottom_radius = 0.05
-	cyl.height = PIVOT_H - 0.6
-	rod.mesh = cyl
-	rod.position = Vector3(0, -(PIVOT_H - 0.6) * 0.5, 0)
-	rod.material_override = _pendulum_mat
-	var head := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = Vector3(1.2, 0.55, 0.55)
-	head.mesh = box
-	head.position = Vector3(0, -(PIVOT_H - 0.35), 0)
-	head.material_override = _pendulum_mat
-	var seam := MeshInstance3D.new()
-	var band := BoxMesh.new()
-	band.size = Vector3(1.24, 0.08, 0.59)
-	seam.mesh = band
-	seam.position = head.position
+	_pendulum_mat = JudgeGearMesh.lit(IRON)
+	_brass_mat = JudgeGearMesh.lit(BRASS)
+	for m: StandardMaterial3D in [_pendulum_mat, _brass_mat]:
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_HASH
+	var rod_h := PIVOT_H - 0.6
+	var head_y := -(PIVOT_H - 0.35)
+	var parts: Array[MeshInstance3D] = [
+		_box(Vector3(0.13, rod_h, 0.13), Vector3(0, -rod_h * 0.5, 0), _pendulum_mat),
+		_box(Vector3(0.24, 0.16, 0.24), Vector3(0, -0.25, 0), _brass_mat),
+		_box(Vector3(0.24, 0.16, 0.24), Vector3(0, head_y + 0.42, 0), _brass_mat),
+		_box(Vector3(1.0, 0.55, 0.55), Vector3(0, head_y, 0), _pendulum_mat),
+		_box(Vector3(0.14, 0.66, 0.66), Vector3(-0.55, head_y, 0), _brass_mat),
+		_box(Vector3(0.14, 0.66, 0.66), Vector3(0.55, head_y, 0), _brass_mat),
+	]
+	var seam := _box(Vector3(1.03, 0.07, 0.58), Vector3(0, head_y, 0), _seam_mat)
 	_seam_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_seam_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_seam_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	_seam_mat.albedo_color = Color(HOT * 2.0, 0.0)
-	seam.material_override = _seam_mat
-	for part: MeshInstance3D in [rod, head, seam]:
-		part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for part in parts:
+		part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		_pendulum.add_child(part)
+	seam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_pendulum.add_child(seam)
 	_pendulum.visible = false
 	add_child(_pendulum)
 	var torus := TorusMesh.new()
@@ -329,8 +343,18 @@ func advance(delta: float) -> void:
 	_draw_ghosts(delta)
 	_draw_filings(delta)
 	_light_t = minf(1.0, _light_t + delta / 0.35)
-	_light.light_energy = 1.6 * (1.0 - _light_t)
+	_light.light_energy = 0.8 * (1.0 - _light_t)
 	_draw_pendulum(delta, calm)
+
+
+func _box(size: Vector3, at: Vector3, mat: Material) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = size
+	mi.mesh = box
+	mi.position = at
+	mi.material_override = mat
+	return mi
 
 
 func _settled() -> bool:
@@ -403,8 +427,8 @@ func _draw_path(phase: int) -> void:
 		segs += 1
 	_ribbon.multimesh.visible_instance_count = segs
 	_halo.multimesh.visible_instance_count = segs
-	(_ribbon.multimesh.mesh.material as StandardMaterial3D).albedo_color.a = 0.9 * _show
-	(_halo.multimesh.mesh.material as StandardMaterial3D).albedo_color.a = 0.28 * _show
+	(_ribbon.multimesh.mesh.material as StandardMaterial3D).albedo_color.a = 0.8 * _show
+	(_halo.multimesh.mesh.material as StandardMaterial3D).albedo_color.a = 0.2 * _show
 
 
 ## A ghost strike lands at `at`: its afterimage rises, a ring rolls out, gear filings spray, the light flashes.
@@ -437,12 +461,12 @@ func _draw_ghosts(delta: float) -> void:
 		var g := _ghosts[s]
 		g.scale = Vector3.ONE * (1.0 + 0.25 * t)
 		g.position.y = 0.6 * t * t
-		_ghost_mats[s].albedo_color = Color(GOLD * 0.6, 0.25 * fade)
-		_inner_mats[s].albedo_color.a = 0.3 * fade * fade
+		_ghost_mats[s].albedo_color = Color(GOLD * 0.6, 0.16 * fade)
+		_inner_mats[s].albedo_color.a = 0.12 * fade * fade
 		var rt := clampf(t * GHOST_S / RING_S, 0.0, 1.0)
 		var r := lerpf(0.4, 2.2, ease(rt, 0.5))
 		_rings[s].scale = Vector3(r, 0.5, r)
-		_ring_mats[s].albedo_color.a = 0.8 * (1.0 - rt)
+		_ring_mats[s].albedo_color.a = 0.55 * (1.0 - rt)
 
 
 func _draw_filings(delta: float) -> void:
@@ -486,7 +510,7 @@ func _draw_pendulum(delta: float, calm: float) -> void:
 	_pendulum.rotation = Vector3(0, 0, _swing)
 	var fade := 1.0 if tracking else 1.0 - clampf((_drop_t - 0.25) / 0.75, 0.0, 1.0)
 	_pendulum_mat.albedo_color.a = fade
-	_pendulum_mat.emission_energy_multiplier = 0.4 + (1.6 if locked else 0.0)
+	_brass_mat.albedo_color.a = fade
 	_seam_mat.albedo_color.a = (0.9 if locked else 0.3) * fade
 	var hit := not tracking and _drop_t >= 0.2
 	# Only a brief faint gold ring as it lands: the hit itself is the stone slam (BossStrikeImpacts)

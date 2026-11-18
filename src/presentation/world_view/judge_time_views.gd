@@ -2,18 +2,23 @@ class_name JudgeTimeViews
 extends Node3D
 ## The Clockwork Judge's Time Wave and what it leaves in the room, drawn from WorldReader.boss_time, boss_pickups and
 ## boss_shot_fields (EI-07: it reads; the cut, the walls and the slowed shots are the sim's).
-## - The cast: a clock dial on the floor under the Judge whose hand goes round once through the cast, a gold ring
-##   closing on it, and the pack's rising area (cj_cast: lift_area_vfx_04) held on it.
-## - The wave: when it lands (the `time_wave` event) a gold ring runs out from the Judge across the whole room, with
-##   the pack's pulse (cj_pulse: pulse_area_vfx_04) on the Judge and on the hero it has just slowed.
+## - The cast: a clock dial drawn in dull gold and ink lines on the floor under the Judge whose hand goes round once
+##   through the cast, a thin gold ring closing on it, and the pack's rising area (cj_cast: lift_area_vfx_04) held on
+##   it, pressed flat so its light stays on the floor and off the Judge.
+## - The wave: when it lands (the `time_wave` event) a thin gold line ringed in ink, with a clock's ticks inside it,
+##   runs out from the Judge across the whole room, and the pack's pulse (cj_pulse: pulse_area_vfx_04) bursts on the
+##   hero it has just slowed.
 ## - The hour orbs: each is the pack's Basic Area 04 (cj_orb) sized to the disc the hero must touch, over a clock dial
-##   of that exact radius, with a small clock standing above it. An orb that runs down (the last phase) shows it: the
-##   clock's hand and the dial's go round once over its life and the effect shrinks. Taking one bursts the pulse.
-## - The stopped gears: each wall is a brass cog standing across the floor, set low enough that the hero shows over
-##   it, cutting the floor along the wall's whole length and as thick as the wall, over a lit strip of the wall's
-##   exact footprint. It rolls up out of the floor when placed and sinks back at its end.
-## - The slow fields: a cool rippling disc of the field's radius under the pack's ripple (cj_field:
-##   ripple_area_vfx_05 in blue, played slowly), fading over its last second.
+##   of that exact radius, with a small brass clock standing above it (matte, lit by the sun, outlined by the ink
+##   pass). An orb that runs down (the last phase) shows it: the clock's hand and the dial's go round once over its
+##   life and the effect shrinks. Taking one bursts the pulse.
+## - The stopped gears: each wall is the Judge's own gear (JudgeGearMesh: dark iron, a gold band and hub) standing
+##   across the floor, set low enough that the hero shows over it, cutting the floor along the wall's whole length and
+##   as thick as the wall, in a dark crack of the wall's exact footprint. It rolls up out of the floor when placed and
+##   sinks back at its end, each time throwing up chunks, grit and dust of the floor's stone along its length
+##   (GroundSlamViews).
+## - The slow fields: a cool, dark blue rippling disc of the field's radius, its rim kept clear, under the pack's
+##   ripple (cj_field: ripple_area_vfx_05 in dark blue, played slowly), fading over its last second.
 ## Every slot is built hidden at the start and the first orb and gear are marked for the floor's shader warm-up, so
 ## their materials are drawn once before the fight. Reduced motion
 ## stills the roll, the bob and the ripples. Nothing here decides an outcome.
@@ -21,10 +26,16 @@ extends Node3D
 const GOLD := JudgeViews.GOLD
 const HOT := JudgeViews.HOT
 const BRASS := Color("#B8862E")
-const FACE := Color("#E8DDB8")
+const FACE := Color("#D9C89A")
 const IRON := Color("#1E1C1F")
-const COOL := Color(0.3, 0.55, 1.0)
-const PALE := Color(0.82, 0.92, 1.0)
+## The slow fields' blues: cooler and darker than the hero's cyan.
+const COOL := Color(0.16, 0.26, 0.52)
+const PALE := Color(0.5, 0.62, 0.82)
+## The rings' gold, unlit and kept under the glow's threshold, and their ink.
+const DULL := Color(0.86, 0.66, 0.3)
+const INK := Color(0.07, 0.06, 0.08)
+## The crack a gear stands in.
+const CRACK := Color(0.06, 0.05, 0.06, 0.9)
 const ORB_ID := &"cj_orb"
 const FIELD_ID := &"cj_field"
 const CAST_ID := &"cj_cast"
@@ -39,21 +50,31 @@ const ORB_PER_M := 0.7
 const FIELD_PER_M := 0.52
 const CAST_SCALE := 1.3
 const PULSE_PER_M := 0.45
-## The wave's ring: seconds to cross, how far it runs (past any boss room's corner), its band (m).
+## The wave's ring: seconds to cross, how far it runs (past any boss room's corner), its line's width (m).
 const WAVE_S := 0.9
 const WAVE_REACH_M := 34.0
-const WAVE_BAND_M := 1.6
+const WAVE_BAND_M := 0.22
+## The cast's pack area pressed flat (its height's share), so its rising light stays below the Judge's knees.
+const CAST_FLAT := 0.18
 const CAST_DIAL_M := 3.4
 const CAST_RING_FROM_M := 7.0
 ## The clock over an orb: its height, its bob, and how fast its hand turns while the orb does not run down.
 const CLOCK_H := 1.55
 const CLOCK_BOB := 0.08
 const CLOCK_IDLE_TURN := TAU / 8.0
+## How far the clock's face tips back from upright toward the sky (rad).
+const CLOCK_TIP := 1.0
 ## A gear's rise and sink (ticks) and its teeth.
 const GEAR_RISE_TICKS := 24.0
 const GEAR_SINK_TICKS := 36.0
-const GEAR_TEETH := 12
 const GEAR_ROLL := 1.4
+## The floor a gear throws up: grit and dust at points this far apart along it, and the chunks' share as it rises and
+## as it sinks.
+const GEAR_KICK_STEP_M := 0.8
+const GEAR_KICK_SIZE := 0.32
+const GEAR_CHUNKS_UP := 0.6
+const GEAR_CHUNKS_DOWN := 0.35
+const GEAR_SLAM_PARTS := GroundSlamViews.P_MID | GroundSlamViews.P_GRIT | GroundSlamViews.P_DUST
 ## How far under the floor a standing gear's axle lies, as a share of its radius (its top then stands 0.6 of it).
 const GEAR_SUNK := 0.4
 const FIELD_FADE_TICKS := 60.0
@@ -84,6 +105,33 @@ void fragment() {
 	ALPHA = clamp(alpha * lit, 0.0, 1.0) * smoothstep(1.0, 0.97, r);
 }
 """
+## The Time Wave's ring and the cast's closing ring: a thin gold line edged in ink with a clock's ticks just inside,
+## drawn over the floor without light of its own.
+const TIME_RING_SHADER := """
+shader_type spatial;
+render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
+
+uniform vec4 gold : source_color = vec4(0.86, 0.66, 0.3, 1.0);
+uniform vec4 ink : source_color = vec4(0.07, 0.06, 0.08, 1.0);
+uniform float alpha = 0.0;
+uniform float band = 0.1;
+uniform float clock = 0.0;
+
+void fragment() {
+	vec2 q = UV * 2.0 - 1.0;
+	float r = length(q);
+	float turns = atan(q.y, q.x) / 6.2831853;
+	float edge = 1.0 - band * 2.0;
+	float d = abs(r - edge);
+	float line = smoothstep(band * 0.5, band * 0.3, d);
+	float inked = smoothstep(band, band * 0.8, d);
+	float td = abs(r - (edge - band * 3.0));
+	float ticks = step(0.8, fract(turns * 60.0)) * smoothstep(band, band * 0.6, td);
+	float lit = max(line, ticks);
+	ALBEDO = mix(ink.rgb, gold.rgb, lit);
+	ALPHA = clamp(alpha * max(lit, inked * 0.7), 0.0, 1.0) * smoothstep(1.0, 0.99, r);
+}
+"""
 const FIELD_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
@@ -103,14 +151,17 @@ void fragment() {
 	float wave = 0.5 + 0.5 * sin((r * 4.0 + clock * 0.12) * 6.2831853);
 	float ripple = wave * wave * wave * wave * (1.0 - r) * 0.8;
 	float ticks = step(0.8, fract(turns * 12.0)) * smoothstep(0.06, 0.0, abs(r - 0.82));
-	float lit = max(rim, max(ripple * 0.5, ticks * 0.6));
-	ALBEDO = mix(cool.rgb, pale.rgb, lit) * (0.55 + 1.1 * lit);
-	ALPHA = clamp(alpha * (lit + 0.2 + 0.12 * n), 0.0, 0.9) * smoothstep(1.0, 0.96, r);
+	float inked = smoothstep(0.035, 0.015, abs(r - 0.985));
+	float body = max(ripple * 0.4, ticks * 0.5);
+	vec3 col = mix(cool.rgb, pale.rgb, max(rim, body * 0.6));
+	ALBEDO = mix(col, vec3(0.05, 0.06, 0.09), inked * (1.0 - rim));
+	ALPHA = clamp(alpha * max(inked * 0.9, rim + body + 0.16 + 0.08 * n), 0.0, 0.85);
+	ALPHA *= smoothstep(1.0, 0.99, r);
 }
 """
 
-static var _cog: ArrayMesh = null
-
+## The floor's chunks, grit and dust the gears throw up (WorldViewRoot hands it the biome's floor colours).
+var slams := GroundSlamViews.new(8)
 ## The pack's effects (WorldViewRoot hands them over; a view built alone draws its own layers only).
 var pack_fx: PackFx = null:
 	set(v):
@@ -136,6 +187,8 @@ var _orb_hands: Array[Node3D] = []
 var _gear_nodes: Array[Node3D] = []
 var _gear_wheels: Array[Node3D] = []
 var _gear_strips: Array[MeshInstance3D] = []
+## Per standing gear (by its place): 1 once it threw up the floor rising, 2 once it did sinking.
+var _gear_kicked := {}
 var _field_nodes: Array[MeshInstance3D] = []
 var _field_mats: Array[ShaderMaterial] = []
 var _wave := MeshInstance3D.new()
@@ -150,17 +203,19 @@ var _cast_dial_mat := ShaderMaterial.new()
 
 func _init() -> void:
 	name = "JudgeTimeViews"
+	add_child(slams)
 	var ring := Shader.new()
-	ring.code = WAVE_SHADER
+	ring.code = TIME_RING_SHADER
 	var dial := Shader.new()
 	dial.code = JudgeViews.ECHO_MARKER_SHADER
 	var disc := Shader.new()
 	disc.code = FIELD_SHADER
 	for pair: Array in [[_wave, _wave_mat], [_cast_ring, _cast_ring_mat]]:
 		_floor_quad(pair[0], pair[1], ring)
-		(pair[1] as ShaderMaterial).set_shader_parameter("gold", GOLD)
-		(pair[1] as ShaderMaterial).set_shader_parameter("hot", HOT)
+		(pair[1] as ShaderMaterial).set_shader_parameter("gold", DULL)
+		(pair[1] as ShaderMaterial).set_shader_parameter("ink", INK)
 	_floor_quad(_cast_dial, _cast_dial_mat, dial)
+	JudgeViews.dial_colours(_cast_dial_mat)
 	for k in ORBS:
 		_build_orb(dial)
 	for k in GEARS:
@@ -190,14 +245,9 @@ func _floor_quad(mi: MeshInstance3D, mat: ShaderMaterial, shader: Shader, to: No
 	(to if to != null else self).add_child(mi)
 
 
-static func _solid(c: Color, glow := 0.0, metal := 0.0) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = c
-	m.metallic = metal
-	m.roughness = 0.35 if metal > 0.0 else 0.8
-	m.emission_enabled = true
-	m.emission = GOLD if metal > 0.0 else c
-	m.emission_energy_multiplier = glow
+## A matte part lit like the game's models (JudgeGearMesh.lit()), seen from either side.
+static func _solid(c: Color) -> StandardMaterial3D:
+	var m := JudgeGearMesh.lit(c)
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return m
 
@@ -212,8 +262,9 @@ static func _part(to: Node3D, mesh: Mesh, mat: Material, at := Vector3.ZERO) -> 
 	return mi
 
 
-## An orb's slot: the dial on the floor (scaled to the orb's radius) and the small clock above it: a brass rim, a
-## pale face, four hour marks and two hands, turned to the camera when drawn.
+## An orb's slot: the dial on the floor (scaled to the orb's radius) and the small clock above it: a faceted brass
+## case (eight sides, thicker than its face, so it shows its edge), a parchment face, four hour marks and two hands,
+## turned to the camera and tipped back to the sky when drawn.
 func _build_orb(dial: Shader) -> void:
 	var node := Node3D.new()
 	node.visible = false
@@ -222,118 +273,72 @@ func _build_orb(dial: Shader) -> void:
 	var mat := ShaderMaterial.new()
 	_floor_quad(mi, mat, dial, node)
 	mi.visible = true
-	mat.set_shader_parameter("gold", GOLD)
-	mat.set_shader_parameter("hot", HOT)
+	JudgeViews.dial_colours(mat)
 	var clock := Node3D.new()
 	clock.rotation = Vector3(-0.6, 0.0, 0.0)
 	node.add_child(clock)
 	var rim := CylinderMesh.new()
-	rim.top_radius = 0.36
-	rim.bottom_radius = 0.36
-	rim.height = 0.08
-	rim.radial_segments = 12
+	rim.top_radius = 0.37
+	rim.bottom_radius = 0.37
+	rim.height = 0.16
+	rim.radial_segments = 8
 	rim.rings = 1
 	var flat := Vector3(PI * 0.5, 0.0, 0.0)  # a cylinder stood on its edge, its faces along Z
-	_part(clock, rim, _solid(BRASS, 0.5, 0.85)).rotation = flat
+	_part(clock, rim, _solid(BRASS)).rotation = flat
 	var face := CylinderMesh.new()
-	face.top_radius = 0.29
-	face.bottom_radius = 0.29
-	face.height = 0.1
-	face.radial_segments = 12
+	face.top_radius = 0.28
+	face.bottom_radius = 0.28
+	face.height = 0.18
+	face.radial_segments = 8
 	face.rings = 1
-	_part(clock, face, _solid(FACE, 0.9)).rotation = flat
+	_part(clock, face, _solid(FACE)).rotation = flat
 	var iron := _solid(IRON)
 	var mark := BoxMesh.new()
 	mark.size = Vector3(0.035, 0.07, 0.02)
 	for h in 4:
 		var a := TAU * float(h) / 4.0
-		var m := _part(clock, mark, iron, Vector3(sin(a) * 0.23, cos(a) * 0.23, 0.055))
+		var m := _part(clock, mark, iron, Vector3(sin(a) * 0.21, cos(a) * 0.21, 0.095))
 		m.rotation.z = -a
 	var hand := Node3D.new()
-	hand.position = Vector3(0, 0, 0.065)
+	hand.position = Vector3(0, 0, 0.105)
 	clock.add_child(hand)
 	var long := BoxMesh.new()
 	long.size = Vector3(0.04, 0.24, 0.02)
 	_part(hand, long, iron, Vector3(0, 0.11, 0))
 	var short := BoxMesh.new()
 	short.size = Vector3(0.05, 0.15, 0.02)
-	_part(clock, short, iron, Vector3(0.05, 0.04, 0.06)).rotation.z = -1.0
+	_part(clock, short, iron, Vector3(0.05, 0.04, 0.1)).rotation.z = -1.0
 	_orb_nodes.append(node)
 	_orb_dials.append(mat)
 	_orb_clocks.append(clock)
 	_orb_hands.append(hand)
 
 
-## A gear's slot: the cog (a unit wheel scaled to the wall's half length and its width), a lit inlay and an axle on
-## it, and the strip of the wall's footprint on the floor.
+## A gear's slot: the Judge's gear (a unit wheel scaled to the wall's half length and its width), casting its shadow,
+## and the dark crack of the wall's footprint it stands in.
 func _build_gear() -> void:
 	var node := Node3D.new()
 	node.visible = false
 	add_child(node)
 	var wheel := Node3D.new()
 	node.add_child(wheel)
-	_part(wheel, cog_mesh(), _solid(BRASS, 0.35, 0.85))
-	var across := Vector3(PI * 0.5, 0.0, 0.0)
-	var inlay := CylinderMesh.new()
-	inlay.top_radius = 0.6
-	inlay.bottom_radius = 0.6
-	inlay.height = 1.06
-	inlay.radial_segments = 12
-	inlay.rings = 1
-	_part(wheel, inlay, _solid(Color("#6E5020"), 0.2, 0.6)).rotation = across
-	var axle := CylinderMesh.new()
-	axle.top_radius = 0.16
-	axle.bottom_radius = 0.16
-	axle.height = 1.2
-	axle.radial_segments = 8
-	axle.rings = 1
-	_part(wheel, axle, _solid(HOT, 2.2)).rotation = across
+	var gear := _part(wheel, JudgeGearMesh.mesh(), JudgeGearMesh.material())
+	gear.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	var box := BoxMesh.new()
 	box.size = Vector3.ONE
-	var glow := StandardMaterial3D.new()
-	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	glow.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	glow.albedo_color = Color(GOLD, 0.55)
-	var strip := _part(node, box, glow)
+	var crack := StandardMaterial3D.new()
+	crack.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	crack.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	crack.albedo_color = CRACK
+	var strip := _part(node, box, crack)
 	_gear_nodes.append(node)
 	_gear_wheels.append(wheel)
 	_gear_strips.append(strip)
 
 
-## The cog: a toothed wheel of radius 1 in the XY plane, 1 thick along Z, flat-shaded (built once).
-static func cog_mesh() -> ArrayMesh:
-	if _cog != null:
-		return _cog
-	var rim := PackedVector2Array()
-	var step := TAU / float(GEAR_TEETH)
-	for k in GEAR_TEETH:
-		var a := step * float(k)
-		for corner: Array in [[0.0, 0.84], [0.12, 1.0], [0.38, 1.0], [0.5, 0.84]]:
-			var at := a + step * float(corner[0])
-			rim.append(Vector2(cos(at), sin(at)) * float(corner[1]))
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for k in rim.size():
-		var p := rim[k]
-		var q := rim[(k + 1) % rim.size()]
-		for side: float in [0.5, -0.5]:
-			st.set_normal(Vector3(0, 0, signf(side)))
-			st.add_vertex(Vector3(0, 0, side))
-			st.add_vertex(Vector3(p.x, p.y, side))
-			st.add_vertex(Vector3(q.x, q.y, side))
-		var out := Vector3(q.y - p.y, p.x - q.x, 0.0).normalized()
-		st.set_normal(out)
-		for v: Vector3 in [
-			Vector3(p.x, p.y, 0.5),
-			Vector3(q.x, q.y, 0.5),
-			Vector3(q.x, q.y, -0.5),
-			Vector3(p.x, p.y, 0.5),
-			Vector3(q.x, q.y, -0.5),
-			Vector3(p.x, p.y, -0.5)
-		]:
-			st.add_vertex(v)
-	_cog = st.commit()
-	return _cog
+## The biome's floor colours for the stone the gears throw up.
+func floor_palette(palette: Dictionary) -> void:
+	slams.floor_palette(palette)
 
 
 func sync(reader: WorldReader) -> void:
@@ -363,13 +368,48 @@ func sync(reader: WorldReader) -> void:
 			_fire_wave(SimPlane.to_3d(e.pos))
 		elif e.kind == SimEvent.Kind.BOSS_PICKUP_TAKEN:
 			_burst(SimPlane.to_3d(e.pos, 0.1), 1.2)
+	_kick_gears()
 
 
-## The wave lands: the ring starts from the Judge, the pulse bursts on it and on the hero it slowed.
+## Each gear throws up the floor once as it rises out of it and once as it starts to sink (one met already standing,
+## a fight joined under way, only as it sinks).
+func _kick_gears() -> void:
+	var seen := {}
+	for g: Dictionary in _time.get("gears", []):
+		var key := "%s/%d" % [g["centre"], int(g["angle"])]
+		seen[key] = true
+		var was := int(_gear_kicked.get(key, 0))
+		if not _gear_kicked.has(key):
+			was = 0 if float(g["age"]) < GEAR_RISE_TICKS * 0.5 else 1
+			if was == 0:
+				_gear_debris(g, GEAR_CHUNKS_UP)
+				was = 1
+		if was == 1 and float(g["left"]) <= GEAR_SINK_TICKS:
+			_gear_debris(g, GEAR_CHUNKS_DOWN)
+			was = 2
+		_gear_kicked[key] = was
+	for key: String in _gear_kicked.keys():
+		if not seen.has(key):
+			_gear_kicked.erase(key)
+
+
+## Chunks of the floor round gear row `g`'s middle (`chunks` of the slam's share) and grit and dust all along it.
+func _gear_debris(g: Dictionary, chunks: float) -> void:
+	var half: Vector2 = g["half"]
+	var at := SimPlane.to_3d(g["centre"])
+	var along := Basis(Vector3.UP, SimPlane.yaw_of(int(g["angle"]))) * Vector3.RIGHT
+	var n := clampi(int(half.x * 2.0 / GEAR_KICK_STEP_M) + 1, 3, 9)
+	var points: Array = []
+	for k in n:
+		points.append(at + along * lerpf(-half.x, half.x, float(k) / float(n - 1)))
+	slams.kick(points, GEAR_KICK_SIZE)
+	slams.slam(at, maxf(1.4, half.x), {"parts": GEAR_SLAM_PARTS, "amount": chunks})
+
+
+## The wave lands: the ring starts from the Judge, the pulse bursts on the hero it slowed.
 func _fire_wave(at: Vector3) -> void:
 	_wave_at = at
 	_wave_t = 0.0
-	_burst(at + Vector3(0, 0.1, 0), 3.0)
 	_burst(_hero_at + Vector3(0, 0.1, 0), 1.0)
 
 
@@ -418,9 +458,10 @@ func _draw_cast() -> void:
 	_cast_ring.position = _boss_at + Vector3(0, 0.07, 0)
 	_cast_ring.scale = Vector3.ONE * r
 	_cast_ring_mat.set_shader_parameter("alpha", 0.25 + 0.6 * p)
-	_cast_ring_mat.set_shader_parameter("band", clampf(0.5 / r, 0.02, 0.4))
+	_cast_ring_mat.set_shader_parameter("band", clampf(0.16 / r, 0.004, 0.12))
 	_cast_ring_mat.set_shader_parameter("clock", _clock)
-	hold.put(&"cast", CAST_ID, &"status", _at(_boss_at + Vector3(0, 0.05, 0), CAST_SCALE))
+	var flat := Basis.from_scale(Vector3(CAST_SCALE, CAST_SCALE * CAST_FLAT, CAST_SCALE))
+	hold.put(&"cast", CAST_ID, &"status", Transform3D(flat, _boss_at + Vector3(0, 0.05, 0)))
 
 
 func _draw_wave(delta: float) -> void:
@@ -434,7 +475,7 @@ func _draw_wave(delta: float) -> void:
 	_wave.position = _wave_at + Vector3(0, 0.09, 0)
 	_wave.scale = Vector3.ONE * r
 	_wave_mat.set_shader_parameter("alpha", 1.0 - u * u)
-	_wave_mat.set_shader_parameter("band", clampf(WAVE_BAND_M / r, 0.02, 0.4))
+	_wave_mat.set_shader_parameter("band", clampf(WAVE_BAND_M / r, 0.004, 0.1))
 	_wave_mat.set_shader_parameter("clock", _clock)
 
 
@@ -474,8 +515,10 @@ func _draw_orbs() -> void:
 		var clock := _orb_clocks[k]
 		clock.position = Vector3(0, CLOCK_H + CLOCK_BOB * sin(_clock * 2.4 + k), 0)
 		clock.scale = Vector3.ONE * (0.4 + 0.6 * grow)
-		if cam != null:
-			clock.global_basis = cam.global_basis.scaled(clock.scale)
+		if cam != null:  # turned to the camera and tipped back to the sky, so the room's light falls on its face
+			var back := cam.global_basis.z
+			var face := Basis(Vector3.UP, atan2(back.x, back.z)) * Basis(Vector3.RIGHT, -CLOCK_TIP)
+			clock.global_basis = face.scaled(clock.scale)
 		var turn := TAU * (1.0 - share) if runs else _clock * CLOCK_IDLE_TURN
 		_orb_hands[k].rotation.z = -turn
 		var size := radius * ORB_PER_M * grow * (0.55 + 0.45 * share)
