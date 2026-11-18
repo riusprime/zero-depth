@@ -3,7 +3,8 @@ extends Node3D
 ## v0.8.0 AV (owner O7: "when they do long distance stonekeeper, it should be like spikes coming out of the ground that
 ## actually look like spikes and not … a red thingy"): the Gatekeeper's shock lanes (its `row_lanes` move) strike as
 ## rows of 3D stone spikes erupting along each lane: faceted grey stone with red-hot cracks, staggered heights, a quick
-## thrust up from where the lanes cross, a hold, then they sink back (LIFE_TICKS, 0.6 s). With the new look's effects
+## thrust up, one after another outward from the boss's edge at the speed the sim strikes them, a hold, then they sink
+## back (LIFE_TICKS, 0.6 s). With the new look's effects
 ## layer (VfxCore) the strike also throws rock debris and dust (the fx_debris_chunks and fx_smoke_puffs atlases),
 ## flashes a hot light and leaves crack marks on the floor (draw_fx, a VfxCore drawer).
 ## The strike is read, never decided: a lanes marker of a row_lanes telegraph (WorldReader.telegraph, the function
@@ -31,10 +32,10 @@ extends Node3D
 const LIFE_TICKS := 36.0
 const RISE_TICKS := 5.0
 const HOLD_TICKS := 20.0
-## The farthest spikes rise this many ticks after the ones where the lanes cross (the eruption runs outward).
+## A spike with no wave speed to follow rises up to this many ticks after the first (the eruption runs outward).
 const SPREAD_TICKS := 4.0
-const STEP_M := 0.5
-const MAX_SPIKES := 512
+const STEP_M := 0.6
+const MAX_SPIKES := 896
 ## 48 (was 8): a Colossus burst raises a strike per spike disc, some thirty alive at once.
 const MAX_STRIKES := 48
 ## A Colossus spike disc's cluster: how many spikes, how much taller than a lane spike its middle one.
@@ -227,13 +228,13 @@ func sync(reader: WorldReader) -> void:
 			if _seen.has(key) and _tick - int(_seen[key]) < LIFE_TICKS:
 				continue
 			_seen[key] = _tick
-			_spawn(obbs, _tick)
+			_spawn(obbs, _tick, float(item.get("wave", 0.0)))
 	for key in _seen.keys():
 		if _tick - int(_seen[key]) > LIFE_TICKS * 2.0:
 			_seen.erase(key)
 	var keep: Array[Dictionary] = []
 	for s in _strikes:
-		if _tick - int(s["tick"]) <= LIFE_TICKS + SPREAD_TICKS + 1.0:
+		if _tick - int(s["tick"]) <= LIFE_TICKS + float(s.get("span", SPREAD_TICKS)) + 1.0:
 			keep.append(s)
 	_strikes = keep
 	_pillars = reader.boss_pillars()  # v0.8.0 BS1
@@ -411,42 +412,44 @@ func _spawn_disc(c: Vector2, r: float, tick: int) -> void:
 	)
 
 
-## Raises one marker's lanes at `tick`: spikes every STEP_M down each lane, zig-zagging across it, taller and earlier
-## where the lanes cross.
-func _spawn(obbs: Array, tick: int) -> void:
-	var c := _crossing(obbs)
+## Raises one marker's lanes at `tick`: spikes every STEP_M down each lane, zig-zagging across it, rising one after
+## another outward from the lane's start at the boss's edge. `mpt` is the metres a tick the sim's strike runs out
+## along the lanes (the item's "wave"): a spike rises on the tick the sim strikes its slice, so the look is the hit.
+## Without it the spikes still spread out, over SPREAD_TICKS.
+func _spawn(obbs: Array, tick: int, mpt := 0.0) -> void:
+	var c := _origin(obbs)
 	var sd := tick * 31 + int(absf(c.x) * 97.0) + int(absf(c.y) * 13.0)
 	var spikes := []
 	var marks := []
 	var dust := []
+	var span := SPREAD_TICKS
 	for li in obbs.size():
 		var o: Obb = obbs[li]
 		var n := maxi(1, int(o.half.x * 2.0 / STEP_M))
+		var start := o.center - o.axis_u * o.half.x
 		for j in n:
 			var s := -o.half.x + STEP_M * (j + 0.5)
 			var hj := VfxCore.h(sd + li * 977, j)
 			var side := (1.0 if j % 2 == 0 else -1.0) * o.half.y * (0.25 + 0.3 * hj)
 			var at := o.center + o.axis_u * s + o.axis_v * side
-			var dist := at.distance_to(c)
-			if li > 0 and dist < o.half.y * 1.2:
-				continue  # the first lane already raised the crossing
-			var near := clampf(1.0 - dist / 3.0, 0.0, 1.0)
+			var along := s + o.half.x
+			var near := clampf(1.0 - along / 3.0, 0.0, 1.0)
 			var height := lerpf(0.55, 1.15, VfxCore.h(sd + li * 977 + 1, j)) * (1.0 + 0.35 * near)
 			var width := lerpf(0.42, 0.62, VfxCore.h(sd + li * 977 + 2, j)) * o.half.y / 0.6
 			var lean := (0.1 + 0.2 * VfxCore.h(sd + li * 977 + 3, j)) * signf(side)
 			var axis := SimPlane.to_3d(o.axis_u) - SimPlane.to_3d(Vector2.ZERO)
 			var turn := Basis(axis.normalized(), lean) * Basis(Vector3.UP, TAU * hj)
 			var b := Basis(turn.x * width, turn.y * height, turn.z * width)
-			var delay := minf(SPREAD_TICKS, dist / 3.0) + VfxCore.h(sd + li * 977 + 4, j)
+			var delay := float(int(along / mpt)) if mpt > 0.0 else minf(SPREAD_TICKS, along / 3.0)
+			delay += VfxCore.h(sd + li * 977 + 4, j) * 0.5  # a spike is never before its slice
+			span = maxf(span, delay)
 			spikes.append([SimPlane.to_3d(at, 0.0), b, height, delay, VfxCore.h(sd, j + li * 500)])
 			if j % 4 == 0:
 				dust.append(SimPlane.to_3d(at, 0.0))
-		for k in range(-MARKS_EACH_WAY, MARKS_EACH_WAY + 1):
-			if li > 0 and k == 0:
-				continue
-			var along := (c - o.center).dot(o.axis_u) + MARK_STEP * k
-			if absf(along) <= o.half.x:
-				marks.append(SimPlane.to_3d(o.center + o.axis_u * along, 0.0))
+		for k in range(MARKS_EACH_WAY + 1):
+			var along := MARK_STEP * k
+			if along <= o.half.x * 2.0 and (li == 0 or k > 0):
+				marks.append(SimPlane.to_3d(start + o.axis_u * along, 0.0))
 	spikes.sort_custom(func(a: Array, b: Array) -> bool: return float(a[3]) < float(b[3]))
 	while _strikes.size() >= MAX_STRIKES:
 		_strikes.pop_front()
@@ -463,22 +466,16 @@ func _spawn(obbs: Array, tick: int) -> void:
 			"center": SimPlane.to_3d(c, 0.0),
 			"spikes": spikes,
 			"marks": marks,
-			"dust": dust
+			"dust": dust,
+			"span": span
 		}
 	)
 
 
-## Where a marker's two lanes cross (its locked point), or the first lane's centre.
-static func _crossing(obbs: Array) -> Vector2:
+## Where a marker's lanes start: the first lane's start at the boss's edge.
+static func _origin(obbs: Array) -> Vector2:
 	var a: Obb = obbs[0]
-	if obbs.size() < 2:
-		return a.center
-	var b: Obb = obbs[1]
-	var den := a.axis_u.cross(b.axis_u)
-	if absf(den) < 0.0001:
-		return a.center
-	var t := (b.center - a.center).cross(b.axis_u) / den
-	return a.center + a.axis_u * t
+	return a.center - a.axis_u * a.half.x
 
 
 ## How far out of the ground a spike stands `a` ticks after it starts rising (0 hidden .. 1 standing).
@@ -626,10 +623,11 @@ func draw_fx(layer: VfxCore) -> void:
 		quake_pack_on = false
 	for s in _strikes:
 		var age := now - float(s["tick"])
-		if age < 0.0 or age > LIFE_TICKS + SPREAD_TICKS:
+		var life := LIFE_TICKS + float(s.get("span", SPREAD_TICKS))
+		if age < 0.0 or age > life:
 			continue
 		var sd: int = s["seed"]
-		var u := clampf(age / (LIFE_TICKS + SPREAD_TICKS), 0.0, 1.0)
+		var u := clampf(age / life, 0.0, 1.0)
 		var dust: Array = s["dust"]
 		for k in dust.size():
 			if VfxCore.h(sd + 5, k) > layer.density:

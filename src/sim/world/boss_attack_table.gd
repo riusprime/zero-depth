@@ -285,3 +285,11 @@ var wave_thick_m := 0.0
 var wave_speed := 0.0
 var wave_shove_m := 0.0
 var wave_clear_m := 0.0
+
+
+## Ticks a `row_lanes` strike takes to run out along its lanes: they rise one slice of `speed` metres a tick from the
+## boss's edge to length_m (a lane with no speed strikes whole on one tick).
+func lane_wave_ticks() -> int:
+	if speed <= 0.0 or length_m <= 0.0:
+		return 1
+	return maxi(1, ceili(length_m / speed - 0.0001))

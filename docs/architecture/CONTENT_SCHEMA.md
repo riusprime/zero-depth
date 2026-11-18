@@ -672,8 +672,11 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
     pattern's whole duration (`active_seconds` is a floor). `damage` is each fireball's.
   - `marks` (CIRCLE): `count` ground circles of `radius_m`, `stagger_seconds` apart, each tracked then locked
     (`lock_seconds` required). Active until the last strikes.
-  - `row_lanes` (LINE): `count` crosses of two lanes (the player's row and column), `length_m` long, `width_m` wide,
-    `stagger_seconds` apart, tracked then locked like `marks`; cut short by walls.
+  - `row_lanes` (LINE): `count` volleys of lanes out of the boss's edge (one through the player and, with
+    `spread_degrees`, one more each side), `length_m` long, `width_m` wide, `stagger_seconds` apart, tracked then locked
+    like `marks`; cut short by walls. With `speed_mps` the lanes rise outward from the boss, each slice of `speed_mps` / 60
+    metres striking on its own tick (the strike lasts `BossAttackTable.lane_wave_ticks()` ticks); without it the whole
+    lane strikes on one.
 - **v0.7.5 BF2 (the Brood Mother and the Hive Lens).** A move may take optional params (`BossSchemas.MOVES[move]
   ["optional"]`; any other unknown key is still an `ERROR`):
   - `marks` + `pattern_id` (a BURST, §4b): each circle is an egg's landing; while it is locked an egg flies onto it,

@@ -32,7 +32,7 @@ func test_the_pillars_stand_as_spikes_where_the_sim_has_them_then_sink() -> void
 	add_child_autofree(spikes)
 	BossLab.start(w, w.actors.index_of(aid), &"shock_lanes")
 	var atk := BossAi.attack_of(w, w.actors.index_of(aid))
-	for t in atk.windup_ticks + 60:
+	for t in atk.windup_ticks + atk.lane_wave_ticks() + 60:
 		w.step(InputFrame.new())
 		spikes.sync(reader)
 	var n := w.bosses.pillar_x.size()

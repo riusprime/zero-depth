@@ -108,18 +108,40 @@ static func mark_of(w: World, i: int, k: int) -> Vector2:
 	return w.bosses.pt(BossAi.entry_of(w, i), k)
 
 
-## Marker k of a `row_lanes` attack: two lanes through its point, along the row (x) and the column (y),
-## each reaching length_m / 2 each way unless a wall cuts it short.
-static func row_lanes_of(w: World, i: int, k: int) -> Array[Obb]:
-	var atk := BossAi.attack_of(w, i)
-	var c := mark_of(w, i, k)
+## Marker k of a `row_lanes` attack: a lane from the boss's edge through its point and, with a spread, one more each
+## side of it, each reaching length_m unless a wall cuts it short. The lane through the point comes first. `from_atk`
+## is the attack when the boss may have left it this tick (a stun).
+static func row_lanes_of(w: World, i: int, k: int, from_atk: BossAttackTable = null) -> Array[Obb]:
+	var atk := from_atk if from_atk != null else BossAi.attack_of(w, i)
+	var from := w.actors.pos(i)
+	var aim := Kin.angle_of(mark_of(w, i, k) - from)
+	var turns: Array[int] = [0]
+	if atk.spread > 0:
+		turns.append(atk.spread)
+		turns.append(-atk.spread)
 	var out: Array[Obb] = []
-	for axis in [0, 1024]:
-		var fwd := EnemyAi.clear_run(w, c, axis, atk.length_m * 0.5, atk.half_width_m)
-		var back := EnemyAi.clear_run(w, c, axis + 2048, atk.length_m * 0.5, atk.half_width_m)
-		var start := c - Kin.dir(axis) * back
-		out.append(AttackShapes.lane(start, axis, maxf(fwd + back, 0.01), atk.half_width_m))
+	for turn in turns:
+		var ang := (aim + turn) & 4095
+		var start := from + Kin.dir(ang) * w.actors.radius[i]
+		var run := EnemyAi.clear_run(w, start, ang, atk.length_m, atk.half_width_m)
+		out.append(AttackShapes.lane(start, ang, maxf(run, 0.01), atk.half_width_m))
 	return out
+
+
+## The part of a lane a `row_lanes` strike has risen through `local` ticks after it began: from the slice it rose
+## on the tick before to the one it rises on now (the last slice reaches the lane's end). Null is returned
+## before the strike and after the lane ran out.
+static func lane_slice(o: Obb, atk: BossAttackTable, local: int) -> Obb:
+	var waves := atk.lane_wave_ticks()
+	var span := o.half.x * 2.0
+	var d0 := 0.0 if waves <= 1 else atk.speed * local
+	var d1 := span if local >= waves - 1 else minf(span, atk.speed * (local + 1))
+	if local < 0 or local >= waves or d1 <= d0:
+		return null
+	var start := o.center - o.axis_u * o.half.x
+	return Obb.make(
+		start + o.axis_u * ((d0 + d1) * 0.5), Vector2((d1 - d0) * 0.5, o.half.y), o.angle
+	)
 
 
 ## The markers of a marks / row_lanes attack showing now (started, not yet struck).
@@ -153,6 +175,7 @@ static func marks_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionar
 		else:
 			item["shape"] = &"lanes"
 			item["obbs"] = row_lanes_of(w, i, k)
+			item["wave"] = atk.speed  # Metres a tick the strike runs out along the lanes
 		items.append(item)
 	if items.is_empty():
 		return {}
@@ -245,11 +268,16 @@ static func resolve_marks(w: World, i: int, b: int, atk: BossAttackTable, st: in
 		var at := BossHard.strike_at(atk, k)
 		if k < atk.count and atk.pattern != null and atk.egg_ticks <= 0:
 			burst_mark(w, i, atk, k, st - k * atk.mark_gap_ticks)  # An egg bursts on its own clock
-		if atk.pillar_ticks > 0 and st == at + 1 and (atk.second_ticks <= 0 or k >= atk.count):
-			# The spikes stay as pillars, the tick after the strike (the strike's own lanes,
-			# drawn and hit on its tick, are never cut short by its pillars). with second crosses,
+		var waves := atk.lane_wave_ticks() if atk.move == BossAttackTable.Move.ROW_LANES else 1
+		if atk.pillar_ticks > 0 and st == at + waves and (atk.second_ticks <= 0 or k >= atk.count):
+			# The spikes stay as pillars, the tick after the lanes ran out (the strike's own lanes,
+			# drawn and hit while they rise, are never cut short by its pillars). with second volleys,
 			# only the second ones leave pillars (the first ones' would cut the second ones' lanes short).
 			BossSignatures.raise_pillars(w, i, atk, k)
+		if atk.move == BossAttackTable.Move.ROW_LANES:
+			if st >= at and st < at + waves:
+				_strike_lanes(w, i, b, atk, k, st - at)
+			continue
 		if st != at:
 			continue
 		w.bosses.hit[b] = 0
@@ -262,12 +290,26 @@ static func resolve_marks(w: World, i: int, b: int, atk: BossAttackTable, st: in
 				BossHazard.rock_stage(w, i, b)  # The Barrage's last shell brings a rock down
 			BossTide.undertow(w, atk, c)  # The Undertow drags the player toward it
 			BossShade.snuff(w, atk, c)  # The Snuff puts out the lantern nearest it
-		else:
-			for o: Obb in row_lanes_of(w, i, k):
-				if Collide.circle_vs_obb(p, pr, o) != Vector2.ZERO:
-					BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, o.center)
-					break
-			BossQuake.lanes_strike(w, i, k, atk)  # A lane through a quake pillar shatters it
+
+
+## Marker k of a `row_lanes` attack, `local` ticks into its strike: the slice of every lane that rises now hurts a
+## player standing in it (the hurt iframes keep a lingering player from being hit by two slices), and on the last
+## tick a lane through a quake pillar shatters it.
+static func _strike_lanes(
+	w: World, i: int, b: int, atk: BossAttackTable, k: int, local: int
+) -> void:
+	if local == 0:
+		w.bosses.hit[b] = 0
+	var lanes := row_lanes_of(w, i, k, atk)
+	var p := w.player_pos()
+	var pr := w.player.radius_m
+	for o in lanes:
+		var s := lane_slice(o, atk, local)
+		if s != null and Collide.circle_vs_obb(p, pr, s) != Vector2.ZERO:
+			BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, s.center)
+			break
+	if local == atk.lane_wave_ticks() - 1:
+		BossQuake.lanes_strike(w, i, k, atk)  # A lane through a quake pillar shatters it
 
 
 ## The Brood Mother's Egg Storm: marker k of a `marks` attack with a pattern is an egg's landing; `local`

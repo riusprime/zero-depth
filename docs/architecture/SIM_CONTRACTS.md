@@ -1711,10 +1711,10 @@ Starting values in `data/bullet_patterns` (CONTENT_SCHEMA §3); `EnemyAi` holds 
 
 Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; all in the F10 Bosses page);
 `BossSignatures` holds the rules. Pure: no stream is drawn.
-- **S1, the Gatekeeper's pillars.** The tick after marker k of a `row_lanes` attack with `pillar_ticks` struck (tick
-  phase 6; so the strike's own lanes, drawn and hit on its tick, are never cut by its pillars; the attack stays
-  active a tick longer for its last cross), pillars (squares `pillar_m` a side, axis-aligned) rise along its two lanes every `pillar_step_m` out
-  from the crossing each way (the crossing stays open), as far as each lane ran. A pillar rises only where it touches
+- **S1, the Gatekeeper's pillars.** The tick after the lanes of marker k of a `row_lanes` attack with `pillar_ticks` ran out (tick
+  phase 6; so the strike's own lanes, drawn and hit while they rise, are never cut by its pillars; the attack stays
+  active a tick longer for its last volley), pillars (squares `pillar_m` a side, axis-aligned) rise along its lanes every
+  `pillar_step_m` out from the boss's edge, as far as each lane ran. A pillar rises only where it touches
   no living body (plus `BODY_MARGIN_M` 0.3) and keeps 2 × the player's radius + `PASS_SLACK_M` (0.15) from every
   wall, the door and every other pillar (`BossSignatures.fits`: the corners of both boxes and the inscribed circle).
   So each pillar is an island in the hero's free space: it never splits it, never closes a way, never seals anyone

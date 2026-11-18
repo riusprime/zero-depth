@@ -37,20 +37,20 @@ const EGG_GONE := 9
 # --- S1: the Gatekeeper's pillars ---------------------------------------------------------------------------------
 
 
-## Tick phase 6, the tick after marker k of boss i's `row_lanes` attack struck: pillars rise along its two lanes, every
-## pillar_step_m out from the crossing each way (the crossing itself stays open), as far as the lane ran, each only
-## where it fits (fits()). Returns how many rose.
+## Tick phase 6, the tick after the lanes of marker k of boss i's `row_lanes` attack ran out: pillars rise along
+## them, every pillar_step_m out from the boss's edge, as far as the lane ran, each only where it fits (fits()).
+## Returns how many rose.
 static func raise_pillars(w: World, i: int, atk: BossAttackTable, k: int) -> int:
 	if atk.pillar_ticks <= 0 or atk.pillar_m <= 0.0 or atk.pillar_step_m <= 0.0:
 		return 0
-	var c := BossDodge.mark_of(w, i, k)
 	var h := atk.pillar_m * 0.5
 	var n := 0
-	for way in [0, 2048, 1024, 3072]:
-		var run := EnemyAi.clear_run(w, c, way, atk.length_m * 0.5, atk.half_width_m)
+	for lane in BossDodge.row_lanes_of(w, i, k, atk):
+		var run := lane.half.x * 2.0
+		var from := lane.center - lane.axis_u * lane.half.x
 		var step := 1
 		while step * atk.pillar_step_m + h <= run:
-			var p := c + Kin.dir(way) * (step * atk.pillar_step_m)
+			var p := from + lane.axis_u * (step * atk.pillar_step_m)
 			step += 1
 			if fits(w, p, h):
 				_add_pillar(w, w.actors.ids[i], p, h, atk.pillar_ticks)

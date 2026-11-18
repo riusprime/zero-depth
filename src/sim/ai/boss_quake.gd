@@ -214,8 +214,8 @@ static func view(w: World) -> Array:
 # --- the shatter (BossDodge.resolve_marks) -----------------------------------------------------------------------
 
 
-## Tick phase 6, the strike tick of marker k of boss i's row_lanes attack: every quake pillar of the boss its four
-## lanes run into shatters (each lane stops at the first wall along it, as row_lanes_of draws and hits it). Returns
+## Tick phase 6, the last strike tick of marker k of boss i's row_lanes attack: every quake pillar of the boss its lanes
+## run into shatters (each lane stops at the first wall along it, as row_lanes_of draws and hits it). Returns
 ## how many shattered.
 static func lanes_strike(w: World, i: int, k: int, atk: BossAttackTable) -> int:
 	var bs := w.bosses
@@ -223,16 +223,18 @@ static func lanes_strike(w: World, i: int, k: int, atk: BossAttackTable) -> int:
 	var mine := pillars_of(w, id)
 	if mine.is_empty():
 		return 0
-	var c := BossDodge.mark_of(w, i, k)
-	var reach := atk.length_m * 0.5
+	var reach := atk.length_m
 	var hit := PackedInt32Array()
-	for way in [0, 1024, 2048, 3072]:
-		var run := EnemyAi.clear_run(w, c, way, reach, atk.half_width_m)
-		var to := c + Kin.dir(way) * reach
+	for lane in BossDodge.row_lanes_of(w, i, k, atk):
+		var run := lane.half.x * 2.0
+		var from := lane.center - lane.axis_u * lane.half.x
+		var to := from + lane.axis_u * reach
 		for p in mine:
 			if hit.has(p):
 				continue
-			var f := Collide.sweep_vs_obb(c, to, atk.half_width_m, BossSignatures.pillar_obb(bs, p))
+			var f := Collide.sweep_vs_obb(
+				from, to, atk.half_width_m, BossSignatures.pillar_obb(bs, p)
+			)
 			if f >= 0.0 and f * reach <= run + REACH_SLACK_M:
 				hit.append(p)
 	if hit.is_empty():
