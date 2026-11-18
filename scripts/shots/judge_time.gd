@@ -3,6 +3,8 @@ extends SceneTree
 ## a walled 24 m room, the iso camera) of a real World stepped tick by tick (Starfall's look, the Judge's floor):
 ##   a_time_wave.png   the Time Wave just landed: its ring crossing the room, the three hour orbs, their arrows;
 ##   c_hud_slowed.png  the HUD's corner, twice its size: the slowed state with one orb's share won back;
+##   d_gears_rising.png the second phase's wave just landed: the stopped gears rolling up out of the floor,
+##                     throwing up its stone;
 ##   b_phase_2.png     the second phase: the stopped gears, a slow field with the hero's shots inside it, the pale
 ##                     copy and the Bell's ring closing on it.
 ## Needs a renderer (no --headless); run it off screen:
@@ -178,9 +180,17 @@ func _process(_delta: float) -> bool:
 			var mid := (_hero + _world.actors.pos(_i())) * 0.5 + Vector2(0.4, 0.3)
 			BossShotFields.place(_world, _boss, BossAi.table_of(_world, _i()).time.field, mid)
 			_shoot = true
-			_run = 75
-			_wait = SETTLE
+			_run = 6
+			_wait = 0
 		3:
+			_save(
+				"d_gears_rising.png",
+				_frame(),
+				"gears %d rising out of the floor" % (_reader.boss_time()["gears"] as Array).size()
+			)
+			_run = 69
+			_wait = SETTLE
+		4:
 			var t := _reader.boss_time()
 			var inside := 0
 			var fields := _reader.boss_shot_fields()
