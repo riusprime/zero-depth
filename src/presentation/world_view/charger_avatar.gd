@@ -113,8 +113,8 @@ func setup(p_kind := WorldReader.KIND_CHARGER) -> void:
 	body = Node3D.new()
 	_model.add_child(body)
 	var shell := [
-		[_hood_mesh(), EnemyPalettes.color(kind, &"body")],
-		[_flap_mesh(), EnemyPalettes.color(kind, &"trim")],
+		[_hood_mesh(), _look_color(kind, &"body")],
+		[_flap_mesh(), _look_color(kind, &"trim")],
 		[_core_mesh(), CORE_COLOR]
 	]
 	_piece(body, shell)
@@ -125,7 +125,7 @@ func setup(p_kind := WorldReader.KIND_CHARGER) -> void:
 	body.add_child(face)
 	visor = MeshInstance3D.new()
 	visor.mesh = _visor_mesh()
-	var eye := EnemyPalettes.color(kind, &"eye")
+	var eye := _look_color(kind, &"eye")
 	_visor_mat = EnemyLooks.accent(eye, eye, VISOR_ENERGY)  # Shared, GLOW per Charger
 	visor.material_override = _visor_mat
 	visor.position = Vector3(0.155, 0.51, 0)
@@ -473,7 +473,7 @@ static func _pose_seg(seg: Node3D, at: Vector3, y: float, p: float, reach: float
 
 func _build_leg(hip: Vector3, lens: Array, side: float, front: bool) -> void:
 	var s := 1.0 if front else 0.8
-	var c := EnemyPalettes.color(kind, &"grey") if front else BACK_LEG_COLOR
+	var c := _look_color(kind, &"grey") if front else BACK_LEG_COLOR
 	var root := Node3D.new()
 	root.position = Vector3(hip.x, hip.y, hip.z * side)
 	_model.add_child(root)

@@ -138,7 +138,7 @@ func setup() -> void:
 	body = Node3D.new()
 	add_child(body)
 	var cube := _chamfer_box(Vector3.ONE * BODY, BODY_BEVEL, BODY_BULGE)
-	var red := EnemyPalettes.color(KIND, &"body")
+	var red := _look_color(KIND, &"body")
 	_piece(body, cube, Vector3(0, BODY_Y, 0), red)
 	# The chassis under the cube, which the hips hang from.
 	var chassis := _chamfer_box(Vector3(0.3, 0.07, 0.3), 0.015)
@@ -147,12 +147,12 @@ func setup() -> void:
 	var pod := _chamfer_box(Vector3(0.24, 0.26, 0.1), 0.06, 0.012)
 	for side in [-1.0, 1.0]:
 		var at := Vector3(-0.03, 0.46, side * (BODY * 0.5 + 0.045))
-		_piece(body, pod, at, EnemyPalettes.color(KIND, &"trim"))
+		_piece(body, pod, at, _look_color(KIND, &"trim"))
 	# The collar on the front face that the barrel comes out of, with a red slit eye on each flank.
 	var collar := _chamfer_box(Vector3(0.12, 0.25, 0.2), 0.02)
 	var collar_x := BODY * 0.5 + 0.03
 	_piece(body, collar, Vector3(collar_x, BARREL_Y - 0.01, 0), DARK)
-	var glow := EnemyPalettes.color(KIND, &"eye")
+	var glow := _look_color(KIND, &"eye")
 	_eye_mat.albedo_color = glow
 	_eye_mat.emission_enabled = true
 	_eye_mat.emission = glow
@@ -447,10 +447,10 @@ func _build_barrel() -> void:
 	barrel.position = Vector3(BODY * 0.5 + 0.06, BARREL_Y, 0)
 	body.add_child(barrel)
 	var tube := _chamfer_box(Vector3(BARREL_LEN, BARREL_W, BARREL_W), 0.012)
-	_piece(barrel, tube, Vector3(BARREL_LEN * 0.5, 0, 0), EnemyPalettes.color(KIND, &"grey"))
+	_piece(barrel, tube, Vector3(BARREL_LEN * 0.5, 0, 0), _look_color(KIND, &"grey"))
 	# A slightly wider sleeve at the muzzle, as on the sheet's side view.
 	var sleeve := _chamfer_box(Vector3(0.07, BARREL_W + 0.012, BARREL_W + 0.012), 0.012)
-	_piece(barrel, sleeve, Vector3(BARREL_LEN - 0.035, 0, 0), EnemyPalettes.color(KIND, &"grey"))
+	_piece(barrel, sleeve, Vector3(BARREL_LEN - 0.035, 0, 0), _look_color(KIND, &"grey"))
 	# The square bore: dark when cold; it glows the hostile-shot colour while charging and firing.
 	var shot := ThemePalette.color(&"proj_hostile")
 	_hole_mat.albedo_color = HOLE
@@ -481,14 +481,14 @@ func _build_leg(k: int) -> void:
 	root.add_child(thigh)
 	_thighs.append(thigh)
 	var tm := _chamfer_box(Vector3(THIGH_LEN, 0.075, 0.07), 0.014)
-	_piece(thigh, tm, Vector3(THIGH_LEN * 0.5, 0, 0), EnemyPalettes.color(KIND, &"grey"))
+	_piece(thigh, tm, Vector3(THIGH_LEN * 0.5, 0, 0), _look_color(KIND, &"grey"))
 	var knee := Node3D.new()
 	knee.position.x = THIGH_LEN
 	thigh.add_child(knee)
 	_knees.append(knee)
 	_piece(knee, _prism(0.042, 0.1, 8), Vector3.ZERO, GREY_LIGHT)
 	var sm := _chamfer_box(Vector3(SHIN_LEN, 0.085, 0.08), 0.016)
-	_piece(knee, sm, Vector3(SHIN_LEN * 0.5, 0, 0), EnemyPalettes.color(KIND, &"grey"))
+	_piece(knee, sm, Vector3(SHIN_LEN * 0.5, 0, 0), _look_color(KIND, &"grey"))
 	var ankle := Node3D.new()
 	ankle.position.x = SHIN_LEN
 	knee.add_child(ankle)

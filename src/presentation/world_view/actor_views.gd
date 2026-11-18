@@ -717,7 +717,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 		WorldReader.KIND_CHARGER:
 			# The clawed hooded crawler: its own node under the facing, animated in frame time.
 			var avatar := ChargerAvatar.new()
-			avatar.enemy_tint = VariantLooks.cast(p_kind, enemy_tint)  # v0.8.0 HR; O13a: a variant's cast
+			avatar.enemy_tint = VariantLooks.cast(p_kind, enemy_tint)  # A variant: its own colours and cast
+			avatar.look_kind = p_kind  # A biome variant wears its biome's colours (EnemyPalettes.VERSIONS)
 			avatar.role_glow = role_glow_energy
 			if VatCrowd.supports(p_kind):  # Drawn by the VAT crowd while the switch is on
 				avatar.vat = ViewPrefs.enemy_vat
@@ -737,6 +738,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 			height = 1.25
 			var warden := WardenAvatar.new()
 			_solo_vat(root, warden, p_kind)  # v0.10.5 W3-V4c
+			warden.look_kind = p_kind
 			warden.setup()
 			facing.add_child(warden)
 			root.set_meta(&"enemy_avatar", warden)
@@ -745,6 +747,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 			# The walking turret: its own node under the facing, animated in frame time.
 			var needle := NeedleAvatar.new()
 			_solo_vat(root, needle, p_kind)  # v0.10.5 W3-V4c
+			needle.look_kind = p_kind
 			needle.setup()
 			facing.add_child(needle)
 			height = NeedleAvatar.HEIGHT
@@ -840,7 +843,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 		_ when HordeAvatar.is_horde_kind(kind):
 			# The horde kinds: one code-built model per kind.
 			var horde := HordeAvatar.new()
-			horde.enemy_tint = VariantLooks.cast(p_kind, enemy_tint)  # v0.8.0 HR (tint_greys, role_glow); O13a
+			horde.enemy_tint = VariantLooks.cast(p_kind, enemy_tint)  # (tint_greys, role_glow); a variant: its own
+			horde.look_kind = p_kind  # A biome variant wears its biome's colours (EnemyPalettes.VERSIONS)
 			horde.role_glow = role_glow_energy
 			if VatCrowd.supports(p_kind):  # Drawn by the VAT crowd while the switch is on
 				horde.vat = ViewPrefs.enemy_vat

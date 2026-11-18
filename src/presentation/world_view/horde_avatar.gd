@@ -971,7 +971,7 @@ func _col(slot: StringName) -> Color:
 		return CritterBodies.color(kind, slot)
 	if CanyonShoreBodies.is_kind(kind):  # The prompts' role colours
 		return CanyonShoreBodies.color(kind, slot)
-	return EnemyPalettes.color(kind, slot)
+	return _look_color(kind, slot)
 
 
 ## A flashable body piece. the shared mesh and material (it was its own material per piece).

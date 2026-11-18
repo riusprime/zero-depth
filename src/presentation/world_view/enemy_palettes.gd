@@ -146,6 +146,22 @@ const TABLE := {
 	},
 }
 
+## Each biome's own version of a base enemy (BehaviourSchemas.VARIANT_OF) wears its biome's colour over the whole
+## body, while the base keeps its look everywhere: one model, two enemies told apart by colour alone, as the Arc Caster
+## and the Cinder Priest. The palettes' four slots [body, trim, grey, eye], the same under every palette: the plates in
+## the biome's hue, the frame darker, the eye a brighter glow of that hue. Red Canyon: charred ember plates under a
+## burning orange flap and a yellow-hot eye (its base is already red, so the version goes dark and burning, not
+## redder); Frozen Shore: ice blue under frost white; Starfall: violet under a light violet trim and a pink glow; Night
+## Rocks: midnight indigo under a pale moonlit eye; Ruins: the cold slate of its broken slabs under rusted orange (its
+## base is a warm bronze, so the version goes cool). Starting values.
+const VERSIONS := {
+	WorldReader.KIND_EMBER_CHARGER: ["#2A120E", "#FF6A1C", "#1E1412", "#FFD040"],
+	WorldReader.KIND_FROST_CHARGER: ["#5FB4F0", "#E4F6FF", "#4A6A8C", "#B4FAFF"],
+	WorldReader.KIND_SPLIT_SNIPER: ["#7A16C8", "#C070FF", "#2A1E40", "#FFA0F4"],
+	WorldReader.KIND_DIM_NEEDLE: ["#2E2862", "#4C3E96", "#24222E", "#C8D6FF"],
+	WorldReader.KIND_RUBBLE_WARDEN: ["#6E8AA4", "#B4521E", "#3E4A56", "#FFB040"],
+}
+
 ## The owner's G2 pick (2026-10-14: "Color palette A"). `current` (the pre-v0.8.0 red and grey) stays in the table.
 const SHIPPED := &"a"
 ## The palette the avatars build with: the owner's pick; the G2 shot script sets it to render each candidate.
@@ -153,8 +169,11 @@ static var active := SHIPPED
 
 
 ## Kind `kind`'s colour in `slot` (body / trim / grey / eye) under `palette` (default: the active one). A kind
-## outside the table (a boss, the player) is magenta, as ThemePalette's unknown role, so it shows up at once.
+## outside the table (a boss, the player) is magenta, as ThemePalette's unknown role, so it shows up at once. A biome's
+## own version (VERSIONS) wears its own colours under every palette.
 static func color(kind: int, slot: StringName, palette: StringName = &"") -> Color:
+	if VERSIONS.has(kind) and SLOTS.has(slot):
+		return Color(String(VERSIONS[kind][SLOTS.find(slot)]))
 	return color_of(KIND_IDS.get(kind, &""), slot, palette)
 
 
