@@ -96,12 +96,14 @@ void fragment() {
 	float core = m.r;
 	float halo = m.g;
 	vec3 ground = mix(wash.rgb, sky * 0.7, 0.5);
-	// A soft cut where a crack meets the pool's edge (it still reaches it).
+	// Everything fades to nothing before the pool's edge (the wash first, the crack close to it), so no rectangle shows.
 	vec2 q = min(UV, vec2(1.0) - UV);
-	core *= mix(0.35, 1.0, smoothstep(0.0, 0.04, min(q.x, q.y)));
+	float edge = min(q.x, q.y);
+	core *= smoothstep(0.0, 0.1, edge);
+	halo *= smoothstep(0.0, 0.12, edge);
 	vec3 col = mix(ground, sky * (1.15 + 0.55 * core) * breathe, core) + glow.rgb * halo * 0.3;
 	ALBEDO = col;
-	ALPHA = clamp(core + halo * 0.45 + wash_alpha, 0.0, 1.0);
+	ALPHA = clamp(core + halo * 0.45 + wash_alpha * smoothstep(0.0, 0.3, edge), 0.0, 1.0);
 }
 """
 
