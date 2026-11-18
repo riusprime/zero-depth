@@ -7,17 +7,22 @@ extends Node3D
 ##   aim locks it flashes white-hot and pulses fast, like every other telegraph's lock.
 ## - Armed (the run has stopped, WorldReader.boss_charge_bursts): the circle stays where it was armed and fills from
 ##   its middle out as the burst comes.
-## - The burst: the pack's explosion, sized to the radius, where an armed circle went off.
+## - The burst, once, where an armed circle went off, sized to the radius: the amber Warden's charge smashes into the
+##   ground (the pack's rock spikes thrown up and its crack under them, no fireball, smoke or dust); any other
+##   boss's charge explodes (the pack's explosion).
 ## - The amber Warden's shade (The Fallen remembering the ward, WorldReader.boss_fallen "shade" and "burst"): the same
-##   circle at its run's end, locked as its aim locks, then armed and bursting the same way.
+##   circle at its run's end, locked as its aim locks, then armed and smashing down the same way.
 ## Every slot is built hidden at the start. Reduced motion stills the hatching and the pulse. Nothing here decides.
 
 const SLOTS := 4
 const RIM_ID := &"tw_burst_rim"
 const BURST_ID := &"tw_burst"
-## The pack scenes' size per metre of radius (the rim: 0.55; the explosion: about 2 m across at 1).
+const SLAM_ID := &"tw_slam"
+## The pack scenes' size per metre of radius (the rim: 0.55; the explosion: about 2 m across at 1; the debris: its
+## rock spikes thrown about 2 m out at 1, so the slam fills the circle).
 const RIM_PER_M := 0.55
 const BURST_PER_M := 0.6
+const SLAM_PER_M := 0.9
 ## The lock's flash (s).
 const FLASH_S := 0.18
 
@@ -32,7 +37,8 @@ var quiet := false
 ## The circles drawn this frame: [centre (sim), radius, locked, fill 0..1 (an armed one), its key].
 var _circles: Array = []
 var _discs: Array[MeshInstance3D] = []
-## Key -> the seconds since it locked (its flash), and the armed bursts last seen (key -> [centre, radius, left]).
+## Key -> the seconds since it locked (its flash), and the armed bursts last seen (key -> [centre, radius, left,
+## whether it is the amber Warden's]).
 var _locked_at := {}
 var _armed := {}
 var _clock := 0.0
@@ -72,7 +78,9 @@ func sync(reader: WorldReader) -> void:
 	for row: Dictionary in rows:
 		var key := "a%d" % int(row["boss"])
 		seen[key] = true
-		_armed[key] = [row["centre"], float(row["radius"]), int(row["left"])]
+		var at := int(row["boss"])  # its actor index (-1: the shade)
+		var amber := at < 0 or reader.actor_kind(at) == WorldReader.KIND_TWIN_WARDEN  # the shade, the amber Warden remembered
+		_armed[key] = [row["centre"], float(row["radius"]), int(row["left"]), amber]
 		_circles.append(
 			[row["centre"], float(row["radius"]), true, float(row["progress"]) / 1000.0, key]
 		)
@@ -81,13 +89,21 @@ func sync(reader: WorldReader) -> void:
 			continue
 		var last: Array = _armed[key]
 		if int(last[2]) <= 2:  # it went off (a burst cancelled early leaves without one)
-			_explode(last[0], float(last[1]))
+			if bool(last[3]):
+				_slam(last[0], float(last[1]))
+			else:
+				_explode(last[0], float(last[1]))
 		_armed.erase(key)
 
 
 func _explode(centre: Vector2, radius: float) -> void:
 	if pack_fx != null and pack_fx.has_id(BURST_ID) and pack_fx.has_room(&"explosion"):
 		pack_fx.spawn(BURST_ID, SimPlane.to_3d(centre, 0.1), radius * BURST_PER_M)
+
+
+func _slam(centre: Vector2, radius: float) -> void:
+	if pack_fx != null and pack_fx.has_id(SLAM_ID):
+		pack_fx.spawn(SLAM_ID, SimPlane.to_3d(centre, 0.1), radius * SLAM_PER_M)
 
 
 func _process(delta: float) -> void:

@@ -1,12 +1,12 @@
 extends GutTest
 ## The Twin Wardens' fight apart as the player sees it, each view built from WorldReader only, in TwinsLab's walled
 ## 24 m room: ChargeBurstViews (the end circle of the burst's exact radius where the lane ends, dull while it tracks
-## and flashing once it locks, then filling where it was armed, and the pack's explosion), WardenWardViews (the
-## resting Warden's dome, the Mirror Ward's wall rising through the cast and standing on the reader's arc, the whole
-## ward, the long lane glowing under it, the break and the ring to its return), WardenBladeViews (the shadow blades on
-## their spots and their slashes, the dash's streak, the rift portals on the reader's spots with only the marked exit
-## glowing), the violet rifts, the bar's gold shimmer, the hint arrow without text, the clips, the borrowed sounds and
-## the reduced-motion path. Nothing stays once the pair is gone.
+## and flashing once it locks, then filling where it was armed, and the debris slam where it burst), WardenWardViews
+## (the resting Warden's dome, the Mirror Ward's wall rising through the cast and standing on the reader's arc, the
+## whole ward, the long lane glowing under it, the break and the ring to its return), WardenBladeViews (the shadow
+## blades on their spots and their slashes, the dash's streak, the rift portals on the reader's spots with only the
+## marked exit glowing), the violet rifts, the bar's gold shimmer, the hint arrow without text, the clips, the
+## borrowed sounds and the reduced-motion path. Nothing stays once the pair is gone.
 
 const DT := 1.0 / 60.0
 const S := EnemyAi.State
@@ -99,8 +99,70 @@ func test_the_end_circle_is_the_bursts_and_flashes_locked_then_fills_and_explode
 	assert_gt(c[3], 0.0, "and fills as the burst comes")
 	assert_not_null(_until(w, r, [view], BossChargeBurst.BURST, 30))
 	_run(w, r, [view], 1)
-	assert_gt(fx.live_count(&"explosion"), 0, "the pack's explosion where it burst")
+	assert_eq(fx.live_count(&"impact"), 1, "the pack's debris slam where it burst")
+	assert_eq(fx.live_count(&"explosion"), 0, "no explosion")
 	assert_eq(view.shown(), 0, "the circle is gone")
+
+
+## Each of the amber Warden's charges (phase 1's flash charge, the long charge) in the whole game view: every view
+## together plays exactly one effect at the charge's end, the debris slam on the burst's tick at its spot, and no
+## explosion, then nothing more.
+func test_each_amber_charge_ends_in_one_ground_slam_and_no_explosion() -> void:
+	for attack: StringName in [&"warden_charge", &"warden_charge_long"]:
+		var s := _stage(Vector2(6, 0), Vector2(-8, 0), Vector2(-8, 9))
+		var w: World = s[0]
+		var biome: BiomeDefinition = SharedContent.repo().get_def(&"biomes", &"ruins")
+		var root := WorldViewRoot.new()
+		root.stage.mood = biome.mood
+		add_child_autofree(root)
+		root.setup(s[3], biome.palette, 60.0)
+		root.sync()
+		var fx := root.pack_fx
+		BossLab.start(w, _i(w, s[1]), attack)
+		w.actors.set_pos(0, Vector2(-11, 11))
+		var seq := TwinsLab.mark(w)
+		var armed: SimEvent = null
+		for k in 300:
+			_step_root(w, root)
+			var got := TwinsLab.effects(w, BossChargeBurst.ARMED, seq)
+			if not got.is_empty():
+				armed = got[0]
+				break
+		assert_not_null(armed, "%s: the run stopped and armed its burst" % attack)
+		if armed == null:
+			continue
+		var before := fx.spawned_in.duplicate()
+		var spawned := func(fam: StringName) -> int:
+			return int(fx.spawned_in.get(fam, 0)) - int(before.get(fam, 0))
+		var burst: SimEvent = null
+		for k in 60:
+			_step_root(w, root)
+			var got := TwinsLab.effects(w, BossChargeBurst.BURST, seq)
+			if not got.is_empty():
+				burst = got[0]
+				break
+		assert_not_null(burst, "%s: it burst" % attack)
+		assert_eq(spawned.call(&"impact"), 1, "%s: one slam on the burst's tick" % attack)
+		var slams := fx._live.filter(
+			func(e: Dictionary) -> bool: return e["id"] == ChargeBurstViews.SLAM_ID
+		)
+		assert_eq(slams.size(), 1, "%s: and it is the debris slam" % attack)
+		if slams.size() == 1:
+			var at := SimPlane.to_sim((slams[0]["node"] as Node3D).global_position)
+			assert_almost_eq(at, burst.pos, Vector2(0.01, 0.01), "%s: at the burst's spot" % attack)
+		for k in 90:
+			_step_root(w, root)
+		var total := 0
+		for fam: StringName in fx.spawned_in:
+			total += spawned.call(fam)
+		assert_eq(spawned.call(&"explosion"), 0, "%s: no explosion" % attack)
+		assert_eq(total, 1, "%s: nothing else played at its end" % attack)
+
+
+func _step_root(w: World, root: WorldViewRoot) -> void:
+	w.actors.hp[0] = w.actors.max_hp[0]
+	w.step(InputFrame.new())
+	root.sync()
 
 
 func test_the_resting_warden_wears_its_dome_and_the_whole_ward_is_its_own() -> void:
@@ -396,6 +458,7 @@ func test_the_pack_rows_are_in_the_table() -> void:
 		[
 			ChargeBurstViews.RIM_ID,
 			ChargeBurstViews.BURST_ID,
+			ChargeBurstViews.SLAM_ID,
 			WardenWardViews.RIM_ID,
 			WardenWardViews.REFLECT_ID,
 			WardenWardViews.PUSH_ID,

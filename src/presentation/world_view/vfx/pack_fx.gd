@@ -81,10 +81,13 @@ const SHORT := {
 ## again through its 1.2 s and it reads as two or three blasts).
 const ONCE: Array[StringName] = [&"explosion", &"impact"]
 
-## The pack scene's child nodes an id never
-## shows (the meteor's landing drops vfx_impact_01's white-hot Core sphere, its smoke and its tall streaks; the
-## pack's files stay as they are).
-const HIDE := {&"p10l_meteor_land": ["Core", "Smoke", "Impact_Streaks2"]}
+## The pack scene's child nodes an id never shows (the meteor's landing drops vfx_impact_01's white-hot Core sphere,
+## its smoke and its tall streaks; the amber Warden's slam keeps vfx_explosion_07's rock spikes and ground crack, not
+## its fireball, smoke or dark dust; the pack's files stay as they are).
+const HIDE := {
+	&"p10l_meteor_land": ["Core", "Smoke", "Impact_Streaks2"],
+	&"tw_slam": ["Core", "Smoke", "Dust"],
+}
 
 ## The children spawn()'s `hide` may switch off (and back on for the next user of a pooled instance).
 ## Also an impact's white Core puff and its Ground_Impact disc (Blood Thorns' eruptions keep the sparks).
@@ -445,6 +448,7 @@ func _make(scene_path: String) -> Node3D:
 		info["anim"] = anim
 		if anim.has_animation(ANIM):
 			longest = anim.get_animation(ANIM).length
+			info["later"] = _started_later(anim.get_animation(ANIM))
 	for p in _particles(node):
 		if anim == null:
 			p.one_shot = true
@@ -490,11 +494,34 @@ func _colour(node: Node3D, info: Dictionary, colors: Dictionary, row: int) -> vo
 		node.set(key, c)
 
 
+## The emitters (child name -> true) whose `emitting` the scene's animation first turns on after its start (an
+## explosion's smoke a beat after its core): the animation fires them, so a spawn leaves them off until then.
+static func _started_later(a: Animation) -> Dictionary:
+	var out := {}
+	for t in a.get_track_count():
+		var path := a.track_get_path(t)
+		if (
+			a.track_get_type(t) != Animation.TYPE_VALUE
+			or path.get_concatenated_subnames() != "emitting"
+		):
+			continue
+		for k in a.track_get_key_count(t):
+			if bool(a.track_get_key_value(t, k)):
+				if a.track_get_key_time(t, k) > 0.0:
+					out[String(path.get_concatenated_names())] = true
+				break
+	return out
+
+
 func _restart(node: Node3D, info: Dictionary) -> void:
 	node.visible = true
 	_set_speed(node, 0.0 if _held else _speed_of(info))
+	var later: Dictionary = info.get("later", {})
 	for p in _particles(node):
-		p.restart()
+		if later.has(String(p.name)):  # its scene starts it later; restarting it now too fired it twice
+			p.emitting = false
+		else:
+			p.restart()
 	var anim := info["anim"] as AnimationPlayer
 	if anim != null and anim.has_animation(ANIM):
 		anim.play(ANIM)
