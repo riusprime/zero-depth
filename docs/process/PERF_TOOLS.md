@@ -66,6 +66,7 @@ what is drawn), `primitives`, `video_mem_MB`, `nodes`, `resources`, `orphans`, `
 |---|---|
 | `--biome=<id[,id]>`, `--secs=N`, `--warm=N` | the biomes (default `frozen_shore,red_canyon`), seconds measured (30), warm-up (3) |
 | `--enemies=N`, `--heavy`, `--only=<kind>`, `--boss=<index>` | the scene: N enemies, the heavy build, one kind only, one boss instead |
+| `--kinds=<kind,...>`, `--hp=<permille>` | the live enemies cycle through those kinds only (a biome's roster); every placed enemy's HP scaled (3000: a later floor's toughness, so statuses stack) |
 | `--spans` | cuts every frame into consecutive spans that add up to it: `probe_script`, `nodes_process` (scripts and views, the views' sync), `after_process` (redraws, layout, transforms, the delete queue), `draw` (the engine's draw and present), `after_draw`, and per physics step `physics_pre`, `nodes_physics` (the sim's ticks and their listeners), `physics_post`. The stamps cost a few µs a frame; runs are a little slower than plain ones, so compare inside one page |
 | `--breakdown` | per-bucket script time: every view's sync, every tick listener, the sim's phases, `PerfMarks` |
 | `--process` | `--breakdown` plus every script node's `_process` timed from the probe. It adds 5–7 ms a frame of its own: proportions only (§4.3) |
@@ -93,6 +94,7 @@ The `--ab` flags. In `frame_probe.gd`: `wildfire`, `no_pack_fx`, `no_interp`, `s
 | `detach_furniture` | each enemy's disc, rings and bar nodes out of the tree |
 | `no_batch` | the enemy batch: every enemy a node again (`ActorViews.batch_enemies` off) |
 | `no_native_crowd` | the batch's native writer: the GDScript pass (`EnemyBatch.native` off) |
+| `no_kind_memo` | the views' reader keeping which form draws each shot for the tick (`LatchedReader.keep_kinds` off) |
 | `no_particles`, `no_sun_shadow`, `no_omni` | particle nodes; the directional light; omni and spot lights |
 | `no_hud`, `no_still` | the HUD layer; the HUD's still-part textures (`HudStill` off) |
 | `no_3d`, `no_viewport` | the root viewport's 3D; the root viewport's drawing |
@@ -182,6 +184,7 @@ output, build and machine.
 | [`PERF_NATIVE.md`](../roadmap/v0.11.1/evidence/PERF_NATIVE.md) | the native kernels off against on; the frame attribution | tick at 120 enemies 3.3 → 0.56 ms; horde frames 2–3 ms shorter; the enemies' nodes 6.0–8.9 ms, the HUD 2.0–2.4 ms |
 | [`PERF_W8.md`](../roadmap/v0.11.1/evidence/PERF_W8.md) | the frame after the first display steps | 20 enemies 8.2 ms (122 fps), 60 heavy 24.9 ms, 120 swarmers 18.5 ms; the HUD about 1 ms; the batch alone 0.15 ms |
 | [`PERF_FINAL.md`](../roadmap/v0.11.1/evidence/PERF_FINAL.md) | the final code of v0.11.1 (the native core the only sim), with PERF_W8's build measured again back to back | 20 enemies 8.7–9.2 ms, 60 heavy 24.3 ms, 120 swarmers 15.5 ms; the tick at 120 enemies 0.54 ms; the Ring 0.9 ms over the Gun alone; a daytime run reads about 0.7 ms higher than a night one |
+| [`COMBAT_FRAME_TIME.md`](../roadmap/v0.12.0/evidence/COMBAT_FRAME_TIME.md) | the owner's three slow fights (F18): Seekers + Venom, Starfall with 35 enemies, Frozen Shore at 1600 × 900, on a busy machine | Seekers + Venom +3.3 ms over the Gun alone; the shot views' sync 300–400 µs a tick shorter with the kind memo; every scene about twice the owner's frame rate |
 
 The quiet run after the batched avatars, the bulk reads and the shard drops is **NOT YET RUN** (PROGRESS "Where we
 are").
