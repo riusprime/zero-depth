@@ -132,3 +132,59 @@ playing, whit arrows or glows, making it showcase with text makes it lose the di
 | # | Owner line | Finding | Decision | Step |
 |---|---|---|---|---|
 | X1 | "we need to make it subtle so the player discovers it while playing, whit arrows or glows" | Text that explains or labels a mechanic exists in: objective-hint labels; boss-bar state tags ("STUNNED · VULNERABLE", the Twins' exposed tags, others); descriptive phase lines ("· Both Wardens fight"); the Judge's "Attacks slowed 75 %"; and the brief for the Siege Engine's views asked for "ARMOUR STRIPPED · VULNERABLE" | **No explanatory or state text for a boss mechanic.** Hints are arrows only; a state shows as a glow or colour on the boss and a shimmer of its bar; the Judge's mark keeps its clock icon and pips, no words. Every later view brief says so. The lead's reading of the scope (not the owner's words): boss names, the death recap's cause lines, sound captions, the Codex and Options are not covered | 9v (the sweep), and every view step after it |
+
+## The owner's playtest feedback round (2026-11-18)
+
+Two sources, kept verbatim: the boss playtest ([`feedback/ZeroDepth_Boss_Feedback_2026-11-18.md`](feedback/ZeroDepth_Boss_Feedback_2026-11-18.md),
+Twin Wardens, Fallen, Foundry, Tidecaller) and the build feedback of the 2026-11-11 session, pasted on 2026-11-18
+([`feedback/ZeroDepth_Build_Feedback_2026-11-11.md`](feedback/ZeroDepth_Build_Feedback_2026-11-11.md)). The owner:
+"small adjustments … the same idea, small fixes that do not need thinking or just a bit". Rows marked **Q** were
+asked on 2026-11-18 and are the owner's answers (quoted as the option they picked).
+
+**Agents (owner, 2026-11-18; supersedes "2 Opus at max" of 2026-11-15):** "send it to a sonnet agent with a very
+well specified task, up to 3 sonnet agents, if the task is hard you can spawn an opus agent, up to 2, so 5 in
+total". The lead writes each spec in full; at most 3 Sonnet and 2 Opus at once, each in its own worktree from the
+lead's SHA and its own `APPDATA`. Every number below is a starting value; the owner judges by playing.
+
+### Every owner line → where it lands
+| # | Owner line (close) | Decision | Step |
+|---|---|---|---|
+| F1 | Twins P1: "ranged attacks can be avoided simply by standing outside their reach … pursue the player, stay in melee range … ranged attacks become relevant when the player retreats" | Amber chases and stays in melee range; his ranged attacks are used only while you stand beyond about 7 m | 13 |
+| F2 | Twins P1: the charge "triggers only when the player is nearby … approximately 10–15-second cooldown" | The charge runs on its own clock, every 10–15 s, at any distance | 13 |
+| F3 | Twins P1: "remove the visible aiming line / long tell, make it near-immediate and anticipate player movement so that dodging with the player dash is necessary" | **Q** "A brief body flash": no lane or end circle drawn in phase 1; a ~0.3 s glow on Amber, the aim leads your movement; the burst stays | 13 |
+| F4 | Twins: "Smoke appears at the boss's feet on every attack and does not look good" | Removed | 13 |
+| F5 | Twins P2: the ground zone + arc "is too easy to bypass by simply stepping outside" | **Q** "Zone is the shelter": the arc sweeps the whole room except the marked zone | 13 |
+| F6 | Twins P3: "Amber still relies too much on ranged attacks" | F1's chase rule in phase 3 too | 13 |
+| F7 | Twins P3: the ward-breaking charge "is infrequent … an additional ~1 second of charge/aiming time" | The long charge comes more often (about every 10–12 s) and winds up 1 s longer (2.4 s); the lane stays drawn in phase 3 | 13 |
+| F8 | Twins P3: "Purple starts the phase with the shield already active … it should activate as a mechanic during the fight" | The whole ward is cast (seen) a few seconds into phase 3, not there at its start | 13 |
+| F9 | Twins P3: "The player can focus Amber and ignore Purple's shield" | **Q** "Amber is shielded too": while Violet's whole ward stands Amber takes about 25 %; the break opens both | 13 |
+| F10 | Fallen: "the shield sequence feels too similar … relatively easy to dodge"; "Full evaluation in a normal gameplay run is still pending" | **Q** "Wait for a normal run": no change now; asked again after the owner's normal run | — |
+| F11 | Foundry: "Fireballs still appear to use previous/legacy VFX … sometimes yellow and sometimes white" | Every Foundry fireball uses one pack effect with one colour (PD-13) | 15 |
+| F12 | Foundry: "gaps too narrow … fire from the boss's head and another dense pattern"; "Fire firing in both directions at once can feel practically impossible to dodge" | Every pattern's gap at least the hero's width plus a margin (tested from the data); no two opposite-facing streams at once | 15 |
+| F13 | Foundry: "The new shiny-looking material … less appealing than the previous appearance" | Back to the previous material | 15 |
+| F14 | Foundry: "Elemental effects, especially fire, can cover the boss in orange and obscure the model" | Element tint and fire overlay on the Foundry capped so the model reads | 15 |
+| F15 | Tidecaller: "the safe zone is displayed in yellow. It should appear as empty map" | The dry strip shows plain floor, no yellow | 14 |
+| F16 | Tidecaller: "The water has a noticeable flickering/twitching visual bug" | Fixed (traced first) | 14 |
+| F17 | Gatekeeper: spikes "closer to the boss … emerge sequentially … from the closest spike to the farthest … similar to … the first phase of the final boss" | Spikes start near the boss and rise one after another outward, as The Fallen's phase-1 spike line | 14 |
+| F18 | Perf: Seekers + Venom ~40 FPS, Starfall ~35 FPS (30–40 enemies), Frozen Shore ~60 FPS at 1600×900 | Profile each on the owner's PC (perf log), find the cost, fix it; numbers before/after on this machine | 16 |
+| F19 | "The options menu currently lacks resolution selection" | A resolution list (windowed and fullscreen) in Options | 17 |
+| F20 | "Explore … DLSS … individual settings for shadows, lighting effects, texture filtering" | **Q** "FSR 2 + separate settings": FSR 2 upscaling, and separate shadows, ambient occlusion/glow, anti-aliasing and texture filtering settings (en + es). DLSS not pursued (no built-in support) | 17 |
+| F21 | Starfall: "Ground marks visibly display the rectangular or square boundaries of their textures" (and other biomes) | Every ground decal fades to nothing at its edge; checked in every biome | 18 |
+| F22 | "Remove the smoke effects associated with these enemies" | Removed from every enemy (spawn, move, attack, death) | 18 |
+| F23 | "Some may be triggering or displaying explosions twice" | Audit every enemy's death and explosion; one effect each | 18 |
+| F24 | Void orb (Gravity Node): "no noticeable gameplay behavior … a slight pulling effect" | **Q** "Slight pull on you": it pulls the hero gently inside 5 m (always walkable out) and still bends shots | 19 |
+| F25 | "the minimap shows the arrow but not the rooms, the small one in the corner" (owner's answer) | Fixed: the corner map draws the rooms; e2e proves it | 20 |
+| F26 | "A Blood Price interaction still displays the old Pulse Gun … cannot be picked up" | Fixed: no retired weapon is offered or shown | 20 |
+| F27 | Enemies per biome look the same; "Basic enemies and their spellcasting variants should be recognizable at a glance" | **Q** "Shots first, you pick": per-biome tints from each biome palette and a clear caster mark, shown as stills (G2); built only after the owner picks | 21 (G2), then 22 |
+
+### Steps (agent, in waves; one owner request = one step)
+- **13. Twin Wardens tweaks** (F1–F9): Opus A. Sim + data + views + bots.
+- **14. Gatekeeper spikes and Tidecaller water** (F15–F17): Sonnet 1.
+- **15. Foundry fixes** (F11–F14): Sonnet 2.
+- **16. Combat frame time** (F18): Opus B. Measured on the owner's PC (real evidence there; machine named).
+- **17. Resolution and graphics settings** (F19–F20): Sonnet 3.
+- Wave 2, as wave 1's agents finish (files must not overlap a running agent's):
+  **18. Enemy VFX cleanup** (F21–F23, not the Twins' or Foundry's files), **19. Void orb pull** (F24),
+  **20. Minimap rooms and Blood Price weapon** (F25–F26), **21. Enemy look stills** (F27, G2; the owner picks).
+- **22.** The picked enemy looks, after 21.
+- After each merge: the lead runs the touched tests; after the wave, `scripts/ci/seams.sh`; nothing pushed (V2).
