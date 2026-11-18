@@ -26,6 +26,7 @@ extends RefCounted
 ## (re-applied every frame, so new enemies too) while its root, body and avatar stay: what the furniture's nodes cost.
 ## --ab=no_batch draws the batched enemy kinds with a node each again (ActorViews.batch_enemies off): the old path, in
 ## the same build, for a before/after run.
+## --ab=no_kind_memo asks the sim which form draws each shot on every call (LatchedReader.keep_kinds off).
 ## --ab=no_native_crowd writes the batched enemies' furniture in GDScript (EnemyBatch.native off) with the native
 ## library loaded: the native writer's before/after.
 ## --ab=no_ring hides the element rings (VfxLayer.ring: the Ring form's rings, their light and sparks);
@@ -43,6 +44,7 @@ const AB := [
 	"detach_furniture",
 	"no_batch",
 	"no_native_crowd",
+	"no_kind_memo",
 	"no_particles",
 	"no_hud",
 	"no_still",
@@ -181,6 +183,8 @@ func setup(tree: SceneTree, main: Node, ab: PackedStringArray) -> void:
 				_detached_parent.remove_child(_detached)
 			"no_batch":
 				ActorViews.batch_enemies = false
+			"no_kind_memo":
+				LatchedReader.keep_kinds = false
 			"no_native_crowd":
 				EnemyBatch.native = false
 			"no_hud":

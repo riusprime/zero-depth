@@ -35,6 +35,8 @@ extends SceneTree
 ## v0.10.5 W3-V1 (the enemy VAT pilot): --only=<kind> (an ActorStore.Kind name, e.g. swarmer) makes every live enemy
 ## that kind; --enemy-vat=on|off sets ViewPrefs.enemy_vat (VatCrowd draws the VatCrowd.KINDS enemies):
 ##   ... -s scripts/checks/frame_probe.gd -- --biome=red_canyon --enemies=60 --only=swarmer --enemy-vat=on
+## --kinds=<kind,...> cycles the live enemies through those kinds only (a biome's roster: core, signatures, variant);
+## --hp=<permille> scales every placed enemy's hit points (a later floor's toughness).
 ## --fx counts, per measured frame, the hero's effect instances (the forms' meshes and particles, the effects layer's
 ## sprites, the hero's share of them when the layer keeps a hero budget, the pack's live instances by family) and the
 ## hostile threats on screen (telegraphs, enemy shots) and the hero effects' opacity, and reports avg / p95 / max.
@@ -87,6 +89,10 @@ var _ab: PackedStringArray = []
 var _shadows := ""  # --enemy-shadows=proxy|blob (v0.10.5 PA)
 var _vat := ""  # --enemy-vat=on|off (v0.10.5 W3-V1)
 var _only := -1  # --only=<kind name> (v0.10.5 W3-V1): ActorStore.Kind, -1 the Playground's whole list
+## --kinds=<kind name,...>: the live enemies cycle through these kinds only (a biome's own roster, say).
+var _kinds: Array[int] = []
+## --hp=<permille>: every enemy placed gets this share of its hit points (3000: three times as tough).
+var _hp_permille := 1000
 var _main: Main
 var _bi := -1
 var _phase := &"boot"
@@ -163,6 +169,11 @@ func _initialize() -> void:
 			_vat = s.trim_prefix("enemy-vat=")
 		elif s.begins_with("only="):  # v0.10.5 W3-V1
 			_only = ActorStore.Kind.keys().find(s.trim_prefix("only=").to_upper())
+		elif s.begins_with("hp="):
+			_hp_permille = int(s.trim_prefix("hp="))
+		elif s.begins_with("kinds="):
+			for k in s.trim_prefix("kinds=").split(",", false):
+				_kinds.append(ActorStore.Kind.keys().find(k.to_upper()))
 		elif s.begins_with("ab="):
 			_ab = s.trim_prefix("ab=").split(",", false)
 		else:
@@ -393,8 +404,14 @@ func _top_up() -> void:
 		var ang := float(tries * 137) * 0.0174533 + float(w.tick) * 0.01
 		var dist := 7.0 + float((tries * 53) % 6)
 		var kind: int = kinds[(tries + alive) % kinds.size()]["kind"] if _only < 0 else _only
+		if not _kinds.is_empty():
+			kind = _kinds[(tries + alive) % _kinds.size()]
 		if _api.place_enemy_now(kind, p + Vector2(cos(ang), sin(ang)) * dist):
 			alive += 1
+			if _hp_permille != 1000:  # a later floor's toughness: statuses stack as they do there
+				var last := a.ids.size() - 1
+				a.max_hp[last] = a.max_hp[last] * _hp_permille / 1000
+				a.hp[last] = a.max_hp[last]
 
 
 func _sample() -> Array:
@@ -610,6 +627,10 @@ func _finish_biome() -> void:
 		)
 	if _only >= 0:  # v0.10.5 W3-V1
 		tag += "_only-" + String(ActorStore.Kind.keys()[_only]).to_lower()
+	if not _kinds.is_empty():
+		tag += "_kinds%d" % _kinds.size()
+	if _hp_permille != 1000:
+		tag += "_hp%d" % _hp_permille
 	if not _vat.is_empty():
 		tag += "_vat-" + _vat
 	var f := FileAccess.open(

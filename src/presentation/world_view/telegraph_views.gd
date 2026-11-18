@@ -482,9 +482,12 @@ func _update(n: Node3D, tg: Dictionary) -> void:
 		var r: float = tg["radius"]
 		n.position = SimPlane.to_3d(tg["center"], Y)
 		var edge: MeshInstance3D = n.get_node("Edge")
-		var torus: TorusMesh = edge.mesh
-		torus.inner_radius = r - EDGE
-		torus.outer_radius = r
+		# A primitive mesh is built again on every property set: the ring only when its radius is new
+		if edge.get_meta(&"r", -1.0) != r:
+			edge.set_meta(&"r", r)
+			var torus: TorusMesh = edge.mesh
+			torus.inner_radius = r - EDGE
+			torus.outer_radius = r
 		edge.scale = Vector3(1, 0.05, 1)
 		var fill: Node3D = n.get_node("Fill")
 		var fr := maxf(r * p, 0.01)
@@ -501,10 +504,13 @@ func _update(n: Node3D, tg: Dictionary) -> void:
 		[Vector3(-hx, 0, 0), Vector3(EDGE, 0.01, hy * 2.0)],
 		[Vector3(hx, 0, 0), Vector3(EDGE, 0.01, hy * 2.0)],
 	]
+	var sized: bool = n.get_meta(&"half", Vector2.INF) == box.half  # (the edges' boxes are built again on a size set)
+	n.set_meta(&"half", box.half)
 	for k in 4:
 		var e: MeshInstance3D = n.get_node("Edge%d" % k)
 		e.position = sides[k][0]
-		(e.mesh as BoxMesh).size = sides[k][1]
+		if not sized:
+			(e.mesh as BoxMesh).size = sides[k][1]
 	# The fill runs from the attacker's end (-x) toward the far end as the windup completes.
 	var fill: Node3D = n.get_node("Fill")
 	var len := maxf(hx * 2.0 * p, 0.01)
