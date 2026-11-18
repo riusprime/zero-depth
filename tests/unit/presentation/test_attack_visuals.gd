@@ -331,7 +331,9 @@ func test_the_thrust_overshoots_unless_reduced_motion_and_ends_sunk() -> void:
 	assert_eq(StoneSpikeViews.extent(StoneSpikeViews.LIFE_TICKS, false), 0.0, "sunk at the end")
 
 
-func test_the_strike_throws_debris_and_dust_flashes_and_cracks_the_floor() -> void:
+## The spikes kick the floor's own grit and a low dust up (GroundSlamViews), with no sprite debris, smoke or light, and
+## crack the floor.
+func test_the_strike_kicks_grit_and_cracks_the_floor_with_no_light() -> void:
 	var s := _lanes_fight()
 	var w: World = s[0]
 	var reader := WorldReader.new(w)
@@ -345,18 +347,15 @@ func test_the_strike_throws_debris_and_dust_flashes_and_cracks_the_floor() -> vo
 		w.step(InputFrame.new())
 		spikes.sync(reader)
 	assert_eq(spikes.strike_count(), 1)
+	assert_eq(spikes.slams.started(), 1, "one kick of grit along the lanes")
 	layer.begin(float(reader.tick()))
 	layer.finish()
-	assert_gt(layer.used(&"debris"), 0, "rock debris")
-	assert_gt(layer.used(&"smoke"), 0, "dust")
-	assert_gt(layer.lights_on(), 0, "a hot flash")
+	assert_eq(layer.used(&"debris"), 0, "no sprite debris")
+	assert_eq(layer.used(&"smoke"), 0, "no smoke puffs")
+	assert_eq(layer.lights_on(), 0, "no red light")
 	assert_gt(layer.marks_of(BossStrikeFx.crack_mark()), 0, "cracks left on the floor")
-	ViewPrefs.effects_density = "low"
-	var high := layer.used(&"debris")
-	layer.density = 0.3
-	layer.begin(float(reader.tick()))
-	layer.finish()
-	assert_lt(layer.used(&"debris"), high, "thinned with the density")
+	spikes.slams.advance(0.3)
+	assert_gt(spikes.slams.pieces_shown(), 0, "the grit flies")
 
 
 ## v0.9.0 MI2: the owner's stone_spike is listed: one unit tall, in its own proportions (a spike, narrower than the

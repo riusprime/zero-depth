@@ -238,16 +238,16 @@ void fragment() {
 		float across = abs(uv.y) + (n - 0.5) * 0.5;
 		a = 1.0 - smoothstep(0.55, 1.0, across);
 		c = mix(dark, glow * 2.2, clamp(veins * heat * 1.4 + (1.0 - across) * heat * 0.3, 0.0, 1.0));
-	} else if (p == 2) {  // acid splat: a blobby pool, bright bubbles in it
-		if (splat_on > 0.5) {  // the owner's splat, in its own greens
+	} else if (p == 2) {  // acid splat: a flat pool in the strike's colour, its shape the owner's splat
+		if (splat_on > 0.5) {  // the owner's splat's shape and shading, in the pool's colour (not its own neon)
 			vec4 k = cell(splat_tex, UV, sub);
-			a = k.a * 0.95;
-			c = k.rgb * mix(0.75, 1.25, heat);
+			a = k.a * 0.9;
+			c = glow * (0.45 + 0.5 * dot(k.rgb, vec3(0.3, 0.59, 0.11)));
 		} else {
 			float d = length(uv) + (n - 0.5) * 0.9;
 			a = (1.0 - smoothstep(0.55, 0.8, d)) * 0.9;
 			float bub = smoothstep(0.62, 0.7, n2);
-			c = mix(glow * 0.35, glow * (1.2 + heat), clamp(bub + heat * 0.4, 0.0, 1.0));
+			c = mix(glow * 0.75, glow * (1.0 + heat), clamp(bub * 0.5 + heat * 0.4, 0.0, 1.0));
 		}
 	} else if (p == 3) {  // molten metal: flowing, a crust closing in as it cools
 		float f = texture(noise_tex, wp.xz * 0.22 + vec2(t * 0.12, t * 0.05) + vec2(fract(cd.b / 97.0))).r;

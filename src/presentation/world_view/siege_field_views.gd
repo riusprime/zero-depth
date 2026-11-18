@@ -6,11 +6,12 @@ extends Node3D
 ## - The Target Lock: a red-orange reticle of the circle's exact radius on its centre (a ring, four ticks turning, a
 ##   small cross, a countdown arc filling as the shell comes) with the pack's rim on it (se_lock_rim). It turns while
 ##   it tracks the hero; for its last moments it holds still, flashes white-hot and pulses fast. The shell falls into
-##   it as a streak from above (the pack's javelin, se_shell) and lands in the pack's explosion (se_blast).
+##   it as a streak from above (the pack's javelin, se_shell) and slams into the stone (GroundSlamViews: chunks,
+##   grit, cracks and a short orange flash; no fireball or smoke).
 ## - The boulders: each the kit's large rock (SiegeLooks.rock) stretched to the boulder's exact square and 1.1 m tall,
-##   so the hero shows over it. It rises out of the floor in the pack's rock dust (vx1_impact_other) when placed; in its
+##   so the hero shows over it. It rises out of the shell's cracks with a kick of grit and dust when placed; in its
 ##   last seconds its cracks glow, and over its last second it shakes and sinks; shattered (a blast it took, the cart,
-##   the cap) it bursts in the dust and goes at once.
+##   the cap) it bursts into stone chunks and goes at once.
 ## - The cover: only while a blast that needs cover comes (a Shockwave under the cover rule winding up, the Doom
 ##   Shell's cart in its last 2 s, the Doom Shell due), a cool teal shadow lies behind each boulder, away from the
 ##   Engine, clipped to the room (the sim's line of sight from the Engine's centre: the hero is safe with its centre in
@@ -21,15 +22,7 @@ extends Node3D
 
 const RIM_ID := &"se_lock_rim"
 const SHELL_ID := &"se_shell"
-const BLAST_ID := &"se_blast"
 const COVER_ID := &"se_cover"
-const DUST_ID := &"vx1_impact_other"
-const DUST_HIDE := ["Core", "Smoke", "Ground_Impact", "Impact_Streaks1", "Impact_Streaks2"]
-const DUST_COLORS := {
-	&"primary": Color(0.8, 0.75, 0.68),
-	&"secondary": Color(0.56, 0.5, 0.45),
-	&"tertiary": Color(0.3, 0.27, 0.24)
-}
 const LOCK_EVENT := &"siege_lock"
 const SHELL_EVENT := &"siege_shell"
 const BOULDER_UP := &"siege_boulder"
@@ -39,10 +32,15 @@ const END_EXPIRED := 0
 ## The cart's last 2 s of its roll (BossDoom.WARN_TICKS): the Doom Shell comes.
 const DOOM_WARN_TICKS := 120
 const BOULDERS := 6
-## The pack scenes' size per metre of radius (the rim 0.55; the explosion about 2 m across at 1; the dust 0.4).
+## The pack rim's size per metre of radius.
 const RIM_PER_M := 0.55
-const BLAST_PER_M := 0.6
-const DUST_PER_M := 0.42
+## The shell's slam (its short orange flash) and the boulder's rise and shatter (m round).
+const SHELL_STYLE := {"flash": Color(1.0, 0.5, 0.2, 0.75)}
+const RISE_M := 1.8
+const SHATTER_M := 2.0
+const SHATTER := (
+	GroundSlamViews.P_BIG | GroundSlamViews.P_MID | GroundSlamViews.P_GRIT | GroundSlamViews.P_DUST
+)
 const COVER_SCALE := 0.45
 ## The shell's fall: its last ticks before it lands, from this high (m), at this size.
 const FALL_TICKS := 24
@@ -66,6 +64,8 @@ var pack_fx: PackFx = null:
 		pack_fx = v
 		hold.pack = v
 var hold := FormPackHold.new()
+## The shells' slams and the boulders' rise and shatter.
+var slams := GroundSlamViews.new(4)
 ## True once a frame with nothing to show drew it all hidden: later frames return at once.
 var quiet := false
 var _siege := {}
@@ -109,6 +109,7 @@ func _init() -> void:
 		_rock_nodes.append(node)
 		_rocks.append(SiegeLooks.rock(node))
 	_rock_nodes[0].set_meta(ShaderWarmup.WARM_META, true)
+	add_child(slams)
 
 
 func sync(reader: WorldReader) -> void:
@@ -158,33 +159,17 @@ func _event(e: SimEvent) -> void:
 		LOCK_EVENT:
 			_lock_len = maxi(1, e.amount)
 		SHELL_EVENT:
-			_spawn(BLAST_ID, &"explosion", SimPlane.to_3d(e.pos, 0.1), _lock_r * BLAST_PER_M)
+			slams.slam(SimPlane.to_3d(e.pos, 0.0), _lock_r, SHELL_STYLE)
 		BOULDER_UP:
 			_rising[e.amount] = 0.0
-			_dust(e.pos, 1.0)
+			slams.slam(
+				SimPlane.to_3d(e.pos, 0.0),
+				RISE_M,
+				{"parts": BossStrikeImpacts.CHIPS, "amount": 0.6}
+			)
 		BOULDER_DOWN:
 			if e.amount_applied != END_EXPIRED:
-				_dust(e.pos, 1.4)
-
-
-## The rock's dust round a boulder's 3 m (`size` times it).
-func _dust(at: Vector2, size: float) -> void:
-	if pack_fx == null or not pack_fx.has_id(DUST_ID) or not pack_fx.has_room(&"impact"):
-		return
-	pack_fx.spawn(
-		DUST_ID,
-		SimPlane.to_3d(at, 0.05),
-		3.0 * DUST_PER_M * size,
-		DUST_COLORS,
-		-1.0,
-		1.0,
-		DUST_HIDE
-	)
-
-
-func _spawn(id: StringName, family: StringName, at: Vector3, scale: float) -> void:
-	if pack_fx != null and pack_fx.has_id(id) and pack_fx.has_room(family):
-		pack_fx.spawn(id, at, scale)
+				slams.slam(SimPlane.to_3d(e.pos, 0.0), SHATTER_M, {"parts": SHATTER})
 
 
 func _process(delta: float) -> void:

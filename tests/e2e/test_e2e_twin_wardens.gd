@@ -114,10 +114,12 @@ func test_continue_floor_4_and_fight_the_twin_wardens() -> void:
 	assert_not_null(amber.imported, "the owner's amber model")
 	assert_not_null(violet.imported, "the owner's violet model")
 	await e.frames(90)  # past the rise
+	var links := main.view.twins.find_children("*", "MultiMeshInstance3D", true, false)
+	var not_grit := func(n: Node) -> bool: return not main.view.twins.slams.is_ancestor_of(n)
 	assert_eq(
-		main.view.twins.find_children("*", "MultiMeshInstance3D", true, false).size(),
+		links.filter(not_grit).size(),
 		0,
-		"no chain between them: they fight apart"
+		"no chain between them: they fight apart (the cut's grit is not a link)"
 	)
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_true(hud.boss_bar.visible, "one bar")

@@ -2,11 +2,11 @@ class_name StoneSpikeViews
 extends Node3D
 ## v0.8.0 AV (owner O7: "when they do long distance stonekeeper, it should be like spikes coming out of the ground that
 ## actually look like spikes and not … a red thingy"): the Gatekeeper's shock lanes (its `row_lanes` move) strike as
-## rows of 3D stone spikes erupting along each lane: faceted grey stone with red-hot cracks, staggered heights, a quick
+## rows of 3D stone spikes erupting along each lane: faceted stone in the floor's colour with faint dark-red seams (no
+## glow or light of their own), staggered heights, a quick
 ## thrust up, one after another outward from the boss's edge at the speed the sim strikes them, a hold, then they sink
-## back (LIFE_TICKS, 0.6 s). With the new look's effects
-## layer (VfxCore) the strike also throws rock debris and dust (the fx_debris_chunks and fx_smoke_puffs atlases),
-## flashes a hot light and leaves crack marks on the floor (draw_fx, a VfxCore drawer).
+## back (LIFE_TICKS, 0.6 s). Each kicks the floor's grit and a low dust up as it rises (GroundSlamViews.kick), and the
+## strike leaves crack marks on the floor (draw_fx, a VfxCore drawer).
 ## The strike is read, never decided: a lanes marker of a row_lanes telegraph (WorldReader.telegraph, the function
 ## that resolves the hit, EI-07) shows "locked" at progress 1000 on exactly its strike tick (BossDodge.mark_state 2),
 ## and the spikes rise along the very lanes it hits. The sim's timings are unchanged.
@@ -23,11 +23,12 @@ extends Node3D
 ## one in its middle DISC_TALL times a lane spike's height, the rest leaning out round it to the disc's edge.
 
 ## The Gatekeeper's quake pillars (WorldReader.boss_quake_pillars, BossQuake.ring_state)
-## stand as taller, wider clusters of the same stone spikes, their hot cracks glowing with the 3 s pulse: dim, warming
-## as the ring grows over its warning, flaring on the pulse. The ring (_ring, flat unshaded bands rebuilt each draw)
-## grows from the pillar out to the very radius the pulse hits, with a faint outline of that radius while it grows,
-## and flashes as it strikes. A pillar the sim removes (its Shock Lanes shattered it) bursts into rubble, debris, dust
-## and a hot flash (_shatter, a strike without lanes). Read only; the pillar, the ring and its clock are the sim's.
+## stand as taller, wider clusters of the same stone spikes, their seams warming with the 3 s pulse: dim, warming as
+## the ring grows over its warning, flaring on the pulse. The ring (_ring, flat unshaded bands rebuilt each draw) is a
+## dark ripple in the floor growing from the pillar out to the very radius the pulse hits, over a faint dark outline of
+## that radius, and only as it strikes a thin bright edge flashes at that radius. A pillar the sim removes (its Shock
+## Lanes shattered it) breaks: short broken spikes and the stone slam's chunks and grit (_shatter). Read only; the
+## pillar, the ring and its clock are the sim's.
 
 const LIFE_TICKS := 36.0
 const RISE_TICKS := 5.0
@@ -44,9 +45,9 @@ const DISC_TALL := 1.9
 ## The floor marks a lane leaves: at the crossing and every MARK_STEP m out, MARKS_EACH_WAY each way.
 const MARK_STEP := 2.0
 const MARKS_EACH_WAY := 2
-const HOT := Color(1.0, 0.32, 0.12)
+## The spikes' seams: a faint dark red, never a glow.
+const HOT := Color(0.36, 0.08, 0.04)
 const CRACK_MARK := Color(0.07, 0.05, 0.045, 0.85)
-const DUST := Color(0.6, 0.55, 0.5)
 const MODEL_ID := "stone_spike"
 const MODEL_PATH := "res://assets/models/fx/stone_spike.glb"
 const MANIFEST := "res://assets/models/manifest.json"
@@ -65,21 +66,16 @@ const QUAKE_SATELLITES := 4
 const QUAKE_REST_HEAT := 0.18
 const QUAKE_FLARE_TICKS := 14.0
 const RING_BAND_M := 0.14
+## The pulse's thin bright edge, and the ripple's dark (the floor pressed down).
 const RING_COLOR := Color(1.0, 0.42, 0.15)
+const RIPPLE := Color(0.05, 0.04, 0.035)
 const RUBBLE := 6
-## With the pack (the game) the quake ring is pack effects, in the telegraph's own orange
-## (an enemy telegraph keeps its colour): the growing ring the fire rim (ring_fire: rim_area_vfx_04), the radius the
-## pulse hits a darker rim (ring_bleed's rim_area_vfx_01, recoloured), the strike a shock pulse (bx_pulse_shock:
-## pulse_area_vfx_02) out to that radius; a shattered pillar a rock impact (bx_impact_a: vfx_impact_03, hot, its Core
-## and Ground_Impact hidden). The flat bands stay for a view without the pack. Each rim's scale per metre of its
-## radius; the pulse scene's own reach (m).
-const QUAKE_RIM_PER_M := 0.72
-const QUAKE_EDGE_PER_M := 0.76
-const QUAKE_PULSE_REACH_M := 2.25
-const QUAKE_SHATTER_SCALE := 1.3
-## The rock impact without its white-hot Core puff and its Ground_Impact disc (PackFx.HIDE_PER_SPAWN).
-const QUAKE_SHATTER_HIDE := ["Core", "Ground_Impact"]
-const QUAKE_EDGE := Color(0.9, 0.3, 0.08)
+## The grit a spike row kicks up (its size against the slam's), and a shattered pillar's slam (m round).
+const KICK_SIZE := 0.28
+const SHATTER_M := 1.8
+const SHATTER := (
+	GroundSlamViews.P_BIG | GroundSlamViews.P_MID | GroundSlamViews.P_GRIT | GroundSlamViews.P_DUST
+)
 
 const SHADER := """
 shader_type spatial;
@@ -89,6 +85,8 @@ uniform vec4 stone : source_color = vec4(0.46, 0.44, 0.42, 1.0);
 uniform vec4 stone_dark : source_color = vec4(0.24, 0.22, 0.21, 1.0);
 uniform vec4 hot : source_color = vec4(1.0, 0.32, 0.12, 1.0);
 uniform float energy = 4.0;
+uniform vec4 floor_col : source_color = vec4(0.5, 0.48, 0.46, 1.0);
+uniform float floor_on = 0.0;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
 uniform sampler2D stone_tex : source_color, filter_linear_mipmap, repeat_enable;
 uniform float stone_on = 0.0;
@@ -120,8 +118,11 @@ void fragment() {
 		ALBEDO = m;
 		veins = clamp((m.r - max(m.g, m.b)) * 3.0, 0.0, 1.0);
 	}
-	float g = veins * heat * mix(0.35, 1.0, low);
-	EMISSION = hot.rgb * (energy * g + 0.5 * heat * low * low);
+	if (floor_on > 0.5) {  // the floor's own stone, the map's shading kept
+		ALBEDO = floor_col.rgb * (0.8 + 0.6 * dot(ALBEDO, vec3(0.3, 0.59, 0.11)));
+	}
+	ALBEDO = mix(ALBEDO, hot.rgb, smoothstep(0.4, 0.9, veins) * 0.45);  // faint dark-red seams
+	EMISSION = hot.rgb * veins * heat * mix(0.35, 1.0, low) * 0.5;
 	ROUGHNESS = 0.9;
 	SPECULAR = 0.2;
 }
@@ -134,14 +135,12 @@ static var _from_model := false
 ## The owner's spike's colour map (null with the code spike).
 static var _model_tex: Texture2D
 
-## The effects layer for the debris, dust, light and floor marks (WorldViewRoot sets it with the new look).
+## The effects layer for the floor marks (WorldViewRoot sets it with the new look).
 var vfx: VfxCore
-## The quake rings' held pack rims, and whether the last effects frame drew the rings with the pack (then
-## the flat bands are not built).
-var quake_holds := PackHold.new()
-var quake_pack_on := false
+## The grit and dust the spikes kick up, and the shattered pillars' slams.
+var slams := GroundSlamViews.new(8)
 ## Live strikes: {"tick", "seed", "center" (Vector3), "spikes": [[base, basis, height, delay, seed]], "marks":
-## [Vector3], "dust": [Vector3]}.
+## [Vector3]}.
 var _strikes: Array[Dictionary] = []
 ## The pillars standing now (WorldReader.boss_pillars: [center, half, from, until]).
 var _pillars: Array = []
@@ -153,7 +152,6 @@ var _quake_seen := {}
 var _ring := MeshInstance3D.new()
 var _ring_mesh := ImmediateMesh.new()
 var _ring_bands := 0
-var _quake_once := {}  # The quake one-shots started (key -> tick)
 ## Strikes already raised, by key (the boss's id and the marker's lanes), with their tick.
 var _seen := {}
 var _tick := 0
@@ -200,6 +198,15 @@ func _init() -> void:
 	_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_ring.extra_cull_margin = 16384.0
 	add_child(_ring)
+	add_child(slams)
+
+
+## The biome's floor colours: the spikes, their grit and the shattered pillars' stone are the floor's.
+func floor_palette(palette: Dictionary) -> void:
+	slams.floor_palette(palette)
+	if palette.has("ground"):
+		_mat.set_shader_parameter("floor_col", palette["ground"])
+		_mat.set_shader_parameter("floor_on", 1.0)
 
 
 func sync(reader: WorldReader) -> void:
@@ -400,16 +407,12 @@ func _spawn_disc(c: Vector2, r: float, tick: int) -> void:
 		_strikes.pop_front()
 		room = MAX_SPIKES - pooled()
 	var mark := SimPlane.to_3d(c, 0.0)
-	_strikes.append(
-		{
-			"tick": tick,
-			"seed": sd,
-			"center": mark,
-			"spikes": spikes,
-			"marks": [mark],
-			"dust": [mark]
-		}
-	)
+	var ring := []
+	for j in 5:  # the floor's grit kicked up round the cluster as it bursts out
+		var ang := TAU * j / 5.0 + VfxCore.h(sd + 5, j)
+		ring.append(SimPlane.to_3d(c + Vector2(cos(ang), sin(ang)) * r * 0.8, 0.0))
+	slams.kick(ring, KICK_SIZE)
+	_strikes.append({"tick": tick, "seed": sd, "center": mark, "spikes": spikes, "marks": [mark]})
 
 
 ## Raises one marker's lanes at `tick`: spikes every STEP_M down each lane, zig-zagging across it, rising one after
@@ -422,6 +425,7 @@ func _spawn(obbs: Array, tick: int, mpt := 0.0) -> void:
 	var spikes := []
 	var marks := []
 	var dust := []
+	var delays := []
 	var span := SPREAD_TICKS
 	for li in obbs.size():
 		var o: Obb = obbs[li]
@@ -444,8 +448,9 @@ func _spawn(obbs: Array, tick: int, mpt := 0.0) -> void:
 			delay += VfxCore.h(sd + li * 977 + 4, j) * 0.5  # a spike is never before its slice
 			span = maxf(span, delay)
 			spikes.append([SimPlane.to_3d(at, 0.0), b, height, delay, VfxCore.h(sd, j + li * 500)])
-			if j % 4 == 0:
+			if j % 3 == 0:  # the floor's grit kicked up as its spike bursts out
 				dust.append(SimPlane.to_3d(at, 0.0))
+				delays.append(delay / 60.0)
 		for k in range(MARKS_EACH_WAY + 1):
 			var along := MARK_STEP * k
 			if along <= o.half.x * 2.0 and (li == 0 or k > 0):
@@ -466,10 +471,10 @@ func _spawn(obbs: Array, tick: int, mpt := 0.0) -> void:
 			"center": SimPlane.to_3d(c, 0.0),
 			"spikes": spikes,
 			"marks": marks,
-			"dust": dust,
 			"span": span
 		}
 	)
+	slams.kick(dust, KICK_SIZE, delays)
 
 
 ## Where a marker's lanes start: the first lane's start at the boss's edge.
@@ -612,51 +617,15 @@ func pillar_count() -> int:
 	return _pillars_drawn
 
 
-## A VfxCore drawer (WorldViewRoot adds it): each strike's rock debris thrown up, dust rising and spreading, a hot
-## flash of light where the lanes cross and crack marks along the lanes. Thinned with the layer's density.
+## A VfxCore drawer (WorldViewRoot adds it): the crack marks each strike leaves along its lanes (its grit and dust
+## are GroundSlamViews' kicks, with no light).
 func draw_fx(layer: VfxCore) -> void:
 	var now := float(_tick) + Engine.get_physics_interpolation_fraction()
-	var vl := layer as VfxLayer
-	if vl != null and vl.pack_fx != null:  # The quake rings and shatters from the pack
-		_pack_quakes(vl.pack_fx, now)
-	else:
-		quake_pack_on = false
 	for s in _strikes:
 		var age := now - float(s["tick"])
-		var life := LIFE_TICKS + float(s.get("span", SPREAD_TICKS))
-		if age < 0.0 or age > life:
+		if age < 0.0 or age > LIFE_TICKS + float(s.get("span", SPREAD_TICKS)):
 			continue
 		var sd: int = s["seed"]
-		var u := clampf(age / life, 0.0, 1.0)
-		var dust: Array = s["dust"]
-		for k in dust.size():
-			if VfxCore.h(sd + 5, k) > layer.density:
-				continue
-			var base: Vector3 = dust[k]
-			var a := TAU * VfxCore.h(sd + 6, k)
-			var out := Vector3(cos(a), 0.0, sin(a))
-			var t := clampf(age / 18.0, 0.0, 1.0)
-			if t < 1.0:
-				var q := base + out * 0.9 * t + Vector3(0, 0.1 + 2.4 * t - 2.6 * t * t, 0)
-				layer.sprite(
-					&"debris",
-					q,
-					0.45 + 0.2 * VfxCore.h(sd + 7, k),
-					Color(0.85, 0.8, 0.76, 1.0 - t * t),
-					(sd + k) % 4,
-					age * 0.3 * (VfxCore.h(sd + 8, k) - 0.5)
-				)
-			var q2 := base + out * 0.4 * u + Vector3(0, 0.25 + 0.9 * u, 0)
-			layer.sprite(
-				&"smoke",
-				q2,
-				0.7 + 1.1 * u,
-				Color(DUST, 0.7 * sin(PI * u)),
-				(sd + k + 1) % 4,
-				TAU * VfxCore.h(sd + 9, k)
-			)
-		var c: Vector3 = s["center"]
-		layer.light_merged(c + Vector3(0, 0.8, 0), HOT, 3.5 * (1.0 - u) * (1.0 - u), 6.0, 1.0)
 		var marks: Array = s["marks"]
 		for k in marks.size():
 			layer.mark(sd * 16 + k, BossStrikeFx.crack_mark(), marks[k], 1.1, CRACK_MARK)
@@ -770,8 +739,9 @@ static func _instance(b: Basis, o: Vector3, heat: float, sd: int) -> PackedFloat
 	)
 
 
-## The rings: while a pillar's warning runs, a hot band grows from the pillar out to the radius its pulse hits, over a
-## faint outline of that radius; as it strikes, the band flashes at that radius and fades. Rebuilt every draw.
+## The rings: while a pillar's warning runs, a dark ripple in the floor grows from the pillar out to the radius its
+## pulse hits, over a faint dark outline of that radius; as it strikes, a thin bright edge flashes at that radius and
+## fades. Rebuilt every draw.
 func _draw_rings(now: float, still: bool) -> void:
 	_ring_mesh.clear_surfaces()
 	var bands := []
@@ -782,26 +752,27 @@ func _draw_rings(now: float, still: bool) -> void:
 		var grow := float(clock[1])
 		if grow >= 0.0:
 			var inner := float(q["half"]) * 1.45
-			bands.append([c, lerpf(inner, r, grow), RING_BAND_M, 0.45 + 0.45 * grow])
-			bands.append([c, r, RING_BAND_M * 0.4, 0.3])
+			bands.append([c, lerpf(inner, r, grow), RING_BAND_M * 3.0, 0.2 + 0.25 * grow, RIPPLE])
+			bands.append([c, r, RING_BAND_M * 0.6, 0.25, RIPPLE])
 		var flare := float(clock[2])
 		if flare > 0.0:
 			var u := 1.0 - flare
 			var spread := 0.0 if still else 0.08 * u
-			bands.append([c, r * (1.0 + spread), RING_BAND_M * (0.6 + 1.6 * flare), flare])
+			bands.append(
+				[c, r * (1.0 + spread), RING_BAND_M * (0.3 + 0.5 * flare), flare, RING_COLOR]
+			)
 	_ring_bands = bands.size()
-	if bands.is_empty() or quake_pack_on:  # VX: the pack's rims draw them (_pack_quakes)
+	if bands.is_empty():
 		return
 	_ring_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 	for bd: Array in bands:
-		_band(bd[0], float(bd[1]), float(bd[2]), float(bd[3]))
+		_band(bd[0], float(bd[1]), float(bd[2]), Color(bd[4], clampf(float(bd[3]), 0.0, 1.0)))
 	_ring_mesh.surface_end()
 
 
-## A flat annulus round c at radius r, `width` wide, of RING_COLOR at alpha a.
-func _band(c: Vector2, r: float, width: float, a: float) -> void:
+## A flat annulus round c at radius r, `width` wide, in `col`.
+func _band(c: Vector2, r: float, width: float, col: Color) -> void:
 	var steps := 40
-	var col := Color(RING_COLOR, clampf(a, 0.0, 1.0))
 	var r0 := maxf(0.0, r - width * 0.5)
 	var r1 := r + width * 0.5
 	for s in steps:
@@ -818,12 +789,11 @@ func _band(c: Vector2, r: float, width: float, a: float) -> void:
 			_ring_mesh.surface_add_vertex(p[k])
 
 
-## A shattered quake pillar at c on `tick`: short broken spikes thrown up round it and sinking, rock debris, dust, a hot
-## flash and a crack mark (draw_fx), as a strike without lanes.
+## A shattered quake pillar at c on `tick`: short broken spikes thrown up round it and sinking, the stone slam's chunks
+## and grit (GroundSlamViews) and a crack mark (draw_fx), as a strike without lanes.
 func _shatter(c: Vector2, tick: int) -> void:
 	var sd := tick * 37 + int(absf(c.x) * 89.0) + int(absf(c.y) * 11.0)
 	var spikes := []
-	var dust := []
 	for j in RUBBLE:
 		var ang := TAU * j / RUBBLE + 0.6 * VfxCore.h(sd, j)
 		var at := c + Vector2(cos(ang), sin(ang)) * (0.3 + 0.5 * VfxCore.h(sd + 1, j))
@@ -835,73 +805,10 @@ func _shatter(c: Vector2, tick: int) -> void:
 		spikes.append(
 			[SimPlane.to_3d(at, 0.0), b, height, VfxCore.h(sd + 4, j), VfxCore.h(sd + 5, j)]
 		)
-		dust.append(SimPlane.to_3d(at, 0.0))
 	while _strikes.size() >= MAX_STRIKES:
 		_strikes.pop_front()
 	var mark := SimPlane.to_3d(c, 0.0)
+	slams.slam(mark, SHATTER_M, {"parts": SHATTER})
 	_strikes.append(
-		{
-			"tick": tick,
-			"seed": sd,
-			"center": mark,
-			"spikes": spikes,
-			"marks": [mark],
-			"dust": dust,
-			"quake": true
-		}
+		{"tick": tick, "seed": sd, "center": mark, "spikes": spikes, "marks": [mark], "quake": true}
 	)
-
-
-## PD-13: the quake rings and shatters as pack effects (QUAKE_RIM_PER_M's note), each effects frame. While
-## a warning runs: the fire rim at the growing radius and the dark rim at the radius the pulse hits; on the pulse: the
-## shock pulse once (not with reduced motion: the rim at the radius flares instead); a shatter: the rock impact once.
-## Effects density thins them through PackFx's caps.
-func _pack_quakes(fx: PackFx, now: float) -> void:
-	quake_holds.fx = fx
-	quake_holds.begin()
-	var still := ViewPrefs.reduced_motion
-	var hot := {&"primary": RING_COLOR.lightened(0.35), &"secondary": RING_COLOR, &"tertiary": HOT}
-	var dark := {
-		&"primary": QUAKE_EDGE, &"secondary": QUAKE_EDGE, &"tertiary": QUAKE_EDGE.darkened(0.4)
-	}
-	var drawn := true
-	for q: Dictionary in _quakes:
-		var c2: Vector2 = q["center"]
-		var c := SimPlane.to_3d(c2, 0.05)
-		var r := float(q["ring"])
-		var clock := quake_clock(q, now)
-		var grow := float(clock[1])
-		var flare := float(clock[2])
-		var key := int(absf(c2.x) * 131.0) * 977 + int(absf(c2.y) * 17.0) * 7 + int(q["rose"])
-		if grow >= 0.0 or (still and flare > 0.0):
-			var at := lerpf(float(q["half"]) * 1.45, r, grow) if grow >= 0.0 else r
-			var n := quake_holds.touch(key * 4, &"ring_fire", &"area", c, at * QUAKE_RIM_PER_M, hot)
-			drawn = drawn and n != null
-		if grow >= 0.0:
-			var e := quake_holds.touch(
-				key * 4 + 1, &"ring_bleed", &"area", c, r * QUAKE_EDGE_PER_M, dark
-			)
-			drawn = drawn and e != null
-		if flare > 0.0 and not still:
-			var pulse := int(float(now - float(q["rose"])) / maxf(1.0, float(q["pulse_ticks"])))
-			_quake_shot(
-				fx, "p%d:%d" % [key, pulse], &"bx_pulse_shock", c, r / QUAKE_PULSE_REACH_M, hot
-			)
-	quake_holds.end()
-	quake_pack_on = drawn
-	for s in _strikes:
-		if s.get("quake", false):
-			var at: Vector3 = s["center"]
-			_quake_shot(fx, "s%d" % int(s["seed"]), &"bx_impact_a", at, QUAKE_SHATTER_SCALE, hot)
-	for k: String in _quake_once.keys():
-		if absf(now - float(_quake_once[k])) > 600.0:
-			_quake_once.erase(k)
-
-
-func _quake_shot(
-	fx: PackFx, key: String, id: StringName, at: Vector3, scale: float, cols: Dictionary
-) -> void:
-	if _quake_once.has(key):
-		return
-	_quake_once[key] = float(_tick)
-	fx.spawn(id, at, scale, cols, -1.0, 1.0, QUAKE_SHATTER_HIDE if id == &"bx_impact_a" else [])

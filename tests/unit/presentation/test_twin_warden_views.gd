@@ -231,11 +231,9 @@ func test_no_chain_is_drawn_and_the_crossfire_and_sword_lane_views_follow_the_re
 			view.sync(r)
 			view.advance(DT)
 	step.call(30)
-	assert_eq(
-		view.find_children("*", "MultiMeshInstance3D", true, false).size(),
-		0,
-		"no links: nothing joins the two Wardens"
-	)
+	var links := view.find_children("*", "MultiMeshInstance3D", true, false)
+	var grit := func(n: Node) -> bool: return not view.slams.is_ancestor_of(n)  # the cut's grit is not a link
+	assert_eq(links.filter(grit).size(), 0, "no links: nothing joins the two Wardens")
 	assert_eq(r.boss_twin(i).get("chain", []), [], "the reader has none")
 	# Crossfire (v0.11.0 O5: the violet's alone): its lane and the spot through the windup.
 	var vid := w.actors.ids[BossTwin.partner_of(w, i)]

@@ -391,7 +391,8 @@ func test_nothing_stays_after_the_pair_is_gone() -> void:
 	var blades: WardenBladeViews = views[2]
 	assert_eq(blades.blades_shown() + blades.slashes_shown(), 0)
 	for v: Node in views:
-		assert_eq((v.get(&"hold") as FormPackHold).count(), 0, "%s released its effects" % v.name)
+		var hold := v.get(&"hold") as FormPackHold  # (the charge's circle holds no pack effect)
+		assert_eq(hold.count() if hold != null else 0, 0, "%s released its effects" % v.name)
 		assert_true(bool(v.get(&"quiet")), "%s idles" % v.name)
 
 
@@ -466,8 +467,6 @@ func test_the_pack_rows_are_in_the_table() -> void:
 	var def := PackFx.shared_def()
 	for id: StringName in (
 		[
-			ChargeBurstViews.RIM_ID,
-			ChargeBurstViews.BURST_ID,
 			WardenWardViews.RIM_ID,
 			WardenWardViews.REFLECT_ID,
 			WardenWardViews.PUSH_ID,

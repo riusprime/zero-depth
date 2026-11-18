@@ -1,11 +1,11 @@
 extends GutTest
 ## The Siege Engine's fight apart as the player sees it, each view built from WorldReader only, in SiegeLab's walled
 ## 24 m room: SiegeFieldViews (the Target Lock's reticle of the reader's exact radius on its centre, dull while it
-## tracks and locked at the end, the shell's fall and explosion; each boulder the rock of its exact square, rising,
-## cracking near its end and gone with it; the cover's shadow behind each boulder and the hero's ring, teal when
-## covered and red when seen, only while a blast that needs cover comes), SiegeCartViews (the cart drawn as a wagon on
-## its place with its HP, its track, its blast circle, the Engine's countdown ring and the Doom Shell's cast), the
-## armour stripped (BossVulnerableViews' pulse and stars on the Engine, the bar's gold shimmer, no words), the hint
+## tracks and locked at the end, the shell's fall and its slam into the stone; each boulder the rock of its exact
+## square, rising, cracking near its end and gone with it; the cover's shadow behind each boulder and the hero's ring,
+## teal when covered and red when seen, only while a blast that needs cover comes), SiegeCartViews (the cart drawn as a
+## wagon on its place with its HP, its track, its blast circle, the Engine's countdown ring and the Doom Shell's cast),
+## the armour stripped (BossVulnerableViews' pulse and stars on the Engine, the bar's gold shimmer, no words), the hint
 ## arrow on the boulders, the borrowed sounds and the reduced-motion path. Nothing stays once the fight ends.
 
 const DT := 1.0 / 60.0
@@ -80,7 +80,10 @@ func test_the_lock_is_the_readers_circle_then_the_shell_leaves_a_boulder_of_its_
 	var landed := func() -> bool: return not r.boss_siege().get("boulders", []).is_empty()
 	assert_true(_until(w, r, [view], landed, 60))
 	_run(w, r, [view], 1)
-	assert_gt(fx.live_count(&"explosion"), 0, "the pack's explosion where it landed")
+	var shell_r := float(lock["radius"])
+	var at_r := func(p: Array) -> bool: return absf(float(p[1]) - shell_r) < 0.001
+	assert_true(view.slams.spots().any(at_r), "the shell slams into the stone, its radius")
+	assert_eq(fx.live_count(&"explosion"), 0, "no fireball")
 	assert_eq(view.lock_circle(), [], "the reticle goes")
 	_run(w, r, [view], 30)
 	assert_eq(view.boulders_shown(), 1)

@@ -464,7 +464,7 @@ func _draw_filings(delta: float) -> void:
 
 
 ## The pendulum over the Verdict's square: it sways while the square tracks, is hauled back to its apex through the
-## lock, then swings down onto the square on the strike (a shockwave rolls out) and fades.
+## lock, then swings down onto the square on the strike (a brief faint gold ring) and fades.
 func _draw_pendulum(delta: float, calm: float) -> void:
 	var tracking := not _verdict.is_empty()
 	var locked := tracking and bool(_verdict.get("locked", false))
@@ -489,13 +489,14 @@ func _draw_pendulum(delta: float, calm: float) -> void:
 	_pendulum_mat.emission_energy_multiplier = 0.4 + (1.6 if locked else 0.0)
 	_seam_mat.albedo_color.a = (0.9 if locked else 0.3) * fade
 	var hit := not tracking and _drop_t >= 0.2
-	_shock.visible = hit and _drop_t < 0.8
+	# Only a brief faint gold ring as it lands: the hit itself is the stone slam (BossStrikeImpacts)
+	_shock.visible = hit and _drop_t < 0.4
 	if _shock.visible:
-		var st := (_drop_t - 0.2) / 0.6
-		var r := lerpf(0.8, 3.4, ease(st, 0.5))
+		var st := (_drop_t - 0.2) / 0.2
+		var r := lerpf(0.8, 2.4, ease(st, 0.5))
 		_shock.position = _verdict_at + Vector3(0, 0.1, 0)
-		_shock.scale = Vector3(r, 0.5, r)
-		_shock_mat.albedo_color.a = 0.9 * (1.0 - st)
+		_shock.scale = Vector3(r, 0.35, r)
+		_shock_mat.albedo_color.a = 0.35 * (1.0 - st)
 
 
 ## Tests: the markers showing, the ghosts rising, the ribbon's segments, the filings flying, the pendulum's swing.
