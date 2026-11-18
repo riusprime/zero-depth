@@ -2,6 +2,9 @@ class_name EnemyDefinition
 extends ContentDef
 ## An enemy (CONTENT_SCHEMA §3): numbers, a behaviour (src/sim/ai/) with its params, and its attacks.
 
+## The Gravity Node's pull on the hero at its centre (m/s) stays at most this: under half the hero's 6 m/s walk, so
+## walking out is always possible.
+const HERO_PULL_MAX_MPS := 2.9
 ## v0.7.0 audit A-13: the attack shape params that must be > 0 when an attack has them (sizes, speeds, ranges and
 ## counts the compiler divides by or turns into ticks). spread_degrees and gap_seconds may be 0.
 const POSITIVE_SHAPE_PARAMS: Array[String] = [
@@ -272,6 +275,8 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 		"stun_seconds",
 		"pull_radius_m",
 		"pull_mps2",
+		"hero_pull_radius_m",
+		"hero_pull_mps",
 	]:
 		if bp.has(k) and float(bp[k]) <= 0.0:
 			issues.append(
@@ -335,6 +340,17 @@ func _check_variant(issues: Array[ValidationIssue]) -> void:
 ## under mark_offset_m) and its strike reaches where the hero stood (radius_m over mark_offset_m): move to answer.
 func _check_starfall(issues: Array[ValidationIssue]) -> void:
 	var bp := behaviour_params
+	if behaviour_id == &"gravity_node" and float(bp.get("hero_pull_mps", 0.0)) > HERO_PULL_MAX_MPS:
+		issues.append(
+			ValidationIssue.new(
+				&"hero_pull",
+				resource_path,
+				(
+					"hero_pull_mps must be at most %.1f (under half the hero's walk)"
+					% HERO_PULL_MAX_MPS
+				)
+			)
+		)
 	if behaviour_id != &"star_warper" or attacks.is_empty() or attacks[0] == null:
 		return
 	var off := float(bp.get("mark_offset_m", 0.0))

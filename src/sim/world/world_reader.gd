@@ -4724,6 +4724,24 @@ func warper_stunned(i: int) -> bool:
 	return StarfallKinds.stunned(_w, i)
 
 
+## 0..1: how strongly Gravity Node i draws the hero now (its pull's share of its centre's; 0 outside its reach).
+func gravity_hero_pull(i: int) -> float:
+	if not StarfallKinds.is_node(_w.actors.kinds[i]):
+		return 0.0
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	if t == null or t.hero_pull <= 0.0:
+		return 0.0
+	return StarfallKinds.hero_pull_of(_w, i) / t.hero_pull
+
+
+## Gravity Node i's reach on the hero (m); 0 for any other actor.
+func gravity_hero_reach(i: int) -> float:
+	if not StarfallKinds.is_node(_w.actors.kinds[i]):
+		return 0.0
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	return t.hero_pull_radius_m if t != null else 0.0
+
+
 ## Gravity Node i's pull reach (m); 0 for any other actor.
 func gravity_reach(i: int) -> float:
 	if not StarfallKinds.is_node(_w.actors.kinds[i]):

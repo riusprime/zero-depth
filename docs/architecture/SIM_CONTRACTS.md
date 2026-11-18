@@ -1586,6 +1586,17 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   projectile). After recovering it walks at 1.5x speed to a spot 45-90 deg around the player (the side and angle
   from `rng_enemy`) in the middle of its band (`pick` = 1), and shoots again only once there (within 0.5 m) or after
   150 ticks.
+- **Gravity Node** (Starfall's signature, `StarfallKinds`; v0.12.0 step 19, owner F24 "Slight pull on you"). It holds
+  its spot, never attacks and floats. Every projectile within `pull_radius_m` turns toward it (`bend`, speed kept;
+  the Needle's telegraph walks the same rule). And the hero within `hero_pull_radius_m` (5 m) drifts toward it
+  (`hero_drift`, tick phase 5, added to the walk's step before the walls resolve): `hero_pull` × (1 − d / reach) at
+  distance d, so 2.1 m/s (35 % of the base walk) at its centre and nothing at the reach; it stops
+  `BossTide.BODY_GAP_M` short of the node's body. Several nodes' drifts sum, and the sum is held to the strongest
+  node's `hero_pull` and to `HERO_WALK_SHARE` (450 ‰) of the hero's run speed now (`BossTide.run_speed`), so
+  walking out always gains ground, slowed or not. No drift while the hero dashes or moves by a skill (the dash flies
+  its own line), is dead, or while the world holds (the arrival, the portal); none from a node still spawning in or
+  dead. `WorldReader.gravity_hero_pull` (0..1, the same `hero_pull_of`) is the view's read: the faint ring of its
+  reach and the core's draw show only while the hero is inside. Float math with + − × ÷ and `Kin.length` only.
 
 ## 10d. Dodge-first boss fights (v0.7.5 BF1; owner N15, [`BOSS_FIGHTS.md`](../design/BOSS_FIGHTS.md))
 

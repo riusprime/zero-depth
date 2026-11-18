@@ -10,7 +10,9 @@ desc_key = &"ENEMY_GRAVITY_NODE_DESC"
 behaviour_id = &"gravity_node"
 behaviour_params = {
 "pull_radius_m": 5.0,
-"pull_mps2": 30.0
+"pull_mps2": 30.0,
+"hero_pull_radius_m": 5.0,
+"hero_pull_mps": 2.1
 }
 hp = 50
 radius_m = 0.45

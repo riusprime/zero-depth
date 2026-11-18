@@ -161,10 +161,13 @@ var chunk_damage := 0
 ## mark_offset_m beside the hero (square to its line to the hero); the hero standing within mark_radius_m of the star
 ## when the windup ends cancels the blink and stuns it stun_ticks; else it blinks onto the star and strikes a disc of
 ## strike_radius_m round it. The Gravity Node: every projectile within pull_radius_m of it turns toward it by up to
-## pull_accel (m per tick per tick at its centre, none at the reach), keeping its speed.
+## pull_accel (m per tick per tick at its centre, none at the reach), keeping its speed; and the hero within
+## hero_pull_radius_m drifts toward it by up to hero_pull (m per tick at its centre, none at the reach).
 var mark_offset_m := 0.0
 var mark_radius_m := 0.0
 var strike_radius_m := 0.0
 var stun_ticks := 0
 var pull_radius_m := 0.0
 var pull_accel := 0.0
+var hero_pull_radius_m := 0.0
+var hero_pull := 0.0

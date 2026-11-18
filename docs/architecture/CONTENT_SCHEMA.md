@@ -149,6 +149,10 @@ class_name AttackDefinition extends Resource
   flies at the player, 3.5 m/s, r 0.13, 10 m, look `lens_orb`), `bomb_drone_fire_x` (BURST 4 at 45 deg to the throw
   = an X, lob 0.6 s, landing radius 0.5 m, 4 m/s, r 0.15, 7 m, safe radius 0.6 m, look `bomb_cinder`). Windups,
   cooldowns, HP, damage and shards are unchanged.
+- **`gravity_node`** (Starfall's signature; SIM_CONTRACTS §10c): `pull_radius_m` (5) and `pull_mps2` (30), the bend
+  on every projectile; `hero_pull_radius_m` (5) and `hero_pull_mps` (2.1: at its centre, none at the reach), the
+  drift on the hero (v0.12.0 step 19, owner F24). Each > 0 (`not_positive`); `hero_pull_mps` at most
+  `EnemyDefinition.HERO_PULL_MAX_MPS` (2.9, under half the hero's 6 m/s walk: `hero_pull`). No attacks.
 - **v0.4.0 EN horde behaviours and params** (starting values, `data/enemies/<id>.tres`):
   - `swarmer` (as `charger`; one LINE `bite`, `length_m`/`speed_mps`): HP 8 (one sword slash), damage 5, 1 shard,
     4.6 m/s, a 2 m lunge at 12 m/s after a 24-30 tick lane.

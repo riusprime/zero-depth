@@ -7,13 +7,21 @@ extends AvatarBase
 ##   its windup the star flares and it crouches; at the blink it snaps upright; stunned, it reels (a slow wobble) with
 ##   its star dim.
 ## - Gravity Node: a floating yellow orb (no legs: it hovers HOVER_Y up over a soft ground shadow) with a violet core
-##   and a ring that turns round it, always (the pull never stops while it lives).
+##   and a ring that turns round it, always (the pull on shots never stops while it lives); while it draws the hero in
+##   (WorldReader.gravity_hero_pull) the ring spins faster and the violet core keeps sinking into itself, the
+##   stronger the nearer the hero.
 ## Their colours are their own (COLORS, not EnemyPalettes' roles: a signature is its biome's). Presentation only
 ## (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame time.
 
 const KINDS: Array[int] = [WorldReader.KIND_STAR_WARPER, WorldReader.KIND_GRAVITY_NODE]
 const HOVER_Y := 1.0
 const SHADOW_R := 0.42
+## The ring's turn (radians a second) at rest, and added at the strongest draw on the hero.
+const RING_SPIN := 2.4
+const RING_SPIN_DRAW := 7.0
+## The core's inward beats a second at the strongest draw, and how far each one shrinks it.
+const CORE_BEATS := 2.5
+const CORE_SINK := 0.45
 ## The body's top (m, for the health bar).
 const HEIGHTS := {
 	WorldReader.KIND_STAR_WARPER: 1.15,
@@ -33,6 +41,11 @@ var ring: Node3D
 var shadow: MeshInstance3D
 var _parts: BossParts
 var _accent: StandardMaterial3D
+var _core: Node3D
+var _draw := 0.0  # 0..1, eased toward the sim's draw on the hero
+var _draw_to := 0.0
+var _spin := 0.0
+var _beat := 0.0
 var _state := WorldReader.STATE_SPAWN
 var _wind := 0.0
 var _stun := false
@@ -133,6 +146,7 @@ func _build_node() -> void:
 		body, BossParts.orb(0.16, 97, 6, 4), Vector3(0.3, 0, 0), color(kind, 3), 2.2
 	)
 	_accent = core.material_override as StandardMaterial3D
+	_core = core
 	ring = Node3D.new()
 	body.add_child(ring)
 	_parts.piece(
@@ -156,6 +170,7 @@ func sync(reader: WorldReader, i: int) -> void:
 			"state": reader.actor_state(i),
 			"windup": windup_progress(reader, i),
 			"stunned": reader.warper_stunned(i),
+			"draw": reader.gravity_hero_pull(i),
 		}
 	)
 
@@ -168,6 +183,7 @@ func apply_state(s: Dictionary) -> void:
 	_state = st
 	_wind = float(s.get("windup", 0.0)) if _state == WorldReader.STATE_WINDUP else 0.0
 	_stun = bool(s.get("stunned", false))
+	_draw_to = clampf(float(s.get("draw", 0.0)), 0.0, 1.0)
 	if _fresh:
 		_fresh = false
 		_rise = 0.0 if _state == WorldReader.STATE_SPAWN else 1.0
@@ -183,12 +199,24 @@ func advance(delta: float) -> void:
 	_rise = move_toward(_rise, 0.0 if spawning else 1.0, dt * (6.0 if spawning else 2.5))
 	_reel = move_toward(_reel, 1.0 if _stun else 0.0, dt * 4.0)
 	_snap = move_toward(_snap, 0.0, dt * 4.0)
+	_draw = move_toward(_draw, _draw_to, dt * 3.0)
+	_spin += dt * (RING_SPIN + RING_SPIN_DRAW * _draw)
+	_beat = (
+		fposmod(_beat + dt * CORE_BEATS * _draw, 1.0)
+		if _draw > 0.0
+		else move_toward(_beat, 0.0, dt)
+	)
 	_pose()
 
 
 ## 0..1: how far into its windup crouch the Warper is (tests); the Node's ring turn (radians).
 func windup_pose() -> float:
 	return _wind
+
+
+## 0..1: how strongly the Node's core shows its draw on the hero now (tests).
+func draw_pose() -> float:
+	return _draw
 
 
 func _pose() -> void:
@@ -198,8 +226,11 @@ func _pose() -> void:
 		var bob := sin(_t * TAU * 0.6) * 0.06
 		body.position = Vector3(0, lerpf(0.3, HOVER_Y, _rise) + bob, 0)
 		if ring != null:
-			ring.rotation = Vector3(0.35, _t * 2.4, 0.2)
-		_accent.emission_energy_multiplier = 2.2 + sin(_t * 5.0) * 0.6
+			ring.rotation = Vector3(0.35 * (1.0 - _draw * 0.6), _spin, 0.2 * (1.0 - _draw * 0.6))
+		if _core != null:  # each beat the core sinks into itself, then springs back for the next
+			_core.scale = Vector3.ONE * (1.0 - CORE_SINK * _draw * _beat)
+			_core.rotation.y = -_spin * 1.5
+		_accent.emission_energy_multiplier = 2.2 + sin(_t * 5.0) * 0.6 + _draw * 1.4
 		var s := lerpf(0.6, 1.0, _rise)
 		shadow.scale = Vector3(s, 1, s)
 		return
