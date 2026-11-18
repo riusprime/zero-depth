@@ -52,7 +52,11 @@ func test_hostile_looks_keep_off_the_heros_colours_with_a_bright_core_and_dark_e
 		var look := FireballViews.look_of(key)
 		for c: Color in hero:
 			assert_gt(_dist(look["core"], c), 0.2, "%s's core is not a hero colour" % key)
-		assert_gt((look["core"] as Color).get_luminance(), 0.55, "%s: a bright core" % key)
+		assert_gt(
+			(look["core"] as Color).get_luminance(),
+			FireballViews.MIN_CORE_LUMINANCE,
+			"%s: a bright core" % key
+		)
 		assert_lt((look["edge"] as Color).get_luminance(), 0.15, "%s: a dark edge" % key)
 	assert_false(
 		FireballViews.look_of(&"someone_new").is_empty(), "a new look draws before it is made"

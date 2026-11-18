@@ -82,6 +82,7 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   deepens with the progress, an accent glow that climbs and flashes over the last fifth, steady under reduced
   motion; the body faces the locked attack). Elites follow their kind; the bosses' markers are unchanged.
   `tests/unit/sim/test_enemy_ground_marks.gd` lists the ground marks per kind.
+- **A boss attack whose tell is the body** (owner: no aiming line for the amber Warden's phase-1 charge). Its windup telegraph is `{"shape": &"signature", "ground": false, "run": Obb}` while `BossWardenAmber.flashing`: nothing is drawn on the ground, `WorldReader.boss_twin(i)["flash"]` (0..1000) is the tell (the body's white-hot flash), and `"run"` is the lane it will run, read only so `BossStrikeViews` draws the run on the sim's strike tick and the end circle's burst still shows. The ground-marker tests accept such an attack only if the body flashes.
 - **Boss ground attacks in 3D** (v0.8.0 AV, owner O7). The Gatekeeper's shock lanes (a `row_lanes` marks telegraph,
   `TelegraphViews.is_cracked`) are drawn as cracked ground on the exact lane quads (a procedural crack shader, still
   unshaded and over shadows): faint glowing cracks under the dull outline while they track, charred ground with wide

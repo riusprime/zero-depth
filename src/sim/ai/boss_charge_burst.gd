@@ -31,10 +31,11 @@ static func end_of(w: World, i: int) -> Vector2:
 
 
 ## BossAi.telegraph for a charge: its lane, and for one that bursts "burst" {center, radius}; nothing on the ground
-## for the amber Warden's phase-1 clock charge (his body's flash is its only tell).
+## for the amber Warden's phase-1 clock charge (his body's flash is its only tell); its "run" is the lane the charge
+## will run, which the view reads only to draw the strike when it starts.
 static func telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionary:
 	if BossWardenAmber.flashing(w, i):
-		return {"shape": &"signature", "ground": false}
+		return {"shape": &"signature", "ground": false, "run": EnemyAi.charge_lane(w, i)}
 	var out := {"shape": &"lane", "obb": EnemyAi.charge_lane(w, i)}
 	if bursts(atk):
 		out["burst"] = {"center": end_of(w, i), "radius": atk.burst_radius_m}
