@@ -555,9 +555,9 @@ func _build_leg(side: float) -> void:
 	legs.append(pivot)
 
 
-## The Warden's colour in `slot` under the active palette.
-static func _color(slot: StringName) -> Color:
-	return EnemyPalettes.color(WorldReader.KIND_WARDEN, slot)
+## The Warden's colour in `slot` under the active palette (a biome's own version's: AvatarBase._look_color).
+func _color(slot: StringName) -> Color:
+	return _look_color(WorldReader.KIND_WARDEN, slot)
 
 
 ## One body piece: a faceted rock (or the shell), its material in
