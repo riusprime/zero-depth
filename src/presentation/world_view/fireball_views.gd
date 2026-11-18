@@ -245,18 +245,19 @@ const LOOKS := {
 		"trail_style": &"smoke",
 		"tail": 1.8,
 	},
-	## Foundry: white-yellow molten drops, a crust over the glow, drips behind.
+	## Foundry: molten drops in one orange-red (the pack's fire ball and the MultiMesh core under it share these
+	## colours; the glow stays low enough that the bloom never whitens it), a crust over the glow, drips behind.
 	&"molten_drop":
 	{
-		"core": Color("#FFF07A"),
-		"edge": Color("#2A1C06"),
-		"trail": Color("#FFB830"),
+		"core": Color("#C85A1A"),
+		"edge": Color("#2A1006"),
+		"trail": Color("#E0431A"),
 		"size": 1.05,
 		"tip": 1.3,
 		"trail_m": 0.45,
 		"mesh": &"drop",
-		"body": Color("#5A3A10"),
-		"energy": 3.4,
+		"body": Color("#5A2A10"),
+		"energy": 2.4,
 		"crack": 0.4,
 		"swirl": 1.0,
 		"trail_style": &"drips",

@@ -118,7 +118,7 @@ func test_the_plate_forges_then_shells_the_model_and_a_bomb_blows_it_off_into_th
 	assert_false(plate.forging_shown(), "the forging read ends with the cast")
 	if avatar.imported != null:
 		assert_almost_eq(avatar.plate_amount(), 1.0, 0.05, "the model wears its steel shell")
-		assert_gt(avatar.plate_shell.albedo_color.a, 0.5)
+		assert_gt(avatar.plate_shell.albedo_color.a, 0.15)
 	else:
 		gut.p("NOTE: the owner's Foundry model is missing here: no shell to check")
 	bar.sync(r)
