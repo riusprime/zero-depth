@@ -339,7 +339,7 @@ static func needs_met(w: World, need: int) -> bool:
 		Need.STAT_CARD:
 			return Stats.enabled(w)
 		Need.ABILITY:
-			return not w.ability_tables.is_empty()
+			return not _levelable(w).is_empty()
 		Need.STAT_RAISED:  # The stat Echo Mirror would echo exists (its choice's own rule)
 			return Stats.enabled(w) and strongest_stat(w) >= 0
 	return true
@@ -449,11 +449,17 @@ static func _mod(w: World) -> int:
 	return pool[pick] if pick >= 0 else -1
 
 
-static func _level_up(w: World) -> int:
+## The owned abilities a level-up card could take now (never the Pulse Gun: it is not offered at any level).
+static func _levelable(w: World) -> PackedInt32Array:
 	var left := PackedInt32Array()
 	for idx in w.ability_owned:
-		if Abilities.level_of(w, idx) < AbilityTable.MAX_LEVEL:
+		if Abilities.can_take(w, idx):
 			left.append(idx)
+	return left
+
+
+static func _level_up(w: World) -> int:
+	var left := _levelable(w)
 	if left.is_empty():
 		return -1
 	return Offers.ability_code(left[w.ev.rng.range_int(0, left.size() - 1)])
