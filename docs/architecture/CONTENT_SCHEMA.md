@@ -865,6 +865,20 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   `damage` 8 every 0.5 s, `warn_seconds` 0.5, `look` "venom" until a view gives it its own) and `hazard_cause_key`.
   The brief's 0.3 s lock for the charge is under the telegraph minimum every lock keeps (24 ticks, 0.4 s): the
   charge ships with `lock_seconds` 0.4 until the owner decides (PROGRESS, step 6).
+- **v0.12.0 step 13 (the owner's playtest, PLAN rows F1-F9): more `wardens` keys** (SIM_CONTRACTS §10q, the
+  amendment; each one left out turns its rule off). `ranged_beyond_m` 7 (0..20; 0 = off: the amber Warden's close
+  attacks, those whose `max_range_m` is within it, only while the hero is within it, the others only beyond);
+  `charge_attack` "warden_charge" with `charge_min_seconds` 10 and `charge_max_seconds` 15 (2..60, min ≤ max: the
+  phase-1 charge on its own clock, never picked); `ward_charge_attack` "warden_charge_long" with
+  `ward_charge_min_seconds` 10 and `ward_charge_max_seconds` 12 (the ward-breaking charge on its own clock while the
+  whole ward stands); both name a `charge`. `ward_attack` "whole_ward" (a `mirror_ward` cast in no phase's list; with
+  it the whole ward is cast) and `ward_first_seconds` 4 (0..30: the cast starts that long into `ward_phase`);
+  `amber_warded_permille` 250 (0..1000: what the amber Warden takes while the whole ward stands; 1000 = off);
+  `shelter_attack` "crossfire" (a `crossfire`) and `shelter_m` 3 (1..8: its safe spot that far from the hero; the walk
+  to it at the base 6 m/s plus 30 % must fit in its `telegraph_seconds`). New attack `whole_ward` (`mirror_ward`,
+  1 s, damage 0, the violet's). `warden_charge` is now 0.4 s with no `lock_seconds` (the telegraph minimum, under
+  which the owner's "~0.3 s" would fall; it leads the hero until the boss's commit), any range;
+  `warden_charge_long` 2.4 s. `twin_wardens_crossfire` is a RING of 48 (one gap of 2, every other wave turned 3.75°).
 - **v0.12.0 step 9 (brief rows SE1, SE2, SG-SE).** `BossDefinition.siege: Dictionary` (empty: none), the Siege
   Engine's siege, checked by `SiegeRules` (`SPEC`: key → [default, min, max]; an unknown key or a value out of range
   is an error) and compiled by `SiegeCompiler` into `BossTable.siege` (`BossSiegeTable`). Keys, with the Engine's

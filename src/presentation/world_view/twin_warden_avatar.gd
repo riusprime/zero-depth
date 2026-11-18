@@ -12,8 +12,10 @@ extends BossAvatar
 ## and visor blaze and its light flares, so the player sees which one is fast. With the file missing it is a code
 ## stand-in of the same parts (a faceted body and cape, a slit helm with stone fins, a tower shield, a short sword)
 ## posed from the same inputs. The roles read out too: the Warden to hit glows brighter (phase 3's exposed one
-## pulses), the one standing back dims and leans back behind its shield. Presentation only (EI-07): it reads the sim
-## and moves its own children.
+## pulses), the one standing back dims and leans back behind its shield. The amber one's phase-1 charge has no lane:
+## its tell is a white-hot flash of his whole body through the short wind-up; while the violet one's whole ward
+## shelters him he wears a faint violet sheen (no line joins them). Presentation only (EI-07): it reads the sim and
+## moves its own children.
 
 const HEIGHT := 2.2
 const WALK_SPEED := 1.6
@@ -40,6 +42,15 @@ const IRON := Color("#3A3836")
 const MODEL_VISOR := Vector3(0.3, 1.95, 0.0)
 const MODEL_CHEST := Vector3(0.35, 1.35, 0.0)
 const LIGHT_ENERGY := 1.0
+## The phase-1 charge's flash: its cracks and light this many times brighter at its height, the body's overlay
+## white-hot at FLASH_ALPHA. The shelter of her whole ward: a faint violet sheen over the body at SHEEN_ALPHA.
+const FLASH_GAIN := 3.0
+const FLASH_ALPHA := 0.35
+const FLASH_COLOR := Color(1.0, 0.85, 0.55)
+const SHEEN_ALPHA := 0.1
+const SHEEN_COLOR := Color(0.72, 0.55, 1.0)
+## BossAvatar's own overlay colour (the windup's red), back when neither shows.
+const WINDUP_COLOR := Color(1.0, 0.06, 0.03)
 
 var torso := Node3D.new()
 var helm := Node3D.new()
@@ -55,6 +66,12 @@ var _resting := false
 var _focus := false
 var _exposed := false
 var _role := 1.0
+## The phase-1 clock charge's flash (0..1 through its wind-up, its only tell) and the shelter of her whole ward (a
+## faint violet sheen while he takes less), read each tick and smoothed in frame time.
+var _flash := 0.0
+var _sheltered := false
+var _flash_shown := 0.0
+var _sheen := 0.0
 
 
 ## The cracks' and visor's colour (the violet twin overrides it).
@@ -73,16 +90,21 @@ func sync(reader: WorldReader, i: int) -> void:
 	_resting = bool(twin.get("resting", false))
 	_focus = bool(twin.get("focus", false))
 	_exposed = bool(twin.get("exposed", false))
+	_flash = float(twin.get("flash", 0)) / 1000.0 if twin.has("flash") else 0.0
+	_sheltered = bool(twin.get("sheltered", false))
 	super(reader, i)
 
 
-## Render scripts and tests set the anger directly: "angry" (bool); "resting", "focus", "exposed".
+## Render scripts and tests set the anger directly: "angry" (bool); "resting", "focus", "exposed", "flash"
+## (0..1), "sheltered".
 func apply_state(s: Dictionary) -> void:
 	if s.has("angry"):
 		_angry = bool(s["angry"])
 	_resting = bool(s.get("resting", _resting))
 	_exposed = bool(s.get("exposed", _exposed))
 	_focus = bool(s.get("focus", _focus or _exposed))
+	_flash = float(s.get("flash", _flash))
+	_sheltered = bool(s.get("sheltered", _sheltered))
 	super(s)
 
 
@@ -233,11 +255,13 @@ func _pose(dt: float) -> void:
 	shield.position.y = 1.05 + torso.position.y + raise * 0.2
 	shield.rotation = Vector3(0, 0.3 * _shielded_amount(), s * 0.06 * walk)
 	sword.rotation = Vector3(0, 0, -0.1 * s * walk - 0.5 * (_wind if windup else 0.0))
-	var glow := (2.0 + 2.5 * _wind + 3.0 * _anger) * (1.0 - 0.6 * _stagger) * role_glow()
+	_advance_marks(dt)
+	var flare := 1.0 + FLASH_GAIN * _flash_shown
+	var glow := (2.0 + 2.5 * _wind + 3.0 * _anger) * (1.0 - 0.6 * _stagger) * role_glow() * flare
 	for m in _cracks:
 		(m.material_override as StandardMaterial3D).emission_energy_multiplier = glow
 	if crack_light != null:
-		crack_light.light_energy = LIGHT_ENERGY * (1.0 + 0.8 * _wind + 1.5 * _anger)
+		crack_light.light_energy = LIGHT_ENERGY * (1.0 + 0.8 * _wind + 1.5 * _anger) * flare
 
 
 func _shielded_amount() -> float:
@@ -273,10 +297,37 @@ func _pose_rig(dt: float) -> void:
 	if not ViewPrefs.reduced_motion:
 		pivot.rotation.z -= 0.1 * _anger
 		pivot.rotation.z += 0.08 * clampf(1.0 - _role, 0.0, 1.0)  # standing back: it leans back
+	_advance_marks(dt)
 	if crack_light != null:
 		var glow := maxf(0.0, 1.0 + 0.6 * animator.param(&"glow") + 1.6 * _anger)
 		var pulse := 0.0 if not _exposed or ViewPrefs.reduced_motion else 0.35 * sin(_t * 6.0)
 		crack_light.light_energy = LIGHT_ENERGY * glow * (_role + pulse) * (1.0 - 0.6 * _stagger)
+		crack_light.light_energy *= 1.0 + FLASH_GAIN * _flash_shown
+	if glow_overlay != null:  # The flash white-hot, the sheltered sheen violet, else the windup's red
+		var c := WINDUP_COLOR
+		if maxf(_sheen, _flash_shown) > 0.01:
+			c = SHEEN_COLOR if _sheen > _flash_shown else FLASH_COLOR
+		glow_overlay.albedo_color = Color(c.r, c.g, c.b, glow_overlay.albedo_color.a)
+
+
+## The overlay's share over the windup's (BossAvatar._pose_imported): the flash's, the sheen's.
+func _extra_glow() -> float:
+	return FLASH_ALPHA * _flash_shown + SHEEN_ALPHA * _sheen
+
+
+## The flash rises fast and falls fast (a flash, not a fade); the sheen comes and goes over a third of a second.
+func _advance_marks(dt: float) -> void:
+	_flash_shown = move_toward(_flash_shown, clampf(_flash * 3.0, 0.0, 1.0), dt * 12.0)
+	_sheen = move_toward(_sheen, 1.0 if _sheltered else 0.0, dt * 3.0)
+
+
+## 0..1: the phase-1 charge's flash and the shelter's sheen shown now (tests).
+func flash_amount() -> float:
+	return _flash_shown
+
+
+func sheen_amount() -> float:
+	return _sheen
 
 
 ## The role's light (1 = as before): the one to hit 1.6 (exposed 2.0), the one standing back 0.35.

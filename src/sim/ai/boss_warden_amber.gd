@@ -9,7 +9,9 @@ extends RefCounted
 ## - The side dash: between two attacks (free, its cooldown still running) it dashes dash_m to the side of the line
 ##   to the hero in dash_ticks, at most once every dash_every_ticks: the side it tried last time second, and only a
 ##   side with room for at least half the dash. It deals no damage and picks no attack while it dashes.
-## Pure: no stream is drawn.
+## - The charges on their own clocks (BossWardensTable charge_attack, ward_charge_attack): never picked, each starts
+##   when its clock says, a wait drawn from the ai stream; the phase-1 one aims where the hero will be.
+## Pure but for those waits (the ai stream).
 
 const S := EnemyAi.State
 ## The ticks before each hit in which the aim holds and the body steps in.
@@ -184,3 +186,86 @@ static func dash_move(w: World, i: int, slow: float) -> bool:
 		var run := EnemyAi.clear_run(w, a.pos(i), Kin.angle_of(v), len, a.radius[i])
 		a.set_pos(i, a.pos(i) + v * (clampf(run, 0.0, len) / len))
 	return true
+
+
+# --- the charges on their own clocks ------------------------------------------------------------------------------
+
+
+## True for an attack only its clock starts (BossTwin.may_use leaves it out of the weighted pick): the two clock
+## charges and the whole ward's cast.
+static func on_clock(wt: BossWardensTable, k: int) -> bool:
+	return k >= 0 and (k == wt.charge_attack or k == wt.ward_charge_attack or k == wt.ward_attack)
+
+
+## The charge whose clock runs for the amber Warden i now (an attack index), or -1: while he leads, the phase-1
+## charge in a phase that lists it, or the ward-breaking one in a phase that lists it while the whole ward stands.
+static func clock_charge(w: World, i: int, wt: BossWardensTable) -> int:
+	if not BossTwin.leads(w, i):
+		return -1
+	var listed := BossAi.table_of(w, i).phase_attacks[w.bosses.phase[BossAi.entry_of(w, i)]]
+	if wt.charge_attack >= 0 and listed.has(wt.charge_attack):
+		return wt.charge_attack
+	var j := BossTwin.partner_of(w, i)
+	if wt.ward_charge_attack >= 0 and listed.has(wt.ward_charge_attack) and BossWard.full(w, j):
+		return wt.ward_charge_attack
+	return -1
+
+
+## Tick phase 3 (BossTwin.think), the amber Warden free: its clock charge; true when it starts one now. The wait is
+## drawn (the ai stream) as the clock starts to run and at each start, so one charge comes every so often from one
+## start to the next, at any distance; the clock stops while no clock charge runs. A due charge waits out his side
+## dash and, in phase 3, his turn (BossTwin.may_start: the two bodies alternate and never overlap).
+static func charge_think(w: World, i: int, wt: BossWardensTable) -> bool:
+	var fs := w.boss_fight
+	var k := clock_charge(w, i, wt)
+	if k < 0:
+		fs.wd_charge_due = -1
+		return false
+	if fs.wd_charge_due < 0:
+		fs.wd_charge_due = w.tick + _wait(w, wt, k)
+		return false
+	if w.tick < fs.wd_charge_due or fs.wd_dash_t > 0 or w.player_dead():
+		return false
+	if not BossTwin.may_start(w, i, BossTwin.pair_of(w, i)):
+		return false  # Phase 3: his turn, the other body not attacking
+	BossAi.start_attack(w, i, k)
+	fs.wd_charge_due = w.tick + _wait(w, wt, k)
+	return true
+
+
+static func _wait(w: World, wt: BossWardensTable, k: int) -> int:
+	if k == wt.charge_attack:
+		return w.rng_ai.range_int(wt.charge_min_ticks, wt.charge_max_ticks)
+	return w.rng_ai.range_int(wt.ward_charge_min_ticks, wt.ward_charge_max_ticks)
+
+
+## True while the amber Warden i winds up the phase-1 clock charge (its tell is his body's flash, not a lane).
+static func flashing(w: World, i: int) -> bool:
+	var wt := BossAi.table_of(w, i).wardens
+	if wt == null or wt.charge_attack < 0 or w.actors.state[i] != S.WINDUP:
+		return false
+	return w.bosses.attack[BossAi.entry_of(w, i)] == wt.charge_attack
+
+
+## BossChallenge.aim_point, boss entry b: true while it aims the phase-1 clock charge (from its first tick: the
+## wind-up starts before BossAi.start_attack locks the aim).
+static func leads_charge(w: World, b: int) -> bool:
+	var i := w.actors.index_of(w.bosses.ids[b])
+	return i >= 0 and flashing(w, i)
+
+
+## Where the phase-1 clock charge aims (BossChallenge.aim_point, so its wind-up tracks it until it commits): where the
+## hero will be when it reaches them, from the hero's last step (World.vel, metres a tick) over the wind-up left and
+## the run to them (once refined; the run no longer than the charge). Walking away does not take the hero out of it;
+## a dash does.
+static func lead_point(w: World, b: int) -> Vector2:
+	var i := w.actors.index_of(w.bosses.ids[b])
+	var atk := BossAi.attack_of(w, i)
+	var at := w.actors.pos(i)
+	var p := w.player_pos()
+	var left := maxi(0, atk.windup_ticks - w.actors.state_t[i])
+	var target := p
+	for n in 2:
+		var run := minf(Kin.length(target - at), atk.length_m)
+		target = p + w.vel * (left + run / maxf(atk.speed, 0.0001))
+	return target

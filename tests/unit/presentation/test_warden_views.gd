@@ -28,6 +28,8 @@ func _stage(hero: Vector2, amber: Vector2, violet: Vector2, phase := 0) -> Array
 	TwinsLab.hush(w, s[1])
 	if phase > 0:
 		TwinsLab.set_phase(w, s[1], phase)
+	if phase >= TwinsLab.wardens(w, s[1]).ward_phase:
+		TwinsLab.raise_ward(w, s[1])  # As her cast would, at once
 	w.actors.set_pos(_i(w, s[1]), amber)
 	w.actors.set_pos(_i(w, s[2]), violet)
 	w.actors.set_pos(0, hero)
@@ -75,7 +77,7 @@ func test_the_end_circle_is_the_bursts_and_flashes_locked_then_fills_and_explode
 	var fx := _pack()
 	var view: ChargeBurstViews = _view(ChargeBurstViews, fx)
 	var i := _i(w, s[1])
-	BossLab.start(w, i, &"warden_charge")
+	BossLab.start(w, i, &"warden_charge_long")
 	_run(w, r, [view], 2)
 	var charge: Dictionary = r.boss_wardens()["charge"]
 	assert_eq(view.shown(), 1, "one circle while he winds up")
@@ -330,7 +332,7 @@ func test_reduced_motion_builds_every_view() -> void:
 	BossLab.start(w, _i(w, s[2]), &"shadow_swords")
 	_run(w, r, views, 3)
 	assert_eq((views[2] as WardenBladeViews).blades_shown(), 5, "the blades hang still")
-	BossLab.start(w, _i(w, s[1]), &"warden_charge")
+	BossLab.start(w, _i(w, s[1]), &"warden_charge_long")
 	_run(w, r, views, 3)
 	assert_eq((views[0] as ChargeBurstViews).shown(), 1, "the end circle, its pulse still")
 
@@ -406,7 +408,6 @@ func test_the_pack_rows_are_in_the_table() -> void:
 			WardenBladeViews.SLASH_ID,
 			WardenBladeViews.PORTAL_ID,
 			WardenBladeViews.EXIT_ID,
-			WardenBladeViews.DASH_ID,
 			HazardViews.RIFT_ID,
 			HazardViews.RIFT_WARN_ID,
 		]
@@ -416,3 +417,46 @@ func test_the_pack_rows_are_in_the_table() -> void:
 		assert_gte(k, 0, "%s is in the table" % id)
 		if k >= 0:
 			assert_string_starts_with(def.scenes[k], "res://assets/BinbunVFX/", "a pack scene")
+
+
+func test_the_phase_one_charge_draws_nothing_on_the_ground() -> void:
+	var s := _stage(Vector2(6, 0), Vector2(-8, 0), Vector2(-8, 9))
+	var w: World = s[0]
+	var r: WorldReader = s[3]
+	var fx := _pack()
+	var view: ChargeBurstViews = _view(ChargeBurstViews, fx)
+	var ward: WardenWardViews = _view(WardenWardViews, fx)
+	var i := _i(w, s[1])
+	BossLab.start(w, i, &"warden_charge")
+	var flashed := false
+	while w.actors.state[i] == S.WINDUP:
+		_run(w, r, [view, ward], 1)
+		assert_eq(view.shown(), 0, "no end circle")
+		assert_false(ward.lane_shown(), "no lane")
+		flashed = flashed or r.boss_twin(i).has("flash")
+	assert_true(flashed, "his body's flash instead")
+	w.actors.set_pos(0, Vector2(-11, 11))
+	assert_not_null(_until(w, r, [view], BossChargeBurst.ARMED, 80), "its burst stays")
+
+
+func test_the_whole_ward_is_cast_with_the_re_forming_light_not_a_wall() -> void:
+	var s := _stage(Vector2(6, 0), Vector2(-8, 0), Vector2(0, 6))
+	var w: World = s[0]
+	var r: WorldReader = s[3]
+	TwinsLab.set_phase(w, s[1], 2)
+	var fx := _pack()
+	var view: WardenWardViews = _view(WardenWardViews, fx)
+	_run(w, r, [view], 2)
+	assert_false(view.full_shown(), "no ward at the phase's start")
+	var j := _i(w, s[2])
+	var seen := false
+	for k in TwinsLab.wardens(w, s[1]).ward_first_ticks + 90:
+		_run(w, r, [view], 1)
+		if BossWard.casting(w, j):
+			seen = true
+			assert_true(view.raising_shown(), "the re-forming light on her through the cast")
+			assert_true(view.hold.has(&"reform"))
+			assert_false(view.wall_shown(), "not the Mirror Ward's wall")
+	assert_true(seen, "she cast it")
+	assert_true(view.full_shown(), "then her whole ward stands")
+	assert_false(view.raising_shown())

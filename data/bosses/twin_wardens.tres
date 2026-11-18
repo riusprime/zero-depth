@@ -125,19 +125,18 @@ shape_params = {
 "length_m": 12.0,
 "speed_mps": 26.0
 }
-telegraph_seconds = 0.6
+telegraph_seconds = 0.4
 active_seconds = 0.0167
 recovery_seconds = 1.3
 damage = 50
 hit_class = &"big"
 move = &"charge"
-min_range_m = 4.0
-max_range_m = 14.0
+min_range_m = 0.0
+max_range_m = 99.0
 weight = 3
 cooldown_seconds = 0.9
 cause_key = &"CAUSE_TWIN_CHARGE"
 opens_weak_point = true
-lock_seconds = 0.4
 
 [sub_resource type="Resource" id="A_warden_charge_long"]
 script = ExtResource("1_atk")
@@ -149,7 +148,7 @@ shape_params = {
 "length_m": 12.0,
 "speed_mps": 26.0
 }
-telegraph_seconds = 1.4
+telegraph_seconds = 2.4
 active_seconds = 0.0167
 recovery_seconds = 1.3
 damage = 50
@@ -305,6 +304,21 @@ max_range_m = 99.0
 weight = 3
 cooldown_seconds = 0.6
 
+[sub_resource type="Resource" id="A_whole_ward"]
+script = ExtResource("1_atk")
+id = &"whole_ward"
+shape = 3
+shape_params = {}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 0.4
+damage = 0
+move = &"mirror_ward"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.6
+
 [sub_resource type="Resource" id="A_shadow_swords"]
 script = ExtResource("1_atk")
 id = &"shadow_swords"
@@ -362,7 +376,7 @@ rear_mult_permille = 1000
 stagger_size = 200
 stagger_decay_per_second = 15.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_crossfire"), SubResource("A_crossfire_3"), SubResource("A_chain_sweep"), SubResource("A_chain_sweep_fast"), SubResource("A_sword_combo"), SubResource("A_warden_charge"), SubResource("A_warden_charge_long"), SubResource("A_rift_charge"), SubResource("A_overhead"), SubResource("A_orb_volley"), SubResource("A_rune_ring"), SubResource("A_blink"), SubResource("A_warden_bolt"), SubResource("A_mirror_ward"), SubResource("A_shadow_swords")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_crossfire"), SubResource("A_crossfire_3"), SubResource("A_chain_sweep"), SubResource("A_chain_sweep_fast"), SubResource("A_sword_combo"), SubResource("A_warden_charge"), SubResource("A_warden_charge_long"), SubResource("A_rift_charge"), SubResource("A_overhead"), SubResource("A_orb_volley"), SubResource("A_rune_ring"), SubResource("A_blink"), SubResource("A_warden_bolt"), SubResource("A_mirror_ward"), SubResource("A_shadow_swords"), SubResource("A_whole_ward")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
 arena_template = 0
@@ -391,7 +405,7 @@ twin_distance_m = 5.0
 flank_m = 4.5
 anger_speed_permille = 1400
 anger_seconds = 3.0
-twin_attack_ids = PackedStringArray("crossfire", "crossfire_3", "orb_volley", "rune_ring", "blink", "mirror_ward", "shadow_swords")
+twin_attack_ids = PackedStringArray("crossfire", "crossfire_3", "orb_volley", "rune_ring", "blink", "mirror_ward", "shadow_swords", "whole_ward")
 twin_bolt_attack = &"warden_bolt"
 twin_bolt_seconds = 4.0
 hazard = {
@@ -408,6 +422,10 @@ hazard = {
 }
 hazard_cause_key = &"CAUSE_TWIN_RIFT"
 wardens = {
+"amber_warded_permille": 250,
+"charge_attack": "warden_charge",
+"charge_max_seconds": 15.0,
+"charge_min_seconds": 10.0,
 "combo_light_permille": 750,
 "dash_every_seconds": 3.0,
 "dash_m": 4.0,
@@ -420,6 +438,7 @@ wardens = {
 "mirror_push_m": 2.0,
 "mirror_range_m": 16.0,
 "mirror_seconds": 4.0,
+"ranged_beyond_m": 7.0,
 "rift_attack": "rift_charge",
 "rift_gap_m": 8.0,
 "rift_hp_permille": 500,
@@ -427,12 +446,19 @@ wardens = {
 "rift_mark_seconds": 0.5,
 "rift_open_seconds": 1.0,
 "rift_radius_m": 1.2,
+"shelter_attack": "crossfire",
+"shelter_m": 3.0,
 "sword_count": 5,
 "sword_fan_degrees": 200.0,
 "sword_gap_seconds": 0.2,
 "sword_lane_max_m": 9.0,
 "sword_length_m": 8.0,
 "sword_ring_m": 5.0,
+"ward_attack": "whole_ward",
+"ward_charge_attack": "warden_charge_long",
+"ward_charge_max_seconds": 12.0,
+"ward_charge_min_seconds": 10.0,
+"ward_first_seconds": 4.0,
 "sword_width_m": 0.9,
 "ward_phase": 2,
 "ward_return_seconds": 12.0,

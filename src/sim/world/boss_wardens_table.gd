@@ -9,6 +9,26 @@ extends RefCounted
 var dash_m := 4.0
 var dash_ticks := 15
 var dash_every_ticks := 180
+## The amber Warden's close and ranged attacks: one whose range band ends within ranged_beyond_m is close, picked only
+## while the hero stands within it; every other one only while the hero stands beyond it (0 = no such rule).
+var ranged_beyond_m := 0.0
+## The charges on their own clocks (attack indices, -1 = none: the attack is picked like any other). charge_attack,
+## in a phase that lists it: one every charge_min_ticks..charge_max_ticks (the ai stream's draw, from one start to the
+## next), at any distance, aimed where the hero will be when it reaches them, with nothing drawn on the ground.
+## ward_charge_attack, in a phase that lists it: one every ward_charge_min_ticks..ward_charge_max_ticks while the
+## violet Warden's whole ward stands.
+var charge_attack := -1
+var charge_min_ticks := 600
+var charge_max_ticks := 900
+var ward_charge_attack := -1
+var ward_charge_min_ticks := 600
+var ward_charge_max_ticks := 720
+## While the violet Warden's whole ward stands the amber Warden takes amber_warded_permille of the hero's damage.
+var amber_warded_permille := 1000
+## Crossfire as a shelter: attack shelter_attack's safe spot (an index, -1 = none) stands shelter_m from the hero, to
+## one side of the line from the caster, so the hero walks into it.
+var shelter_attack := -1
+var shelter_m := 3.0
 ## A sword combo's hits before its last deal this share of the attack's damage.
 var combo_light_permille := 750
 ## The longest a Sword Lane runs (its `chain_sweep` attack's line).
@@ -35,8 +55,12 @@ var sword_half_m := 0.45
 var sword_gap_ticks := 12
 ## From ward_phase the violet Warden stands under a whole ward. The amber Warden's charge through it breaks it: the
 ## violet one is stunned stun_ticks (taking stun_permille), the amber one staggered stagger_ticks, and the ward is
-## back return_ticks after the break.
+## back return_ticks after the break. With a ward_attack (the violet Warden's cast, an index; -1 = the ward stands
+## from the phase's start) the ward is cast instead: the cast starts ward_first_ticks into ward_phase, and after a
+## break so that the ward stands again return_ticks after it.
 var ward_phase := 2
+var ward_attack := -1
+var ward_first_ticks := 240
 var stun_ticks := 300
 var stun_permille := 1500
 var stagger_ticks := 120

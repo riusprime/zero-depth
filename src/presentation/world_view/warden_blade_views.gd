@@ -5,8 +5,8 @@ extends Node3D
 ## - Shadow Swords: a dark blade hangs over each sword's spot, pointing along its line (the line itself is the
 ##   ordinary telegraph, in the tw_swords look), with the pack's violet flare at its hilt. On its cut it flies down its
 ##   line, a dark slash with a violet edge runs along the line and fades, and the pack's hit bursts where it cut.
-## - The side dash: a short amber afterimage streak from where the dash began to where he is, fading after it; the
-##   pack's thin smoke where he pushed off.
+## - The side dash: a short amber afterimage streak from where the dash began to where he is, fading
+##   after it (no smoke at his feet).
 ## - Through the Rift: three violet portals (the pack's ripple) at the reader's spots, opening as they appear; he sinks
 ##   into the entry one (his avatar sinks while the sim hides him) in a flash; for the last moments the exit, and only
 ##   the exit, glows (the pack's light pillar) with its lane on the floor; he bursts out of it in a flash (the
@@ -21,9 +21,7 @@ const FLARE_ID := &"tw_rift_flash"
 const SLASH_ID := &"tw_slash"
 const PORTAL_ID := &"tw_portal"
 const EXIT_ID := &"tw_portal_exit"
-const DASH_ID := &"tw_dash"
 const EFFECT_CUT := &"warden_sword_cut"
-const EFFECT_DASH := &"warden_dash"
 const EFFECT_ENTER := &"warden_rift_enter"
 const EFFECT_EXIT := &"warden_rift_exit"
 ## The blades hang this high (m) and their slash fades over SLASH_S; a blade flies its line in FLY_S.
@@ -133,8 +131,6 @@ func _events(reader: WorldReader) -> void:
 		match e.effect_id:
 			EFFECT_CUT:
 				_spawn(SLASH_ID, &"hit", SimPlane.to_3d(e.pos, 0.6), 0.8)
-			EFFECT_DASH:
-				_spawn(DASH_ID, &"cloud", SimPlane.to_3d(_lead_at, 0.1), 0.6)
 			EFFECT_ENTER, EFFECT_EXIT:
 				_spawn(
 					FLARE_ID,

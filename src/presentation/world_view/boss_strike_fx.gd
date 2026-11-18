@@ -15,6 +15,9 @@ const DUST_LIFE_S := 1.1
 const FLAME_GAP_M := 1.0
 const FLAMES_PER_LANE := 8
 const FLAME_SCALE := 0.4
+## Looks whose strikes raise no dust at the body's feet (the Wardens' stone knights strike clean); an arc of these
+## throws sparks instead.
+const NO_DUST: Array[StringName] = [&"tw_sweep", &"tw_charge", &"tw_overhead"]
 
 
 static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void:
@@ -138,7 +141,7 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 				var g: Array = s["arc"]
 				var mid := (float(g[3]) + float(g[4])) * 0.5
 				var tip := SimPlane.to_3d(g[0] + Vector2(cos(mid), sin(mid)) * float(g[2]))
-				if s["kind"] == &"steel_arc":
+				if s["kind"] == &"steel_arc" or NO_DUST.has(s["look"]):
 					_sparks(layer, tip, age, sd, 10, Color(1.0, 0.8, 0.5))
 					layer.light_merged(tip + Vector3.UP * 0.6, glow, 2.0 * (1.0 - u), 5.0, 2.0)
 				elif (
@@ -208,7 +211,7 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					var p := SimPlane.to_3d(s["to"])
 					_sparks(layer, p, age, sd, 8, Color(1.0, 0.75, 0.4))
 					layer.light_merged(p + Vector3.UP * 0.4, glow, 1.6, 4.0, 2.0)
-					if hold != null:  # A small puff of dust every so often along the skid
+					if hold != null and not NO_DUST.has(s["look"]):  # A puff of dust now and then
 						hold.once(
 							_key(s, int(age / 14.0), 7),
 							&"bx_smoke_dust",

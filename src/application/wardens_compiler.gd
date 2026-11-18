@@ -43,7 +43,19 @@ static func compile_boss(def: BossDefinition, t: BossTable) -> void:
 	wt.rift_open_ticks = _ticks(wd, "rift_open_seconds")
 	wt.rift_inside_ticks = _ticks(wd, "rift_inside_seconds")
 	wt.rift_mark_ticks = mini(_ticks(wd, "rift_mark_seconds"), wt.rift_inside_ticks)
-	wt.rift_attack = t.attack_index(StringName(String(wd.get("rift_attack", ""))))
+	wt.rift_attack = _attack(wd, t, "rift_attack")
+	wt.ranged_beyond_m = WardensRules.value(wd, "ranged_beyond_m")
+	wt.charge_attack = _attack(wd, t, "charge_attack")
+	wt.charge_min_ticks = _ticks(wd, "charge_min_seconds")
+	wt.charge_max_ticks = maxi(wt.charge_min_ticks, _ticks(wd, "charge_max_seconds"))
+	wt.ward_charge_attack = _attack(wd, t, "ward_charge_attack")
+	wt.ward_charge_min_ticks = _ticks(wd, "ward_charge_min_seconds")
+	wt.ward_charge_max_ticks = maxi(wt.ward_charge_min_ticks, _ticks(wd, "ward_charge_max_seconds"))
+	wt.ward_attack = _attack(wd, t, "ward_attack")
+	wt.ward_first_ticks = _ticks(wd, "ward_first_seconds")
+	wt.amber_warded_permille = _int(wd, "amber_warded_permille")
+	wt.shelter_attack = _attack(wd, t, "shelter_attack")
+	wt.shelter_m = WardensRules.value(wd, "shelter_m")
 	for a in t.attacks:  # The cuts run one after another: the attack is active until its last
 		if a.move == BossAttackTable.Move.SHADOW_SWORDS:
 			a.active_ticks = maxi(a.active_ticks, (wt.sword_count - 1) * wt.sword_gap_ticks + 1)
@@ -57,6 +69,11 @@ static func compile_attack(def: BossAttackDefinition, t: BossAttackTable) -> voi
 	t.burst_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("burst_seconds", 0.0))))
 	if t.move == BossAttackTable.Move.SWORD_COMBO:
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.gap_ticks + 1)
+
+
+## The index of the attack text key `key` names (-1 = none).
+static func _attack(wd: Dictionary, t: BossTable, key: String) -> int:
+	return t.attack_index(StringName(String(wd.get(key, ""))))
 
 
 static func _int(wd: Dictionary, key: String) -> int:

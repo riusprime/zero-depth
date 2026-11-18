@@ -44,9 +44,30 @@ const SPEC := {
 	"rift_open_seconds": [1.0, 0.4, 5.0],
 	"rift_inside_seconds": [1.5, 0.6, 5.0],
 	"rift_mark_seconds": [0.5, 0.2, 2.0],
+	"ranged_beyond_m": [0.0, 0.0, 20.0],
+	"charge_min_seconds": [10.0, 2.0, 60.0],
+	"charge_max_seconds": [15.0, 2.0, 60.0],
+	"ward_charge_min_seconds": [10.0, 2.0, 60.0],
+	"ward_charge_max_seconds": [12.0, 2.0, 60.0],
+	"ward_first_seconds": [4.0, 0.0, 30.0],
+	"amber_warded_permille": [1000, 0, 1000],
+	"shelter_m": [3.0, 1.0, 8.0],
 }
-## Keys that hold text: the returned shot's recap line and look, the attack the rift's exit charge is.
-const TEXT_KEYS := ["mirror_cause_key", "mirror_look", "rift_attack"]
+## Keys that hold text: the returned shot's recap line and look, the attacks the rift's exit charge, the two charges
+## on their own clocks, the whole ward's cast and the sheltering Crossfire are.
+const TEXT_KEYS := [
+	"mirror_cause_key",
+	"mirror_look",
+	"rift_attack",
+	"charge_attack",
+	"ward_charge_attack",
+	"ward_attack",
+	"shelter_attack"
+]
+## The base hero's walking speed (m/s, PlayerTable.starting_values) and the margin the shelter's warning leaves over
+## the walk to it (per mille of the walk).
+const BASE_SPEED_MPS := 6.0
+const SHELTER_MARGIN_PERMILLE := 1300
 
 
 ## The wardens dictionary's value for `key` (its default when the dictionary leaves it out).
@@ -95,6 +116,41 @@ static func validate(def: BossDefinition, issues: Array[ValidationIssue]) -> voi
 	if value(wd, "dash_every_seconds") <= value(wd, "dash_seconds"):
 		issues.append(ValidationIssue.new(&"duration", p, "wardens: a dash ends before the next"))
 	_check_rift(def, issues)
+	_check_clocks(def, issues)
+
+
+## The charges on their own clocks name charges, each clock's shortest wait is within its longest; the whole ward's
+## cast is a `mirror_ward` in no phase; the sheltering Crossfire's spot is walked to with SHELTER_MARGIN_PERMILLE of
+## the walk to spare inside its warning.
+static func _check_clocks(def: BossDefinition, issues: Array[ValidationIssue]) -> void:
+	var wd := def.wardens
+	var p := def.resource_path
+	for c: Array in [["charge", "charge"], ["ward_charge", "charge"], ["ward", "mirror_ward"]]:
+		var id := String(wd.get(c[0] + "_attack", ""))
+		var a := def.attack(StringName(id))
+		if not id.is_empty() and (a == null or a.move != StringName(c[1])):
+			issues.append(ValidationIssue.new(&"missing", p, "wardens.%s_attack" % c[0]))
+	for c: String in ["charge", "ward_charge"]:
+		if value(wd, c + "_min_seconds") > value(wd, c + "_max_seconds"):
+			issues.append(ValidationIssue.new(&"duration", p, "wardens: %s's clock" % c))
+	var ward := def.attack(StringName(String(wd.get("ward_attack", ""))))
+	for ph in def.phases:
+		if ward != null and ph != null and ph.attack_ids.has(String(ward.id)):
+			issues.append(ValidationIssue.new(&"attacks", p, "wardens.ward_attack in no phase"))
+	var sid := String(wd.get("shelter_attack", ""))
+	if sid.is_empty():
+		return
+	var s := def.attack(StringName(sid))
+	if s == null or s.move != &"crossfire":
+		issues.append(
+			ValidationIssue.new(&"missing", p, "wardens.shelter_attack names a crossfire")
+		)
+		return
+	var walk := value(wd, "shelter_m") / BASE_SPEED_MPS * SHELTER_MARGIN_PERMILLE / 1000.0
+	if walk > s.telegraph_seconds:
+		issues.append(
+			ValidationIssue.new(&"duration", p, "wardens: the shelter is reached in its warning")
+		)
 
 
 ## The exit charge is a `charge` of this boss, in no phase, and neither its body nor its burst takes more than

@@ -13,7 +13,9 @@ extends RefCounted
 ## - The whole ward, from ward_phase: the violet Warden takes nothing from anywhere (hits and ticks spark off). The
 ##   amber Warden's charge breaks it when the lane its body has swept touches the violet Warden: she is stunned
 ##   stun_ticks (taking stun_permille), he is staggered stagger_ticks, and the ward is back return_ticks after the
-##   break. While he winds a charge up with the ward standing, ObjectiveMarkers.TWINS_WARD follows her.
+##   break. With the table's ward_attack the whole ward is cast, seen: ward_first_ticks into its phase (none stands
+##   at the phase's start), and after a break so that it stands again return_ticks after it. While he winds a
+##   charge up with the ward standing, ObjectiveMarkers.TWINS_WARD follows her.
 ## Pure: no stream is drawn.
 
 const S := EnemyAi.State
@@ -56,7 +58,61 @@ static func full(w: World, i: int) -> bool:
 	var wt := BossAi.table_of(w, i).wardens
 	if bs.twin_phase[bs.twin_lead.find(fs.wd_boss)] < wt.ward_phase:
 		return false
+	if wt.ward_attack >= 0:  # Cast: it stands from the cast's end to the break
+		return fs.wd_full == 1
 	return fs.wd_break_at < 0 or w.tick >= fs.wd_break_at + wt.return_ticks
+
+
+## Tick phase 3 (BossTwin.think), the violet Warden free: true when she starts the whole ward's cast now (its due
+## tick reached, the ward down, the set piece not holding her, her turn with the amber Warden not attacking).
+static func cast_think(w: World, i: int) -> bool:
+	var fs := w.boss_fight
+	var wt := BossAi.table_of(w, i).wardens
+	if _violet(w, i) < 0 or wt.ward_attack < 0 or fs.wd_full == 1 or fs.wd_ward_due < 0:
+		return false
+	if w.tick < fs.wd_ward_due or BossRift.holds(w):
+		return false
+	if not BossTwin.may_start(w, i, BossTwin.pair_of(w, i)):
+		return false  # Her turn, his attack over: the two alternate and never overlap
+	fs.wd_ward_due = -1
+	BossAi.start_attack(w, i, wt.ward_attack)
+	return true
+
+
+## True while body i casts the whole ward (its windup).
+static func casting(w: World, i: int) -> bool:
+	var wt := BossAi.table_of(w, i).wardens
+	if _violet(w, i) < 0 or wt.ward_attack < 0:
+		return false
+	var b := BossAi.entry_of(w, i)
+	return w.bosses.attack[b] == wt.ward_attack and w.actors.state[i] == S.WINDUP
+
+
+## Tick phase 6 (BossTwin.resolve), as the whole ward's cast ends: it stands (a Mirror Ward still up gives way).
+static func raise(w: World, i: int) -> void:
+	var fs := w.boss_fight
+	fs.wd_full = 1
+	fs.wd_ward_due = -1
+	fs.wd_mirror_on = 0
+	fs.wd_mirror_until = -1
+	_tell(w, i, UP, 0, 1)
+
+
+## Tick phase 6 (advance): the whole ward's next cast is set due once it is down in its phase: ward_first_ticks after
+## the phase is first seen, or so that the cast ends return_ticks after a break.
+static func _schedule(w: World, violet: int) -> void:
+	var fs := w.boss_fight
+	var bs := w.bosses
+	var wt := BossAi.table_of(w, violet).wardens
+	if wt.ward_attack < 0 or fs.wd_full == 1 or fs.wd_ward_due >= 0 or casting(w, violet):
+		return
+	if bs.twin_phase[bs.twin_lead.find(fs.wd_boss)] < wt.ward_phase:
+		return
+	if fs.wd_break_at < 0:
+		fs.wd_ward_due = w.tick + wt.ward_first_ticks
+		return
+	var cast := BossAi.table_of(w, violet).attacks[wt.ward_attack].windup_ticks
+	fs.wd_ward_due = maxi(w.tick, fs.wd_break_at + wt.return_ticks - cast)
 
 
 ## True while actor i is the violet Warden stunned by her broken ward.
@@ -123,10 +179,14 @@ static func reflect(w: World, pi: int, actor: int, a: Vector2, v: Vector2, t: fl
 	return true
 
 
-## Tick phase 6 (BossTwin.resolve), as the Mirror Ward's cast ends: the ward stands, facing the hero.
+## Tick phase 6 (BossTwin.resolve), as the Mirror Ward's cast ends: the ward stands, facing the hero (the whole
+## ward's cast raises the whole ward instead).
 static func cast(w: World, i: int) -> void:
 	var bs := w.boss_fight
 	var wt := BossAi.table_of(w, i).wardens
+	if wt.ward_attack >= 0 and w.bosses.attack[BossAi.entry_of(w, i)] == wt.ward_attack:
+		raise(w, i)
+		return
 	bs.wd_mirror_until = w.tick + wt.mirror_ticks
 	bs.wd_mirror_a = Kin.angle_of(w.player_pos() - w.actors.pos(i))
 	bs.wd_mirror_on = 1
@@ -179,6 +239,7 @@ static func _reel(w: World, i: int, ticks: int) -> void:
 ## Warden while the amber one winds up a charge at her standing ward.
 static func advance(w: World, lead: int, violet: int) -> void:
 	var bs := w.boss_fight
+	_schedule(w, violet)
 	if bs.wd_mirror_on == 1 and not mirror_up(w):
 		bs.wd_mirror_on = 0
 		bs.wd_mirror_until = -1
@@ -208,7 +269,8 @@ static func _tell(w: World, i: int, effect: StringName, ticks: int, whole: int) 
 
 ## BossWardens.state: the ward for the view: "who" (the violet Warden's index), "kind" (&"" none, &"mirror",
 ## &"full"), "centre" and "half_arc" (the arc, 1/4096 turns; the whole ward 2048 each side), "left" (the Mirror
-## Ward's ticks, -1 otherwise), "broken" (the whole ward is down), "stun_left" and "return_in" (ticks, 0 when not).
+## Ward's ticks, -1 otherwise), "broken" (the whole ward is down), "stun_left" and "return_in" (ticks, 0 when not),
+## "raising" (the violet Warden casts the whole ward now).
 static func state(w: World, violet: int) -> Dictionary:
 	var bs := w.boss_fight
 	var wt := BossAi.table_of(w, violet).wardens
@@ -224,4 +286,5 @@ static func state(w: World, violet: int) -> Dictionary:
 		"broken": broken,
 		"stun_left": maxi(0, bs.wd_break_at + wt.stun_ticks - w.tick) if broken else 0,
 		"return_in": bs.wd_break_at + wt.return_ticks - w.tick if broken else 0,
+		"raising": casting(w, violet),
 	}

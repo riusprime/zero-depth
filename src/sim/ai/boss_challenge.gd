@@ -142,7 +142,8 @@ static func punish_due(w: World, b: int, t: BossTable) -> int:
 
 
 ## Where an attack aims: the player, led by the boss's lead time at the player's velocity for aimed moves; for
-## dash_read_ticks after a dash, aimed moves go at that dash's landing point instead.
+## dash_read_ticks after a dash, aimed moves go at that dash's landing point instead. The amber Warden's phase-1
+## clock charge leads by its own wind-up left and run (BossWardenAmber.lead_point).
 static func aim_point(w: World, b: int, move: int) -> Vector2:
 	var p := w.player_pos()
 	var t: BossTable = w.boss_tables[w.bosses.table[b]]
@@ -150,6 +151,8 @@ static func aim_point(w: World, b: int, move: int) -> Vector2:
 		return p
 	if w.bosses.dash_t[b] > 0:
 		return Vector2(w.bosses.dash_x[b], w.bosses.dash_y[b])
+	if t.wardens != null and BossWardenAmber.leads_charge(w, b):
+		return BossWardenAmber.lead_point(w, b)
 	if t.lead_ticks <= 0:
 		return p
 	return p + w.vel * t.lead_ticks

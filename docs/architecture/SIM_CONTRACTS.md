@@ -2404,6 +2404,46 @@ draws a stream (`ai`). No native change.
   `boss_charge_bursts()` (the armed bursts: boss, centre, radius, left, progress). The combo's arc, the overhead's
   arc and the swords' lanes are ordinary telegraphs; the swords' rifts are `boss_hazards()`.
   `MOVE_SWORD_COMBO`, `MOVE_MIRROR_WARD`, `MOVE_SHADOW_SWORDS`, `OBJECTIVE_TWINS_WARD`.
+- **Amended by v0.12.0 step 13 (the owner's playtest, PLAN rows F1-F9).** Every key below is a `wardens` key
+  (CONTENT_SCHEMA §4); with a key left out the rule it adds is off and the fight runs as above.
+  - **Close up, ranged at range (F1, F6).** `BossTwin.may_use`: an attack of the amber Warden's whose range band
+    ends within `ranged_beyond_m` (7 m; the combo and the overhead, 5 m) is close and is picked only while the hero
+    stands within `ranged_beyond_m`; every other one of his (the Sword Lane) only while the hero stands beyond it.
+    The punish and the gap-closer go through `may_use` (`BossTwin.own`), so the gap-closing Sword Lane fires only past
+    7 m too. He pursues as before (`keep_distance_m`). Phases 1 and 3 alike.
+  - **The charges on their own clocks (F2, F7; `BossWardenAmber.charge_think`, tick phase 3, him free).**
+    `charge_attack` (`warden_charge`) in a phase that lists it and `ward_charge_attack` (`warden_charge_long`) in a
+    phase that lists it while the whole ward stands are never picked (`may_use` leaves them out); each starts when
+    `wd_charge_due` comes, at any distance, never while he attacks or dashes, and in phase 3 only on his turn with
+    the violet Warden not attacking (`BossTwin.may_start`; it waits). The wait is one `ai` draw in `charge_min..charge_max` (10-15 s) or `ward_charge_min..max` (10-12 s)
+    as the clock starts to run and again at each start; the clock stops (`-1`) while neither runs (phase 2, the ward
+    down), so it starts afresh when the ward rises.
+  - **The phase-1 charge is near-immediate and leads (F3).** Its wind-up is 24 ticks (the telegraph minimum: the
+    owner's "~0.3 s" is under it, as the earlier 0.3 s lock was), no `lock_seconds`: the aim tracks until the table's
+    `commit_ticks` (12) and `BossChallenge.aim_point` answers `BossWardenAmber.lead_point`: the hero's spot plus
+    `World.vel` (their last step) × (the wind-up left + the run to the led spot at the charge's speed, the run at most
+    its `length_m`), refined once. The dash-read rule comes first as for every aimed move. Its telegraph is
+    `{"shape": &"signature", "ground": false}` (no lane, no end circle); `boss_twin` carries `"flash"` (0..1000)
+    through its wind-up, the only tell (the amber avatar's body flash). Its run, speed and 3.5 m burst are as above.
+    The ward-breaking charge's wind-up is 144 ticks (2.4 s), locked the last 30; its lane is drawn as before.
+  - **The whole ward is cast (F8; `BossWard.cast_think`, `raise`, `_schedule`).** With `ward_attack` (`whole_ward`, a
+    `mirror_ward` cast of 1 s in no phase's list) `BossWard.full` is `wd_full == 1`. Once the ward is down in
+    `ward_phase`, `wd_ward_due` is set: `ward_first_ticks` (4 s) after the phase is first seen, or so that the cast
+    ends `return_ticks` after a break. On it, the violet Warden free (not while the rift holds; in phase 3 on her turn, `may_start`)
+    starts the cast; as it
+    ends the ward stands (`warden_ward_up`, amount 0, amount_applied 1) and a Mirror Ward still up gives way.
+    `ward.raising` is true through the cast.
+  - **Amber sheltered (F9).** While the whole ward stands, `BossTwin.taken_permille` gives the amber Warden
+    `amber_warded_permille` (250) of every hero hit and tick (`TAG_ARMOURED`: the dull spark); the break opens both
+    (she `stun_permille`, he 1000). `boss_twin` carries `"sheltered"`. No line joins them.
+  - **Crossfire as the shelter (F5).** For `shelter_attack` (phase 2's `crossfire`) the safe spot is
+    `BossTwin.shelter_spot`: `shelter_m` (3 m) from the hero at a right angle to the line from the caster, on the side
+    away from the other Warden (the other side when a wall leaves less than half of it). The volley is a ring
+    (`twin_wardens_crossfire`: 48 shots, 3 waves 0.7 s apart, every other wave turned 3.75°) aimed through the spot,
+    its own one gap there and the shots within `gap_m` of the spot left out, so the whole room but the marked spot is
+    swept. `WardensRules` checks the walk to it (at the base 6 m/s, + 30 %) fits inside its wind-up.
+  - **Hash.** `wd_charge_due` and `wd_ward_due` (`BossFightStore.WD_CLOCK_FIELDS`) are hashed in the `-15` block only
+    while a pair runs (`wd_boss >= 0`), so a Warlord's pending burst hashes as before.
 ## 10r. The Siege Engine's cover and Doom Shell (v0.12.0 step 9; brief rows SE1, SE2 and SG-SE, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
 
 The Engine keeps its turrets, mortar grid, barrages, rails, deploys and falling rocks (§10d, §10f) and gains the pieces

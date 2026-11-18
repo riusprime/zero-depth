@@ -113,3 +113,47 @@ TWINSBOT| weapon=blade over 3 seeds: plays { "ticks": 10252, "hp_lost": 958 }, i
 - Which hits make up `hp_lost` (no split by attack was printed), and why the Gun bot that plays still loses about
   1,300 HP a fight.
 - Feel, difficulty, whether 0.4 s of locked aim and 1.4 s of wind-up are right (the brief's TW8): `OWNER ONLY`.
+
+## After step 13 (the owner's playtest, PLAN rows F1-F9)
+- **Status:** RUN. **Met with both weapons** (ignoring costs more than 30 % more HP with each; the Gun's also takes
+  about 50 % longer). Nothing was retuned to reach it; the bots are unchanged (they still read the phase-1 charge's
+  lane from `WorldReader.boss_wardens()["charge"]`, which the views no longer draw, and walk out of it).
+- **Build:** the tree of the commit that adds this section (`v0.12.0 Step 13`; its parent is `ee030910`) on
+  `v0120-s13`, run before the commit was made; Godot `4.7.2.stable.official.ed1daf0bf`; Windows 11 Pro 10.0.26200
+  (the owner's PC, i7-10700K), the debug native library copied from the main checkout (no native change).
+- **Date:** 2026-11-18. **Who ran it:** agent. Two other Godot test processes of this worktree ran at the same time;
+  no timing is taken from this run.
+
+### Command
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/sim/test_twins_bots.gd -gexit
+```
+Exit code 0; 2 of 2 tests passed (26 asserts).
+
+### Raw output
+```
+TWINSBOT| weapon=gun bot=plays seed=5 dead=true ticks=7434 seconds=123.9 phases=[2067, 2076, 3291] hp_lost=1469 biggest=50 reflected=1 reflected_hits=0 blocks=0 ward_breaks=2 bursts=3 burst_hits=0 rifts=1 rift_cost=40
+TWINSBOT| weapon=gun bot=ignores seed=5 dead=true ticks=13032 seconds=217.2 phases=[2048, 1927, 9057] hp_lost=3678 biggest=50 reflected=0 reflected_hits=0 blocks=0 ward_breaks=0 bursts=14 burst_hits=0 rifts=1 rift_cost=40
+TWINSBOT| weapon=gun bot=plays seed=6 dead=true ticks=7304 seconds=121.7 phases=[2127, 1982, 3195] hp_lost=1392 biggest=50 reflected=1 reflected_hits=0 blocks=0 ward_breaks=2 bursts=3 burst_hits=0 rifts=1 rift_cost=0
+TWINSBOT| weapon=gun bot=ignores seed=6 dead=true ticks=13205 seconds=220.1 phases=[1923, 2138, 9144] hp_lost=3831 biggest=50 reflected=24 reflected_hits=6 blocks=0 ward_breaks=0 bursts=14 burst_hits=1 rifts=1 rift_cost=40
+TWINSBOT| weapon=gun bot=plays seed=7 dead=true ticks=8007 seconds=133.4 phases=[2000, 2050, 3957] hp_lost=1766 biggest=50 reflected=2 reflected_hits=0 blocks=0 ward_breaks=2 bursts=4 burst_hits=0 rifts=1 rift_cost=0
+TWINSBOT| weapon=gun bot=ignores seed=7 dead=true ticks=7974 seconds=132.9 phases=[2000, 2267, 3707] hp_lost=1869 biggest=50 reflected=38 reflected_hits=9 blocks=0 ward_breaks=1 bursts=5 burst_hits=0 rifts=1 rift_cost=0
+TWINSBOT| weapon=gun over 3 seeds: plays { "ticks": 22745, "hp_lost": 4627 }, ignores { "ticks": 34211, "hp_lost": 9378 }
+TWINSBOT| weapon=blade bot=plays seed=5 dead=true ticks=3218 seconds=53.6 phases=[1244, 1042, 932] hp_lost=359 biggest=38 reflected=0 reflected_hits=0 blocks=0 ward_breaks=1 bursts=1 burst_hits=0 rifts=1 rift_cost=0
+TWINSBOT| weapon=blade bot=ignores seed=5 dead=true ticks=3123 seconds=52.0 phases=[1141, 1073, 909] hp_lost=424 biggest=38 reflected=0 reflected_hits=0 blocks=0 ward_breaks=1 bursts=1 burst_hits=1 rifts=1 rift_cost=30
+TWINSBOT| weapon=blade bot=plays seed=6 dead=true ticks=3148 seconds=52.5 phases=[1240, 902, 1006] hp_lost=241 biggest=38 reflected=0 reflected_hits=0 blocks=0 ward_breaks=1 bursts=1 burst_hits=0 rifts=1 rift_cost=0
+TWINSBOT| weapon=blade bot=ignores seed=6 dead=true ticks=2957 seconds=49.3 phases=[1140, 885, 932] hp_lost=336 biggest=38 reflected=0 reflected_hits=0 blocks=0 ward_breaks=1 bursts=1 burst_hits=1 rifts=1 rift_cost=30
+TWINSBOT| weapon=blade bot=plays seed=7 dead=true ticks=3196 seconds=53.3 phases=[1248, 1012, 936] hp_lost=287 biggest=38 reflected=0 reflected_hits=0 blocks=0 ward_breaks=1 bursts=1 burst_hits=0 rifts=1 rift_cost=0
+TWINSBOT| weapon=blade bot=ignores seed=7 dead=true ticks=5386 seconds=89.8 phases=[1141, 1310, 2935] hp_lost=964 biggest=38 reflected=0 reflected_hits=0 blocks=11 ward_breaks=0 bursts=4 burst_hits=2 rifts=1 rift_cost=30
+TWINSBOT| weapon=blade over 3 seeds: plays { "ticks": 9562, "hp_lost": 887 }, ignores { "ticks": 11466, "hp_lost": 1724 }
+```
+
+### Reading it
+- Gun: ignoring 34,211 ticks / 9,378 HP against playing 22,745 / 4,627 (+50 % time, +103 % HP). Blade: 11,466 /
+  1,724 against 9,562 / 887 (+20 % time, +94 % HP). The 30 % target is met on HP with both.
+- The ignoring Gun bot's phase 3 runs 9,057 and 9,144 ticks on seeds 5 and 6 (no ward break: it focuses the amber
+  Warden at 25 %). The playing Gun bot's phase 3 grew too (2,307 → 3,291 ticks on seed 5).
+- `rift_cost=40` for the **playing** Gun bot on seed 5 (it was 0 in every playing fight before): one hit of 40, at
+  the cap (40 % of the base HP), not over it.
+- Its 120 s and more: the Gun fights playing run 122-133 s, past the owner's 1-2 minutes (Q29); the
+  `test_twin_wardens_roles.gd` pace tests passed in this tree (they use their own scripted players).

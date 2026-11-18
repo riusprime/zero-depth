@@ -100,3 +100,8 @@ static func until_effect(w: World, effect: StringName, limit: int, seq: int = 0)
 ## The newest event's seq (events after it are new).
 static func mark(w: World) -> int:
 	return w.last_event_seq()
+
+
+## The violet Warden's whole ward stands now, as the end of her cast raises it (phase 3).
+static func raise_ward(w: World, aid: int) -> void:
+	BossWard.raise(w, BossTwin.partner_of(w, w.actors.index_of(aid)))
