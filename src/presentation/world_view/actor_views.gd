@@ -9,6 +9,9 @@ extends Node3D
 ## legged turret; v0.3.5 AI adds the Arc Caster (a robed caster with a staff) and the Bomb Drone (a hovering
 ## quad-rotor); v0.4.0 EN the six horde kinds (HordeAvatar).
 
+## The contact disc under every actor: always a dark shadow, whatever the biome's outline colour (a pale outline
+## on a dark floor would draw it as a white circle).
+const CONTACT_COLOR := Color("#1A1A22")
 const CUBE := 0.7
 const BAR_W := 0.55
 ## Projectile nodes kept for reuse per look, at most this many idle (hordes fire hundreds a second).
@@ -707,7 +710,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 	# A horde critter has neither the contact disc nor the team
 	# ring (its body and its shadow only: two draws fewer each, in a crowd of up to the surge's cap).
 	if not CritterBodies.is_critter(kind) and not batched:
-		shared_parts.add_rings(root, radius, team_color, outline_color)
+		shared_parts.add_rings(root, radius, team_color, CONTACT_COLOR)
 	# The body turns with the actor's facing (+X is the front).
 	var facing := Node3D.new()
 	root.add_child(facing)
