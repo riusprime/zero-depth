@@ -1,8 +1,9 @@
 class_name SiegeLooks
 extends RefCounted
 ## What the Siege Engine's fight views share: their colours, the floor shaders (the Target Lock's reticle, the ring a
-## body wears that shows through walls, the cover's shadow), the boulder's rock, the ammo cart's code-made wagon, and
-## the geometry of the shadow a boulder casts away from the Engine. Looks only (EI-07).
+## body wears that shows through walls, the cover's shadow, the cart's ruts and its plain floor rings), the boulder's
+## rock, and the geometry of the shadow a boulder casts away from the Engine. The ammo cart's wagon is SiegeCartModel.
+## Looks only (EI-07).
 
 ## The Engine's palette (SiegeEngineAvatar): its red hull, dark plates, grey metal, its red glow.
 const HULL := Color("#D23E35")
@@ -12,8 +13,15 @@ const METAL_DARK := Color("#4C4847")
 const GLOW := Color("#FF3A26")
 ## The lock's reticle and every "do not stand here" read: a hot red-orange.
 const DANGER := Color("#FF4A24")
-## The cover's safe read (the shadow behind a boulder, the ring on a covered hero): a cool teal, far from the reds.
-const SAFE := Color("#5CE6E0")
+## The cover's safe read (the rim of the shadow behind a boulder, the ring on a covered hero): a pale cool slate, far
+## from the reds and from the hero's own cyan; the shadow itself is a dark cool shade over the floor.
+const SAFE := Color("#A9C3D2")
+const SHADE := Color("#0B1220")
+## The cart's floor rings: its blast circle (dull red, a dull gold once the Engine stands in it) and the Engine's
+## countdown ring (a dull red).
+const BLAST := Color("#C0543C")
+const BLAST_GOLD := Color("#D2A85A")
+const COUNTDOWN := Color("#94392C")
 ## The rock's dust and its cracks' glow as it is about to go.
 const DUST := Color(0.72, 0.64, 0.52)
 const CRACK := Color("#FF7A3A")
@@ -76,20 +84,77 @@ void fragment() {
 	ALPHA = clamp(alpha * beat * (edge + fill * step(r, 0.88)), 0.0, 0.95) * step(r, 1.0);
 }
 """
-## The cover's shadow (UV.y 0 at the boulder, 1 at its far end): a cool wash fading out with distance, its two side
-## edges brighter.
+## The cover's shadow (UV.y 0 at the boulder, 1 at its far end): a dark cool shade over the floor, as a real cast
+## shadow reads, fading out with distance, its two side edges a thin faint pale rim so its shape reads on any floor.
 const SHADOW_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 
-uniform vec4 tint : source_color = vec4(0.36, 0.9, 0.88, 1.0);
+uniform vec4 tint : source_color = vec4(0.66, 0.76, 0.82, 1.0);
+uniform vec4 shade : source_color = vec4(0.04, 0.07, 0.12, 1.0);
 uniform float alpha = 0.0;
 
 void fragment() {
-	float fade = 1.0 - smoothstep(0.35, 1.0, UV.y);
-	float side = smoothstep(0.08, 0.0, min(UV.x, 1.0 - UV.x));
-	ALBEDO = tint.rgb * (1.0 + side);
-	ALPHA = clamp(alpha * fade * (0.32 + 0.5 * side), 0.0, 0.8);
+	float fade = 1.0 - smoothstep(0.45, 1.0, UV.y);
+	float side = smoothstep(0.022, 0.008, min(UV.x, 1.0 - UV.x));
+	ALBEDO = mix(shade.rgb, tint.rgb * 0.75, side);
+	ALPHA = clamp(alpha * fade * mix(0.62, 0.4, side), 0.0, 0.7);
+}
+"""
+## The cart's track (a unit plane along +X laid as a strip RAIL_W wide): two wheel ruts pressed into the floor, each a
+## dark groove with a pale lip on its outer side where the floor's edge catches the light; `fresh` 1 behind the cart
+## (deeper, churned).
+const RUT_SHADER := """
+shader_type spatial;
+render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
+
+uniform vec4 groove : source_color = vec4(0.06, 0.05, 0.05, 1.0);
+uniform vec4 lip : source_color = vec4(0.66, 0.6, 0.52, 1.0);
+uniform float alpha = 0.5;
+uniform float fresh = 0.0;
+uniform float length_m = 10.0;
+uniform float clock = 0.0;
+uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
+
+void fragment() {
+	float y = abs(UV.y * 2.0 - 1.0);
+	float n = texture(noise_tex, vec2(UV.x * length_m * 0.4, UV.y * 0.7)).r;
+	float rut = 1.0 - smoothstep(0.075, 0.11, abs(y - 0.74) + (n - 0.5) * 0.04);
+	float lip_l = (1.0 - smoothstep(0.012, 0.04, abs(y - 0.88))) * (0.55 + 0.45 * n);
+	float grit = step(0.8, n) * step(abs(y - 0.74), 0.2) * fresh * 0.35;
+	float fade = smoothstep(0.0, 0.03, UV.x) * (1.0 - smoothstep(0.97, 1.0, UV.x));
+	ALBEDO = mix(groove.rgb, lip.rgb, max(lip_l, grit) * (1.0 - rut));
+	ALPHA = clamp(alpha * fade * max(rut * (0.8 + 0.2 * fresh), max(lip_l * 0.75, grit)), 0.0, 0.9);
+}
+"""
+## A plain floor ring of radius 1 (the cart's blast circle, the Engine's countdown): a thin dull band at the rim (its
+## first `share` of a turn full, the rest faint), a faint wash inside, a disc growing from the middle to `fill`;
+## `locked` 1 strengthens it and beats it slowly, `flash` lifts it toward a pale heat. No stripes, no glow halo.
+const RING_SHADER := """
+shader_type spatial;
+render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
+
+uniform vec4 tint : source_color = vec4(0.75, 0.33, 0.24, 1.0);
+uniform float alpha = 1.0;
+uniform float share = 1.0;
+uniform float locked = 0.0;
+uniform float flash = 0.0;
+uniform float fill = 0.0;
+uniform float edge = 0.05;
+uniform float clock = 0.0;
+
+void fragment() {
+	vec2 q = UV * 2.0 - 1.0;
+	float r = length(q);
+	float turn = fract(atan(q.x, -q.y) / 6.2831853 + 1.0);
+	float band = 1.0 - smoothstep(edge * 0.5, edge, abs(r - (1.0 - edge)));
+	float arc = mix(0.3, 1.0, step(turn, share));
+	float beat = 1.0 - 0.15 * locked * (0.5 + 0.5 * sin(clock * 4.0));
+	float grow = step(r, fill) * 0.16;
+	float wash = 0.05 * step(r, 1.0 - edge);
+	ALBEDO = mix(tint.rgb, vec3(0.95, 0.86, 0.72), flash * 0.6);
+	ALPHA = clamp(alpha * (band * arc * (0.7 + 0.3 * locked) * beat + grow + wash + flash * 0.3), 0.0, 0.85);
+	ALPHA *= step(r, 1.0);
 }
 """
 ## How far a boulder's shadow reaches past it when nothing in the room cuts it short (m).
@@ -98,6 +163,8 @@ const SHADOW_REACH_M := 30.0
 static var _reticle: Shader
 static var _halo: Shader
 static var _shadow: Shader
+static var _rut: Shader
+static var _plain_ring: Shader
 
 
 static func _shader(code: String) -> Shader:
@@ -133,8 +200,45 @@ static func shadow_material() -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = _shadow
 	m.set_shader_parameter("tint", SAFE)
+	m.set_shader_parameter("shade", SHADE)
 	m.render_priority = 2
 	return m
+
+
+## A hidden strip of the cart's ruts under `parent` (laid with WardenLooks.lay_strip), on its own material.
+static func ruts(parent: Node3D) -> MeshInstance3D:
+	if _rut == null:
+		_rut = _shader(RUT_SHADER)
+	var m := ShaderMaterial.new()
+	m.shader = _rut
+	m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+	m.render_priority = -1
+	var mi := MeshInstance3D.new()
+	mi.mesh = WardenLooks.plane()
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.visible = false
+	parent.add_child(mi)
+	return mi
+
+
+## A hidden plain floor ring (2 m across: its scale is a radius) under `parent` in `tint`, on its own material.
+static func plain_ring(parent: Node3D, tint: Color) -> MeshInstance3D:
+	if _plain_ring == null:
+		_plain_ring = _shader(RING_SHADER)
+	var m := ShaderMaterial.new()
+	m.shader = _plain_ring
+	m.set_shader_parameter("tint", tint)
+	m.render_priority = -1
+	var plane := PlaneMesh.new()
+	plane.size = Vector2.ONE * 2.0
+	var mi := MeshInstance3D.new()
+	mi.mesh = plane
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.visible = false
+	parent.add_child(mi)
+	return mi
 
 
 static func param(mi: MeshInstance3D, key: StringName, value: Variant) -> void:
@@ -241,78 +345,6 @@ static func rock(parent: Node3D) -> MeshInstance3D:
 	mi.material_override = mat
 	parent.add_child(mi)
 	return mi
-
-
-static func _solid(c: Color, glow := 0.0) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = c
-	m.roughness = 0.7
-	if glow > 0.0:
-		m.emission_enabled = true
-		m.emission = c
-		m.emission_energy_multiplier = glow
-	return m
-
-
-static func _box(parent: Node3D, size: Vector3, at: Vector3, mat: Material) -> MeshInstance3D:
-	var b := BoxMesh.new()
-	b.size = size
-	var mi := MeshInstance3D.new()
-	mi.mesh = b
-	mi.material_override = mat
-	mi.position = at
-	parent.add_child(mi)
-	return mi
-
-
-## The ammo cart (a stand-in in code until the owner's model): a red wagon bed with dark side plates, four grey
-## wheels, three glowing red shells lying in it and a tow bar toward +X (its front: the way it rolls). About 2 m long
-## and 1.3 m wide, the cart's 1 m radius. Returns [root, its wheels].
-static func cart(parent: Node3D) -> Array:
-	var root := Node3D.new()
-	parent.add_child(root)
-	var hull := _solid(HULL)
-	var plate := _solid(PLATE)
-	var metal := _solid(METAL)
-	_box(root, Vector3(1.7, 0.42, 1.1), Vector3(0, 0.62, 0), hull)
-	_box(root, Vector3(1.74, 0.3, 0.08), Vector3(0, 0.78, 0.56), plate)
-	_box(root, Vector3(1.74, 0.3, 0.08), Vector3(0, 0.78, -0.56), plate)
-	_box(root, Vector3(0.08, 0.3, 1.1), Vector3(-0.86, 0.78, 0), plate)
-	_box(root, Vector3(0.7, 0.07, 0.07), Vector3(1.18, 0.42, 0), metal)
-	var shell := _solid(GLOW, 1.6)
-	for k in 3:
-		var cap := CapsuleMesh.new()
-		cap.radius = 0.15
-		cap.height = 1.2
-		cap.radial_segments = 8
-		cap.rings = 2
-		var mi := MeshInstance3D.new()
-		mi.mesh = cap
-		mi.material_override = shell
-		mi.rotation.z = PI * 0.5
-		mi.position = Vector3(0, 0.98, (float(k) - 1.0) * 0.32)
-		root.add_child(mi)
-	var wheels: Array[Node3D] = []
-	var wheel_mat := _solid(METAL_DARK)
-	for x: float in [-0.55, 0.55]:
-		for z: float in [-0.62, 0.62]:
-			var w := CylinderMesh.new()
-			w.top_radius = 0.34
-			w.bottom_radius = 0.34
-			w.height = 0.14
-			w.radial_segments = 10
-			w.rings = 1
-			var spin := Node3D.new()
-			spin.position = Vector3(x, 0.34, z)
-			root.add_child(spin)
-			var mi := MeshInstance3D.new()
-			mi.mesh = w
-			mi.material_override = wheel_mat
-			mi.rotation.x = PI * 0.5
-			spin.add_child(mi)
-			_box(spin, Vector3(0.5, 0.06, 0.16), Vector3.ZERO, metal)
-			wheels.append(spin)
-	return [root, wheels]
 
 
 ## Transform: `scale` uniform at `pos`.

@@ -17,10 +17,10 @@ extends BossAvatar
 ## are laid over the file's animation (BossAvatar), as is the one layer this adds after them (_pose_rig): the
 ## shield lifted up and aside while the weak point is open. The spear's tip and the shield's face ride the spear's
 ## and the shield's own bones, which turn in the hand and on the fist.
-## Its War Banner and Duel (WorldReader.boss_warlord), wordless: while it stands in its own banner its body glows hot
-## and pulses (the glow overlay; WarBannerViews adds the embers at its feet), and while its Duel's cage stands it
-## carries its shield low at its side, off its front (the sim lets its front be hurt then), so a hit on the front lands
-## as a plain hit, not a block.
+## Its War Banner and Duel (WorldReader.boss_warlord), wordless: while it stands in its own banner its body's accent
+## rim beats slowly (the glow overlay's rim, not a fill; WarBannerViews adds the embers at its feet), and while its
+## Duel's cage stands it carries its shield low at its side, off its front (the sim lets its front be hurt then), so a
+## hit on the front lands as a plain hit, not a block.
 
 const HEIGHT := 2.7
 const WALK_SPEED := 2.1
@@ -119,8 +119,16 @@ func _ease_duel(dt: float) -> void:
 	_rage = lerpf(_rage, 1.0 if _enraged else 0.0, _rate(4.0, dt))
 
 
-func _extra_glow() -> float:
-	return _rage * (0.03 + 0.015 * sin(_t * 7.0))
+## Standing in its banner it shows its accent rim, beating slowly (BossBodyGlow), never a whole-body fill: the body
+## keeps its flat colours, and the embers at its feet are WarBannerViews'.
+func _pose_imported(dt: float) -> void:
+	super(dt)
+	if _rage > 0.001:
+		var beat := 0.55 + 0.15 * sin(_t * 7.0)
+		var rim := float(glow_overlay.get_shader_parameter("rim"))
+		glow_overlay.set_shader_parameter(
+			"rim", maxf(rim, clampf(_rage * beat, 0.0, 1.0) * BossBodyGlow.RIM_MAX)
+		)
 
 
 func anchor_names() -> Array[StringName]:

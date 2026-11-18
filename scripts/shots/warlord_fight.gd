@@ -9,11 +9,11 @@ extends SceneTree
 ## Needs a renderer (no --headless); run it off screen:
 ##   godot --path . --position -10000,-10000 --audio-driver Dummy --resolution 1600x900 \
 ##     -s scripts/shots/warlord_fight.gd
-## Writes build/shots/<version>/warlord_fight/ and prints each path with what the sim held at that moment.
+## Writes build/shots/<version>/warlord_fight/ (or out=<folder>; biome=<id> for another floor) and prints each path
+## with what the sim held at that moment.
 
 const SIZE := Vector2i(1600, 900)
 const SETTLE := 14
-const BIOME := &"red_canyon"
 
 var _vp: SubViewport
 var _world: World
@@ -22,13 +22,26 @@ var _boss := -1
 var _stage := 0
 var _wait := 12
 var _dir := ""
+## The floor's look (biome=<id>), and where the stills go (out=<folder>).
+var _biome := &"red_canyon"
 var _hero := Vector2(-8.0, -2.0)
 var _boss_at := Vector2.ZERO
 var _run := 0
 
 
 func _initialize() -> void:
-	_dir = "res://build/shots/%s/warlord_fight/" % GameVersion.label()
+	var args := {}
+	for a in OS.get_cmdline_user_args():
+		var kv := a.split("=", true, 1)
+		if kv.size() == 2:
+			args[kv[0]] = kv[1]
+	_biome = StringName(args.get("biome", _biome))
+	_dir = (
+		args.get("out", "res://build/shots/%s/warlord_fight/" % GameVersion.label()).trim_suffix(
+			"/"
+		)
+		+ "/"
+	)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	TranslationServer.set_locale("en")
 	_vp = SubViewport.new()
@@ -50,7 +63,7 @@ func _begin(phase: int, due: bool) -> void:
 	_boss_at = _world.actors.pos(_index())
 	if _view != null:
 		_view.free_all()
-	_view = WarlordFightRig.new(_vp, _world, BIOME)
+	_view = WarlordFightRig.new(_vp, _world, _biome)
 
 
 func _index() -> int:

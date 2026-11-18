@@ -1,7 +1,8 @@
 class_name ForgeLooks
 extends RefCounted
-## What the Foundry's forge views share: their colours, the floor shaders (a pool's crust as it cools, a slab, the
-## Overpressure's burning floor with the safe slabs cut out of it) and the pack colour sets. Looks only (EI-07).
+## What the Foundry's forge views share: their colours, the floor shaders (a pool's crust as it cools, the
+## Overpressure's burning floor with the slabs cut out of it), a slab's basalt plinth and its shader, and the pack
+## colour sets. Looks only (EI-07).
 
 ## The plate's cold iron and the shards it bursts into.
 const STEEL := Color("#9AA4B0")
@@ -9,10 +10,13 @@ const STEEL_DARK := Color("#4A525C")
 ## The forge's own fire: the hammer's sparks and the floor's heat, hot orange to white.
 const HOT := Color("#FF7A2A")
 const WHITE_HOT := Color("#FFE2B0")
-## A slab's basalt (a lit grey stone, so it reads as a solid plate, not a pit) and the cool rim that reads "safe":
-## blue-grey, far from the lava's oranges.
-const BASALT := Color("#5A534E")
+## A slab's basalt (a grey stone light enough to catch the room's light as the walls do, so it reads as a solid
+## plinth, not a pit) and the cool rim that reads "safe": blue-grey, far from the lava's oranges.
+const BASALT := Color("#8A817A")
 const COOL := Color("#7FC4E8")
+## A slab's plinth: how high it stands (m) and its sides.
+const PLINTH_H := 0.24
+const PLINTH_SIDES := 9
 ## Sorts under the telegraphs and the bodies (as the Tidecaller's water does).
 const UNDER := -2
 ## The most slabs the burning floor cuts out at once.
@@ -61,14 +65,16 @@ void fragment() {
 	ALPHA = clamp(cover * 0.92 + line * 0.6, 0.0, 0.95) * smoothstep(1.0, 0.92, r);
 }
 """
-## A slab on a disc of radius 1: dark basalt with a raised, lit face, a cool rim, and dull orange cracks that spread
-## as `crack` rises (its time running out); `safe` brightens the rim and pulses it (the Overpressure counts it);
-## `alpha` fades it as it crumbles.
+## A slab: a low faceted basalt plinth (plinth_mesh, radius 1 and PLINTH_H tall; the node's x and z scale are its
+## radius), shaded like the kit's stone (matte, lit by the room; the InkPass outlines it), a faint cool rim along its
+## top's edge, and dull orange cracks across its top that spread as `crack` rises (its time running out); `safe`
+## strengthens the rim and beats it slowly (the Overpressure counts it); `alpha` under 1 sinks it into the floor as it
+## crumbles.
 const SLAB_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
+render_mode cull_back, diffuse_burley, specular_schlick_ggx;
 
-uniform vec4 basalt : source_color = vec4(0.14, 0.13, 0.13, 1.0);
+uniform vec4 basalt : source_color = vec4(0.35, 0.33, 0.31, 1.0);
 uniform vec4 rim : source_color = vec4(0.5, 0.77, 0.91, 1.0);
 uniform vec4 seam : source_color = vec4(1.0, 0.42, 0.12, 1.0);
 uniform float crack = 0.0;
@@ -76,30 +82,35 @@ uniform float safe = 0.0;
 uniform float alpha = 1.0;
 uniform float clock = 0.0;
 uniform float seed = 0.0;
+uniform float height = 0.24;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
+varying vec3 lp;
+
+void vertex() {
+	lp = VERTEX;
+	VERTEX.y -= (1.0 - alpha) * (height + 0.08);
+}
 
 void fragment() {
-	vec2 q = UV * 2.0 - 1.0;
-	float r = length(q);
-	float n = texture(noise_tex, q * 0.5 + vec2(seed * 0.3, seed)).r;
-	float n2 = texture(noise_tex, q * 1.3 - vec2(seed, seed * 0.4)).r;
-	vec2 lit_dir = normalize(vec2(-0.6, -0.8));
-	float face = 0.95 + 0.45 * (n - 0.5) + 0.35 * step(0.78, n2);
-	float bevel = smoothstep(0.78, 0.88, r) * (1.0 - smoothstep(0.9, 0.97, r));
-	float lit = clamp(dot(normalize(q + vec2(0.0001)), lit_dir), -1.0, 1.0);
-	float edge = smoothstep(0.7, 0.86, r) * (1.0 - smoothstep(0.86, 0.9, r));
-	float lines = smoothstep(0.025, 0.0, abs(n2 - 0.5)) * step(1.0 - crack, n * 0.8 + r * 0.4);
-	float beat = mix(1.0, 0.75 + 0.25 * sin(clock * 5.0), safe);
-	vec3 col = basalt.rgb * face * (1.0 + 0.35 * edge * lit);
-	col = mix(col, rim.rgb * (0.7 + 0.8 * safe) * beat, bevel * (0.55 + 0.45 * safe));
-	col = mix(col, seam.rgb * 0.8, lines * crack);
-	ALBEDO = col;
-	ALPHA = alpha * smoothstep(1.0, 0.96, r);
+	float r = length(lp.xz);
+	float top = step(height - 0.005, lp.y);
+	float n = texture(noise_tex, lp.xz * 0.6 + vec2(seed * 0.3, seed)).r;
+	float n2 = texture(noise_tex, lp.xz * 1.4 - vec2(seed, seed * 0.4)).r;
+	float lines = smoothstep(0.03, 0.0, abs(n2 - 0.5)) * step(1.0 - crack, n * 0.8 + r * 0.4) * top;
+	float edge = top * smoothstep(0.74, 0.86, r);
+	float beat = mix(1.0, 0.8 + 0.2 * sin(clock * 3.0), safe);
+	ALBEDO = mix(basalt.rgb * (0.9 + 0.3 * (n - 0.5)), seam.rgb * 0.35, lines * crack);
+	ALBEDO = mix(ALBEDO, rim.rgb * 0.7, edge * (0.25 + 0.35 * safe));
+	EMISSION = rim.rgb * edge * (0.08 + 0.5 * safe) * beat + seam.rgb * lines * crack * 0.7;
+	ROUGHNESS = 1.0;
+	METALLIC = 0.0;
+	SPECULAR = 0.5;
 }
 """
-## The Overpressure's floor over the room (a plane 1 m across scaled to it): a heat shimmer rising with `level`,
-## burning with `burn` (never above 0.42 opaque); each slab in `holes` ((x, z) from the plane's centre, radius) is
-## cut out, ringed in cool blue.
+## The Overpressure's floor over the room (a plane 1 m across scaled to it): the floor's own tiles show; heat rises
+## along their seams (the stage's TILE_M grid) with `level`, a slow pulse running through it, a faint warm cast over
+## the tiles, the seams hotter with `burn`; each slab in `holes` ((x, z) from the plane's centre, radius) is cut out
+## with a thin cool edge round it.
 const HEAT_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
@@ -113,7 +124,13 @@ uniform int hole_n = 0;
 uniform float level = 0.0;
 uniform float burn = 0.0;
 uniform float clock = 0.0;
+uniform float tile_m = 4.0;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
+varying vec3 wp;
+
+void vertex() {
+	wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
 
 void fragment() {
 	vec2 p = (UV - 0.5) * room_size;
@@ -125,21 +142,28 @@ void fragment() {
 		}
 		float d = length(p - holes[k].xy) - holes[k].z;
 		open = min(open, smoothstep(0.0, 0.35, d));
-		ring = max(ring, smoothstep(0.3, 0.0, abs(d - 0.12)));
+		ring = max(ring, smoothstep(0.12, 0.0, abs(d - 0.1)));
 	}
-	float n = texture(noise_tex, p * 0.07 + vec2(clock * 0.05, -clock * 0.08)).r;
-	float n2 = texture(noise_tex, p * 0.19 - vec2(clock * 0.11, clock * 0.04)).r;
-	float flame = smoothstep(0.55, 0.8, n * 0.6 + n2 * 0.6) * burn;
+	vec2 g = abs(fract(wp.xz / tile_m + 0.5) - 0.5) * tile_m;
+	float sd = min(g.x, g.y);
+	float n = texture(noise_tex, wp.xz * 0.11 + vec2(clock * 0.02, -clock * 0.03)).r;
+	float n2 = texture(noise_tex, wp.xz * 0.43).r;
+	float seam = 1.0 - smoothstep(0.02, 0.06 + 0.06 * n, sd + (n2 - 0.5) * 0.06);
+	float run = smoothstep(0.3, 0.7, n2 * 0.7 + n * 0.5);
+	float halo = (1.0 - smoothstep(0.06, 0.45, sd)) * run;
+	float pulse = 0.7 + 0.3 * sin(clock * 1.6 - n * 3.0);
 	vec2 e = min(UV, 1.0 - UV) * room_size;
 	float edge = smoothstep(0.0, 1.0, min(e.x, e.y));
-	vec3 col = mix(heat.rgb, white.rgb, 0.2 * n + 0.6 * flame);
-	float a = open * level * (0.16 + 0.12 * n + 0.14 * burn + 0.2 * flame);
-	ALBEDO = mix(col, cool.rgb * 1.4, ring * (1.0 - open * 0.5));
-	ALPHA = clamp(max(a, ring * level * 0.7) * edge, 0.0, 0.42);
+	vec3 col = mix(heat.rgb * 0.9, white.rgb, seam * run * 0.3 * burn * pulse);
+	float hot = seam * (0.25 + 0.75 * run) * 0.7 + halo * 0.18;
+	float a = open * level * (0.035 + 0.03 * burn + hot * (0.55 + 0.45 * burn) * pulse);
+	ALBEDO = mix(col, cool.rgb, ring * (1.0 - open * 0.5));
+	ALPHA = clamp(max(a, ring * level * 0.45) * edge, 0.0, 0.8);
 }
 """
 
 static var _shaders := {}
+static var _plinth: ArrayMesh
 
 
 static func shader(code: String) -> Shader:
@@ -165,6 +189,48 @@ static func floor_mesh(parent: Node3D, code: String, size: float, priority: int)
 	mi.visible = false
 	parent.add_child(mi)
 	return mi
+
+
+## A hidden slab (plinth_mesh on its own SLAB_SHADER material) under `parent`.
+static func slab(parent: Node3D) -> MeshInstance3D:
+	var m := ShaderMaterial.new()
+	m.shader = shader(SLAB_SHADER)
+	m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+	m.set_shader_parameter("height", PLINTH_H)
+	var mi := MeshInstance3D.new()
+	mi.mesh = plinth_mesh()
+	mi.material_override = m
+	mi.visible = false
+	parent.add_child(mi)
+	return mi
+
+
+## A low faceted plinth of radius 1 standing PLINTH_H on y = 0 (a little below, so it never floats): an uneven
+## PLINTH_SIDES-gon, its top bevelled in, flat-shaded.
+static func plinth_mesh() -> ArrayMesh:
+	if _plinth != null:
+		return _plinth
+	var low := []
+	var mid := []
+	var top := []
+	for k in PLINTH_SIDES:
+		var a := TAU * (k + 0.37 * VfxCore.h(911, k)) / PLINTH_SIDES
+		var r := 0.94 + 0.06 * VfxCore.h(912, k)
+		var d := Vector3(cos(a), 0.0, sin(a))
+		low.append(d * r + Vector3(0, -0.06, 0))
+		mid.append(d * r + Vector3(0, PLINTH_H - 0.07, 0))
+		top.append(d * (r - 0.12) + Vector3(0, PLINTH_H, 0))
+	var tris := []
+	for k in PLINTH_SIDES:
+		var n := (k + 1) % PLINTH_SIDES
+		tris.append([low[k], mid[k], mid[n]])
+		tris.append([low[k], mid[n], low[n]])
+		tris.append([mid[k], top[k], top[n]])
+		tris.append([mid[k], top[n], mid[n]])
+		if k > 0 and k < PLINTH_SIDES - 1:
+			tris.append([top[0], top[k], top[n]])
+	_plinth = AvatarBase.flat_mesh(tris, Vector3(0, PLINTH_H * 0.4, 0))
+	return _plinth
 
 
 static func param(mi: MeshInstance3D, key: StringName, value: Variant) -> void:

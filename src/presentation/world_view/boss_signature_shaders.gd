@@ -3,8 +3,9 @@ extends RefCounted
 ## The shaders BossSignatureViews draws the new signature pieces
 ## with (kept apart so the view stays readable): the Gaze's beam (a hot core and glow with scrolling noise, additive)
 ## and the strip it burns on the floor, the scorch marks it leaves, a ricochet's spark (a camera-facing star), the
-## Foundry's molten floor (churning, crusting over as it cools) and its meltdown (the floor beyond a radius molten,
-## a cool bridge left out, the next ring pulsing while warned). Presentation only.
+## Foundry's molten floor (churning, crusting over as it cools) and its meltdown (the floor beyond a radius molten in
+## the floods' own lava crust, lit by the room and dimmer than a flood, a dark crust band along the safe line with a
+## thin hot rim on it, a cool bridge left out, the next ring pulsing while warned). Presentation only.
 
 const BEAM := """
 shader_type spatial;
@@ -178,27 +179,38 @@ void fragment() {
 	float n2 = texture(noise_tex, uv * 2.1 - vec2(TIME * 0.04, 0.0)).r;
 	float heat = smoothstep(0.3, 0.75, n * 0.6 + n2 * 0.4);
 	vec3 hot = mix(vec3(0.85, 0.14, 0.02), vec3(1.0, 0.62, 0.12), heat);
+	// The floods' lava crust (tex_lava_crust: its alpha the hot seams between the plates), as the flood markers draw
+	// it (BossStrikeLooks MOLTEN), kept dimmer: dark plates lit by the room, the seams glowing between them.
+	float seam = smoothstep(0.55, 0.8, n2 * 0.7 + n * 0.3);
+	vec3 plate = vec3(0.13, 0.06, 0.04);
+	if (crust_on > 0.5) {
+		vec4 cr = texture(crust_tex, p * 0.1 + vec2(TIME * 0.004, 0.0));
+		seam = cr.a;
+		plate = mix(vec3(0.1, 0.035, 0.02), cr.rgb * 0.5, 0.45);
+		hot = mix(cr.rgb, vec3(1.0, 0.55, 0.1), 0.45);
+	}
+	ROUGHNESS = 1.0;
+	SPECULAR = 0.3;
 	if (molten) {
-		float crust = smoothstep(0.62, 0.7, n2);
-		vec3 crust_rgb = vec3(0.08, 0.04, 0.03);
-		if (lava_on > 0.5) {  // v0.8.0 TX2: the owner's lava, a few crust plates (tex_lava_crust) floating on it
-			vec4 lv = texture(lava_tex, p * 0.22 + vec2(TIME * 0.018, TIME * 0.01));
-			hot = lv.rgb * mix(0.45, 0.9, lv.a);
-			if (crust_on > 0.5) {
-				vec4 cr = texture(crust_tex, p * 0.27);
-				crust = smoothstep(0.9, 0.98, 1.0 - cr.a) * smoothstep(0.55, 0.7, n);
-				crust_rgb = cr.rgb * 0.5;
-			}
+		// Along the safe line (and the bridge's sides) the crust closes into a dark band, a thin hot rim on its edge.
+		float edge_d = d - radius;
+		if (bridge > 0.5) {
+			edge_d = min(edge_d, seg(p, centre, bridge_to) - bridge_half);
 		}
-		ALBEDO = mix(hot * 0.35, crust_rgb, crust * 0.85);
-		EMISSION = hot * (1.0 - crust) * 1.3;
+		float band = 1.0 - smoothstep(0.3, 1.1, edge_d);
+		float rim = 1.0 - smoothstep(0.04, 0.16, edge_d);
+		seam *= 1.0 - band * 0.9;
+		ALBEDO = mix(mix(plate, hot * 0.3, seam), vec3(0.06, 0.03, 0.02), band * (1.0 - rim));
+		EMISSION = hot * seam * (0.45 + 0.15 * heat) + vec3(1.0, 0.42, 0.1) * rim * 1.4;
 		ALPHA = 1.0;
 	} else {
+		// The ring that melts next: the same crust heating through the floor, its seams and the line it will stop at
+		// pulsing faster as the warning runs out.
 		float pulse = 0.5 + 0.5 * sin(TIME * (6.0 + 10.0 * warn));
-		ALBEDO = vec3(0.35, 0.08, 0.02);
-		EMISSION = vec3(1.0, 0.3, 0.05) * (0.6 + 1.8 * warn) * (0.45 + 0.55 * pulse);
-		ALPHA = (0.35 + 0.5 * warn) * (0.55 + 0.45 * pulse);
+		float rim = 1.0 - smoothstep(0.05, 0.2, d - next);
+		ALBEDO = mix(plate, hot * 0.3, seam * warn);
+		EMISSION = hot * seam * (0.2 + 0.7 * warn) * (0.5 + 0.5 * pulse) + vec3(1.0, 0.42, 0.1) * rim * (0.5 + pulse);
+		ALPHA = max((0.4 + 0.4 * warn) * (0.75 + 0.25 * pulse), rim);
 	}
-	ROUGHNESS = 0.7;
 }
 """

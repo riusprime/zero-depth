@@ -5,8 +5,8 @@ extends Node3D
 ## glows (the owner: the player discovers it while playing).
 ## - The cast: the banner (WarlordLooks.banner, a code-made stand-in) is raised from the floor to upright through the
 ##   cast, in the pack's warm lift (wl_banner_cast); its circle fades in.
-## - Standing: a quiet ring of the circle's exact radius with a faint warm wash inside (WarlordLooks.RING_SHADER) and
-##   the pack's warm rim (wl_banner_rim) kept low; the cloth waves.
+## - Standing: a thin dull-gold rim of the circle's exact radius with a faint tint inside (WarlordLooks.RING_SHADER),
+##   no glow; the cloth waves.
 ## - The Warlord inside it: the pack's red embers (wl_rage) rise round its feet (and WarlordAvatar's body glows hot).
 ## - The hero inside it: a warm flare (wl_hand) at its casting hand, and each of its hits on the Warlord lands with an
 ##   extra warm burst (wl_hit) over the usual hit.
@@ -16,7 +16,6 @@ extends Node3D
 ## Reduced motion stills the wave and the tumble. Nothing here decides.
 
 const CAST_ID := &"wl_banner_cast"
-const RIM_ID := &"wl_banner_rim"
 const RAGE_ID := &"wl_rage"
 const HAND_ID := &"wl_hand"
 const HIT_ID := &"wl_hit"
@@ -25,9 +24,7 @@ const BURN_ID := &"status_burn_b"
 const FALLEN_EVENT := &"warlord_banner_fallen"
 const FELL_TIME := 0
 const FELL_CHARGE := 1
-## The pack scenes' size per metre of radius (the rim 0.55, as the Siege Engine's, held this low), and the others'.
-const RIM_PER_M := 0.55
-const RIM_TALL := 0.35
+## The pack scenes' sizes.
 const LIFT_SCALE := 0.9
 const RAGE_PER_M := 0.55
 const HAND_SCALE := 0.3
@@ -35,9 +32,9 @@ const HIT_SCALE := 0.75
 const SNAP_SCALE := 0.9
 const BURN_SCALE := 0.6
 ## The ring's band (m) and its look standing.
-const EDGE_M := 0.16
-const EDGE_ALPHA := 0.55
-const FILL_ALPHA := 0.07
+const EDGE_M := 0.11
+const EDGE_ALPHA := 0.8
+const FILL_ALPHA := 0.06
 ## The cloth starts to burn over its last BURN_TICKS standing.
 const BURN_TICKS := 90.0
 ## After its fall (s): burnt away and sunk; snapped, the top's flight.
@@ -70,7 +67,7 @@ var _hits := 0
 
 func _init() -> void:
 	name = "WarBannerViews"
-	_ring_mi = WarlordLooks.ring(self, WarlordLooks.WARM)
+	_ring_mi = WarlordLooks.ring(self, WarlordLooks.BANNER_RING)
 	_model = WarlordLooks.banner(self)
 	(_model["root"] as Node3D).set_meta(ShaderWarmup.WARM_META, true)
 
@@ -178,12 +175,6 @@ func _draw_standing(still: bool) -> void:
 	if cast >= 0:
 		hold.put(&"cast", CAST_ID, &"status", WarlordLooks.at(at + Vector3(0, 0.06, 0), LIFT_SCALE))
 		return
-	hold.put(
-		&"rim",
-		RIM_ID,
-		&"area",
-		WarlordLooks.flat(at + Vector3(0, 0.05, 0), radius * RIM_PER_M, RIM_TALL)
-	)
 	if burn > 0.0:
 		hold.put(
 			&"burn", BURN_ID, &"status", WarlordLooks.at(at + Vector3(0, 1.5, 0), BURN_SCALE * burn)

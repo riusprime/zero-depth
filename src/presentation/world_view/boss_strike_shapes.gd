@@ -20,6 +20,9 @@ const DUST_RING_MAX_M := 6.0
 const SLAMMED: Array[StringName] = [&"crater", &"crack_impact", &"eruption", &"shell", &"beam"]
 ## The Brood Mother's acid: a dark olive pool, flat, the egg's shell broken on it.
 const ACID_POOL := Color(0.3, 0.36, 0.1)
+## The Siege Engine's rail shot: a dull orange core in a dull ember haze (a cannon's streak, not a white-hot laser).
+const RAIL_CORE := Color(0.95, 0.5, 0.22)
+const RAIL_HAZE := Color(0.72, 0.3, 0.14)
 
 ## The views' pools (id -> {mm, used, cap, drawn}) and the swooshes' triangles ([position, colour]) this draw.
 var pools := {}
@@ -412,13 +415,16 @@ func _beam(s: Dictionary, o: Obb, age: float, after: float, life: float, sd: int
 	var reach := clampf(age / 3.0, 0.0, 1.0)  # the beam ignites down the line
 	var tip := a.lerp(b, reach)
 	var flick := 0.85 + 0.15 * _h(sd, int(age))
-	if fade > 0.0:
-		var core := 0.12 if rail else o.half.y * 0.45
-		_tube(a, tip, core, Color(1.0, 0.97, 0.9, fade), 2.6 * flick, sd, not rail)
-		_tube(a, tip, core * 2.6, Color(glow, 0.55 * fade), 1.8 * flick, sd + 1, not rail)
+	if fade > 0.0 and rail:
+		_tube(a, tip, 0.12, Color(RAIL_CORE, fade), 1.3 * flick, sd)
+		_tube(a, tip, 0.26, Color(RAIL_HAZE, 0.4 * fade), 0.9 * flick, sd + 1)
+	elif fade > 0.0:
+		var core := o.half.y * 0.45
+		_tube(a, tip, core, Color(1.0, 0.97, 0.9, fade), 2.6 * flick, sd, true)
+		_tube(a, tip, core * 2.6, Color(glow, 0.55 * fade), 1.8 * flick, sd + 1, true)
 	if rail:  # its haze lingers longer than the streak
 		var haze := clampf(1.0 - age / life, 0.0, 1.0)
-		_tube(a, b, 0.45, Color(glow, 0.3 * haze), 1.2, sd + 2)
+		_tube(a, b, 0.4, Color(RAIL_HAZE, 0.16 * haze), 0.7, sd + 2)
 	var heat := clampf(1.0 - age / (life + 20.0), 0.0, 1.0) if rail else fade
 	var mid := SimPlane.to_3d(o.center)
 	_ground(
@@ -427,9 +433,9 @@ func _beam(s: Dictionary, o: Obb, age: float, after: float, life: float, sd: int
 		o.half.x * 2.0 * reach,
 		o.half.y * 1.6,
 		BossStrikeMeshes.G_SCORCH,
-		heat,
+		heat * (0.2 if rail else 1.0),  # the rail scorches the floor dark, its cracks barely warm
 		clampf(heat * 1.5, 0.0, 1.0),
-		glow,
+		RAIL_HAZE if rail else glow,
 		sd
 	)
 

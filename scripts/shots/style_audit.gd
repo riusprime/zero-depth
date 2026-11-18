@@ -6,7 +6,8 @@ extends SceneTree
 ## boss's own fight mechanics (the Judge's time, the siege, the forge, the banner, the lattice) have their own scripts.
 ## Needs a renderer (no --headless); run it off screen:
 ##   godot --path . --position -10000,-10000 --audio-driver Dummy --resolution 1600x900 \
-##     -s scripts/shots/style_audit.gd -- boss=siege_engine biome=night_rocks out=<folder> [sheet=<folder>]
+##     -s scripts/shots/style_audit.gd -- boss=siege_engine biome=night_rocks out=<folder> [sheet=<folder>] \
+##     [only=<label,...>]
 ## Writes <out>/<nn>_<label>.png (default build/style_audit/<boss>/) and, with `sheet`, 2 x 2 contact sheets at half
 ## size there; prints each path with what the sim held at that moment.
 
@@ -60,6 +61,8 @@ const PLAN := {
 		["firestorm_active", "firestorm", 120, 2],
 		["meltdown_telegraph", "meltdown", 100, 2],
 		["meltdown_active", "meltdown", 128, 2],
+		["meltdown_molten", "meltdown", 240, 2],
+		["meltdown_late", "meltdown", 420, 2],
 	],
 	&"warlord":
 	[
@@ -121,6 +124,9 @@ func _initialize() -> void:
 			args[kv[0]] = kv[1]
 	_boss_id = StringName(args.get("boss", "siege_engine"))
 	_jobs = PLAN.get(_boss_id, [])
+	if args.has("only"):  # only the labels listed (comma-separated)
+		var keep: PackedStringArray = String(args["only"]).split(",")
+		_jobs = _jobs.filter(func(j: Array) -> bool: return keep.has(j[0]))
 	_out = args.get("out", ProjectSettings.globalize_path("res://build/style_audit/%s" % _boss_id))
 	_sheet = args.get("sheet", "")
 	DirAccess.make_dir_recursive_absolute(_out)

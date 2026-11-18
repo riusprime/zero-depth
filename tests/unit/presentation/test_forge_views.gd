@@ -243,7 +243,7 @@ func test_overpressure_heats_the_floor_around_the_slabs_and_burns_the_edge_off_a
 	assert_eq(holes.size(), 1, "the slab is cut out of it")
 	assert_almost_eq(holes[0].z, float(r.boss_forge()["slabs"][0]["radius"]), 0.001)
 	assert_true(slag.slabs()[0]["safe"], "the safe slab stands out")
-	assert_true(slag.hold.has([&"safe", int(r.boss_forge()["slabs"][0]["id"])]), "ringed cool")
+	assert_eq(slag.hold.count(), 0, "no pack ring: the plinth's own cool rim reads safe")
 	assert_false(ForgeBurnEdge.burning(r), "no edge before the burn")
 	var burning := func() -> bool: return int(r.boss_forge()["overpressure"].get("burn", -1)) >= 0
 	assert_true(_until(w, r, [slag], burning, 300))
@@ -400,7 +400,6 @@ func test_the_forge_effects_are_in_the_pack_table() -> void:
 		ForgePlateViews.REACH_ID,
 		ForgePlateViews.REACH_ON_ID,
 		ForgePlateViews.BOMB_ID,
-		ForgeSlagViews.SAFE_ID,
 		ForgeSlagViews.DROP_ID,
 		ForgeSlagViews.SPLASH_ID,
 		ForgeSlagViews.DUST_ID,

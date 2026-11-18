@@ -85,6 +85,8 @@ const ONCE: Array[StringName] = [&"explosion", &"impact"]
 ## its smoke and its tall streaks; the pack's files stay as they are).
 const HIDE := {
 	&"p10l_meteor_land": ["Core", "Smoke", "Impact_Streaks2"],
+	# The Siege Engine's rail keeps the blast's core; its outer sheath's crackling noise does not fit the flat floor.
+	&"bx_rail": ["BeamPivot/BeamScalor/BeamOuter"],
 }
 
 ## The light pillars and pulses drawn quieter than their scenes were made, to sit with the flat-shaded floor (the

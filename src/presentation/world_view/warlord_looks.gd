@@ -1,19 +1,25 @@
 class_name WarlordLooks
 extends RefCounted
-## What the Warlord's War Banner and Duel views share: their colours, the floor ring's shader (the banner's warm circle,
-## the cage's danger rim), the code-made War Banner (a stand-in until the owner's model: a pole, a crossbar and a red
-## cloth that waves and can burn from its hem up) and the pose of a javelin planted in the fence. Looks only (EI-07).
+## What the Warlord's War Banner and Duel views share: their colours, the floor ring's shader (the banner's dull-gold
+## circle, the cage's dull rim), the code-made War Banner (a stand-in until the owner's model: a pole, a crossbar and a
+## red cloth that waves and can burn from its hem up), the cage's javelin (the spear lines' faceted spear, matte) and
+## the pose of a javelin planted in the fence. Looks only (EI-07).
 
 ## The Warlord's red and steel (WarlordAvatar), its emblem's glow.
 const RED := Color("#D23E35")
 const RED_DARK := Color("#A9322B")
 const STEEL := Color("#6A6462")
 const EMBLEM := Color("#FF3A26")
-## The banner's warmth: its circle, the glow it lends whoever fights in it.
+## The banner's warmth: the glow it lends whoever fights in it; its circle on the floor, a dull gold.
 const WARM := Color("#FFB04A")
 const TRIM := Color("#E8B45A")
-## The cage's danger rim.
+const BANNER_RING := Color("#C49A4E")
+## The cage's danger read (its javelins' heat) and its rim on the floor, a dull rust red.
 const DANGER := Color("#FF4A24")
+const CAGE_RIM := Color("#A8442F")
+## The cage javelins' steel (lit and matte like the spear lines' spears) and its head's heat as the recall nears.
+const JAVELIN_STEEL := Color(0.74, 0.72, 0.69)
+const JAVELIN_HOT := Color(1.0, 0.42, 0.16)
 const EMBER := Color(1.0, 0.55, 0.15)
 const DUST := {
 	&"primary": Color(0.72, 0.64, 0.52),
@@ -25,9 +31,9 @@ const POLE_H := 3.2
 const BAR_Y := 2.95
 const CLOTH := Vector2(1.1, 1.5)
 
-## A floor circle of radius 1 (the node's scale is its radius in metres): a band of `edge` (a share of the radius) at
-## its rim, at `edge_alpha`, and a faint wash inside at `fill_alpha`, a little brighter toward the rim; `pulse` 1
-## breathes it slowly. Depth-tested, so the bodies on it stand over it.
+## A floor circle of radius 1 (the node's scale is its radius in metres): a flat band of `edge` (a share of the
+## radius) at its rim, at `edge_alpha`, and a faint tint inside at `fill_alpha`, a little stronger toward the rim;
+## `pulse` 1 breathes it slowly. No glow: the band is the tint itself. Depth-tested, so the bodies on it stand over it.
 const RING_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
@@ -46,7 +52,7 @@ void fragment() {
 	float band = smoothstep(edge, 0.0, abs(r - (1.0 - edge)));
 	float inside = step(r, 1.0 - edge) * (0.55 + 0.45 * r * r);
 	float beat = mix(1.0, 0.8 + 0.2 * sin(clock * 2.5), pulse);
-	ALBEDO = tint.rgb * (1.0 + 0.6 * band);
+	ALBEDO = tint.rgb * (0.9 + 0.15 * band);
 	ALPHA = clamp(alpha * beat * (band * edge_alpha + inside * fill_alpha), 0.0, 0.9) * step(r, 1.0);
 }
 """
@@ -81,8 +87,31 @@ void fragment() {
 }
 """
 
+## The cage javelins' shader (one MultiMesh): steel lit like the walls (matte, the default specular), the head warming
+## toward JAVELIN_HOT with the instance's INSTANCE_CUSTOM.r (the recall's warning), a small accent only.
+const JAVELIN_SHADER := """
+shader_type spatial;
+render_mode cull_back, diffuse_burley, specular_schlick_ggx;
+uniform vec4 steel : source_color = vec4(0.62, 0.6, 0.58, 1.0);
+uniform vec4 hot : source_color = vec4(1.0, 0.42, 0.16, 1.0);
+varying float glow;
+void vertex() {
+	glow = INSTANCE_CUSTOM.r;
+}
+void fragment() {
+	float head = smoothstep(0.72, 0.86, UV.y);
+	float heat = smoothstep(0.2, 1.0, glow);
+	ALBEDO = mix(steel.rgb, hot.rgb * 0.6, head * heat * 0.6);
+	EMISSION = hot.rgb * head * heat * 1.4;
+	ROUGHNESS = 1.0;
+	METALLIC = 0.0;
+	SPECULAR = 0.5;
+}
+"""
+
 static var _ring: Shader
 static var _cloth: Shader
+static var _javelin: ArrayMesh
 
 
 static func _shader(code: String) -> Shader:
@@ -194,6 +223,44 @@ static func banner(parent: Node3D) -> Dictionary:
 	return {"root": root, "top": top, "cloth": cloth}
 
 
+## The cage's javelin: the spear lines' faceted spear (BossStrikeMeshes.blade) laid along +X from its butt (x = 0) to
+## its point, BossSignatureViews.JAVELIN_LENGTH long, so it poses as the fan's javelin does; flat-shaded, its UV.y
+## how far along it lies (0 butt, 1 point) for the head's heat.
+static func javelin() -> ArrayMesh:
+	if _javelin != null:
+		return _javelin
+	var src := BossStrikeMeshes.blade()
+	var arrays := src.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+	var length := BossSignatureViews.JAVELIN_LENGTH
+	# The spear's +Y (y -0.1 at the butt to 1 at the point) turned to +X (a rotation, so the faces keep their winding),
+	# stretched to the javelin's length, a little thicker across; each face's normal recomputed after the stretch.
+	var across := 1.15
+	var out_v := PackedVector3Array()
+	var out_n := PackedVector3Array()
+	var uv := PackedVector2Array()
+	for k in verts.size():
+		var v := verts[k]
+		var along := (v.y + 0.1) / 1.1
+		out_v.append(Vector3(along * length, -v.x * across, v.z * across))
+		uv.append(Vector2(0.0, along))
+	for k in range(0, out_v.size() - 2, 3):
+		var was := normals[k]
+		var n := (out_v[k + 1] - out_v[k]).cross(out_v[k + 2] - out_v[k]).normalized()
+		if n.dot(Vector3(was.y, -was.x, was.z)) < 0.0:
+			n = -n
+		out_n.append_array([n, n, n])
+	var a := []
+	a.resize(Mesh.ARRAY_MAX)
+	a[Mesh.ARRAY_VERTEX] = out_v
+	a[Mesh.ARRAY_NORMAL] = out_n
+	a[Mesh.ARRAY_TEX_UV] = uv
+	_javelin = ArrayMesh.new()
+	_javelin.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, a)
+	return _javelin
+
+
 ## A fence javelin's transform: its head `sink` m into the floor at `at` (3D, on the floor), its shaft rising outward
 ## from `centre` (3D) at `pitch` (radians below level from the tail to the head), `size` times the javelin's size.
 static func planted(
@@ -215,8 +282,3 @@ static func planted(
 ## Transform: `scale` uniform at `pos`.
 static func at(pos: Vector3, scale: float) -> Transform3D:
 	return Transform3D(Basis.from_scale(Vector3.ONE * scale), pos)
-
-
-## Transform: `across` wide (x, z) and `tall` high at `pos` (a rim kept low while it spans a wide circle).
-static func flat(pos: Vector3, across: float, tall: float) -> Transform3D:
-	return Transform3D(Basis.from_scale(Vector3(across, tall, across)), pos)

@@ -5,19 +5,19 @@ extends Node3D
 ## anywhere.
 ## - A pool cooling: dark crust (CRUST_SHADER) grows over the burning pool (HazardViews' lava) through its `cooling`,
 ##   and the lava between the patches dims: bright lava turns to a dull crust.
-## - A slab: a dark basalt plate of the pool's exact radius with a cool blue rim (SLAB_SHADER), clearly not lava; its
-##   cracks glow dull orange as its time runs low, it fades over its last moments and crumbles in the pack's dust
-##   (vx1_impact_other, dark); shattered by the vent blast it bursts in the dust at once and goes.
+## - A slab: a low faceted basalt plinth of the pool's exact radius (ForgeLooks.slab: matte stone lit like the walls,
+##   a faint cool rim on its top's edge), clearly not lava; its cracks glow dull orange as its time runs low, it sinks
+##   into the floor over its last moments and crumbles in the pack's dust (vx1_impact_other, dark); shattered by the
+##   vent blast it bursts in the dust at once and goes.
 ## - A slag drop (a pool dropped at the hero's feet): a molten blob (fo_drop) falls into its warning ring and lands in
 ##   the pack's ember impact.
-## - The Overpressure: through its cast the open floor heats (HEAT_SHADER, a room-wide glow rising with `cast`, sorted
-##   under the bodies and telegraphs and never above half opaque); every whole slab is cut out of it, ringed cool, and
-##   the safe ones carry the pack's cool rim (fo_safe): the only cool islands. While it burns the floor flickers with
-##   flame; it fades out when it ends. The hint arrows (ObjectiveHints, `foundry_slab`) and the HUD's edge glow
-##   (ForgeHud) are the HUD's.
+## - The Overpressure: through its cast the open floor heats (HEAT_SHADER: the floor's own tiles show, heat rising
+##   along their seams with `cast`, sorted under the bodies and telegraphs); every whole slab is cut out of it with a
+##   thin cool edge, and the safe ones' rims strengthen and beat slowly: the only cool islands. While it burns the
+##   seams run hotter and pulse; it fades out when it ends. The hint arrows (ObjectiveHints, `foundry_slab`) and the
+##   HUD's edge glow (ForgeHud) are the HUD's.
 ## Every slot is built hidden at the start (the warm-up draws them). Reduced motion stills the floor's flicker.
 
-const SAFE_ID := &"fo_safe"
 const DROP_ID := &"fo_drop"
 const SPLASH_ID := &"vx1_impact_ember"
 const DUST_ID := &"vx1_impact_other"
@@ -27,7 +27,6 @@ const SHATTERED := &"slab_shattered"
 const SLAG_DROP := &"slag_drop"
 const SLOTS := 8
 ## The pack scenes' size per metre of radius.
-const RIM_PER_M := 0.55
 const DUST_PER_M := 0.42
 const SPLASH_PER_M := 0.45
 const DROP_SCALE := 0.8
@@ -68,13 +67,14 @@ func _init() -> void:
 	name = "ForgeSlagViews"
 	for k in SLOTS:
 		_crusts.append(ForgeLooks.floor_mesh(self, ForgeLooks.CRUST_SHADER, 2.0, 1))
-		_slabs.append(ForgeLooks.floor_mesh(self, ForgeLooks.SLAB_SHADER, 2.0, 1))
+		_slabs.append(ForgeLooks.slab(self))
 		ForgeLooks.param(_crusts[k], &"seed", float(k) * 0.37)
 		ForgeLooks.param(_slabs[k], &"seed", float(k) * 0.61)
 		ForgeLooks.param(_slabs[k], &"basalt", ForgeLooks.BASALT)
 		ForgeLooks.param(_slabs[k], &"rim", ForgeLooks.COOL)
 	_heat = ForgeLooks.floor_mesh(self, ForgeLooks.HEAT_SHADER, 1.0, ForgeLooks.UNDER)
 	ForgeLooks.param(_heat, &"cool", ForgeLooks.COOL)
+	ForgeLooks.param(_heat, &"tile_m", StageView.TILE_M)
 
 
 func sync(reader: WorldReader) -> void:
@@ -189,20 +189,13 @@ func _draw_rows() -> void:
 		var s := _slabs[slabs]
 		slabs += 1
 		s.visible = true
-		s.position = SimPlane.to_3d(at, 0.05)
-		s.scale = Vector3.ONE * r
+		s.position = SimPlane.to_3d(at)
+		s.scale = Vector3(r, 1.0, r)
 		var safe := not _over.is_empty() and bool(row["safe"])
 		ForgeLooks.param(s, &"crack", clampf(1.0 - left / maxf(1.0, float(_life[id])), 0.0, 1.0))
 		ForgeLooks.param(s, &"alpha", clampf(left / FADE_TICKS, 0.0, 1.0))
 		ForgeLooks.param(s, &"safe", 1.0 if safe else 0.0)
 		ForgeLooks.param(s, &"clock", _clock)
-		if safe:
-			hold.put(
-				[&"safe", id],
-				SAFE_ID,
-				&"area",
-				SiegeLooks.at(s.position + Vector3(0, 0.03, 0), r * RIM_PER_M)
-			)
 	for k in range(pools, SLOTS):
 		_crusts[k].visible = false
 	for k in range(slabs, SLOTS):
