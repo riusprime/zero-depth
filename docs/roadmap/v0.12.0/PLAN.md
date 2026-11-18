@@ -208,4 +208,4 @@ The owner, on Amber's stone slam: "this matches a lot more the style, the little
 | 31 | Siege, Foundry, Warlord set pieces: se-rail, se-cover, se-cart, fd-meltdown, fd-overpressure, fd-slabs, wl-banner, wl-cage | Opus |
 | 32 | Hive Lens, Prism, Tidecaller, Twins, The Fallen set pieces: hl-gaze, hl-focus, hl-feed, hl-lattice, hl-glass, pr-cross, pr-lances, tc-pull, tc-waves, tw-swords, tw-mirror, fa-label, fa-mimic, fa-riptide, fa-ward | Opus |
 
-Two Opus agents at a time (owner: visual work goes to Opus), in the order above; each shows before/after stills.
+Two Opus agents at a time (owner: visual work goes to Opus), in the order above; each shows before/after stills. The rule over every call (owner, mid-build): "keep the new effects as close as possible and fit as much as we can to the game style, the lines, textures that dont fit and out of place things have to go out": an effect keeps its idea and readability, and whatever does not fit is removed or replaced, not only dimmed.
