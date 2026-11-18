@@ -3,10 +3,10 @@ extends Node3D
 ## The Warlord's great javelin, read from the sim (WorldReader.boss_great_javelin; EI-07), never
 ## decided here: the fan's javelin at GREAT_SCALE (BossSignatureViews.javelin_mesh and its hot shader), flying level
 ## along its line (out, and back the way it came), or planted leaning as the small ones do. Embedded, it vibrates with
-## an
-## amplitude from the sim's "shake" (harder as a quake pulse nears, hardest through the recall line; none with reduced
-## motion). Where it lands: the pack's rock impact and dust once, a crack mark on the floor, and a puff of dust on each
-## pulse (PD-13). The ring and its pulse are StoneSpikeViews' quake rings; the lines are TelegraphViews'.
+## an amplitude from the sim's "shake" (harder as a quake pulse nears, hardest through the recall line; none with
+## reduced motion). Where it lands it sticks in the stone: the slam's cracks, chips and grit thrown up once
+## (GroundSlamViews), a crack mark on the floor, and a low kick of dust on each pulse. The ring and its pulse are
+## StoneSpikeViews' quake rings; the lines are TelegraphViews'.
 
 const GREAT_SCALE := 2.2
 ## Its flight's height (m) and how far its planted head sinks into the floor.
@@ -14,28 +14,27 @@ const FLY_Y := 1.5
 const SINK := 0.4
 const SHAKE_ROT := 0.08  # radians at full shake
 const SHAKE_POS := 0.07  # metres at full shake
-const IMPACT_SCALE := 0.8
-const DUST_SCALE := 0.65
-const PULSE_DUST_SCALE := 0.7
 const CRACK_RADIUS := 2.2
-## The pack's rock impact and dust in the quake's own hot orange and the Warlord's dust.
-const HOT_COLS := {
-	&"primary": Color(1.0, 0.64, 0.42),
-	&"secondary": StoneSpikeViews.RING_COLOR,
-	&"tertiary": StoneSpikeViews.HOT
-}
-const DUST_COLS := {
-	&"primary": StoneSpikeViews.DUST,
-	&"secondary": StoneSpikeViews.DUST,
-	&"tertiary": StoneSpikeViews.DUST
-}
+## Its landing: the slam's cracks, chips and grit (no big rocks or heaved plates: a spear, not a boulder), this
+## wide (m); a pulse's low dust kick, this wide.
+const LAND_M := 1.8
+const LAND := (
+	GroundSlamViews.P_MID
+	| GroundSlamViews.P_GRIT
+	| GroundSlamViews.P_DUST
+	| GroundSlamViews.P_CRACK
+)
+const PULSE_M := 1.4
 
+## Its landing and its pulses' dust.
+var slams := GroundSlamViews.new(3)
 var _mm := MultiMeshInstance3D.new()
 var _mat := ShaderMaterial.new()
 var _tick := 0
 var _state := {}
 var _shake := 0.0
 var _once := {}  # one-shot effects' keys already played (key -> tick)
+var _slammed := {}  # the landings and pulses already slammed (key -> tick)
 
 
 func _init() -> void:
@@ -57,12 +56,14 @@ func _init() -> void:
 	_mm.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_mm.extra_cull_margin = 16384.0
 	add_child(_mm)
+	add_child(slams)
 
 
 func sync(reader: WorldReader) -> void:
 	_tick = reader.tick()
 	var boss := reader.boss_index()
 	_state = reader.boss_great_javelin(boss) if boss >= 0 else {}
+	_slam()
 	_draw(float(_tick))
 
 
@@ -142,8 +143,27 @@ func _draw(now: float) -> void:
 	mm.visible_instance_count = 1
 
 
-## A VfxCore drawer: the impact (pack rock impact, dust, a crack mark on the floor) once where it lands, a puff of the
-## pack's dust on each pulse.
+## The landing's slam once where it sticks, a low dust kick on each pulse.
+func _slam() -> void:
+	if _state.is_empty():
+		_slammed.clear()
+		return
+	if int(_state["phase"]) != WorldReader.GREAT_JAVELIN_EMBEDDED:
+		return
+	var at := SimPlane.to_3d(_state["at"], 0.0)
+	var key := "i%d" % int(_state["from_tick"])
+	if not _slammed.has(key):
+		_slammed[key] = _tick
+		slams.slam(at, LAND_M, {"parts": LAND, "amount": 0.7})
+	var pulse := "p%d:%d" % [int(_state["from_tick"]), int(_state["pulse"])]
+	if bool(_state["struck"]) and not _slammed.has(pulse):
+		_slammed[pulse] = _tick
+		slams.slam(
+			at, PULSE_M, {"parts": GroundSlamViews.P_DUST | GroundSlamViews.P_GRIT, "amount": 0.5}
+		)
+
+
+## A VfxCore drawer: the crack mark on the floor once where it lands.
 func draw_fx(layer: VfxCore) -> void:
 	if _state.is_empty():
 		_once.clear()
@@ -162,23 +182,3 @@ func draw_fx(layer: VfxCore) -> void:
 			CRACK_RADIUS,
 			BossStrikeViews.CRACK_MARK
 		)
-		_spawn(
-			layer, &"bx_impact_a", at, IMPACT_SCALE, HOT_COLS, StoneSpikeViews.QUAKE_SHATTER_HIDE
-		)
-		_spawn(layer, &"bx_smoke_dust", at, DUST_SCALE, DUST_COLS, [])
-	var pulse := "p%d:%d" % [int(_state["from_tick"]), int(_state["pulse"])]
-	if (
-		phase == WorldReader.GREAT_JAVELIN_EMBEDDED
-		and bool(_state["struck"])
-		and not _once.has(pulse)
-	):
-		_once[pulse] = _tick
-		_spawn(layer, &"bx_smoke_dust", at, PULSE_DUST_SCALE, DUST_COLS, [])
-
-
-static func _spawn(
-	layer: VfxCore, id: StringName, at: Vector3, s: float, cols: Dictionary, hide_nodes: Array
-) -> void:
-	var vl := layer as VfxLayer
-	if vl != null and vl.pack_fx != null:
-		vl.pack_fx.spawn(id, at, s, cols, -1.0, 1.0, hide_nodes)

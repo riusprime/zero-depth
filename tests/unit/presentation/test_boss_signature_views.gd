@@ -235,10 +235,9 @@ func test_the_quake_pillars_stand_ring_before_each_pulse_and_burst_when_gone() -
 	assert_eq(spikes.strike_count(), strikes + 1, "the gone pillar bursts")
 
 
-## v0.11.0 VX (owner PD-13: new effects use the premade packs): with the pack, the quake rings are pack rims in the
-## telegraph's orange (the growing ring and the radius it hits, held while the warning runs) and the flat bands are not
-## built; the pulse plays a shock pulse and a gone pillar a rock impact, once each.
-func test_vx_the_quake_rings_and_shatter_are_pack_effects() -> void:
+## The quake rings are the flat bands even with the pack (a dark ripple growing to the radius it hits, its faint
+## outline, a thin bright edge only on the pulse; no pack rims), and a gone pillar breaks as the stone slam, once.
+func test_the_quake_rings_are_a_floor_ripple_and_a_shatter_is_a_slam() -> void:
 	var s := _fight(&"gatekeeper", Vector2(7, 2))
 	var w: World = s[0]
 	var aid: int = s[1]
@@ -260,10 +259,10 @@ func test_vx_the_quake_rings_and_shatter_are_pack_effects() -> void:
 	layer.begin(float(w.tick))
 	spikes.draw_fx(layer)
 	layer.finish()
-	assert_true(spikes.quake_pack_on, "the pack draws the rings")
-	assert_eq(spikes.quake_holds.held, 6, "a rim growing and the rim it hits, three pillars")
-	assert_eq(spikes.ring_bands(), 6, "the telegraph's pieces (counted)")
+	assert_eq(spikes.ring_bands(), 6, "a ripple growing and the radius it hits, three pillars")
+	assert_eq(layer.pack_fx.live_count(&"area"), 0, "no pack rims")
 	var impacts := layer.pack_fx.live_count(&"impact")
+	var slams := spikes.slams.started()
 	var o := BossSignatures.pillar_obb(w.bosses, k)
 	var gone: Array[Obb] = [o]
 	w.bosses.remove_pillar(k)
@@ -273,6 +272,5 @@ func test_vx_the_quake_rings_and_shatter_are_pack_effects() -> void:
 	spikes.draw_fx(layer)
 	spikes.draw_fx(layer)  # (once: a second frame starts nothing more)
 	layer.finish()
-	assert_eq(
-		layer.pack_fx.live_count(&"impact"), impacts + 1, "the gone pillar's rock impact, once"
-	)
+	assert_eq(spikes.slams.started(), slams + 1, "the gone pillar breaks as a slam, once")
+	assert_eq(layer.pack_fx.live_count(&"impact"), impacts, "no pack impact")

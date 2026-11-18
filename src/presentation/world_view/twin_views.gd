@@ -5,8 +5,9 @@ extends Node3D
 ## - Crossfire's read (its windup and firing): each body's gap lane on the ground, a glowing strip in its colour from
 ##   the body through the safe spot with chevrons flowing toward it, and the safe spot itself, a bright gold ring with a
 ##   pulsing core: the two lanes cross only there.
-## - The Sword Lane's cut: on its strike a white-hot amber slash runs along the locked line from the boss to the line's
-##   end and fades, with a flash of light (the lane's marker is TelegraphViews', its scorch BossStrikeViews').
+## - The Sword Lane's cut: on its strike a thin amber-white slash runs along the locked line from the boss to the line's
+##   end and fades, with a faint flash of light, kicking the floor's grit up along it as it passes (GroundSlamViews;
+##   the lane's marker is TelegraphViews', its scorch BossStrikeViews').
 ## Reduced motion stills the chevrons. Nothing here decides an outcome.
 
 const AMBER := Color("#FFB347")
@@ -14,7 +15,14 @@ const VIOLET := Color("#B98CFF")
 const SAFE := Color("#FFE9A0")
 const CUT_SECONDS := 0.45
 ## The slash's width (m).
-const CUT_W := 1.4
+const CUT_W := 0.7
+const CUT_COLOR := Color(1.0, 0.8, 0.5)
+const CUT_GLOW := 0.9
+const CUT_ALPHA := 0.75
+const CUT_LIGHT := 1.5
+## The grit kicked up along the cut: a point about every KICK_GAP_M, KICK_SIZE the slam's size.
+const KICK_GAP_M := 0.9
+const KICK_SIZE := 0.26
 const LANE_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
@@ -56,6 +64,8 @@ void fragment() {
 
 ## True once a frame with nothing to show drew it all hidden: later frames return at once.
 var quiet := false
+## The grit the cut kicks up.
+var slams := GroundSlamViews.new(2)
 var _flash := OmniLight3D.new()
 var _lanes: Array[MeshInstance3D] = []
 var _spot := MeshInstance3D.new()
@@ -99,7 +109,8 @@ func _init() -> void:
 	_spot.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_spot.visible = false
 	add_child(_spot)
-	_cut = WardenLooks.floor_mesh(self, false, Color(1.0, 0.85, 0.55))
+	_cut = WardenLooks.floor_mesh(self, false, CUT_COLOR)
+	add_child(slams)
 	_flash.light_energy = 0.0
 	_flash.shadow_enabled = false
 	_flash.omni_range = 7.0
@@ -125,6 +136,7 @@ func sync(reader: WorldReader) -> void:
 		_cut_t = 0.0
 		_cut_from = sweep["from"]
 		_cut_to = sweep["to"]
+		_kick()
 	_struck = struck
 
 
@@ -178,15 +190,15 @@ func _draw_gaps(delta: float) -> void:
 func _draw_cut() -> void:
 	var on := _cut_t < 1.0
 	_cut.visible = on
-	_flash.light_energy = 5.0 * (1.0 - _cut_t) if on else 0.0
+	_flash.light_energy = CUT_LIGHT * (1.0 - _cut_t) if on else 0.0
 	if not on:
 		return
 	var front := minf(1.0, _cut_t * 4.0)
 	var fade := 1.0 - smoothstep(0.25, 1.0, _cut_t)
 	var to := _cut_from.lerp(_cut_to, front)
 	WardenLooks.lay_strip(_cut, _cut_from, to, CUT_W, 0.09)
-	WardenLooks.param(_cut, &"alpha", fade)
-	WardenLooks.param(_cut, &"glow", 2.0)
+	WardenLooks.param(_cut, &"alpha", fade * CUT_ALPHA)
+	WardenLooks.param(_cut, &"glow", CUT_GLOW)
 	WardenLooks.param(_cut, &"clock", _clock)
 	_flash.position = SimPlane.to_3d(_cut_from.lerp(_cut_to, 0.5), 0.8)
 
@@ -205,3 +217,16 @@ func spot_shown() -> bool:
 
 func lashing() -> bool:
 	return _cut_t < 1.0
+
+
+## The floor's grit kicked up along the cut, each point as the slash's front passes it (a quarter of its life).
+func _kick() -> void:
+	var length := _cut_from.distance_to(_cut_to)
+	var n := clampi(int(length / KICK_GAP_M), 2, 18)
+	var points := []
+	var delays := []
+	for k in n:
+		var t := (k + 0.5) / n
+		points.append(SimPlane.to_3d(_cut_from.lerp(_cut_to, t), 0.0))
+		delays.append(t * CUT_SECONDS * 0.25)
+	slams.kick(points, KICK_SIZE, delays)

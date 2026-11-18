@@ -335,14 +335,14 @@ func test_an_eggs_shadow_grows_on_its_circle_before_the_acid_splat() -> void:
 func test_low_density_thins_the_rocks_and_reduced_motion_stills_the_flow() -> void:
 	var view := BossStrikeViews.new()
 	add_child_autofree(view)
-	view._spawn(&"bm_burrow", 3, {"discs": [[Vector2.ZERO, 2.0]]})
+	view._spawn(&"bm_eggs", 3, {"discs": [[Vector2.ZERO, 2.0]]})
 	view._draw(6.0)
 	var rocks := view.drawn(&"rock")
 	assert_gt(rocks, 0)
 	ViewPrefs.effects_density = "low"
 	view._draw(6.0)
 	assert_lt(view.drawn(&"rock"), rocks, "fewer rocks")
-	assert_gt(view.drawn(&"ground"), 0, "the crater stays")
+	assert_gt(view.drawn(&"ground"), 0, "the pool stays")
 	ViewPrefs.reduced_motion = true
 	view._draw(6.0)
 	var m := view.get_node("Strike_ground") as MultiMeshInstance3D
@@ -370,7 +370,8 @@ func test_the_effects_go_through_the_layers_budgets() -> void:
 	view._tick = 32
 	layer.begin(33.0)
 	layer.finish()
-	assert_gt(layer.bursts_asked, 0, "the shells explode through VfxLayer.burst")
+	assert_eq(layer.bursts_asked, 0, "the shells slam into the stone: no VfxLayer.burst")
+	assert_gt(view.slams.live(), 0, "their slams")
 	assert_lte(layer.bursts_drawn, VfxLayer.BURST_MAX, "within the frame's burst budget")
 	assert_lte(view.live_bursts(), BurstBudget.MAX_LIVE)
 	assert_gt(layer.lights_asked(), 0, "flashes ask for light")

@@ -2,18 +2,23 @@ class_name BossStrikeViews
 extends Node3D
 ## v0.8.0 AV part 2 (owner O7: "so the attacks look real … not … a red thingy"): the strike of every boss ground
 ## attack with a look (BossStrikeLooks) as a real 3D effect, as StoneSpikeViews does for the Gatekeeper's shock lanes:
-## - Gatekeeper: a fist slam blows a crater (rocks thrown up, a dust shockwave, a hot cracked bowl); its sweep a dust
-##   arc.
+## The stone impacts (the fist slams, landings, eruptions, shells and drops) slam into the floor in the game's own
+## faceted stone (BossStrikeImpacts into GroundSlamViews), each boss with only its small touch:
+## - Gatekeeper: a fist slam slams the floor; its sweep a dust arc with grit kicked along it.
 ## - Warlord: spear lines thrust up rows of spears along the lanes (they stand while the lanes do, then retract); the
-##   lunge leaves a scorched skid with sparks behind it; the shield bash a steel arc; the javelin rain plants javelins.
-## - Brood Mother: an egg's circle gets the egg's shadow growing as it falls, then an acid splat; a leap lands as a
-##   cracked impact with dust; a burrow erupts as a ring of dirt and rock; a brood hatches out of acid splats.
+##   lunge leaves a scorched skid with sparks behind it; the shield bash a dust arc with chips; the javelin rain plants
+##   javelins.
+## - Brood Mother: an egg's circle gets the egg's shadow growing as it falls, then a flat olive acid pool with the
+##   shell broken on it; a leap and a burrow slam the floor with acid flecks among the chips; a brood hatches out of
+##   acid pools.
 ## - Hive Lens: the focus beam fires as a 3D beam down the locked lanes; the lens flare is a light shockwave ring; a
 ##   dive and a split flash as bursts of light.
-## - Siege Engine: mortar and barrage shells fall onto their circles and explode (fireball, debris, a scorched crater);
-##   the rail fires a streak down its lane and leaves a scorched line; the shockwave rolls out as a dust wall.
+## - Siege Engine: mortar and barrage shells fall onto their circles and slam into the stone with a short orange flash;
+##   the turrets drop in with a ring of dust and chips; the rail fires a streak down its lane and leaves a scorched
+##   line; the shockwave rolls out as one ring of the floor's dust.
 ## - Foundry: the molten flood pours molten metal down the lanes, which cools from hot seams to a dark crust; the vent
-##   blast is a ring of steam and heat; the firestorm sets the lanes burning; the bombs explode as shells.
+##   blast throws stone out with a short orange flash and a wisp of steam; the firestorm sets the lanes burning; each
+##   bomb drone drops in a small ring of dust.
 ## The strike is read, never decided (EI-07): the tick a marker shows locked at progress 1000 (BossDodge.mark_state 2
 ## and grid_state 2), the tick a windup turns active (the hit resolves on that tick), the tick a leap lands (boss_leap
 ## at 1.0) and the tick a burrow comes up (boss_hidden turns false), all from WorldReader; the geometry is the
@@ -66,9 +71,13 @@ const SEEN_TICKS := 30
 const CRACK_MARK := Color(0.07, 0.05, 0.045, 0.85)
 ## A mark key well apart from VfxLayer's and StoneSpikeViews' (keys only suppress repeats).
 const MARK_BASE := 1 << 40
+## The stone impacts playing at once (a Mortar Grid lands a score of shells together; more replace the oldest).
+const SLAM_SLOTS := 24
 
 ## The effects layer for the sprites, lights, floor marks and explosions (WorldViewRoot sets it with the new look).
 var vfx: VfxCore
+## The strikes' stone impacts (BossStrikeImpacts): faceted chunks of the floor, grit, dust and cracks.
+var slams := GroundSlamViews.new(SLAM_SLOTS)
 ## Live strikes: {"look", "kind", "tick", "end" (-1 while sustained), "aid", "seed", "glow", "glow_i", and the
 ## geometry: "discs" [[centre, radius, fx?]], "ring" [centre, inner, outer], "arc" [centre, own_r, reach, a0, a1],
 ## "lanes" [Obb], or "lane" Obb with "from"/"to" (the skid)}.
@@ -127,6 +136,14 @@ func _init() -> void:
 			m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 		mi.material_override = m
 		add_child(mi)
+	add_child(slams)
+
+
+## The biome's floor colours: the impacts' stone and the strikes' dust are the floor's.
+func floor_palette(palette: Dictionary) -> void:
+	slams.floor_palette(palette)
+	if palette.has("ground"):
+		_shapes.dust = (palette["ground"] as Color).lightened(0.12)
 
 
 func _mat(code: String) -> ShaderMaterial:
@@ -465,6 +482,7 @@ func _spawn(look: StringName, aid: int, geo: Dictionary) -> void:
 	while _strikes.size() >= MAX_STRIKES:
 		_strikes.pop_front()
 	_strikes.append(s)
+	BossStrikeImpacts.spawn(slams, s)
 
 
 static func _glow_index(pattern: int) -> float:

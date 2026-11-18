@@ -126,22 +126,18 @@ func _frame(l: VfxLayer, strikes: Array[Dictionary], now: float) -> void:
 	l.finish()
 
 
-func test_a_crater_spawns_its_burst_and_dust_once_per_disc() -> void:
-	var l := _layer()
-	var s := _strike(&"crater", {"discs": [[Vector2(2, 0), 2.0, true], [Vector2(6, 0), 2.0, true]]})
-	for k in 6:
-		_frame(l, [s], 100.0 + k)
-	assert_eq(_fx.live_count(&"impact"), 2, "one burst a disc, not a frame")
-	assert_eq(_fx.live_count(&"cloud"), 2, "one dust cloud a disc")
-	_frame(l, [], 110.0)
-	assert_eq(_fx.spawned, 4)
-
-
-func test_a_crack_impact_takes_the_other_burst() -> void:
+## The craters, landings and eruptions start no pack burst, smoke or light here: their impact is the stone slam
+## (BossStrikeImpacts); the floor keeps its crack mark.
+func test_a_crater_plays_no_pack_burst_smoke_or_light() -> void:
 	var l := _layer()
 	var n := _fx.spawned
-	_frame(l, [_strike(&"crack_impact", {"discs": [[Vector2.ZERO, 1.5, true]]})], 100.0)
-	assert_eq(_fx.spawned, n + 2)
+	for kind: StringName in [&"crater", &"crack_impact", &"eruption"]:
+		var s := _strike(kind, {"discs": [[Vector2(2, 0), 2.0, true], [Vector2(6, 0), 2.0, true]]})
+		for k in 6:
+			_frame(l, [s], 100.0 + k)
+	assert_eq(_fx.spawned, n, "no pack effect")
+	assert_eq(l.lights_asked(), 0, "no light")
+	assert_gt(l.marks(), 0, "the crack mark stays")
 
 
 func test_the_rings_and_the_light_strikes_spawn_their_areas() -> void:
@@ -210,12 +206,3 @@ func test_a_rail_is_a_blast_beam_for_its_first_ten_ticks() -> void:
 	assert_eq(_fx.live_count(&"beam"), 1, "held")
 	_frame(l, [s], 112.0)
 	assert_eq(_fx.live_count(&"beam"), 0, "let go when the rail is over")
-
-
-func test_a_full_cloud_family_keeps_the_dust_sprites() -> void:
-	var l := _layer()
-	_fill(&"cloud", &"bx_smoke_dust")
-	var n := _fx.spawned
-	_frame(l, [_strike(&"crater", {"discs": [[Vector2(2, 0), 2.0, true]]})], 100.0)
-	assert_eq(_fx.live_count(&"cloud"), _fx.cap_for(&"cloud"), "no new smoke")
-	assert_eq(_fx.spawned, n + 1, "only the burst")

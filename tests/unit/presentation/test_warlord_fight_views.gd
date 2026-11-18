@@ -106,8 +106,12 @@ func test_the_warlords_charge_draws_its_end_circle_then_bursts_there() -> void:
 	var gone := func() -> bool: return r.boss_charge_bursts().is_empty()
 	assert_true(_until(w, r, [bursts], gone, 60))
 	_run(w, r, [bursts], 1)
-	assert_eq(fx.live_count(&"explosion"), 1, "the pack's explosion where it ended, once")
-	assert_eq(fx.live_count(&"impact"), 0, "its lunge keeps its explosion: no debris slam")
+	assert_eq(
+		bursts.slams.started(),
+		1,
+		"it slams into the stone where it ended, once (as the amber Warden's)"
+	)
+	assert_eq(fx.live_count(&"explosion"), 0, "no explosion")
 
 
 func test_the_banner_rises_through_its_cast_and_stands_on_the_readers_circle() -> void:
