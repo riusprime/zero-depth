@@ -33,6 +33,13 @@ const DEFAULTS := {
 	"audio/ambience": 60,
 	"window_mode": "windowed",
 	"render_scale": "100",
+	"resolution": "native",  # GraphicsSettings.RESOLUTIONS
+	"upscaler": "bilinear",  # GraphicsSettings.UPSCALERS
+	"shadows": "high",  # GraphicsSettings.SHADOW_LEVELS
+	"ambient_occlusion": "on",
+	"glow": "on",
+	"anti_aliasing": "off",  # GraphicsSettings.ANTI_ALIASING
+	"texture_filtering": "4x",  # GraphicsSettings.TEXTURE_FILTERS
 	"reduced_motion": "off",
 	"colour_mode": "off",
 	"captions": "off",
@@ -78,10 +85,18 @@ static func apply_one(profile: ProfileStore, key: String) -> void:
 				AudioServer.set_bus_volume_db(
 					bus, linear_to_db(clampf(float(v) / 100.0, 0.0001, 1.0))
 				)
-		"render_scale":
-			var tree := Engine.get_main_loop() as SceneTree
-			if tree != null:
-				tree.root.scaling_3d_scale = clampf(float(v) / 100.0, 0.25, 1.0)
+		"render_scale", "resolution", "upscaler":
+			GraphicsSettings.apply_display(profile)
+		"shadows":
+			GraphicsSettings.apply_shadows(String(v))
+		"ambient_occlusion":
+			GraphicsSettings.ambient_occlusion = String(v) != "off"
+		"glow":
+			GraphicsSettings.glow = String(v) != "off"
+		"anti_aliasing":
+			GraphicsSettings.set_anti_aliasing(String(v))
+		"texture_filtering":
+			GraphicsSettings.apply_texture_filtering(String(v))
 		"window_mode":
 			if DisplayServer.get_name() != "headless":
 				DisplayServer.window_set_mode(
@@ -91,6 +106,7 @@ static func apply_one(profile: ProfileStore, key: String) -> void:
 						else DisplayServer.WINDOW_MODE_WINDOWED
 					)
 				)
+			GraphicsSettings.apply_display(profile)
 		"language":
 			TranslationServer.set_locale(String(v))
 		"ui_scale":

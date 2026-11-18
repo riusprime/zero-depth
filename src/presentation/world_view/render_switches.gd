@@ -68,6 +68,7 @@ static func apply_sun(light: DirectionalLight3D) -> void:
 	light.directional_shadow_max_distance = CHEAP_SUN_MAX_M if cheap_sun else SUN_MAX_M
 	if not cheap_sun:
 		return
+	GraphicsSettings.sun_atlas_managed = false
 	var bits16 := bool(
 		ProjectSettings.get_setting("rendering/lights_and_shadows/directional_shadow/16_bits", true)
 	)
@@ -80,8 +81,12 @@ static func camera_near() -> float:
 	return CHEAP_SUN_NEAR_M if cheap_sun else CAMERA_NEAR_M
 
 
-## The game window's 3D MSAA under MSAA_OFF. Only the root window: a tool's own SubViewport keeps the MSAA it set.
+## The game window's anti-aliasing: the Options choice, which starts as no MSAA under MSAA_OFF. Only the root
+## window: a tool's own SubViewport keeps the MSAA it set.
 static func apply_viewport(vp: Viewport) -> void:
 	if vp == null or not vp.is_inside_tree() or vp != vp.get_tree().root:
 		return
-	vp.msaa_3d = Viewport.MSAA_DISABLED if MSAA_OFF else OLD_MSAA
+	if not MSAA_OFF and GraphicsSettings.anti_aliasing == "off":
+		vp.msaa_3d = OLD_MSAA
+		return
+	GraphicsSettings.apply_anti_aliasing(vp)

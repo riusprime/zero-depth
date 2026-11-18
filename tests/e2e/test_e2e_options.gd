@@ -10,6 +10,16 @@ func after_each() -> void:
 	ThemePalette.mode = &"off"
 	TranslationServer.set_locale("en")
 	GameSettings.apply_one(ProfileStore.new(""), "audio/master")
+	for k in [
+		"resolution",
+		"upscaler",
+		"shadows",
+		"ambient_occlusion",
+		"glow",
+		"anti_aliasing",
+		"texture_filtering"
+	]:
+		GameSettings.apply_one(ProfileStore.new(""), k)
 	for a in [
 		&"pause", &"ui_accept", &"ui_down", &"ui_up", &"ui_left", &"ui_right", &"ui_cancel", &"dash"
 	]:
@@ -143,3 +153,47 @@ func test_the_mouse_changes_the_language_from_the_main_menu() -> void:
 	await e.click_at(options.find_child("Back", true, false).get_global_rect().get_center())
 	await e.frames(2)
 	assert_not_null(main.get_node_or_null("UI/MainMenu"), "Back returns to the main menu")
+
+
+## The graphics rows are reached with the keyboard alone (Display: the resolution; Graphics: the shadows and the
+## anti-aliasing) and each choice applies at once.
+func test_the_keyboard_reaches_resolution_shadows_and_anti_aliasing() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.tap(KEY_DOWN)
+	await e.tap(KEY_ENTER)
+	var options := main.get_node_or_null("UI/OptionsMenu") as OptionsMenu
+	assert_not_null(options, "Options opens from the main menu")
+	assert_true(await _key_to(e, main, KEY_DOWN, &"TabDisplay"), "down to Display")
+	await e.tap(KEY_RIGHT)
+	assert_true(await _key_to(e, main, KEY_DOWN, &"resolution"), "down to the resolution")
+	await e.tap(KEY_ENTER)
+	assert_ne(
+		GameSettings.get_value(main.profile, "resolution"), "native", "Enter steps the resolution"
+	)
+	assert_true(
+		GraphicsSettings.parse_resolution(GameSettings.get_value(main.profile, "resolution")).x > 0
+	)
+	await e.tap(KEY_LEFT)
+	assert_eq(GameSettings.get_value(main.profile, "resolution"), "native", "left steps back")
+	# Back to the categories, then Graphics.
+	await e.tap(KEY_ESCAPE)
+	assert_true(await _key_to(e, main, KEY_DOWN, &"TabGraphics"), "down to Graphics")
+	await e.tap(KEY_RIGHT)
+	assert_true(await _key_to(e, main, KEY_DOWN, &"shadows"), "down to the shadows")
+	await e.tap(KEY_ENTER)
+	assert_eq(GameSettings.get_value(main.profile, "shadows"), "off", "Enter steps High to Off")
+	assert_eq(GraphicsSettings.shadows, "off")
+	assert_true(await _key_to(e, main, KEY_DOWN, &"anti_aliasing"), "down to the anti-aliasing")
+	await e.tap(KEY_ENTER)
+	assert_eq(GameSettings.get_value(main.profile, "anti_aliasing"), "fxaa")
+	assert_eq(
+		main.get_tree().root.screen_space_aa, Viewport.SCREEN_SPACE_AA_FXAA, "applied to the window"
+	)
+	assert_true(
+		await _key_to(e, main, KEY_DOWN, &"texture_filtering"), "down to the texture filtering"
+	)
+	await e.tap(KEY_ENTER)
+	assert_eq(GameSettings.get_value(main.profile, "texture_filtering"), "8x")
+	assert_eq(main.get_tree().root.anisotropic_filtering_level, Viewport.ANISOTROPY_8X)
+	assert_eq(get_errors().size(), 0, "no engine or script error")
