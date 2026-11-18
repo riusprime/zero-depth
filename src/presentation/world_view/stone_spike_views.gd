@@ -45,8 +45,8 @@ const DISC_TALL := 1.9
 ## The floor marks a lane leaves: at the crossing and every MARK_STEP m out, MARKS_EACH_WAY each way.
 const MARK_STEP := 2.0
 const MARKS_EACH_WAY := 2
-## The spikes' seams: a faint dark red, never a glow.
-const HOT := Color(0.36, 0.08, 0.04)
+## The spikes' seams: an ember red that glows a little while the spike is hot, so a row reads on any floor.
+const HOT := Color(0.85, 0.3, 0.1)
 const CRACK_MARK := Color(0.07, 0.05, 0.045, 0.85)
 const MODEL_ID := "stone_spike"
 const MODEL_PATH := "res://assets/models/fx/stone_spike.glb"
@@ -118,11 +118,12 @@ void fragment() {
 		ALBEDO = m;
 		veins = clamp((m.r - max(m.g, m.b)) * 3.0, 0.0, 1.0);
 	}
-	if (floor_on > 0.5) {  // the floor's own stone, the map's shading kept
-		ALBEDO = floor_col.rgb * (0.8 + 0.6 * dot(ALBEDO, vec3(0.3, 0.59, 0.11)));
+	if (floor_on > 0.5) {  // the floor's stone, lifted to a pale stone so the spikes stand out on dark floors
+		vec3 pale = mix(floor_col.rgb, vec3(0.86, 0.82, 0.76), 0.8);
+		ALBEDO = pale * (0.9 + 0.5 * dot(ALBEDO, vec3(0.3, 0.59, 0.11)));
 	}
-	ALBEDO = mix(ALBEDO, hot.rgb, smoothstep(0.4, 0.9, veins) * 0.45);  // faint dark-red seams
-	EMISSION = hot.rgb * veins * heat * mix(0.35, 1.0, low) * 0.5;
+	ALBEDO = mix(ALBEDO, hot.rgb, smoothstep(0.4, 0.9, veins) * 0.7);  // ember seams
+	EMISSION = hot.rgb * veins * heat * mix(0.5, 1.0, low) * 2.6;  // a visible ember glow, no light cast
 	ROUGHNESS = 0.9;
 	SPECULAR = 0.2;
 }
