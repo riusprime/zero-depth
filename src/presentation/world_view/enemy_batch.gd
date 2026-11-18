@@ -751,7 +751,7 @@ func _set_index(part: int, radius: float) -> int:
 	match part:
 		Part.DISC:
 			mesh = parts.disc_mesh(radius)
-			mat = parts.disc_material(views.outline_color)
+			mat = parts.disc_material(ActorViews.CONTACT_COLOR)
 		Part.RING:
 			mesh = flattened(parts.ring_mesh(radius), RING_FLAT)
 			mat = parts.ring_material(ThemePalette.color(&"enemy_body"))
