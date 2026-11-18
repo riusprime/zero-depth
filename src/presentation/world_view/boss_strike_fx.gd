@@ -141,7 +141,7 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 				var g: Array = s["arc"]
 				var mid := (float(g[3]) + float(g[4])) * 0.5
 				var tip := SimPlane.to_3d(g[0] + Vector2(cos(mid), sin(mid)) * float(g[2]))
-				if s["kind"] == &"steel_arc" or NO_DUST.has(s["look"]):
+				if s["kind"] == &"steel_arc" or NO_DUST.has(s.get("look", &"")):
 					_sparks(layer, tip, age, sd, 10, Color(1.0, 0.8, 0.5))
 					layer.light_merged(tip + Vector3.UP * 0.6, glow, 2.0 * (1.0 - u), 5.0, 2.0)
 				elif (
@@ -211,7 +211,7 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					var p := SimPlane.to_3d(s["to"])
 					_sparks(layer, p, age, sd, 8, Color(1.0, 0.75, 0.4))
 					layer.light_merged(p + Vector3.UP * 0.4, glow, 1.6, 4.0, 2.0)
-					if hold != null and not NO_DUST.has(s["look"]):  # A puff of dust now and then
+					if hold != null and not NO_DUST.has(s.get("look", &"")):  # A puff of dust now and then
 						hold.once(
 							_key(s, int(age / 14.0), 7),
 							&"bx_smoke_dust",

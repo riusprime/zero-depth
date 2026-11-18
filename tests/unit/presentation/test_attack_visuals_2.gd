@@ -188,6 +188,7 @@ func test_markers_are_styled_dull_while_tracking_and_hot_once_locked() -> void:
 		var look := BossStrikeLooks.look_for(a[2], a[3])
 		var tracked_seen := false
 		var styled_seen := false
+		var body_tell := 0
 		for t in 400:  # the windup, and the active time (a burrow's circle shows while it is underground)
 			w.step(InputFrame.new())
 			w.actors.hp[0] = w.actors.max_hp[0]
@@ -195,7 +196,10 @@ func test_markers_are_styled_dull_while_tracking_and_hot_once_locked() -> void:
 			if i < 0 or w.actors.state[i] == EnemyAi.State.RECOVER:
 				break
 			var tg := reader.telegraph(i)
-			if tg.is_empty() or not tg.get("ground", true):
+			if not tg.is_empty() and not tg.get("ground", true):
+				body_tell += int(reader.boss_twin(i).get("flash", 0) > 0)
+				continue
+			if tg.is_empty():
 				continue
 			assert_eq(TelegraphViews.look_of(reader, i, tg), look)
 			tv.sync(reader)
@@ -216,6 +220,8 @@ func test_markers_are_styled_dull_while_tracking_and_hot_once_locked() -> void:
 					var pat := int((m as ShaderMaterial).get_shader_parameter("pattern"))
 					assert_eq(pat, BossStrikeLooks.pattern_of(look))
 					styled_seen = true
+		if body_tell > 0:  # its tell is the body's flash: no ground line or circle is drawn through its windup
+			continue
 		assert_true(styled_seen, "%s %s: its marker is styled" % [a[0], a[1]])
 		if tracked_seen:
 			styled += 1

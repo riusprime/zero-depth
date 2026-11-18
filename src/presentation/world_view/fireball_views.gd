@@ -22,6 +22,10 @@ extends Node3D
 ##   boss's signature shots) ask VfxCore for a small light within its budget (draw_lights, a VfxCore drawer).
 ##   Reduced motion stills the swirl, the turning and the wobble.
 
+## The darkest a hostile ball's core may be and still read as bright; the hero's heat colours stay 0.2 colour
+## distance from every core (tests read it).
+const MIN_CORE_LUMINANCE := 0.4
+
 ## Each look is a real 3D body (FireballShaders, ProjectileMeshes): "mesh" its shape, "body"
 ## its lit surface, "energy" its glow, "crack" how much of it glows only in veins (stone, crust) rather than all
 ## over (plasma), "swirl" the noise speed inside, "spin" / "tumble" its own turn, "wobble" (a glob), "facets" (a gem's

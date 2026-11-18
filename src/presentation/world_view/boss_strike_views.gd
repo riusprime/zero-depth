@@ -285,6 +285,8 @@ func _detect(
 	):
 		return
 	var t0: Dictionary = prev.get("tg", {})
+	if t0.has("run"):  # a charge whose wind-up drew nothing on the ground still strikes down the lane it locked
+		t0 = {"shape": &"lane", "obb": t0["run"]}
 	match t0.get("shape", &""):
 		&"ring":
 			_spawn(look, aid, {"ring": [t0["center"], float(t0["inner"]), float(t0["outer"])]})
