@@ -25,11 +25,12 @@ signal setting_changed(key: String)
 enum Layout { SIDEBAR, TABS, LIST }
 
 const SECTIONS: Array[StringName] = [
-	&"audio", &"display", &"controls", &"accessibility", &"language"
+	&"audio", &"display", &"graphics", &"controls", &"accessibility", &"language"
 ]
 const SECTION_KEYS := {
 	&"audio": "UI_SECTION_AUDIO",
 	&"display": "UI_SECTION_DISPLAY",
+	&"graphics": "UI_SECTION_GRAPHICS",
 	&"controls": "UI_SECTION_CONTROLS",
 	&"accessibility": "UI_SECTION_ACCESSIBILITY",
 	&"language": "UI_SECTION_LANGUAGE",
@@ -246,13 +247,29 @@ func _build_section(id: StringName) -> VBoxContainer:
 				_slider(box, VOLUMES[key], key)
 		&"display":
 			_cycler(box, "UI_WINDOW_MODE", "window_mode", GameSettings.WINDOW_MODES)
+			var res := String(GameSettings.get_value(_profile, "resolution"))
+			_cycler(
+				box,
+				"UI_RESOLUTION",
+				"resolution",
+				GraphicsSettings.resolution_choices(GraphicsSettings.screen_size(), res)
+			)
 			_cycler(box, "UI_VSYNC", "vsync", ["on", "off"])
 			_cycler(box, "UI_SHOW_FPS", FpsCounter.SETTING, ["on", "off"])
 			_cycler(box, "UI_FRAME_CAP", "frame_cap", GameSettings.FRAME_CAPS)
-			_cycler(box, "UI_RENDER_SCALE", "render_scale", GameSettings.RENDER_SCALES)
 			_cycler(box, "UI_OUTLINE", "outline", ["off", "ink", "sketch", "paper"])
 			_cycler(box, "UI_LIGHTING", "lighting", StageView.LIGHTING_QUALITIES)
 			_cycler(box, "UI_EFFECTS_DENSITY", "effects_density", GameSettings.EFFECTS_DENSITIES)
+		&"graphics":
+			_cycler(box, "UI_UPSCALER", "upscaler", GraphicsSettings.UPSCALERS)
+			_cycler(box, "UI_RENDER_SCALE", "render_scale", GameSettings.RENDER_SCALES)
+			_cycler(box, "UI_SHADOWS", "shadows", GraphicsSettings.SHADOW_LEVELS)
+			_cycler(box, "UI_AMBIENT_OCCLUSION", "ambient_occlusion", ["on", "off"])
+			_cycler(box, "UI_GLOW", "glow", ["on", "off"])
+			_cycler(box, "UI_ANTI_ALIASING", "anti_aliasing", GraphicsSettings.ANTI_ALIASING)
+			_cycler(
+				box, "UI_TEXTURE_FILTERING", "texture_filtering", GraphicsSettings.TEXTURE_FILTERS
+			)
 		&"controls":
 			var assist := _cycler(box, "UI_AIM_ASSIST", AimAssist.SETTING, ["on", "off"])
 			_controls(box)
