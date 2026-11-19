@@ -7,6 +7,7 @@ extends SceneTree
 ##   godot --path . --position -10000,-10000 --resolution 1920x1080 -s scripts/shots/o15_purpose_floor.gd
 ## SHOT CHOICE (labelled): for each target, the first run seed from SEED whose floor 1 (in the target's biome) has a
 ## room with that purpose. Writes build/shots/v0.11.0/o15/floor_<purpose>_<biome>.png. Quits on every path.
+## Options after `--`: only=<purpose>:<biome>[,...] (default TARGETS), out=<res:// folder> (default OUT).
 
 const OUT := "res://build/shots/v0.11.0/o15/"
 const SEED := 20261014
@@ -22,10 +23,20 @@ var _view: WorldViewRoot
 var _wait := 0
 var _frame := 0
 var _stem := ""
+var _out := OUT
+var _targets: Array = TARGETS
 
 
 func _initialize() -> void:
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("out="):
+			_out = a.substr(4).trim_suffix("/") + "/"
+		elif a.begins_with("only="):
+			_targets = []
+			for t in a.substr(5).split(","):
+				var pb := t.split(":")
+				_targets.append([StringName(pb[0]), StringName(pb[1])])
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_out))
 	_repo = ContentRepository.load_all()
 
 
@@ -35,10 +46,10 @@ func _next() -> bool:
 		_view = null
 	while true:
 		_target += 1
-		if _target >= TARGETS.size():
+		if _target >= _targets.size():
 			return false
-		var purpose: StringName = TARGETS[_target][0]
-		var biome_id: StringName = TARGETS[_target][1]
+		var purpose: StringName = _targets[_target][0]
+		var biome_id: StringName = _targets[_target][1]
 		for s in SEARCH:
 			var run := SaveLab.run_state(SEED + s, 1, &"blade", 0, _repo)
 			var w := SaveLab.build_floor(run, biome_id, _repo)
@@ -99,7 +110,7 @@ func _process(_delta: float) -> bool:
 	if _wait > 0:
 		_wait -= 1
 		if _wait == 0:
-			var path := OUT + "%s.png" % _stem
+			var path := _out + "%s.png" % _stem
 			var img := root.get_texture().get_image()
 			if img == null or img.save_png(path) != OK:
 				push_error("o15_purpose_floor: could not save %s" % path)

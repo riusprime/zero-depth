@@ -15,8 +15,8 @@ extends ContentDef
 ## The variation's bounds (G2_ROOMS.md: "small shifts and turns (under 1 m, under 15 degrees)").
 const SHIFT_MAX_M := 1.0
 const TURN_MAX_DEG := 15.0
-## The kit pieces a palette may name: the designed rooms' (RoomLayoutDefinition.KIT) and the biomes' own pieces
-## (KitModels.SPECS; tests/content/test_room_purpose_validation.gd checks every one is installed).
+## The kit pieces a palette may name: the designed rooms' (RoomLayoutDefinition.KIT), the biomes' own pieces and the
+## purpose rooms' own (KitModels.SPECS; tests/content/test_room_purpose_validation.gd checks every one is installed).
 const PIECES: Array[StringName] = [
 	&"wall_broken",
 	&"wall_pillar",
@@ -54,6 +54,17 @@ const PIECES: Array[StringName] = [
 	&"meteorite",
 	&"star_monolith",
 	&"ruined_observatory",
+	&"camp_tent",
+	&"log_seat",
+	&"cook_pot",
+	&"statue_whole",
+	&"statue_broken",
+	&"column_round",
+	&"column_drum",
+	&"quarry_crane",
+	&"mine_cart",
+	&"stone_block",
+	&"tool_rack",
 ]
 ## The low pieces a palette may draw on open floor (never solid; "looks solid = is solid"). A taller drawn piece must
 ## rest on its group's solids (RoomPurposePiece.lift: a lintel), so nothing tall stands on open floor.

@@ -1,7 +1,7 @@
 class_name RoomPurposePiece
 extends Resource
-## What a biome draws for one token of a purpose room (v0.11.0 O15, RoomPurposePalette). Until the owner's purpose-room
-## models arrive (OWNER_TODO §3.6) the pieces are kit stand-ins; a new model swaps in by changing `piece` here.
+## What a biome draws for one token of a purpose room (v0.11.0 O15, RoomPurposePalette): a kit piece, the owner's room
+## pieces (OWNER_TODO §3.6) among them; a new model swaps in by changing `piece` here.
 
 @export var token := &""
 ## The kit piece (RoomPurposeDefinition.PIECES).

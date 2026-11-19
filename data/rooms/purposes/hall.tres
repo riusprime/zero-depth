@@ -1136,7 +1136,7 @@ parts = Array[ExtResource("3_osv64")]([SubResource("Resource_hldr8"), SubResourc
 
 [sub_resource type="Resource" id="Resource_nhrf7"]
 script = ExtResource("3_osv64")
-token = &"column"
+token = &"outlier"
 yaw = 27.762966
 height_scale = 0.75
 height_spread = 0.2
@@ -1150,7 +1150,7 @@ parts = Array[ExtResource("3_osv64")]([SubResource("Resource_nhrf7")])
 
 [sub_resource type="Resource" id="Resource_ebqc1"]
 script = ExtResource("3_osv64")
-token = &"column"
+token = &"outlier"
 yaw = 14.631365
 height_scale = 0.75
 height_spread = 0.2
@@ -1164,7 +1164,7 @@ parts = Array[ExtResource("3_osv64")]([SubResource("Resource_ebqc1")])
 
 [sub_resource type="Resource" id="Resource_cbhnv"]
 script = ExtResource("3_osv64")
-token = &"column"
+token = &"outlier"
 yaw = 153.56758
 height_scale = 0.75
 height_spread = 0.2
@@ -1178,7 +1178,7 @@ parts = Array[ExtResource("3_osv64")]([SubResource("Resource_cbhnv")])
 
 [sub_resource type="Resource" id="Resource_3inbk"]
 script = ExtResource("3_osv64")
-token = &"column"
+token = &"outlier"
 yaw = 172.28067
 height_scale = 0.75
 height_spread = 0.2
@@ -1312,98 +1312,108 @@ size = Vector2(0.7, 0.7)
 [sub_resource type="Resource" id="Resource_r47o7"]
 script = ExtResource("5_12cg3")
 token = &"column"
-piece = &"wall_pillar"
-size = Vector2(1.3, 1.3)
-height = 3.0
+piece = &"column_round"
+size = Vector2(1.21, 1.26)
+height = 3.6
 
 [sub_resource type="Resource" id="Resource_cwq2m"]
 script = ExtResource("5_12cg3")
-token = &"fallen"
-piece = &"slab_wide"
-size = Vector2(3.6, 1.2)
-height = 0.8
+token = &"outlier"
+piece = &"statue_broken"
+size = Vector2(3.2, 1.67)
 
 [sub_resource type="Resource" id="Resource_sam5p"]
+script = ExtResource("5_12cg3")
+token = &"fallen"
+piece = &"column_drum"
+size = Vector2(1.46, 0.97)
+
+[sub_resource type="Resource" id="Resource_8crji"]
 script = ExtResource("5_12cg3")
 token = &"lintel"
 piece = &"slab_wide"
 size = Vector2(4, 1)
 height = 0.6
-lift = 2.9
+lift = 3.5
 solid = false
 
-[sub_resource type="Resource" id="Resource_8crji"]
+[sub_resource type="Resource" id="Resource_jkpnn"]
 script = ExtResource("5_12cg3")
 token = &"stump"
 piece = &"column_broken"
 size = Vector2(1.1, 1.1)
 
-[sub_resource type="Resource" id="Resource_jkpnn"]
-script = ExtResource("5_12cg3")
-token = &"upright"
-piece = &"wall_pillar"
-size = Vector2(1.2, 1.2)
-height = 3.0
-
 [sub_resource type="Resource" id="Resource_i0gq1"]
 script = ExtResource("5_12cg3")
-token = &"tower"
-piece = &"wall_pillar"
-size = Vector2(1.6, 1.6)
-height = 3.4
+token = &"upright"
+piece = &"column_round"
+size = Vector2(1.21, 1.26)
+height = 3.6
 
 [sub_resource type="Resource" id="Resource_r5c1u"]
+script = ExtResource("5_12cg3")
+token = &"tower"
+piece = &"statue_whole"
+size = Vector2(1.19, 1.28)
+
+[sub_resource type="Resource" id="Resource_x6mnh"]
 script = ExtResource("5_12cg3")
 token = &"grass"
 piece = &"grass_tuft"
 size = Vector2(0.6, 0.6)
 solid = false
 
-[sub_resource type="Resource" id="Resource_x6mnh"]
+[sub_resource type="Resource" id="Resource_xxrbr"]
 script = ExtResource("5_12cg3")
 token = &"rubble"
 piece = &"rubble_small"
 size = Vector2(0.6, 0.6)
 solid = false
 
-[sub_resource type="Resource" id="Resource_xxrbr"]
+[sub_resource type="Resource" id="Resource_jad0j"]
 script = ExtResource("5_12cg3")
 token = &"debris"
 piece = &"debris_low"
 size = Vector2(1, 0.5)
 solid = false
 
-[sub_resource type="Resource" id="Resource_jad0j"]
+[sub_resource type="Resource" id="Resource_8pgcp"]
 script = ExtResource("5_12cg3")
 token = &"focal"
 piece = &"stone_arch"
 size = Vector2(3, 1)
 
-[sub_resource type="Resource" id="Resource_8pgcp"]
+[sub_resource type="Resource" id="Resource_uu6ar"]
 script = ExtResource("4_r64cy")
 biome = &"ruins"
-pieces = Array[ExtResource("5_12cg3")]([SubResource("Resource_k8e4n"), SubResource("Resource_r47o7"), SubResource("Resource_cwq2m"), SubResource("Resource_sam5p"), SubResource("Resource_8crji"), SubResource("Resource_jkpnn"), SubResource("Resource_i0gq1"), SubResource("Resource_r5c1u"), SubResource("Resource_x6mnh"), SubResource("Resource_xxrbr"), SubResource("Resource_jad0j")])
+pieces = Array[ExtResource("5_12cg3")]([SubResource("Resource_k8e4n"), SubResource("Resource_r47o7"), SubResource("Resource_cwq2m"), SubResource("Resource_sam5p"), SubResource("Resource_8crji"), SubResource("Resource_jkpnn"), SubResource("Resource_i0gq1"), SubResource("Resource_r5c1u"), SubResource("Resource_x6mnh"), SubResource("Resource_xxrbr"), SubResource("Resource_jad0j"), SubResource("Resource_8pgcp")])
 
-[sub_resource type="Resource" id="Resource_uu6ar"]
+[sub_resource type="Resource" id="Resource_e73fl"]
 script = ExtResource("5_12cg3")
 token = &"post"
 piece = &"brazier_pole"
 size = Vector2(0.7, 0.7)
 
-[sub_resource type="Resource" id="Resource_e73fl"]
+[sub_resource type="Resource" id="Resource_6mnjk"]
 script = ExtResource("5_12cg3")
 token = &"column"
 piece = &"star_monolith"
 size = Vector2(1.2, 1.2)
 
-[sub_resource type="Resource" id="Resource_6mnjk"]
+[sub_resource type="Resource" id="Resource_tng0p"]
+script = ExtResource("5_12cg3")
+token = &"outlier"
+piece = &"star_monolith"
+size = Vector2(1.2, 1.2)
+
+[sub_resource type="Resource" id="Resource_26i73"]
 script = ExtResource("5_12cg3")
 token = &"fallen"
 piece = &"rock_large"
 size = Vector2(3.6, 1.2)
 height = 0.8
 
-[sub_resource type="Resource" id="Resource_tng0p"]
+[sub_resource type="Resource" id="Resource_aluis"]
 script = ExtResource("5_12cg3")
 token = &"lintel"
 piece = &"rock_large"
@@ -1412,78 +1422,84 @@ height = 0.6
 lift = 2.7
 solid = false
 
-[sub_resource type="Resource" id="Resource_26i73"]
+[sub_resource type="Resource" id="Resource_ar01g"]
 script = ExtResource("5_12cg3")
 token = &"stump"
 piece = &"rock_large"
 size = Vector2(1.2, 1.2)
 height = 0.9
 
-[sub_resource type="Resource" id="Resource_aluis"]
+[sub_resource type="Resource" id="Resource_l7k0k"]
 script = ExtResource("5_12cg3")
 token = &"upright"
 piece = &"rock_large"
 size = Vector2(1.2, 1.2)
 height = 2.8
 
-[sub_resource type="Resource" id="Resource_ar01g"]
+[sub_resource type="Resource" id="Resource_f6g85"]
 script = ExtResource("5_12cg3")
 token = &"tower"
 piece = &"star_monolith"
 size = Vector2(1.4, 1.4)
 
-[sub_resource type="Resource" id="Resource_l7k0k"]
+[sub_resource type="Resource" id="Resource_w8chg"]
 script = ExtResource("5_12cg3")
 token = &"grass"
 piece = &"star_crystal"
 size = Vector2(0.5, 0.5)
 solid = false
 
-[sub_resource type="Resource" id="Resource_f6g85"]
+[sub_resource type="Resource" id="Resource_yd1du"]
 script = ExtResource("5_12cg3")
 token = &"rubble"
 piece = &"meteorite"
 size = Vector2(0.6, 0.5)
 solid = false
 
-[sub_resource type="Resource" id="Resource_w8chg"]
+[sub_resource type="Resource" id="Resource_2d6v2"]
 script = ExtResource("5_12cg3")
 token = &"debris"
 piece = &"meteorite"
 size = Vector2(0.6, 0.5)
 solid = false
 
-[sub_resource type="Resource" id="Resource_yd1du"]
+[sub_resource type="Resource" id="Resource_vvv35"]
 script = ExtResource("5_12cg3")
 token = &"focal"
 piece = &"ruined_observatory"
 size = Vector2(2.6, 2.6)
 
-[sub_resource type="Resource" id="Resource_2d6v2"]
+[sub_resource type="Resource" id="Resource_ub1d1"]
 script = ExtResource("4_r64cy")
 biome = &"starfall"
-pieces = Array[ExtResource("5_12cg3")]([SubResource("Resource_uu6ar"), SubResource("Resource_e73fl"), SubResource("Resource_6mnjk"), SubResource("Resource_tng0p"), SubResource("Resource_26i73"), SubResource("Resource_aluis"), SubResource("Resource_ar01g"), SubResource("Resource_l7k0k"), SubResource("Resource_f6g85"), SubResource("Resource_w8chg"), SubResource("Resource_yd1du")])
+pieces = Array[ExtResource("5_12cg3")]([SubResource("Resource_e73fl"), SubResource("Resource_6mnjk"), SubResource("Resource_tng0p"), SubResource("Resource_26i73"), SubResource("Resource_aluis"), SubResource("Resource_ar01g"), SubResource("Resource_l7k0k"), SubResource("Resource_f6g85"), SubResource("Resource_w8chg"), SubResource("Resource_yd1du"), SubResource("Resource_2d6v2"), SubResource("Resource_vvv35")])
 
-[sub_resource type="Resource" id="Resource_vvv35"]
+[sub_resource type="Resource" id="Resource_7cwfp"]
 script = ExtResource("5_12cg3")
 token = &"post"
 piece = &"brazier_pole"
 size = Vector2(0.7, 0.7)
 
-[sub_resource type="Resource" id="Resource_ub1d1"]
+[sub_resource type="Resource" id="Resource_s4ycf"]
 script = ExtResource("5_12cg3")
 token = &"column"
 piece = &"rock_spire"
 size = Vector2(1.1, 1.1)
 
-[sub_resource type="Resource" id="Resource_7cwfp"]
+[sub_resource type="Resource" id="Resource_m8fed"]
+script = ExtResource("5_12cg3")
+token = &"outlier"
+piece = &"rock_spire"
+size = Vector2(1.1, 1.1)
+
+[sub_resource type="Resource" id="Resource_hq78i"]
 script = ExtResource("5_12cg3")
 token = &"fallen"
 piece = &"rock_large"
 size = Vector2(3.6, 1.2)
 height = 0.7
 
-[sub_resource type="Resource" id="Resource_s4ycf"]
+[sub_resource type="Resource" id="Resource_rc5pk"]
 script = ExtResource("5_12cg3")
 token = &"lintel"
 piece = &"rock_large"
@@ -1492,57 +1508,57 @@ height = 0.6
 lift = 2.5
 solid = false
 
-[sub_resource type="Resource" id="Resource_m8fed"]
+[sub_resource type="Resource" id="Resource_bmnh0"]
 script = ExtResource("5_12cg3")
 token = &"stump"
 piece = &"rock_large"
 size = Vector2(1.1, 1.1)
 height = 0.8
 
-[sub_resource type="Resource" id="Resource_hq78i"]
+[sub_resource type="Resource" id="Resource_gvs6n"]
 script = ExtResource("5_12cg3")
 token = &"upright"
 piece = &"rock_large"
 size = Vector2(1.2, 1.2)
 height = 2.6
 
-[sub_resource type="Resource" id="Resource_rc5pk"]
+[sub_resource type="Resource" id="Resource_30qrb"]
 script = ExtResource("5_12cg3")
 token = &"tower"
 piece = &"rock_spire"
 size = Vector2(1.4, 1.4)
 
-[sub_resource type="Resource" id="Resource_bmnh0"]
+[sub_resource type="Resource" id="Resource_o107x"]
 script = ExtResource("5_12cg3")
 token = &"grass"
 piece = &"mushroom_cluster"
 size = Vector2(0.6, 0.6)
 solid = false
 
-[sub_resource type="Resource" id="Resource_gvs6n"]
+[sub_resource type="Resource" id="Resource_1msnp"]
 script = ExtResource("5_12cg3")
 token = &"rubble"
 piece = &"boulder_small"
 size = Vector2(0.5, 0.45)
 solid = false
 
-[sub_resource type="Resource" id="Resource_30qrb"]
+[sub_resource type="Resource" id="Resource_qmdo5"]
 script = ExtResource("5_12cg3")
 token = &"debris"
 piece = &"bone_pile"
 size = Vector2(0.8, 0.6)
 solid = false
 
-[sub_resource type="Resource" id="Resource_o107x"]
+[sub_resource type="Resource" id="Resource_itimr"]
 script = ExtResource("5_12cg3")
 token = &"focal"
 piece = &"stone_arch"
 size = Vector2(3, 1)
 
-[sub_resource type="Resource" id="Resource_1msnp"]
+[sub_resource type="Resource" id="Resource_big5k"]
 script = ExtResource("4_r64cy")
 biome = &"night_rocks"
-pieces = Array[ExtResource("5_12cg3")]([SubResource("Resource_vvv35"), SubResource("Resource_ub1d1"), SubResource("Resource_7cwfp"), SubResource("Resource_s4ycf"), SubResource("Resource_m8fed"), SubResource("Resource_hq78i"), SubResource("Resource_rc5pk"), SubResource("Resource_bmnh0"), SubResource("Resource_gvs6n"), SubResource("Resource_30qrb"), SubResource("Resource_o107x")])
+pieces = Array[ExtResource("5_12cg3")]([SubResource("Resource_7cwfp"), SubResource("Resource_s4ycf"), SubResource("Resource_m8fed"), SubResource("Resource_hq78i"), SubResource("Resource_rc5pk"), SubResource("Resource_bmnh0"), SubResource("Resource_gvs6n"), SubResource("Resource_30qrb"), SubResource("Resource_o107x"), SubResource("Resource_1msnp"), SubResource("Resource_qmdo5"), SubResource("Resource_itimr")])
 
 [resource]
 script = ExtResource("6_fvjq1")
@@ -1550,5 +1566,5 @@ biomes = Array[StringName]([&"ruins", &"starfall", &"night_rocks"])
 shift_m = 0.5
 choices = Array[ExtResource("1_8sb2s")]([SubResource("Resource_mettu"), SubResource("Resource_7uuaf"), SubResource("Resource_7u6ay"), SubResource("Resource_coqun"), SubResource("Resource_3c7e2"), SubResource("Resource_j4iwj"), SubResource("Resource_ttn7c"), SubResource("Resource_4vued"), SubResource("Resource_w288r"), SubResource("Resource_68k4n"), SubResource("Resource_frt71"), SubResource("Resource_3c1il"), SubResource("Resource_72ngx"), SubResource("Resource_xjikw")])
 groups = Array[ExtResource("2_lswkj")]([SubResource("Resource_xqhrw"), SubResource("Resource_lb01j"), SubResource("Resource_deqqm"), SubResource("Resource_mige8"), SubResource("Resource_t5r51"), SubResource("Resource_w8kuc"), SubResource("Resource_hcs4v"), SubResource("Resource_3xmku"), SubResource("Resource_nycqo"), SubResource("Resource_66bsh"), SubResource("Resource_i3g4i"), SubResource("Resource_gansb"), SubResource("Resource_20gpc"), SubResource("Resource_vyoph"), SubResource("Resource_xkko8"), SubResource("Resource_xkdsh"), SubResource("Resource_fsj1l"), SubResource("Resource_14uso"), SubResource("Resource_owh5w"), SubResource("Resource_gyy3n"), SubResource("Resource_k5hds"), SubResource("Resource_n17aq"), SubResource("Resource_o6fhe"), SubResource("Resource_h4mrt"), SubResource("Resource_86knv"), SubResource("Resource_dgok8"), SubResource("Resource_cuxdo"), SubResource("Resource_a5goe"), SubResource("Resource_h2ilt"), SubResource("Resource_366ee"), SubResource("Resource_tqh2l"), SubResource("Resource_jj6m0"), SubResource("Resource_7a5cu"), SubResource("Resource_x0fhm"), SubResource("Resource_us5nf"), SubResource("Resource_dlc5u"), SubResource("Resource_cfqiy"), SubResource("Resource_skm6i"), SubResource("Resource_opx7u"), SubResource("Resource_m5p5b"), SubResource("Resource_eecym"), SubResource("Resource_bgnk6"), SubResource("Resource_3pfdp"), SubResource("Resource_fi75u"), SubResource("Resource_ipq4b"), SubResource("Resource_ovn02"), SubResource("Resource_slx3c"), SubResource("Resource_j5k5c")])
-palettes = Array[ExtResource("4_r64cy")]([SubResource("Resource_8pgcp"), SubResource("Resource_2d6v2"), SubResource("Resource_1msnp")])
+palettes = Array[ExtResource("4_r64cy")]([SubResource("Resource_uu6ar"), SubResource("Resource_ub1d1"), SubResource("Resource_big5k")])
 id = &"hall"
