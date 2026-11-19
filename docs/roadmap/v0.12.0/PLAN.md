@@ -209,3 +209,41 @@ The owner, on Amber's stone slam: "this matches a lot more the style, the little
 | 32 | Hive Lens, Prism, Tidecaller, Twins, The Fallen set pieces: hl-gaze, hl-focus, hl-feed, hl-lattice, hl-glass, pr-cross, pr-lances, tc-pull, tc-waves, tw-swords, tw-mirror, fa-label, fa-mimic, fa-riptide, fa-ward | Opus |
 
 Two Opus agents at a time (owner: visual work goes to Opus), in the order above; each shows before/after stills. The rule over every call (owner, mid-build): "keep the new effects as close as possible and fit as much as we can to the game style, the lines, textures that dont fit and out of place things have to go out": an effect keeps its idea and readability, and whatever does not fit is removed or replaced, not only dimmed.
+
+## The owner's models of 2026-11-19 (rooms, four enemies, four boss pieces)
+
+The owner, 2026-11-19, with `3dassets.zip` (raw files now in `unprocessed_images/models_v0120/`): "We had some assets
+pending from the game, rooms and enemies … mostly the rooms element come in the same file and you will have to cut them
+and separate them, the enemies have to be animated and then passed through VAT animation so they don't consume as much
+and they run smooth, use other enemies using VAT as the process for this". All are Tripo exports: one mesh, about 4.7k
+triangles, one embedded colour map, no rig.
+
+- **Rooms** (OWNER_TODO §3.6): `room_assetspack1.glb` holds the camp tent, log seat, cook pot, whole statue, broken
+  statue and round column; `room_assetspack2.glb` the column drum, quarry crane, mine cart, stone block and tool rack;
+  `room_assetspack3.glb` the metal post, dumpster, cable spool, sign frame and ice floe. Fifteen pieces, each a set of
+  loose parts laid out apart on the floor plane.
+- **Enemies** (OWNER_TODO §3.2, `docs/art/requests/v0.11.0_enemy_models.md`): Wire Weaver, Frost Spitter, Glacier
+  Turtle, Gravity Node. The same path as v0.11.0 O17 (the Scrap Hound, Cinder Priest, Kiln Beetle, Rock Lurker, Stone
+  Thrower): cut into the parts that move, `base`/`role`/`glow` surfaces, an avatar of its own with a full clip set
+  (idle, gait, tell, attack, flinch, death, its special states, reduced motion), on VAT (`SoloVat`), checked by
+  `vat_bake_report` and a `vat_sheet`, plus a clip sheet for the owner.
+- **Boss pieces** (OWNER_TODO §3.5; in the zip though not named in the message): the Warlord's javelin and War Banner
+  (the cloth cut from the pole, so it keeps its wave, burn and fly-off), the Clockwork Judge's hour clock (the minute
+  hand cut free, so the game turns it), the Siege Engine's ammo cart. Each replaces its code-built stand-in.
+
+**The lead's defaults, open to the owner** (not the owner's words): the camp takes the tent, log seat and cook pot;
+the collapsed hall the two statues, the round column (in place of the square pier stand-in) and the column drum; the
+quarry the crane, mine cart (in place of the wagon stand-in), stone block (in place of the concrete slab stand-in) and
+tool rack. The four Ruins pieces join the Ruins kit's dressing and the ice floe the Frozen Shore's. Pieces are tinted by
+the biome like the rest of the kit. Any golden that moves with the new footprints is named in PROGRESS.
+
+| Step | What | Agent |
+|---|---|---|
+| 36 | The 15 room pieces cut out of the three packs, installed in the kit, placed in the purpose rooms and biome dressing | Opus |
+| 37a | Wire Weaver on the owner's model, animated and on VAT (the two posts separate) | Opus |
+| 37b | Frost Spitter on the owner's model, animated and on VAT (the throat sac swells) | Opus |
+| 37c | Glacier Turtle on the owner's model, animated and on VAT (the ice shell separate) | Opus |
+| 37d | Gravity Node on the owner's model, animated and on VAT (the rings separate) | Opus |
+| 38 | The javelin, War Banner, hour clock and ammo cart on the owner's models | Opus |
+
+Three Opus agents at a time, one Godot process each: 36, 37a, 37b first, then 37c, 37d, 38.
