@@ -690,8 +690,9 @@ func _enemy_cue(reader: WorldReader, i: int, kind: int, st: int, at: Vector2, ou
 		if cue != &"":
 			out.append([cue, at, 1.0])
 		return
-	if RuinsRocksAvatar.draws(kind) or kind == WorldReader.KIND_WIRE_WEAVER:  # (its own avatar now)
-		_ruins_rocks_cue(reader, i, kind, st, at, out)
+	# Keyed by kind, not by which avatar draws it: the Hound, Lurker, Thrower and Weaver moved to their own
+	# avatars and must keep their cues.
+	_ruins_rocks_cue(reader, i, kind, st, at, out)
 	if st == WorldReader.STATE_WINDUP:
 		out.append(
 			[&"bomb_lob" if kind == WorldReader.KIND_BOMB_DRONE else &"enemy_windup", at, 1.0]
