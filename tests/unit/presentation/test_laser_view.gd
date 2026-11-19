@@ -117,7 +117,9 @@ func test_the_hum_loops_while_the_beam_fires() -> void:
 	var s := audio.stream_for(&"laser_loop")
 	assert_not_null(s, "the placeholder file")
 	assert_eq(
-		(AudioDirector.looped(s) as AudioStreamWAV).loop_mode, AudioStreamWAV.LOOP_FORWARD, "loops"
+		(AudioStreamBank.looped(s) as AudioStreamWAV).loop_mode,
+		AudioStreamWAV.LOOP_FORWARD,
+		"loops"
 	)
 	W.run(w, 2, 0, 0)
 	audio.sync(r)
