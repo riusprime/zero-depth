@@ -140,6 +140,25 @@ func _notification(what: int) -> void:
 		_spent.clear()
 
 
+## The nodes the panel keeps outside the tree on purpose (its spare boxes and the replaced ones still to free), each
+## with everything under it. They go with the panel (the HUD is built anew each floor); an orphan check counts the
+## others (tests/e2e/test_e2e_damage_soak.gd).
+func idle_nodes() -> int:
+	var n := 0
+	for b: Node in _spares.values():
+		n += _subtree(b)
+	for b in _spent:
+		n += _subtree(b)
+	return n
+
+
+static func _subtree(n: Node) -> int:
+	var count := 1
+	for c in n.get_children(true):
+		count += _subtree(c)
+	return count
+
+
 ## The header: the sigil and the title at the left; the buys left, their pips, a hairline and the wallet at the right.
 func _header() -> Control:
 	var head := HBoxContainer.new()

@@ -77,6 +77,11 @@ func test_take_hits_die_and_restart_with_no_errors_or_growth() -> void:
 	# v0.10.5 PC: the live floor's idle pool entries wait outside the tree on purpose (freed with its view)
 	var held: int = main.view.idle_pool_nodes()
 	assert_gt(held, 0, "the live floor's pools hold idle entries outside the tree")
+	# So does the live HUD: the shop's card boxes built ahead (freed with the HUD)
+	var hud: Hud = main.get_node("UI/Hud")
+	var hud_held := hud.shop.panel.idle_nodes()
+	assert_gt(hud_held, 0, "the shop keeps its card boxes built ahead outside the tree")
+	held += hud_held
 	assert_eq(
 		int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)) - held,
 		0,
