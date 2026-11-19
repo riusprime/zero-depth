@@ -5,10 +5,11 @@ extends Node
 ## are limited per cue (SfxMixer); each play is pitched a little by presentation's own RNG; world sounds are
 ## panned by where they happen on screen; boss telegraphs duck the world sounds so the warning reads.
 ## A file named like a cue in user://audio_override/ or res://assets/audio/override/ (.wav or .ogg) replaces the
-## shipped one (docs/audio/README.md).
+## shipped one (docs/audio/README.md). Every cue's sound loads ahead, on a loader thread from boot, and a floor's
+## build waits for what is left (AudioStreamBank); sounds play on players made once (AudioVoicePool), so a busy
+## fight frame neither reads the disk nor makes nodes.
 
 const CUES_DIR := "res://data/audio/cues"
-const OVERRIDE_DIRS: Array[String] = ["user://audio_override", "res://assets/audio/override"]
 const BUS_NAMES := {&"sfx": "SFX", &"ui": "UI", &"ambience": "Ambience"}
 ## How far the sfx bus drops under a ducking cue, and how fast it moves (dB per second). Starting values.
 const DUCK_DB := -9.0
@@ -21,6 +22,8 @@ const UI_MOVE_QUIET_S := 0.12
 ## How long a caption stays up (seconds).
 const CAPTION_S := 2.5
 const LOG_MAX := 256
+## The held sounds the game turns on and off in a fight (the Laser's hum): their players are made at boot.
+const HELD_CUES: Array[StringName] = [&"laser_loop"]
 
 ## Cue id -> AudioCueDefinition.
 var cues := {}
@@ -37,8 +40,8 @@ var captions_forced := -1
 var _reader: WorldReader
 var _now := 0.0
 var _rng := RandomNumberGenerator.new()
-var _streams := {}
-var _voices: Array = []
+var _bank := AudioStreamBank.new()
+var _pool := AudioVoicePool.new()
 var _duck_until := 0.0
 var _duck_db := 0.0
 var _ambience_id := &""
@@ -51,6 +54,8 @@ var _caption_layer := CanvasLayer.new()
 var _caption_label := Label.new()
 ## The held sounds playing now (cue id -> its looping player; hold()).
 var _held := {}
+## Cue id -> the looping player its held sound uses, made on its first hold and kept.
+var _held_players := {}
 
 
 func _init() -> void:
@@ -72,6 +77,11 @@ func _ready() -> void:
 		add_child(p)
 		_amb_players.append(p)
 	_build_caption()
+	_bank.warm(cues)
+	_pool.build(self, cues)
+	for id in HELD_CUES:
+		if cues.has(id):
+			_held_player(id)
 	get_viewport().gui_focus_changed.connect(_on_focus_changed)
 	get_tree().node_added.connect(_on_node_added)
 
@@ -82,10 +92,16 @@ func setup(p_profile: ProfileStore) -> void:
 
 ## A floor starts: its sounds come from `reader` from now on, and its biome's loop fades in.
 func attach(reader: WorldReader, biome: StringName) -> void:
+	finish_warm()
 	_reader = reader
 	events.prime(reader)
 	set_ambience(biome)
 	play(&"floor_enter")
+
+
+## Waits for every cue's sound still loading (a floor's build, behind its cover).
+func finish_warm() -> void:
+	_bank.finish()
 
 
 func detach() -> void:
@@ -101,25 +117,31 @@ func hold(id: StringName, on: bool) -> void:
 	if not on:
 		if p != null:
 			_held.erase(id)
-			if is_instance_valid(p):
-				p.queue_free()
+			p.stop()
 		return
 	if p != null:
 		return
 	var cue: AudioCueDefinition = cues.get(id)
 	if cue == null:
 		return
-	p = AudioStreamPlayer.new()
-	var s := stream_for(id)
-	p.stream = looped(s) if s != null else null
+	p = _held_player(id)
+	p.stream = _bank.looped_stream(id, cue)
 	p.volume_db = cue.volume_db
 	p.bus = BUS_NAMES[cue.bus]
 	_held[id] = p
-	played_log.append(id)
-	if is_inside_tree():
+	_log(id)
+	if is_inside_tree() and p.stream != null:
+		p.play()
+
+
+func _held_player(id: StringName) -> AudioStreamPlayer:
+	var p: AudioStreamPlayer = _held_players.get(id)
+	if p == null:
+		p = AudioStreamPlayer.new()
+		p.name = "Held_%s" % id
+		_held_players[id] = p
 		add_child(p)
-		if p.stream != null:
-			p.play()
+	return p
 
 
 ## Whether held sound `id` is on now (tests).
@@ -143,12 +165,7 @@ func _process(delta: float) -> void:
 ## Moves the director's clock: voices end, the duck and the ambience fade move, the caption times out.
 func advance(delta: float) -> void:
 	_now += delta
-	for k in range(_voices.size() - 1, -1, -1):
-		if _voices[k][1] <= _now:
-			var n: Node = _voices[k][0]
-			if is_instance_valid(n):
-				n.queue_free()
-			_voices.remove_at(k)
+	_bank.poll()
 	var duck_target := DUCK_DB if _now < _duck_until else 0.0
 	_duck_db = move_toward(_duck_db, duck_target, DUCK_RATE_DB * delta)
 	var sfx_bus := AudioServer.get_bus_index(BUS_NAMES[&"sfx"])
@@ -185,84 +202,32 @@ func play(id: StringName, pos: Variant = null, pitch: float = 1.0) -> bool:
 		_ui_quiet_until = _now + UI_MOVE_QUIET_S
 	if cue.caption_key != &"":
 		show_caption(cue.caption_key)
-	played_log.append(id)
-	if played_log.size() > LOG_MAX:
-		played_log = played_log.slice(played_log.size() - LOG_MAX)
+	_log(id)
 	if stream != null and is_inside_tree():
-		_start_voice(cue, stream, ps, pos, seconds)
+		var panned := pos is Vector2 and cue.bus == &"sfx"
+		var at := SimPlane.to_3d(pos, 0.5) if panned else Vector3.ZERO
+		_pool.start(stream, cue.volume_db, ps, BUS_NAMES[cue.bus], panned, at, _now, seconds)
 	return true
 
 
-func _start_voice(
-	cue: AudioCueDefinition, stream: AudioStream, ps: float, pos: Variant, seconds: float
-) -> void:
-	var node: Node
-	if pos is Vector2 and cue.bus == &"sfx":
-		var p3 := AudioStreamPlayer3D.new()
-		p3.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
-		p3.attenuation_filter_cutoff_hz = 20500.0
-		p3.panning_strength = 0.7
-		p3.stream = stream
-		p3.volume_db = cue.volume_db
-		p3.pitch_scale = ps
-		p3.bus = BUS_NAMES[cue.bus]
-		p3.position = SimPlane.to_3d(pos, 0.5)
-		node = p3
-	else:
-		var p := AudioStreamPlayer.new()
-		p.stream = stream
-		p.volume_db = cue.volume_db
-		p.pitch_scale = ps
-		p.bus = BUS_NAMES[cue.bus]
-		node = p
-	add_child(node)
-	node.call(&"play")
-	_voices.append([node, _now + seconds + 0.05])
+func _log(id: StringName) -> void:
+	played_log.append(id)
+	if played_log.size() > LOG_MAX:
+		played_log.pop_front()
 
 
-## The stream for cue `id`: an override file when one exists, else the shipped file (cached).
+## The stream for cue `id`: an override file when one exists, else the shipped file (loaded ahead).
 func stream_for(id: StringName) -> AudioStream:
-	if _streams.has(id):
-		return _streams[id]
-	var cue: AudioCueDefinition = cues.get(id)
-	var s: AudioStream = override_stream(id)
-	if s == null and cue != null and ResourceLoader.exists(cue.default_path()):
-		s = load(cue.default_path())
-	if s != null and cue != null and cue.kind == &"ambience":
-		s = looped(s)
-	_streams[id] = s
-	return s
+	return _bank.stream(id, cues.get(id))
 
 
-## The override for `id`, or null: <dir>/<id>.wav or .ogg in user://audio_override/ (any build) or
-## res://assets/audio/override/ (shipped with the project).
-static func override_stream(id: StringName) -> AudioStream:
-	for dir in OVERRIDE_DIRS:
-		for ext in ["wav", "ogg"]:
-			var path := "%s/%s.%s" % [dir, id, ext]
-			if dir.begins_with("res://"):
-				if ResourceLoader.exists(path):
-					return load(path)
-			elif FileAccess.file_exists(path):
-				return (
-					AudioStreamWAV.load_from_file(path)
-					if ext == "wav"
-					else AudioStreamOggVorbis.load_from_file(path)
-				)
-	return null
+## How many players the one-shot sounds have, and how many sound at the director's clock now (tests).
+func voice_pool_size() -> int:
+	return _pool.size()
 
 
-## An ambience stream set to loop over its whole length (an override file may not carry loop points).
-static func looped(s: AudioStream) -> AudioStream:
-	if s is AudioStreamWAV and (s as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_DISABLED:
-		var w := (s as AudioStreamWAV).duplicate() as AudioStreamWAV
-		w.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		w.loop_begin = 0
-		w.loop_end = int(round(w.get_length() * w.mix_rate))
-		return w
-	if s is AudioStreamOggVorbis:
-		(s as AudioStreamOggVorbis).loop = true
-	return s
+func voices_busy() -> int:
+	return _pool.busy(_now)
 
 
 ## Fades the biome loop `biome` in (and the current one out) over AMBIENCE_FADE_S; &"" fades to silence.

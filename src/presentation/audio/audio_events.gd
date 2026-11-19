@@ -81,6 +81,8 @@ var _echo_t := {}
 var _shade_dark := false
 var _shade_lit: Array[bool] = []
 var _projectiles := {}
+## The set before last, cleared and refilled as the next tick's (a busy fight's shots make no new set each tick).
+var _projectiles_spare := {}
 ## The rune bursts heard so far (their uids).
 var _rune_seen := {}
 ## Where each enemy's area spell (a rune, a bomb) is aimed, from its telegraph at the windup.
@@ -806,7 +808,8 @@ static func swing_cue(motion: int, step: int) -> StringName:
 
 ## A new projectile is a shot: the player's bolts and the enemies' shots, once per tick each.
 func _scan_projectiles(reader: WorldReader, out: Array) -> void:
-	var seen := {}
+	var seen := _projectiles_spare
+	seen.clear()
 	var fired := false
 	var hostile := false
 	var wisp := false  # A wisp's own shot chirps, not the Gun's cue
@@ -821,6 +824,7 @@ func _scan_projectiles(reader: WorldReader, out: Array) -> void:
 			fired = fired or not reader.projectile_is_shard(i)
 		else:
 			hostile = true
+	_projectiles_spare = _projectiles
 	_projectiles = seen
 	if fired and reader.lance_active():  # The Lance's ball sounds with its LANCE event (_events)
 		fired = false
