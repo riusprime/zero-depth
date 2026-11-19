@@ -244,6 +244,6 @@ the biome like the rest of the kit. Any golden that moves with the new footprint
 | 37b | Frost Spitter on the owner's model, animated and on VAT (the throat sac swells) | Opus |
 | 37c | Glacier Turtle on the owner's model, animated and on VAT (the ice shell separate) | Opus |
 | 37d | Gravity Node on the owner's model, animated and on VAT (the rings separate) | Opus |
-| 38 | The javelin, War Banner, hour clock and ammo cart on the owner's models | Opus |
+| 39 | The javelin, War Banner, hour clock and ammo cart on the owner's models (38 is the other lead session's performance pass) | Opus |
 
-Three Opus agents at a time, one Godot process each: 36, 37a, 37b first, then 37c, 37d, 38.
+Three Opus agents at a time across the PC (the performance pass counts), one Godot process each: 36, 37a, 37b first, then 37c, 37d, 39.
