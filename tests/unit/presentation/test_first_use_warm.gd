@@ -342,13 +342,20 @@ func test_idle_pool_entries_wait_outside_the_tree_after_the_load() -> void:
 		assert_true(
 			c.is_inside_tree() and (c as Node3D).visible, "only what shows is in the elite view"
 		)
-	# a spawn takes an instance into the tree; its release puts it back outside
+	# a spawn takes an instance into the tree; its release lets it rest there hidden (the next spawn takes it without
+	# moving it in again), and once rested it waits outside
 	var id := &"vx1_hit_frost"
 	if PackFx.available() and pack.idle_count(id) > 0:
 		var node := pack.spawn(id, Vector3.ZERO)
 		assert_true(node.is_inside_tree(), "a spawned instance is in the tree")
 		pack.release(node)
-		assert_false(node.is_inside_tree(), "a released one waits outside it")
+		assert_true(
+			node.is_inside_tree() and not node.visible, "a released one rests in the tree, hidden"
+		)
+		assert_eq(pack.spawn(id, Vector3.ZERO), node, "and the next spawn takes it")
+		pack.release(node)
+		pack._park_rested(true)
+		assert_false(node.is_inside_tree(), "once rested it waits outside it")
 	# the load's warm-up still draws the idle pieces once (their meshes and materials, from outside the tree)
 	if RenderSwitches.SHADER_WARMUP:
 		var cam := Camera3D.new()

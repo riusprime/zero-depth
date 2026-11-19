@@ -67,8 +67,15 @@ const SCENE_K := {
 ## Flashes smaller than this (m across) keep the old look (the pack's flash is the heavy cast's).
 const FLASH_MIN_M := 1.0
 
-## (layer id, tag, seed) -> [last u, mode, last tick].
+## The tags `state` keys by (their place: the key's low bits).
+const TAGS: Array[StringName] = [&"hit", &"slash", &"muzzle", &"flash"]
+
+## Layer id -> {seed * TAGS.size() + the tag's place -> [last u, mode, last tick]}: plain int keys, so the lookup
+## every drawn frame makes no key array and hashes no array.
 static var _seen := {}
+## How many instances `_seen` holds over every layer, and the tick of the last prune.
+static var _seen_n := 0
+static var _pruned_at := -INF
 
 
 ## The layer's PackFx (VfxLayer has one; a bare VfxCore, or one without the pack: null).
@@ -103,13 +110,22 @@ static func element_for(c: Color) -> StringName:
 ## The mode of instance (`tag`, `sd`) of `layer` at `u`: NEW when it is a new one (and it is now remembered as NEW
 ## until `decide`), else the mode it chose.
 static func state(layer: VfxCore, tag: StringName, sd: int, u: float) -> int:
-	var key := [layer.get_instance_id(), tag, sd]
+	var lid := layer.get_instance_id()
+	var of_layer: Dictionary = _seen.get(lid, {})
+	if of_layer.is_empty() and not _seen.has(lid):
+		_seen[lid] = of_layer
+	var key := _key(tag, sd)
 	var now := layer.now()
-	var e: Array = _seen.get(key, [])
+	var e: Array = of_layer.get(key, [])
 	if e.is_empty() or u < float(e[0]) - 0.0001 or absf(now - float(e[2])) > GONE_TICKS:
-		if _seen.size() > PRUNE_AT:
+		# An instance past PRUNE_TICKS is NEW here whether it is kept or not, so pruning once a tick (not on every new
+		# instance while more than PRUNE_AT are young) changes nothing drawn.
+		if _seen_n > PRUNE_AT and absf(now - _pruned_at) >= 1.0:
 			_prune(now)
-		_seen[key] = [u, NEW, now]
+			_seen[lid] = of_layer  # (the prune drops a layer it emptied)
+		if not of_layer.has(key):
+			_seen_n += 1
+		of_layer[key] = [u, NEW, now]
 		return NEW
 	e[0] = u
 	e[2] = now
@@ -117,19 +133,33 @@ static func state(layer: VfxCore, tag: StringName, sd: int, u: float) -> int:
 
 
 static func decide(layer: VfxCore, tag: StringName, sd: int, mode: int) -> void:
-	var e: Array = _seen.get([layer.get_instance_id(), tag, sd], [])
+	var of_layer: Dictionary = _seen.get(layer.get_instance_id(), {})
+	var e: Array = of_layer.get(_key(tag, sd), [])
 	if not e.is_empty():
 		e[1] = mode
 
 
+static func _key(tag: StringName, sd: int) -> int:
+	return sd * TAGS.size() + maxi(TAGS.find(tag), 0)
+
+
 static func _prune(now: float) -> void:
-	for k: Array in _seen.keys():
-		if absf(now - float((_seen[k] as Array)[2])) > PRUNE_TICKS:
-			_seen.erase(k)
+	_pruned_at = now
+	_seen_n = 0
+	for lid: int in _seen.keys():
+		var of_layer: Dictionary = _seen[lid]
+		for k: int in of_layer.keys():
+			if absf(now - float((of_layer[k] as Array)[2])) > PRUNE_TICKS:
+				of_layer.erase(k)
+		if of_layer.is_empty():
+			_seen.erase(lid)
+		_seen_n += of_layer.size()
 
 
 static func clear() -> void:
 	_seen.clear()
+	_seen_n = 0
+	_pruned_at = -INF
 
 
 ## The yaw (about up) that turns +X to the flat direction `d`.

@@ -104,6 +104,11 @@ const LOOK := {
 ## Also an impact's white Core puff and its Ground_Impact disc (Blood Thorns' eruptions keep the sparks), and a beam's
 ## ball where it strikes (BeamEndPivot: a held beam's caller hides it, BossPackHold.no_end_ball).
 const HIDE_PER_SPAWN: Array[String] = ["Smoke", "Core", "Ground_Impact", "BeamEndPivot"]
+## How long a released instance rests in the tree before it is parked outside it, and how many of one id may rest.
+const REST_MS := 1000
+const REST_PER_ID := 4
+## The resting instances are looked over this often (msec), not every frame.
+const REST_CHECK_MS := 100
 
 static var _shared: PackFxDefinition
 ## How floor loads warm the pack (VX-W): &"menu" (PackFxSessionWarm warms at the main menu; a load warms what is
@@ -128,6 +133,11 @@ var _def: PackFxDefinition
 ## for every frame): an idle instance waits outside the scene tree (kept here, freed with the pack) and joins it again
 ## when spawned.
 var _idle := {}
+## Released instances still in the tree, hidden: node -> the msec of its release. Hits and statuses spawn many times a
+## second; an instance taken out of the tree at its release and put back at its next spawn paid both moves (its every
+## child leaves and joins the renderer), so the last few of an id rest in the tree for REST_MS first.
+var _resting := {}
+var _rest_check_ms := 0
 var _live: Array[Dictionary] = []  # oldest first: {node, id, family, left}
 var _info := {}  # Node3D -> {anim, colors, speed, life, lights}
 var _live_n := {}  # id -> its live instances
@@ -355,6 +365,7 @@ func advance(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	advance(delta)
+	_park_rested()
 	var keep: Array[Dictionary] = []
 	for w in _warm_nodes:
 		w["left"] = int(w["left"]) - 1
@@ -429,6 +440,7 @@ func _take(effect_id: StringName, scene_path: String) -> Node3D:
 	var idle: Array = _idle.get(effect_id, [])
 	if not idle.is_empty():
 		var node: Node3D = idle.pop_back()
+		_resting.erase(node)
 		if node.get_parent() == null:
 			add_child(node)  # Back in the tree
 		return node
@@ -524,9 +536,14 @@ func _colour(node: Node3D, info: Dictionary, colors: Dictionary, row: int, dark 
 			c = colors[asked[key]]
 		if dark > 0.0 and key != &"primary_color":
 			c = Color(c.darkened(dark), c.a)
-		node.set(key, c)
+		# The controller's setter writes every material of the instance (its own copies): a pooled instance
+		# spawned again in the colour it holds needs none of it
+		if node.get(key) != c:
+			node.set(key, c)
 	if info.has("emission"):
-		node.set("emission", float(colors.get(&"emission", info["emission"])))
+		var em := float(colors.get(&"emission", info["emission"]))
+		if float(node.get("emission")) != em:
+			node.set("emission", em)
 
 
 ## The emitters (child name -> true) whose `emitting` the scene's animation first turns on after its start (an
@@ -648,11 +665,36 @@ func _release(node: Node3D, later := false) -> void:
 			if not _idle.has(id):
 				_idle[id] = []
 			(_idle[id] as Array).append(node)
-			if later:
+			if node.get_parent() == self and _resting_of(id) < REST_PER_ID:
+				_resting[node] = Time.get_ticks_msec()  # parked by _process once rested, unless spawned again
+			elif later:
 				_park_if_idle.call_deferred(node)
 			else:
 				_park(node)
 			return
+
+
+## How many released instances of `id` rest in the tree.
+func _resting_of(id: StringName) -> int:
+	var n := 0
+	for node: Variant in _idle.get(id, []):  # (a Variant: an idle instance may be freed)
+		if _resting.has(node):
+			n += 1
+	return n
+
+
+## Parks the instances that rested REST_MS (or every resting one: `all`).
+func _park_rested(all := false) -> void:
+	if _resting.is_empty():
+		return
+	var ms := Time.get_ticks_msec()
+	if not all and ms < _rest_check_ms:
+		return
+	_rest_check_ms = ms + REST_CHECK_MS
+	for node: Variant in _resting.keys():
+		if all or ms - int(_resting[node]) >= REST_MS:
+			_resting.erase(node)
+			_park_if_idle(node)
 
 
 ## A deferred park, unless a spawn took the instance again meanwhile.
