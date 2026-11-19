@@ -2,8 +2,10 @@
 
 Every tool that measures the sim or the frame, what its numbers mean, the protocol that makes a number evidence, and
 the misreadings that cost this project time. Logging a game the owner plays is a separate tool:
-[`PERF_LOG.md`](PERF_LOG.md). Evidence pages follow [`TEMPLATES.md`](TEMPLATES.md) §3; tools write only under
-`build/`, and a number goes into evidence by hand (CLAUDE.md "Evidence honesty").
+[`PERF_LOG.md`](PERF_LOG.md) (the frame, the main thread in order, the GPU per render pass with `--gpu-profile`, a
+census of the scene and the Graphics options; `scripts/perf/summarize_perf.py` says what is biggest). Evidence pages
+follow [`TEMPLATES.md`](TEMPLATES.md) §3; tools write only under `build/`, and a number goes into evidence by hand
+(CLAUDE.md "Evidence honesty").
 
 ## 1. The target
 
@@ -184,6 +186,7 @@ output, build and machine.
 | [`PERF_NATIVE.md`](../roadmap/v0.11.1/evidence/PERF_NATIVE.md) | the native kernels off against on; the frame attribution | tick at 120 enemies 3.3 → 0.56 ms; horde frames 2–3 ms shorter; the enemies' nodes 6.0–8.9 ms, the HUD 2.0–2.4 ms |
 | [`PERF_W8.md`](../roadmap/v0.11.1/evidence/PERF_W8.md) | the frame after the first display steps | 20 enemies 8.2 ms (122 fps), 60 heavy 24.9 ms, 120 swarmers 18.5 ms; the HUD about 1 ms; the batch alone 0.15 ms |
 | [`PERF_FINAL.md`](../roadmap/v0.11.1/evidence/PERF_FINAL.md) | the final code of v0.11.1 (the native core the only sim), with PERF_W8's build measured again back to back | 20 enemies 8.7–9.2 ms, 60 heavy 24.3 ms, 120 swarmers 15.5 ms; the tick at 120 enemies 0.54 ms; the Ring 0.9 ms over the Gun alone; a daytime run reads about 0.7 ms higher than a night one |
+| [`PERF_LOG_GPU.md`](../roadmap/v0.12.0/evidence/PERF_LOG_GPU.md) | the perf log's GPU-per-pass, census and frame-order columns, proved on the frame probe's Starfall heavy fight at 2560 × 1440 (60 enemies) | 35 fps, CPU-bound 98 %: the GPU 14.6 ms of a 28.8 ms frame, half of it the transparent pass (7.6 ms); the process step 13.9 ms, the draw 6.6 ms, the physics steps 4.4 ms; the recorder 0.8 ms a frame |
 | [`COMBAT_FRAME_TIME.md`](../roadmap/v0.12.0/evidence/COMBAT_FRAME_TIME.md) | the owner's three slow fights (F18): Seekers + Venom, Starfall with 35 enemies, Frozen Shore at 1600 × 900, on a busy machine | Seekers + Venom +3.3 ms over the Gun alone; the shot views' sync 300–400 µs a tick shorter with the kind memo; every scene about twice the owner's frame rate |
 
 The quiet run after the batched avatars, the bulk reads and the shard drops is **NOT YET RUN** (PROGRESS "Where we

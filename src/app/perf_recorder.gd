@@ -6,8 +6,11 @@ extends Node
 ## Off by default: Main makes no recorder without the flag, and PerfMarks stays off (one bool check per call site).
 ## F9 marks a moment ("this felt bad here") while recording; a corner label shows it records and flashes on a mark.
 ## The rows are buffered and written by a worker thread every FLUSH_ROWS rows or FLUSH_USEC (so a crash loses at most
-## that), on returning to the menu and on quit. App side: it reads the World (the load) and the views, never writes
-## them; the sim's only hook is the existing probe-only World.phase_probe (full mode).
+## that), on returning to the menu and on quit. Both modes record the main window's render time on the CPU and the
+## GPU; the full mode adds the renderer's per-pass times (PerfGpuPasses, with the engine flag `--gpu-profile`), a
+## census of what the scene holds every SAMPLE_USEC (PerfSceneCensus), the display and Graphics options, and the
+## main thread's frame in order. App side: it reads the World (the load) and the views, never writes them; the sim's
+## only hook is the existing probe-only World.phase_probe (full mode).
 
 const DIR := "user://perf/"
 const FLUSH_ROWS := 240
@@ -37,6 +40,8 @@ const LIGHT_COLS: PackedStringArray = [
 	"objects_drawn",
 	"vram_mb",
 	"rec_us",
+	"gpu_us",
+	"rcpu_us",
 ]
 const FULL_COLS: PackedStringArray = [
 	"step_us",
@@ -47,6 +52,17 @@ const FULL_COLS: PackedStringArray = [
 	"engine_us",
 	"draw_us",
 	"bd",
+	"setup_us",
+	"proc_us",
+	"phys_us",
+	"gp",
+	"gp_new",
+	"sc",
+	"cfg",
+	"proc_span_us",
+	"after_us",
+	"between_us",
+	"phys_span_us",
 ]
 
 ## True: the breakdown columns too (PerfMarks on, the views' sync profile, the sim's phase timer, timed listeners).
@@ -77,8 +93,17 @@ var _timers: Array = []
 var _phases := PerfBreakdown.PhaseTimer.new()
 var _t_pre := 0
 var _t_post := 0
+## The frame's main-thread spans (full mode): the first physics step, the start of the process step, the end of the
+## last _process (the late stamper, run after every other node), against the draw's pre/post stamps.
+var _t_phys := 0
+var _t_proc := 0
+var _t_proc_end := 0
+var _late: Node
 ## The recorder's own time on the main thread last frame (the row, the flush hand-off): its overhead, in the CSV.
 var _rec_us := 0
+var _passes: PerfGpuPasses
+var _census: PerfSceneCensus
+var _cfg := ""
 var _layer: CanvasLayer
 var _label: Label
 
@@ -142,11 +167,21 @@ func start() -> void:
 	_last_us = _t0
 	_last_flush_us = _t0
 	_next_sample_us = _t0
+	# Left on after the stop: the viewport's two timestamps cost nothing worth undoing, and a probe may share them.
+	RenderingServer.viewport_set_measure_render_time(get_viewport().get_viewport_rid(), true)
 	if full:
+		_passes = PerfGpuPasses.new()
+		_census = PerfSceneCensus.new()
+		_cfg = ""
 		PerfMarks.on = true
 		PerfMarks.clear()
 		RenderingServer.frame_pre_draw.connect(_on_pre_draw)
 		RenderingServer.frame_post_draw.connect(_on_post_draw)
+		get_tree().physics_frame.connect(_on_physics_frame)
+		get_tree().process_frame.connect(_on_process_frame)
+		_late = LateStamp.new()
+		_late.done.connect(_on_process_end)
+		add_child(_late)
 	_make_label()
 
 
@@ -166,6 +201,12 @@ func stop() -> void:
 		if RenderingServer.frame_pre_draw.is_connected(_on_pre_draw):
 			RenderingServer.frame_pre_draw.disconnect(_on_pre_draw)
 			RenderingServer.frame_post_draw.disconnect(_on_post_draw)
+		if get_tree() != null and get_tree().physics_frame.is_connected(_on_physics_frame):
+			get_tree().physics_frame.disconnect(_on_physics_frame)
+			get_tree().process_frame.disconnect(_on_process_frame)
+		if _late != null:
+			_late.queue_free()
+			_late = null
 		var view := _view()
 		if view != null:
 			view.profile_sync = false
@@ -255,6 +296,33 @@ func _on_post_draw() -> void:
 	_t_post = Time.get_ticks_usec()
 
 
+func _on_physics_frame() -> void:
+	if _t_phys <= _t_post:  # the first physics step since the last draw
+		_t_phys = Time.get_ticks_usec()
+
+
+func _on_process_frame() -> void:
+	_t_proc = Time.get_ticks_usec()
+
+
+func _on_process_end() -> void:
+	_t_proc_end = Time.get_ticks_usec()
+
+
+## Stamps the end of the process step: its _process runs after every other node's.
+class LateStamp:
+	extends Node
+	signal done
+
+	func _init() -> void:
+		name = "PerfLateStamp"
+		process_mode = Node.PROCESS_MODE_ALWAYS
+		process_priority = 2147483647
+
+	func _process(_delta: float) -> void:
+		done.emit()
+
+
 ## One CSV row: the frame that ended now (since the last row).
 func _row(now: int) -> String:
 	var dt_us := now - _last_us
@@ -319,6 +387,9 @@ func _row(now: int) -> String:
 	else:
 		vals.append_array(["", "", "", "", ""])
 	vals.append(str(_rec_us))
+	var vp := get_viewport().get_viewport_rid()
+	vals.append(str(roundi(RenderingServer.viewport_get_measured_render_time_gpu(vp) * 1000.0)))
+	vals.append(str(roundi(RenderingServer.viewport_get_measured_render_time_cpu(vp) * 1000.0)))
 	if full:
 		_full_cols(vals, dt_us, drv, w, view)
 	return ",".join(vals)
@@ -350,6 +421,51 @@ func _full_cols(
 		if v > 0:
 			parts.append("%s=%d" % [k, v])
 	vals.append(";".join(parts))
+	vals.append(str(roundi(RenderingServer.get_frame_setup_time_cpu() * 1000.0)))
+	vals.append(str(roundi(Performance.get_monitor(Performance.TIME_PROCESS) * 1e6)))
+	vals.append(str(roundi(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1e6)))
+	vals.append(_passes.frame_column())
+	vals.append(_passes.take_new_names())
+	_scene_cols(vals, view)
+	_span_cols(vals)
+
+
+## The last frame's main thread in order: its process step from the row on (the recorder runs first), what ran after
+## it until the draw (deferred calls, transforms, deletes), and, after the draw, the time until the next physics step
+## (OS events, input, a frame cap's sleep) and the physics steps until this process step. A frame with no draw
+## (headless) counts its draw as nothing. "" when a stamp is missing.
+func _span_cols(vals: PackedStringArray) -> void:
+	var pre := _t_pre
+	var post := _t_post
+	if pre < _t_proc_end or post < pre:
+		pre = _t_proc_end
+		post = _t_proc_end
+	if _t_proc_end < _last_us or _t_proc < post:
+		vals.append_array(["", "", "", ""])
+		return
+	var phys := _t_phys if _t_phys > post and _t_phys <= _t_proc else _t_proc
+	vals.append(str(_t_proc_end - _last_us))
+	vals.append(str(pre - _t_proc_end))
+	vals.append(str(phys - post))
+	vals.append(str(_t_proc - phys))
+
+
+## The census (`sc`): one starts every SAMPLE_USEC and fills its row when its last slice is done; the options
+## (`cfg`) are read when a census starts and written only when they changed.
+func _scene_cols(vals: PackedStringArray, view: WorldViewRoot) -> void:
+	var sc := ""
+	var cfg := ""
+	if _census.busy:
+		if _census.step():
+			sc = _census.result()
+	elif vals[LIGHT_COLS.find("nodes")] != "":
+		_census.begin(get_tree().root, view)
+		var c := PerfSceneCensus.config_string(get_tree().root, _passes.passes_on)
+		if c != _cfg:
+			_cfg = c
+			cfg = c
+	vals.append(sc)
+	vals.append(cfg)
 
 
 ## Full mode: a new floor's driver gets its listeners timed, its view its sync profile, its World the phase timer.
