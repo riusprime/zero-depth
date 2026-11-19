@@ -333,7 +333,7 @@ func test_a_missing_model_falls_back_to_the_code_body() -> void:
 func test_the_vat_bake_matches_the_live_pose() -> void:
 	assert_true(VatCrowd.supports(KIND), "drawn by the VAT crowd")
 	assert_true(SoloVat.is_solo(KIND))
-	assert_false(CanyonShoreBodies.is_kind(KIND), "no stand-in body left")
+	assert_false(HordeAvatar.is_horde_kind(KIND), "no stand-in body left")
 	for calm: bool in [false, true]:
 		ViewPrefs.reduced_motion = calm
 		var pose := VatBake.pose_for(KIND)

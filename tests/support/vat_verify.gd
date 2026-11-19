@@ -349,6 +349,27 @@ static func ranges(a: Node3D, rng: RandomNumberGenerator) -> Dictionary:
 			"_die_t": [-0.6, FrostSpitterAvatar.DEATH_SECONDS],
 			"_state": states4,
 		}
+	if a is GlacierTurtleAvatar:
+		return {
+			"_t": [0.0, 40.0],
+			"_phase": [0.0, 1.0],
+			"_speed": [0.0, 1.5],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2.LEFT],
+			"_omega": [-1.2, 1.2],
+			"_stride": [0.0, 1.0],
+			"_coil": [0.0, 1.0],
+			"_tell": [0.0, 1.0],
+			"_rise": [0.0, 1.0],
+			"_bare": [0.0, 1.0],
+			"_shell": [-1, 0, 30, 60],
+			"_slam_t": [-0.3, GlacierTurtleAvatar.SLAM_SECONDS],
+			"_brace_t": [-0.2, GlacierTurtleAvatar.BRACE_SECONDS],
+			"_break_t": [-0.2, GlacierTurtleAvatar.BREAK_SECONDS],
+			"_hurt_t": [-0.2, GlacierTurtleAvatar.HURT_SECONDS],
+			"_hurt_leg": [0, 1, 2, 3],
+			"_die_t": [-0.6, GlacierTurtleAvatar.DEATH_SECONDS],
+			"_state": states4,
+		}
 	if a is NeedleAvatar:
 		var dir := rng.randf() * TAU
 		return {

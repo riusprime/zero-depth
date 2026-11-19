@@ -797,6 +797,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 			height = FrostSpitterAvatar.attach(self, root, facing)
 		WorldReader.KIND_WIRE_WEAVER:  # The owner's model, animated in code, on VAT
 			height = WireWeaverAvatar.attach(self, root, facing)
+		WorldReader.KIND_GLACIER_TURTLE:  # The owner's model, animated in code, on VAT
+			height = GlacierTurtleAvatar.attach(self, root, facing)
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling: a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()

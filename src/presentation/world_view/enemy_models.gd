@@ -43,6 +43,9 @@ const SPECS := {
 	# The Wire Weaver (scripts/assets/wire_weaver_prep.py: body, head, spool, four two-part legs, two two-part
 	# arms; WireWeaverAvatar poses them), at the request row's 1.0 m.
 	&"wire_weaver": {"height": WireWeaverAvatar.HEIGHT},
+	# The Glacier Turtle (scripts/assets/glacier_turtle_prep.py: body, carapace, head, shield, four two-part legs;
+	# GlacierTurtleAvatar poses them), 0.9 m tall (1.33 m long: the shield's face at the sim's radius).
+	&"glacier_turtle": {"height": 0.9},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

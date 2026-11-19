@@ -99,10 +99,6 @@ var height := 1.0
 ## The pivot every part hangs from (the rise-in and the lean), and the kind's moving parts, by name.
 var body: Node3D
 var parts := {}
-## A signature's tell drive (CanyonShoreBodies.read: the beetle's heat, the priest's pulse, 0..1) and
-## whether the turtle's shell stands.
-var sig_drive := 0.0
-var sig_on := true
 ## The owner's model (null: the code-made body), scaled to the kind's height.
 var model: Node3D
 ## True (set before setup(), ActorViews from
@@ -158,8 +154,6 @@ var _slide_armed := false
 static func height_of(p_kind: int) -> float:
 	if CritterBodies.is_critter(p_kind):  # v0.11.0 O9
 		return float(CritterBodies.HEIGHTS[p_kind])
-	if CanyonShoreBodies.is_kind(p_kind):  # v0.11.0 O13c
-		return float(CanyonShoreBodies.HEIGHTS[p_kind])
 	if p_kind == WorldReader.KIND_SPLITLING:
 		return float(HEIGHTS[WorldReader.KIND_SPLITTER]) * SPLITLING_SCALE
 	return float(HEIGHTS.get(p_kind, 1.0))
@@ -170,8 +164,7 @@ static func is_horde_kind(p_kind: int) -> bool:
 		p_kind == WorldReader.KIND_SPLITLING
 		or HEIGHTS.has(p_kind)
 		or CritterBodies.is_critter(p_kind)
-		or CanyonShoreBodies.is_kind(p_kind)
-	)  # R5-R8 # v0.11.0 O9: the horde critters (CritterBodies)
+	)  # The horde critters (CritterBodies)
 
 
 ## The owner's model a kind draws with (EnemyModels; the Splitling the Splitter's, smaller), or &"".
@@ -252,15 +245,11 @@ func setup(p_kind: int) -> void:
 				_build_sniper()
 			_ when CritterBodies.is_critter(kind):  # v0.11.0 O9
 				CritterBodies.build(self)
-			_ when CanyonShoreBodies.is_kind(kind):  # v0.11.0 O13c
-				CanyonShoreBodies.build(self)
 	_pose()
 
 
 ## The values straight to _apply (no Dictionary per enemy per sync).
 func sync(reader: WorldReader, i: int) -> void:
-	if CanyonShoreBodies.is_kind(kind):  # Its tell's drive (heat, pulse, shell)
-		CanyonShoreBodies.read(self, reader, i)
 	_apply(
 		reader.tick(),
 		reader.actor_state(i),
@@ -466,8 +455,6 @@ func _pose() -> void:
 					0.0
 				)
 			)
-		_ when CanyonShoreBodies.is_kind(kind):  # v0.11.0 O13c
-			energy = CanyonShoreBodies.pose(self, energy, calm)
 	_place_body(bp, brz)
 	_set_glow(energy * lerpf(0.2, 1.0, _rise))
 
@@ -969,8 +956,6 @@ func _eye(parent: Node3D, size: Vector3, at: Vector3) -> void:
 func _col(slot: StringName) -> Color:
 	if CritterBodies.is_critter(kind):  # A critter wears its biome's colours, not a role's
 		return CritterBodies.color(kind, slot)
-	if CanyonShoreBodies.is_kind(kind):  # The prompts' role colours
-		return CanyonShoreBodies.color(kind, slot)
 	return _look_color(kind, slot)
 
 
