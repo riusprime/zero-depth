@@ -24,6 +24,7 @@ var _glow_template := make_glow_template()
 var _sphere := SphereMesh.new()
 var _box := BoxMesh.new()
 var _disc := CylinderMesh.new()
+var _ring := _make_ring()  # one ring mesh for every blast (ShaderWarmup draws it with its template)
 var _rng := RandomNumberGenerator.new()
 var _last_vent := -1
 var _last_overheat := -1
@@ -127,10 +128,7 @@ func _blast(s: Dictionary) -> void:
 	# as a flat sheet of paper over a dark lit floor); the ring keeps the blast's edge readable on pale ground.
 	_add(disc, c, 0.1 + 0.15 * share, &"blast", Vector3.ZERO, r, _glow_template)
 	var ring := MeshInstance3D.new()
-	var torus := TorusMesh.new()
-	torus.inner_radius = 0.86
-	torus.outer_radius = 1.0
-	ring.mesh = torus
+	ring.mesh = _ring
 	ring.position = SimPlane.to_3d(at, 0.2)
 	ring.scale = Vector3(0.25, 0.3, 0.25)
 	_add(ring, c, 0.95, &"ring", Vector3.ZERO, r)
@@ -177,6 +175,18 @@ func _add(
 	_fx.append([n, m, FX_FRAMES, FX_FRAMES, kind, vel, alpha, grow])
 
 
+## The effects' templates on their meshes, for ShaderWarmup: drawn once behind the loading cover, each template keeps
+## its shader made, so a vent, an overheat or an ember burst never compiles one mid-fight (the copies alone freed it
+## with the burst's last effect, and the next burst compiled it again: a 40-100 ms frame each time).
+func warm_looks() -> Array:
+	return [
+		[_sphere, _steam_template],
+		[_box, _fx_template],
+		[_ring, _fx_template],
+		[_disc, _glow_template],
+	]
+
+
 func _process(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
 	for k in range(_fx.size() - 1, -1, -1):
@@ -198,6 +208,13 @@ func _process(delta: float) -> void:
 		if fx[2] <= 0:
 			n.queue_free()
 			_fx.remove_at(k)
+
+
+static func _make_ring() -> TorusMesh:
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.86
+	torus.outer_radius = 1.0
+	return torus
 
 
 static func _make_fx_template() -> StandardMaterial3D:

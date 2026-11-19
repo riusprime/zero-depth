@@ -90,6 +90,7 @@ var _rock_base: Array[Basis] = []  # per standing rock: its landed pose
 var _hidden := {}  # lurker id -> was hidden
 var _yelped := {}
 var _cable_mat: StandardMaterial3D
+var _rock_mat: StandardMaterial3D  # the owner's rock's look, one for every rock (made with the first)
 
 
 func _ready() -> void:
@@ -203,10 +204,11 @@ func _boulder() -> MeshInstance3D:
 	var parts: Dictionary = m.get("parts", {})
 	if parts.has(&"rock"):
 		mi.mesh = (parts[&"rock"] as Dictionary)["mesh"]
-		var mat := StandardMaterial3D.new()
-		mat.albedo_texture = m["texture"]
-		mat.roughness = 1.0
-		mi.material_override = mat
+		if _rock_mat == null:
+			_rock_mat = StandardMaterial3D.new()
+			_rock_mat.albedo_texture = m["texture"]
+			_rock_mat.roughness = 1.0
+		mi.material_override = _rock_mat
 		mi.set_meta(&"owner_rock", float(m["scale"]) * StoneThrowerAvatar.ROCK_SCALE)
 		return mi
 	var piece := KitModels.get_piece(ROCK_MODEL)
@@ -218,6 +220,15 @@ func _boulder() -> MeshInstance3D:
 		mi.mesh = piece["mesh"]
 		mi.material_override = piece["material"]
 	return mi
+
+
+## The thrown rock's look, for ShaderWarmup: drawn behind the loading cover, so a Thrower's first throw compiles
+## nothing mid-fight.
+func warm_looks() -> Array:
+	var mi := _boulder()
+	var look := [mi.mesh, mi.material_override]
+	mi.free()
+	return [look]
 
 
 ## The scale a rock's mesh is drawn at (`side`: the sim's square, for the kit's boulder).
