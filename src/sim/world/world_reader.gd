@@ -105,7 +105,7 @@ const KIND_WIRE_POST := ActorStore.Kind.WIRE_POST
 const KIND_SCRAP_HOUND := ActorStore.Kind.SCRAP_HOUND
 const KIND_ROCK_LURKER := ActorStore.Kind.ROCK_LURKER
 const KIND_STONE_THROWER := ActorStore.Kind.STONE_THROWER
-## The Red Canyon's and the Frozen Shore's signature enemies (CanyonShore; CanyonShoreBodies).
+## The Red Canyon's and the Frozen Shore's signature enemies (CanyonShore; drawn by their own avatars).
 const KIND_KILN_BEETLE := ActorStore.Kind.KILN_BEETLE
 const KIND_CINDER_PRIEST := ActorStore.Kind.CINDER_PRIEST
 const KIND_FROST_SPITTER := ActorStore.Kind.FROST_SPITTER
@@ -2997,6 +2997,14 @@ func priest_pulse(i: int) -> int:
 ## Whether actor i is a Glacier Turtle whose shell still stands.
 func shell_on(i: int) -> bool:
 	return CanyonShore.shell_on(_w, i)
+
+
+## Glacier Turtle i's shell HP left (0: broken, or not a turtle): its view braces as a hit on the shell takes some.
+func shell_hp(i: int) -> int:
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	if _w.actors.kinds[i] != KIND_GLACIER_TURTLE or t == null:
+		return 0
+	return maxi(0, _w.canyon_shore.shell_of(_w.actors.ids[i], t.shell_hp))
 
 
 ## The Kiln Beetles' bursts waiting: [centre (Vector2), radius (float), progress 0..1000 toward the blow, seed] each.

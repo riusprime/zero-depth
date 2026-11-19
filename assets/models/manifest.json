@@ -417,6 +417,11 @@
       "sha256": "63db78faa74c2ac8112aa1cabdafb8d92e899fbd0ad300e0f8b601e0f686136b"
     },
     {
+      "id": "glacier_turtle",
+      "path": "assets/models/enemies/glacier_turtle.glb",
+      "sha256": "3d016d88b7220e9434280c62873c58477ee152b44f21cdb717e0ffd82b776873"
+    },
+    {
       "id": "rock_lurker",
       "path": "assets/models/enemies/rock_lurker.glb",
       "sha256": "0f6428702750f5687253358df4cfe1dbfb876af22811cd58e145af606cc87a6f"

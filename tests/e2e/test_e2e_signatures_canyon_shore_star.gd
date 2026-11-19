@@ -10,7 +10,8 @@ extends GutTest
 ##   Charger leaves a fire trail.
 ## - Frozen Shore: the Frost Spitter's arc is drawn and its blob leaves a slick (on the owner's model: its sac swells
 ##   through the windup, and it plays its death); the Glacier Turtle's shell stands and breaks under the shots before
-##   it dies; the Frost Charger leaves a slick trail.
+##   it dies (on the owner's model: its shield held up, gone once it broke, the turtle bare; it plays its death); the
+##   Frost Charger leaves a slick trail.
 ## - Starfall: the Star Warper's star mark is drawn; the Gravity Node draws the hero, standing with no input, toward
 ##   it (its reach's ring drawn while the hero is inside) and bends a hero shot; the Split Sniper's line splits in
 ##   three (its four lanes drawn).
@@ -147,12 +148,24 @@ func test_the_frozen_shore_signatures_and_variant_on_a_frozen_shore_floor() -> v
 	# R8 Glacier Turtle: its shell stands, and breaks under the shots before the turtle dies.
 	var turtle: int = await s.spawn(ActorStore.Kind.GLACIER_TURTLE, "ENEMY_GLACIER_TURTLE")
 	assert_true(reader.shell_on(w.actors.index_of(turtle)), "the Turtle's shell stands")
-	var broke := [false]
-	var watch := func(i: int) -> void: broke[0] = broke[0] or not reader.shell_on(i)
+	# Drawn on the owner's model: its ice shield held up while the shell stands, gone (the turtle bare) once it broke.
+	var tort := _avatar(s, turtle) as GlacierTurtleAvatar
+	assert_not_null(tort, "the Glacier Turtle is drawn by its own avatar")
+	assert_eq(tort.shield_shown(), 1.0, "its shield held up")
+	var broke := [false, false]
+	var watch := func(i: int) -> void:
+		broke[0] = broke[0] or not reader.shell_on(i)
+		if broke[0] and is_instance_valid(tort) and not tort.dying():
+			broke[1] = broke[1] or (tort.shield_shown() == 0.0 and tort.bareness() > 0.0)
 	assert_true(
 		await s.shoot_dead(turtle, KILL_FRAMES * 2, watch, 3.0), "the Glacier Turtle is shot dead"
 	)
 	assert_true(broke[0], "its shell broke first")
+	assert_true(broke[1], "its shield gone from its body, the turtle standing bare")
+	var tort_falls: bool = await s.until(
+		func() -> bool: return is_instance_valid(tort) and tort.dying(), 20
+	)
+	assert_true(tort_falls, "its body plays its death")
 	# V4 Frost Charger: a slick trail behind its charge.
 	var charger: int = await s.spawn(ActorStore.Kind.FROST_CHARGER, "ENEMY_FROST_CHARGER")
 	var trail: bool = await s.until(func() -> bool: return vfx.trail_count() > 0, 1200)

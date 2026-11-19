@@ -40,6 +40,9 @@ const SPECS := {
 	# The Frost Spitter (scripts/assets/frost_spitter_prep.py: shell, body, head, sac, four two-part legs;
 	# FrostSpitterAvatar poses them), at the request row's 0.85 m.
 	&"frost_spitter": {"height": 0.85},
+	# The Glacier Turtle (scripts/assets/glacier_turtle_prep.py: body, carapace, head, shield, four two-part legs;
+	# GlacierTurtleAvatar poses them), 0.9 m tall (1.33 m long: the shield's face at the sim's radius).
+	&"glacier_turtle": {"height": 0.9},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 
