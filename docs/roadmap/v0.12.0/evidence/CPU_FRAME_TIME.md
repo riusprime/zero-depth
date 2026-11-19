@@ -256,3 +256,5 @@ APPDATA=C:/Users/extri/Desktop/zerodepth/appdata-s40 "$GODOT" --path . --positio
 moment, the same impacts, sparks, poison clouds and bubbles, floor marks and seekers in both; the files are not
 byte-identical (the pack's GPU particles differ in small places, e.g. the smoke round a frozen enemy). A same-build
 repeat to show that variance: NOT YET RUN. Owner-only: whether anything looks different in play (OWNER ONLY).
+
+**Owner, 2026-11-19, on the pooled effects resting hidden in the tree for 1 s before parking (a change to the v0.10.5 PC_POOLS rule that idle instances wait outside the tree):** "Yes, allow it".
