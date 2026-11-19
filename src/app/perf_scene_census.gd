@@ -218,6 +218,11 @@ func _monitors() -> void:
 			+ Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_SPECIALIZATION)
 		)
 	)
+	# The ones made on the main thread when a surface, a mesh or a 2D item first needs its pipeline (a mid-fight one
+	# is a 40-160 ms frame, and up to a second with cold caches): counted apart, since pipe_compiles leaves them out.
+	_c["pipe_surface"] = int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_SURFACE))
+	_c["pipe_mesh"] = int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_MESH))
+	_c["pipe_canvas"] = int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_CANVAS))
 
 
 ## The views' counts that explain their sync time: actors drawn as nodes or batched, the critters, the pack effects

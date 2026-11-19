@@ -70,6 +70,7 @@ var _view_want := PackedByteArray()
 var _solid := {}
 var _faded := {}
 var _faded_now := {}
+var _fade_mesh := {}  # solid material -> a mesh drawn with it (its faded look's warm-up)
 var _t := 0.0
 var _frame := 0
 
@@ -147,6 +148,8 @@ func _add_pieces(pieces: Array, wall_count: int, tint: Color, mood: BiomeMood) -
 		node.material_override = _material(
 			p["piece"], piece["material"], Color.WHITE.lerp(tint, share) if tinted else Color.WHITE
 		)
+		if not _fade_mesh.has(node.material_override):
+			_fade_mesh[node.material_override] = node.mesh
 		node.transform = p["xform"]
 		node.set_meta(&"piece", p["piece"])
 		add_child(node)
@@ -236,6 +239,8 @@ func _build_proc(surfaces: Dictionary, owners: Array, solid: Material) -> void:
 		var node := MeshInstance3D.new()
 		node.name = "ProcWall_%d" % owner
 		node.mesh = mesh
+		if not _fade_mesh.has(solid):
+			_fade_mesh[solid] = mesh
 		for k in mesh.get_surface_count():
 			node.set_surface_override_material(k, solid)
 		node.set_meta(&"piece", &"proc_wall")
@@ -320,6 +325,17 @@ static func hero_light(mood: BiomeMood) -> OmniLight3D:
 	l.position = Vector3(0, 1.3, 0)
 	l.shadow_enabled = false
 	return l
+
+
+## The faded looks on a mesh of their pieces, for ShaderWarmup: a wall fades (its pieces swap to the faded copy,
+## transparent) only when it stands between the camera and the hero, so each faded look is drawn once behind the
+## loading cover and the first fade of a fight compiles nothing (a 60-160 ms frame each before).
+func warm_looks() -> Array:
+	var out := []
+	for solid: Material in _fade_mesh:
+		if _faded.has(solid):
+			out.append([_fade_mesh[solid], _faded[solid]])
+	return out
 
 
 ## Fades every piece of the walls at `indices` (dithered) and restores the rest; only changed walls are touched.

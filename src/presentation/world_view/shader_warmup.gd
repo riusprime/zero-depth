@@ -18,6 +18,10 @@ extends Node3D
 ##   MagicArea's parts: EliteViews' pooled sigil); FireballViews.prepare's looks are its empty MultiMeshes.
 ##   And a view's idle_pieces(), the pool entries kept outside the tree (the walk runs at the view's build,
 ##   so the proxies hold their meshes and materials; the pieces never need the tree to be drawn here).
+## - a view's warm_looks(): [mesh, material] pairs no node of the view shows yet (StageKit's faded wall materials,
+##   swapped in when a wall hides the hero; HeatVisuals' effect templates; the Stone Thrower's rock). A
+##   StandardMaterial3D's shader is made on its first draw and freed with its last drawn copy, so a template that is
+##   only duplicated compiles again on every burst unless it was drawn once itself.
 ## Every proxy sits in front of the camera (AT in its frame), scaled to TINY (well under a pixel): the draw is issued,
 ## nothing shows. A load builds the view hidden under the closed cover (Main), so the warm-up hangs beside the view
 ## (its parent), where it draws while the cover is still closed; without one (a tool's setup()) it hangs off the
@@ -53,6 +57,8 @@ const HORDE_KINDS: Array[int] = [
 ## The proxies made (tests): from the view's hidden pieces, from the first-use materials, and horde enemies.
 var hidden_proxies := 0
 var lazy_proxies := 0
+## The proxies made from the views' warm_looks() (tests; counted in hidden_proxies too).
+var look_proxies := 0
 var enemies := 0
 ## How many other enemies' merged bodies were drawn (tests).
 var rigs := 0
@@ -126,6 +132,11 @@ func _from_view(n: Node, hidden: bool, warm: bool) -> void:
 	if n.has_method(&"idle_pieces"):
 		for c: Node in n.call(&"idle_pieces"):
 			_from_view(c, true, all)
+	# A view's looks no node shows yet (a material it swaps in later, an effect's template): its [mesh, material]
+	# pairs (warm_looks()), one proxy each
+	if n.has_method(&"warm_looks"):
+		for look: Array in n.call(&"warm_looks"):
+			_look_proxy(look[0], look[1])
 
 
 ## Whether a hidden piece draws with an effect's own shader (a ShaderMaterial: the ones made and compiled on first
@@ -156,6 +167,21 @@ func _mesh_proxy(mi: MeshInstance3D) -> void:
 		p.set_surface_override_material(k, mi.get_surface_override_material(k))
 	_add(p)
 	hidden_proxies += 1
+
+
+func _look_proxy(mesh: Mesh, mat: Material) -> void:
+	if mesh == null or mat == null or hidden_proxies >= MAX_PROXIES:
+		return
+	var key := "l/%d/%d" % [mesh.get_instance_id(), mat.get_instance_id()]
+	if _seen.has(key):
+		return
+	_seen[key] = true
+	var p := MeshInstance3D.new()
+	p.mesh = mesh
+	p.material_override = mat
+	_add(p)
+	hidden_proxies += 1
+	look_proxies += 1
 
 
 func _particles_proxy(cp: CPUParticles3D) -> void:
