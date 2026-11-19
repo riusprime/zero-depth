@@ -255,6 +255,7 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	AstralCardArt.warm_icons()  # The cards' icons load on a worker, before a pick or the shop shows one
 	# The run's lasting parts; panels that come and go (the pick, the shop, the swap) draw directly.
 	for part: CanvasItem in [
 		_corner,

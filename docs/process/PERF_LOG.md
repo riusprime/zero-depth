@@ -66,8 +66,9 @@ section, **What is biggest**, answers "what is taking the most" in a few lines:
 - the GPU's time for the main window and the CPU's time recording it;
 - the five costliest render passes on the GPU, with their share of the GPU's time;
 - the main thread's parts (sim / views / listeners / other script / engine+draw), then the same frame in order: the
-  process step (the timed script and the rest of the nodes' `_process`), after it until the draw, the draw, between
-  frames, the physics steps;
+  process step (the views' once-a-frame sync with its listeners, and the rest of the nodes' `_process`), after it
+  until the draw, the draw, between frames, the physics steps (the sim's ticks with their `ticked` listeners, and the
+  engine's own part: the game uses no Godot physics, so that is the physics interpolation's tick);
 - inside the draw: recording the viewports, the estimated wait, the frame setup;
 - what the scene held on average (lights and shadows, particles, MultiMesh instances, transparent geometry,
   materials, shaders, texture memory).

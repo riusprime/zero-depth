@@ -67,6 +67,7 @@ const PACK_STATUS := true  # burn, poison and frost on an enemy; Bulwark's guard
 ## What an element ring draws, for the frame probe's A/B runs (scripts/checks/frame_spans.gd --ab=no_ring,
 ## no_ring_light, no_ring_sparks): the ring at all, its light, the storm ring's sparks along its edge. The game
 ## never changes them.
+const NO_PROP_FIRE: Array = []
 static var rings_drawn := true
 static var ring_lights := true
 static var ring_sparks := true
@@ -79,6 +80,8 @@ var burst_hide: Array = []
 ## ring() is drawing a followed ring (its `follow`), read by the ring drawers' hold keys.
 var ring_follow := false
 var _pack_seen := {}  # seed -> the tick the burst was last drawn
+## Each fire prop's fixed numbers by its seed (_prop_fire_numbers).
+var _prop_fires := {}
 var _burst_weight := 1.0  # W3-S4: the burst being drawn's weight (burst())
 ## The pack's zones, bursts and statuses (VfxPackViews).
 var _views := VfxPackViews.new(self)
@@ -334,16 +337,38 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int, top: float = 0.9) -> 
 ## 2026-10-12: the torch flames should halo, not stay flat).
 func prop_fire(p: Vector3, sd: int) -> void:
 	var age := _now
+	var c: Array = _prop_fires.get(sd, NO_PROP_FIRE)
+	if c.is_empty() or c[0] != p:
+		c = _prop_fire_numbers(p, sd)
+		_prop_fires[sd] = c
+	var feet: PackedVector3Array = c[1]
+	var n: PackedFloat64Array = c[2]
 	for k in 3:
-		var a := TAU * (k / 3.0 + h(sd, k))
-		var q := p + Vector3(cos(a), 0, sin(a)) * 0.07 * float(k > 0)
-		var beat := 0.85 + 0.15 * sin(age * (0.4 + 0.15 * h(sd + 1, k)) + TAU * h(sd + 2, k))
-		var hgt := (0.62 if k == 0 else 0.42 + 0.12 * h(sd + 3, k)) * beat
-		var cell := (k + int(age / (8.0 + 4.0 * h(sd, k + 40)))) % 4
+		var o := k * 5
+		var beat := 0.85 + 0.15 * sin(age * n[o] + n[o + 1])
+		var hgt := n[o + 2] * beat
+		var cell := (k + int(age / n[o + 3])) % 4
 		_put(
-			&"flame", _facing(q, hgt * 0.7, hgt, false), PROP_FIRE_COLOR, cell, 0.0, h(sd, k) * 10.0
+			&"flame", _facing(feet[k], hgt * 0.7, hgt, false), PROP_FIRE_COLOR, cell, 0.0, n[o + 4]
 		)
 	_embers(p, age, sd, 2, 1.0)
+
+
+## A fire prop's numbers that never change, worked out once (the prop and its seed stay): [its foot, its three
+## flames' feet, per flame its beat's rate and phase, its base height, its frame period and its seed for the shader].
+## The same sums prop_fire made every frame for every fire of the floor.
+static func _prop_fire_numbers(p: Vector3, sd: int) -> Array:
+	var feet := PackedVector3Array()
+	var n := PackedFloat64Array()
+	for k in 3:
+		var a := TAU * (k / 3.0 + h(sd, k))
+		feet.append(p + Vector3(cos(a), 0, sin(a)) * 0.07 * float(k > 0))
+		n.append(0.4 + 0.15 * h(sd + 1, k))
+		n.append(TAU * h(sd + 2, k))
+		n.append(0.62 if k == 0 else 0.42 + 0.12 * h(sd + 3, k))
+		n.append(8.0 + 4.0 * h(sd, k + 40))
+		n.append(h(sd, k) * 10.0)
+	return [p, feet, n]
 
 
 static func _status_key(sd: int, kind: int, slot: int) -> int:

@@ -985,7 +985,8 @@ func sync() -> void:
 
 
 ## Draws a real flame on each fire prop into the effects layer (inside its frame): the props' own lights stay in
-## StageKit. a prop whose light StageKit hid (out of the view's reach) draws no flame either.
+## StageKit. a prop whose light StageKit hid (out of the view's reach) draws no flame either, nor one wholly out of the
+## picture (ScreenCull; its embers rise 1.6 m): laying out every flame of the floor each frame cost the most in play.
 func _draw_prop_fires(layer: VfxCore) -> void:
 	if stage == null or stage.kit == null:
 		return
@@ -993,4 +994,6 @@ func _draw_prop_fires(layer: VfxCore) -> void:
 	for k in stage.kit.lights.size():
 		var l := stage.kit.lights[k]
 		if is_instance_valid(l) and l.visible and l.is_inside_tree():
-			fx.prop_fire(l.global_position - Vector3(0, 0.36, 0), k * 7919 + 13)
+			var at := l.global_position - Vector3(0, 0.36, 0)
+			if not cull.active or cull.shows(at, 2.0):
+				fx.prop_fire(at, k * 7919 + 13)

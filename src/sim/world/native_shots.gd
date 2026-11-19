@@ -31,10 +31,14 @@ static func sweep(w: World) -> void:
 		pp.begin(&"proj.steer")
 	var pull := StarfallKinds.nodes(w) if not w.enemy_tables.is_empty() else PackedFloat32Array()
 	if p.moves or not pull.is_empty():
+		w.seek_memo.clear()
+		w.seek_memo_on = true  # The darts of one rank share their target while the shots steer
 		for i in n:
 			var held := ProjectileMoves.steer(w, i)  # Orbit first, homing, the way back
 			if not pull.is_empty() and not held:  # A Gravity Node bends it (after its form's steering)
 				StarfallKinds.bend_projectile(w, i, pull)
+		w.seek_memo_on = false
+		w.seek_memo.clear()
 	var skip := PackedByteArray()
 	if not w.mx.gm_kind.is_empty():
 		skip.resize(n)

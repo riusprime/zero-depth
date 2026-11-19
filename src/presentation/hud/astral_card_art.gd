@@ -55,6 +55,8 @@ static var _backs := {}
 static var _noise: Texture2D
 static var _cinzel: FontFile
 static var _serif := {}
+## The icon files asked of a loader thread (warm_icons), taken from it on their first use.
+static var _asked := {}
 
 
 ## Card `id`'s icon, or the fallback icon_unknown when it has none.
@@ -64,12 +66,29 @@ static func icon(id: StringName) -> Texture2D:
 		return _icons[key]
 	var path := ICON_DIR + "icon_%s.png" % key
 	var tex: Texture2D = null
-	if ResourceLoader.exists(path):
+	if _asked.has(path):  # Loaded on the loader thread (or still loading: this waits for it)
+		_asked.erase(path)
+		tex = ResourceLoader.load_threaded_get(path)
+	elif ResourceLoader.exists(path):
 		tex = load(path)
 	elif key != UNKNOWN:
 		tex = icon(UNKNOWN)
 	_icons[key] = tex
 	return tex
+
+
+## Asks a loader thread for every card icon not loaded yet, so a pick or the shop showing a card never reads its
+## icon from disk in its frame (each first read held that frame about 2 ms).
+static func warm_icons() -> void:
+	for f in ResourceLoader.list_directory(ICON_DIR):
+		if not f.begins_with("icon_") or not f.ends_with(".png"):
+			continue
+		var path := ICON_DIR + f
+		var key := StringName(f.trim_prefix("icon_").trim_suffix(".png"))
+		if _icons.has(key) or _asked.has(path):
+			continue
+		if ResourceLoader.load_threaded_request(path, "Texture2D") == OK:
+			_asked[path] = true
 
 
 ## Whether card `id` has its own icon (not the fallback).
