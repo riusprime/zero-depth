@@ -37,6 +37,9 @@ const SPECS := {
 	# The Kiln Beetle (scripts/assets/o17_prep_kiln_beetle.py: shell, body, head, eight two-part legs;
 	# KilnBeetleAvatar poses them), at the request row's 0.7 m.
 	&"kiln_beetle": {"height": 0.7},
+	# The Wire Weaver (scripts/assets/wire_weaver_prep.py: body, head, spool, four two-part legs, two two-part
+	# arms; WireWeaverAvatar poses them), at the request row's 1.0 m.
+	&"wire_weaver": {"height": WireWeaverAvatar.HEIGHT},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

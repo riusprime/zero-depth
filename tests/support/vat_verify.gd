@@ -366,6 +366,22 @@ static func ranges(a: Node3D, rng: RandomNumberGenerator) -> Dictionary:
 			"_flinch_t": [0.0, 0.25],
 			"_flinch_s": [0.0, 1.5],
 		}
+	if a is WireWeaverAvatar:
+		return {
+			"_t": [0.0, 40.0],
+			"_phase": [0.0, 1.0],
+			"_speed": [-3.0, 3.0],
+			"_omega": [-2.0, 2.0],
+			"_stride": [0.0, 1.0],
+			"_coil": [0.0, 1.0],
+			"_tell": [0.0, 1.0],
+			"_rise": [0.0, 1.0],
+			"_plant_t": [-0.4, WireWeaverAvatar.RELOAD_FROM + WireWeaverAvatar.RELOAD_SECONDS],
+			"_hurt_t": [-0.2, WireWeaverAvatar.HURT_SECONDS],
+			"_hurt_leg": [0, 1, 2, 3],
+			"_die_t": [-0.6, WireWeaverAvatar.DEATH_SECONDS],
+			"_state": states4,
+		}
 	if a is ScrapHoundAvatar:
 		return {
 			"_t": [0.0, 40.0],

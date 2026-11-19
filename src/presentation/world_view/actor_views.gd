@@ -41,6 +41,7 @@ const MODEL_LIFT := {
 	WorldReader.KIND_STONE_THROWER: 1.2,
 	WorldReader.KIND_KILN_BEETLE: 1.15,
 	WorldReader.KIND_CINDER_PRIEST: 1.6,
+	WorldReader.KIND_WIRE_WEAVER: 1.2,
 }
 
 ## The role glow's energy the views build with (ROLE_GLOW; the line-up shot script sweeps it, 0 = none).
@@ -792,6 +793,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 			height = CinderPriestAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_KILN_BEETLE:  # The owner's model, animated in code, on VAT
 			height = KilnBeetleAvatar.attach(self, root, facing)
+		WorldReader.KIND_WIRE_WEAVER:  # The owner's model, animated in code, on VAT
+			height = WireWeaverAvatar.attach(self, root, facing)
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling: a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()
