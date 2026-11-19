@@ -2,7 +2,7 @@ extends GutTest
 ## v0.10.5 (owner: "play a normal game, log it and then you can measure what takes the most frames"): the play
 ## recorder in the real game. main.tscn boots with no recorder (off by default); switched on (as `-- --perf-log`
 ## does), it records the hub, the load and the run through real input, F9 marks a moment, and the CSV holds a row per
-## frame with the scene, the sim ticks, the load and the breakdown, and the mark.
+## frame with the scene, the sim ticks, the load and the breakdown, a census of the run's scene, and the mark.
 
 
 func after_each() -> void:
@@ -33,6 +33,8 @@ func test_a_logged_run_with_an_f9_mark() -> void:
 	var c_ticks := cols.find("ticks")
 	var c_mark := cols.find("mark")
 	var c_bd := cols.find("bd")
+	var c_sc := cols.find("sc")
+	var run_census := ""
 	var scenes := {}
 	var run_rows := 0
 	var ticks := 0
@@ -50,6 +52,8 @@ func test_a_logged_run_with_an_f9_mark() -> void:
 			ticks += int(v[c_ticks])
 			if v[c_bd].contains("sim_step="):
 				sim_bd += 1
+			if v[c_sc] != "":
+				run_census = v[c_sc]
 		if v[c_mark] == "1":
 			marked += 1
 	assert_eq(short, 0, "every row has every column")
@@ -60,4 +64,6 @@ func test_a_logged_run_with_an_f9_mark() -> void:
 	assert_gt(run_rows, 150, "the run's frames")
 	assert_gt(ticks, 150, "the sim ticked in them")
 	assert_gt(sim_bd, 100, "the breakdown names the sim's step")
+	assert_string_contains(run_census, "actor_nodes=", "the run's census counts the views' actors")
+	assert_string_contains(run_census, "geo=", "and the geometry in the tree")
 	assert_eq(marked, 1, "one row carries the F9 mark")

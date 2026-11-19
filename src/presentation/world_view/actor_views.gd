@@ -325,6 +325,11 @@ func anchor_node(id: int) -> Node3D:
 	return _actors.get(id)
 
 
+## The actors drawn as their own node (the hero, the bosses, the enemies the batch does not draw; the perf log's count).
+func node_count() -> int:
+	return _actors.size()
+
+
 ## The enemies drawn with no node in the tree (EnemyBatch; the probe's count).
 func batched_count() -> int:
 	return batch.ids().size() if batch != null else 0
