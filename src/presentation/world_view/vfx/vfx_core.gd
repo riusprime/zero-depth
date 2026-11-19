@@ -170,6 +170,10 @@ var _status_wants: Array = []
 ## Floor marks: [key, texture id, position, radius, start tick, turn, colour].
 var _marks: Array = []
 var _mark_keys := {}
+## The mark each decal showed last frame (the same entry of _marks: its place, turn, size and texture are set).
+var _decal_shown: Array = []
+## Each drawer's probe bucket (_drawer_key), made once per drawer.
+var _drawer_keys := {}
 var _mark_tex := {}
 var _now := 0.0
 var _shaders := {}
@@ -420,14 +424,14 @@ func finish() -> void:
 			var t_d := PerfMarks.start()
 			d.call(self)
 			if PerfMarks.on:  # Each drawer's share, in the frame probe's --breakdown
-				PerfMarks.add(_drawer_key("vfx.hero.", d), t_d)
+				PerfMarks.add(_bucket("vfx.hero.", d), t_d)
 	hero_end()
 	for d in drawers:
 		if d.is_valid():
 			var t_d := PerfMarks.start()
 			d.call(self)
 			if PerfMarks.on:
-				PerfMarks.add(_drawer_key("vfx.", d), t_d)
+				PerfMarks.add(_bucket("vfx.", d), t_d)
 	var t_end := PerfMarks.start()
 	_flush_status_lights()
 	# A pool's count and a light's settings are written only when they change (each write is a
@@ -454,6 +458,15 @@ func finish() -> void:
 			l.visible = false
 	_lay_marks()
 	PerfMarks.add(&"vfx.finish_rest", t_end)
+
+
+## _drawer_key, kept per drawer (building it every frame cost the probe's own numbers).
+func _bucket(prefix: String, d: Callable) -> StringName:
+	var k: Variant = _drawer_keys.get(d)
+	if k == null:
+		k = _drawer_key(prefix, d)
+		_drawer_keys[d] = k
+	return k
 
 
 ## A drawer's bucket in the frame probe's --breakdown (its script's file and method).
@@ -720,27 +733,36 @@ func _lay_marks() -> void:
 		else:
 			_mark_keys.erase(s[0])
 	_marks = keep
+	if _decal_shown.size() != decals.size():
+		_decal_shown.resize(decals.size())
 	for k in decals.size():
 		var d := decals[k]
 		if k >= _marks.size():
 			d.visible = false
+			_decal_shown[k] = null
 			continue
 		var s: Array = _marks[k]
 		var tex: Texture2D = _mark_tex.get(s[1])
-		if d.texture_albedo != tex:
-			d.texture_albedo = tex
+		# A decal showing the same mark as last frame keeps its place, turn, size and texture (each write
+		# is a transform or RenderingServer update); only its fade changes.
+		if not is_same(_decal_shown[k], s):
+			_decal_shown[k] = s
+			if d.texture_albedo != tex:
+				d.texture_albedo = tex
+			var r: float = s[3]
+			d.position = s[2] + Vector3(0, 0.3, 0)
+			d.rotation = Vector3(0, s[5], 0)
+			d.size = Vector3(r * 2.0, 1.2, r * 2.0)
 		var left := MARK_TICKS - (_now - float(s[4]))
-		var r: float = s[3]
 		var c: Color = s[6]
-		d.position = s[2] + Vector3(0, 0.3, 0)
-		d.rotation = Vector3(0, s[5], 0)
-		d.size = Vector3(r * 2.0, 1.2, r * 2.0)
-		d.modulate = Color(
+		var mod := Color(
 			c.r,
 			c.g,
 			c.b,
 			c.a * clampf(left / MARK_FADE, 0.0, 1.0) * clampf((_now - float(s[4])) / 6.0, 0.0, 1.0)
 		)
+		if d.modulate != mod:
+			d.modulate = mod
 		d.visible = tex != null
 
 

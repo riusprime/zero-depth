@@ -191,3 +191,68 @@ props, so this step's changes barely reach it. The owner's own perf log after th
    files.
 3. The shop tent texture (320 MB of video memory) and the lossless 1024 maps.
 4. The first open of the pick and the shop (20–45 ms: glyphs, first layout) and a boss's first build (27–31 ms).
+
+## 8. The effects layer (Step 40)
+
+- **Status:** RUN, indications only: another session's Godot processes ran during every run (the counts below), so
+  the quiet-machine protocol (`PERF_TOOLS.md` §2) was not met.
+- **Build:** base `259980cd` (branch `lead-v0120`); after: the working tree of `v0.12.0 Step 40` on parent `259980cd`
+  (branch `v0120-s40`); the debug native library copied from the main checkout (no native change). The base runs were
+  made in the same worktree with `src/` and `tests/` stashed, alternating base and after.
+- **Machine:** the owner's PC (i7-10700K, RTX 3060), driven by an agent. **Date:** 2026-11-19.
+
+**Where the layer's time goes.** `script.attack_form_view.gd` (`AttackFormCanvas.draw_at`) is mostly not the attack
+forms' own layout: split with temporary buckets (removed again), about 90 % of it is `VfxCore.finish`, the drawers every
+view hands the layer, and inside them the pack scenes' spawns. One base run, Seekers + Split Shot + Venom Core at L5:
+```
+script.attack_form_view.gd 1651   afc.vfx_finish 1468   (the canvas's own forms, bolts, begin and pools: about 180)
+vfx.hero.impact_fx.draw     481   imp.spray 182, imp.sparks 120, imp.hitpack 121 (3 impacts drawn a frame)
+vfx.status_visuals._draw_vfx 308  st.poison 246 (12 poisoned enemies a frame: the held cloud's touch 123, bubble spawns)
+vfx.canyon_shore_views 128, vfx.variant_views 123, vfx.fireball_views.draw_lights 114, vfx.finish_rest 101
+core.put 150 for 54 sprites a frame (every pool's per-sprite write together)
+pk.spawn 349 a frame (609 in the 430 of 751 frames that spawned): take 140 (put back in the tree 86, new instances),
+         restart 95, colour 88
+```
+So the per-sprite layout and its MultiMesh writes are a small part (`core.put` ~150 µs for every sprite); laying the
+sprites out once a tick with a shader would save little at the owner's ~73 fps and nothing of the spawns.
+
+**What changed (no look changes, EI-07):**
+- `ImpactFx`: each impact's spark and spray flight (direction times reach) is worked out once (again when a merge makes
+  it stronger), not every frame; the same sums in the same order, so the pieces land on the same spots
+  (`spray_at` shares the helper).
+- `HitPack.state`: int keys per layer instead of a new `[layer, tag, seed]` array per call, and the prune at most once a
+  tick (it ran on every new hit while more than 48 young instances were remembered; an instance past `PRUNE_TICKS` is
+  new whether kept or not, so nothing drawn changes).
+- `PackFx`: a pooled instance spawned again in the colour it holds skips the controller's setters (they rewrite every
+  material); the last `REST_PER_ID` (4) released instances of an id rest in the tree, hidden, for `REST_MS` (1 s) before
+  they are parked outside it, so a hit or a bubble that spawns again soon does not leave and rejoin the tree.
+- `VfxCore`: a floor mark's decal is placed only when it starts showing a mark (its fade still every frame); the probe's
+  drawer bucket names are built once per drawer, not every frame.
+
+**Before / after** (`--process --breakdown`, Starfall, 35 enemies, the cards above, 2560 × 1440, off screen, one process):
+```
+APPDATA=C:/Users/extri/Desktop/zerodepth/appdata-s40 "$GODOT" --path . --position -10000,-10000 --resolution 2560x1440 \
+  --windowed -s scripts/checks/frame_probe.gd -- --biome=starfall --enemies=35 --secs=20 --warm=3 --size=2560x1440 \
+  --process --breakdown --cards=gun_seekers:5,split_shot:5,venom_core:5
+```
+| run (in order) | Godot lines in `tasklist` before / after | avg frame ms | `attack_form_view.gd` µs | impact_fx | status_visuals | finish_rest | variant_views | fireball_views |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| base 1 | 6 / 2 | 28.264 | 1,424 | 382 | 279 | 96 | 82 | 91 |
+| after 1 | 2 / 6 | 28.677 | 1,509 | 260 | 239 | 92 | 322 | 155 |
+| base 2 | 6 / 6 | 29.250 | 1,733 | 396 | 294 | 114 | 186 | 166 |
+| after 2 | 6 / 4 | 26.309 | 1,197 | 221 | 213 | 77 | 187 | 125 |
+
+(An earlier base run of the same command, before any change: 1,366 µs, 6 Godot lines at its start.)
+- The drawers this step changed are lower in both after runs: `impact_fx` 382–396 → 221–260 µs (about −37 %),
+  `status_visuals` 279–294 → 213–239 (about −20 %), `finish_rest` 96–114 → 77–92.
+- **The layer's total is inside the spread** (base 1,366–1,733 µs, after 1,197–1,509): the scenario is not the same
+  from run to run (which enemies and variants spawn, how many pack scenes start), and drawers this step did not touch
+  (`variant_views` 82–322, `fireball_views` 91–166, `canyon_shore_views` 81–205) move by more than the gain.
+- **The target (under ~0.4 ms) is missed.** What is left is spread over about 25 drawers in other views
+  (`canyon_shore_views` and others belong to the parallel model steps) and the pack scenes' spawns (engine work:
+  restarting particles and animations); a native drawer would take neither. Not built; the lead decides.
+
+**Still frames** (`--fixed-fps 60 --shot-at=N:<png>`, frames 420 and 600 of the scenario, base then after): the same
+moment, the same impacts, sparks, poison clouds and bubbles, floor marks and seekers in both; the files are not
+byte-identical (the pack's GPU particles differ in small places, e.g. the smoke round a frozen enemy). A same-build
+repeat to show that variance: NOT YET RUN. Owner-only: whether anything looks different in play (OWNER ONLY).
