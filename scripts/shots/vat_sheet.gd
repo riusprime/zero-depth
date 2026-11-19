@@ -159,6 +159,7 @@ const SOLO := {
 	"cinder_priest": WorldReader.KIND_CINDER_PRIEST,  # v0.11.0 O17d
 	"kiln_beetle": WorldReader.KIND_KILN_BEETLE,  # v0.11.0 O17e
 	"frost_spitter": WorldReader.KIND_FROST_SPITTER,
+	"wire_weaver": WorldReader.KIND_WIRE_WEAVER,
 }
 const SOLO_FRAME := {
 	WorldReader.KIND_NEEDLE: [1.5, 0.4],
@@ -171,6 +172,7 @@ const SOLO_FRAME := {
 	WorldReader.KIND_CINDER_PRIEST: [2.6, 0.85],
 	WorldReader.KIND_KILN_BEETLE: [1.9, 0.3],
 	WorldReader.KIND_FROST_SPITTER: [2.0, 0.4],
+	WorldReader.KIND_WIRE_WEAVER: [2.0, 0.5],
 }
 const SOLO_PLAN := [
 	["idle (t 1.5 s)", {}, "idle"],
@@ -547,6 +549,7 @@ func _drive_solo(a: AvatarBase, steps: String) -> void:
 			WorldReader.KIND_STONE_THROWER: 1.8,
 			WorldReader.KIND_KILN_BEETLE: 1.2,
 			WorldReader.KIND_FROST_SPITTER: 2.6,
+			WorldReader.KIND_WIRE_WEAVER: 2.6,
 		}[_kind]
 		/ 60.0
 	)

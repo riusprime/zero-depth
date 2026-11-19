@@ -45,9 +45,26 @@ func test_the_ruins_signatures_and_variant_on_a_ruins_floor() -> void:
 	)
 	# R1 Wire Weaver: a live cable across the hero's way, drawn.
 	var weaver: int = await s.spawn(ActorStore.Kind.WIRE_WEAVER, "ENEMY_WIRE_WEAVER")
-	var strung: bool = await s.until(func() -> bool: return rr.cable_count() > 0, 900)
+	await s.until(func() -> bool: return _avatar(s, weaver) != null, 60)
+	var wav := _avatar(s, weaver) as WireWeaverAvatar
+	assert_not_null(wav, "the Weaver is drawn by its own avatar (the owner's model)")
+	assert_true(wav != null and wav.has_model, "on the owner's model")
+	# Its tell (the visor climbing) and the plant (the posts it carried are gone: they stand at the cable's ends).
+	var seen := {"told": false, "planted": false}
+	var strung: bool = await s.until(
+		func() -> bool:
+			if is_instance_valid(wav):
+				seen["told"] = (
+					seen["told"] or wav.visor_energy() > WireWeaverAvatar.VISOR_REST + 0.5
+				)
+				seen["planted"] = seen["planted"] or not wav.carrying()
+			return rr.cable_count() > 0 and seen["planted"],
+		900
+	)
 	assert_true(strung, "the Weaver's cable is drawn")
 	assert_gt(reader.cables().size(), 0, "and live in the sim")
+	assert_true(seen["told"], "its visor flashed through the tell")
+	assert_true(seen["planted"], "the posts it carried went in (it stands empty-handed)")
 	assert_true(await s.shoot_dead(weaver, KILL_FRAMES), "the Wire Weaver is shot dead")
 	# R2 Scrap Hound: it turns in only on a hero who attacks with his back to it; the visor flash is the tell.
 	var hound: int = await s.spawn(ActorStore.Kind.SCRAP_HOUND, "ENEMY_SCRAP_HOUND")

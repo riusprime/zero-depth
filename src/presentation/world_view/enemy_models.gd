@@ -40,6 +40,9 @@ const SPECS := {
 	# The Frost Spitter (scripts/assets/frost_spitter_prep.py: shell, body, head, sac, four two-part legs;
 	# FrostSpitterAvatar poses them), at the request row's 0.85 m.
 	&"frost_spitter": {"height": 0.85},
+	# The Wire Weaver (scripts/assets/wire_weaver_prep.py: body, head, spool, four two-part legs, two two-part
+	# arms; WireWeaverAvatar poses them), at the request row's 1.0 m.
+	&"wire_weaver": {"height": WireWeaverAvatar.HEIGHT},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 
