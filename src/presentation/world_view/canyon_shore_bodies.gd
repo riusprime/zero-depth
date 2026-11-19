@@ -6,26 +6,21 @@ extends RefCounted
 ## role colour, a dark shield-shaped face with one glowing gem visor, a charcoal body, grey segmented limbs with bone
 ## tips. Each one shape at a glance, and its tell drawn on the body:
 ## (the Cinder Priest is the owner's model now, CinderPriestAvatar; O17e: the Kiln Beetle,
-## KilnBeetleAvatar.)
-## - Frost Spitter (ranged blue): a lean four-legged body with a pale ice sac on its throat that swells through the
-##   windup.
+## KilnBeetleAvatar; the Frost Spitter, FrostSpitterAvatar.)
 ## - Glacier Turtle (tank bronze): a squat charcoal body on four thick legs under a small bronze cap, a big domed shell
 ##   of pale ice slabs held in front while it stands (WorldReader.shell_on).
 ## Their colours are their own (the prompts' role colours; not EnemyPalettes' table, which holds the 14 older kinds).
 ## Presentation only (EI-07): frame-time animation, nothing reaches the sim.
 
 const KINDS: Array[int] = [
-	WorldReader.KIND_FROST_SPITTER,
 	WorldReader.KIND_GLACIER_TURTLE,
 ]
 ## The body's top (m, for the health bar).
 const HEIGHTS := {
-	WorldReader.KIND_FROST_SPITTER: 0.85,
 	WorldReader.KIND_GLACIER_TURTLE: 1.0,
 }
 ## [body, trim, grey, eye] per kind (starting values: the prompts' role colours, the family's charcoal and greys).
 const COLORS := {
-	WorldReader.KIND_FROST_SPITTER: ["#3A6BD4", "#262A32", "#56606A", "#8FE6FF"],
 	WorldReader.KIND_GLACIER_TURTLE: ["#9A6232", "#2A2828", "#5C5A58", "#FFB04A"],
 }
 const TURTLE_BODY_SCALE := 1.25
@@ -34,7 +29,6 @@ const ICE := Color("#A6DAEE")
 const SHELL_ICE := Color("#A9D6EE") * 1.9
 const SHELL_TOP := Color("#DDF2FF") * 2.0
 const SHELL_RIM := Color("#5C8FB0") * 1.2
-const SAC := Color("#CFEFFF")
 
 
 static func is_kind(kind: int) -> bool:
@@ -50,8 +44,6 @@ static func color(kind: int, slot: StringName) -> Color:
 ## Builds `a`'s pieces under its body (HordeAvatar.setup).
 static func build(a: HordeAvatar) -> void:
 	match a.kind:
-		WorldReader.KIND_FROST_SPITTER:
-			_build_spitter(a)
 		WorldReader.KIND_GLACIER_TURTLE:
 			_build_turtle(a)
 
@@ -68,8 +60,6 @@ static func read(a: HordeAvatar, reader: WorldReader, i: int) -> void:
 static func pose(a: HordeAvatar, energy: float, _calm: bool) -> float:
 	var p := a.parts
 	match a.kind:
-		WorldReader.KIND_FROST_SPITTER:
-			(p["sac"] as Node3D).scale = Vector3.ONE * (1.0 + a.windup_pose() * 0.6)
 		WorldReader.KIND_GLACIER_TURTLE:
 			(p["shell"] as Node3D).visible = a.sig_on
 	return energy
@@ -127,23 +117,6 @@ static func _leg(
 		at + Vector3(0, -long * 0.48, long * 0.66 * side),
 		BONE
 	)
-
-
-static func _build_spitter(a: HordeAvatar) -> void:
-	var k := a.kind
-	a._piece(
-		a.body, _box(Vector3(0.56, 0.22, 0.4), 0.05), Vector3(-0.04, 0.46, 0), color(k, &"trim")
-	)
-	a._piece(
-		a.body, _box(Vector3(0.6, 0.18, 0.44), 0.07), Vector3(-0.06, 0.6, 0), color(k, &"body")
-	)
-	a._piece(a.body, _box(Vector3(0.2, 0.06, 0.3), 0.02), Vector3(-0.1, 0.71, 0), color(k, &"body"))
-	_face(a, Vector3(0.28, 0.52, 0), 1.1)
-	var sac := _joint(a, "sac", Vector3(0.22, 0.36, 0))
-	a._piece(sac, ArcCasterAvatar._octahedron(0.13), Vector3.ZERO, SAC)
-	for n in 2:
-		for side in [-1.0, 1.0]:
-			_leg(a, Vector3(0.12 - n * 0.28, 0.44, 0.18 * side), side, 0.46, 0.06)
 
 
 static func _build_turtle(a: HordeAvatar) -> void:

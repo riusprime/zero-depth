@@ -332,6 +332,23 @@ static func ranges(a: Node3D, rng: RandomNumberGenerator) -> Dictionary:
 			"_die_t": [-0.6, KilnBeetleAvatar.DEATH_SECONDS],
 			"_state": states4,
 		}
+	if a is FrostSpitterAvatar:
+		return {
+			"_t": [0.0, 40.0],
+			"_phase": [0.0, 1.0],
+			"_speed": [0.0, 3.4],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2.LEFT],
+			"_omega": [-4.0, 4.0],
+			"_stride": [0.0, 1.0],
+			"_coil": [0.0, 1.0],
+			"_tell": [0.0, 1.0],
+			"_rise": [0.0, 1.0],
+			"_spit_t": [-0.3, FrostSpitterAvatar.SPIT_SECONDS],
+			"_hurt_t": [-0.2, FrostSpitterAvatar.HURT_SECONDS],
+			"_hurt_leg": [0, 1, 2, 3],
+			"_die_t": [-0.6, FrostSpitterAvatar.DEATH_SECONDS],
+			"_state": states4,
+		}
 	if a is NeedleAvatar:
 		var dir := rng.randf() * TAU
 		return {

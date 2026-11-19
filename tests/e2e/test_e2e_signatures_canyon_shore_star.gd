@@ -8,8 +8,9 @@ extends GutTest
 ## - Red Canyon: the Cinder Priest's lava vent is drawn (v0.11.0 O17d: on its own avatar, its crystal flaring with the
 ##   vent's pulse); the Kiln Beetle's death leaves its burst (drawn); the Ember
 ##   Charger leaves a fire trail.
-## - Frozen Shore: the Frost Spitter's arc is drawn and its blob leaves a slick; the Glacier Turtle's shell stands and
-##   breaks under the shots before it dies; the Frost Charger leaves a slick trail.
+## - Frozen Shore: the Frost Spitter's arc is drawn and its blob leaves a slick (on the owner's model: its sac swells
+##   through the windup, and it plays its death); the Glacier Turtle's shell stands and breaks under the shots before
+##   it dies; the Frost Charger leaves a slick trail.
 ## - Starfall: the Star Warper's star mark is drawn; the Gravity Node draws the hero, standing with no input, toward
 ##   it (its reach's ring drawn while the hero is inside) and bends a hero shot; the Split Sniper's line splits in
 ##   three (its four lanes drawn).
@@ -115,13 +116,34 @@ func test_the_frozen_shore_signatures_and_variant_on_a_frozen_shore_floor() -> v
 	)
 	# R7 Frost Spitter: its lob's arc drawn, its blob landing as a slick.
 	var spitter: int = await s.spawn(ActorStore.Kind.FROST_SPITTER, "ENEMY_FROST_SPITTER")
-	var arc: bool = await s.until(func() -> bool: return int(cs.counts()["arcs"]) > 0, 1200)
+	# Drawn on the owner's model: its throat sac swells through the windup (the arc warns from the windup's start)
+	# before the blob leaves.
+	var spit := _avatar(s, spitter) as FrostSpitterAvatar
+	assert_not_null(spit, "the Frost Spitter is drawn by its own avatar")
+	var fullest := [0.0]
+	var swell := func() -> void:
+		if is_instance_valid(spit):
+			fullest[0] = maxf(fullest[0], spit.sac_swell())
+	var arc: bool = await s.until(
+		func() -> bool:
+			swell.call()
+			return int(cs.counts()["arcs"]) > 0,
+		1200
+	)
 	assert_true(arc, "the Spitter's arc is drawn")
 	var slick: bool = await s.until(
-		func() -> bool: return _trail(reader, Variants.TRAIL_SLICK), 600
+		func() -> bool:
+			swell.call()
+			return _trail(reader, Variants.TRAIL_SLICK),
+		600
 	)
+	assert_gt(float(fullest[0]), 0.3, "its sac swelled through the windup")
 	assert_true(slick, "its blob leaves a slick")
 	assert_true(await s.shoot_dead(spitter, KILL_FRAMES), "the Frost Spitter is shot dead")
+	var spit_falls: bool = await s.until(
+		func() -> bool: return is_instance_valid(spit) and spit.dying(), 20
+	)
+	assert_true(spit_falls, "its body plays its death")
 	# R8 Glacier Turtle: its shell stands, and breaks under the shots before the turtle dies.
 	var turtle: int = await s.spawn(ActorStore.Kind.GLACIER_TURTLE, "ENEMY_GLACIER_TURTLE")
 	assert_true(reader.shell_on(w.actors.index_of(turtle)), "the Turtle's shell stands")

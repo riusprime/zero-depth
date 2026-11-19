@@ -37,6 +37,9 @@ const SPECS := {
 	# The Kiln Beetle (scripts/assets/o17_prep_kiln_beetle.py: shell, body, head, eight two-part legs;
 	# KilnBeetleAvatar poses them), at the request row's 0.7 m.
 	&"kiln_beetle": {"height": 0.7},
+	# The Frost Spitter (scripts/assets/frost_spitter_prep.py: shell, body, head, sac, four two-part legs;
+	# FrostSpitterAvatar poses them), at the request row's 0.85 m.
+	&"frost_spitter": {"height": 0.85},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 
