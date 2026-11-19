@@ -436,13 +436,23 @@ def _headline(frames, full, passes, censuses, play):
         if spans:
             k = len(spans)
             proc = sum(f.span[0] for f in spans) / k
-            timed = sum(sum(f.cats[c] for c in f.cats if not c.startswith("engine")) for f in spans) / k / 1000.0
-            L.append("- **Main thread, in order**: the process step %.2f ms (the timed sim, views and listeners %.2f, "
+            # The sim's ticks and their `ticked` listeners run in the physics steps (SimDriver._physics_process:
+            # step_once); the process step holds the views' once-a-frame sync and its listeners (frame_synced) and
+            # every other node's _process. Without the breakdown's buckets, every timed part counts in the process step.
+            if any(f.bd and "frame_synced" in f.bd for f in spans):
+                timed = sum(f.bd.get("frame_synced", 0.0) for f in spans if f.bd) / k / 1000.0
+                stepped = sum(f.bd.get("step_once", 0.0) for f in spans if f.bd) / k / 1000.0
+            else:
+                timed = sum(sum(f.cats[c] for c in f.cats if not c.startswith("engine")) for f in spans) / k / 1000.0
+                stepped = 0.0
+            phys = sum(f.span[3] for f in spans) / k
+            L.append("- **Main thread, in order**: the process step %.2f ms (the views' sync and its listeners %.2f, "
                      "the rest of the nodes' _process %.2f), after it until the draw %.2f, the draw %.2f, then until "
-                     "the next step (events, input, a frame cap) %.2f, the physics steps %.2f." % (
+                     "the next step (events, input, a frame cap) %.2f, the physics steps %.2f (the sim's ticks and "
+                     "their listeners %.2f, the engine's own %.2f)." % (
                          proc, timed, max(proc - timed, 0.0), sum(f.span[1] for f in spans) / k,
                          sum(f.draw for f in spans) / k, sum(f.span[2] for f in spans) / k,
-                         sum(f.span[3] for f in spans) / k))
+                         phys, stepped, max(phys - stepped, 0.0)))
         waits = [w for w in (_wait(f) for f in base) if w >= 0]
         if waits:
             L.append("- **Inside engine+draw**: the draw %.2f ms a frame, of which recording the viewports %.2f ms "

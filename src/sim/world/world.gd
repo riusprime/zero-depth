@@ -579,6 +579,11 @@ var surge_spawned := 0
 ## The perf probe's phase timer (scripts/checks/perf_probe.gd --phases); null in play. Told where each tick
 ## phase begins and ends (begin/end with the phase's name), it never reads or writes state: not hashed, not copied.
 var phase_probe: Object = null
+## The Seekers darts' hero-centred targets by rank (Seekers.target), kept only while the projectile phase steers
+## (NativeShots.sweep turns it on and off): nothing moves, dies or turns invulnerable while the shots steer, so every
+## dart of one rank gets the same answer. A cache of a pure read: not hashed, not copied, empty outside the steering.
+var seek_memo := {}
+var seek_memo_on := false
 ## The native side (NativeWorld.make: the C++ library's ZdWorld), where the hot loops of phases 3, 5 and 6 run; null
 ## only without the library, and then step() does nothing but count its tick (NativeWorld.MISSING is printed). Not
 ## hashed, not copied: it holds caches only, and a restored world makes its own.

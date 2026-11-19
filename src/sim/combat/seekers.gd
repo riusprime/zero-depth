@@ -56,6 +56,18 @@ static func target(w: World, pi: int) -> int:
 		return picked
 	var n := maxi(1, SeekerMods.count(w, spec, SeekerMods.mask(spec)))
 	var rank := w.projectiles.ids[pi] % n
+	if w.seek_memo_on:
+		if w.seek_memo.has(rank):
+			return w.seek_memo[rank]
+		var found := _ranked(w, rank)
+		w.seek_memo[rank] = found
+		return found
+	return _ranked(w, rank)
+
+
+## The enemy at `rank` among those within SEEK_M of the hero and in its sight (not invulnerable), nearest first (a
+## tie: the lower index), the ranks wrapping round them; -1 when there is none.
+static func _ranked(w: World, rank: int) -> int:
 	var hero := w.player_pos()
 	var a := w.actors
 	var ds := PackedFloat32Array()

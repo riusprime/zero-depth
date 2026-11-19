@@ -135,6 +135,8 @@ The outcome hashes are the "same result" proof of a speed-up that must not chang
 | `scripts/checks/view_dump.gd` | `godot --path . --fixed-fps 60 --resolution 640x360 --windowed --position -10000,-10000 -s scripts/checks/view_dump.gd -- --out=build/view_dump.txt [--frames=900]` | a frame-by-frame dump of the bulk-reading views' nodes and state over one seeded fight: diff two trees' dumps line by line |
 | `scripts/checks/hud_still_diff.gd` | `godot --path . --position -10000,-10000 -s scripts/checks/hud_still_diff.gd -- --scene=fight\|run [--size=1600x900] [--ui=110]` | pixels that differ, HUD drawn from textures against drawn directly, with the noise floor (two captures of the same mode) |
 | `scripts/bench/view_bench.gd` | see its header | the view's CPU side over the horde scene (lavapipe in a container: scaling only) |
+| `scripts/checks/ui_spike_probe.gd` | `godot --path . --position -10000,-10000 --resolution 2560x1440 --windowed -s scripts/checks/ui_spike_probe.gd -- [--rounds=4] [--only=shop,pick,boss,walk]` | the real game's one-frame spikes: the shop and an altar's pick opening, a boss appearing (the slowest frame and the buckets after each); `walk`: the mean frame and buckets of floor 1 |
+| `scripts/checks/texture_census.gd` | `godot --path . --position -10000,-10000 --resolution 2560x1440 --windowed -s scripts/checks/texture_census.gd -- [--top=40]` | counts: every texture the scene's nodes use on floor 1, its size estimated from its import, by folder and import, the biggest first; beside the renderer's texture_mem_used |
 
 ## 4. Reading the numbers: mistakes already made
 
@@ -188,6 +190,7 @@ output, build and machine.
 | [`PERF_FINAL.md`](../roadmap/v0.11.1/evidence/PERF_FINAL.md) | the final code of v0.11.1 (the native core the only sim), with PERF_W8's build measured again back to back | 20 enemies 8.7–9.2 ms, 60 heavy 24.3 ms, 120 swarmers 15.5 ms; the tick at 120 enemies 0.54 ms; the Ring 0.9 ms over the Gun alone; a daytime run reads about 0.7 ms higher than a night one |
 | [`PERF_LOG_GPU.md`](../roadmap/v0.12.0/evidence/PERF_LOG_GPU.md) | the perf log's GPU-per-pass, census and frame-order columns, proved on the frame probe's Starfall heavy fight at 2560 × 1440 (60 enemies) | 35 fps, CPU-bound 98 %: the GPU 14.6 ms of a 28.8 ms frame, half of it the transparent pass (7.6 ms); the process step 13.9 ms, the draw 6.6 ms, the physics steps 4.4 ms; the recorder 0.8 ms a frame |
 | [`COMBAT_FRAME_TIME.md`](../roadmap/v0.12.0/evidence/COMBAT_FRAME_TIME.md) | the owner's three slow fights (F18): Seekers + Venom, Starfall with 35 enemies, Frozen Shore at 1600 × 900, on a busy machine | Seekers + Venom +3.3 ms over the Gun alone; the shot views' sync 300–400 µs a tick shorter with the kind memo; every scene about twice the owner's frame rate |
+| [`CPU_FRAME_TIME.md`](../roadmap/v0.12.0/evidence/CPU_FRAME_TIME.md) | the owner's 40 fps report: the main thread's parts, the Seekers' homing, the shop and pick spikes, the video memory | the physics steps are the sim (no Godot physics); the Seekers' steering 2.92 → 1.86 ms a tick, same hash; the shop's re-open 16–25 → 12–16 ms; one 8192² shop texture is about 341 MB of video memory |
 
 The quiet run after the batched avatars, the bulk reads and the shard drops is **NOT YET RUN** (PROGRESS "Where we
 are").

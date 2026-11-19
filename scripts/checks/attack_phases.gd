@@ -8,8 +8,11 @@ extends SceneTree
 ## projectiles every 60 ticks: the same before and after a speed-up.
 ## --calls=1 also times the helpers a landed hero hit calls (microseconds a call, CALL_REPS calls each, on the world as
 ## the run left it, against a burning enemy when there is one). They only read the world.
+## --cards=<id[:level],...> grants exactly those cards instead of the heavy build (scripts/checks/probe_build.gd, as the
+## frame probe's option), e.g. --cards=gun_seekers:5,venom_core:5 for the Seekers' homing.
 ## Writes nothing tracked; paste the output into evidence by hand.
 ##   godot --headless --path . -s scripts/checks/attack_phases.gd [-- --enemies=60] [-- --ticks=1800] [-- --calls=1]
+##     [-- --cards=gun_seekers:5]
 
 const BIOME := &"red_canyon"
 const BOT_SEED := 20261010
@@ -39,14 +42,22 @@ const HEAVY_KEYS: Array[StringName] = [
 ]
 const HEAVY_LEVEL := 5
 
+const ProbeBuild := preload("res://scripts/checks/probe_build.gd")
+
 var _spawned := 0
+var _cards := ""
+var _failed := false
 
 
 func _initialize() -> void:
 	var args := ScriptArgs.parse()
+	_cards = String(args.get("--cards", ""))
 	var w := _measure(
 		ContentRepository.load_all(), int(args.get("--enemies", 60)), int(args.get("--ticks", 1800))
 	)
+	if _failed:
+		quit(1)
+		return
 	if args.has("--calls"):
 		_calls(w)
 	quit(0)
@@ -56,12 +67,22 @@ func _measure(repo: ContentRepository, n: int, ticks: int) -> World:
 	var w := PlaygroundScenario.build(repo, &"gun", repo.get_def(&"biomes", BIOME))
 	var api := PlaygroundApi.new(w)
 	var granted: PackedStringArray = []
-	for e: Dictionary in api.catalog():
-		if BUILD_KEYS.has(e["name_key"]) and api.grant_now(e["code"], 3):
-			granted.append(String(e["name_key"]))
-	for e: Dictionary in api.catalog():
-		if HEAVY_KEYS.has(e["name_key"]) and api.grant_now(e["code"], HEAVY_LEVEL):
-			granted.append(String(e["name_key"]))
+	if _cards != "":
+		var build = ProbeBuild.new()
+		build.parse("cards=" + _cards)
+		var errors: PackedStringArray = build.grant(api)
+		if not errors.is_empty():
+			push_error("attack_phases: " + ", ".join(errors))
+			_failed = true
+			return w
+		granted.append(build.describe())
+	else:
+		for e: Dictionary in api.catalog():
+			if BUILD_KEYS.has(e["name_key"]) and api.grant_now(e["code"], 3):
+				granted.append(String(e["name_key"]))
+		for e: Dictionary in api.catalog():
+			if HEAVY_KEYS.has(e["name_key"]) and api.grant_now(e["code"], HEAVY_LEVEL):
+				granted.append(String(e["name_key"]))
 	var bot := FightBot.new(BOT_SEED)
 	var timer := PerfBreakdown.PhaseTimer.new()
 	w.phase_probe = timer

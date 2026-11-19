@@ -64,6 +64,9 @@ const WORLD_KEPT := {
 	&"curse_totals": "rebuilt: Curses.total's cache, summed from curses_owned (v0.7.0 audit C-12)",
 	&"phase_probe": "debug (v0.8.0 HS): the perf probe's phase timer, null in play, not state",
 	&"native": "setup: the native side (NativeWorld.make), caches only, not state",
+	&"seek_memo":
+	"transient within the projectile phase's steering (Seekers.target): empty between ticks",
+	&"seek_memo_on": "transient within the projectile phase's steering: false between ticks",
 	&"_wall_rev":
 	"derived: counts the wall grid's changes (the native side's cue to take the walls again)",
 	&"debug_aoe_misses": "debug (v0.8.0 HS): a test's superset check, off in play",
