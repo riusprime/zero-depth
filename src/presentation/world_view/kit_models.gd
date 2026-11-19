@@ -149,6 +149,38 @@ const SPECS := {
 		"tint": 0.0,
 		"min_foot": 1.9
 	},
+	# The owner's room pieces cut out of three packed files (scripts/assets/rooms_v0120_prep.py, sized evenly to their
+	# request rows' heights, so "foot" is the model's own footprint, which the rows' wishes do not always match). No
+	# "tint": they take the biome's hue like the rest of the kit. Role &"room": a purpose room's piece (RoomPurposes'
+	# palettes name it), drawn at the palette's height (0: its own), so the quarry's block stacks keep their steps.
+	&"camp_tent": {"yaw": 0.0, "height": 1.8, "role": &"room", "foot": Vector2(2.35, 1.82)},
+	&"log_seat": {"yaw": 0.0, "height": 0.4, "role": &"room", "foot": Vector2(0.99, 0.33)},
+	&"cook_pot": {"yaw": 0.0, "height": 0.9, "role": &"room", "foot": Vector2(0.8, 0.8)},
+	&"statue_whole": {"yaw": 0.0, "height": 3.2, "role": &"room", "foot": Vector2(1.19, 1.28)},
+	&"statue_broken": {"yaw": 0.0, "height": 1.41, "role": &"room", "foot": Vector2(3.2, 1.67)},
+	&"column_round": {"yaw": 0.0, "height": 3.6, "role": &"room", "foot": Vector2(1.21, 1.26)},
+	&"column_drum": {"yaw": 0.0, "height": 0.8, "role": &"room", "foot": Vector2(1.46, 0.97)},
+	&"quarry_crane": {"yaw": 0.0, "height": 4.0, "role": &"room", "foot": Vector2(4.34, 1.66)},
+	&"mine_cart": {"yaw": 0.0, "height": 1.0, "role": &"room", "foot": Vector2(1.65, 0.66)},
+	&"stone_block": {"yaw": 0.0, "height": 0.8, "role": &"room", "foot": Vector2(1.46, 1.01)},
+	&"tool_rack": {"yaw": 0.0, "height": 1.6, "role": &"room", "foot": Vector2(1.46, 0.62)},
+	# The Ruins' own: the post and the sign frame stand in a wall's niche (pool wall_prop), the spool is square cover
+	# and the dumpster long cover.
+	&"metal_post": {"yaw": 0.0, "height": 1.8, "role": &"biome", "foot": Vector2(0.89, 0.57)},
+	&"sign_frame": {"yaw": 0.0, "height": 1.6, "role": &"biome", "foot": Vector2(1.85, 0.47)},
+	&"cable_spool":
+	{"yaw": 0.0, "height": 0.7, "role": &"biome", "foot": Vector2(1.14, 0.79), "max_foot": 1.2},
+	&"dumpster":
+	{
+		"yaw": 0.0,
+		"height": 1.2,
+		"role": &"biome",
+		"foot": Vector2(1.56, 1.18),
+		"min_foot": 0.9,
+		"max_foot": 1.4
+	},
+	# Frozen Shore's sea ice: the floes drifting past the floor's edge (BiomeEdge), drawn flat.
+	&"ice_floe": {"yaw": 0.0, "height": 0.49, "role": &"void", "foot": Vector2(2.0, 1.89)},
 }
 
 ## The chest's lid seam, as a fraction of its height (an empty band in its vertex heights at 0.55-0.575; the

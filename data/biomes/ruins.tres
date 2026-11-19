@@ -58,7 +58,8 @@ pools = {
 &"crate_stack": 6,
 &"rock_large": 2,
 &"tire_stack": 1,
-&"column_broken": 1
+&"column_broken": 1,
+&"cable_spool": 1
 },
 &"cover_block": {
 &"slab_concrete": 5,
@@ -68,7 +69,8 @@ pools = {
 &"slab_wide": 3,
 &"slab_concrete": 2,
 &"barricade": 1,
-&"pipe_bundle": 1
+&"pipe_bundle": 1,
+&"dumpster": 1
 },
 &"cover_wall": {
 &"wall_broken": 3,
@@ -86,7 +88,9 @@ pools = {
 &"slab_concrete": 1
 },
 &"wall_prop": {
-&"ladder_frame": 1
+&"ladder_frame": 1,
+&"metal_post": 1,
+&"sign_frame": 1
 }
 }
 max_per_floor = {
