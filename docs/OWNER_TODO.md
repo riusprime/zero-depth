@@ -190,16 +190,16 @@ the short summary.
 
 | ✓ | id | Role colour | In-game size | Prompt (after the character prefix, then the 3D step) |
 |---|---|---|---|---|
-| ☐ | `wire_weaver` | bomber yellow `#E8C22E` | — | a spindly cable-laying walker: a faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, four long grey segmented arms with bone tips holding two short grey cable posts with sparking tops (the two posts as separate objects), a coil of cable on its back, four thin grey segmented legs; about 5k triangles |
+| ✓ | `wire_weaver` | bomber yellow `#E8C22E` | — | a spindly cable-laying walker: a faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, four long grey segmented arms with bone tips holding two short grey cable posts with sparking tops (the two posts as separate objects), a coil of cable on its back, four thin grey segmented legs; about 5k triangles **Arrived 2026-11-19, animated and on VAT (v0.12.0 step 37).** |
 | ✓ | `scrap_hound` | melee red-orange `#C93A1E` | — | a lean fast four-legged hound: a low faceted ridged shell in [COLOUR] along the back, a dark shield-shaped face on a long snout with one glowing [COLOUR] gem visor, a charcoal body, four long thin grey segmented legs with bone-coloured claws, a short grey segmented tail, a few scrap plates bolted on its flanks; about 5k triangles |
 | ✓ | `rock_lurker` | melee red-orange `#C93A1E` | — | a crouched creature disguised as a boulder: a round rough faceted ridged grey rock shell covering its whole back, thin glowing [COLOUR] cracks across the rock, a dark shield-shaped face half hidden under the rock edge with one glowing [COLOUR] gem visor, a charcoal body, four thick short grey segmented legs with bone-coloured claws tucked in; about 5k triangles |
 | ✓ | `stone_thrower` | tank bronze `#9A6232` | — | a hunched brute with huge arms: a faceted ridged shell in [COLOUR] on its back, a small dark shield-shaped face with one glowing [COLOUR] gem visor, a heavy charcoal chest, two huge grey segmented arms with big bone-tipped hands raised overhead holding a rough grey rock (the rock as a separate object), two short stumpy grey legs; about 5k triangles |
 | ✓ | `kiln_beetle` | bomber yellow `#E8C22E` | — | a slow, heavy armoured beetle: a round faceted ridged shell in [COLOUR] with vent slits, a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, a big glowing [COLOUR] kiln belly showing through a gap under the shell, six thick grey segmented legs with bone tips; about 5k triangles |
 | ✓ | `cinder_priest` | ranged violet `#8A50D8` | — | a robed priest: a faceted ridged hood and long robe-like shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body under it, grey segmented arms holding a tall grey staff topped with a glowing [COLOUR] ember crystal, a hem of grey segmented spikes with bone tips, no legs showing; about 5k triangles |
-| ☐ | `frost_spitter` | ranged blue `#3A6BD4` | — | a lean four-legged spitter: a faceted ridged shell in [COLOUR], a dark shield-shaped face on a short wide mouth with one glowing [COLOUR] gem visor, a charcoal body, a big pale ice-blue sac swelling on its throat, four grey segmented legs with bone tips; about 5k triangles |
-| ☐ | `glacier_turtle` | tank bronze `#9A6232` | — | a squat turtle: a charcoal body, a dark shield-shaped face with one glowing [COLOUR] gem visor on a short grey neck, four thick grey segmented legs with bone tips, a big domed ice shell of pale blue faceted slabs held in front (the shell as a separate object), a small faceted ridged cap in [COLOUR] on its back; about 5k triangles |
+| ✓ | `frost_spitter` | ranged blue `#3A6BD4` | — | a lean four-legged spitter: a faceted ridged shell in [COLOUR], a dark shield-shaped face on a short wide mouth with one glowing [COLOUR] gem visor, a charcoal body, a big pale ice-blue sac swelling on its throat, four grey segmented legs with bone tips; about 5k triangles **Arrived 2026-11-19, animated and on VAT (v0.12.0 step 37).** |
+| ✓ | `glacier_turtle` | tank bronze `#9A6232` | — | a squat turtle: a charcoal body, a dark shield-shaped face with one glowing [COLOUR] gem visor on a short grey neck, four thick grey segmented legs with bone tips, a big domed ice shell of pale blue faceted slabs held in front (the shell as a separate object), a small faceted ridged cap in [COLOUR] on its back; about 5k triangles **Arrived 2026-11-19, animated and on VAT (v0.12.0 step 37).** |
 | ☐ | `star_warper` | ranged violet `#8A50D8` | — | a slim floating caster: a five-pointed star-shaped faceted ridged head in [COLOUR], a dark shield-shaped face in the middle of the star with one glowing [COLOUR] gem visor, a narrow charcoal body, two thin grey segmented arms with bone tips, a tapering grey tail instead of legs, a few small [COLOUR] star shards around it; about 5k triangles |
-| ☐ | `gravity_node` | bomber yellow `#E8C22E` | — | a floating orb, no legs: a round faceted ridged shell in [COLOUR] split in two halves around a charcoal core, a dark shield-shaped face plate on the front with one glowing [COLOUR] gem visor, two or three thin grey rings circling it at different tilts (the rings as separate parts), small bone-coloured studs on the rings; about 5k triangles |
+| ✓ | `gravity_node` | bomber yellow `#E8C22E` | — | a floating orb, no legs: a round faceted ridged shell in [COLOUR] split in two halves around a charcoal core, a dark shield-shaped face plate on the front with one glowing [COLOUR] gem visor, two or three thin grey rings circling it at different tilts (the rings as separate parts), small bone-coloured studs on the rings; about 5k triangles **Arrived 2026-11-19, animated and on VAT (v0.12.0 step 37).** |
 
 Role colours for kinds that don't match the eight above one to one: the Weaver, Kiln Beetle and Gravity Node
 (area control, bomber) take the bomber yellow; the Scrap Hound and Rock Lurker (flanker, ambush) take the melee
@@ -233,15 +233,15 @@ The biome variants (Rubble Warden, Dim Needle, Ember Charger, Frost Charger, Spl
 
 | ✓ | id | Size | Prompt (after the kit prefix) |
 |---|---|---|---|
-| ☐ | `javelin` | 2.0 long | the Warlord's leaf-headed crystal javelin, a red faceted crystal tip, a grey worn steel shaft |
+| ✓ | `javelin` | 2.0 long | the Warlord's leaf-headed crystal javelin, a red faceted crystal tip, a grey worn steel shaft **Arrived 2026-11-19, installed (v0.12.0 step 39).** |
 | ☐ | `brood_egg` | 0.6 tall | the Brood Mother's leathery green-grey egg with glowing veins, slightly cracked at the top |
-| ☐ | `hour_clock` | 0.7 across | the small clock that floats over each of the Clockwork Judge's hour orbs: a round brass pocket-clock face, cream dial, two dark hands (the minute hand a separate piece, so the game can turn it). Today a clock built in code stands in |
+| ✓ | `hour_clock` | 0.7 across | the small clock that floats over each of the Clockwork Judge's hour orbs: a round brass pocket-clock face, cream dial, two dark hands (the minute hand a separate piece, so the game can turn it). **Arrived 2026-11-19, installed (v0.12.0 step 39).** |
 | ☐ | `stopped_gear` | 5.4 across, 0.8 thick | one large brass cog with square teeth for the Judge's gear walls, standing on its edge (the game sinks it so 1.6 m shows). Today a cog built in code stands in |
-| ☐ | `siege_cart` | 2.0 long, 1.3 wide, 1.1 tall | the Siege Engine's ammo cart: a squat red-painted iron wagon on four heavy grey wheels, a tow bar at the front, three big glowing red shells lying in its bed (the front on +X). Today a wagon built in code from boxes stands in |
+| ✓ | `siege_cart` | 2.0 long, 1.3 wide, 1.1 tall | the Siege Engine's ammo cart: a squat red-painted iron wagon on four heavy grey wheels, a tow bar at the front, three big glowing red shells lying in its bed (the front on +X). **Arrived 2026-11-19, installed (v0.12.0 step 39).** |
 | ☐ | `siege_boulder` | 3 × 3, 1.1 tall | the crater wall a Siege Engine shell leaves: a squat heap of broken grey-brown rock filling a 3 m square, flat-topped, low enough to see a person behind it, with a crack pattern that can glow orange. Today the kit's `rock_large` stretched to the square stands in |
 | ☐ | `foundry_slab` | 4.0 across (radius 2), 0.15 tall | a cooled lava slab the Foundry's pools leave: a flat round plate of dark cracked basalt, its top lightly faceted, a thin cool blue-grey rim round its edge, hairline cracks that can glow dull orange (the game scales it to the pool). Today a shader disc on the floor stands in |
 | ☐ | `foundry_plate` | fits the Foundry's model | the Forged Plate: riveted steel armour plates over the Foundry's furnace body and hood (a separate mesh worn over the model, so it can come off). Today a lit metallic shell grown off the model's own skin stands in |
-| ☐ | `war_banner` | 3.2 tall, its cloth 1.1 × 1.5 | the Warlord's War Banner, planted in the floor: a tall grey steel pole with a red leaf spearhead, a crossbar near the top, and a red cloth with a gold hem and the Warlord's glowing red emblem hanging from it (its cloth a separate mesh, so it can wave, burn and fly off when the pole snaps). Today a pole, a bar and a waving quad built in code stand in |
+| ✓ | `war_banner` | 3.2 tall, its cloth 1.1 × 1.5 | the Warlord's War Banner, planted in the floor: a tall grey steel pole with a red leaf spearhead, a crossbar near the top, and a red cloth with a gold hem and the Warlord's glowing red emblem hanging from it (its cloth a separate mesh, so it can wave, burn and fly off when the pole snaps). **Arrived 2026-11-19, installed (v0.12.0 step 39).** |
 | ☐ | `lens_glass` | a strip 8 long, 1 wide, flat | the Hive Lens's burnt glass: a flat strip of scorched, cracked dark glass fused into the floor, its cracks and edge glowing hot rose-pink (the game stretches it to the strip and cools its glow). Today a shader strip on the floor stands in |
 
 ### 3.6 Room pieces (P2–P3)
@@ -249,28 +249,28 @@ Still to come (the rest of the list arrived 2026-10-18, §3.0). All after the ki
 
 | Biome | id | Size (W×D×H m) | Prompt |
 |---|---|---|---|
-| Ruins | `metal_post` | 0.2 × 0.2 × 1.8 | a bent rusty metal post with a snapped bracket at the top |
-| Ruins | `dumpster` | 1.8 × 1.0 × 1.2 | a dented rusty dumpster with its lid half open, junk spilling over |
-| Ruins | `cable_spool` | 0.9 × 0.9 × 0.7 | a big wooden cable spool lying on its side |
-| Ruins | `sign_frame` | 1.2 × 0.2 × 1.6 | a blank fallen billboard frame on two posts, no text |
-| Frozen Shore | `ice_floe` | 2 × 1.6 × 0.12 | a flat cracked slab of floating sea ice, seen from above (the file you sent under this name is a frozen boat; it went in as `boat_wreck`) |
+| Ruins | `metal_post` | 0.2 × 0.2 × 1.8 | a bent rusty metal post with a snapped bracket at the top **Arrived 2026-11-19, installed (v0.12.0 step 36).** |
+| Ruins | `dumpster` | 1.8 × 1.0 × 1.2 | a dented rusty dumpster with its lid half open, junk spilling over **Arrived 2026-11-19, installed (v0.12.0 step 36).** |
+| Ruins | `cable_spool` | 0.9 × 0.9 × 0.7 | a big wooden cable spool lying on its side **Arrived 2026-11-19, installed (v0.12.0 step 36).** |
+| Ruins | `sign_frame` | 1.2 × 0.2 × 1.6 | a blank fallen billboard frame on two posts, no text **Arrived 2026-11-19, installed (v0.12.0 step 36).** |
+| Frozen Shore | `ice_floe` | 2 × 1.6 × 0.12 | a flat cracked slab of floating sea ice, seen from above (the file you sent under this name is a frozen boat; it went in as `boat_wreck`) **Arrived 2026-11-19, installed (v0.12.0 step 36).** |
 
 **v0.11.0 purpose rooms (owner, 2026-11-07: "Add to my list"; G2_ROOMS.md).** The camp, collapsed hall and quarry
 rooms use stand-ins until these arrive. All after the kit prefix; sizes are targets, not measurements.
 
 | ✓ | Room | id | Size (W×D×H m) | Prompt |
 |---|---|---|---|---|
-| ☐ | Camp | `camp_tent` | 2.4 × 2.0 × 1.8 | a patched canvas lean-to tent on bent metal poles, one side open, a rolled blanket inside |
-| ☐ | Camp | `log_seat` | 1.4 × 0.4 × 0.4 | a short log split lengthwise as a bench, worn smooth on top |
-| ☐ | Camp | `cook_pot` | 0.7 × 0.7 × 0.9 | a dented iron cooking pot hanging from a tripod of three metal rods over cold ashes |
-| ☐ | Hall | `statue_whole` | 1.2 × 1.2 × 3.2 | a weathered stone statue of a hooded figure holding a staff, on a square plinth |
-| ☐ | Hall | `statue_broken` | 1.4 × 1.2 × 1.8 | the same hooded statue broken at the waist, its upper half lying beside the plinth |
-| ☐ | Hall | `column_round` | 0.8 × 0.8 × 3.6 | a tall round fluted stone column with a simple capital, chipped |
-| ☐ | Hall | `column_drum` | 0.8 × 1.6 × 0.8 | a fallen round column drum lying on its side, cracked |
-| ☐ | Quarry | `quarry_crane` | 2.0 × 1.6 × 4.0 | a wooden quarry hoist: a timber frame with a jib arm, a pulley, a rope and a hanging stone block |
-| ☐ | Quarry | `mine_cart` | 1.4 × 0.9 × 1.0 | a small rusty mine cart full of rubble on a short length of rail |
-| ☐ | Quarry | `stone_block` | 1.2 × 1.2 × 0.8 | a roughly cut rectangular stone block with chisel marks (tinted per biome by the game) |
-| ☐ | Quarry | `tool_rack` | 1.4 × 0.4 × 1.6 | a wooden rack with pickaxes, a sledgehammer and shovels leaning in it |
+| ✓ | Camp | `camp_tent` | 2.4 × 2.0 × 1.8 | a patched canvas lean-to tent on bent metal poles, one side open, a rolled blanket inside |
+| ✓ | Camp | `log_seat` | 1.4 × 0.4 × 0.4 | a short log split lengthwise as a bench, worn smooth on top |
+| ✓ | Camp | `cook_pot` | 0.7 × 0.7 × 0.9 | a dented iron cooking pot hanging from a tripod of three metal rods over cold ashes |
+| ✓ | Hall | `statue_whole` | 1.2 × 1.2 × 3.2 | a weathered stone statue of a hooded figure holding a staff, on a square plinth |
+| ✓ | Hall | `statue_broken` | 1.4 × 1.2 × 1.8 | the same hooded statue broken at the waist, its upper half lying beside the plinth |
+| ✓ | Hall | `column_round` | 0.8 × 0.8 × 3.6 | a tall round fluted stone column with a simple capital, chipped |
+| ✓ | Hall | `column_drum` | 0.8 × 1.6 × 0.8 | a fallen round column drum lying on its side, cracked |
+| ✓ | Quarry | `quarry_crane` | 2.0 × 1.6 × 4.0 | a wooden quarry hoist: a timber frame with a jib arm, a pulley, a rope and a hanging stone block |
+| ✓ | Quarry | `mine_cart` | 1.4 × 0.9 × 1.0 | a small rusty mine cart full of rubble on a short length of rail |
+| ✓ | Quarry | `stone_block` | 1.2 × 1.2 × 0.8 | a roughly cut rectangular stone block with chisel marks (tinted per biome by the game) |
+| ✓ | Quarry | `tool_rack` | 1.4 × 0.4 × 1.6 | a wooden rack with pickaxes, a sledgehammer and shovels leaning in it |
 | ☐ | All | bigger focal pieces | — | larger versions of the biome focal pieces (the Ruins arch, the Starfall observatory and monoliths) so they read across a 3x3 room; or say if the game may scale the existing ones |
 
 ### 3.7 Boss animation clips (P3: you're not sure yet)
