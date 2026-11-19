@@ -210,6 +210,11 @@ func test_the_starfall_signatures_and_variant_on_a_starfall_floor() -> void:
 	await s.e.frames(60)
 	var d1 := w.player_pos().distance_to(w.actors.pos(w.actors.index_of(node)))
 	assert_lt(d1, d0 - 0.2, "standing with no input, the hero drifts toward it")
+	# Drawn on the owner's model: its rings and core show the draw on the hero.
+	var orb := _avatar(s, node) as GravityNodeAvatar
+	assert_not_null(orb, "the Gravity Node is drawn by its own avatar")
+	if orb != null:
+		assert_gt(orb.draw_pose(), 0.1, "it shows its draw on the hero")
 	assert_gt(sf.swirl_count(), 0, "its reach's ring is drawn while the hero is inside")
 	assert_true(await s.e.walk_to(start, 0.5), "the hero walks back out of its pull")
 	assert_eq(sf.swirl_count(), 0, "out of its reach: the ring is gone")

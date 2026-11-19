@@ -43,6 +43,9 @@ const SPECS := {
 	# The Wire Weaver (scripts/assets/wire_weaver_prep.py: body, head, spool, four two-part legs, two two-part
 	# arms; WireWeaverAvatar poses them), at the request row's 1.0 m.
 	&"wire_weaver": {"height": WireWeaverAvatar.HEIGHT},
+	# The Gravity Node (scripts/assets/gravity_node_prep.py: face plate, core, two shell halves, two rings;
+	# GravityNodeAvatar poses them), about the request row's 0.9 m orb with its rings.
+	&"gravity_node": {"height": GravityNodeAvatar.MODEL_HEIGHT},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

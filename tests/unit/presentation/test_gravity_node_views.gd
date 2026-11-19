@@ -1,7 +1,7 @@
 extends GutTest
 ## The Gravity Node's tells of its pull on the hero, read from a real World (EI-07): the faint ring of its reach on the
-## floor (StarfallViews' swirl) shows only while the hero is inside it, and the orb's core shows the draw
-## (StarfallAvatar.draw_pose), stronger nearer, none outside.
+## floor (StarfallViews' swirl) shows only while the hero is inside it, and the orb shows the draw
+## (GravityNodeAvatar.draw_pose: its rings tighten round the core), stronger nearer, none outside.
 
 var _tables: Array[EnemyTable] = []
 
@@ -29,15 +29,16 @@ func _views() -> StarfallViews:
 	return v
 
 
-func _avatar() -> StarfallAvatar:
-	var a := StarfallAvatar.new()
-	a.setup(WorldReader.KIND_GRAVITY_NODE)
+func _avatar() -> GravityNodeAvatar:
+	var a := GravityNodeAvatar.new()
+	a.setup()
 	add_child_autofree(a)
+	a.set_process(false)
 	return a
 
 
 ## Syncs and advances `a` for two seconds of frame time.
-func _show(a: StarfallAvatar, reader: WorldReader) -> void:
+func _show(a: GravityNodeAvatar, reader: WorldReader) -> void:
 	for _k in 40:
 		a.sync(reader, 1)
 		a.advance(0.05)
@@ -79,7 +80,7 @@ func test_a_dead_node_shows_no_ring() -> void:
 	assert_eq(v.swirl_count(), 0, "dead: no ring")
 
 
-func test_the_core_shows_the_draw_stronger_nearer() -> void:
+func test_the_orb_shows_the_draw_stronger_nearer() -> void:
 	var far := _avatar()
 	_show(far, WorldReader.new(_world(8.0)))
 	assert_eq(far.draw_pose(), 0.0, "outside: at rest")
@@ -89,4 +90,7 @@ func test_the_core_shows_the_draw_stronger_nearer() -> void:
 	_show(near, WorldReader.new(_world(1.5)))
 	assert_gt(mid.draw_pose(), 0.0, "inside: it draws")
 	assert_gt(near.draw_pose(), mid.draw_pose(), "stronger nearer")
-	assert_lt(near._core.scale.x, 1.0 + 0.0001, "the core sinks into itself")
+	var size := GravityNodeAvatar.RING0 + GravityNodeAvatar.SIZE
+	assert_eq(far.drives()[size], 0.0, "outside: its rings at rest")
+	assert_lt(mid.drives()[size], 0.0, "inside: its rings tighten")
+	assert_lt(near.drives()[size], mid.drives()[size], "tighter nearer")
