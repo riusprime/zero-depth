@@ -161,6 +161,7 @@ const SOLO := {
 	"frost_spitter": WorldReader.KIND_FROST_SPITTER,
 	"wire_weaver": WorldReader.KIND_WIRE_WEAVER,
 	"glacier_turtle": WorldReader.KIND_GLACIER_TURTLE,
+	"gravity_node": WorldReader.KIND_GRAVITY_NODE,
 }
 const SOLO_FRAME := {
 	WorldReader.KIND_NEEDLE: [1.5, 0.4],
@@ -175,6 +176,7 @@ const SOLO_FRAME := {
 	WorldReader.KIND_FROST_SPITTER: [2.0, 0.4],
 	WorldReader.KIND_WIRE_WEAVER: [2.0, 0.5],
 	WorldReader.KIND_GLACIER_TURTLE: [2.4, 0.45],
+	WorldReader.KIND_GRAVITY_NODE: [2.4, 1.2],
 }
 const SOLO_PLAN := [
 	["idle (t 1.5 s)", {}, "idle"],
@@ -553,6 +555,7 @@ func _drive_solo(a: AvatarBase, steps: String) -> void:
 			WorldReader.KIND_FROST_SPITTER: 2.6,
 			WorldReader.KIND_WIRE_WEAVER: 2.6,
 			WorldReader.KIND_GLACIER_TURTLE: 1.1,
+			WorldReader.KIND_GRAVITY_NODE: 0.1,
 		}[_kind]
 		/ 60.0
 	)

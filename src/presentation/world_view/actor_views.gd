@@ -42,6 +42,7 @@ const MODEL_LIFT := {
 	WorldReader.KIND_KILN_BEETLE: 1.15,
 	WorldReader.KIND_CINDER_PRIEST: 1.6,
 	WorldReader.KIND_WIRE_WEAVER: 1.2,
+	WorldReader.KIND_GRAVITY_NODE: 1.2,
 }
 
 ## The role glow's energy the views build with (ROLE_GLOW; the line-up shot script sweeps it, 0 = none).
@@ -799,6 +800,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 			height = WireWeaverAvatar.attach(self, root, facing)
 		WorldReader.KIND_GLACIER_TURTLE:  # The owner's model, animated in code, on VAT
 			height = GlacierTurtleAvatar.attach(self, root, facing)
+		WorldReader.KIND_GRAVITY_NODE:  # The owner's model, animated in code, on VAT
+			height = GravityNodeAvatar.attach(self, root, facing)
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling: a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()
@@ -853,7 +856,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 			root.set_meta(&"mats", elite.body_materials.duplicate())
 			root.set_meta(&"hit_look", elite)
 			root.set_meta(&"elite", true)
-		_ when StarfallAvatar.takes(kind):  # The Starfall signatures' stand-ins
+		_ when StarfallAvatar.takes(kind):  # The Star Warper's stand-in
 			height = StarfallAvatar.make(root, facing, kind)
 		_ when HordeAvatar.is_horde_kind(kind):
 			# The horde kinds: one code-built model per kind.

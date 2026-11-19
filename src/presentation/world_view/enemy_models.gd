@@ -46,6 +46,9 @@ const SPECS := {
 	# The Glacier Turtle (scripts/assets/glacier_turtle_prep.py: body, carapace, head, shield, four two-part legs;
 	# GlacierTurtleAvatar poses them), 0.9 m tall (1.33 m long: the shield's face at the sim's radius).
 	&"glacier_turtle": {"height": 0.9},
+	# The Gravity Node (scripts/assets/gravity_node_prep.py: face plate, core, two shell halves, two rings;
+	# GravityNodeAvatar poses them), about the request row's 0.9 m orb with its rings.
+	&"gravity_node": {"height": GravityNodeAvatar.MODEL_HEIGHT},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

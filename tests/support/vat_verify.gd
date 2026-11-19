@@ -332,6 +332,20 @@ static func ranges(a: Node3D, rng: RandomNumberGenerator) -> Dictionary:
 			"_die_t": [-0.6, KilnBeetleAvatar.DEATH_SECONDS],
 			"_state": states4,
 		}
+	if a is GravityNodeAvatar:
+		return {
+			"_t": [0.0, 40.0],
+			"_draw": [0.0, 1.0],
+			"_beat": [0.0, 1.0],
+			"_rise": [0.0, 1.0],
+			"_spin_a": [0.0, TAU],
+			"_spin_b": [0.0, TAU],
+			"_omega": [-4.0, 4.0],
+			"_hurt_t": [-0.3, GravityNodeAvatar.HURT_SECONDS],
+			"_hurt_side": [-1.0, 1.0],
+			"_die_t": [-0.8, GravityNodeAvatar.DEATH_SECONDS],
+			"_state": states4,
+		}
 	if a is FrostSpitterAvatar:
 		return {
 			"_t": [0.0, 40.0],

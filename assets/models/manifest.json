@@ -442,6 +442,11 @@
       "sha256": "d093d0eb5b8b4f75864fe6ae875f1f25a788603d4a7a9ecf12cb4ccfdc24a8e9"
     },
     {
+      "id": "gravity_node",
+      "path": "assets/models/enemies/gravity_node.glb",
+      "sha256": "17c6da16db384b56e9b21439e350a7a0ea9da59398a7ef895e0b26cb774937f2"
+    },
+    {
       "id": "loop_device",
       "path": "assets/models/devices/loop_device.glb",
       "sha256": "c52a01bbbef3c6f037baeb6eb2491960df98998372ada530d829d6708734c67f"
