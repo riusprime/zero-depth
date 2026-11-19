@@ -1,10 +1,12 @@
 class_name SiegeCartModel
 extends RefCounted
-## The Siege Engine's ammo cart, made in code in the game's own low-poly look: a small faceted wagon of wood and iron
-## (a plank crate banded in iron with the Engine's red on its lid, a chassis, four spoked wooden wheels with iron
-## tyres, a tow bar), every piece flat-shaded and matte like the kit's props and the enemies' bodies (roughness 1,
-## metallic 0, the default specular), lit by the room and outlined by the InkPass; nothing on it glows. About 2 m long
-## and 1.3 m wide (the cart's 1 m radius), its front (the way it rolls) toward +X. Looks only (EI-07).
+## The Siege Engine's ammo cart: the owner's (BossPieceModels `siege_cart`: a red iron wagon with three shells in its
+## bed, its four wheels parts of their own that turn) when it loads, else made in code in the game's own low-poly look
+## (a small faceted wagon of wood and iron: a plank crate banded in iron with the Engine's red on its lid, a chassis,
+## four spoked wooden wheels with iron tyres, a tow bar). Either is matte like the kit's props and the enemies' bodies
+## (roughness 1, metallic 0, the default specular), lit by the room and outlined by the InkPass; nothing on it glows.
+## About 2 m long and 1.2-1.3 m wide (the cart's 1 m radius), its front (the way it rolls) toward +X. Looks only
+## (EI-07).
 
 ## Its palette: weathered wood (light enough to catch the room's light as the walls do), the wood's darker planks and
 ## spokes, iron, and the Engine's red, dulled, on the lid.
@@ -12,8 +14,10 @@ const WOOD := Color("#B48A60")
 const WOOD_DARK := Color("#8C6844")
 const IRON := Color("#97938F")
 const LID := Color("#B84A3B")
-## The wheels' radius (m).
+## The code wheels' radius and how far they stand out from the cart's middle line (m).
 const WHEEL_R := 0.34
+const WHEEL_Z := 0.62
+const MODEL_WHEELS := ["wheel_0", "wheel_1", "wheel_2", "wheel_3"]
 
 static var _prisms := {}
 
@@ -67,11 +71,15 @@ static func _put(parent: Node3D, mesh: Mesh, at: Vector3, mat: Material) -> Mesh
 	return mi
 
 
-## The wagon under `parent`. Returns [root, its wheels (each turns about its local Z as the cart rolls)].
+## The wagon under `parent`. Returns [root, its wheels (each turns about its local Z as the cart rolls), their radius
+## (m), how far they stand out from its middle line (m)].
 static func build(parent: Node3D) -> Array:
 	var root := Node3D.new()
 	root.name = "AmmoCart"
 	parent.add_child(root)
+	var piece := BossPieceModels.get_piece(&"siege_cart", ["body"] + MODEL_WHEELS)
+	if not piece.is_empty():
+		return _model(root, piece)
 	var wood := matte(WOOD)
 	var dark := matte(WOOD_DARK)
 	var iron := matte(IRON)
@@ -98,7 +106,7 @@ static func build(parent: Node3D) -> Array:
 	var wheels: Array[Node3D] = []
 	for x: float in [-0.55, 0.55]:
 		_put(root, prism(6, 0.05, 1.38), Vector3(x, WHEEL_R, 0.0), iron)
-		for z: float in [-0.62, 0.62]:
+		for z: float in [-WHEEL_Z, WHEEL_Z]:
 			var spin := Node3D.new()
 			spin.position = Vector3(x, WHEEL_R, z)
 			root.add_child(spin)
@@ -109,4 +117,23 @@ static func build(parent: Node3D) -> Array:
 				spoke.rotation.z = a
 			_put(spin, prism(6, 0.08, 0.2), Vector3.ZERO, iron)
 			wheels.append(spin)
-	return [root, wheels]
+	return [root, wheels, WHEEL_R, WHEEL_Z]
+
+
+## The owner's cart under `root`: his body, and each wheel on a node at its hub (the part's own place) that turns.
+static func _model(root: Node3D, piece: Dictionary) -> Array:
+	BossPieceModels.put(piece, "body", root)
+	var wheels: Array[Node3D] = []
+	var r := 0.0
+	var side := 0.0
+	for id: String in MODEL_WHEELS:
+		var spin := Node3D.new()
+		spin.position = piece["parts"][id]["at"]
+		root.add_child(spin)
+		var mi := BossPieceModels.put(piece, id, spin)
+		mi.position = Vector3.ZERO
+		var box := (mi.mesh as Mesh).get_aabb()
+		r = maxf(r, box.size.y * 0.5)
+		side += absf(spin.position.z) / MODEL_WHEELS.size()
+		wheels.append(spin)
+	return [root, wheels, r, side]

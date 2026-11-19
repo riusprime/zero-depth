@@ -171,7 +171,8 @@ func test_the_cart_is_a_wagon_on_its_place_with_its_hp_track_and_the_doom_cast()
 	assert_true(view.cart_shown())
 	assert_almost_eq(view.cart_position(), cart["position"], Vector2(0.001, 0.001), "on its place")
 	assert_eq(view.cart_hp_fraction(), 1.0, "its bar full")
-	assert_eq(view.cart_wheels(), 4, "the code-made wagon")
+	assert_eq(view.cart_wheels(), 4, "a wagon on four wheels")
+	assert_false(BossPieceModels.get_piece(&"siege_cart").is_empty(), "the owner's cart")
 	assert_true(view.track_shown(), "its track")
 	assert_almost_eq(
 		view.cast_share(), float(cart["progress"]) / 1000.0, 0.001, "the Engine's ring fills"
@@ -187,6 +188,9 @@ func test_the_cart_is_a_wagon_on_its_place_with_its_hp_track_and_the_doom_cast()
 	w.actors.hp[ci] = w.actors.max_hp[ci] / 2
 	_run(w, r, [view, field], 1)
 	assert_almost_eq(view.cart_hp_fraction(), 0.5, 0.02, "its bar follows its HP")
+	var turned := view.wheel_turn()
+	_run(w, r, [view, field], 30)
+	assert_ne(view.wheel_turn(), turned, "its wheels turn as it rolls")
 	var near := func() -> bool: return int(r.boss_siege().get("cart", {}).get("left", 999)) <= 100
 	assert_true(_until(w, r, [view, field], near, 700))
 	assert_true(view.blast_circle()[2], "near the Engine: gold")

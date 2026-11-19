@@ -6,8 +6,9 @@ extends Node3D
 ## - The Warlord's javelins stuck in the floor (WorldReader.boss_javelins): a code-made 3D javelin each (a dark shaft,
 ##   an iron head with a red-hot edge), its head planted where it stopped, its shaft leaning back the way it flew in,
 ##   so the line it will come back along reads at a glance. Over the last RECALL_WARN_TICKS before the recall they
-##   tremble and their heads glow hotter: the second dodge's warning. An owner model `javelin` listed in
-##   assets/models/manifest.json at MODEL_PATH replaces the code mesh (normalised to the same length along +X).
+##   tremble and their heads glow hotter: the second dodge's warning. The owner's `javelin` (listed in
+##   assets/models/manifest.json, at MODEL_PATH) replaces the code mesh: the same length along +X, its own colour map,
+##   matte and lit like the walls, its red crystal head (from HEAD_FROM of its length) the part that glows.
 ## - The Brood Mother's eggs (WorldReader.actor_egg_permille): a speckled egg on the floor where the egg actor lies,
 ##   its veins glowing brighter as it nears its hatch, wobbling harder and faster (the hatch wobble), and an HP pip
 ##   bar over it (its HP over its max: break it before it hatches). A bursting egg swells and splits. The Hatchling
@@ -45,20 +46,25 @@ const PIP_FILL := Color(0.6, 1.0, 0.3, 0.95)
 const MODEL_ID := "javelin"
 const MODEL_PATH := "res://assets/models/fx/javelin.glb"
 const MANIFEST := "res://assets/models/manifest.json"
+## Where along the owner's javelin (a share of its length from the butt) its crystal head starts
+## (scripts/assets/boss_pieces_v0120_prep.py prints it as head_from).
+const HEAD_FROM := 0.79
 
 const JAVELIN_SHADER := """
 shader_type spatial;
 render_mode cull_disabled, diffuse_lambert, specular_schlick_ggx;
 uniform vec4 hot : source_color = vec4(1.0, 0.27, 0.12, 1.0);
+uniform sampler2D albedo_tex : source_color, filter_linear_mipmap;
+uniform float textured = 0.0;
 varying float glow;
 void vertex() {
 	glow = INSTANCE_CUSTOM.r;
 }
 void fragment() {
-	ALBEDO = COLOR.rgb;
+	ALBEDO = mix(COLOR.rgb, texture(albedo_tex, UV).rgb, textured);
 	EMISSION = hot.rgb * COLOR.a * (0.6 + 4.0 * glow);
-	ROUGHNESS = mix(0.85, 0.45, COLOR.a);
-	METALLIC = 0.4 * COLOR.a;
+	ROUGHNESS = mix(mix(0.85, 0.45, COLOR.a), 1.0, textured);
+	METALLIC = 0.4 * COLOR.a * (1.0 - textured);
 }
 """
 
@@ -125,6 +131,7 @@ const PACK_GAZE := true
 static var model_path := MODEL_PATH
 static var _mesh: Mesh
 static var _from_model := false
+static var _texture: Texture2D
 
 ## The chips the Gaze knocks off the wall it strikes (WorldViewRoot hands it the floor's stone).
 var chips := GroundSlamViews.new(6)
@@ -185,6 +192,7 @@ func _init() -> void:
 	sh.code = JAVELIN_SHADER
 	_jav_mat.shader = sh
 	_jav_mat.set_shader_parameter("hot", HOT)
+	dress_javelin(_jav_mat)
 	_javelins.material_override = _jav_mat
 	_javelins.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	_javelins.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
@@ -430,6 +438,16 @@ static func javelin_mesh() -> Mesh:
 static func clear_cache() -> void:
 	_mesh = null
 	_from_model = false
+	_texture = null
+
+
+## Gives a javelin material (JAVELIN_SHADER or WarlordLooks.JAVELIN_SHADER) the owner's colour map when his model is
+## the javelin; the code mesh keeps its vertex colours.
+static func dress_javelin(mat: ShaderMaterial) -> void:
+	var on := from_model()
+	mat.set_shader_parameter("textured", 1.0 if on else 0.0)
+	if on:
+		mat.set_shader_parameter("albedo_tex", _texture)
 
 
 ## A shaft (a thin octagonal rod), a leather grip and a leaf-shaped iron head with a hot edge.
@@ -487,13 +505,17 @@ static func _append(
 		st.add_vertex(at * verts[k])
 
 
-## The owner's javelin (javelin.glb), normalised to JAVELIN_LENGTH along its longest axis turned to +X from x = 0, or
-## null when it isn't listed in the manifest or isn't on disk.
+## The owner's javelin (javelin.glb), normalised to JAVELIN_LENGTH along its longest axis turned to +X from x = 0, its
+## vertex alpha the head (HEAD_FROM on) and its colour map kept for dress_javelin, or null when it isn't listed in the
+## manifest, isn't on disk or has no map.
 static func _model_mesh() -> Mesh:
 	if not _listed() or not ResourceLoader.exists(model_path):
 		return null
 	var surface := ModelLibrary.first_surface(load(model_path) as PackedScene)
-	if surface.is_empty():
+	if surface.is_empty() or surface["material"] == null:
+		return null
+	_texture = (surface["material"] as StandardMaterial3D).albedo_texture
+	if _texture == null:
 		return null
 	var arrays: Array = surface["arrays"]
 	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
@@ -513,11 +535,12 @@ static func _model_mesh() -> Mesh:
 		var b := v[(axis + 2) % 3]
 		verts[i] = Vector3(along * k, a * k, b * k)
 	arrays[Mesh.ARRAY_VERTEX] = verts
-	if arrays[Mesh.ARRAY_COLOR] == null:
-		var cols := PackedColorArray()
-		cols.resize(verts.size())
-		cols.fill(Color(IRON, 0.0))
-		arrays[Mesh.ARRAY_COLOR] = cols
+	var cols := PackedColorArray()
+	cols.resize(verts.size())
+	for i in verts.size():
+		var head := smoothstep(HEAD_FROM - 0.02, HEAD_FROM + 0.02, verts[i].x / JAVELIN_LENGTH)
+		cols[i] = Color(1.0, 1.0, 1.0, head)
+	arrays[Mesh.ARRAY_COLOR] = cols
 	var m := ArrayMesh.new()
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return m

@@ -141,6 +141,30 @@ func test_the_banner_rises_through_its_cast_and_stands_on_the_readers_circle() -
 	assert_almost_eq(float(ring[1]), 6.0, 0.0001)
 	assert_false(view.hold.has(&"rim"), "no pack glow on it: a thin dull-gold rim of its own")
 	assert_false(view.hold.has(&"cast"), "the lift goes with the cast")
+	# The owner's model, its cloth a part of its own under the top a charge snaps off, and waving.
+	var m := view.banner_model()
+	assert_true(bool(m["from_model"]), "the owner's War Banner")
+	var top: Node3D = m["top"]
+	var cloth: ShaderMaterial = m["cloth"]
+	var cloth_mi: MeshInstance3D = null
+	for c in top.get_children():
+		if c is MeshInstance3D and (c as MeshInstance3D).material_override == cloth:
+			cloth_mi = c
+	assert_not_null(cloth_mi, "the cloth is its own mesh, hanging from the top")
+	if cloth_mi == null:
+		return
+	var box := cloth_mi.get_aabb()
+	assert_between(box.size.y, 1.2, 1.6, "about the request's 1.5 m of cloth")
+	assert_almost_eq(
+		float(m["snap_y"]), top.position.y, 0.0001, "the top stands where the pole is cut"
+	)
+	assert_lt(
+		float(m["snap_y"]), box.position.y + cloth_mi.position.y + top.position.y, "below the cloth"
+	)
+	assert_eq(float(cloth.get_shader_parameter("wave")), 1.0, "it waves")
+	var was := float(cloth.get_shader_parameter("clock"))
+	_run(w, r, [view], 10)
+	assert_gt(float(cloth.get_shader_parameter("clock")), was, "and its wave runs on")
 
 
 func test_who_stands_inside_shows_on_the_warlord_and_on_the_hero() -> void:
@@ -196,6 +220,8 @@ func test_the_banner_burns_down_with_its_time() -> void:
 	w.boss_fight.wl_bn_from = w.tick - wt.banner_ticks + 60  # one second left
 	_run(w, r, [view], 30)
 	assert_true(view.hold.has(&"burn"), "its last seconds: it starts to burn")
+	var cloth: ShaderMaterial = view.banner_model()["cloth"]
+	assert_gt(float(cloth.get_shader_parameter("burn")), 0.0, "its cloth burning from the hem")
 	var fell := func() -> bool: return view.falling() == WarBannerViews.FELL_TIME
 	assert_true(_until(w, r, [view], fell, 60), "it falls to its time")
 	assert_true(view.banner_shown(), "and burns away")
@@ -221,7 +247,13 @@ func test_a_charge_through_the_pole_snaps_it() -> void:
 	var snapped := func() -> bool: return view.falling() == WarBannerViews.FELL_CHARGE
 	assert_true(_until(w, r, [view], snapped, 90), "its charge knocks it down")
 	assert_gt(fx.live_count(&"impact"), 0, "the pack's shards at the pole")
-	_run(w, r, [view], 60)
+	_run(w, r, [view], 10)
+	var top: Node3D = view.banner_model()["top"]
+	var snap := float(view.banner_model()["snap_y"])
+	assert_gt(Vector2(top.position.x, top.position.z).length(), 0.1, "the top flies off")
+	assert_ne(top.rotation.z, 0.0, "tumbling")
+	assert_ne(top.position.y, snap, "off the stump")
+	_run(w, r, [view], 50)
 	assert_false(view.banner_shown(), "the top flew off and the stump is gone")
 
 

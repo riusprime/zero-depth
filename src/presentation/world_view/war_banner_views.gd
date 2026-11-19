@@ -3,8 +3,8 @@ extends Node3D
 ## The Warlord's War Banner as the player sees it, drawn from WorldReader.boss_warlord "banner" (EI-07: where it
 ## stands, how long, and who stands inside it are the sim's, BossWarlord). No word anywhere: the trade is found from
 ## glows (the owner: the player discovers it while playing).
-## - The cast: the banner (WarlordLooks.banner, a code-made stand-in) is raised from the floor to upright through the
-##   cast, in the pack's warm lift (wl_banner_cast); its circle fades in.
+## - The cast: the banner (WarlordLooks.banner: the owner's model, its cloth a part of its own) is raised from the
+##   floor to upright through the cast, in the pack's warm lift (wl_banner_cast); its circle fades in.
 ## - Standing: a thin dull-gold rim of the circle's exact radius with a faint tint inside (WarlordLooks.RING_SHADER),
 ##   no glow; the cloth waves.
 ## - The Warlord inside it: the pack's red embers (wl_rage) rise round its feet (and WarlordAvatar's body glows hot).
@@ -159,7 +159,7 @@ func _draw_standing(still: bool) -> void:
 	root.position = at
 	root.rotation = Vector3(0, 0, (1.0 - ease(share, 0.5)) * PI * 0.48)  # raised from lying to upright
 	root.scale = Vector3.ONE
-	top.position = Vector3(0, WarlordLooks.BAR_Y - 0.6, 0)
+	top.position = Vector3(0, float(_model["snap_y"]), 0)
 	top.rotation = Vector3.ZERO
 	var left := int(_banner["left"])
 	var burn := 0.0 if left < 0 else clampf(1.0 - float(left) / BURN_TICKS, 0.0, 1.0) * 0.35
@@ -216,7 +216,7 @@ func _draw_fallen(delta: float, still: bool) -> void:
 	if why == FELL_CHARGE:
 		# The top flies off, tumbling (stilled with reduced motion); the stump sinks at once.
 		root.position = at - Vector3(0, SINK_M * u * 1.5, 0)
-		top.position = Vector3(0.9 * t, WarlordLooks.BAR_Y - 0.6 + 2.2 * t - 4.0 * t * t, 0.6 * t)
+		top.position = Vector3(0.9 * t, float(_model["snap_y"]) + 2.2 * t - 4.0 * t * t, 0.6 * t)
 		top.rotation = Vector3(0, 0, 0.0 if still else -5.0 * t)
 		_cloth(still, 0.0)
 		return
@@ -226,6 +226,11 @@ func _draw_fallen(delta: float, still: bool) -> void:
 
 
 # --- tests and the shot scripts ----------------------------------------------------------------------------------
+
+
+## The banner's parts: {"root", "top" (what a charge snaps off), "snap_y", "cloth" (its material), "from_model"}.
+func banner_model() -> Dictionary:
+	return _model
 
 
 ## The banner's model shown now (upright, rising or falling).
