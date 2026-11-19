@@ -2,9 +2,9 @@ class_name SiegeCartViews
 extends Node3D
 ## The Siege Engine's ammo cart and its Doom Shell, drawn from WorldReader.boss_siege (EI-07: where the cart stands,
 ## its HP, its way, when the shell fires and whether the armour is stripped are the sim's, BossDoom).
-## - The cart: a small faceted wagon of wood and iron (SiegeCartModel, matte and lit like the kit's props) on the
-##   cart's place, facing its way, its wheels turning as it rolls (the warden body the sim uses never shows:
-##   ActorViews hides it), with its own HP bar over it, shown from full.
+## - The cart: the owner's red iron ammo wagon (SiegeCartModel; a code-made wagon without it), matte and lit like the
+##   kit's props, on the cart's place, facing its way, its wheels turning as it rolls (the warden body the sim uses
+##   never shows: ActorViews hides it), with its own HP bar over it, shown from full.
 ## - Its track: two wheel ruts in the floor from where it set off to the Engine's edge (SiegeLooks.RUT_SHADER), faint
 ##   ahead of it and pressed deep behind it, so how far it has come reads at a glance; under the Engine a dull
 ##   countdown ring fills with the roll.
@@ -27,9 +27,9 @@ const CAST_SCALE := 1.4
 const DOOM_SCALE := 1.1
 ## The countdown ring under the Engine: this far past its edge (m).
 const RING_PAST_M := 0.9
-## The track: its width (m, the wheels' span and their ruts' lips) and how strong its ruts lie ahead of and behind
-## the cart.
-const RAIL_W := 1.7
+## The track: its ruts lie at RUT_AT of its half width (SiegeLooks.RUT_SHADER), under the wheels, and this strong
+## ahead of and behind the cart.
+const RUT_AT := 0.74
 const AHEAD_ALPHA := 0.4
 const BEHIND_ALPHA := 0.85
 ## The blast circle's alpha at full HP and near death, and its band (m).
@@ -41,8 +41,7 @@ const GOLD := SiegeLooks.BLAST_GOLD
 const RING_EDGE_M := 0.14
 const RING_ALPHA := 0.45
 const RING_FIRING := 0.75
-## The wheels' radius (m) and the HP bar (m: its width, its height over the floor).
-const WHEEL_R := SiegeCartModel.WHEEL_R
+## The HP bar (m: its width, its height over the floor).
 const BAR_W := 1.3
 const BAR_H := 0.12
 const BAR_Y := 1.9
@@ -65,6 +64,9 @@ var _clock := 0.0
 var _locked_for := -1.0
 var _cart_root: Node3D
 var _wheels: Array[Node3D] = []
+## The wheels' radius (m): how far the cart rolls per turn of them; the track's width (m: its ruts under the wheels).
+var _wheel_r := SiegeCartModel.WHEEL_R
+var _rail_w := 2.0 * SiegeCartModel.WHEEL_Z / RUT_AT
 var _roll := 0.0
 var _last_at := Vector2.INF
 var _bar_back := MeshInstance3D.new()
@@ -82,6 +84,8 @@ func _init() -> void:
 	var parts := SiegeCartModel.build(self)
 	_cart_root = parts[0]
 	_wheels.assign(parts[1])
+	_wheel_r = float(parts[2])
+	_rail_w = 2.0 * float(parts[3]) / RUT_AT
 	_cart_root.visible = false
 	_cart_root.set_meta(ShaderWarmup.WARM_META, true)
 	_build_bar()
@@ -195,17 +199,17 @@ func _draw_cart(cart: Dictionary, still: bool) -> void:
 	_cart_root.position = SimPlane.to_3d(at)
 	_cart_root.rotation.y = atan2(way.y, way.x)
 	if _last_at != Vector2.INF and not still:
-		_roll -= at.distance_to(_last_at) / WHEEL_R
+		_roll -= at.distance_to(_last_at) / _wheel_r
 	_last_at = at
 	for w in _wheels:
 		w.rotation.z = _roll
 	var hp_max := maxi(1, int(cart["max"]))
 	var frac := clampf(float(cart["hp"]) / float(hp_max), 0.0, 1.0)
 	_set_bar(frac)
-	WardenLooks.lay_strip(_ahead, at, to, RAIL_W, 0.04)
+	WardenLooks.lay_strip(_ahead, at, to, _rail_w, 0.04)
 	SiegeLooks.param(_ahead, &"alpha", AHEAD_ALPHA)
 	_behind.visible = at.distance_to(from) > 0.05
-	WardenLooks.lay_strip(_behind, from, at, RAIL_W, 0.045)
+	WardenLooks.lay_strip(_behind, from, at, _rail_w, 0.045)
 	SiegeLooks.param(_behind, &"alpha", BEHIND_ALPHA)
 	var near_engine := at.distance_to(_engine) <= _blast_m + _engine_r
 	_blast_ring.position = SimPlane.to_3d(at, 0.03)
@@ -261,9 +265,14 @@ func cart_hp_fraction() -> float:
 	return _bar_frac
 
 
-## The cart's look is the code-made wagon (its wheels), never an enemy's model.
+## The cart's look is a wagon (its wheels), never an enemy's model.
 func cart_wheels() -> int:
 	return _wheels.size()
+
+
+## How far its wheels have turned (radians; tests: they turn as it rolls).
+func wheel_turn() -> float:
+	return _wheels[0].rotation.z if not _wheels.is_empty() else 0.0
 
 
 func track_shown() -> bool:

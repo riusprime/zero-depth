@@ -101,9 +101,9 @@ void fragment() {
 	ALPHA = clamp(alpha * fade * mix(0.62, 0.4, side), 0.0, 0.7);
 }
 """
-## The cart's track (a unit plane along +X laid as a strip RAIL_W wide): two wheel ruts pressed into the floor, each a
-## dark groove with a pale lip on its outer side where the floor's edge catches the light; `fresh` 1 behind the cart
-## (deeper, churned).
+## The cart's track (a unit plane along +X laid as a strip as wide as SiegeCartViews' track): two wheel ruts pressed
+## into the floor, each a dark groove with a pale lip on its outer side where the floor's edge catches the light;
+## `fresh` 1 behind the cart (deeper, churned).
 const RUT_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;

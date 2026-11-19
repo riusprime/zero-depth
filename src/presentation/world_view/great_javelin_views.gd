@@ -51,6 +51,7 @@ func _init() -> void:
 	sh.code = BossSignatureViews.JAVELIN_SHADER
 	_mat.shader = sh
 	_mat.set_shader_parameter("hot", BossSignatureViews.HOT)
+	BossSignatureViews.dress_javelin(_mat)
 	_mm.material_override = _mat
 	_mm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	_mm.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF

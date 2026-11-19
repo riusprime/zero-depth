@@ -1,7 +1,7 @@
 extends GutTest
 ## v0.8.0 BS1 (owner O5; BOSS_SIGNATURES.md S1-S3): the signature mechanics read in 3D, from the sim (EI-07): the
 ## Gatekeeper's pillars stand as clusters of its stone spikes for their life and sink when the walls go; the Warlord's
-## javelins stand in the floor where they stuck (a code-made 3D javelin until the owner's model is listed) and its
+## javelins stand in the floor where they stuck (the owner's model; a code-made 3D javelin without it) and its
 ## recall clip plays while they stand; the Brood Mother's eggs are 3D eggs with an HP pip and a hatch wobble, the
 ## Hatchling inside hidden; her Egg Storm clip lays before it flings.
 
@@ -89,6 +89,37 @@ func test_the_javelin_is_code_made_until_the_owners_model_is_listed() -> void:
 	var box := m.get_aabb()
 	assert_almost_eq(box.size.x, BossSignatureViews.JAVELIN_LENGTH, 0.1, "its length along +X")
 	assert_lt(box.size.y, 0.25, "and thin")
+
+
+func test_the_owners_javelin_lies_along_its_flight_with_his_map_and_a_hot_head() -> void:
+	BossSignatureViews.clear_cache()
+	assert_true(BossSignatureViews.from_model(), "his javelin is listed and loads")
+	var m := BossSignatureViews.javelin_mesh()
+	var box := m.get_aabb()
+	assert_almost_eq(box.position.x, 0.0, 0.01, "its butt at x = 0")
+	assert_almost_eq(
+		box.size.x, BossSignatureViews.JAVELIN_LENGTH, 0.01, "its length along +X, the way it flies"
+	)
+	assert_lt(maxf(box.size.y, box.size.z), 0.3, "and thin across")
+	var arrays := m.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var cols: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
+	var head_hot := 0
+	var shaft_hot := 0
+	for k in verts.size():
+		if verts[k].x > BossSignatureViews.JAVELIN_LENGTH * 0.9 and cols[k].a > 0.99:
+			head_hot += 1
+		if verts[k].x < BossSignatureViews.JAVELIN_LENGTH * 0.5 and cols[k].a > 0.01:
+			shaft_hot += 1
+	assert_gt(head_hot, 0, "its crystal head glows")
+	assert_eq(shaft_hot, 0, "its shaft does not")
+	var view := BossSignatureViews.new()
+	add_child_autofree(view)
+	var node := view.get_node("Javelins") as MultiMeshInstance3D
+	var mat := node.material_override as ShaderMaterial
+	assert_eq(float(mat.get_shader_parameter("textured")), 1.0, "drawn from his colour map")
+	assert_not_null(mat.get_shader_parameter("albedo_tex"))
+	assert_eq(WarlordLooks.javelin(), m, "the cage's javelins are his too")
 
 
 func test_the_warlord_pulls_while_its_javelins_stand() -> void:

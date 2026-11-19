@@ -9,9 +9,10 @@ extends Node3D
 ##   runs out from the Judge across the whole room, and the pack's pulse (cj_pulse: pulse_area_vfx_04) bursts on the
 ##   hero it has just slowed.
 ## - The hour orbs: each is the pack's Basic Area 04 (cj_orb) sized to the disc the hero must touch, over a clock dial
-##   of that exact radius, with a small brass clock standing above it (matte, lit by the sun, outlined by the ink
-##   pass). An orb that runs down (the last phase) shows it: the clock's hand and the dial's go round once over its
-##   life and the effect shrinks. Taking one bursts the pulse.
+##   of that exact radius, with a small brass clock standing above it (the owner's `hour_clock`, BossPieceModels, its
+##   minute hand a part of its own; a code-made clock without it; matte, lit by the sun, outlined by the ink pass).
+##   An orb that runs down (the last phase) shows it: the clock's hand and the dial's go round once over its life and
+##   the effect shrinks. Taking one bursts the pulse.
 ## - The stopped gears: each wall is the Judge's own gear (JudgeGearMesh: dark iron, a gold band and hub) standing
 ##   across the floor, set low enough that the hero shows over it, cutting the floor along the wall's whole length and
 ##   as thick as the wall, in a dark crack of the wall's exact footprint. It rolls up out of the floor when placed and
@@ -64,6 +65,9 @@ const CLOCK_BOB := 0.08
 const CLOCK_IDLE_TURN := TAU / 8.0
 ## How far the clock's face tips back from upright toward the sky (rad).
 const CLOCK_TIP := 1.0
+## Where the owner's minute hand points as delivered (degrees from +X; scripts/assets/boss_pieces_v0120_prep.py
+## HAND_DEG).
+const MODEL_HAND_DEG := 22.0
 ## A gear's rise and sink (ticks) and its teeth.
 const GEAR_RISE_TICKS := 24.0
 const GEAR_SINK_TICKS := 36.0
@@ -262,9 +266,9 @@ static func _part(to: Node3D, mesh: Mesh, mat: Material, at := Vector3.ZERO) -> 
 	return mi
 
 
-## An orb's slot: the dial on the floor (scaled to the orb's radius) and the small clock above it: a faceted brass
-## case (eight sides, thicker than its face, so it shows its edge), a parchment face, four hour marks and two hands,
-## turned to the camera and tipped back to the sky when drawn.
+## An orb's slot: the dial on the floor (scaled to the orb's radius) and the small clock above it, turned to the camera
+## and tipped back to the sky when drawn: the owner's clock (its minute hand turning about the hub) when it loads,
+## else a code-made one.
 func _build_orb(dial: Shader) -> void:
 	var node := Node3D.new()
 	node.visible = false
@@ -277,6 +281,27 @@ func _build_orb(dial: Shader) -> void:
 	var clock := Node3D.new()
 	clock.rotation = Vector3(-0.6, 0.0, 0.0)
 	node.add_child(clock)
+	var hand := Node3D.new()
+	clock.add_child(hand)
+	var piece := BossPieceModels.get_piece(&"hour_clock", ["clock", "minute_hand"])
+	if piece.is_empty():
+		_code_clock(clock, hand)
+	else:
+		BossPieceModels.put(piece, "clock", clock).cast_shadow = (
+			GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		)
+		var minute := BossPieceModels.put(piece, "minute_hand", hand)
+		minute.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		minute.rotation.z = PI * 0.5 - deg_to_rad(MODEL_HAND_DEG)  # at no turn it points to twelve
+	_orb_nodes.append(node)
+	_orb_dials.append(mat)
+	_orb_clocks.append(clock)
+	_orb_hands.append(hand)
+
+
+## The code-made clock: a faceted brass case (eight sides, thicker than its face, so it shows its edge), a parchment
+## face, four hour marks and two hands (the long one under `hand`, which turns).
+static func _code_clock(clock: Node3D, hand: Node3D) -> void:
 	var rim := CylinderMesh.new()
 	rim.top_radius = 0.37
 	rim.bottom_radius = 0.37
@@ -299,19 +324,13 @@ func _build_orb(dial: Shader) -> void:
 		var a := TAU * float(h) / 4.0
 		var m := _part(clock, mark, iron, Vector3(sin(a) * 0.21, cos(a) * 0.21, 0.095))
 		m.rotation.z = -a
-	var hand := Node3D.new()
 	hand.position = Vector3(0, 0, 0.105)
-	clock.add_child(hand)
 	var long := BoxMesh.new()
 	long.size = Vector3(0.04, 0.24, 0.02)
 	_part(hand, long, iron, Vector3(0, 0.11, 0))
 	var short := BoxMesh.new()
 	short.size = Vector3(0.05, 0.15, 0.02)
 	_part(clock, short, iron, Vector3(0.05, 0.04, 0.1)).rotation.z = -1.0
-	_orb_nodes.append(node)
-	_orb_dials.append(mat)
-	_orb_clocks.append(clock)
-	_orb_hands.append(hand)
 
 
 ## A gear's slot: the Judge's gear (a unit wheel scaled to the wall's half length and its width), casting its shadow,
@@ -593,6 +612,11 @@ func orb_dial_radius(k: int) -> float:
 
 func orb_hand_turn(k: int) -> float:
 	return -_orb_hands[k].rotation.z
+
+
+## Orb slot k's minute hand (the node that turns; tests).
+func orb_hand(k: int) -> Node3D:
+	return _orb_hands[k]
 
 
 func gears_shown() -> int:
