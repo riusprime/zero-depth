@@ -9,7 +9,8 @@ extends RefCounted
 ## - Shield Bearer: x the windup raise, y the strike (the shield); w the legs' swing, as a stride's phase (the gait).
 ## - Splitter, Splitling: x the raise, y the strike, z the death (the halves and claws); w the legs (the gait).
 ## - Mender: x the crystal raised while it heals (0 / 1); w the cross's turn (the gait, one turn a loop).
-## - Mine Layer: x the windup (the hopper lowers), y the mine shown (0 / 1: hidden, its joint folds to a point).
+## - Mine Layer (the code body, without the owner's model; the model's rig is MineLayerModel's): x the windup (the
+##   hopper lowers), y the mine shown (0 / 1: hidden, its joint folds to a point).
 ## - Sniper: x the barrel's angle, y the muzzle's size; w the muzzle's own glow (no gait).
 ## - v0.11.0 O9, the horde critters (CritterBodies): w the gait loop (the legs, wings, claws or tail); x, y, z unused.
 ## The Swarmer keeps the pilot's path (VatBake's own joint list and grids). Presentation only (EI-07).
@@ -38,6 +39,8 @@ const GRIDS := {
 ## The body is the root joint, on the stance grid but always the identity (its moves are the instance's, vat_offset);
 ## a hidden joint (the dropped mine) is baked folded to a point (a zero basis), so its triangles draw nothing.
 static func rig(a: HordeAvatar) -> Dictionary:
+	if MineLayerModel.takes(a):  # The owner's Mine Layer declares its own (five drives)
+		return MineLayerModel.rig(a)
 	var g: Array = grids(a.kind)
 	var sn: Vector3i = g[0]
 	var gait: int = g[1]
@@ -188,7 +191,7 @@ static func alt_glow(avatar: Node3D, piece: Node) -> bool:
 ## A random set of HordeAvatar.pose_with's inputs (the bake report, tests): about a third dying, a quarter fully risen.
 static func sample(rng: RandomNumberGenerator, t_max := 20.0) -> Dictionary:
 	var dying := rng.randf() < 0.3
-	return {
+	var out := {
 		"wind": rng.randf(),
 		"strike": rng.randf(),
 		"crouch": rng.randf(),
@@ -200,4 +203,11 @@ static func sample(rng: RandomNumberGenerator, t_max := 20.0) -> Dictionary:
 		"healing": rng.randf() < 0.5,
 		"tell": rng.randf(),
 		"winding": rng.randf() < 0.5,
+		"walk_x": 0.0,  # The Mine Layer's stride (in the unit disc: MineLayerModel.step keeps it there)
+		"walk_z": 0.0,
 	}
+	var r := sqrt(rng.randf())
+	var a := rng.randf() * TAU
+	out["walk_x"] = r * cos(a)
+	out["walk_z"] = r * sin(a)
+	return out

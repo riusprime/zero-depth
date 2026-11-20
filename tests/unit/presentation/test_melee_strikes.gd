@@ -110,7 +110,7 @@ func test_the_warden_slams_overhead_and_kicks_up_a_dust_ring_the_size_of_its_cir
 	for k in 20:
 		t += 1
 		_tick(a, t, WorldReader.STATE_MOVE, 0.0)
-	var hang := a.fist_height()
+	var hang := _fist_height(a)
 	for k in WINDUP_TICKS:
 		t += 1
 		(
@@ -127,7 +127,7 @@ func test_the_warden_slams_overhead_and_kicks_up_a_dust_ring_the_size_of_its_cir
 		)
 		a.advance(DT)
 		if k >= WINDUP_TICKS / 2:
-			assert_gt(a.fist_height(), 1.0, "fists held overhead through the windup")
+			assert_gt(_fist_height(a), 1.0, "fists held overhead through the windup")
 	assert_lt(a.dust_amount(), 0.0, "no dust before the slam")
 	assert_false(a.dust.visible)
 	t += 1
@@ -138,11 +138,15 @@ func test_the_warden_slams_overhead_and_kicks_up_a_dust_ring_the_size_of_its_cir
 	for k in 40:
 		t += 1
 		_tick(a, t, WorldReader.STATE_RECOVER, 0.0)
-		lowest = minf(lowest, a.fist_height())
+		lowest = minf(lowest, _fist_height(a))
 		if a.dust.visible:
 			seen = true
 			widest = maxf(widest, a.dust.scale.x)
-	assert_lt(lowest, hang * 0.6, "the fists come down to the ground, below where they hang")
+	assert_lt(
+		lowest,
+		0.25,
+		"the fists come down to the ground (they rest there between slams: %.2f m)" % hang
+	)
 	assert_true(seen, "a dust ring at the impact")
 	assert_almost_eq(a.slam_radius(), 2.4, 0.001, "the telegraph's radius")
 	assert_gt(widest, 2.4 * 0.85, "it runs out to the slam's circle")
@@ -151,6 +155,11 @@ func test_the_warden_slams_overhead_and_kicks_up_a_dust_ring_the_size_of_its_cir
 		t += 1
 		_tick(a, t, WorldReader.STATE_MOVE, 0.0)
 	assert_false(a.dust.visible, "the dust settles")
+
+
+## The Warden's fists' mean height (its knuckles).
+static func _fist_height(a: WardenAvatar) -> float:
+	return (a.limb_at(&"fist", 0).y + a.limb_at(&"fist", 1).y) * 0.5
 
 
 func test_the_wardens_red_circle_is_drawn_on_the_ground_again() -> void:

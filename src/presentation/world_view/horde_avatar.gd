@@ -10,7 +10,9 @@ extends AvatarBase
 ##   shield draws back through the windup and slams forward on the bash.
 ## - Mender: a floating red robe and grey hood holding up a pale-green heal crystal, a spinning green cross over it
 ##   (the priority mark); the crystal flares while its beam heals (the beam itself is HordeVisuals').
-## - Mine Layer: a low red crawler with a grey dome and a mine sitting in its rear hopper, lowered to drop it.
+## - Mine Layer: the owner's model (MineLayerModel poses it: scuttling legs, a hopper that drops its mine through a
+##   hatch); without the file, a low red crawler with a grey dome and a mine sitting in its rear hopper, lowered to
+##   drop it.
 ## - Sniper: a red box body on a grey tripod with a long grey barrel; its scope glows hotter through the windup.
 ## Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame time.
 ## +X is the front. every material is EnemyLooks' (shared by every enemy of the
@@ -133,6 +135,8 @@ var _strike := 0.0
 var _rest := {}
 var _walk := 0.0
 var _walk_t := 0.0
+## The Mine Layer's stride along +Z (its _walk is along +X, signed; MineLayerModel.step).
+var _walk_z := 0.0
 var _last_at := Vector3.INF
 var _die_t := -1.0
 var _model_scale := 1.0
@@ -176,6 +180,8 @@ static func model_id(p_kind: int) -> StringName:
 			return &"shield_bearer"
 		WorldReader.KIND_MENDER:
 			return &"mender"
+		WorldReader.KIND_MINE_LAYER:
+			return MineLayerModel.MODEL
 		WorldReader.KIND_LENS_DRONE:  # v0.11.0 S4 (VatCrowd.supports reads it; the Lens Drone is no HordeAvatar)
 			return &"lens_drone"
 	return &""
@@ -225,6 +231,8 @@ func setup(p_kind: int) -> void:
 	if not owner_model.is_empty():
 		_build_model(owner_model)
 		_is_model = true
+		if kind == WorldReader.KIND_MINE_LAYER:
+			MineLayerModel.rig_nodes(self)
 		if kind == WorldReader.KIND_SPLITLING:
 			body.scale = Vector3.ONE * SPLITLING_SCALE
 	else:
@@ -297,9 +305,13 @@ func advance(delta: float) -> void:
 			if _last_at == Vector3.INF
 			else Vector2(at.x - _last_at.x, at.z - _last_at.z).length() / dt
 		)
+		if kind == WorldReader.KIND_MINE_LAYER:  # Its stride's way and phase
+			var f := get_parent() as Node3D
+			MineLayerModel.step(self, at, f.rotation.y if f != null else 0.0, dt)
+		else:
+			_walk = move_toward(_walk, clampf(speed / WALK_FULL_MPS, 0.0, 1.0), dt * 4.0)
+			_walk_t += dt * lerpf(0.0, WALK_HZ * TAU, _walk)
 		_last_at = at
-		_walk = move_toward(_walk, clampf(speed / WALK_FULL_MPS, 0.0, 1.0), dt * 4.0)
-		_walk_t += dt * lerpf(0.0, WALK_HZ * TAU, _walk)
 		_slide_step(dt)
 	var spawning := _state == WorldReader.STATE_SPAWN
 	_rise = move_toward(_rise, 0.0 if spawning else 1.0, dt * (6.0 if spawning else 2.5))
@@ -624,6 +636,17 @@ func _body_material(c: Color, tex: Texture2D) -> ShaderMaterial:
 ## _place_body; the parts' through _pose_parts: the same arithmetic as before, split so the VAT bake poses the parts.)
 func _pose_model(energy: float, calm: bool, bp: Vector3, brz: float) -> void:
 	var d := clampf(_die_t / DEATH_SECONDS, 0.0, 1.0) if _die_t >= 0.0 else 0.0
+	if kind == WorldReader.KIND_MINE_LAYER:  # Its own clips (MineLayerModel)
+		_place_body(
+			MineLayerModel.body_at(self, d), 0.0, -MineLayerModel.death_roll(d), 1.0 - 0.35 * d
+		)
+		_vat_d = MineLayerModel.drives(self, d)
+		if not vat:
+			var dv := PackedFloat64Array([_vat_d.x, _vat_d.y, _vat_d.z, _vat_d.w])
+			dv.append(MineLayerModel.idle_phase(_t))
+			MineLayerModel.pose(self, dv)
+		_set_glow(energy * lerpf(0.2, 1.0, _rise) * (1.0 - d))
+		return
 	var mrx := 0.0
 	var drives := Vector4(_wind, _strike, 0.0, sin(_walk_t) * _walk)
 	if MODEL_LEG_KINDS.has(kind):
@@ -667,7 +690,10 @@ func vat_bake_pose(u: Vector3, phase: float) -> void:
 ## shader poses it at (HordeVat: the stance grid's x, y, z, the gait's w), from the last _pose().
 func vat_grid_drives() -> PackedFloat32Array:
 	_peek()
-	return PackedFloat32Array([_vat_d.x, _vat_d.y, _vat_d.z, _vat_d.w])
+	var out := PackedFloat32Array([_vat_d.x, _vat_d.y, _vat_d.z, _vat_d.w])
+	if _is_model and kind == WorldReader.KIND_MINE_LAYER:  # Its fifth: the idle loop
+		out.append(MineLayerModel.idle_phase(_t))
+	return out
 
 
 ## VatCrowd: the body's transform in the avatar's space past the baked pose (the Swarmer's: its lift).
@@ -688,7 +714,8 @@ func pose_with(s: Dictionary) -> void:
 	_t = s["t"]
 	_rise = s["rise"]
 	_die_t = s["die"]
-	_walk = s["walk"]
+	_walk = s.get("walk_x", s["walk"]) if kind == WorldReader.KIND_MINE_LAYER else s["walk"]
+	_walk_z = s.get("walk_z", 0.0)
 	_walk_t = s["walk_t"]
 	_healing = s["healing"]
 	_tell_p = s["tell"]

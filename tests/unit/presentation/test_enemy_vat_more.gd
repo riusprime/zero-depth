@@ -64,19 +64,25 @@ func test_the_needle_sends_nineteen_drives_and_its_muzzle_on_its_own() -> void:
 
 
 func test_the_pieces_keep_their_own_looks() -> void:
-	# The Warden: its rocks take their facet colours; its cracks are unshaded; nothing is kept but the dust ring.
+	# The Warden (the owner's model): its cracks glow at the instance's glow, its eye at its EYE drive; nothing is
+	# kept but the dust ring.
 	var warden := VatBake.mesh_for(WorldReader.KIND_WARDEN, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 	var arrays := warden.surface_get_arrays(0)
 	var c0: PackedFloat32Array = arrays[Mesh.ARRAY_CUSTOM0]
 	var c2: PackedFloat32Array = arrays[Mesh.ARRAY_CUSTOM2]
-	var greys := {}
-	var unshaded := 0
+	var eye := 0
+	var cracks := 0
 	for k in range(0, c0.size(), 4):
-		greys[snappedf(c0[k], 0.001)] = true
-		if c2[k + 3] > 0.5:
-			unshaded += 1
-	assert_gt(greys.size(), 10, "the facets read apart (vertex colours)")
-	assert_gt(unshaded, 0, "the cracks draw their colour as is")
+		if c0[k + 3] > 0.5:  # an accent
+			if int(c2[k + 2]) == WardenAvatar.EYE + 1:
+				eye += 1
+			else:
+				cracks += 1
+	assert_gt(eye, 0, "the eye glows at the EYE drive")
+	assert_gt(cracks, 0, "the cracks glow at the instance's glow")
+	assert_true(
+		VatBake.pose_for(WorldReader.KIND_WARDEN).has("albedo_tex"), "the owner's colour map"
+	)
 	# A role-coloured plate glows at the role glow's energy of its own colour at rest.
 	var lit := VatBake.mesh_for(WorldReader.KIND_NEEDLE, Color(0, 0, 0, 0), 0.45, Color.BLACK)
 	var e1: PackedFloat32Array = lit.surface_get_arrays(0)[Mesh.ARRAY_CUSTOM1]

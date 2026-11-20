@@ -49,6 +49,12 @@ const SPECS := {
 	# The Gravity Node (scripts/assets/gravity_node_prep.py: face plate, core, two shell halves, two rings;
 	# GravityNodeAvatar poses them), about the request row's 0.9 m orb with its rings.
 	&"gravity_node": {"height": GravityNodeAvatar.MODEL_HEIGHT},
+	# The Warden (scripts/assets/warden_prep.py: body, head, two-part arms, three-part legs; WardenAvatar poses
+	# them), the old code golem's 1.2 m.
+	&"warden": {"height": 1.2},
+	# The Mine Layer (scripts/assets/mine_layer_prep.py: body, head, hopper, hatch, mine, six two-part legs;
+	# MineLayerModel poses them on HordeAvatar), 0.8 m long.
+	&"mine_layer": {"height": MineLayerModel.TOP},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

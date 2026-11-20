@@ -302,25 +302,42 @@ func test_every_other_horde_kind_bakes_within_2_mm() -> void:
 
 
 func test_the_mine_layer_s_dropped_mine_draws_nothing() -> void:
+	# The owner's model (MineLayerModel): past the drop the mine has shrunk to a point (its triangles draw nothing).
 	var kind := WorldReader.KIND_MINE_LAYER
 	var pose := VatBake.pose_for(kind)
 	var mesh := VatBake.mesh_for(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var ref := VatBake.reference_avatar(kind, Color(0, 0, 0, 0), 0.0)
 	var vat := HordeAvatar.new()
 	vat.vat = true
 	vat.setup(kind)
 	var s := HordeVat.sample(RandomNumberGenerator.new())
+	s["die"] = -1.0
 	s["strike"] = 0.0
+	s["wind"] = 0.0
 	vat.pose_with(s)
 	var shown := VatVerify.eval_vertices_at(pose, mesh, vat.vat_grid_drives(), vat.vat_offset())
-	s["strike"] = 1.0
+	s["strike"] = 0.8
 	vat.pose_with(s)
+	assert_almost_eq(vat.vat_grid_drives()[3], 0.6, 1e-6, "the clip past the drop")
 	var dropped := VatVerify.eval_vertices_at(pose, mesh, vat.vat_grid_drives(), vat.vat_offset())
-	var folded := 0
-	for k in shown.size():
-		if not shown[k].is_equal_approx(dropped[k]):
-			folded += 1
-	assert_gt(folded, 0, "the mine's vertices move")
-	assert_eq(vat.vat_grid_drives()[1], 0.0, "hidden: the mine's drive is 0")
+	var k0 := 0
+	var mine := 0
+	var spread := 0.0
+	var first := Vector3.INF
+	for p: Dictionary in VatBake.pieces(ref, VatBake.joints(ref)):
+		var mi: MeshInstance3D = p["node"]
+		var arrays := mi.mesh.surface_get_arrays(p["surface"])
+		var nv: int = (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+		if mi.get_parent() == ref.parts["mine"]:
+			for k in range(k0, k0 + nv):
+				mine += 1
+				first = dropped[k] if first == Vector3.INF else first
+				spread = maxf(spread, dropped[k].distance_to(first))
+				assert_false(shown[k].is_equal_approx(dropped[k]), "vertex %d moved" % k)
+		k0 += nv
+	assert_gt(mine, 100, "the mine's vertices")
+	assert_lt(spread, 1e-5, "folded to a point")
+	ref.free()
 	vat.free()
 
 
