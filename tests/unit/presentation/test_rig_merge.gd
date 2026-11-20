@@ -7,11 +7,17 @@ extends GutTest
 
 func before_each() -> void:
 	RigMerge.enabled = true
+	# The Warden's code body: many rigid pieces, several of one colour, the case the merge is for (the owner's model
+	# is a few parts that need no merge).
+	EnemyModels.dir = "res://tests/fixtures/no_such_dir/"
+	EnemyModels.clear_cache()
 
 
 func after_each() -> void:
 	RigMerge.enabled = false
 	RigMerge.skip_kinds = {}
+	EnemyModels.dir = EnemyModels.DIR
+	EnemyModels.clear_cache()
 
 
 func _warden() -> WardenAvatar:
@@ -95,11 +101,11 @@ func test_a_pieces_material_that_the_avatar_animates_stays_the_same_object() -> 
 	for mi in n.merged_rig.get_children():
 		var m := mi as MeshInstance3D
 		for s in m.mesh.get_surface_count():
-			if m.get_surface_override_material(s) == n._visor_mat:
+			if m.get_surface_override_material(s) == n._eye_mat:
 				seen = true
 	assert_true(
 		seen,
-		"the visor's glow material is a surface of the merged mesh, so its emission still animates it"
+		"the eye's glow material is a surface of the merged mesh, so its emission still animates it"
 	)
 
 
