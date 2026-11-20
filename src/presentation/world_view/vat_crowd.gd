@@ -84,7 +84,12 @@ static func supports(kind: int) -> bool:
 	if not KINDS.has(kind):
 		return false
 	var model := HordeAvatar.model_id(kind)
-	return model == &"" or EnemyModels.has_model(model) or kind == WorldReader.KIND_SWARMER
+	return (
+		model == &""
+		or EnemyModels.has_model(model)
+		or kind == WorldReader.KIND_SWARMER
+		or CritterBodies.is_critter(kind)
+	)
 
 
 func _init() -> void:

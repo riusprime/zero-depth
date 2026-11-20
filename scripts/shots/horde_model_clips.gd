@@ -1,6 +1,7 @@
 extends SceneTree
-## The clip sheet of the Hatchling or the Swarmer on the owner's model, for the owner: one row per clip, five frames
-## across, each frame its own avatar (HatchlingAvatar; the Swarmer's HordeAvatar) driven from a fresh start to that
+## The clip sheet of the Hatchling, the Swarmer or a walking critter (the Dust Mite, Ember Flea, Ice Crab) on the
+## owner's model, for the owner: one row per clip, five frames
+## across, each frame its own avatar (HatchlingAvatar; the others' HordeAvatar) driven from a fresh start to that
 ## moment by the calls ActorViews makes (apply_state once a tick, advance once a frame, the flinch and the death as
 ## HitFeel and ActorViews start them), seen from the game's iso camera angle on a plain floor.
 ## Needs a renderer (not --headless); off screen:
@@ -18,6 +19,9 @@ const OUT := "res://build/shots/models_v0120b/%s_clips.png"
 const KINDS := {
 	"hatchling": [WorldReader.KIND_HATCHLING, 3.6, 0.85, 0.18],
 	"swarmer": [WorldReader.KIND_SWARMER, 4.6, 0.7, 0.12],
+	"dust_mite": [WorldReader.KIND_DUST_MITE, 5.0, 0.55, 0.1],
+	"ember_flea": [WorldReader.KIND_EMBER_FLEA, 5.2, 0.75, 0.24],
+	"ice_crab": [WorldReader.KIND_ICE_CRAB, 4.8, 0.6, 0.08],
 }
 ## [label, clip, frame values].
 const ROWS := [
@@ -29,6 +33,16 @@ const ROWS := [
 	["death: 0, 15, 35, 60, 100 %", "death", [0.0, 0.15, 0.35, 0.6, 1.0]],
 	["rise-in: 0, 0.1, 0.2, 0.3, 0.5 s", "spawn", [0.0, 0.1, 0.2, 0.3, 0.5]],
 	["reduced motion: idle, run, windup 80 %, strike +0.1 s, death 60 %", "calm", [0, 1, 2, 3, 4]],
+]
+## The critters' clips (no windup: they only touch).
+const CRITTER_ROWS := [
+	["idle (0.15 s apart)", "idle_fast", [0, 1, 2, 3, 4]],
+	["run (one frame apart)", "run_fine", [0, 1, 2, 3, 4]],
+	["stop after a run: 0, 0.08, 0.16, 0.24, 0.32 s", "stop", [0, 5, 10, 14, 19]],
+	["hit: 0, 0.05, 0.1, 0.18, 0.3 s", "hit", [0.0, 0.05, 0.1, 0.18, 0.3]],
+	["death: 0, 15, 35, 60, 100 %", "death", [0.0, 0.15, 0.35, 0.6, 1.0]],
+	["rise-in: 0, 0.1, 0.2, 0.3, 0.5 s", "spawn", [0.0, 0.1, 0.2, 0.3, 0.5]],
+	["reduced motion: idle, idle +0.3 s, run, hit, death 60 %", "calm_critter", [0, 1, 2, 3, 4]],
 ]
 ## The Hatchling's daze after its charge (s into the recovery).
 const DAZE_ROW := ["daze after the charge: 0.1, 0.3, 0.5, 0.7, 0.9 s", "daze", [6, 18, 30, 42, 54]]
@@ -58,7 +72,9 @@ func _initialize() -> void:
 func _process(_delta: float) -> bool:
 	_frame += 1
 	if _frame == 1:
-		var rows: Array = ROWS.duplicate()
+		var rows: Array = (
+			CRITTER_ROWS.duplicate() if CritterModel.takes(_spec[0]) else ROWS.duplicate()
+		)
 		if _name == "hatchling":
 			rows.insert(4, DAZE_ROW)
 		for spec: Array in rows:
@@ -137,7 +153,7 @@ func _row(spec: Array) -> SubViewport:
 			(a as HatchlingAvatar).setup()
 		else:
 			a = HordeAvatar.new()
-			(a as HordeAvatar).setup(WorldReader.KIND_SWARMER)
+			(a as HordeAvatar).setup(_spec[0])
 		facing.add_child(a)
 		a.set_process(false)  # (after it enters the tree: ready turns its _process back on)
 		_drive(a, String(spec[1]), values[f], f)
@@ -198,8 +214,30 @@ func _drive(a: AvatarBase, clip: String, v: Variant, f: int) -> void:
 	match clip:
 		"idle":
 			_ticks(a, 60 + int(v) * 18)
+		"idle_fast":
+			_ticks(a, 60 + int(v) * 9)
 		"run":
 			_ticks(a, 60 + int(v) * 2, WorldReader.STATE_MOVE, 0.0, run)
+		"run_fine":
+			_ticks(a, 60 + int(v), WorldReader.STATE_MOVE, 0.0, run)
+		"stop":
+			_ticks(a, 60, WorldReader.STATE_MOVE, 0.0, run)
+			_ticks(a, 1 + int(v))
+		"calm_critter":
+			ViewPrefs.reduced_motion = true
+			match f:
+				0, 1:
+					_ticks(a, 60 + 18 * f)
+				2:
+					_ticks(a, 63, WorldReader.STATE_MOVE, 0.0, run)
+				3:
+					_ticks(a, 60)
+					a.flinch(-Vector2(cos(FACING), -sin(FACING)), 1.0)
+					_ticks(a, 6)
+				4:
+					_ticks(a, 60)
+					a.call(&"die")
+					_frames(a, 0.6 * death_s)
 		"tell":
 			_ticks(a, 60)
 			_ramp(a, float(v))

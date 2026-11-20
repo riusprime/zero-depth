@@ -14,6 +14,9 @@ extends RefCounted
 ##   legs); z the legs (the pace, or the death's curl) and w the gait's phase (the legs, the mandibles' working, the
 ##   wing cases' breath) on one gait grid of both (SwarmerModel.GRIDS).
 ## - v0.11.0 O9, the horde critters (CritterBodies): w the gait loop (the legs, wings, claws or tail); x, y, z unused.
+## - The Dust Mite, Ember Flea and Ice Crab on the owner's models (CritterModel): x the hit's flinch, y the crab's claws
+##   (the stance grid); z the legs (the pace, the flea's hop, or the death's curl) and w the gait's phase (the gait grid
+##   of both, CritterModel.GRIDS).
 ## The Swarmer's code body (its model missing) keeps the pilot's path (VatBake's own joint list and grids).
 ## Presentation only (EI-07).
 
@@ -62,6 +65,8 @@ static func rig(a: HordeAvatar) -> Dictionary:
 		axes.append([[3, gait, true]])
 	if a.kind == WorldReader.KIND_SWARMER:
 		axes = SwarmerModel.GRIDS.duplicate(true)
+	elif CritterModel.takes(a.kind) and a.has_model():
+		axes = CritterModel.GRIDS.duplicate(true)
 	var out := {
 		"key": "horde%d" % a.kind,
 		"drives": 4,
@@ -118,7 +123,7 @@ static func joint_spec(a: HordeAvatar) -> Array:
 		WorldReader.KIND_SWARMER:
 			out.append_array(SwarmerModel.joints(a))
 		_ when CritterBodies.is_critter(a.kind):  # Legs, wings, claws or tail on the gait
-			out.append_array(CritterBodies.joints(a))
+			out.append_array(CritterModel.joints(a) if a.has_model() else CritterBodies.joints(a))
 		_:
 			return []
 	return out
@@ -128,6 +133,8 @@ static func joint_spec(a: HordeAvatar) -> Array:
 ## grid; w the gait loop's phase (any real: the shader wraps it).
 static func grid_of(a: HordeAvatar, d: Vector4) -> Vector4:
 	if CritterBodies.is_critter(a.kind):  # W is the gait's phase (0..1)
+		if a.has_model():
+			return CritterModel.grid_of(d)
 		return Vector4(0.0, 0.0, 0.0, fposmod(d.w, 1.0))
 	match a.kind:
 		WorldReader.KIND_SWARMER:  # The legs -1..1 to 0..1
@@ -144,6 +151,8 @@ static func grid_of(a: HordeAvatar, d: Vector4) -> Vector4:
 ## The inverse of grid_of: `kind`'s natural drives at stance grid point `u` and gait phase `phase` (0..1).
 static func natural(kind: int, u: Vector3, phase: float) -> Vector4:
 	if CritterBodies.is_critter(kind):  # v0.11.0 O9
+		if CritterModel.on_model(kind):
+			return CritterModel.natural(u, phase)
 		return Vector4(0.0, 0.0, 0.0, phase)
 	match kind:
 		WorldReader.KIND_SWARMER:

@@ -467,6 +467,21 @@
       "sha256": "03c0b40202cf77135c943ed1f03d0b8566e897cab331196c36490159a570e05f"
     },
     {
+      "id": "dust_mite",
+      "path": "assets/models/enemies/dust_mite.glb",
+      "sha256": "07a4b5fe8fda73e3d3b5c036e35b6587aa21755f4ba0b12e6d8f5534ab7b2496"
+    },
+    {
+      "id": "ember_flea",
+      "path": "assets/models/enemies/ember_flea.glb",
+      "sha256": "c06fc92fdbc172c56c6e4c90c579fb213c015885176518b94fa023a134e50b13"
+    },
+    {
+      "id": "ice_crab",
+      "path": "assets/models/enemies/ice_crab.glb",
+      "sha256": "0639896d2c7bd76d1b9daac7199ecabbcc1490a5613160b773a7d8f411336bac"
+    },
+    {
       "id": "loop_device",
       "path": "assets/models/devices/loop_device.glb",
       "sha256": "c52a01bbbef3c6f037baeb6eb2491960df98998372ada530d829d6708734c67f"
