@@ -145,6 +145,8 @@ func test_a_critter_flashes_and_goes() -> void:
 	views.critters.advance(DT)
 	assert_eq(views.critters.count(), 1, "the dead one is let go")
 	assert_false(views.draws(a))
+	for f in roundi(HordeAvatar.DEATH_SECONDS / DT) + 2:  # (the owner's model plays its death first)
+		views.critters.advance(DT)
 	assert_eq(views.critters.drawn, 1)
 	assert_false(views.is_flashing(a))
 

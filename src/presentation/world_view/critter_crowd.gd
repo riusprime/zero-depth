@@ -16,8 +16,13 @@ extends Node3D
 ## - the shadow: ViewPrefs.enemy_shadows "proxy": VatCrowd.shadow_mesh (the same rest-pose stand-in, SHADOWS_ONLY) at
 ##   the place and facing; "blob": EnemyShadows' blob disc, flat under it;
 ## - the health bar, once it is hurt: a quad over its head, shrunk toward its centre by the HP left (no chunk trail).
-## A critter has no flinch, hold or status rings (they need a node); its hit flash, damage numbers (events) and death
-## spark (HitFeel, from the reader) are as before. Presentation only (EI-07): it reads, never writes.
+## A critter has no hold or status rings (they need a node); its hit flash, damage numbers (events) and death
+## spark (HitFeel, from the reader) are as before.
+## The kinds on the owner's models (CritterModel: the Dust Mite, Ember Flea, Ice Crab) pose from more of their slot:
+## the body's moves are CritterModel.body_xf (its gait's bob, the flea's hop and pitch, the crab's side-on turn and
+## slide, a hit's flinch, the death's roll), INSTANCE_CUSTOM the four drives (CritterModel.drives: the flinch, the
+## crab's claws, the legs, the gait's phase, which runs with the walk's pace); one gone from the sim stays a slot
+## DEATH_SECONDS more, dying (its id no longer drawn as live). Presentation only (EI-07): it reads, never writes.
 
 ## After the views' syncs and the other nodes' _process (as VatCrowd).
 const PROCESS_PRIORITY := 1000
@@ -62,11 +67,18 @@ var _walk := PackedFloat32Array()
 var _lx := PackedFloat32Array()  # where it was drawn last frame (its walk pace)
 var _ly := PackedFloat32Array()
 var _slide := PackedFloat32Array()  # the crab's slide (0..1 through it; < 0 none)
+var _ph := PackedFloat32Array()  # the gait's phase (0..1; the owner's models)
+var _die := PackedFloat32Array()  # seconds into its death (< 0: alive)
+var _fl := PackedFloat32Array()  # seconds into a hit's flinch
 var _armed := PackedByteArray()
 var _hit := PackedVector4Array()
 var _seen := PackedInt32Array()
 var _slot_of := {}
 var _gen := 0
+var _dying := 0
+## This frame's world-to-crowd transform (advance) and whether it is the identity.
+var _inv := Transform3D.IDENTITY
+var _inv_identity := true
 ## Per kind: {body: [mmi, mm], shadow: [mmi, mm] or [], buf, sbuf}; and the one bar set.
 var _sets := {}
 var _bar_mm: MultiMesh
@@ -84,9 +96,14 @@ func _init() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 
 
-## The critters it draws (live, as of the last sync).
+## The critters it draws (live, as of the last sync; not the dying).
 func count() -> int:
-	return _ids.size()
+	return _ids.size() - _dying
+
+
+## The dying critters still drawn (the owner's models' death).
+func dying_count() -> int:
+	return _dying
 
 
 func has(id: int) -> bool:
@@ -98,11 +115,14 @@ func ids() -> PackedInt32Array:
 	return _ids
 
 
-## The hit flash or status tint (EnemyLooks.hit_value; HIT_OFF: none) critter `id` shows.
-func set_hit(id: int, v: Vector4) -> void:
+## The hit flash or status tint (EnemyLooks.hit_value; HIT_OFF: none) critter `id` shows; `flash` (a hit) also
+## starts its flinch (once the last has run AvatarBase.FLINCH_RETRIGGER_S).
+func set_hit(id: int, v: Vector4, flash := false) -> void:
 	var k: int = _slot_of.get(id, -1)
 	if k >= 0:
 		_hit[k] = v
+		if flash and _fl[k] >= AvatarBase.FLINCH_RETRIGGER_S:
+			_fl[k] = 0.0
 
 
 ## Reads the critters from `reader`'s columns (`latched`: the place a tick before on a frame that ran two or more).
@@ -147,11 +167,24 @@ func sync(reader: WorldReader, latched: LatchedReader = null) -> int:
 	var gone := 0
 	var k := _ids.size() - 1
 	while k >= 0:
-		if _seen[k] != _gen:
-			_remove(k)
+		if _seen[k] != _gen and _die[k] < 0.0:
+			if (_sets[_kind[k]] as Dictionary)["model"]:
+				_start_death(k)
+			else:
+				_remove(k)
 			gone += 1
 		k -= 1
 	return gone
+
+
+## Slot `k`'s critter is gone from the sim: it stays to play its death, its id let go (keyed as -1 - id).
+func _start_death(k: int) -> void:
+	_slot_of.erase(_ids[k])
+	_ids[k] = -1 - _ids[k]
+	_slot_of[_ids[k]] = k
+	_die[k] = 0.0
+	_hit[k] = EnemyLooks.HIT_OFF
+	_dying += 1
 
 
 func _add(id: int, kind: int, x: float, y: float, yaw: float, spawning: bool, radius: float) -> int:
@@ -174,6 +207,9 @@ func _add(id: int, kind: int, x: float, y: float, yaw: float, spawning: bool, ra
 	_lx.append(INF)
 	_ly.append(INF)
 	_slide.append(-1.0)
+	_ph.append(0.0)
+	_die.append(-1.0)
+	_fl.append(AvatarBase.FLINCH_SECONDS)
 	_armed.append(0)
 	_hit.append(EnemyLooks.HIT_OFF)
 	_seen.append(_gen)
@@ -183,6 +219,8 @@ func _add(id: int, kind: int, x: float, y: float, yaw: float, spawning: bool, ra
 ## Swap-removes slot `k` (the last slot takes its place).
 func _remove(k: int) -> void:
 	var last := _ids.size() - 1
+	if _die[k] >= 0.0:
+		_dying -= 1
 	_slot_of.erase(_ids[k])
 	if k != last:
 		_ids[k] = _ids[last]
@@ -203,6 +241,9 @@ func _remove(k: int) -> void:
 			&"_lx",
 			&"_ly",
 			&"_slide",
+			&"_ph",
+			&"_die",
+			&"_fl",
 			&"_armed",
 			&"_hit",
 			&"_seen"
@@ -227,6 +268,9 @@ func _remove(k: int) -> void:
 		&"_lx",
 		&"_ly",
 		&"_slide",
+		&"_ph",
+		&"_die",
+		&"_fl",
 		&"_armed",
 		&"_hit",
 		&"_seen"
@@ -265,6 +309,7 @@ func _set_of(kind: int, radius: float) -> Dictionary:
 				GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
 			)
 	s["height"] = HordeAvatar.height_of(kind)
+	s["model"] = CritterModel.on_model(kind)
 	_sets[kind] = s
 	return s
 
@@ -331,15 +376,25 @@ func advance(delta: float) -> void:
 		f = Engine.get_physics_interpolation_fraction()
 	var calm := ViewPrefs.reduced_motion
 	var inv := global_transform.affine_inverse() if is_inside_tree() else Transform3D.IDENTITY
+	_inv = inv
+	_inv_identity = inv == Transform3D.IDENTITY
 	var n_all := _ids.size()
 	drawn = 0
 	shadows_drawn = 0
 	bars_drawn = 0
-	# The slots' frame-time state first (the clock, the rise-in, the crab's walk and slide).
-	for k in n_all:
-		_t[k] += dt
-		var spawning := _spawning[k] == 1
-		_rise[k] = move_toward(_rise[k], 0.0 if spawning else 1.0, dt * (6.0 if spawning else 2.5))
+	# The slots' frame-time state first (the clock, the rise-in, a hit's flinch, the death; the dead go).
+	var q := n_all - 1
+	while q >= 0:
+		_t[q] += dt
+		_fl[q] += dt
+		var spawning := _spawning[q] == 1
+		_rise[q] = move_toward(_rise[q], 0.0 if spawning else 1.0, dt * (6.0 if spawning else 2.5))
+		if _die[q] >= 0.0:
+			_die[q] += dt
+			if _die[q] > HordeAvatar.DEATH_SECONDS:
+				_remove(q)
+		q -= 1
+	n_all = _ids.size()
 	var bars := 0
 	for kind: int in _sets:
 		var s: Dictionary = _sets[kind]
@@ -364,6 +419,8 @@ func advance(delta: float) -> void:
 		var bs: float = s.get("blob_scale", 1.0)
 		var hz: float = CritterBodies.GAIT_HZ.get(kind, 1.0)
 		var crab := kind == WorldReader.KIND_ICE_CRAB
+		var model: bool = s["model"]
+		var step_hz: float = CritterModel.STEP_HZ.get(kind, 0.0)
 		var j := 0
 		for k in n_all:
 			if _kind[k] != kind:
@@ -376,15 +433,26 @@ func advance(delta: float) -> void:
 			var t := _t[k]
 			if crab:
 				_crab_step(k, x, y, dt)
+			elif model and dt > 0.0:  # The walk's pace (_crab_step's, inline)
+				var sp := 0.0 if _lx[k] == INF else Vector2(x - _lx[k], y - _ly[k]).length() / dt
+				_walk[k] = move_toward(_walk[k], clampf(sp / WALK_FULL_MPS, 0.0, 1.0), dt * 4.0)
 			_lx[k] = x
 			_ly[k] = y
 			var yb := Basis(Vector3.UP, lerp_angle(_yaw0[k], _yaw1[k], f))
+			var o := j * BODY_STRIDE
+			if model:
+				_model_instance(buf, o, k, kind, at, yb, dt, calm, h, step_hz)
+				if smm != null:
+					_put(sbuf, j * SHADOW_STRIDE, inv * _shadow_xf(blob, bs, at, yb))
+				if _hp[k] < 1.0 and _spawning[k] == 0 and _die[k] < 0.0:
+					bars += 1
+				j += 1
+				continue
 			var mv := CritterBodies.body_move_v(kind, t, _slide[k], calm)
 			var bob := 0.0 if calm else sin(t * HordeAvatar.BOB_RATE) * HordeAvatar.BOB_M
 			var lift := bob - (1.0 - _rise[k]) * h
 			var bp := Vector3(mv.x, lift + mv.y, 0.0)
 			var xf := inv * Transform3D(yb * Basis(Vector3.BACK, mv.z), at + yb * bp)
-			var o := j * BODY_STRIDE
 			_put(buf, o, xf)
 			var c := VatLooks.instance_color(_hit[k], 1.5 * lerpf(0.2, 1.0, _rise[k]))
 			buf[o + 12] = c.r
@@ -396,14 +464,7 @@ func advance(delta: float) -> void:
 			buf[o + 18] = 0.0
 			buf[o + 19] = fposmod(t * hz, 1.0)
 			if smm != null:
-				var sx := (
-					Transform3D(
-						Basis.from_scale(Vector3.ONE * bs), at + Vector3(0, EnemyShadows.BLOB_Y, 0)
-					)
-					if blob
-					else Transform3D(yb, at)
-				)
-				_put(sbuf, j * SHADOW_STRIDE, inv * sx)
+				_put(sbuf, j * SHADOW_STRIDE, inv * _shadow_xf(blob, bs, at, yb))
 			if _hp[k] < 1.0 and not _spawning[k] == 1:
 				bars += 1
 			j += 1
@@ -421,6 +482,117 @@ func advance(delta: float) -> void:
 	_draw_bars(bars, f, inv)
 
 
+## Writes slot `k`'s body instance at `o` in `buf` (a kind on the owner's model): its place `at` and facing `yb`, the
+## body's own moves (CritterModel.body_xf), the eye's glow and the four drives; its gait's phase steps on `dt` (`h`
+## its height, `step_hz` its cadence).
+func _model_instance(
+	buf: PackedFloat32Array,
+	o: int,
+	k: int,
+	kind: int,
+	at: Vector3,
+	yb: Basis,
+	dt: float,
+	calm: bool,
+	h: float,
+	step_hz: float
+) -> void:
+	# CritterModel's gait_rate, phase, energy and drives reckoned inline (no call each: a surge is dozens of slots).
+	var t := _t[k]
+	var walk := _walk[k]
+	var die := _die[k]
+	var rise := _rise[k]
+	var flea := kind == WorldReader.KIND_EMBER_FLEA
+	var ph := _ph[k]
+	if flea:
+		ph = fposmod(t * CritterBodies.HOP_HZ, 1.0)
+	elif die < 0.0:
+		var hz := step_hz * walk
+		if not calm:
+			hz += CritterModel.IDLE_HZ * (1.0 - walk)
+		ph = fposmod(ph + dt * hz, 1.0)
+		_ph[k] = ph
+	var fl := 0.0
+	if _fl[k] < AvatarBase.FLINCH_SECONDS:
+		fl = AvatarBase.flinch_envelope(_fl[k] / AvatarBase.FLINCH_SECONDS)
+		if calm:
+			fl *= AvatarBase.FLINCH_CALM
+	var xf: Transform3D
+	if die < 0.0 and fl == 0.0:  # The common frame: CritterModel.body_xf's live, unhit path, inline
+		var x := 0.0
+		var y := -(1.0 - rise) * h
+		if not calm:
+			y += (0.5 + 0.5 * sin(t * HordeAvatar.BOB_RATE)) * HordeAvatar.BOB_M
+		var lean := 0.0
+		var yaw := 0.0
+		var z := 0.0
+		if flea:
+			if not calm:
+				var p := sin(ph * TAU) * CritterModel.PITCH
+				var px := CritterModel.FOOT_BACK if p > 0.0 else CritterModel.FOOT_FRONT
+				x += px * (1.0 - cos(p))
+				y += sin(ph * PI) * CritterBodies.HOP_M - px * sin(p)
+				lean += p
+		elif kind == WorldReader.KIND_ICE_CRAB:
+			var slide := _slide[k]
+			if slide >= 0.0:
+				x += sin(clampf(slide, 0.0, 1.0) * PI) * CritterBodies.SLIDE_M
+			if walk > 0.0:
+				var sw := sin(ph * TAU)
+				yaw = CritterModel.SIDE_YAW * walk
+				z = sw * CritterModel.SWAY_M * walk
+				y += absf(sw) * CritterModel.STRIDE_BOB * walk
+		elif walk > 0.0:
+			y += absf(sin(ph * TAU)) * CritterModel.STRIDE_BOB * walk
+		var b := yb
+		if lean != 0.0:
+			b = b * Basis(Vector3.BACK, lean)
+		if yaw != 0.0:
+			b = b * Basis(Vector3.UP, yaw)
+		xf = Transform3D(b, at + yb * Vector3(x, y, z))
+	else:
+		var body := CritterModel.body_xf(kind, t, ph, walk, _slide[k], die, fl, rise, calm)
+		xf = Transform3D(yb * body.basis, at + yb * body.origin)
+	_put(buf, o, xf if _inv_identity else _inv * xf)
+	var e := 1.5 * lerpf(0.2, 1.0, rise)
+	var legs := walk
+	var claws := 0.0
+	if die >= 0.0:
+		var dd := clampf(die / HordeAvatar.DEATH_SECONDS, 0.0, 1.0)
+		e *= 1.0 - dd
+		legs = -dd
+	elif flea:
+		legs = 0.0 if calm else 1.0
+	elif kind == WorldReader.KIND_ICE_CRAB:
+		claws = 0.35
+		if not calm:  # (CritterModel.snap, inline)
+			var u := fposmod(t * CritterModel.SNAP_HZ, 1.0)
+			if u < 0.7:
+				claws = sin(u / 0.7 * PI * 0.5)
+			else:
+				claws = (1.0 - (u - 0.7) / 0.3) * (1.0 - (u - 0.7) / 0.3)
+	if flea and not calm:
+		e *= 0.8 + 0.5 * (0.5 + 0.5 * sin(t * TAU * CritterModel.PULSE_HZ))
+	var hit := _hit[k]
+	buf[o + 12] = hit.x
+	buf[o + 13] = hit.y
+	buf[o + 14] = hit.z
+	buf[o + 15] = -1.0 - e if hit.w > 0.5 else e
+	buf[o + 16] = clampf(fl, 0.0, 1.0)
+	buf[o + 17] = claws
+	buf[o + 18] = (legs + 1.0) * 0.5
+	buf[o + 19] = ph
+
+
+## A critter's shadow: the blob (flat, `bs` its scale) or the proxy, at `at` facing `yb`.
+static func _shadow_xf(blob: bool, bs: float, at: Vector3, yb: Basis) -> Transform3D:
+	if blob:
+		return Transform3D(
+			Basis.from_scale(Vector3.ONE * bs), at + Vector3(0, EnemyShadows.BLOB_Y, 0)
+		)
+	return Transform3D(yb, at)
+
+
 ## The bars over the hurt critters (none at full HP, none while it rises in).
 func _draw_bars(bars: int, f: float, inv: Transform3D) -> void:
 	if bars == 0:
@@ -432,7 +604,7 @@ func _draw_bars(bars: int, f: float, inv: Transform3D) -> void:
 	_bar_buf.resize(mm.instance_count * SHADOW_STRIDE)
 	var j := 0
 	for k in _ids.size():
-		if _hp[k] >= 1.0 or _spawning[k] == 1:
+		if _hp[k] >= 1.0 or _spawning[k] == 1 or _die[k] >= 0.0:
 			continue
 		var h: float = (_sets[_kind[k]] as Dictionary)["height"]
 		var at := Vector3(lerpf(_x0[k], _x1[k], f), h + BAR_LIFT_M, -lerpf(_y0[k], _y1[k], f))

@@ -74,6 +74,9 @@ const KINDS := {
 	"shield_bearer": WorldReader.KIND_SHIELD_BEARER,
 	"mender": WorldReader.KIND_MENDER,
 	"mine_layer": WorldReader.KIND_MINE_LAYER,
+	"dust_mite": WorldReader.KIND_DUST_MITE,
+	"ember_flea": WorldReader.KIND_EMBER_FLEA,
+	"ice_crab": WorldReader.KIND_ICE_CRAB,
 }
 const CAST := {"tint": Color(0.45, 0.65, 1.0, 0.5), "role": 0.45}
 ## v0.10.5 W3-V4b: the other kinds' states (the Swarmer's: PLAN).
@@ -108,6 +111,20 @@ const KIND_PLANS := {
 		["death, 0.3 s in", {}, "death_late"],
 		["flinch at its peak", {}, "flinch"],
 		["Blade knock", {}, "knock"],
+		["hit flash", {}, "flash"],
+		["status tint (burn)", {}, "tint"],
+		["rise-in, half way", {}, "spawn"],
+		["biome cast + role glow", CAST, "idle"],
+		["reduced motion + flinch", {}, "calm"],
+	],
+	"critter_model":
+	[
+		["idle", {}, "idle"],
+		["idle, 1.3 s later", {}, "idle_late"],
+		["walking", {}, "walk"],
+		["death, 0.1 s in", {}, "death_early"],
+		["death, 0.3 s in", {}, "death_late"],
+		["flinch at its peak", {}, "flinch"],
 		["hit flash", {}, "flash"],
 		["status tint (burn)", {}, "tint"],
 		["rise-in, half way", {}, "spawn"],
@@ -231,6 +248,8 @@ func _initialize() -> void:
 			match kname:
 				"splitter", "splitling", "shield_bearer":
 					plan = KIND_PLANS["melee_model"]
+				"dust_mite", "ember_flea", "ice_crab":  # The walking critters on their models
+					plan = KIND_PLANS["critter_model"]
 				_:
 					plan = KIND_PLANS[kname]
 		elif arg.begins_with("--kind=") and SOLO.has(arg.trim_prefix("--kind=")):  # v0.10.5 W3-V4c

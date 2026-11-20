@@ -171,6 +171,8 @@ static func model_id(p_kind: int) -> StringName:
 			return MineLayerModel.MODEL
 		WorldReader.KIND_LENS_DRONE:  # v0.11.0 S4 (VatCrowd.supports reads it; the Lens Drone is no HordeAvatar)
 			return &"lens_drone"
+		_ when CritterModel.takes(p_kind):  # The walking critters (CritterModel poses them)
+			return CritterModel.KINDS[p_kind]
 	return &""
 
 
@@ -214,14 +216,19 @@ func setup(p_kind: int) -> void:
 	elif kind == WorldReader.KIND_MENDER:
 		glow = MEND
 	var owner_model := EnemyModels.get_model(model_id(kind))  # The owner's model first
+	if not owner_model.is_empty() and CritterModel.takes(kind):  # The family's crimson, not the biome's
+		_is_model = true
+		glow = CritterModel.eye_color(kind, _col(&"eye"))
 	_glow_mat = EnemyLooks.accent(glow, glow, 1.5)
 	if not owner_model.is_empty():
 		_build_model(owner_model)
 		_is_model = true
 		if kind == WorldReader.KIND_SWARMER:
 			SwarmerModel.rig_nodes(self)
-		if kind == WorldReader.KIND_MINE_LAYER:
+		elif kind == WorldReader.KIND_MINE_LAYER:
 			MineLayerModel.rig_nodes(self)
+		elif CritterModel.takes(kind):
+			CritterModel.rig_nodes(self)
 		if kind == WorldReader.KIND_SPLITLING:
 			body.scale = Vector3.ONE * SPLITLING_SCALE
 	else:
@@ -299,6 +306,8 @@ func advance(delta: float) -> void:
 			_walk = move_toward(_walk, clampf(speed / WALK_FULL_MPS, 0.0, 1.0), dt * 4.0)
 			if kind == WorldReader.KIND_SWARMER:  # Its gait clock runs idle too
 				_walk_t += dt * SwarmerModel.gait_rate(_walk, ViewPrefs.reduced_motion)
+			elif _is_model and CritterModel.takes(kind):
+				_walk_t += dt * CritterModel.gait_rate(kind, _walk, ViewPrefs.reduced_motion)
 			else:
 				_walk_t += dt * lerpf(0.0, WALK_HZ * TAU, _walk)
 		_last_at = at
@@ -394,7 +403,7 @@ func _pose() -> void:
 		0
 	)
 	var brz := crouch * 0.12
-	if CritterBodies.is_critter(kind):  # The body's own move, then the gait's parts
+	if CritterBodies.is_critter(kind) and not _is_model:  # The body's own move, then the gait's parts
 		var mv := CritterBodies.body_move(kind, _t, _slide, calm)
 		_place_body(bp + (mv[0] as Vector3), brz + float(mv[1]))
 		_pose_parts(Vector4(0, 0, 0, CritterBodies.phase_at(kind, _t)))
@@ -477,8 +486,11 @@ func _pose_parts(d: Vector4) -> void:
 	if vat:
 		_vat_d = HordeVat.grid_of(self, d)
 		return
-	if CritterBodies.is_critter(kind):  # v0.11.0 O9
-		CritterBodies.pose_parts(self, d.w)
+	if CritterBodies.is_critter(kind):  # v0.11.0 O9; the owner's models: CritterModel
+		if _is_model:
+			CritterModel.pose_parts(self, d)
+		else:
+			CritterBodies.pose_parts(self, d.w)
 		return
 	if kind == WorldReader.KIND_SWARMER:  # The owner's model (the code body never comes here)
 		SwarmerModel.pose_parts(self, d)
@@ -596,6 +608,9 @@ func _body_material(c: Color, tex: Texture2D) -> ShaderMaterial:
 func _pose_model(energy: float, calm: bool, bp: Vector3, brz: float) -> void:
 	if kind == WorldReader.KIND_SWARMER:
 		SwarmerModel.place(self, energy)
+		return
+	if CritterModel.takes(kind):
+		CritterModel.place(self)
 		return
 	var d := clampf(_die_t / DEATH_SECONDS, 0.0, 1.0) if _die_t >= 0.0 else 0.0
 	if kind == WorldReader.KIND_MINE_LAYER:  # Its own clips (MineLayerModel)
@@ -896,6 +911,8 @@ func _eye(parent: Node3D, size: Vector3, at: Vector3) -> void:
 ## This kind's colour in `slot` under the active palette.
 func _col(slot: StringName) -> Color:
 	if CritterBodies.is_critter(kind):  # A critter wears its biome's colours, not a role's
+		if _is_model:  # The owner's model: the family's crimson (the Swarmer's)
+			return _look_color(WorldReader.KIND_SWARMER, slot)
 		return CritterBodies.color(kind, slot)
 	return _look_color(kind, slot)
 

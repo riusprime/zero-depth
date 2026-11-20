@@ -439,7 +439,8 @@ func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
 					on or not tint.is_empty(),
 					Color.WHITE if on else (tint[0] if not tint.is_empty() else Color.WHITE),
 					1.6 if on else (float(tint[1]) if not tint.is_empty() else 0.0)
-				)
+				),
+				on  # A hit also flinches it (a critter on the owner's model)
 			)
 		return
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):

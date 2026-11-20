@@ -69,6 +69,12 @@ const SPECS := {
 	# The Mine Layer (scripts/assets/mine_layer_prep.py: body, head, hopper, hatch, mine, six two-part legs;
 	# MineLayerModel poses them on HordeAvatar), 0.8 m long.
 	&"mine_layer": {"height": MineLayerModel.TOP},
+	# The Dust Mite, the Ember Flea and the Ice Crab (scripts/assets/critter_prep.py: body, legs, the flea's thighs
+	# and shins, the crab's claws; CritterModel poses them): no taller than CritterBodies.HEIGHTS and about as wide
+	# as the sim's body (the mite 0.37 m by 0.42 m across its legs, the crab 0.4 m by 0.46 m).
+	&"dust_mite": {"height": 0.2},
+	&"ember_flea": {"height": 0.3},
+	&"ice_crab": {"height": 0.15},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 
@@ -97,6 +103,7 @@ static func has_model(id: StringName) -> bool:
 
 static func clear_cache() -> void:
 	_cache.clear()
+	CritterModel.clear_cache()
 
 
 static func _read(scene: PackedScene, height: float) -> Dictionary:
