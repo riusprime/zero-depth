@@ -40,10 +40,13 @@ func test_walk_into_a_crate_stop_break_it_and_walk_through() -> void:
 				gap, w.actors.radius[0] + 0.25, "the hero stopped against it (gap %.2f)" % gap
 			)
 			assert_lt(gap, 1.6, "and was walking at it")
+			var prop := main.view.breakables.props[i]
+			assert_true(prop.has_node("Model") and prop.visible, "the owner's model stands there")
 			await e.mouse_button(MOUSE_BUTTON_LEFT, true)
 			await e.mouse_button(MOUSE_BUTTON_LEFT, false)
 			await e.frames(30)
 			assert_eq(b.broken[i], 1, "one hit breaks it")
+			assert_false(prop.visible, "and it is gone")
 			e.stick_toward(dir)
 			await e.frames(90)
 			e.stick_toward(Vector2.ZERO)

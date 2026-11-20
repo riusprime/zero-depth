@@ -4,7 +4,7 @@ extends GutTest
 ## doorway of every Lockdown room; on the seal they come down into the doorways with `lockdown_close` (captioned) and
 ## the banner reads LOCKDOWN with the formation and the enemies left; on the clear they rise out of sight with
 ## `lockdown_open` and the banner says the exits are open. A Hazard Lockdown shows each strike's ground warning before
-## it lands, and the biome's hazard (Ruins: the sparking cable, a stand-in until its model arrives).
+## it lands, and the biome's hazard (Ruins: the owner's sparking cable, its spark the code's).
 
 
 func _view(w: World) -> WorldViewRoot:
@@ -85,7 +85,8 @@ func test_a_hazard_lockdown_shows_its_warning_and_its_hazard() -> void:
 	var v := _view(w)
 	var l := v.lockdowns
 	assert_eq(l.hazard_id, &"hazard_cable", "Ruins: the sparking cable")
-	assert_false(l.hazard_uses_model, "a stand-in until the owner's model arrives")
+	assert_true(l.hazard_uses_model, "the owner's cable")
+	assert_true(l.has_node("Hazard/Model/Spark"), "its spark at the frayed ends")
 	var r := LockLab.room(w)
 	LockLab.enter(w, r)
 	var hud := LockdownHud.new()

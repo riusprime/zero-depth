@@ -8,9 +8,12 @@ extends Node3D
 ## - the altar: SA's AltarStage in its purple look (AltarStage.final) at the plateau's centre; each lit pylon lights
 ##   its share of the runes; the buildup plays the altar's timeline with its pop on the buildup's end (the walls rise,
 ##   the Colossus rises from the altar), then the release;
-## - the two rune pylons (code-made: a faceted dark stone with a rune on each face and a crystal on top): dark until
-##   pressed, then they lock in (a quick punch, a flash, a burst of motes, the rune and crystal lit, a light); they
-##   sink into the plateau once the fight begins (the sim has no body for them);
+## - the two rune pylons (the owner's `approach_pylon` through ShopModels: a tapered obelisk on stepped base with a
+##   round socket on its face toward the altar and channels carved down from it; a crystal sits in the socket and the
+##   channels glow through the model's emission map; else a code-made faceted stone with a rune on each face and a
+##   crystal on top): dark until pressed, then they lock in (a quick punch, a flash, a burst of motes, the channels
+##   or runes and the crystal lit, a light); they sink into the plateau once the fight begins (the sim has no body for
+##   them);
 ## - the walls of light: one glowing violet curtain per light wall (WorldReader.approach_light_wall), rising from the
 ##   floor when they stand;
 ## - the camera: a thud as the hero lands at the causeway's foot, the vibration climbing through the buildup and a
@@ -21,6 +24,11 @@ const VIOLET := AltarStage.VIOLET
 const VIOLET_CORE := AltarStage.VIOLET_CORE
 const PYLON_H := 2.3
 const PYLON_W := 0.75
+const MODEL_PYLON := &"approach_pylon"
+## On the owner's pylon (m, its frame): the socket's middle on its front face (the crystal sits in it) and the
+## crystal's size there.
+const SOCKET_AT := Vector3(0.0, 1.85, 0.17)
+const SOCKET_GEM := 0.13
 ## The lock-in's punch (s) and size, the pylons' sink (s) once the fight begins, the walls' rise (ticks).
 const PUNCH_S := 0.45
 const PUNCH := 0.35
@@ -43,6 +51,8 @@ var calm := false
 ## Pylon k's lock-in has played (tests read it), and the walls have risen.
 var locked: Array[bool] = [false, false]
 var walls_up := false
+## The pylons are the owner's model (tests read it).
+var pylon_uses_model := false
 var _landed := false
 var _crystal_mats: Array[StandardMaterial3D] = []
 var _rune_mats: Array[Material] = []
@@ -186,6 +196,11 @@ func _build_pylon(k: int, at: Vector2, centre: Vector2) -> Node3D:
 	add_child(root)
 	var to := SimPlane.to_3d(centre) - root.position
 	root.rotation.y = atan2(to.x, to.z)  # +Z faces the altar
+	var model := ShopModels.get_model(MODEL_PYLON)
+	if not model.is_empty():
+		pylon_uses_model = true
+		_model_pylon(root, model)
+		return root
 	var stone := StandardMaterial3D.new()
 	stone.albedo_color = Color("#3B3442")
 	stone.roughness = 0.95
@@ -222,17 +237,49 @@ func _build_pylon(k: int, at: Vector2, centre: Vector2) -> Node3D:
 	gem.height = 0.6
 	gem.radial_segments = 4
 	gem.rings = 2
+	_mesh(root, "Crystal", AltarStage.faceted(gem), _crystal_mat(), Vector3(0, PYLON_H + 0.75, 0))
+	_add_glow(root, Vector3(0, PYLON_H + 0.6, 0), Vector3(0, PYLON_H + 0.7, 0))
+	return root
+
+
+## The owner's pylon: the model, its own copy of the material (the channels' emission lit per pylon), a crystal in
+## its socket.
+func _model_pylon(root: Node3D, model: Dictionary) -> void:
+	var mat := (model["material"] as StandardMaterial3D).duplicate() as StandardMaterial3D
+	mat.emission_enabled = true
+	mat.emission = VIOLET
+	_rune_mats.append(mat)
+	var mi := MeshInstance3D.new()
+	mi.name = "Model"
+	mi.mesh = model["mesh"]
+	mi.set_surface_override_material(0, mat)
+	root.add_child(mi)
+	var gem := SphereMesh.new()
+	gem.radius = SOCKET_GEM
+	gem.height = SOCKET_GEM * 2.4
+	gem.radial_segments = 4
+	gem.rings = 2
+	var crystal := _mesh(root, "Crystal", AltarStage.faceted(gem), _crystal_mat(), SOCKET_AT)
+	crystal.rotation.x = PI * 0.5  # its long axis out of the socket
+	_add_glow(root, SOCKET_AT + Vector3(0, 0, 0.5), SOCKET_AT + Vector3(0, 0, 0.1))
+
+
+func _crystal_mat() -> StandardMaterial3D:
 	var cm := StandardMaterial3D.new()
 	cm.emission_enabled = true
 	cm.emission = VIOLET
 	cm.roughness = 0.25
 	_crystal_mats.append(cm)
-	_mesh(root, "Crystal", AltarStage.faceted(gem), cm, Vector3(0, PYLON_H + 0.75, 0))
+	return cm
+
+
+## A pylon's light at `light_at` and its lock-in burst of motes from `burst_at`.
+func _add_glow(root: Node3D, light_at: Vector3, burst_at: Vector3) -> void:
 	var light := OmniLight3D.new()
 	light.light_color = VIOLET
 	light.omni_range = 5.0
 	light.shadow_enabled = false
-	light.position = Vector3(0, PYLON_H + 0.6, 0)
+	light.position = light_at
 	root.add_child(light)
 	_lights.append(light)
 	var burst := CPUParticles3D.new()
@@ -261,10 +308,9 @@ func _build_pylon(k: int, at: Vector2, centre: Vector2) -> Node3D:
 	burst.initial_velocity_min = 2.0
 	burst.initial_velocity_max = 4.5
 	burst.gravity = Vector3(0, -2.0, 0)
-	burst.position = Vector3(0, PYLON_H + 0.7, 0)
+	burst.position = burst_at
 	root.add_child(burst)
 	_bursts.append(burst)
-	return root
 
 
 func _mesh(parent: Node3D, n: String, mesh: Mesh, mat: Material, at: Vector3) -> MeshInstance3D:

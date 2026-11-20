@@ -27,6 +27,18 @@ const MI2_DEVICES: Array[StringName] = [
 	&"shrine_blood",
 	&"shrine_chaos",
 	&"healing_fountain",
+	# The owner's props and timed door (scripts/assets/props_v0120_prep.py)
+	&"container_crate",
+	&"container_urn",
+	&"container_barrel",
+	&"explosive_barrel",
+	&"approach_pylon",
+	&"timed_door",
+	&"hazard_cable",
+	&"hazard_rock",
+	&"hazard_vent",
+	&"hazard_ice",
+	&"hazard_star",
 ]
 
 var _w: World

@@ -11,8 +11,10 @@ extends Node3D
 ## - Containers (`container_crate`, `container_urn`, `container_barrel`): broken, the piece goes and a few chips fly and
 ##   fade (DEBRIS_S).
 ## - Explosive barrels (`explosive_barrel`): a battered red barrel with a fuse cap; lit, a red light on it blinks faster
-##   and faster until it blows (the `barrel_fuse` sound is AudioEvents'); the blast is a flash and a ball of fire the
-##   size of its reach (BLAST_S), and `blasted` asks the camera for a thud.
+##   and faster until it blows (the `barrel_fuse` sound is AudioEvents'), and on the owner's barrel its lid and fuse
+##   rattle on it; the blast is one of the packs' fire explosions the size of its reach (PD-13; the owner: one
+##   exploding animation, never two), a code ball of fire only when the packs aren't there, with a flash of light
+##   (BLAST_S), and `blasted` asks the camera for a thud. The owner's barrel keeps its own red (no biome tint).
 ## - v0.9.0 BV: per biome (InteractionLooks, the stage's prop_style): the owner's wall models tinted, the room's
 ##   light, the biome's accent at the wall's feet; the containers' wood, clay and hoops and their chips (Ruins brown
 ##   wood and clay, Night Rocks blue-grey, Red Canyon bleached wood and terracotta, Frozen Shore frosted grey under a
@@ -47,6 +49,13 @@ const BLAST_S := 0.35
 const MODEL_WALL := &"cracked_wall"
 const MODEL_WALL_BROKEN := &"cracked_wall_broken"
 const MODELS := [&"container_crate", &"container_urn", &"container_barrel", &"explosive_barrel"]
+## The packs' fire explosion a barrel's blast plays, and its size per metre of the blast's reach (the pack's fireball
+## is about 3 m across at scale 1).
+const BLAST_ID := &"explosion_fire_a"
+const BLAST_PER_M := 0.6
+## The owner's barrel lid's rattle while the fuse burns: how far it lifts (m) and tips (rad) at the fuse's blink.
+const LID_LIFT := 0.025
+const LID_TIP := 0.06
 
 ## The wall section (whole) and its broken frame; the props by index; true on the sync a barrel blew (the thud).
 var wall: Node3D
@@ -65,6 +74,10 @@ var slab_spec: Array = []
 var slab_index := -1
 ## How bright the runes are now (0.. 1; they shine when the hero is near).
 var shine := 0.0
+## The pack effects the blasts play (WorldViewRoot's, found up the tree; tests may set it) and how many explosions
+## this view has played (one per barrel: tests read it).
+var pack_fx: PackFx = null
+var explosions := 0
 var _accent_biome := &""
 var _mats := {}
 var _reader: WorldReader
@@ -73,6 +86,8 @@ var _stone := StandardMaterial3D.new()
 var _crack_mat := StandardMaterial3D.new()
 var _room_light: OmniLight3D
 var _fuse_lights: Array[OmniLight3D] = []
+## Each prop's lid (the owner's explosive barrel), else null.
+var _lids: Array[Node3D] = []
 var _seen := PackedByteArray()
 var _fx: Array = []
 var _slab_faded := false
@@ -131,6 +146,10 @@ func sync(reader: WorldReader) -> void:
 			fuse_glow[i] = 1.0 if fuse_blink(reader, i) else 0.0
 		if i < _fuse_lights.size() and _fuse_lights[i] != null:
 			_fuse_lights[i].visible = fuse_glow[i] > 0.5
+		if i < _lids.size() and _lids[i] != null:  # the lid jumps on each blink
+			var on := fuse_glow[i]
+			_lids[i].position.y = LID_LIFT * on
+			_lids[i].rotation.z = LID_TIP * on * (1.0 if (reader.tick() / 4) % 2 == 0 else -1.0)
 
 
 ## Barrel i's fuse light is on now: it blinks every 12 ticks at first, every 3 at the end.
@@ -173,8 +192,10 @@ func _process(delta: float) -> void:
 			node.position += (fx[4] as Vector3) * delta
 			fx[4] = (fx[4] as Vector3) + Vector3(0, -9.0 * delta, 0)
 			node.scale = Vector3.ONE * (1.0 - u)
-		else:  # the blast: grows to its reach and fades
+		elif fx[3] == 1:  # the code's blast: grows to its reach and fades
 			node.scale = Vector3.ONE * lerpf(0.2, float(fx[4]), u)
+		else:  # the pack blast's flash: dims out
+			(node as OmniLight3D).light_energy = 4.0 * (1.0 - u)
 		if u >= 1.0:
 			node.queue_free()
 			_fx.remove_at(k)
@@ -305,7 +326,10 @@ func _build_prop(i: int, kind: int, at: Vector2) -> void:
 	props.append(root)
 	var model := ShopModels.get_model(MODELS[kind])
 	var light: OmniLight3D = null
-	if not model.is_empty():
+	var lid: Node3D = null
+	if not model.is_empty() and kind == WorldReader.BREAKABLE_EXPLOSIVE:
+		lid = _barrel_model(root, model)
+	elif not model.is_empty():
 		_model(root, model, Vector3.ONE)
 	else:
 		var top := 0.7
@@ -350,6 +374,23 @@ func _build_prop(i: int, kind: int, at: Vector2) -> void:
 		light.visible = false
 		root.add_child(light)
 	_fuse_lights.append(light)
+	_lids.append(lid)
+
+
+## The owner's explosive barrel, untinted (its red warns): the body, and the lid with its fuse as a node of its own
+## (returned) that rattles while the fuse burns.
+func _barrel_model(root: Node3D, model: Dictionary) -> Node3D:
+	var meshes := ShopModels.parts(MODELS[WorldReader.BREAKABLE_EXPLOSIVE])
+	var lid: Node3D = null
+	for k in meshes.size():
+		var mi := MeshInstance3D.new()
+		mi.name = "Model" if k == 0 else "Lid"
+		mi.mesh = meshes[k]
+		mi.set_surface_override_material(0, model["material"])
+		root.add_child(mi)
+		if k > 0:
+			lid = mi
+	return lid
 
 
 func _debris(at: Vector2, kind: int) -> void:
@@ -360,7 +401,23 @@ func _debris(at: Vector2, kind: int) -> void:
 		_fx.append([chip, 0.0, DEBRIS_S, 0, Vector3(cos(ang) * 1.6, 3.0, sin(ang) * 1.6)])
 
 
+## One explosion for a barrel's blast: the packs' (PD-13) or, without them, the code's ball of fire; a flash of light
+## with either.
 func _blast(at: Vector2, radius: float) -> void:
+	explosions += 1
+	if pack_fx == null and is_inside_tree():
+		pack_fx = GapPack.pack_of(get_parent())
+	if pack_fx != null and pack_fx.has_id(BLAST_ID):
+		pack_fx.spawn(BLAST_ID, SimPlane.to_3d(at, 0.1), radius * BLAST_PER_M)
+		var flash := OmniLight3D.new()
+		flash.name = "Flash"
+		flash.light_color = FIRE
+		flash.omni_range = radius * 3.0
+		flash.light_energy = 4.0
+		flash.position = SimPlane.to_3d(at, 0.6)
+		add_child(flash)
+		_fx.append([flash, 0.0, BLAST_S, 2, 0.0])
+		return
 	var m := StandardMaterial3D.new()
 	m.albedo_color = Color(FIRE, 0.55)
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA

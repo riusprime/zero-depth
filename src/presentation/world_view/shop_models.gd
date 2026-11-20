@@ -17,6 +17,8 @@ const MANIFEST := "res://assets/models/manifest.json"
 const DIR := "res://assets/models/shop/"
 ## A delivered model's front: glTF +Z, turned onto +X.
 const FRONT_YAW := PI * 0.5
+## The slots a prepared model's parts are numbered in (scripts/assets/props_v0120_prep.py PART_SLOTS).
+const PART_SLOTS := 16.0
 ## Per model: "size" (the box it fills, m, after the turn: the tent x front-to-back, y height, z across) or "height"
 ## (m, uniform), "yaw"
 ## (radians about Y onto +X), "lift" (m off the floor). The stand-ins are built to the same numbers.
@@ -49,33 +51,38 @@ const SPECS := {
 	# 2026-10-22; scripts/assets/mi2_prep.py prepared them in this frame, so no turn): the owner's door is a gate of
 	# iron bars with no frame; his switch keeps its own proportions, 1.3 m high, its slanted rune top toward +Z (the door).
 	# The owner (2026-10-22, PLAN "Owner decisions" FV, MI2: "Use it for Lockdowns"): the gate is `lockdown_seal`, the
-	# Lockdowns' doorway bars (LK), 0.4 m thick, 2.6 m high, 3.0 m across (its width on z, as prepared); `timed_door` is
-	# unlisted again, so the timed door is the code stone slab until the owner's stone door arrives.
+	# Lockdowns' doorway bars (LK), 0.4 m thick, 2.6 m high, 3.0 m across (its width on z, as prepared). The timed
+	# door is the owner's stone door (below, with the props).
 	&"lockdown_seal": {"size": Vector3(0.4, 2.6, 3.0), "yaw": 0.0},
 	&"rune_switch": {"height": 1.3, "yaw": 0.0},
 	# The same list; RuneAlignmentView: the turning pillar, 0.9 x 2.2 x 0.9 m, and the carving, 2.4 m
 	# across, 1.6 m high, 0.3 m deep (on the sealed doorway's slab). Code stand-ins until the owner's files arrive.
 	&"rune_pillar": {"size": Vector3(0.9, 2.2, 0.9), "yaw": 0.0},
 	&"rune_mural": {"size": Vector3(2.4, 1.6, 0.3), "yaw": 0.0},
-	# The same list; BreakablesView: the cracked wall whole and broken (stretched across the doorway), the
-	# three containers and the explosive barrel. Code stand-ins until the owner's files arrive.
+	# The same list; BreakablesView: the cracked wall whole and broken (stretched across the doorway).
 	&"cracked_wall": {"size": Vector3(1.0, 3.0, 3.0), "yaw": 0.0},
 	&"cracked_wall_broken": {"size": Vector3(1.4, 3.0, 3.0), "yaw": 0.0},
-	&"container_crate": {"size": Vector3(0.7, 0.7, 0.7), "yaw": 0.0},
-	&"container_urn": {"size": Vector3(0.5, 0.8, 0.5), "yaw": 0.0},
-	&"container_barrel": {"size": Vector3(0.6, 0.9, 0.6), "yaw": 0.0},
-	&"explosive_barrel": {"size": Vector3(0.7, 1.0, 0.7), "yaw": 0.0},
+	# The owner's props (docs/art/requests/v0.12.0_models.md Part 2), cut out of his two packed files and written at
+	# their size by scripts/assets/props_v0120_prep.py (base on the floor, centred, scaled evenly to the request rows):
+	# the three containers and the explosive barrel (its lid and fuse a part of their own: ShopModels.parts),
+	# BreakablesView; the final plateau's pylon (front +Z, its socket and channels in an emission map),
+	# FinalApproachView; the Lockdowns' five hazards (the ice plate's shards are parts), LockdownView; the timed door
+	# (jambs, lintel and sill, slab: parts), TimedDoorView.
+	&"container_crate": {"as_is": true},
+	&"container_urn": {"as_is": true},
+	&"container_barrel": {"as_is": true},
+	&"explosive_barrel": {"as_is": true},
+	&"approach_pylon": {"as_is": true},
+	&"timed_door": {"as_is": true},
 	# The purple-rune dais, round, so no turn: its stone fills a 1.7 x 0.55 x
 	# 1.7 m box in the room's middle (the floating crystal stays a code object). Listed in assets/models/manifest.json
 	# when the owner's file is prepared; until then the code stand-in draws it.
 	&"purple_rune_dais": {"size": Vector3(1.7, 0.55, 1.7), "yaw": 0.0},
-	# The Hazard Lockdowns' props, one per
-	# biome, each filling the box of its code stand-in. Not delivered yet: the stand-ins draw them until they are listed.
-	&"hazard_cable": {"size": Vector3(0.6, 1.6, 0.6), "yaw": 0.0},
-	&"hazard_rock": {"size": Vector3(1.1, 1.0, 1.1), "yaw": 0.0},
-	&"hazard_vent": {"size": Vector3(1.4, 2.2, 1.4), "yaw": 0.0},
-	&"hazard_ice": {"size": Vector3(1.6, 0.9, 1.6), "yaw": 0.0},
-	&"hazard_star": {"size": Vector3(0.8, 0.8, 0.8), "yaw": 0.0},
+	&"hazard_cable": {"as_is": true},
+	&"hazard_rock": {"as_is": true},
+	&"hazard_vent": {"as_is": true},
+	&"hazard_ice": {"as_is": true},
+	&"hazard_star": {"as_is": true},
 	# v0.9.0 SH, HF (owner Q29b; GambleShrineView, ShrinesView): the shrines and the healing fountain, front +Z kept
 	# (the views turn them to the camera), scaled uniformly. Prepared by scripts/assets/mi2_prep.py to these heights
 	# (measured: Fortune 1.33 x 2.0 x 1.16 m, Blood 2.72 x 2.0 x 2.13, Chaos 1.83 x 2.2 x 1.78, the fountain
@@ -112,6 +119,7 @@ const SPECS := {
 ## Where the manifest is read (tests point it at their own).
 static var manifest := MANIFEST
 static var _cache := {}
+static var _parts := {}
 static var _listed := {}
 static var _listed_read := false
 
@@ -134,6 +142,40 @@ static func get_model(id: StringName) -> Dictionary:
 	return out
 
 
+## A prepared model's moving parts, one mesh each (index = part): the prep script numbers each vertex's part in its
+## second UV set (u = (part + 0.5) / PART_SLOTS). Empty when the model isn't listed; one mesh when it has no parts.
+static func parts(id: StringName) -> Array[Mesh]:
+	if _parts.has(id):
+		return _parts[id]
+	var out: Array[Mesh] = []
+	var model := get_model(id)
+	if not model.is_empty():
+		var mesh := model["mesh"] as ArrayMesh
+		var arrays := mesh.surface_get_arrays(0)
+		var uv2: Variant = arrays[Mesh.ARRAY_TEX_UV2]
+		if uv2 == null:
+			out.append(mesh)
+		else:
+			var idx: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+			var by_part := {}
+			for t in range(0, idx.size(), 3):
+				var k := int((uv2 as PackedVector2Array)[idx[t]].x * PART_SLOTS)
+				if not by_part.has(k):
+					by_part[k] = []  # an Array is shared by reference (a packed array would be copied)
+				(by_part[k] as Array).append_array([idx[t], idx[t + 1], idx[t + 2]])
+			var keys := by_part.keys()
+			keys.sort()
+			for k: int in keys:
+				var part := arrays.duplicate()
+				part[Mesh.ARRAY_INDEX] = PackedInt32Array(by_part[k])
+				part[Mesh.ARRAY_TEX_UV2] = null
+				var m := ArrayMesh.new()
+				m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, part)
+				out.append(m)
+	_parts[id] = out
+	return out
+
+
 ## The res:// path the manifest lists for `id` ("" when it isn't listed).
 static func listed_path(id: StringName) -> String:
 	if not _listed_read:
@@ -151,6 +193,7 @@ static func listed_path(id: StringName) -> String:
 
 static func clear_cache() -> void:
 	_cache.clear()
+	_parts.clear()
 	_listed.clear()
 	_listed_read = false
 
