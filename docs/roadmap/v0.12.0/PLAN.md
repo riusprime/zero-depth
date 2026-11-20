@@ -285,7 +285,7 @@ explode twice, just one exploding animation".
   Bat, Star Mote) hover, bob, bank and drift: never static.
 - **Props:** `props_pack_a.glb` holds the Ruins cables hazard, the crate, urn, barrel, explosive barrel and the approach
   pylon; `props_pack_b.glb` the Night Rocks rock, Red Canyon vent, Frozen Shore ice and Starfall star hazards. The timed
-  door did not come (still pending). The explosive barrel bursts once, with one premade pack explosion (PD-13).
+  door came after, as its own file (`timed_door.glb`; owner: "you'll have to split the model for it to open"): added to step 43. The explosive barrel bursts once, with one premade pack explosion (PD-13).
 - **Focal pieces:** `grand_arch`, `great_monolith`; the observatory, fire pit and quarry rock face scaled up about 1.5x
   (the lead's proposal the owner made the pieces for).
 - **The Blade** (14.5k tris, three maps): the owner sent the model without picking a look; built as the lead's
@@ -296,7 +296,7 @@ explode twice, just one exploding animation".
 
 | Step | What | Agent |
 |---|---|---|
-| 43 | The props: hazards, breakables (one explosion for the barrel), the pylon | Opus |
+| 43 | The props: hazards, breakables (one explosion for the barrel), the pylon, the timed door (split to open) | Opus |
 | 44 | The focal pieces in the halls; the other focal pieces scaled up | Opus |
 | 45 | The Siege Engine's rail streak laid down as it slides | Opus |
 | 46 | The rune-summoned Blade | Opus |
