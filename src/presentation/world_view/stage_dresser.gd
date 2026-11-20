@@ -95,7 +95,8 @@ const WALL_PROP_BACK := 0.1
 ##   (optional float)]] (kind 0 structural, 1 cover slab; a slab that names its piece is drawn with it; a
 ##   layout height >= 0 marks a designed room's blocker, drawn at that height (0: the kit's own) after the biome's
 ##   swap), the same order and yaw as StageView.wall_specs;
-## - v0.8.0 RT, "props": the designed rooms' drawn-only pieces (WorldReader.layout_prop dictionaries);
+## - v0.8.0 RT, "props": the designed rooms' drawn-only pieces (WorldReader.layout_prop dictionaries); a prop with
+##   "legs" (an arch) is drawn whole at its own size and height, and its legs' blockers are left undrawn;
 ## - "rooms": [Rect2] interiors; "start_room": int; "doors": [Rect2]; "keep_clear": [Vector2];
 ## - "biome": StringName; "seed": int;
 ## - v0.7.5 NB1, a biome's look (BiomeLook; both optional, absent for the first three biomes): "square_cover"
@@ -103,7 +104,7 @@ const WALL_PROP_BACK := 0.1
 ##   decoration piece as another (a kit or a code-made piece, CodeProps).
 ## Returns [{"piece": StringName, "xform": Transform3D (scales the unit-box piece), "wall": the wall index it
 ## belongs to (-1 for none), "kind": &"cover" | &"light" | &"decor"}] (a structural wall's light props
-## also carry "niche": Rect2).
+## also carry "niche": Rect2; a piece drawn over legs carries "legs": their wall indices).
 ## - v0.8.0 MI, a biome's piece pools (look_input(look)): "pools" {role: {piece: weight}}, "max_per_floor"
 ##   {piece: n}, "wall_props_per_room" and "wall_prop_chance" (BiomeLook's fields).
 static func dress(f: Dictionary) -> Array:
@@ -114,8 +115,14 @@ static func dress(f: Dictionary) -> Array:
 	f["_counts"] = {}  # Per piece, how many this floor has drawn (max_per_floor)
 	var slots := _light_slots(f, rng)
 	var props := _wall_prop_slots(f, slots, rng)  # v0.8.0 MI
+	var legs := {}  # The legs of a piece drawn whole over them (an arch): its prop draws it
+	for p: Dictionary in f.get("props", []):
+		for k: int in p.get("legs", PackedInt32Array()):
+			legs[k] = true
 	for i in walls.size():
 		var w: Array = walls[i]
+		if legs.has(i):
+			continue
 		if w[3] == 0 and ProceduralWall.handles(w):
 			_dress_wall_proc(out, i, w, slots.get(i, []))
 			_dress_wall_props(out, i, w, props.get(i, []))
@@ -517,7 +524,9 @@ static func _layout_props(out: Array, f: Dictionary, rng: RandomNumberGenerator)
 			if not named:
 				piece = _resolve(piece, {"depth": minf(size.x, size.y)}, f, rng)
 			var spec := _spec_of(piece)
-			if h <= 0.0 or spec.get("role", &"") == &"biome":
+			if not (p.get("legs", PackedInt32Array()) as PackedInt32Array).is_empty() and h <= 0.0:
+				h = float(spec["height"])  # A piece on legs stands at its own height, never jittered
+			elif h <= 0.0 or spec.get("role", &"") == &"biome":
 				h = _jitter(rng, float(spec["height"]))
 			kind = &"light" if spec["role"] == &"light" else &"cover"
 		var basis := (
@@ -526,6 +535,8 @@ static func _layout_props(out: Array, f: Dictionary, rng: RandomNumberGenerator)
 		)
 		var lift := float(p.get("lift", 0.0))  # A lintel rests on its stones
 		_add(out, piece, Transform3D(basis, SimPlane.to_3d(at, lift)), wall, kind)
+		if not (p.get("legs", PackedInt32Array()) as PackedInt32Array).is_empty():
+			out[-1]["legs"] = p["legs"]  # It fades when the cutaway picks any of its legs
 
 
 ## Whether `at` lies in a purpose room (the input's "named_rooms").

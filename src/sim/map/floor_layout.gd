@@ -230,6 +230,9 @@ var lockdown_kinds := PackedInt32Array()
 ## RoomPurposeTable id: a large combat room furnished as a camp, a collapsed hall or a quarry), &"" for none; empty on
 ## a floor without purposes.
 var room_purpose: Array[StringName] = []
+## The purpose rooms' ways through: the centre of each opening between a piece's two legs (an arch, RoomPurposes).
+## The room's spawn spots, so its enemies and containers, and the purple dais keep clear of them.
+var purpose_ways := PackedVector2Array()
 
 
 func room_count() -> int:

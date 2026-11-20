@@ -21,8 +21,11 @@ extends RefCounted
 ##   stand, the room keeps its interior).
 ## - The result: the room's old interior pieces leave f.walls (their drawn pieces leave layout_props); the template's
 ##   solids join f.walls (piece_tags / piece_heights: drawn by the dresser as a designed room's blockers), its drawn
-##   pieces join layout_props; room_layout and room_purpose hold the purpose's id; the room's spawn points keep only
-##   those clear of the new pieces and on its one region.
+##   pieces join layout_props (a piece on legs, RoomPurposeTable.Piece.legs: its two legs join f.walls tagged with
+##   it, it joins layout_props whole, its row naming the legs, which the dresser then leaves undrawn, and the opening
+##   between the legs joins f.purpose_ways); room_layout and room_purpose hold the purpose's id; the room's spawn
+##   points keep only those clear of the new pieces, WAY_CLEAR_M from its ways (no enemy or container stands in an
+##   arch's opening) and on its one region.
 ## Pure sim code: integer draws, centimetres, angles in 1/4096 turns, no trig.
 
 const STREAM := "map:purpose"
@@ -34,6 +37,10 @@ const NEAR_COST := 100
 ## The least share (per mille) of the chosen mirror's groups with a solid that must still stand after the flow check;
 ## fewer, and the room keeps its interior (too little of the template would stand to read as its purpose).
 const MIN_KEPT_PERMILLE := 700
+## A spawn spot keeps this far from the opening between a piece's legs (m): the opening's half-width plus a container.
+const WAY_CLEAR_M := 1.8
+## Between the wall keys of a piece on legs, in its layout_props row's 6th field (FloorLayout.piece_key has commas).
+const LEG_SEP := ";"
 const _DOOR_APPROACH := 1.0
 const _INSET := 0.05
 
@@ -79,6 +86,7 @@ static func lay(
 	taken: PackedInt32Array = PackedInt32Array()
 ) -> PackedInt32Array:
 	f.room_purpose.clear()
+	f.purpose_ways = PackedVector2Array()
 	for room in f.room_count():
 		f.room_purpose.append(&"")
 	var out := PackedInt32Array()
@@ -204,17 +212,29 @@ static func place(
 		if not by_group.has(gi):
 			var solids: Array[Obb] = []
 			var tags: Array[StringName] = []
-			by_group[gi] = {"solids": solids, "tags": tags, "heights": [], "props": []}
+			by_group[gi] = {"solids": solids, "tags": tags, "heights": [], "props": [], "ways": []}
 		var e: Dictionary = by_group[gi]
 		var h: float = roundi(piece.height * float(d[3])) / 100.0
-		if piece.solid:
+		if piece.solid and piece.legs != Vector2i.ZERO:
+			var keys := PackedStringArray()
+			var axis := Kin.dir(at[1])
+			for side: float in [-1.0, 1.0]:
+				var c := _cm(at[0] + axis * (side * piece.leg_at / 100.0))
+				var leg := Obb.make(c, Vector2(piece.legs) / 200.0, at[1])
+				if not _fits(leg, inner, boxes, items):
+					bad[gi] = true
+				_add_solid(e, leg, piece.piece, h)
+				keys.append(FloorLayout.piece_key(leg))
+			(e["ways"] as Array).append(at[0])
+			# Drawn whole over its legs: the 6th field names them, the first is the one it fades with
+			(e["props"] as Array).append(
+				[piece.piece, at[0], at[1], Vector2(piece.size) / 100.0, h, LEG_SEP.join(keys)]
+			)
+		elif piece.solid:
 			var o := Obb.make(at[0], Vector2(piece.size) / 200.0, at[1])
-			var b := o.bounds()
-			if not inner.encloses(b) or _in_boxes(b, boxes) or _near_items(b, items):
+			if not _fits(o, inner, boxes, items):
 				bad[gi] = true
-			(e["solids"] as Array[Obb]).append(o)
-			(e["tags"] as Array[StringName]).append(piece.piece)
-			(e["heights"] as Array).append(h)
+			_add_solid(e, o, piece.piece, h)
 		elif r.has_point(at[0]) and not _point_in_boxes(at[0], boxes):
 			var row: Array = [piece.piece, at[0], at[1], Vector2(piece.size) / 100.0, h, ""]
 			if piece.lift > 0:
@@ -368,6 +388,8 @@ static func _commit(
 			f.piece_heights[key] = e["heights"][k]
 			added.append(solids[k])
 		props.append_array(e["props"])
+		for q: Vector2 in e["ways"]:
+			f.purpose_ways.append(q)
 	walls.append_array(added)
 	f.walls = walls
 	f.layout_props = props
@@ -381,7 +403,11 @@ static func _commit(
 	reach.build(r, all, p.nav_clearance)
 	var spots := PackedVector2Array()
 	for q in f.spawn_points[room]:
-		if _clear_of(q, p.spawn_clearance, all) and reach.region_at(q) == 0:
+		if (
+			_clear_of(q, p.spawn_clearance, all)
+			and reach.region_at(q) == 0
+			and not _near_any(q, f.purpose_ways, WAY_CLEAR_M)
+		):
 			spots.append(q)
 	f.spawn_points[room] = spots
 
@@ -404,6 +430,18 @@ static func items_in(f: FloorLayout, room: int) -> PackedVector2Array:
 	return out
 
 
+## True when solid `o` stands inside the room's interior `inner`, out of the doorways' boxes and clear of the items.
+static func _fits(o: Obb, inner: Rect2, boxes: Array[Rect2], items: PackedVector2Array) -> bool:
+	var b := o.bounds()
+	return inner.encloses(b) and not _in_boxes(b, boxes) and not _near_items(b, items)
+
+
+static func _add_solid(e: Dictionary, o: Obb, piece: StringName, h: float) -> void:
+	(e["solids"] as Array[Obb]).append(o)
+	(e["tags"] as Array[StringName]).append(piece)
+	(e["heights"] as Array).append(h)
+
+
 static func _in_boxes(b: Rect2, boxes: Array[Rect2]) -> bool:
 	for box in boxes:
 		if b.intersects(box):
@@ -422,6 +460,13 @@ static func _near_items(b: Rect2, items: PackedVector2Array) -> bool:
 	var grown := b.grow(ITEM_CLEAR_M)
 	for q in items:
 		if grown.has_point(q):
+			return true
+	return false
+
+
+static func _near_any(q: Vector2, points: PackedVector2Array, m: float) -> bool:
+	for k in points:
+		if q.distance_squared_to(k) < m * m:
 			return true
 	return false
 

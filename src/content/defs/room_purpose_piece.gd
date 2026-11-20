@@ -6,7 +6,7 @@ extends Resource
 @export var token := &""
 ## The kit piece (RoomPurposeDefinition.PIECES).
 @export var piece := &""
-## Its footprint (m; x along the part's yaw).
+## Its footprint (m; x along the part's yaw). A piece on legs: the whole piece's drawn footprint.
 @export var size := Vector2.ONE
 ## Its drawn height (m; 0 keeps the kit's own; a biome piece always keeps its own).
 @export var height := 0.0
@@ -15,3 +15,9 @@ extends Resource
 @export var lift := 0.0
 ## True: a sim blocker (its turned footprint is a wall). False: drawn only, a low decoration piece.
 @export var solid := true
+## A solid standing on two legs (an arch): each leg's blocker footprint (m, x along the part's yaw), so only what
+## stands on the floor is solid and the opening between the legs is walkable floor. The piece is drawn whole at
+## `size` over them. Zero: the whole footprint is one blocker.
+@export var legs := Vector2.ZERO
+## The legs' centres, this far each side of the piece's centre along its x (m).
+@export var leg_at := 0.0

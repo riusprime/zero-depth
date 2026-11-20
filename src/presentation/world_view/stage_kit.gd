@@ -57,6 +57,8 @@ var proc_nodes := 0
 var proc_tris := 0
 ## Per dressed wall index: its pieces.
 var wall_pieces: Array = []
+## A leg's wall index -> the wall index its piece fades with (an arch drawn whole over two leg blockers).
+var fade_with := {}
 ## The decoration MultiMeshes built (one per piece kind per chunk).
 var decor_nodes := 0
 var shadows := true
@@ -155,6 +157,8 @@ func _add_pieces(pieces: Array, wall_count: int, tint: Color, mood: BiomeMood) -
 		add_child(node)
 		if p["wall"] >= 0 and p["wall"] < wall_count:
 			wall_pieces[p["wall"]].append(node)
+			for k: int in p.get("legs", PackedInt32Array()):
+				fade_with[k] = p["wall"]
 		if p["kind"] == &"light":
 			_add_light(p["piece"], (p["xform"] as Transform3D).origin, mood)
 
@@ -341,7 +345,8 @@ func warm_looks() -> Array:
 ## Fades every piece of the walls at `indices` (dithered) and restores the rest; only changed walls are touched.
 func set_faded(indices: PackedInt32Array) -> void:
 	var want := {}
-	for i in indices:
+	for k in indices:
+		var i: int = fade_with.get(k, k)
 		if i >= 0 and i < wall_pieces.size():
 			want[i] = true
 	for i: int in _faded_now:

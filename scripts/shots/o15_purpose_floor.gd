@@ -122,12 +122,18 @@ func _show(w: World, room: int, biome_id: StringName, run_seed: int) -> void:
 	_wait = SETTLE
 
 
-## The centre of the room's blocker drawn with the first `focus` piece found, or INF without one (or no focus).
+## The centre of the room's blockers drawn with the first `focus` piece found (a piece on legs: between its legs),
+## or INF without one (or no focus).
 func _focal_of(reader: WorldReader, r: Rect2) -> Vector2:
 	for piece in _focus:
+		var sum := Vector2.ZERO
+		var n := 0
 		for i in reader.wall_count():
 			if reader.wall_piece(i) == StringName(piece) and r.has_point(reader.wall(i).center):
-				return reader.wall(i).center
+				sum += reader.wall(i).center
+				n += 1
+		if n > 0:
+			return sum / n
 	return Vector2(INF, INF)
 
 

@@ -310,6 +310,8 @@ static func compile_room_purpose(def: RoomPurposeDefinition) -> RoomPurposeTable
 			cq.height = roundi(q.height * 100.0)
 			cq.solid = q.solid
 			cq.lift = roundi(q.lift * 100.0)
+			cq.legs = Vector2i(roundi(q.legs.x * 100.0), roundi(q.legs.y * 100.0))
+			cq.leg_at = roundi(q.leg_at * 100.0)
 			pieces[q.token] = cq
 		t.palettes[pal.biome] = pieces
 	return t

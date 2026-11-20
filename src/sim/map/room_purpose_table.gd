@@ -29,7 +29,8 @@ class Part:
 	var chance_permille := 1000
 
 
-## A biome's piece for a token: the kit piece, its footprint (cm), its height (cm; 0 the kit's own), solid or drawn.
+## A biome's piece for a token: the kit piece, its footprint (cm), its height (cm; 0 the kit's own), solid or drawn,
+## and the legs it stands on.
 class Piece:
 	var piece := &""
 	var size := Vector2i(100, 100)
@@ -37,6 +38,10 @@ class Piece:
 	var solid := true
 	## A drawn piece's base height (cm; a lintel on its stones), 0 on the ground.
 	var lift := 0
+	## A solid on two legs (an arch): each leg's blocker footprint (cm), zero for one blocker of `size`; and the legs'
+	## centres this far each side of the piece's centre along its axis (cm). The piece is drawn whole at `size`.
+	var legs := Vector2i.ZERO
+	var leg_at := 0
 
 
 var id := &""

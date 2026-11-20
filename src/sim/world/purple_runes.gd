@@ -45,10 +45,12 @@ static func setup(
 	w.purple = p
 
 
-## The spots the dais keeps clear of: rewards, events, the shrine, the puzzles' pieces, the containers and barrels.
+## The spots the dais keeps clear of: rewards, events, the shrine, the puzzles' pieces, the containers and barrels,
+## and the purpose rooms' ways through (an arch's opening stays a way through).
 static func avoid_spots(w: World) -> PackedVector2Array:
 	var f := w.floor_layout
 	var out := Secrets.avoid_spots(w)
+	out.append_array(f.purpose_ways)
 	out.append_array(f.timed_switches)
 	out.append_array(f.rune_pillars)
 	if f.shop_room >= 0:

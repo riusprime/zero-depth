@@ -15,10 +15,13 @@ const OUT := "res://data/rooms/purposes/"
 const AUTHOR_SEED := 20261107
 ## The G2 room's half-size (42.7 x 34.2 m), for the yaws that face a ring's pieces to its centre.
 const REF_HALF := Vector2(21.35, 17.1)
-## The hall's centrepieces stand on its focal blocker (3 x 1 m for the arch, 2.6 m square for the monolith), which
-## the sim keeps: so each is drawn as wide as that blocker and as tall as its request row is for that width (the arch
-## asked 6.0 wide and 5.0 tall), never past the row's height (the monolith asked 6.0 m).
-const FOCAL_ARCH_H := 2.5
+## The hall's centrepieces. The monolith stands on its 2.6 m square focal blocker at its request row's 6.0 m. The arch
+## stands at its own size (KitModels "foot" 6.0 x 2.56 m, 3.71 m tall: height 0, the kit's own) on two leg blockers
+## measured from the model (scripts/assets/focal_v0120_prep.py's output, the legs' standing part from 0.4 to 2.0 m up:
+## x 1.31..2.83 m each side, depth within ±1.0 m, so each leg 1.52 x 2.0 m at ±2.07 m), the 2.62 m opening between
+## them walkable floor. The legs are the same either side and centred on its depth, so a mirrored hall (which turns
+## the model half round) keeps them under the drawn legs.
+const FOCAL_ARCH := [&"grand_arch", 6.0, 2.56, 0.0, true, 0.0, Vector2(1.52, 2.0), 2.07]
 const FOCAL_MONOLITH_H := 6.0
 
 var _rng := RandomNumberGenerator.new()
@@ -86,7 +89,7 @@ static func _choice(id: StringName, weights: PackedInt32Array) -> RoomPurposeCho
 	return c
 
 
-## A palette from {token: [piece, length, depth, height, solid, lift (optional)]}.
+## A palette from {token: [piece, length, depth, height, solid, lift (optional), legs and leg_at (optional)]}.
 static func _palette(biome: StringName, rows: Dictionary) -> RoomPurposePalette:
 	var pal := RoomPurposePalette.new()
 	pal.biome = biome
@@ -101,6 +104,8 @@ static func _palette(biome: StringName, rows: Dictionary) -> RoomPurposePalette:
 		q.height = r[3]
 		q.solid = r[4]
 		q.lift = r[5] if r.size() > 5 else 0.0
+		q.legs = r[6] if r.size() > 6 else Vector2.ZERO
+		q.leg_at = r[7] if r.size() > 7 else 0.0
 		pal.pieces.append(q)
 	return pal
 
@@ -414,7 +419,7 @@ func _hall() -> RoomPurposeDefinition:
 		_palette(
 			&"ruins",
 			{
-				&"focal": [&"grand_arch", 3.0, 1.0, FOCAL_ARCH_H, true],
+				&"focal": FOCAL_ARCH,
 				&"tower": [&"statue_whole", 1.19, 1.28, 0.0, true],
 				&"column": [&"column_round", 1.21, 1.26, 3.6, true],
 				&"outlier": [&"statue_broken", 3.2, 1.67, 0.0, true],
@@ -449,7 +454,7 @@ func _hall() -> RoomPurposeDefinition:
 		_palette(
 			&"night_rocks",
 			{
-				&"focal": [&"grand_arch", 3.0, 1.0, FOCAL_ARCH_H, true],
+				&"focal": FOCAL_ARCH,
 				&"tower": [&"rock_spire", 1.4, 1.4, 0.0, true],
 				&"column": [&"rock_spire", 1.1, 1.1, 0.0, true],
 				&"outlier": [&"rock_spire", 1.1, 1.1, 0.0, true],
