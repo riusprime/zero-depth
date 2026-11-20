@@ -22,7 +22,9 @@ extends Node3D
 ## the body's moves are CritterModel.body_xf (its gait's bob, the flea's hop and pitch, the crab's side-on turn and
 ## slide, a hit's flinch, the death's roll), INSTANCE_CUSTOM the four drives (CritterModel.drives: the flinch, the
 ## crab's claws, the legs, the gait's phase, which runs with the walk's pace); one gone from the sim stays a slot
-## DEATH_SECONDS more, dying (its id no longer drawn as live). Presentation only (EI-07): it reads, never writes.
+## DEATH_SECONDS more, dying (its id no longer drawn as live). The flying critters on theirs (FlyerModel: the Cave
+## Bat, the Star Mote) pose the same way from FlyerModel's body_xf, drives and energy (the bat's bank from how far its
+## facing turned between the last two ticks). Presentation only (EI-07): it reads, never writes.
 
 ## After the views' syncs and the other nodes' _process (as VatCrowd).
 const PROCESS_PRIORITY := 1000
@@ -70,6 +72,7 @@ var _slide := PackedFloat32Array()  # the crab's slide (0..1 through it; < 0 non
 var _ph := PackedFloat32Array()  # the gait's phase (0..1; the owner's models)
 var _die := PackedFloat32Array()  # seconds into its death (< 0: alive)
 var _fl := PackedFloat32Array()  # seconds into a hit's flinch
+var _bank := PackedFloat32Array()  # the bat's bank (rad)
 var _armed := PackedByteArray()
 var _hit := PackedVector4Array()
 var _seen := PackedInt32Array()
@@ -210,6 +213,7 @@ func _add(id: int, kind: int, x: float, y: float, yaw: float, spawning: bool, ra
 	_ph.append(0.0)
 	_die.append(-1.0)
 	_fl.append(AvatarBase.FLINCH_SECONDS)
+	_bank.append(0.0)
 	_armed.append(0)
 	_hit.append(EnemyLooks.HIT_OFF)
 	_seen.append(_gen)
@@ -244,6 +248,7 @@ func _remove(k: int) -> void:
 			&"_ph",
 			&"_die",
 			&"_fl",
+			&"_bank",
 			&"_armed",
 			&"_hit",
 			&"_seen"
@@ -271,6 +276,7 @@ func _remove(k: int) -> void:
 		&"_ph",
 		&"_die",
 		&"_fl",
+		&"_bank",
 		&"_armed",
 		&"_hit",
 		&"_seen"
@@ -497,6 +503,9 @@ func _model_instance(
 	h: float,
 	step_hz: float
 ) -> void:
+	if FlyerModel.takes(kind):
+		_flyer_instance(buf, o, k, kind, at, yb, dt, calm)
+		return
 	# CritterModel's gait_rate, phase, energy and drives reckoned inline (no call each: a surge is dozens of slots).
 	var t := _t[k]
 	var walk := _walk[k]
@@ -581,6 +590,100 @@ func _model_instance(
 	buf[o + 16] = clampf(fl, 0.0, 1.0)
 	buf[o + 17] = claws
 	buf[o + 18] = (legs + 1.0) * 0.5
+	buf[o + 19] = ph
+
+
+## Writes slot `k`'s body instance at `o` in `buf` (a flyer on the owner's model, FlyerModel): as _model_instance,
+## its gait's clock stepping on `dt` at its phase, the bat's bank easing toward its turn.
+func _flyer_instance(
+	buf: PackedFloat32Array,
+	o: int,
+	k: int,
+	kind: int,
+	at: Vector3,
+	yb: Basis,
+	dt: float,
+	calm: bool
+) -> void:
+	# FlyerModel's gait_rate, body_xf (alive and unhit), energy and drives reckoned inline (a surge is dozens of slots).
+	var t := _t[k]
+	var walk := _walk[k]
+	var die := _die[k]
+	var rise := _rise[k]
+	var bat := kind == WorldReader.KIND_CAVE_BAT
+	var ph := _ph[k]
+	var hz := 0.0
+	if not bat:
+		hz = 0.0 if calm else FlyerModel.SPIN_HZ
+	elif calm:
+		hz = FlyerModel.CALM_FLAP_HZ
+	else:
+		hz = lerpf(FlyerModel.IDLE_FLAP_HZ, FlyerModel.FLAP_HZ, walk)
+		hz *= (0.5 / FlyerModel.DOWN_SHARE if ph < 0.5 else 0.5 / (1.0 - FlyerModel.DOWN_SHARE))
+		if fposmod(t / FlyerModel.GLIDE_PERIOD, 1.0) < FlyerModel.GLIDE_OPEN:
+			var near := clampf(
+				2.0 * (1.0 - absf(ph - FlyerModel.GLIDE_AT) / FlyerModel.GLIDE_WIDTH), 0.0, 1.0
+			)
+			hz *= 1.0 - (1.0 - FlyerModel.GLIDE_RATE) * near * (1.0 - walk)
+	ph = fposmod(ph + dt * hz, 1.0)
+	_ph[k] = ph
+	var bank := 0.0
+	if bat:
+		var turn := 0.0
+		if die < 0.0:
+			turn = angle_difference(_yaw0[k], _yaw1[k]) * SimTick.TICKS_PER_SECOND
+		bank = FlyerModel.bank_step(_bank[k], turn, dt)
+		_bank[k] = bank
+	var fl := 0.0
+	if _fl[k] < AvatarBase.FLINCH_SECONDS:
+		fl = AvatarBase.flinch_envelope(_fl[k] / AvatarBase.FLINCH_SECONDS)
+		if calm:
+			fl *= AvatarBase.FLINCH_CALM
+	var xf: Transform3D
+	var e := 1.5 * lerpf(0.2, 1.0, rise)
+	if die < 0.0 and fl == 0.0:  # The common frame: FlyerModel.body_xf's live, unhit path, inline
+		var h := FlyerModel.BAT_H if bat else FlyerModel.MOTE_H
+		var y := (
+			(CritterBodies.BAT_FLY_M if bat else CritterBodies.MOTE_FLOAT_M) * rise
+			- (1.0 - rise) * h
+		)
+		var roll := 0.0
+		var pitch := 0.0
+		var yaw := 0.0
+		if bat:
+			roll = bank
+			pitch = -FlyerModel.DIVE * walk
+			if not calm:
+				y += (
+					FlyerModel.BEAT_BOB * sin(ph * TAU)
+					+ FlyerModel.HOVER_M * sin(t * FlyerModel.HOVER_RATE)
+				)
+		else:
+			pitch = -FlyerModel.TILT * walk
+			if not calm:
+				y += FlyerModel.BOB_M * sin(t * FlyerModel.BOB_RATE)
+				roll = FlyerModel.SWAY * sin(t * 1.3)
+				yaw = FlyerModel.DRIFT * sin(t * 0.8)
+				e *= 0.7 + 0.6 * (0.5 + 0.5 * sin(t * TAU * FlyerModel.PULSE_HZ))
+			roll -= ph * TAU
+		var b := Basis.from_euler(Vector3(roll, yaw, pitch), EULER_ORDER_YZX)
+		var mid := Vector3(0.0, FlyerModel.BAT_MID_Y if bat else FlyerModel.MOTE_MID_Y, 0.0)
+		xf = Transform3D(yb * b, at + yb * (Vector3(0.0, y, 0.0) + mid - b * mid))
+	else:
+		var body := FlyerModel.body_xf(kind, t, ph, walk, bank, die, fl, rise, calm)
+		xf = Transform3D(yb * body.basis, at + yb * body.origin)
+		e = FlyerModel.energy(kind, t, rise, die, fl, calm)
+	_put(buf, o, xf if _inv_identity else _inv * xf)
+	var hit := _hit[k]
+	buf[o + 12] = hit.x
+	buf[o + 13] = hit.y
+	buf[o + 14] = hit.z
+	buf[o + 15] = -1.0 - e if hit.w > 0.5 else e
+	buf[o + 16] = clampf(fl, 0.0, 1.0)
+	buf[o + 17] = 0.0
+	buf[o + 18] = (
+		((walk if die < 0.0 else -clampf(die / HordeAvatar.DEATH_SECONDS, 0.0, 1.0)) + 1.0) * 0.5
+	)
 	buf[o + 19] = ph
 
 

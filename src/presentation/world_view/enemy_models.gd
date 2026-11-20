@@ -75,6 +75,10 @@ const SPECS := {
 	&"dust_mite": {"height": 0.2},
 	&"ember_flea": {"height": 0.3},
 	&"ice_crab": {"height": 0.15},
+	# The Cave Bat and the Star Mote (critter_prep.py: the bat's two-part wings, the mote's five points and three-part
+	# tail; FlyerModel poses them): no taller than CritterBodies.HEIGHTS over their flight and float.
+	&"cave_bat": {"height": FlyerModel.MODEL_H[WorldReader.KIND_CAVE_BAT]},
+	&"star_mote": {"height": FlyerModel.MODEL_H[WorldReader.KIND_STAR_MOTE]},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

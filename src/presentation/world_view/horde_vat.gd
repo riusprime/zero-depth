@@ -17,7 +17,8 @@ extends RefCounted
 ## - v0.11.0 O9, the horde critters (CritterBodies): w the gait loop (the legs, wings, claws or tail); x, y, z unused.
 ## - The Dust Mite, Ember Flea and Ice Crab on the owner's models (CritterModel): x the hit's flinch, y the crab's claws
 ##   (the stance grid); z the legs (the pace, the flea's hop, or the death's curl) and w the gait's phase (the gait grid
-##   of both, CritterModel.GRIDS).
+##   of both, CritterModel.GRIDS); the Cave Bat and Star Mote (FlyerModel) on the same drives: z their pace or death,
+##   w the bat's beat or the mote's spin.
 ## The Swarmer's code body (its model missing) keeps the pilot's path (VatBake's own joint list and grids).
 ## Presentation only (EI-07).
 

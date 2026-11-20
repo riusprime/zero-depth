@@ -77,6 +77,8 @@ const KINDS := {
 	"dust_mite": WorldReader.KIND_DUST_MITE,
 	"ember_flea": WorldReader.KIND_EMBER_FLEA,
 	"ice_crab": WorldReader.KIND_ICE_CRAB,
+	"cave_bat": WorldReader.KIND_CAVE_BAT,
+	"star_mote": WorldReader.KIND_STAR_MOTE,
 }
 const CAST := {"tint": Color(0.45, 0.65, 1.0, 0.5), "role": 0.45}
 ## v0.10.5 W3-V4b: the other kinds' states (the Swarmer's: PLAN).
@@ -248,7 +250,7 @@ func _initialize() -> void:
 			match kname:
 				"splitter", "splitling", "shield_bearer":
 					plan = KIND_PLANS["melee_model"]
-				"dust_mite", "ember_flea", "ice_crab":  # The walking critters on their models
+				"dust_mite", "ember_flea", "ice_crab", "cave_bat", "star_mote":  # The critters' models
 					plan = KIND_PLANS["critter_model"]
 				_:
 					plan = KIND_PLANS[kname]

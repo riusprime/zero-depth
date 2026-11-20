@@ -489,17 +489,27 @@
     {
       "id": "dust_mite",
       "path": "assets/models/enemies/dust_mite.glb",
-      "sha256": "07a4b5fe8fda73e3d3b5c036e35b6587aa21755f4ba0b12e6d8f5534ab7b2496"
+      "sha256": "04d0e4f8a7342e458f8abb7d3a3ab1b562c901c37a14e19f5475ce7793930b56"
     },
     {
       "id": "ember_flea",
       "path": "assets/models/enemies/ember_flea.glb",
-      "sha256": "c06fc92fdbc172c56c6e4c90c579fb213c015885176518b94fa023a134e50b13"
+      "sha256": "edc96ed1ee5935971a1221fa75e8c365b6604bc1dce204bbc407fbf8ba19380a"
     },
     {
       "id": "ice_crab",
       "path": "assets/models/enemies/ice_crab.glb",
-      "sha256": "0639896d2c7bd76d1b9daac7199ecabbcc1490a5613160b773a7d8f411336bac"
+      "sha256": "d3659fb259fad248a47d8b2861373d8abf6634cd42fc5f7f3bfb88148a9a8149"
+    },
+    {
+      "id": "cave_bat",
+      "path": "assets/models/enemies/cave_bat.glb",
+      "sha256": "e4100ab7514ae623f7d9fe83a51fde1ae286c90307b20538e10e5b75c373c18c"
+    },
+    {
+      "id": "star_mote",
+      "path": "assets/models/enemies/star_mote.glb",
+      "sha256": "cf02a8750b17a0a68eda15144a68c561baa83b5fb7bd3d0d0a0c589f6b6905b1"
     },
     {
       "id": "loop_device",

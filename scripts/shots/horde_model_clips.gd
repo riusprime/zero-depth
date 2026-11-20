@@ -1,6 +1,6 @@
 extends SceneTree
-## The clip sheet of the Hatchling, the Swarmer or a walking critter (the Dust Mite, Ember Flea, Ice Crab) on the
-## owner's model, for the owner: one row per clip, five frames
+## The clip sheet of the Hatchling, the Swarmer or a critter (the Dust Mite, Ember Flea, Ice Crab; the flying Cave Bat
+## and Star Mote) on the owner's model, for the owner: one row per clip, five frames
 ## across, each frame its own avatar (HatchlingAvatar; the others' HordeAvatar) driven from a fresh start to that
 ## moment by the calls ActorViews makes (apply_state once a tick, advance once a frame, the flinch and the death as
 ## HitFeel and ActorViews start them), seen from the game's iso camera angle on a plain floor.
@@ -22,6 +22,8 @@ const KINDS := {
 	"dust_mite": [WorldReader.KIND_DUST_MITE, 5.0, 0.55, 0.1],
 	"ember_flea": [WorldReader.KIND_EMBER_FLEA, 5.2, 0.75, 0.24],
 	"ice_crab": [WorldReader.KIND_ICE_CRAB, 4.8, 0.6, 0.08],
+	"cave_bat": [WorldReader.KIND_CAVE_BAT, 5.0, 0.75, 0.38],
+	"star_mote": [WorldReader.KIND_STAR_MOTE, 4.0, 0.6, 0.45],
 }
 ## [label, clip, frame values].
 const ROWS := [
@@ -39,6 +41,16 @@ const CRITTER_ROWS := [
 	["idle (0.15 s apart)", "idle_fast", [0, 1, 2, 3, 4]],
 	["run (one frame apart)", "run_fine", [0, 1, 2, 3, 4]],
 	["stop after a run: 0, 0.08, 0.16, 0.24, 0.32 s", "stop", [0, 5, 10, 14, 19]],
+	["hit: 0, 0.05, 0.1, 0.18, 0.3 s", "hit", [0.0, 0.05, 0.1, 0.18, 0.3]],
+	["death: 0, 15, 35, 60, 100 %", "death", [0.0, 0.15, 0.35, 0.6, 1.0]],
+	["rise-in: 0, 0.1, 0.2, 0.3, 0.5 s", "spawn", [0.0, 0.1, 0.2, 0.3, 0.5]],
+	["reduced motion: idle, idle +0.3 s, run, hit, death 60 %", "calm_critter", [0, 1, 2, 3, 4]],
+]
+## The flyers' clips: the beat (or the spin) through a quarter second, the bank into a turn.
+const FLYER_ROWS := [
+	["idle (0.15 s apart)", "idle_fast", [0, 1, 2, 3, 4]],
+	["flying (four frames apart)", "beat", [0, 1, 2, 3, 4]],
+	["turning left in flight: 0.1, 0.2, 0.3, 0.4, 0.5 s", "turn", [6, 12, 18, 24, 30]],
 	["hit: 0, 0.05, 0.1, 0.18, 0.3 s", "hit", [0.0, 0.05, 0.1, 0.18, 0.3]],
 	["death: 0, 15, 35, 60, 100 %", "death", [0.0, 0.15, 0.35, 0.6, 1.0]],
 	["rise-in: 0, 0.1, 0.2, 0.3, 0.5 s", "spawn", [0.0, 0.1, 0.2, 0.3, 0.5]],
@@ -75,6 +87,8 @@ func _process(_delta: float) -> bool:
 		var rows: Array = (
 			CRITTER_ROWS.duplicate() if CritterModel.takes(_spec[0]) else ROWS.duplicate()
 		)
+		if FlyerModel.takes(_spec[0]):
+			rows = FLYER_ROWS.duplicate()
 		if _name == "hatchling":
 			rows.insert(4, DAZE_ROW)
 		for spec: Array in rows:
@@ -220,6 +234,13 @@ func _drive(a: AvatarBase, clip: String, v: Variant, f: int) -> void:
 			_ticks(a, 60 + int(v) * 2, WorldReader.STATE_MOVE, 0.0, run)
 		"run_fine":
 			_ticks(a, 60 + int(v), WorldReader.STATE_MOVE, 0.0, run)
+		"beat":
+			_ticks(a, 60 + int(v) * 4, WorldReader.STATE_MOVE, 0.0, run)
+		"turn":
+			_ticks(a, 40, WorldReader.STATE_MOVE, 0.0, run)
+			for k in int(v):
+				(a.get_parent() as Node3D).rotation.y += 3.0 * DT
+				_ticks(a, 1, WorldReader.STATE_MOVE, 0.0, run)
 		"stop":
 			_ticks(a, 60, WorldReader.STATE_MOVE, 0.0, run)
 			_ticks(a, 1 + int(v))
