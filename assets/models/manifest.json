@@ -994,6 +994,11 @@
       "sha256": "0b3c6c6c88b0233605ad5fb6668dfaa91ac5aa504de1b3c15cebbf8e0d7e2205"
     },
     {
+      "id": "fx_rail_streak",
+      "path": "assets/textures/vfx/fx_rail_streak.png",
+      "sha256": "6874cc85d706401b3b7f941096f2987286a523a1d023a81d863a998238bfeee5"
+    },
+    {
       "id": "fx_crystal_shatter",
       "path": "assets/textures/vfx/fx_crystal_shatter.png",
       "sha256": "7789d42bdd637a23ec063cad2a184334f0967bf0e785867c508f92edc9107603"

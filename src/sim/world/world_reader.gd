@@ -2203,6 +2203,21 @@ func boss_leap(i: int) -> Array:
 	return [true, clampf(float(_w.actors.state_t[i] + 1) / atk.active_ticks, 0.0, 1.0)]
 
 
+## How far (m from where lane k starts at the boss's edge) boss i's shot down its lanes has run by this tick: the far
+## end of the slice the hit is resolved from (BossAi.lane_slice), the whole lane once past its end; -1 while boss i
+## is not striking down lanes. For the Siege Engine's rail streak, laid down behind the shot.
+func boss_lane_front(i: int, k: int) -> float:
+	var atk := BossAi.attack_of(_w, i)
+	if atk == null or atk.move != MOVE_LANES or _w.actors.state[i] != EnemyAi.State.ACTIVE:
+		return -1.0
+	var whole := BossAi.lane_of(_w, i, k)
+	var s := BossAi.lane_slice(_w, i, k, _w.actors.state_t[i])
+	if s == null:
+		return whole.half.x * 2.0
+	var start := whole.center - whole.axis_u * whole.half.x
+	return (s.center + s.axis_u * s.half.x - start).length()
+
+
 ## Boss i is shielded now (its signature pattern runs): the
 ## player's hits spark off it. For the shell view and the avatars' shield pose.
 func boss_shielded(i: int) -> bool:

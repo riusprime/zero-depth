@@ -19,6 +19,8 @@ const FLAME_SCALE := 0.4
 ## throws sparks instead.
 const NO_DUST: Array[StringName] = [&"tw_sweep", &"tw_charge", &"tw_overhead"]
 ## The rail's blast (bx_rail) in dull embers, as its streak (BossStrikeShapes.RAIL_CORE).
+## The rail's blast at the muzzle (m) when the owner's streak draws the shot.
+const RAIL_MUZZLE_M := 2.0
 const RAIL_COLORS := {
 	&"primary": Color(0.95, 0.52, 0.24),
 	&"secondary": Color(0.7, 0.28, 0.12),
@@ -168,8 +170,13 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 							_key(s, li, 6), &"bx_rail", near, 1.0, RAIL_COLORS, false
 						)
 						if bn != null:
+							# With the owner's streak the blast is only the muzzle's, a fixed length: the
+							# streak is the shot down the lane, so nothing is stretched along it.
+							var end := far
+							if s.has("streak"):
+								end = near.lerp(far, minf(RAIL_MUZZLE_M / lane.half.x * 0.5, 1.0))
 							BossPackHold.beam_place(
-								bn, near, far, lane.half.y, BossPackHold.RAIL_NATIVE_R
+								bn, near, end, lane.half.y, BossPackHold.RAIL_NATIVE_R
 							)
 					var rail: bool = s["kind"] == &"rail"
 					if on and focus:

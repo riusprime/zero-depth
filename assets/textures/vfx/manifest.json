@@ -42,6 +42,7 @@
     {"id": "fx_light_ring", "use": "BossStrikeMeshes: a strike's light ring", "tint": "art", "fallback": "the code ring", "status": "installed"},
     {"id": "fx_dust_ring", "use": "BossStrikeMeshes, WardenAvatar: dust rings", "tint": "art", "fallback": "the code ring", "status": "installed"},
     {"id": "fx_skid_marks", "use": "BossStrikeMeshes: skid marks", "tint": "art", "fallback": "no mark", "status": "installed"},
+    {"id": "fx_rail_streak", "use": "RailStreakViews: the Siege Engine's rail streak, laid down in tiles behind the shot (1 x 4 variants at their own aspect)", "tint": "art", "fallback": "the code rail tubes", "status": "installed"},
     {"id": "fx_lava_flow", "use": "BossStrikeMeshes: the Foundry's lava ground", "tint": "art", "fallback": "the code lava", "status": "installed"},
     {"id": "fx_acid_splat", "use": "BossStrikeMeshes: acid ground", "tint": "art", "fallback": "the code ground", "status": "installed"},
     {"id": "fx_electric_noise", "use": "unused (V44: free for a Lightning scroll)", "tint": "noise", "fallback": "none", "status": "installed"},
