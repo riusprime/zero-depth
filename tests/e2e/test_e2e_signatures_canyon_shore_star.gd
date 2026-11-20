@@ -268,21 +268,27 @@ func test_the_starfall_signatures_and_variant_on_a_starfall_floor() -> void:
 	var crouched := false
 	var four_lanes := false
 	var tracers := 0
+	var kicked := false
+	var modelled := false
 	for k in 1200:
 		var i := w.actors.index_of(sniper)
 		if i < 0:
 			break
+		var body := s.main.view.actors.actor_node(sniper)
+		var av := body.get_meta(&"enemy_avatar") as SniperAvatar if body != null else null
+		modelled = modelled or (av != null and av.has_model)
+		kicked = kicked or (av != null and av.barrel_recoil() > 0.05)
 		var tg := reader.telegraph(i)
 		if tg.get("style", &"") == &"snipe":
 			four_lanes = four_lanes or (tg.get("obbs", []) as Array).size() >= 4
-			var body := s.main.view.actors.actor_node(sniper)
-			var av := body.get_meta(&"enemy_avatar") as HordeAvatar if body != null else null
 			crouched = crouched or (av != null and av.crouch_amount() > 0.0)
 		tracers = maxi(tracers, hv.tracer_count())
-		if crouched and four_lanes and tracers >= 4:
+		if crouched and four_lanes and tracers >= 4 and kicked:
 			break
 		await s.e.frames(1)
 	assert_true(four_lanes, "the Split Sniper's shot is its line and three branches")
 	assert_true(crouched, "its body winds up (the tell)")
 	assert_gte(tracers, 4, "the shot draws a tracer down each lane")
+	assert_true(modelled, "the owner's Sniper model, in its biome's colours")
+	assert_true(kicked, "its barrel kicks back with the shot")
 	assert_true(await s.shoot_dead(sniper, KILL_FRAMES), "the Split Sniper is shot dead")

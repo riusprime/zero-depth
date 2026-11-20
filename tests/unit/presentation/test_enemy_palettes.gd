@@ -239,10 +239,13 @@ func test_role_colours_stay_out_of_the_biome_grey_cast() -> void:
 ## v0.8.0 MI: true when kind `kind` draws the owner's model (its frame and trims are his texture's).
 static func _owner_model(kind: int) -> bool:
 	var id := HordeAvatar.model_id(kind)
-	if kind == WorldReader.KIND_LENS_DRONE:
-		id = &"lens_drone"
-	if kind == WorldReader.KIND_HATCHLING:  # HatchlingAvatar's
-		id = HatchlingAvatar.MODEL
+	var own := {
+		WorldReader.KIND_LENS_DRONE: &"lens_drone",
+		WorldReader.KIND_NEEDLE: &"needle",
+		WorldReader.KIND_SNIPER: &"sniper",
+		WorldReader.KIND_HATCHLING: HatchlingAvatar.MODEL,
+	}
+	id = own.get(kind, id)
 	return id != &"" and EnemyModels.has_model(id)
 
 

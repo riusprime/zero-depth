@@ -190,7 +190,7 @@ func _tracer(o: Obb) -> void:
 	m.albedo_color = ThemePalette.color(&"proj_hostile")
 	n.material_override = m
 	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	n.position = SimPlane.to_3d(o.center, SimPlane.CORE_HEIGHT)
+	n.position = SimPlane.to_3d(o.center, SniperAvatar.MUZZLE_AT.y)  # level with the barrel's tip
 	n.rotation = Vector3(0, SimPlane.yaw_of(o.angle), 0)
 	add_child(n)
 	_tracers.append([n, TRACER_S])

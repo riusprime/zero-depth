@@ -18,7 +18,6 @@ const OTHERS: Array[int] = [
 	WorldReader.KIND_SHIELD_BEARER,
 	WorldReader.KIND_MENDER,
 	WorldReader.KIND_MINE_LAYER,
-	WorldReader.KIND_SNIPER,
 ]
 
 var _vat := false
@@ -376,7 +375,6 @@ func test_vat_kinds_keep_the_old_drives_through_a_fight_and_a_death() -> void:
 			assert_eq(
 				vat.glow_energy(), live.glow_energy(), "kind %d tick %d: the glow" % [kind, k]
 			)
-			assert_eq(vat.muzzle_energy(), live.muzzle_energy(), "kind %d: the muzzle" % kind)
 			var a_v := VatVerify.live_vertices(live)
 			var b_v := VatVerify.eval_vertices_at(
 				pose, mesh, vat.vat_grid_drives(), vat.vat_offset()
@@ -434,7 +432,7 @@ func test_actor_views_draw_every_horde_kind_through_the_crowd_and_let_the_models
 	views.sync(WorldReader.new(w))
 	views.vat_crowd._process(DT)
 	var shield := avatars[WorldReader.KIND_SHIELD_BEARER] as HordeAvatar
-	var sniper: Variant = avatars[WorldReader.KIND_SNIPER]
+	var layer: Variant = avatars[WorldReader.KIND_MINE_LAYER]
 	assert_true(shield.dying(), "the Shield Bearer's model falls")
 	assert_false(views.vat_crowd.instance_of(shield).is_empty(), "drawn while it falls")
-	assert_false(is_instance_valid(sniper), "a code body goes at once: its root freed with it")
+	assert_false(is_instance_valid(layer), "a code body goes at once: its root freed with it")

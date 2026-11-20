@@ -35,7 +35,6 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_SHIELD_BEARER,
 	WorldReader.KIND_MENDER,
 	WorldReader.KIND_MINE_LAYER,
-	WorldReader.KIND_SNIPER,
 	WorldReader.KIND_CHARGER,
 	WorldReader.KIND_HATCHLING,
 ]

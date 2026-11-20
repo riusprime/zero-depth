@@ -753,16 +753,10 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 			facing.add_child(warden)
 			root.set_meta(&"enemy_avatar", warden)
 			root.set_meta(&"mats", warden.body_materials.duplicate())
-		WorldReader.KIND_NEEDLE:
-			# The walking turret: its own node under the facing, animated in frame time.
-			var needle := NeedleAvatar.new()
-			_solo_vat(root, needle, p_kind)  # v0.10.5 W3-V4c
-			needle.look_kind = p_kind
-			needle.setup()
-			facing.add_child(needle)
-			height = NeedleAvatar.HEIGHT
-			root.set_meta(&"enemy_avatar", needle)
-			root.set_meta(&"mats", needle.body_materials.duplicate())
+		WorldReader.KIND_NEEDLE:  # The owner's model, animated in code, on VAT
+			height = NeedleAvatar.attach(self, root, facing, p_kind)
+		WorldReader.KIND_SNIPER:  # The owner's model, animated in code, on VAT
+			height = SniperAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_ARC_CASTER:
 			# The Arc Caster wears the Cinder Priest's model in its own colours (CinderPriestAvatar.LOOKS).
 			height = CinderPriestAvatar.attach(self, root, facing, p_kind)

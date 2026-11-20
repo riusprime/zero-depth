@@ -53,6 +53,10 @@ const SPECS := {
 	# mandibles, six two-part legs; HatchlingAvatar and SwarmerModel pose them), the horde's small sizes.
 	&"hatchling": {"height": HatchlingAvatar.MODEL_HEIGHT},
 	&"swarmer": {"height": 0.25},
+	# The Needle and the Sniper (scripts/assets/needle_sniper_prep.py: body, shell, barrel, two-part legs;
+	# NeedleAvatar / SniperAvatar pose them), at the request rows' 1.1 m and 1.3 m.
+	&"needle": {"height": NeedleAvatar.HEIGHT},
+	&"sniper": {"height": SniperAvatar.HEIGHT},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 
