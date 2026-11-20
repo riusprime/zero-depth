@@ -59,6 +59,8 @@ const STONE: Array[StringName] = [
 	&"ice_rock",
 	&"star_monolith",
 	&"ruined_observatory",
+	&"grand_arch",
+	&"great_monolith",
 ]
 const NON_STONE_CLEAR := 0.5
 ## Rule 3 (the share of the free wall base) and rule 4.

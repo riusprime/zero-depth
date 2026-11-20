@@ -8,6 +8,9 @@ extends SceneTree
 ## SHOT CHOICE (labelled): for each target, the first run seed from SEED whose floor 1 (in the target's biome) has a
 ## room with that purpose. Writes build/shots/v0.11.0/o15/floor_<purpose>_<biome>.png. Quits on every path.
 ## Options after `--`: only=<purpose>:<biome>[,...] (default TARGETS), out=<res:// folder> (default OUT).
+## focus=<piece>[,...]: SHOT STAGING (labelled) instead: the camera at the game's own size on the room's blocker drawn
+## with the first of those pieces, the hero behind=<m> (default 3) beyond it from the camera, so the shot shows the
+## piece at the hero's scale and its cutaway (the view is synced each frame, as the app does after a tick).
 
 const OUT := "res://build/shots/v0.11.0/o15/"
 const SEED := 20261014
@@ -25,12 +28,18 @@ var _frame := 0
 var _stem := ""
 var _out := OUT
 var _targets: Array = TARGETS
+var _focus := PackedStringArray()
+var _behind := 3.0
 
 
 func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("out="):
 			_out = a.substr(4).trim_suffix("/") + "/"
+		elif a.begins_with("focus="):
+			_focus = a.substr(6).split(",")
+		elif a.begins_with("behind="):
+			_behind = float(a.substr(7))
 		elif a.begins_with("only="):
 			_targets = []
 			for t in a.substr(5).split(","):
@@ -57,7 +66,10 @@ func _next() -> bool:
 			for room in f.purpose_rooms():
 				if f.purpose_of(room) == purpose:
 					_show(w, room, biome_id, SEED + s)
-					_stem = "floor_%s_%s" % [purpose, biome_id]
+					_stem = (
+						("floor_%s_%s" if _focus.is_empty() else "focal_%s_%s")
+						% [purpose, biome_id]
+					)
 					return true
 		print("o15_purpose_floor: no %s room in %s within %d seeds" % [purpose, biome_id, SEARCH])
 	return false
@@ -73,6 +85,12 @@ func _show(w: World, room: int, biome_id: StringName, run_seed: int) -> void:
 		w.actors.pos_x[0] = doors[0].x
 		w.actors.pos_y[0] = doors[0].y
 	var reader := WorldReader.new(w)
+	var focal := _focal_of(reader, r)
+	if focal.x < INF:  # SHOT STAGING (labelled): the hero beyond the focal piece from the camera
+		var yaw := deg_to_rad(IsoRig.YAW_DEG)  # as IsoRig.toward_camera_on_plane
+		var away := -SimPlane.to_sim(Vector3(sin(yaw), 0, cos(yaw))).normalized()
+		w.actors.pos_x[0] = focal.x + away.x * _behind
+		w.actors.pos_y[0] = focal.y + away.y * _behind
 	_view = WorldViewRoot.new()
 	_view.stage.mood = biome.mood
 	_view.stage.prop_style = biome.id
@@ -82,8 +100,11 @@ func _show(w: World, room: int, biome_id: StringName, run_seed: int) -> void:
 	_view.rig.dead_zone_m = 1000.0
 	root.add_child(_view)
 	_view.setup(reader, biome.palette, 60.0)
-	_view.rig.view_size = maxf(r.size.x, r.size.y) * 0.72
-	_view.rig.snap_to(SimPlane.to_3d(r.get_center()))
+	if focal.x < INF:
+		_view.rig.snap_to(SimPlane.to_3d(focal))
+	else:
+		_view.rig.view_size = maxf(r.size.x, r.size.y) * 0.72
+		_view.rig.snap_to(SimPlane.to_3d(r.get_center()))
 	print(
 		(
 			"o15_purpose_floor: %s run_seed=%d floor=1 room=%d cells=%s size=%.1fx%.1f m mirror=%d"
@@ -101,6 +122,15 @@ func _show(w: World, room: int, biome_id: StringName, run_seed: int) -> void:
 	_wait = SETTLE
 
 
+## The centre of the room's blocker drawn with the first `focus` piece found, or INF without one (or no focus).
+func _focal_of(reader: WorldReader, r: Rect2) -> Vector2:
+	for piece in _focus:
+		for i in reader.wall_count():
+			if reader.wall_piece(i) == StringName(piece) and r.has_point(reader.wall(i).center):
+				return reader.wall(i).center
+	return Vector2(INF, INF)
+
+
 func _process(_delta: float) -> bool:
 	_frame += 1
 	if _frame > 6000:
@@ -108,6 +138,8 @@ func _process(_delta: float) -> bool:
 		quit(1)
 		return false
 	if _wait > 0:
+		if not _focus.is_empty():
+			_view.sync()
 		_wait -= 1
 		if _wait == 0:
 			var path := _out + "%s.png" % _stem

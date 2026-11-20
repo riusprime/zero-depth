@@ -1380,8 +1380,9 @@ solid = false
 [sub_resource type="Resource" id="Resource_8pgcp"]
 script = ExtResource("5_12cg3")
 token = &"focal"
-piece = &"stone_arch"
+piece = &"grand_arch"
 size = Vector2(3, 1)
+height = 2.5
 
 [sub_resource type="Resource" id="Resource_uu6ar"]
 script = ExtResource("4_r64cy")
@@ -1466,8 +1467,9 @@ solid = false
 [sub_resource type="Resource" id="Resource_vvv35"]
 script = ExtResource("5_12cg3")
 token = &"focal"
-piece = &"ruined_observatory"
+piece = &"great_monolith"
 size = Vector2(2.6, 2.6)
+height = 6.0
 
 [sub_resource type="Resource" id="Resource_ub1d1"]
 script = ExtResource("4_r64cy")
@@ -1552,8 +1554,9 @@ solid = false
 [sub_resource type="Resource" id="Resource_itimr"]
 script = ExtResource("5_12cg3")
 token = &"focal"
-piece = &"stone_arch"
+piece = &"grand_arch"
 size = Vector2(3, 1)
+height = 2.5
 
 [sub_resource type="Resource" id="Resource_big5k"]
 script = ExtResource("4_r64cy")
