@@ -1,4 +1,4 @@
-# Assets still pending (updated 2026-11-20)
+# Assets still pending (updated 2026-11-20, after the second delivery)
 
 Everything the game still draws with a code stand-in or plays with a borrowed sound, after the 2026-11-19 delivery (the
 16 room pieces, the Wire Weaver, Frost Spitter, Glacier Turtle, Gravity Node, the javelin, War Banner, hour clock and
@@ -9,7 +9,7 @@ ammo cart are in). Each row was checked against `assets/`: none of these has a f
 
 The owner's answers of 2026-11-20 are quoted where they set a row.
 
-## 1. Enemies: Owner making (14 models)
+## 1. Enemies: Done (14 models, merged 2026-11-20, steps 47a-g)
 
 Owner: "I'll work the 8 regular pending enemies, the star warper, and the 5 small horde critters as well". Each will be
 cut into parts, animated and put on VAT like the 2026-11-19 four. Prompts: `v0.12.0_models.md` §1–14.
@@ -27,7 +27,7 @@ cut into parts, animated and put on VAT like the 2026-11-19 four. Prompts: `v0.1
 | `star_warper` | a floating star-headed caster (Starfall) | ranged violet `#8A50D8` |
 | `dust_mite`, `cave_bat`, `ember_flea`, `ice_crab`, `star_mote` | the five horde critters, one per biome | melee crimson `#B82A48` |
 
-## 2. Props: Owner making (11 models)
+## 2. Props: Done (11 models, merged 2026-11-20, steps 43 and 43b)
 
 Owner: "I'll also work the props". Prompts: `v0.12.0_models.md` §15–25.
 
@@ -40,7 +40,7 @@ Owner: "I'll also work the props". Prompts: `v0.12.0_models.md` §15–25.
 | What | Status | Note |
 |---|---|---|
 | `hero_gun` | **Dropped** | Owner: "the hero being the one who shoots like "energy" / magic rune power feels better for me than giving him a gun". The hero keeps shooting from his own rune power, with no gun in his hand |
-| `hero_blade` | **Owner has the model** | Owner: "the blade I have the model the thing is how are we implementing it visually so it fits". The lead's proposal is in §9 below; waiting on the owner's choice |
+| `hero_blade` | **Done** (step 46: the rune-summoned blade, §9) | Owner: "the blade I have the model the thing is how are we implementing it visually so it fits". The lead's proposal is in §9 below; waiting on the owner's choice |
 | Final-boss file re-exported with one shared, smaller texture | Open (P1) | each of the three bodies carries its own 8192² copy today (+56 MB) |
 | Animated Colossus, Prism and The Fallen | Open (P2) | clips `idle`, `walk` and the attack names (OWNER_TODO §3.3). The lead can rig and animate these in Blender, as it did for the Twin Wardens and the Warlord |
 | The Fallen's four emblems | Open (P3) | Judge, Tidecaller, Gatekeeper, Twin Wardens (OWNER_TODO §3.3) |
@@ -61,12 +61,14 @@ The one stall stays in every biome. Prompts: OWNER_TODO §3.4.
 
 Five vendors (one per biome), `shop_wares`, stalls for the other four biomes.
 
-## 6. Rooms: bigger focal pieces (optional, Owner)
+## 6. Rooms: bigger focal pieces: Done, the arch held small (step 44)
 
 Owner: "there is nothing specified in the doc, what kind of pieces do you want, we can work a couple but otherwise make
 others bigger". The lead's proposal (`v0.12.0_models.md` Part 4): two new pieces, a `grand_arch` (6 m wide, the hall's
 centrepiece in the Ruins, Night Rocks and Red Canyon) and a `great_monolith` (6 m tall, Starfall's hall). The game
 scales the rest up by about 1.5 times (the observatory, the camp's fire pit, the quarry's rock face).
+
+Built (step 44): the monolith stands 6 m in Starfall's hall. The arch is held to the hall's existing 3 × 1 m solid block, so it draws 3 m wide and 2.5 m tall; at its full 6 m it needs the hall's collisions changed (two pillars with a walkable opening), which waits on the owner. The quarry face and observatory are taller but not wider (they stand on solid ground of fixed size); the fire-pit stones are 1.5× all round. Red Canyon has no collapsed hall, so no arch there.
 
 ## 7. Boss animation clips: Lead
 
@@ -91,7 +93,7 @@ an old clip today. The lead makes the eleven clips with the same rigs (a step of
 
 | What | Status | Note |
 |---|---|---|
-| `fx_rail_streak` | **Owner making** | the Siege Engine's rail shot; prompt in `v0.12.0_models.md` §26 |
+| `fx_rail_streak` | **Done** (step 45) | laid in tiles behind the shot, never stretched |
 | Final-boss music | Paused | Owner: "Audio - still pending not gonna work on it now" |
 | Boss mechanic sounds (Judge, Twin Wardens, Tidecaller, Siege Engine, The Fallen, Foundry, Warlord, Hive Lens) | Paused | each borrows re-pitched existing sounds today (OWNER_TODO §4) |
 
