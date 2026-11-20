@@ -57,18 +57,17 @@ func test_the_drone_lobs_its_bomb_and_slings_a_new_one() -> void:
 
 
 func test_the_caster_charges_its_crystal_through_the_windup() -> void:
-	var a := CinderPriestAvatar.new()
-	a.kind = WorldReader.KIND_ARC_CASTER
+	var a := ArcCasterAvatar.new()
 	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	_run(a, 0, STATE.MOVE, 30)
 	var rest := a.glow_energy()
 	for k in 28:  # the sim gives the windup's progress (0..1000)
-		a.apply_state({"tick": 30 + k, "state": STATE.WINDUP, "pulse": (k + 1) * 1000 / 28})
+		a.apply_state({"tick": 30 + k, "state": STATE.WINDUP, "windup": (k + 1) / 28.0})
 		a.advance(DT)
 	assert_gt(a.glow_energy(), rest + 2.0, "it glows as the spell builds")
-	assert_gt(a._vd[CinderPriestAvatar.STAFF_F], 0.5, "the staff comes up")
+	assert_gt(a.drives()[ArcCasterAvatar.ARM_R_F], 0.8, "the staff comes up")
 
 
 func test_actor_views_build_the_new_models() -> void:
@@ -81,7 +80,7 @@ func test_actor_views_build_the_new_models() -> void:
 	views.sync(reader)
 	var caster := views.actor_node(w.actors.ids[1])
 	var drone := views.actor_node(w.actors.ids[2])
-	assert_true(caster.get_meta(&"enemy_avatar") is CinderPriestAvatar)
+	assert_true(caster.get_meta(&"enemy_avatar") is ArcCasterAvatar)
 	assert_true(drone.get_meta(&"enemy_avatar") is BombDroneAvatar)
 	var bar: Node3D = drone.get_meta(&"bar")
 	assert_gt(

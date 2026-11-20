@@ -49,6 +49,12 @@ const SPECS := {
 	# The Gravity Node (scripts/assets/gravity_node_prep.py: face plate, core, two shell halves, two rings;
 	# GravityNodeAvatar poses them), about the request row's 0.9 m orb with its rings.
 	&"gravity_node": {"height": GravityNodeAvatar.MODEL_HEIGHT},
+	# The Arc Caster (scripts/assets/arc_caster_prep.py: torso, two robe tiers, hood, staff arm, staff, two-part free
+	# arm, three shards; ArcCasterAvatar poses them), its height with the staff.
+	&"arc_caster": {"height": ArcCasterAvatar.MODEL_HEIGHT},
+	# The Star Warper (scripts/assets/star_warper_prep.py: torso, star head, two two-part arms, a three-part tail,
+	# three shards; StarWarperAvatar poses them, floating).
+	&"star_warper": {"height": StarWarperAvatar.MODEL_HEIGHT},
 	# The Hatchling and the Swarmer (scripts/assets/hatchling_swarmer_prep.py: body, carapace or wing cases,
 	# mandibles, six two-part legs; HatchlingAvatar and SwarmerModel pose them), the horde's small sizes.
 	&"hatchling": {"height": HatchlingAvatar.MODEL_HEIGHT},

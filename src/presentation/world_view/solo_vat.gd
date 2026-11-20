@@ -38,6 +38,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_WIRE_WEAVER,  # The owner's model, animated in code
 	WorldReader.KIND_GLACIER_TURTLE,  # The owner's model, animated in code
 	WorldReader.KIND_GRAVITY_NODE,  # The owner's model, animated in code
+	WorldReader.KIND_STAR_WARPER,  # The owner's model, animated in code
 ]
 ## Metas: a piece material's look (its role: &"plate", &"accent", &"unshaded"), an accent's glow drive (+ 1), a node
 ## kept live.
@@ -50,7 +51,7 @@ static func is_solo(kind: int) -> bool:
 	return KINDS.has(kind)
 
 
-## The Cinder Priest model, in the palette of `kind` (the Priest or the Arc Caster).
+## The Cinder Priest model, in the Priest's palette.
 static func _priest_of(kind: int) -> AvatarBase:
 	var a := CinderPriestAvatar.new()
 	a.kind = kind
@@ -64,7 +65,7 @@ static func _new(kind: int) -> AvatarBase:
 		WorldReader.KIND_WARDEN:
 			return WardenAvatar.new()
 		WorldReader.KIND_ARC_CASTER:
-			return _priest_of(kind)
+			return ArcCasterAvatar.new()
 		WorldReader.KIND_BOMB_DRONE:
 			return BombDroneAvatar.new()
 		WorldReader.KIND_LENS_DRONE:
@@ -87,6 +88,8 @@ static func _new(kind: int) -> AvatarBase:
 			return GlacierTurtleAvatar.new()
 		WorldReader.KIND_GRAVITY_NODE:
 			return GravityNodeAvatar.new()
+		WorldReader.KIND_STAR_WARPER:
+			return StarWarperAvatar.new()
 	return null
 
 

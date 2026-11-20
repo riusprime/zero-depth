@@ -6,7 +6,9 @@ extends Node3D
 ##   magic_areas rim_area_vfx_02, pale gold) and the star itself at its centre (o13d_star_core: magic_orbs
 ##   magic_orb_flare_vfx_01), held until the windup ends (the red disc that fills is EnemyAi.telegraph's, as every
 ##   ground tell);
-## - the blink: a flash where it left and where it lands (o13d_blink: magic_orbs magic_orb_flash_vfx_01, violet);
+## - the blink: a flash where it left and where it lands (o13d_blink: magic_orbs magic_orb_flash_vfx_01, violet), and
+##   where it left a burst of shards, violet (o13d_shatter: ice_effects ice_mist_vfx_03), as its body
+##   (StarWarperAvatar) breaks into its star shards there;
 ## - the stun (the hero stood on the star): a gold ripple at its feet (o13d_stun: magic_areas ripple_area_vfx_01);
 ## - the Gravity Node's swirl: a faint violet ripple on the floor the size of its reach on the hero, held only while
 ##   the hero is inside it and being drawn in (WorldReader.gravity_hero_pull; o13d_swirl: magic_areas
@@ -20,11 +22,13 @@ const STAR_CORE := &"o13d_star_core"
 const BLINK := &"o13d_blink"
 const STUN := &"o13d_stun"
 const SWIRL := &"o13d_swirl"
+const SHATTER := &"o13d_shatter"
 ## The pack's area scenes' scale per metre of the radius they fill (as VfxPackViews' rings).
 const RING_PER_M := 0.55
 const CORE_SCALE := 0.6
 const BLINK_SCALE := 0.8
 const STUN_SCALE := 0.6
+const SHATTER_SCALE := 0.6
 const GROUND_Y := 0.05
 
 ## The pack (WorldViewRoot sets it; null: nothing drawn).
@@ -95,6 +99,7 @@ func _sync_warper(reader: WorldReader, i: int, id: int, live: Dictionary) -> voi
 	var was: Array = _seen.get(id, [st, stunned, pos])
 	if st == WorldReader.STATE_ACTIVE and int(was[0]) != st:  # the blink: a flash where it left and where it lands
 		pack_fx.spawn(BLINK, SimPlane.to_3d(was[2], SimPlane.CORE_HEIGHT), BLINK_SCALE)
+		pack_fx.spawn(SHATTER, SimPlane.to_3d(was[2], SimPlane.CORE_HEIGHT), SHATTER_SCALE)
 		pack_fx.spawn(BLINK, SimPlane.to_3d(pos, SimPlane.CORE_HEIGHT), BLINK_SCALE)
 	if stunned and not bool(was[1]):
 		pack_fx.spawn(STUN, SimPlane.to_3d(pos, GROUND_Y), STUN_SCALE)

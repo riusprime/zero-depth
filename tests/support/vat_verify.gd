@@ -332,6 +332,38 @@ static func ranges(a: Node3D, rng: RandomNumberGenerator) -> Dictionary:
 			"_die_t": [-0.6, KilnBeetleAvatar.DEATH_SECONDS],
 			"_state": states4,
 		}
+	if a is ArcCasterAvatar:
+		return {
+			"_t": [0.0, 40.0],
+			"_wind": [0.0, 0.0, 0.3, 0.8, 1.0],
+			"_cast_s": [-1.0, -1.0, 0.03, 0.15, 0.5],
+			"_rise": [1.0, 1.0, 0.3, 0.0],
+			"_glide": [0.0, 1.0],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2(-1.0, 0.0)],
+			"_step": [0.0, TAU],
+			"_orbit": [0.0, TAU],
+			"_omega": [-4.0, 4.0],
+			"_die_t":
+			[-1.0, -1.0, ArcCasterAvatar.DEATH_SECONDS * 0.4, ArcCasterAvatar.DEATH_SECONDS],
+		}
+	if a is StarWarperAvatar:
+		return {
+			"_t": [0.0, 40.0],
+			"_wind": [0.0, 0.0, 0.5, 0.9, 1.0],
+			"_gone": [0.0, 0.0, 0.5, 1.0],
+			"_slash_s": [-1.0, -1.0, 0.05, 0.2, 0.5],
+			"_rise": [1.0, 1.0, 0.4, 0.0],
+			"_reel": [0.0, 0.0, 1.0],
+			"_glide": [0.0, 1.0],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2(-1.0, 0.0)],
+			"_wave": [0.0, TAU],
+			"_orbit": [0.0, TAU],
+			"_omega": [-4.0, 4.0],
+			"_hurt_t": [-0.3, StarWarperAvatar.HURT_SECONDS],
+			"_hurt_side": [-1.0, 1.0],
+			"_die_t":
+			[-1.0, -1.0, StarWarperAvatar.DEATH_SECONDS * 0.5, StarWarperAvatar.DEATH_SECONDS],
+		}
 	if a is GravityNodeAvatar:
 		return {
 			"_t": [0.0, 40.0],

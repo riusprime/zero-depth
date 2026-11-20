@@ -199,6 +199,13 @@ func test_the_starfall_signatures_and_variant_on_a_starfall_floor() -> void:
 		1200
 	)
 	assert_true(star, "the Warper's star mark is drawn")
+	# Drawn on the owner's model, floating: its tell shows while its star is on the floor.
+	var warper_body := _avatar(s, warper) as StarWarperAvatar
+	assert_not_null(warper_body, "the Star Warper is drawn by its own avatar")
+	if warper_body != null:
+		var told: bool = await s.until(func() -> bool: return warper_body.tell_pose() > 0.0, 60)
+		assert_true(told, "it shows its tell")
+		assert_gt(warper_body.vat_lift(), 0.1, "it floats")
 	assert_true(await s.shoot_dead(warper, KILL_FRAMES), "the Star Warper is shot dead")
 	# R10 Gravity Node: with no input the hero drifts toward it, its reach's ring drawn; a hero shot aimed past it
 	# bends toward it.
