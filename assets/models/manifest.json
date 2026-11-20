@@ -487,6 +487,11 @@
       "sha256": "0a1cc12c1e45c40a7344cd27a11a160848ff8f983f7df92f1323a6a82547c6aa"
     },
     {
+      "id": "bomb_drone",
+      "path": "assets/models/enemies/bomb_drone.glb",
+      "sha256": "c0a94c7b0439dc60b6361fbcf541ff212bce65cbebf5e91994a179fe5531ba47"
+    },
+    {
       "id": "loop_device",
       "path": "assets/models/devices/loop_device.glb",
       "sha256": "c52a01bbbef3c6f037baeb6eb2491960df98998372ada530d829d6708734c67f"

@@ -1,6 +1,5 @@
 extends GutTest
-## The Bomb Drone's model (v0.3.5 AI; the Arc Caster is the Cinder Priest's model since v0.11.0 F6): code-built
-## low-poly in the enemy style, flashable
+## The Bomb Drone (on the owner's model; its own clips are in test_bomb_drone_avatar.gd) and the Arc Caster: flashable
 ## without a shader change, the drone hovering with a ground shadow and losing its bomb as it lobs it, the caster's
 ## crystal charging through the windup; ActorViews builds them, and the telegraph view draws their spells.
 
@@ -19,7 +18,7 @@ func test_the_drone_is_built_flashable_and_outlined() -> void:
 	for avatar in avatars:
 		var name: String = avatar.get_script().get_global_name()
 		avatar.setup()
-		assert_gt(avatar.body_materials.size(), 5, name)
+		assert_gt(avatar.body_materials.size(), 1, name)  # the model's base and role plates
 		for m: StandardMaterial3D in avatar.body_materials:
 			assert_true(m.emission_enabled, "%s: a hit flash changes energy only" % name)
 			assert_eq(m.emission_energy_multiplier, 0.0, "%s: dark until flashed" % name)

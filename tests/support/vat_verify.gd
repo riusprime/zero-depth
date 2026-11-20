@@ -296,7 +296,22 @@ static func ranges(a: Node3D, _rng: RandomNumberGenerator) -> Dictionary:
 		WorldReader.STATE_RECOVER
 	]
 	if a is BombDroneAvatar:
-		return {"_t": [0.0, 40.0], "_rise": [0.0, 1.0], "_armed": [0.0, 1.0], "_fuse": [0.0, 1.0]}
+		return {
+			"_t": [0.0, 40.0],
+			"_rise": [1.0, 1.0, 0.4, 0.0],
+			"_armed": [1.0, 0.5, 0.04, 0.0],
+			"_fuse": [0.0, 1.0],
+			"_lob_s": [-1.0, -1.0, 0.1, 0.3],
+			"_aim": [0.0, 1.0],
+			"_rot": [0.0, TAU],
+			"_glide": [0.0, 1.0],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2(-1.0, 0.0)],
+			"_omega": [-4.0, 4.0],
+			"_hurt_t": [-0.3, BombDroneAvatar.HURT_SECONDS],
+			"_hurt_side": [-1.0, 1.0],
+			"_die_t":
+			[-1.0, -1.0, BombDroneAvatar.DEATH_SECONDS * 0.5, BombDroneAvatar.DEATH_SECONDS],
+		}
 	if a is LensDroneAvatar:
 		return {"_t": [0.0, 40.0], "_rise": [0.0, 1.0], "_charge": [0.0, 1.0]}
 	if a is CinderPriestAvatar:

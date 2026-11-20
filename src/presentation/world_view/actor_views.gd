@@ -751,15 +751,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 			height = SniperAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_ARC_CASTER:  # The owner's model, animated in code, on VAT
 			height = ArcCasterAvatar.attach(self, root, facing)
-		WorldReader.KIND_BOMB_DRONE:
-			# The Bomb Drone: drawn hovering, its shadow on the ground where the sim has it.
-			var drone := BombDroneAvatar.new()
-			_solo_vat(root, drone, p_kind)  # v0.10.5 W3-V4c
-			drone.setup()
-			facing.add_child(drone)
-			height = BombDroneAvatar.HEIGHT
-			root.set_meta(&"enemy_avatar", drone)
-			root.set_meta(&"mats", drone.body_materials.duplicate())
+		WorldReader.KIND_BOMB_DRONE:  # The owner's model, hovering, animated in code, on VAT
+			height = BombDroneAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_LENS_DRONE:
 			# The Hive Lens's drones: drawn hovering, their shadow where the sim has them.
 			var lens := LensDroneAvatar.new()
