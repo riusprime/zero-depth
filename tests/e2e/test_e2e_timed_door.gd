@@ -48,7 +48,7 @@ func test_press_both_switches_and_walk_in_before_the_timer() -> void:
 	assert_true(view.revealed, "and the secret room comes into sight")
 	await e.frames(int(TimedDoorView.SINK_S * 60.0) + 10)
 	assert_false(view.slab.visible, "the owner's slab sank into the floor")
-	assert_true(view.has_node("Door/Frame/Middle"), "his frame stands")
+	assert_true(view.has_node("Door/Frame/Blocks"), "its frame of the walls' blocks stands")
 	var t0 := w.timed.open_tick
 	var inside := f.rooms[f.timed_room].get_center()
 	assert_true(await e.walk_to(inside, 1.0), "walked through the doorway into the secret room")

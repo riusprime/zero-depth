@@ -6,11 +6,13 @@ extends SceneTree
 ## - in the real game view (WorldViewRoot over a lab's floor, the iso camera at the game's size): a Lockdown hazard
 ##   where it landed (Red Canyon's vent, its crack lit and its plume), the containers and the explosive barrel in a
 ##   room, the barrel mid-explosion, the final plateau's pylons (one locked in) and that pylon close, the timed door
-##   shut and open.
+##   shut and open in Ruins and Frozen Shore (door_<biome>_shut.png, door_<biome>_open.png), and Ruins' open door seen
+##   from inside the secret room, looking back through it (door_ruins_inside.png).
 ## Needs a renderer (no --headless); run it off screen:
 ##   godot --path . --position -10000,-10000 --audio-driver Dummy --fixed-fps 60 -s scripts/shots/props_v0120.gd
-##   -- out=<folder>
-## Writes <folder> (default build/shots/models_v0120b/props/) and prints each path. Quits on every path.
+##   -- out=<folder> [only=door]
+## `only=door`: the timed door's shots alone. Writes <folder> (default build/shots/models_v0120b/props/) and prints
+## each path. Quits on every path.
 
 const SIZE := Vector2i(1280, 720)
 const SHEET := [
@@ -34,13 +36,16 @@ const BLAST_AT := 9
 
 var _dir := "res://build/shots/models_v0120b/props/"
 var _vp: SubViewport
-var _jobs: Array[StringName] = [&"sheet", &"hazard", &"breakables", &"blast", &"pylons", &"door"]
+var _jobs: Array[StringName] = [
+	&"sheet", &"hazard", &"breakables", &"blast", &"pylons", &"door_ruins", &"door_frozen_shore"
+]
 var _job := -1
 var _wait := 0
 var _world: World
 var _root: WorldViewRoot
 var _blast_tick := -1
 var _door_open := false
+var _door_inside := false
 var _close := false
 
 
@@ -48,6 +53,8 @@ func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("out="):
 			_dir = a.substr(4).trim_suffix("/") + "/"
+		elif a == "only=door":
+			_jobs = [&"door_ruins", &"door_frozen_shore"]
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	_next()
 
@@ -75,8 +82,8 @@ func _next() -> void:
 			_breakables()
 		&"pylons":
 			_pylons()
-		&"door":
-			_door()
+		&"door_ruins", &"door_frozen_shore":
+			_door(StringName(String(_jobs[_job]).trim_prefix("door_")))
 
 
 func _view(w: World, biome_id: StringName, at: Vector2) -> void:
@@ -188,11 +195,28 @@ func _pylons() -> void:
 	_close = false
 
 
-func _door() -> void:
+func _door(biome_id: StringName) -> void:
 	var w := TimedLab.world()
 	w.step(InputFrame.new())
-	_view(w, &"ruins", w.floor_layout.door_centers[w.floor_layout.timed_door])
+	_view(w, biome_id, w.floor_layout.door_centers[w.floor_layout.timed_door])
+	_root.rig.camera.size = _root.rig.view_size * 0.45
 	_door_open = false
+	_door_inside = false
+
+
+## A camera in the secret room, the game's iso pitch turned to look back out through the doorway.
+func _look_back() -> void:
+	var r := _root.reader
+	var at := SimPlane.to_3d(r.timed_door_center(), 1.0)
+	var yaw := SimPlane.yaw_of(r.timed_door_angle())
+	var into := Basis(Vector3.UP, yaw) * Vector3.RIGHT
+	var cam := Camera3D.new()
+	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+	cam.size = _root.rig.camera.size
+	_vp.add_child(cam)
+	var eye := at + into * 20.0 + Vector3.UP * 14.0
+	cam.look_at_from_position(eye, at, Vector3.UP)
+	cam.current = true
 
 
 func _process(_delta: float) -> bool:
@@ -221,13 +245,21 @@ func _blast_frame() -> void:
 
 ## A settled scene's shot; the door opens and the camera closes on the lit pylon for a second one.
 func _shoot(job: StringName) -> void:
-	if job == &"door" and not _door_open:
-		_save("door_shut.png")
+	if String(job).begins_with("door_") and not _door_open:
+		_save("%s_shut.png" % job)
 		TimedLab.switch(_world, 0)
 		TimedLab.switch(_world, 1)
 		_root.sync()
+		var door := _world.floor_layout.door_centers[_world.floor_layout.timed_door]
+		_root.rig.snap_to(SimPlane.to_3d(door))  # the sync follows the hero the switches moved
 		_door_open = true
 		_wait = int(TimedDoorView.SINK_S * 60.0) + 10
+		return
+	if job == &"door_ruins" and not _door_inside:
+		_save("door_ruins_open.png")
+		_door_inside = true
+		_look_back()
+		_wait = 4
 		return
 	if job == &"pylons" and not _close:
 		_save("pylons.png")
@@ -236,7 +268,11 @@ func _shoot(job: StringName) -> void:
 		_root.rig.snap_to(SimPlane.to_3d(_world.floor_layout.pylons[0], 1.2))
 		_wait = 4
 		return
-	var names := {&"door": "door_open.png", &"pylons": "pylon_lit.png"}
+	var names := {
+		&"door_ruins": "door_ruins_inside.png",
+		&"door_frozen_shore": "door_frozen_shore_open.png",
+		&"pylons": "pylon_lit.png"
+	}
 	_save(names.get(job, "%s.png" % job))
 	_next()
 

@@ -3,10 +3,10 @@ extends GutTest
 ## explosion, but dont make it explode twice, just one exploding animation"; on the door: "you'll have to split the
 ## model for it to open"), cut by scripts/assets/props_v0120_prep.py: each one listed, at its size, standing on the
 ## floor and matte; the parts the game moves are their own meshes (the ice's shards, the barrel's lid, the door's
-## jambs, middle and slab). In the views: every Lockdown hazard draws the owner's model with the code's hot parts, the
-## rock and star still fall; the containers and the barrel are his, the barrel's lid rattles on its fuse and its blast
-## plays exactly one pack explosion; the final plateau's pylons are his with a crystal in the socket and the channels
-## lit as each locks in.
+## jambs, middle and slab; the game draws only the slab, its frame the walls' own blocks). In the views: every Lockdown
+## hazard draws the owner's model with the code's hot parts, the rock and star still fall; the containers and the
+## barrel are his, the barrel's lid rattles on its fuse and its blast plays exactly one pack explosion; the final
+## plateau's pylons are his with a crystal in the socket and the channels lit as each locks in.
 
 ## id -> [width, depth, height] (m) as prepared (the request rows; the flat hazards' height their own).
 const SIZES := {
