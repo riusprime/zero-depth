@@ -245,6 +245,7 @@ static func _owner_model(kind: int) -> bool:
 		WorldReader.KIND_SNIPER: &"sniper",
 		WorldReader.KIND_HATCHLING: HatchlingAvatar.MODEL,
 		WorldReader.KIND_WARDEN: WardenAvatar.MODEL,
+		WorldReader.KIND_BOMB_DRONE: BombDroneAvatar.MODEL,
 	}
 	id = own.get(kind, id)
 	return id != &"" and EnemyModels.has_model(id)

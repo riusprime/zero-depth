@@ -55,6 +55,9 @@ const SPECS := {
 	# The Star Warper (scripts/assets/star_warper_prep.py: torso, star head, two two-part arms, a three-part tail,
 	# three shards; StarWarperAvatar poses them, floating).
 	&"star_warper": {"height": StarWarperAvatar.MODEL_HEIGHT},
+	# The Bomb Drone (scripts/assets/bomb_drone_prep.py: hull, four arms with their housings, four rotors, the claw
+	# cradle; BombDroneAvatar poses them, hovering), at its own size (1.0 m across the rotors).
+	&"bomb_drone": {"height": BombDroneAvatar.MODEL_HEIGHT},
 	# The Hatchling and the Swarmer (scripts/assets/hatchling_swarmer_prep.py: body, carapace or wing cases,
 	# mandibles, six two-part legs; HatchlingAvatar and SwarmerModel pose them), the horde's small sizes.
 	&"hatchling": {"height": HatchlingAvatar.MODEL_HEIGHT},
