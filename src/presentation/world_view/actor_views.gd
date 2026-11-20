@@ -802,21 +802,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 			height = GlacierTurtleAvatar.attach(self, root, facing)
 		WorldReader.KIND_GRAVITY_NODE:  # The owner's model, animated in code, on VAT
 			height = GravityNodeAvatar.attach(self, root, facing)
-		WorldReader.KIND_HATCHLING:
-			# The Brood Mother's hatchling: a Charger crawler at two thirds of the size.
-			var hatch := ChargerAvatar.new()
-			hatch.enemy_tint = enemy_tint  # They pick its shared materials
-			hatch.role_glow = role_glow_energy
-			if VatCrowd.supports(p_kind):  # Drawn by the VAT crowd while the switch is on
-				hatch.vat = ViewPrefs.enemy_vat
-				root.set_meta(&"vat_kind", true)
-			hatch.setup(WorldReader.KIND_HATCHLING)  # Its colours
-			root.set_meta(&"hit_look", hatch)
-			hatch.scale = Vector3.ONE * 0.66
-			facing.add_child(hatch)
-			height = ChargerAvatar.HEIGHT * 0.66
-			root.set_meta(&"enemy_avatar", hatch)
-			root.set_meta(&"mats", hatch.body_materials.duplicate())
+		WorldReader.KIND_HATCHLING:  # The Brood Mother's hatchling: the owner's model, on the Charger's state
+			height = HatchlingAvatar.attach(self, root, facing)
 		_ when WorldReader.is_boss_kind(kind):
 			# The bosses: their own models; their HP shows in the HUD's boss bar, not over them.
 			var boss: BossAvatar = (

@@ -287,7 +287,7 @@ func _enemies(actors: ActorViews) -> void:
 				)
 			)
 	for kind in [WorldReader.KIND_CHARGER, WorldReader.KIND_HATCHLING]:  # the Charger's shared look too
-		var c := ChargerAvatar.new()
+		var c := HatchlingAvatar.avatar_of(kind)
 		c.enemy_tint = actors.enemy_tint
 		c.role_glow = ActorViews.role_glow_energy
 		c.setup(kind)

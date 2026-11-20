@@ -98,6 +98,8 @@ var _crouch_now := 0.0
 var _y_now := 0.0
 var _vat_lift := 0.0
 var _ang := PackedFloat64Array([0, 0, 0, 0, 0, 0])
+## Seconds into the death (-1: alive). Only the Hatchling on the owner's model dies with a fall (HatchlingAvatar.die).
+var _die_t := -1.0
 
 
 ## Builds the model.
@@ -175,6 +177,8 @@ func advance(delta: float) -> void:
 	if dt <= 0.0 or (body == null and not vat):
 		return
 	_t += dt
+	if _die_t >= 0.0:
+		_die_t += dt
 	_speed = lerpf(_speed, _vel.length(), _rate(12.0, dt))
 	var st := _state
 	strike_advance(dt)
@@ -272,7 +276,13 @@ func vat_drives() -> PackedFloat32Array:
 	d[ChargerVat.FIDGET_CLOCK] = _loop(_t * 0.9 / TAU)
 	d[ChargerVat.FIDGET] = (1.0 - _walk) * (1.0 - _wind)
 	d[ChargerVat.TWITCH_CLOCK] = _loop(_t * 9.0 / TAU)
+	d[ChargerVat.DEATH] = dead()
 	return d
+
+
+## 0..1 how far into its death's fall (HatchlingAvatar.DEATH_SECONDS; 0 alive, and always for the Charger).
+func dead() -> float:
+	return clampf(_die_t / HatchlingAvatar.DEATH_SECONDS, 0.0, 1.0) if _die_t >= 0.0 else 0.0
 
 
 static func _loop(u: float) -> float:
@@ -304,11 +314,20 @@ func _pose() -> void:
 	var shimmer := 0.0 if calm else 0.5 * sin(_t * 30.0)
 	var tell := tell_glow(_tell_p, _t, calm) if _state == WorldReader.STATE_WINDUP else 1.0
 	var glow := (
-		VISOR_ENERGY * (1.0 + _wind * (1.6 + shimmer) + lunge * 1.2) * tell * (1.0 - _daze * 0.7)
+		VISOR_ENERGY
+		* (1.0 + _wind * (1.6 + shimmer) + lunge * 1.2)
+		* tell
+		* (1.0 - _daze * 0.7)
+		* (1.0 - dead())
 	)
 	set_visor_energy(glow)  # Written on a change only (the visor's GLOW)
 	if vat:  # The crowd draws the body (VatCrowd); only the numbers it reads
 		return
+	_pose_nodes(sink, y, crouch, lunge, rise)
+
+
+## Writes the nodes from this pose's numbers (HatchlingAvatar poses the owner's model instead).
+func _pose_nodes(sink: Vector3, y: float, crouch: float, lunge: float, rise: float) -> void:
 	if _model.position != sink:  # Still once risen (moving it re-dirties the whole model)
 		_model.position = sink
 	# The lunge throws the whole hood forward, nose down and stretched long, so it reads from above.

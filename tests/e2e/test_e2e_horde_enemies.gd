@@ -84,6 +84,9 @@ func test_the_dev_panel_brings_in_each_horde_kind_and_it_acts() -> void:
 		[ActorStore.Kind.SNIPER, "ENEMY_SNIPER", [&"snipe"]],
 	]:
 		var id: int = await _spawn(e, main, spec[0], spec[1])
+		if spec[0] == ActorStore.Kind.SWARMER:  # The owner's model, animated (SwarmerModel)
+			var sw: HordeAvatar = main.view.actors.actor_node(id).get_meta(&"enemy_avatar")
+			assert_true(sw.has_model(), "the Swarmer on the owner's model")
 		var bearer: bool = spec[0] == ActorStore.Kind.SHIELD_BEARER
 		var got: Array = await _watch(e, main, id, spec[2], 900, bearer)
 		assert_true(got[0], "%s: its telegraph shows (its body tells it)" % spec[1])

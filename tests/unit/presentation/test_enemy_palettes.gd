@@ -241,6 +241,8 @@ static func _owner_model(kind: int) -> bool:
 	var id := HordeAvatar.model_id(kind)
 	if kind == WorldReader.KIND_LENS_DRONE:
 		id = &"lens_drone"
+	if kind == WorldReader.KIND_HATCHLING:  # HatchlingAvatar's
+		id = HatchlingAvatar.MODEL
 	return id != &"" and EnemyModels.has_model(id)
 
 

@@ -49,6 +49,10 @@ const SPECS := {
 	# The Gravity Node (scripts/assets/gravity_node_prep.py: face plate, core, two shell halves, two rings;
 	# GravityNodeAvatar poses them), about the request row's 0.9 m orb with its rings.
 	&"gravity_node": {"height": GravityNodeAvatar.MODEL_HEIGHT},
+	# The Hatchling and the Swarmer (scripts/assets/hatchling_swarmer_prep.py: body, carapace or wing cases,
+	# mandibles, six two-part legs; HatchlingAvatar and SwarmerModel pose them), the horde's small sizes.
+	&"hatchling": {"height": HatchlingAvatar.MODEL_HEIGHT},
+	&"swarmer": {"height": 0.25},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

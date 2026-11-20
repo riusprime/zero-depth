@@ -21,6 +21,8 @@ const BODY_Y := 7
 const FIDGET_CLOCK := 8
 const FIDGET := 9
 const TWITCH_CLOCK := 10
+## The Hatchling's death (HatchlingAvatar: 0..1 into its fall; the Charger's grids never read it).
+const DEATH := 11
 const DRIVES := 12
 ## The body's height drive spans these (m): the bob, the breath and the tremble over the deepest drop and the reared
 ## wind-up (-0.284 .. 0.084), with a margin.
@@ -230,6 +232,9 @@ static func sample(c: ChargerAvatar, rng: RandomNumberGenerator) -> Dictionary:
 	}
 	if rng.randf() < 0.25:  # a quarter fully risen (the commonest)
 		s["rise"] = 1.0
+	if c is HatchlingAvatar:  # its fall too, a third of them
+		var dying := rng.randf() < 0.3
+		s["die"] = rng.randf() * HatchlingAvatar.DEATH_SECONDS * 1.2 if dying else -1.0
 	apply(c, s)
 	return s
 
@@ -245,4 +250,5 @@ static func apply(c: ChargerAvatar, s: Dictionary) -> void:
 	c._rise = s["rise"]
 	c._state = WorldReader.STATE_WINDUP if s["windup"] else WorldReader.STATE_MOVE
 	c._tell_p = s["tell"]
+	c._die_t = s.get("die", -1.0)
 	c._pose()

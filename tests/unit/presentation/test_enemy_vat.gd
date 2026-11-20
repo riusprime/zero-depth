@@ -5,6 +5,8 @@ extends GutTest
 ## and ActorViews draws, flashes, flinches and rebuilds them through the crowd.
 ## v0.10.5 W3-V4a: the same for the Charger and the Hatchling (ChargerVat's rig: twelve drives, the eight past the
 ## fourth in a drive texture), and the old Charger pose is untouched (test_charger_pose_hv).
+## The Swarmer's pilot rig is now its code body's (the model missing); its model's: test_swarmer_model.gd. The
+## Hatchling has its own bake on its model (test_hatchling_avatar.gd).
 
 const SW := ActorStore.Kind.SWARMER
 const CH := ActorStore.Kind.CHARGER
@@ -32,6 +34,16 @@ func before_each() -> void:
 func after_each() -> void:
 	ViewPrefs.enemy_vat = _vat
 	ViewPrefs.reduced_motion = _calm
+	EnemyModels.dir = EnemyModels.DIR
+	EnemyModels.clear_cache()
+	VatBake.clear_cache()
+
+
+## The Swarmer's code body (the pilot's rig): its model file looked for where there is none.
+func _code_swarmer() -> void:
+	EnemyModels.dir = "res://tests/fixtures/no_such_dir/"
+	EnemyModels.clear_cache()
+	VatBake.clear_cache()
 
 
 func test_vat_is_the_default_and_can_be_turned_off() -> void:
@@ -49,6 +61,7 @@ func test_vat_is_the_default_and_can_be_turned_off() -> void:
 
 
 func test_the_bake_matches_the_live_pose() -> void:
+	_code_swarmer()
 	var pose := VatBake.pose_for(SW)
 	var mesh := VatBake.mesh_for(SW, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 	var live := VatBake.reference_avatar(SW, Color(0, 0, 0, 0), 0.0)
@@ -73,6 +86,7 @@ func test_the_bake_matches_the_live_pose() -> void:
 
 
 func test_a_vat_avatar_has_no_pieces_and_the_same_drives() -> void:
+	_code_swarmer()
 	var live := HordeAvatar.new()
 	live.setup(SW)
 	var vat := HordeAvatar.new()
@@ -198,9 +212,11 @@ func test_the_charger_bake_matches_the_live_pose() -> void:
 		var mesh := VatBake.mesh_for(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 		var live := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0)
 		var vat := VatBake.vat_avatar_of(kind)
-		assert_eq(pose["key"], "charger", "the Charger and the Hatchling share one bake")
+		var hatch := kind == ActorStore.Kind.HATCHLING
+		assert_eq(pose["key"], "hatchling" if hatch else "charger", "the Hatchling's own bake")
 		assert_eq(int(pose["drive_texels"]), 2, "eight drives past the fourth")
-		assert_true(mesh.get_meta(&"two_sided"), "its shell is drawn from both sides")
+		if not hatch:
+			assert_true(mesh.get_meta(&"two_sided"), "its shell is drawn from both sides")
 		var e := VatVerify.pose_error(live, vat, pose, mesh, 60, 11)
 		assert_eq(e["vertices"], mesh.surface_get_array_len(0), "every vertex compared")
 		# 15.7 mm is a pixel at the game's camera; the report gives the real number.
@@ -261,13 +277,14 @@ func test_actor_views_draw_vat_chargers_and_hatchlings() -> void:
 			assert_true(node.has_meta(&"dazed_y"), "its dazed ring is the batch's (EnemyBatch)")
 	views.vat_crowd._process(DT)
 	assert_eq(views.vat_crowd.drawn, 3)
-	var hatch := views.actor_node(ids[2]).get_meta(&"enemy_avatar") as ChargerAvatar
+	var hatch := views.actor_node(ids[2]).get_meta(&"enemy_avatar") as HatchlingAvatar
 	var inst := views.vat_crowd.instance_of(hatch)
+	assert_true(hatch.has_model, "the Hatchling on the owner's model")
 	assert_almost_eq(
 		(inst["xf"] as Transform3D).basis.get_scale(),
-		Vector3.ONE * 0.66,
+		Vector3.ONE,
 		Vector3.ONE * 1e-3,
-		"the Hatchling at two thirds of the size"
+		"the Hatchling's model at its own size"
 	)
 	assert_eq(inst["drives"] as PackedFloat32Array, hatch.vat_drives(), "all twelve drives sent")
 	views.flash(ids[0])
