@@ -247,3 +247,23 @@ the biome like the rest of the kit. Any golden that moves with the new footprint
 | 39 | The javelin, War Banner, hour clock and ammo cart on the owner's models (38 is the other lead session's performance pass) | Opus |
 
 Three Opus agents at a time across the PC (the performance pass counts), one Godot process each: 36, 37a, 37b first, then 37c, 37d, 39.
+
+## The owner's asset answers (2026-11-20)
+
+Asked for one list of what is pending, then answered it row by row (the list: `docs/art/requests/PENDING_ASSETS.md`;
+the prompts: `docs/art/requests/v0.12.0_models.md`, owner: "add the full detailed prompts … add the prefix if they have
+one to the prompt already and give them as much detail as possible so there is consistency between assets"):
+
+- **The owner makes:** the 8 regular enemies, the Star Warper, the 5 horde critters ("I'll work the 8 regular pending
+  enemies, the star warper, and the 5 small horde critters as well"), the 11 props ("I'll also work the props"), the rail
+  streak texture, and possibly two big focal pieces (the lead proposed `grand_arch` and `great_monolith`; the rest
+  scaled up in game).
+- **Dropped:** the hero's gun model. Owner: "the hero being the one who shoots like "energy" / magic rune power feels
+  better for me than giving him a gun".
+- **Open, the owner's choice:** how the owner's Blade model shows. The lead proposed a rune-summoned blade that forms for
+  each swing and breaks into motes after it (PENDING_ASSETS §9).
+- **Paused, kept on the list:** the boss attack pieces ("they look good enough actually, leave them as paused but do not
+  delete them from the list just in case"), the shop's vendors, wares and other stalls ("the same one is enough"), the
+  audio ("still pending not gonna work on it now").
+- **The lead's, no art needed:** the eleven Twin Wardens and Warlord clips (OWNER_TODO §3.7), on the v0.11.1 Blender
+  rigs. Not started.

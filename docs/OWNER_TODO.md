@@ -95,7 +95,7 @@ with your biggest builds; bugs (what you did, saw, expected; a screenshot); anyt
 
 ## 3. 3D art: specs and prompts
 
-**What is still pending, in one list (2026-11-20):** [`art/requests/PENDING_ASSETS.md`](art/requests/PENDING_ASSETS.md). The tables below keep the prompts.
+**What is still pending, in one list (2026-11-20):** [`art/requests/PENDING_ASSETS.md`](art/requests/PENDING_ASSETS.md). **The ready-to-paste prompts for what you are making now** (14 enemies, 11 props, the rail texture, two focal pieces): [`art/requests/v0.12.0_models.md`](art/requests/v0.12.0_models.md). The tables below keep the older prompts.
 
 **Shared rules (every model):** the look of your kit and `docs/art/look_reference.webp`: chunky, chipped, weathered
 low-poly; worn metal, concrete and stone; no baked lighting or shadows; no text, letters or logos; one object, no
@@ -147,8 +147,8 @@ the eight enemy models in §3.2.
 
 | ✓ | id | What it is, how it should look | Size (W×D×H m) | Prompt (after the prefix) |
 |---|---|---|---|---|
-| ☐ | `hero_gun` | The hero's Gun, professional-looking (your note: they "need to look professional"). It fires the blue pulse, so blue accents; seen in the hero's hand, small | 0.7 long | [character prefix, steel blue] a chunky sci-fi energy pistol held in one hand, a short thick barrel with a glowing blue core visible through vents, a faceted charcoal steel body, a blue crystal power cell at the back, a worn grip; shown on its own, side view |
-| ☐ | `hero_blade` | The hero's Blade, professional-looking. Its slash leaves a blue-white edge, so the edge glows | 1.1 long | [character prefix, steel blue] a single-edged laser sword, a long straight faceted blade of pale blue-white light with a hard bright edge, a chunky charcoal steel hilt with a blue crystal in the guard, a wrapped grip; shown on its own, side view |
+| ✗ dropped (owner 2026-11-20: the hero shoots rune power, no gun) | `hero_gun` | The hero's Gun, professional-looking (your note: they "need to look professional"). It fires the blue pulse, so blue accents; seen in the hero's hand, small | 0.7 long | [character prefix, steel blue] a chunky sci-fi energy pistol held in one hand, a short thick barrel with a glowing blue core visible through vents, a faceted charcoal steel body, a blue crystal power cell at the back, a worn grip; shown on its own, side view |
+| ☐ owner has the model; how it shows: PENDING_ASSETS §9 | `hero_blade` | The hero's Blade, professional-looking. Its slash leaves a blue-white edge, so the edge glows | 1.1 long | [character prefix, steel blue] a single-edged laser sword, a long straight faceted blade of pale blue-white light with a hard bright edge, a chunky charcoal steel hilt with a blue crystal in the guard, a wrapped grip; shown on its own, side view |
 | ☐ | `menu_chest` | For the future main-menu scene (the hero opening a chest). A treasure chest that opens: a separate lid (or a rig with an `open` clip) | 1.0 × 0.6 × 0.7 | [kit prefix] a heavy iron-banded treasure chest of dark weathered wood, faceted metal corners, a red crystal lock, glowing red light leaking through the gap under the lid, the lid as a separate object |
 | ☐ | (rig) the hero | For the same scene: if your hero model can be rigged with an `open_chest` clip (kneel, lift the lid, look in), the lead builds the menu around it. Otherwise the lead animates the existing hero in code | — | — |
 
@@ -219,7 +219,7 @@ The biome variants (Rubble Warden, Dim Needle, Ember Charger, Frost Charger, Spl
 | ☐ | The Fallen's emblems of the bosses it remembers (P3) | four small emblems, one per boss: the Clockwork Judge (gold), the Tidecaller (sea blue), the Gatekeeper (stone amber), the Twin Wardens (amber and violet) | Over The Fallen while it casts a mechanic it remembers. Today each is a ghost of that boss's own model drawn as glowing light in its colour (the Twins as a pair), rising over it; say if you want a sigil or icon instead |
 | ☐ | The amber Warden's shade (P3) | a translucent amber Warden, 2.6 m, standing and charging | The Fallen's remembered ward: today the amber Warden's model drawn as amber light, held still in its rest pose (no run or wind-up clip) |
 
-### 3.4 The shop (P2: you're not sure yet)
+### 3.4 The shop (paused, owner 2026-11-20: "the same one is enough")
 
 | ✓ | id | Spec | Prompt (after the character prefix, "standing idle, arms at its sides, facing forward") |
 |---|---|---|---|
@@ -231,7 +231,7 @@ The biome variants (Rubble Warden, Dim Needle, Ember Charger, Frost Charger, Spl
 | ☐ | `shop_wares` | 1.0 × 0.6 × 0.6, +Z toward the player | (kit prefix) a pile of goods for a counter: bottles, a scroll case, glowing crystal shards in a crate, a small chest |
 | ☐ | stalls for the other 4 biomes (P3) | must fit 4.0 × 3.4 m, 2.55 m tall; say which way its front faces | (kit prefix) your desert stall's shape, re-dressed: Night Rocks (moss-grey cloth, a hanging lantern on a staff), Red Canyon (sun-bleached cloth, cattle skull), Frozen Shore (furs, nets, frost), Starfall (star-map cloth, floating crystals) |
 
-### 3.5 Boss attack pieces (P2)
+### 3.5 Boss attack pieces (paused, owner 2026-11-20: "they look good enough actually"; kept on the list)
 
 | ✓ | id | Size | Prompt (after the kit prefix) |
 |---|---|---|---|
@@ -275,7 +275,7 @@ rooms use stand-ins until these arrive. All after the kit prefix; sizes are targ
 | ✓ | Quarry | `tool_rack` | 1.4 × 0.4 × 1.6 | a wooden rack with pickaxes, a sledgehammer and shovels leaning in it |
 | ☐ | All | bigger focal pieces | — | larger versions of the biome focal pieces (the Ruins arch, the Starfall observatory and monoliths) so they read across a 3x3 room; or say if the game may scale the existing ones |
 
-### 3.7 Boss animation clips (P3: you're not sure yet)
+### 3.7 Boss animation clips (the lead makes these in Blender with the v0.11.1 rigs; no art needed)
 Any boss: clips named like the code ones (`idle`, `walk`, `marks`, `pattern`, `lanes`, `leap`, `death`…, listed per
 boss in [`roadmap/v0.8.0/evidence/BOSS_ANIMATIONS.md`](roadmap/v0.8.0/evidence/BOSS_ANIMATIONS.md)) in an
 AnimationPlayer inside the `.glb`; yours replace the code ones.
