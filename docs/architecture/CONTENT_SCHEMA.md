@@ -1125,7 +1125,11 @@ Array[RoomPurposeChoice]` (`id`, one weight per option), `min_cells` (3 x 3 and 
 (the focal wall prefers a far side from the camera), `shift_m` (< 1 m) and `turn_deg` (< 15), and one
 `RoomPurposePalette` per biome mapping each token to a `RoomPurposePiece` (`piece` from `PIECES`, `size`, `height`
 (0..8 m, the drawn height: a focal piece stands up to the hall's 6 m monolith),
-`solid`; a drawn piece is low decoration (`DECOR`) or rests on its group's solids at `lift` m: a lintel). The pieces
+`solid`; a drawn piece is low decoration (`DECOR`) or rests on its group's solids at `lift` m: a lintel; a solid on
+`legs` (an arch: each leg's blocker footprint, their centres `leg_at` m each side along its x, inside `size`) is solid
+only under its legs, the opening between them walkable floor of at least `MIN_OPENING_M` (2 m), and is drawn whole
+at `size` over them: the Ruins and Night Rocks halls' grand arch, 6 x 2.56 m at its own 3.71 m, on legs of
+1.52 x 2 m at ±2.07 m). The pieces
 are kit stand-ins until the purpose-room models arrive (OWNER_TODO §3.6): a new model swaps in by its palette row.
 `RunContentCompiler.compile_room_purposes` → `RoomPurposeTable`; `RunSaver.floor_tables` passes them to
 `FloorScenario.add_purposes` (after the shop), which lays `MapDefinition.purpose_permille` (750) of the large rooms of

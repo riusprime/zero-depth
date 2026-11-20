@@ -112,3 +112,35 @@ func test_each_rule_catches_its_mistake() -> void:
 	d = _good()
 	d.min_cells = Vector2i(2, 2)
 	assert_has(_codes(d), "range", "a purpose is for large rooms")
+
+
+## A good piece on legs (the hall's arch): 6 m wide, legs 1.5 m each at ±2.1 m, a 2.7 m opening.
+func _on_legs() -> RoomPurposeDefinition:
+	var d := _good()
+	var p := d.palettes[0].pieces[0]
+	p.piece = &"grand_arch"
+	p.size = Vector2(6.0, 2.56)
+	p.legs = Vector2(1.5, 2.0)
+	p.leg_at = 2.1
+	return d
+
+
+func test_a_piece_on_legs_is_solid_under_its_legs_with_an_opening() -> void:
+	assert_eq(_codes(_on_legs()), [], "an arch on two legs")
+	var d := _on_legs()
+	d.palettes[0].pieces[0].solid = false
+	assert_has(_codes(d), "legs", "a piece on legs is a solid")
+	d = _on_legs()
+	d.palettes[0].pieces[0].legs = Vector2(0.2, 2.0)
+	assert_has(_codes(d), "legs", "a leg too thin to block")
+	d = _on_legs()
+	d.palettes[0].pieces[0].leg_at = 2.4
+	assert_has(_codes(d), "legs", "a leg past the drawn footprint's end")
+	d = _on_legs()
+	d.palettes[0].pieces[0].legs = Vector2(1.5, 3.0)
+	assert_has(_codes(d), "legs", "a leg deeper than the piece")
+	d = _on_legs()
+	d.palettes[0].pieces[0].leg_at = 1.6
+	assert_has(
+		_codes(d), "legs", "an opening under 2 m: it would look like a way through and not be one"
+	)

@@ -1492,17 +1492,25 @@ func layout_prop_count() -> int:
 
 ## Prop i: {"piece": StringName, "pos": Vector2, "angle": int (1/4096), "size": Vector2 (m), "height": float (m; 0 =
 ## the kit's own), "wall": the wall index it stands on (-1: decoration on open floor; -2: its blocker is gone, so it
-## isn't drawn), "lift": its base height (m; v0.11.0 O15, a lintel; 0 on the ground)}.
+## isn't drawn), "lift": its base height (m; v0.11.0 O15, a lintel; 0 on the ground), "legs": the wall indices of the
+## legs it is drawn whole over (an arch, RoomPurposes; empty for any other prop; "wall" is the first)}.
 func layout_prop(i: int) -> Dictionary:
 	var f := _w.floor_layout
 	var p: Array = f.layout_props[i]
 	var wall := -1
+	var legs := PackedInt32Array()
 	var key: String = p[5]
 	if not key.is_empty():
 		if _layout_wall_index.is_empty():
 			for k in range(f.slab_first, _w.walls.size()):
 				_layout_wall_index[FloorLayout.piece_key(_w.walls[k])] = k
-		wall = int(_layout_wall_index.get(key, -2))
+		var keys := key.split(RoomPurposes.LEG_SEP)
+		for k in keys:
+			var at := int(_layout_wall_index.get(k, -2))
+			if wall == -1 or at == -2:  # The first leg's, or -2 when any of them is gone
+				wall = at
+			if keys.size() > 1:
+				legs.append(at)
 	var lift: float = p[6] if p.size() > 6 else 0.0  # A lintel's base height
 	return {
 		"piece": p[0],
@@ -1511,7 +1519,8 @@ func layout_prop(i: int) -> Dictionary:
 		"size": p[3],
 		"height": p[4],
 		"wall": wall,
-		"lift": lift
+		"lift": lift,
+		"legs": legs
 	}
 
 

@@ -1381,8 +1381,9 @@ solid = false
 script = ExtResource("5_12cg3")
 token = &"focal"
 piece = &"grand_arch"
-size = Vector2(3, 1)
-height = 2.5
+size = Vector2(6, 2.56)
+legs = Vector2(1.52, 2)
+leg_at = 2.07
 
 [sub_resource type="Resource" id="Resource_uu6ar"]
 script = ExtResource("4_r64cy")
@@ -1555,8 +1556,9 @@ solid = false
 script = ExtResource("5_12cg3")
 token = &"focal"
 piece = &"grand_arch"
-size = Vector2(3, 1)
-height = 2.5
+size = Vector2(6, 2.56)
+legs = Vector2(1.52, 2)
+leg_at = 2.07
 
 [sub_resource type="Resource" id="Resource_big5k"]
 script = ExtResource("4_r64cy")

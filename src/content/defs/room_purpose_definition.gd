@@ -17,6 +17,9 @@ const SHIFT_MAX_M := 1.0
 const TURN_MAX_DEG := 15.0
 ## A palette piece's drawn height bound: a big room's focal piece stands up to the hall's 6 m monolith.
 const MAX_HEIGHT_M := 8.0
+## The least opening between a piece's two legs: wide enough that the enemies' path flood passes it (FloorParams
+## nav_clearance 0.6 m each side of a FloorReach cell of 0.5 m, rounded up), so a way through looks like one and is.
+const MIN_OPENING_M := 2.0
 ## The kit pieces a palette may name: the designed rooms' (RoomLayoutDefinition.KIT), the biomes' own pieces and the
 ## purpose rooms' own (KitModels.SPECS; tests/content/test_room_purpose_validation.gd checks every one is installed).
 const PIECES: Array[StringName] = [
@@ -71,7 +74,9 @@ const PIECES: Array[StringName] = [
 	&"great_monolith",
 ]
 ## The low pieces a palette may draw on open floor (never solid; "looks solid = is solid"). A taller drawn piece must
-## rest on its group's solids (RoomPurposePiece.lift: a lintel), so nothing tall stands on open floor.
+## rest on its group's solids (RoomPurposePiece.lift: a lintel), so nothing tall stands on open floor. A solid on legs
+## (RoomPurposePiece.legs: an arch) is solid only under its legs: the opening between them is floor, so it is at
+## least MIN_OPENING_M wide.
 const DECOR: Array[StringName] = [
 	&"rubble_small",
 	&"grass_tuft",
@@ -263,6 +268,8 @@ func _check_palette(issues: Array[ValidationIssue], pal: RoomPurposePalette) -> 
 			issues.append(
 				ValidationIssue.new(&"range", resource_path, "%s: lift 0..4 m, drawn only" % where)
 			)
+		if p.legs != Vector2.ZERO:
+			_check_legs(issues, where, p)
 		if not p.solid and not DECOR.has(p.piece) and p.lift <= 0.0:
 			issues.append(
 				ValidationIssue.new(
@@ -271,3 +278,29 @@ func _check_palette(issues: Array[ValidationIssue], pal: RoomPurposePalette) -> 
 					"%s: '%s' is taller than decoration and not solid" % [where, p.piece]
 				)
 			)
+
+
+## A piece on legs: a solid on the floor, each leg a blocker inside the drawn footprint, the opening between them
+## MIN_OPENING_M or wider.
+func _check_legs(issues: Array[ValidationIssue], where: String, p: RoomPurposePiece) -> void:
+	if not p.solid or p.lift > 0.0:
+		issues.append(
+			ValidationIssue.new(&"legs", resource_path, "%s: a piece on legs is a solid" % where)
+		)
+	if minf(p.legs.x, p.legs.y) < 0.3:
+		issues.append(ValidationIssue.new(&"legs", resource_path, "%s: a leg is 0.3 m+" % where))
+	var eps := 0.001
+	if p.leg_at + p.legs.x * 0.5 > p.size.x * 0.5 + eps or p.legs.y > p.size.y + eps:
+		issues.append(
+			ValidationIssue.new(
+				&"legs", resource_path, "%s: the legs stand inside its footprint" % where
+			)
+		)
+	if p.leg_at * 2.0 - p.legs.x < MIN_OPENING_M - eps:
+		issues.append(
+			ValidationIssue.new(
+				&"legs",
+				resource_path,
+				"%s: the opening between the legs is %.1f m+" % [where, MIN_OPENING_M]
+			)
+		)
