@@ -36,7 +36,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_SHIELD_BEARER,
 	WorldReader.KIND_MENDER,
 	WorldReader.KIND_MINE_LAYER,
-	WorldReader.KIND_SNIPER,
+	WorldReader.KIND_SNIPER,  # The owner's model (SoloVat)
 	WorldReader.KIND_NEEDLE,
 	WorldReader.KIND_WARDEN,
 	WorldReader.KIND_ARC_CASTER,
@@ -84,7 +84,7 @@ static func supports(kind: int) -> bool:
 	if not KINDS.has(kind):
 		return false
 	var model := HordeAvatar.model_id(kind)
-	return model == &"" or EnemyModels.has_model(model)
+	return model == &"" or EnemyModels.has_model(model) or kind == WorldReader.KIND_SWARMER
 
 
 func _init() -> void:

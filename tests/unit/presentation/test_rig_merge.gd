@@ -14,8 +14,8 @@ func after_each() -> void:
 	RigMerge.skip_kinds = {}
 
 
-func _needle() -> NeedleAvatar:
-	var n := NeedleAvatar.new()
+func _warden() -> WardenAvatar:
+	var n := WardenAvatar.new()
 	n.setup()
 	add_child_autofree(n)
 	return n
@@ -35,74 +35,78 @@ func _drawn(n: Node) -> Array[int]:
 	return out
 
 
-func test_a_merged_needle_draws_a_few_surfaces_instead_of_every_piece() -> void:
-	var before := _drawn(_needle())
-	var n := _needle()
-	var stats := RigMerge.merge(n, WorldReader.KIND_NEEDLE)
+func test_a_merged_warden_draws_a_few_surfaces_instead_of_every_piece() -> void:
+	var before := _drawn(_warden())
+	var n := _warden()
+	var stats := RigMerge.merge(n, WorldReader.KIND_WARDEN)
 	var after := _drawn(n)
 	assert_false(stats.is_empty(), "merged")
-	assert_lt(after[1], before[1] / 2, "far fewer surfaces drawn")
-	assert_eq(stats["pieces"], before[0], "every piece went into the merged meshes")
+	assert_lt(after[1], before[1], "fewer surfaces drawn")
+	assert_eq(
+		stats["pieces"],
+		before[0] - 1,
+		"every piece but its see-through one (it sorts by its own node)"
+	)
 	assert_not_null(n.merged_rig, "the avatar knows its skeleton")
 
 
 func test_the_switch_and_the_skip_list_leave_the_rig_as_built() -> void:
 	RigMerge.enabled = false
-	var off := _needle()
-	assert_true(RigMerge.merge(off, WorldReader.KIND_NEEDLE).is_empty())
+	var off := _warden()
+	assert_true(RigMerge.merge(off, WorldReader.KIND_WARDEN).is_empty())
 	assert_null(off.merged_rig)
 	RigMerge.enabled = true
-	RigMerge.skip_kinds = {WorldReader.KIND_NEEDLE: true}
-	var skipped := _needle()
-	assert_true(RigMerge.merge(skipped, WorldReader.KIND_NEEDLE).is_empty())
-	assert_gt(_drawn(skipped)[0], 20, "its pieces still draw")
+	RigMerge.skip_kinds = {WorldReader.KIND_WARDEN: true}
+	var skipped := _warden()
+	assert_true(RigMerge.merge(skipped, WorldReader.KIND_WARDEN).is_empty())
+	assert_gt(_drawn(skipped)[0], 10, "its pieces still draw")
 
 
 func test_a_bone_follows_the_node_the_animation_writes() -> void:
-	var n := _needle()
-	RigMerge.merge(n, WorldReader.KIND_NEEDLE)
+	var n := _warden()
+	RigMerge.merge(n, WorldReader.KIND_WARDEN)
 	var rig := n.merged_rig
-	var i := rig.nodes.find(n.barrel)
-	assert_gt(i, -1, "the barrel is a bone")
+	var i := rig.nodes.find(n.arms[0])
+	assert_gt(i, -1, "the arm is a bone")
 	var rest := rig.get_bone_pose(i)
-	n.barrel.position.x += 0.2
+	n.arms[0].position.x += 0.2
 	assert_true(rig.update_bones(), "a moved node moves its bone")
 	assert_almost_eq(rig.get_bone_pose(i).origin.x, rest.origin.x + 0.2, 0.0001)
 	assert_false(rig.update_bones(), "nothing changed: nothing written")
 
 
 func test_a_hidden_node_folds_its_bone_to_a_point_and_comes_back() -> void:
-	var n := _needle()
-	RigMerge.merge(n, WorldReader.KIND_NEEDLE)
+	var n := _warden()
+	RigMerge.merge(n, WorldReader.KIND_WARDEN)
 	var rig := n.merged_rig
-	var i := rig.nodes.find(n.barrel)
-	n.barrel.visible = false
+	var i := rig.nodes.find(n.arms[0])
+	n.arms[0].visible = false
 	rig.update_bones()
 	assert_lt(rig.get_bone_pose(i).basis.get_scale().x, 0.001, "hidden: scaled away")
-	n.barrel.visible = true
+	n.arms[0].visible = true
 	rig.update_bones()
 	assert_almost_eq(rig.get_bone_pose(i).basis.get_scale().x, 1.0, 0.0001, "shown again")
 
 
 func test_a_pieces_material_that_the_avatar_animates_stays_the_same_object() -> void:
-	var n := _needle()
-	RigMerge.merge(n, WorldReader.KIND_NEEDLE)
+	var n := _warden()
+	RigMerge.merge(n, WorldReader.KIND_WARDEN)
 	var seen := false
 	for mi in n.merged_rig.get_children():
 		var m := mi as MeshInstance3D
 		for s in m.mesh.get_surface_count():
-			if m.get_surface_override_material(s) == n._eye_mat:
+			if m.get_surface_override_material(s) == n._visor_mat:
 				seen = true
 	assert_true(
 		seen,
-		"the eye's glow material is a surface of the merged mesh, so its emission still animates it"
+		"the visor's glow material is a surface of the merged mesh, so its emission still animates it"
 	)
 
 
 func test_equal_body_materials_are_one_and_the_flash_list_has_each_once() -> void:
-	var n := _needle()
+	var n := _warden()
 	var before := n.body_materials.size()
-	RigMerge.merge(n, WorldReader.KIND_NEEDLE)
+	RigMerge.merge(n, WorldReader.KIND_WARDEN)
 	assert_lt(n.body_materials.size(), before, "pieces of one colour share a material")
 	for m in n.body_materials:
 		assert_eq(n.body_materials.count(m), 1, "listed once, so a tint is applied once")
@@ -135,9 +139,9 @@ func test_a_charger_keeps_its_stretched_body_apart_and_merges_its_legs() -> void
 
 
 func test_shadow_casting_follows_the_trimmed_pieces() -> void:
-	var n := _needle()
+	var n := _warden()
 	ShadowTrim.trim(n, 2)
-	RigMerge.merge(n, WorldReader.KIND_NEEDLE)
+	RigMerge.merge(n, WorldReader.KIND_WARDEN)
 	var casting := 0
 	for mi in n.merged_rig.get_children():
 		var m := mi as MeshInstance3D

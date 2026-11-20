@@ -10,8 +10,8 @@ extends SceneTree
 ## v0.10.5 W3-V4a: `-- --kind=charger` draws the Charger's states instead (CHARGER_PLAN: its run, wind-up, lunge,
 ## recovery and daze, and one Hatchling), into vat_sheet_charger.png and vat_diff_charger.txt; `--out=<res:// dir>`
 ## writes elsewhere than build/shots/<version>/vat/.
-## v0.10.5 W3-V4b: `-- --kind=<name>` (splitter, splitling, shield_bearer, mender, mine_layer, sniper) draws that kind
-## in its own states (KIND_PLANS: the walk, the death, the heal, the mine dropped, the muzzle) into
+## v0.10.5 W3-V4b: `-- --kind=<name>` (splitter, splitling, shield_bearer, mender, mine_layer) draws that kind
+## in its own states (KIND_PLANS: the walk, the death, the heal, the mine dropped) into
 ## vat_sheet_<name>.png and vat_diff_<name>.txt; `--version-dir=<v>` writes under build/shots/<v>/vat/. Every horde
 ## sheet also gives each state's largest vertex error (the shader's arithmetic on the CPU).
 ## v0.10.5 W3-V4c: `-- --kind=<name>` (needle, warden, arc_caster, bomb_drone; v0.11.0 O17c: stone_thrower) draws
@@ -41,6 +41,8 @@ const PLAN := [
 	["rise-in, half way", {}, "spawn"],
 	["biome cast + role glow", {"tint": Color(0.45, 0.65, 1.0, 0.5), "role": 0.45}, "idle"],
 	["reduced motion + flinch", {}, "calm"],
+	["walking", {}, "walk"],
+	["death, 75 %", {}, "death_late"],
 ]
 ## v0.10.5 W3-V4a: the Charger's states (build "hatchling": the Brood Mother's, at two thirds of the size).
 const CHARGER_PLAN := [
@@ -62,6 +64,7 @@ const CHARGER_PLAN := [
 	["reduced motion + windup", {}, "calm"],
 	["Hatchling, run", {"hatchling": true}, "run"],
 	["Hatchling, charge", {"hatchling": true}, "charge"],
+	["Hatchling, death 50 %", {"hatchling": true}, "death"],
 ]
 
 ## v0.10.5 W3-V4b: the other horde kinds by name (--kind=<name>).
@@ -71,7 +74,6 @@ const KINDS := {
 	"shield_bearer": WorldReader.KIND_SHIELD_BEARER,
 	"mender": WorldReader.KIND_MENDER,
 	"mine_layer": WorldReader.KIND_MINE_LAYER,
-	"sniper": WorldReader.KIND_SNIPER,
 }
 const CAST := {"tint": Color(0.45, 0.65, 1.0, 0.5), "role": 0.45}
 ## v0.10.5 W3-V4b: the other kinds' states (the Swarmer's: PLAN).
@@ -131,22 +133,6 @@ const KIND_PLANS := {
 		["biome cast + role glow", CAST, "idle"],
 		["reduced motion + flinch", {}, "calm"],
 	],
-	"sniper":
-	[
-		["idle", {}, "idle"],
-		["windup 31 % (muzzle)", {}, "windup_early"],
-		["windup 90 % (flash)", {}, "windup_late"],
-		["shot (0.05 s)", {}, "strike_snap"],
-		["shot (0.15 s)", {}, "strike_out"],
-		["easing back", {}, "strike_back"],
-		["flinch at its peak", {}, "flinch"],
-		["Blade knock", {}, "knock"],
-		["hit flash", {}, "flash"],
-		["status tint (burn)", {}, "tint"],
-		["rise-in, half way", {}, "spawn"],
-		["biome cast + role glow", CAST, "idle"],
-		["reduced motion + flinch", {}, "calm"],
-	],
 }
 
 ## v0.10.5 W3-V4c: the stand-alone kinds by name (--kind=<name>), their states, and their framing
@@ -165,9 +151,10 @@ const SOLO := {
 	"wire_weaver": WorldReader.KIND_WIRE_WEAVER,
 	"glacier_turtle": WorldReader.KIND_GLACIER_TURTLE,
 	"gravity_node": WorldReader.KIND_GRAVITY_NODE,
+	"sniper": WorldReader.KIND_SNIPER,
 }
 const SOLO_FRAME := {
-	WorldReader.KIND_NEEDLE: [1.5, 0.4],
+	WorldReader.KIND_NEEDLE: [2.2, 0.5],
 	WorldReader.KIND_WARDEN: [2.6, 0.75],
 	WorldReader.KIND_ARC_CASTER: [1.9, 0.65],
 	WorldReader.KIND_BOMB_DRONE: [2.8, 1.1],
@@ -180,6 +167,7 @@ const SOLO_FRAME := {
 	WorldReader.KIND_WIRE_WEAVER: [2.0, 0.5],
 	WorldReader.KIND_GLACIER_TURTLE: [2.4, 0.45],
 	WorldReader.KIND_GRAVITY_NODE: [2.4, 1.2],
+	WorldReader.KIND_SNIPER: [2.8, 0.6],
 }
 const SOLO_PLAN := [
 	["idle (t 1.5 s)", {}, "idle"],
@@ -221,15 +209,18 @@ var _pairs: Array = []  # [label, live SubViewport, vat SubViewport]
 var _frame := 0
 var _kind := KIND
 var _suffix := ""
+## `--kind=hatchling`: the Charger's states, every one on the Hatchling.
+var _hatch := false
 
 
 func _initialize() -> void:
 	_dir = "res://build/shots/%s/vat/" % GameVersion.label()
 	var plan: Array = PLAN
 	for arg in OS.get_cmdline_user_args():
-		if arg == "--kind=charger":
+		if arg == "--kind=charger" or arg == "--kind=hatchling":
 			_kind = WorldReader.KIND_CHARGER
-			_suffix = "_charger"
+			_hatch = arg == "--kind=hatchling"
+			_suffix = "_hatchling" if _hatch else "_charger"
 			plan = CHARGER_PLAN
 		elif arg.begins_with("--kind=") and KINDS.has(arg.trim_prefix("--kind=")):
 			var kname := arg.trim_prefix("--kind=")
@@ -389,14 +380,16 @@ func _avatar(vat: bool, build: Dictionary) -> AvatarBase:
 		s.role_glow = role
 		return s
 	if _kind == WorldReader.KIND_CHARGER:
-		var c := ChargerAvatar.new()
+		var hatch := _hatch or bool(build.get("hatchling", false))
+		var c := HatchlingAvatar.avatar_of(
+			WorldReader.KIND_HATCHLING if hatch else WorldReader.KIND_CHARGER
+		)
 		c.enemy_tint = tint
 		c.role_glow = role
 		c.vat = vat
-		var hatch := bool(build.get("hatchling", false))
 		c.setup(WorldReader.KIND_HATCHLING if hatch else WorldReader.KIND_CHARGER)
-		if hatch:
-			c.scale = Vector3.ONE * 0.66
+		if hatch and not (c as HatchlingAvatar).has_model:
+			c.scale = Vector3.ONE * HatchlingAvatar.FALLBACK_SCALE
 		return c
 	var a := HordeAvatar.new()
 	a.enemy_tint = tint
@@ -533,6 +526,10 @@ func _drive_charger(a: ChargerAvatar, steps: String) -> void:
 			a.show_hit(true, Color.WHITE, 1.6)
 		"tint":
 			a.show_hit(true, Color(1.0, 0.45, 0.1), 1.2)
+		"death":  # The Hatchling on its model falls
+			if a.has_method(&"die"):
+				a.call(&"die")
+			_run(a, 18)
 	ViewPrefs.reduced_motion = false
 
 
@@ -559,6 +556,7 @@ func _drive_solo(a: AvatarBase, steps: String) -> void:
 			WorldReader.KIND_WIRE_WEAVER: 2.6,
 			WorldReader.KIND_GLACIER_TURTLE: 1.1,
 			WorldReader.KIND_GRAVITY_NODE: 0.1,
+			WorldReader.KIND_SNIPER: 2.6,
 		}[_kind]
 		/ 60.0
 	)

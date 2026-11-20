@@ -417,6 +417,16 @@
       "sha256": "63db78faa74c2ac8112aa1cabdafb8d92e899fbd0ad300e0f8b601e0f686136b"
     },
     {
+      "id": "hatchling",
+      "path": "assets/models/enemies/hatchling.glb",
+      "sha256": "86d49253e3e5ae85a794a86566a20aeffd6df5db83595e39ae6428a1cb29e171"
+    },
+    {
+      "id": "swarmer",
+      "path": "assets/models/enemies/swarmer.glb",
+      "sha256": "71b9f072627494390ccfe17ad7ddd946da3e9965bf222cbe98e200e4f195e122"
+    },
+    {
       "id": "glacier_turtle",
       "path": "assets/models/enemies/glacier_turtle.glb",
       "sha256": "3d016d88b7220e9434280c62873c58477ee152b44f21cdb717e0ffd82b776873"
@@ -445,6 +455,16 @@
       "id": "gravity_node",
       "path": "assets/models/enemies/gravity_node.glb",
       "sha256": "17c6da16db384b56e9b21439e350a7a0ea9da59398a7ef895e0b26cb774937f2"
+    },
+    {
+      "id": "needle",
+      "path": "assets/models/enemies/needle.glb",
+      "sha256": "e7644a011aa32a03dad49fb212e135df4388f624294d659ab69448e0cf4c964b"
+    },
+    {
+      "id": "sniper",
+      "path": "assets/models/enemies/sniper.glb",
+      "sha256": "03c0b40202cf77135c943ed1f03d0b8566e897cab331196c36490159a570e05f"
     },
     {
       "id": "warden",

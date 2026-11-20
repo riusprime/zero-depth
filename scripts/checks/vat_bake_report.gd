@@ -94,7 +94,9 @@ func _report(kind: int) -> PackedStringArray:
 	out.append("  bake ms (this machine, once a session): poses %.1f, mesh %.1f" % [t_pose, t_mesh])
 	for calm: bool in [false, true]:
 		ViewPrefs.reduced_motion = calm
-		var full := live is HordeAvatar and kind != WorldReader.KIND_SWARMER  # v0.10.5 W3-V4b
+		var full: bool = (
+			live is HordeAvatar and (kind != WorldReader.KIND_SWARMER or live.has_model())
+		)  # The horde kinds past the pilot (its code body)
 		var e := (
 			VatVerify.pose_error_full(
 				live as HordeAvatar, vat as HordeAvatar, pose, mesh, _samples, SEED

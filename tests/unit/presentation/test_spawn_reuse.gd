@@ -128,11 +128,11 @@ func test_a_vat_kinds_proxy_shadow_is_made_once_and_warmed() -> void:
 
 
 func test_code_built_shapes_are_one_mesh_per_shape() -> void:
-	var box := NeedleAvatar._chamfer_box(Vector3(0.3, 0.07, 0.3), 0.015)
-	assert_same(NeedleAvatar._chamfer_box(Vector3(0.3, 0.07, 0.3), 0.015), box)
-	assert_ne(NeedleAvatar._chamfer_box(Vector3(0.3, 0.07, 0.31), 0.015), box, "another size")
-	var prism := NeedleAvatar._prism(0.05, 0.08, 8)
-	assert_same(NeedleAvatar._prism(0.05, 0.08, 8), prism)
+	var box := CodeMeshes.chamfer_box(Vector3(0.3, 0.07, 0.3), 0.015)
+	assert_same(CodeMeshes.chamfer_box(Vector3(0.3, 0.07, 0.3), 0.015), box)
+	assert_ne(CodeMeshes.chamfer_box(Vector3(0.3, 0.07, 0.31), 0.015), box, "another size")
+	var prism := CodeMeshes.prism(0.05, 0.08, 8)
+	assert_same(CodeMeshes.prism(0.05, 0.08, 8), prism)
 	assert_same(BossParts.block(Vector3.ONE, 7), BossParts.block(Vector3.ONE, 7))
 	assert_same(BossParts.crystal(0.4, 0.2, 93), BossParts.crystal(0.4, 0.2, 93))
 	assert_same(BossParts.orb(0.36, 96, 8, 6), BossParts.orb(0.36, 96, 8, 6))
@@ -140,14 +140,14 @@ func test_code_built_shapes_are_one_mesh_per_shape() -> void:
 	assert_same(BossParts.rock(Vector3.ONE, 3), BossParts.rock(Vector3.ONE, 3))
 	assert_ne(BossParts.rock(Vector3.ONE, 3), BossParts.rock(Vector3.ONE, 4), "another salt")
 	# The shared mesh is the one a fresh build makes (the same vertices).
-	var fresh := NeedleAvatar._build_chamfer_box(Vector3(0.3, 0.07, 0.3), 0.015, 0.0)
+	var fresh := CodeMeshes.build_chamfer_box(Vector3(0.3, 0.07, 0.3), 0.015, 0.0)
 	assert_eq(
 		fresh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX], box.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
 	)
 
 
-## (Its two small BoxMesh pieces, the eye slit and the bore, are still its own: cheap primitives, not built in code.)
-func test_two_node_path_needles_share_their_code_built_meshes() -> void:
+## Two Needles share the owner's model's part meshes (EnemyModels reads the file once).
+func test_two_node_path_needles_share_their_meshes() -> void:
 	var a := NeedleAvatar.new()
 	a.setup()
 	var b := NeedleAvatar.new()
@@ -161,6 +161,6 @@ func test_two_node_path_needles_share_their_code_built_meshes() -> void:
 		if mesh is ArrayMesh:
 			assert_same(mesh, (mb[k] as MeshInstance3D).mesh, "piece %d" % k)
 			shared += 1
-	assert_gt(shared, 10, "the boxes and prisms")
+	assert_gt(shared, 10, "every part of the model")
 	a.free()
 	b.free()

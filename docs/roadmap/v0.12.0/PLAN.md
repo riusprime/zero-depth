@@ -297,6 +297,7 @@ explode twice, just one exploding animation".
 | Step | What | Agent |
 |---|---|---|
 | 43 | The props: hazards, breakables (one explosion for the barrel), the pylon, the timed door (split to open) | Opus |
+| 43b | The timed door fits the walls: its frame built from the room's own square wall blocks, lower so it does not tower over the walls; only the owner's slab (with its carved seal) kept, sinking as now. Owner, on the merged door: "the rounded corners dont quite fit with the walls"; asked how, they chose the wall-block frame | Opus |
 | 44 | The focal pieces in the halls; the other focal pieces scaled up | Opus |
 | 45 | The Siege Engine's rail streak laid down as it slides | Opus |
 | 46 | The rune-summoned Blade | Opus |
@@ -309,4 +310,4 @@ explode twice, just one exploding animation".
 | 47g | Cave Bat and Star Mote (flying critters) | Opus |
 
 At most three Opus agents at once across the PC (owner), one Godot process each; no Sonnet. Order: 47a, 47b, 43; then
-47c, 47d, 47f; then 47e, 47g, 45; then 46, 44.
+47c, 47d, 47f, with 43b in the first free slot; then 47e, 47g, 45; then 46, 44.

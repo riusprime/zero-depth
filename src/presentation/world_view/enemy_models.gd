@@ -49,6 +49,14 @@ const SPECS := {
 	# The Gravity Node (scripts/assets/gravity_node_prep.py: face plate, core, two shell halves, two rings;
 	# GravityNodeAvatar poses them), about the request row's 0.9 m orb with its rings.
 	&"gravity_node": {"height": GravityNodeAvatar.MODEL_HEIGHT},
+	# The Hatchling and the Swarmer (scripts/assets/hatchling_swarmer_prep.py: body, carapace or wing cases,
+	# mandibles, six two-part legs; HatchlingAvatar and SwarmerModel pose them), the horde's small sizes.
+	&"hatchling": {"height": HatchlingAvatar.MODEL_HEIGHT},
+	&"swarmer": {"height": 0.25},
+	# The Needle and the Sniper (scripts/assets/needle_sniper_prep.py: body, shell, barrel, two-part legs;
+	# NeedleAvatar / SniperAvatar pose them), at the request rows' 1.1 m and 1.3 m.
+	&"needle": {"height": NeedleAvatar.HEIGHT},
+	&"sniper": {"height": SniperAvatar.HEIGHT},
 	# The Warden (scripts/assets/warden_prep.py: body, head, two-part arms, three-part legs; WardenAvatar poses
 	# them), the old code golem's 1.2 m.
 	&"warden": {"height": 1.2},

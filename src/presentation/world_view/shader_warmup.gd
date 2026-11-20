@@ -46,7 +46,6 @@ const HORDE_KINDS: Array[int] = [
 	WorldReader.KIND_SHIELD_BEARER,
 	WorldReader.KIND_MENDER,
 	WorldReader.KIND_MINE_LAYER,
-	WorldReader.KIND_SNIPER,
 	WorldReader.KIND_DUST_MITE,  # The horde critters (a surge brings dozens at once)
 	WorldReader.KIND_CAVE_BAT,
 	WorldReader.KIND_EMBER_FLEA,
@@ -287,7 +286,7 @@ func _enemies(actors: ActorViews) -> void:
 				)
 			)
 	for kind in [WorldReader.KIND_CHARGER, WorldReader.KIND_HATCHLING]:  # the Charger's shared look too
-		var c := ChargerAvatar.new()
+		var c := HatchlingAvatar.avatar_of(kind)
 		c.enemy_tint = actors.enemy_tint
 		c.role_glow = ActorViews.role_glow_energy
 		c.setup(kind)

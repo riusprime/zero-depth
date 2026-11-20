@@ -50,10 +50,10 @@ func test_the_bake_matches_the_live_pose() -> void:
 		vat.free()
 
 
-func test_the_needle_sends_nineteen_drives_and_its_muzzle_on_its_own() -> void:
+func test_the_needle_sends_twenty_drives_and_its_muzzle_on_its_own() -> void:
 	var pose := VatBake.pose_for(WorldReader.KIND_NEEDLE)
-	assert_eq(int(pose["drives"]), 19)
-	assert_eq(int(pose["drive_texels"]), 4, "fifteen past the fourth")
+	assert_eq(int(pose["drives"]), NeedleAvatar.VAT_DRIVES.size())
+	assert_eq(int(pose["drive_texels"]), 4, "sixteen past the fourth")
 	var mesh := VatBake.mesh_for(WorldReader.KIND_NEEDLE, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 	var c2: PackedFloat32Array = mesh.surface_get_arrays(0)[Mesh.ARRAY_CUSTOM2]
 	var sources := {}
@@ -182,8 +182,8 @@ func test_actor_views_draw_them_through_the_crowd_and_flash_them() -> void:
 	var needle := views.actor_node(ids[0]).get_meta(&"enemy_avatar") as NeedleAvatar
 	assert_true(needle.vat)
 	var inst := views.vat_crowd.instance_of(needle)
-	var sent := (inst["drives"] as PackedFloat32Array).slice(0, 19)  # (padded to whole texels)
-	assert_eq(sent, needle.vat_drives(), "all nineteen drives sent")
+	var sent := (inst["drives"] as PackedFloat32Array).slice(0, 20)  # (padded to whole texels)
+	assert_eq(sent, needle.vat_drives(), "all twenty drives sent")
 	var warden := views.actor_node(ids[1]).get_meta(&"enemy_avatar") as WardenAvatar
 	assert_not_null(warden.dust, "the dust ring stays a node")
 	var drone := views.actor_node(ids[3]).get_meta(&"enemy_avatar") as BombDroneAvatar

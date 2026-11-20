@@ -135,8 +135,9 @@ func test_hatchlings_use_a_small_crawler() -> void:
 	add_child_autofree(views)
 	views.sync(WorldReader.new(w))
 	var avatar: Node3D = views.actor_node(id).get_meta(&"enemy_avatar")
-	assert_true(avatar is ChargerAvatar)
-	assert_lt(avatar.scale.x, 1.0)
+	assert_true(avatar is HatchlingAvatar, "the owner's Hatchling (on the Charger's state)")
+	assert_true((avatar as HatchlingAvatar).has_model)
+	assert_lt(HatchlingAvatar.MODEL_HEIGHT, ChargerAvatar.HEIGHT * 0.66, "small: 0.4 m tall")
 
 
 func test_telegraph_views_draw_every_boss_shape() -> void:
