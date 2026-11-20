@@ -310,6 +310,7 @@ explode twice, just one exploding animation".
 | 47f | Dust Mite, Ember Flea, Ice Crab (critters) | Opus |
 | 47g | Cave Bat and Star Mote (flying critters) | Opus |
 | 44b | The grand arch stands at its full size (6 m wide, its own 3.71 m tall) in the Ruins and Night Rocks halls. The hall's one 3 x 1 m focal blocker becomes two pillar blockers under the arch's legs (about ±2.25 m along its span), with the opening between them walkable, so what looks solid is solid and the gap reads as a way through. Starfall's monolith and every other hall piece unchanged. Owner, asked whether the arch should get bigger collisions so it can stand at full size: "Yes, enlarge it" | Opus |
+| 46b | The summoned Blade fixed after the owner's play: its rune flash and motes follow the hero instead of staying where they spawned, and the blade is larger and starts at the hero's body (hilt at the hand, tip still on the slash's tip, which the sim's hit decides). Owner: "the particles on the sword look bad they stay behind while you move and look a bit buggy, the sword is also small and too separated from the body" | Opus |
 
 At most three Opus agents at once across the PC (owner), one Godot process each; no Sonnet. Order: 47a, 47b, 43; then
-47c, 47d, 47f, with 43b in the first free slot, then 47b2; then 47e, 47g, 45; then 46, 44; then 44b.
+47c, 47d, 47f, with 43b in the first free slot, then 47b2; then 47e, 47g, 45; then 46, 44; then 44b and 46b.
