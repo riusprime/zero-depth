@@ -2,8 +2,8 @@ extends GutTest
 ## v0.9.0 TD (owner W §2 presentation: "Slow beeps at first. Increasing frequency as time passes. Very fast beeping
 ## immediately before closure. A heavy impact when the door shuts. Include visual feedback, such as flashing runes, for
 ## accessibility"; Q23: the hidden room "should not appear or be visible until you open it"): the timed door's view on
-## a whole floor's view (WorldViewRoot, the biome's kit). The door and both rune switches stand (code stand-ins without
-## the owner's models); the secret room's ground, own walls and reward are out of sight and the minimap leaves it out;
+## a whole floor's view (WorldViewRoot, the biome's kit). The door (the owner's frame and slab) and both rune switches
+## stand; the secret room's ground, own walls and reward are out of sight and the minimap leaves it out;
 ## a switch's rune lights when pressed; both open the door, the room comes into sight; the beeps run slow to fast and
 ## each flashes the runes; the cues play the opening, the beeps (captioned) and the impact; the shut slams the slab.
 
@@ -40,9 +40,10 @@ func test_the_door_the_switches_and_the_hidden_room() -> void:
 	var t := v.timed_door
 	assert_not_null(t, "the view is built")
 	assert_eq(t.switch_count(), 2, "two rune switches")
-	# v0.9.0 MI2: the owner's switches are listed; his bar gate went to the Lockdowns (owner 2026-10-22), so the door
-	# is the code stone slab.
-	assert_false(t.uses_model, "the code stone slab")
+	# The owner's stone door: the jambs, the lintel and sill, the slab with its carved seal.
+	assert_true(t.uses_model, "the owner's timed_door")
+	for n in ["Frame/JambLeft", "Frame/JambRight", "Frame/Middle", "Slab/Model", "Slab/Seal"]:
+		assert_true(t.has_node("Door/" + n), "the door's %s" % n)
 	assert_true(t.switch_uses_model, "the owner's rune_switch")
 	assert_true(t.slab.visible, "shut: the slab stands")
 	assert_false(t.revealed, "the secret room unseen")

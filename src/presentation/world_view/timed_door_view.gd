@@ -5,9 +5,12 @@ extends Node3D
 ## accessibility"; Q23: the hidden room unseen until it opens; docs/art/requests/v0.9.0_ART_LIST.md §3.2): the floor's
 ## timed door and its two rune switches, reading only (WorldReader.timed_*, interactable_*).
 ## - The door: a heavy stone slab in a thick carved frame, a circular rune seal in its middle and rune notches round
-##   the frame (an owner `timed_door` model through ShopModels when one is listed, else this code stand-in). Shut it
-##   stands in the doorway; opened it sinks into the floor (SINK_S); on the shut it slams back up (SLAM_S) and `slammed`
-##   asks the camera for the door's thud (the impact sound is AudioEvents').
+##   the frame. The owner's `timed_door` through ShopModels when it is listed (cut by scripts/assets/props_v0120_prep.py
+##   into its two jambs, which stand just outside the doorway, the lintel and sill, stretched across it, and the slab
+##   with its carved seal, stretched the same; the frame as deep as the doorway), tinted per biome; else this code
+##   stand-in. Shut it stands in the doorway; opened it sinks into the floor (SINK_S); on the shut it slams back up
+##   (SLAM_S) and `slammed` asks the camera for the door's thud (the impact sound is AudioEvents'). The seal's lit ring
+##   lies on the slab's carved one.
 ## - The switches: short octagonal stone columns with a rune disc on a slanted top (`rune_switch`, the same way). A
 ##   switch that is on glows amber; off, its rune is dark.
 ## - v0.9.5 TS: the lever inside the secret room, a short stone post with a handle (code stand-in), on the
@@ -39,6 +42,21 @@ const BEEP_FAST := 6
 ## A beep's flash fades over this many ticks.
 const FLASH_TICKS := 8
 const MODEL_DOOR := &"timed_door"
+## The owner's door as prepared (m): its depth (front to back), the frame's opening, how high the slab's top stands
+## (its foot on the sill), the slab's faces (x from the middle) and the middle of its carved seal (y), the jambs'
+## width, the frame's front face.
+const DOOR_DEPTH := 1.548
+const DOOR_OPENING := 2.677
+const DOOR_SLAB_TOP := 3.39
+const DOOR_SLAB_FACE := 0.377
+const DOOR_SEAL_Y := 1.9
+const DOOR_JAMB := 0.88
+const DOOR_FRONT := 0.52
+## The parts of the owner's door (ShopModels.parts).
+const DOOR_LEFT := 0
+const DOOR_RIGHT := 1
+const DOOR_MIDDLE := 2
+const DOOR_SLAB := 3
 const MODEL_SWITCH := &"rune_switch"
 ## On the owner's switch (1.3 m, its slanted top falling toward the door) the lit rune disc lies on the
 ## middle of the slant: its centre (m, the switch's frame) and its tilt (rad), measured from the prepared model.
@@ -73,8 +91,9 @@ var _seal_mat := StandardMaterial3D.new()
 var _stone := StandardMaterial3D.new()
 var _room_light: OmniLight3D
 var _state := -1
-## The slab's height share: 0 standing, 1 sunk; and its target.
+## The slab's height share: 0 standing, 1 sunk; and its target. How far it sinks (m): its top to the floor.
 var _sink := 0.0
+var _sink_m := SLAB_H
 var _open := false
 
 
@@ -180,7 +199,7 @@ func _process(delta: float) -> void:
 func _apply_slab() -> void:
 	if slab == null:
 		return
-	slab.position.y = -SLAB_H * _sink
+	slab.position.y = -_sink_m * _sink
 	slab.visible = _sink < 0.999
 
 
@@ -234,6 +253,9 @@ static func beep_flash(reader: WorldReader) -> float:
 ## The frame (two jambs, a lintel with rune notches) and the slab with its seal. Local +X points into the secret room.
 func _build_door(door: Node3D, width: float, depth: float) -> void:
 	var d := maxf(depth, 0.6) + 0.2
+	if ShopModels.parts(MODEL_DOOR).size() > DOOR_SLAB:
+		_build_model_door(door, width, d)
+		return
 	for side in [-1.0, 1.0]:
 		_box(
 			door,
@@ -258,25 +280,15 @@ func _build_door(door: Node3D, width: float, depth: float) -> void:
 	slab = Node3D.new()
 	slab.name = "Slab"
 	door.add_child(slab)
-	var model := ShopModels.get_model(MODEL_DOOR)
-	if not model.is_empty():
-		uses_model = true
-		var mi := MeshInstance3D.new()
-		mi.name = "Model"
-		mi.mesh = model["mesh"]
-		mi.set_surface_override_material(0, model["material"])
-		mi.scale = Vector3(1.0, 1.0, width / 3.0)
-		slab.add_child(mi)
-	else:
-		_box(slab, Vector3(SLAB_T, SLAB_H, width - 0.04), Vector3(0, SLAB_H * 0.5, 0), _stone)
-		for bolt in [-0.6, 0.6]:  # the two iron bolts across it
-			var b := _box(
-				slab,
-				Vector3(SLAB_T + 0.08, 0.14, width - 0.3),
-				Vector3(0, SLAB_H * 0.5 + bolt, 0),
-				_stone
-			)
-			b.material_override = _iron(InteractionLooks.color(biome, "metal"))
+	_box(slab, Vector3(SLAB_T, SLAB_H, width - 0.04), Vector3(0, SLAB_H * 0.5, 0), _stone)
+	for bolt in [-0.6, 0.6]:  # the two iron bolts across it
+		var b := _box(
+			slab,
+			Vector3(SLAB_T + 0.08, 0.14, width - 0.3),
+			Vector3(0, SLAB_H * 0.5 + bolt, 0),
+			_stone
+		)
+		b.material_override = _iron(InteractionLooks.color(biome, "metal"))
 	for face in [-1.0, 1.0]:  # the round rune seal, on both faces
 		var cyl := CylinderMesh.new()
 		cyl.top_radius = 0.5
@@ -291,6 +303,66 @@ func _build_door(door: Node3D, width: float, depth: float) -> void:
 		disc.position = Vector3(face * (SLAB_T * 0.5 + 0.06), SLAB_H * 0.5, 0)
 		disc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		slab.add_child(disc)
+
+
+## The owner's door in a doorway `width` across and `d` deep: the jambs moved out to the doorway's sides, the lintel,
+## sill and slab stretched across it, all as deep as the stand-in's frame; the seal's lit ring and the frame's lit
+## notches on both faces.
+func _build_model_door(door: Node3D, width: float, d: float) -> void:
+	uses_model = true
+	_sink_m = DOOR_SLAB_TOP
+	var parts := ShopModels.parts(MODEL_DOOR)
+	var mat := InteractionLooks.tinted(ShopModels.get_model(MODEL_DOOR)["material"], biome)
+	var sx := d / DOOR_DEPTH
+	var sz := width / DOOR_OPENING
+	var shift := (width - DOOR_OPENING) * 0.5
+	var frame := Node3D.new()
+	frame.name = "Frame"
+	door.add_child(frame)
+	for k in [DOOR_LEFT, DOOR_RIGHT, DOOR_MIDDLE]:
+		var mi := MeshInstance3D.new()
+		mi.name = ["JambLeft", "JambRight", "Middle"][k]
+		mi.mesh = parts[k]
+		mi.set_surface_override_material(0, mat)
+		mi.scale = Vector3(sx, 1.0, sz if k == DOOR_MIDDLE else 1.0)
+		mi.position.z = -shift if k == DOOR_LEFT else (shift if k == DOOR_RIGHT else 0.0)
+		frame.add_child(mi)
+	slab = Node3D.new()
+	slab.name = "Slab"
+	door.add_child(slab)
+	var body := MeshInstance3D.new()
+	body.name = "Model"
+	body.mesh = parts[DOOR_SLAB]
+	body.set_surface_override_material(0, mat)
+	body.scale = Vector3(sx, 1.0, sz)
+	slab.add_child(body)
+	var ring := TorusMesh.new()
+	ring.inner_radius = 0.52
+	ring.outer_radius = 0.62
+	ring.rings = 24
+	ring.ring_segments = 4
+	for face in [-1.0, 1.0]:  # the carved seal's ring lit, on both faces
+		var seal := MeshInstance3D.new()
+		seal.name = "Seal"
+		seal.mesh = ring
+		seal.material_override = _seal_mat
+		seal.rotation.z = PI * 0.5
+		seal.scale = Vector3(1.0, 0.3, 1.0)
+		seal.position = Vector3(face * (DOOR_SLAB_FACE * sx + 0.02), DOOR_SEAL_Y, 0)
+		seal.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		slab.add_child(seal)
+	for side in [-1.0, 1.0]:  # three lit notches down each jamb's face, on the side you come from
+		for j in 3:
+			var notch := _box(
+				frame,
+				Vector3(0.06, 0.2, 0.2),
+				Vector3(
+					-DOOR_FRONT * sx - 0.03, 0.9 + j * 0.9, side * (width * 0.5 + DOOR_JAMB * 0.5)
+				),
+				_seal_mat
+			)
+			notch.name = "Notch"
+			notch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
 ## Switch k: an octagonal column with a slanted top holding its rune disc, turned to face the door.

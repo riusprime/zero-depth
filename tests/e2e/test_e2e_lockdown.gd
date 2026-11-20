@@ -60,6 +60,8 @@ func test_walk_into_a_lockdown_see_the_bars_clear_it_and_they_rise() -> void:
 	assert_true(hud.lockdown_hud.visible, "the banner")
 	var hazard: bool = w.lockdown.kind == LockdownTable.Kind.HAZARD
 	assert_eq(hud.lockdown_hud.title.text, tr("HUD_LOCKDOWN_HAZARD" if hazard else "HUD_LOCKDOWN"))
+	if hazard:
+		assert_true(view.hazard_uses_model, "the owner's hazard prop")
 	var sealed_tick := w.lockdown.sealed_tick
 	var clicks := 0
 	while w.lockdown.sealed() and clicks < 12:

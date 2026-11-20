@@ -102,6 +102,7 @@ func test_the_ascension_portal_opens_the_approach_and_two_pylons_wake_the_coloss
 	assert_not_null(main.view.approach_view, "the approach is drawn")
 	assert_eq(main.view.approach_view.altar.look.color, AltarStage.VIOLET, "the purple altar")
 	assert_eq(main.view.approach_view.pylons.size(), 2, "two pylons")
+	assert_true(main.view.approach_view.pylon_uses_model, "the owner's pylons")
 	assert_null(main.view.gate, "no run gate")
 	assert_null(main.view.receiver, "no floor receiver")
 	assert_gt(
