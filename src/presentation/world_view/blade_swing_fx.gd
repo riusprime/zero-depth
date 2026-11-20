@@ -11,7 +11,9 @@ extends Node3D
 ##   time; it decides nothing (EI-07). Reduced motion keeps it (a light, no movement of its own).
 
 ## VFX_PACK N3: the cut also strikes a pack spark (vfx_hit_04) on the tip, gold or the
-## step's element; false: the old flare alone.
+## step's element; false: the old flare alone. The pack spark rides with the hero for its whole life (moved each sync
+## by its place from the hero), so a hero who walks on after the cut never leaves it hanging in the air behind; it
+## starts with its interpolation reset (a pooled spark would otherwise draw a frame between its last place and this).
 const PACK_BLADE := true
 const POOL := 3
 ## The spark's size (metres across) riding the tip, at the cut's flare and the finisher's.
@@ -40,6 +42,8 @@ var _next := 0
 var _live := -1
 var _last_t := 0
 var _last_step := -1
+## The cut sparks still playing: [node, offset from the hero's centre].
+var _riders: Array = []
 
 
 func _init(p_kit: KitView = null) -> void:
@@ -93,6 +97,7 @@ func _build() -> void:
 
 func sync(reader: WorldReader) -> void:
 	_build()
+	_follow(SimPlane.to_3d(reader.player_pos(), KitView.BLADE_HEIGHT))
 	var t := reader.swing_tick()
 	var step := reader.combo_step()
 	if t <= 0 or reader.player_dead():
@@ -118,7 +123,7 @@ func sync(reader: WorldReader) -> void:
 		s["flare"] = 1.0
 		s["big"] = FINISHER_SIZE / CUT_SIZE if reader.is_finisher() else 1.0
 		cuts += 1
-		if _pack_cut(reader.is_finisher()):
+		if _pack_cut(reader):
 			s["flare"] = PACK_FLARE_SHARE
 	s["sweeping"] = t <= reader.swing_sweep_ticks() + 1
 	_last_t = t
@@ -169,14 +174,45 @@ func spark_size() -> float:
 
 ## The cut's pack spark (vx8_cut) on the blade's tip; false when the pack is off or its `hit`
 ## family is full (the old flare then draws alone).
-func _pack_cut(finisher: bool) -> bool:
+func _pack_cut(reader: WorldReader) -> bool:
+	var finisher := reader.is_finisher()
 	var pack := BladePack.pack_of(self) if PACK_BLADE and kit != null else null
 	if pack == null or not pack.has_room(&"hit"):
 		return false
 	var tint := kit.edge_color()  # the element's, the heat tier's, else the hero's blue-white: that is gold here
 	var colors := BladePack.colors_of(BladePack.GOLD if tint == ImpactFx.HERO else tint)
 	var scale := PACK_FINISHER_SCALE if finisher else PACK_CUT_SCALE
-	if pack.spawn(&"vx8_cut", kit.blade_tip_point(), scale, colors) == null:
+	var at := kit.blade_tip_point()
+	var node := pack.spawn(&"vx8_cut", at, scale, colors)
+	if node == null:
 		return false
+	node.reset_physics_interpolation()
+	for k in range(_riders.size() - 1, -1, -1):  # past its cap the pack hands back a live one: one rider each
+		if _riders[k][0] == node:
+			_riders.remove_at(k)
+	_riders.append([node, at - SimPlane.to_3d(reader.player_pos(), KitView.BLADE_HEIGHT)])
 	pack_cuts += 1
 	return true
+
+
+## Every cut spark still playing moves with the hero (`centre`, at blade height); the ones the pack took back are
+## dropped.
+func _follow(centre: Vector3) -> void:
+	if _riders.is_empty():
+		return
+	var pack := BladePack.pack_of(self) if is_inside_tree() else null
+	for k in range(_riders.size() - 1, -1, -1):
+		var node: Node3D = _riders[k][0] if is_instance_valid(_riders[k][0]) else null
+		if pack == null or node == null or not pack.is_live(node):
+			_riders.remove_at(k)
+			continue
+		node.global_position = centre + (_riders[k][1] as Vector3)
+
+
+## The cut sparks riding with the hero now, and where rider `k` stands (tests).
+func riders() -> int:
+	return _riders.size()
+
+
+func rider_point(k: int) -> Vector3:
+	return (_riders[k][0] as Node3D).global_position

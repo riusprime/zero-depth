@@ -1,8 +1,9 @@
 extends GutTest
 ## The rune-summoned Blade (PENDING_ASSETS §9): the owner's model shows only while a swing or the Lunge Cleave is out,
-## forms (a flash of runes) at the start of each arc, follows the arc the sim hits with, holds through the finisher's
-## spin and the whole cleave, breaks into motes at the end, reads only, is one pooled holder, and keeps no flash or
-## motes with reduced motion.
+## forms (a flash of runes) at the start of each arc, follows the arc the sim hits with, spans from the body to the
+## slash's tip scaled uniformly, holds through the finisher's spin and the whole cleave, breaks into motes at the end,
+## keeps its flash and motes with the hero as it moves, reads only, is one pooled holder, and keeps no flash or motes
+## with reduced motion.
 
 
 ## A stand-in for WorldViewRoot: the views find the pack on an ancestor's `pack_fx`.
@@ -250,3 +251,80 @@ func test_reduced_motion_keeps_the_arc_without_flash_or_motes() -> void:
 	assert_eq(kit.summoned.flashes, 0, "no flash")
 	assert_eq(kit.summoned.motes, 0, "no motes")
 	assert_eq(_fx.pooled(SummonedBlade.FLASH_ID) + _fx.pooled(SummonedBlade.MOTES_ID), 0)
+
+
+func test_it_spans_from_the_body_to_the_tip_scaled_uniformly() -> void:
+	for step in 4:
+		var w := _world_at(step)
+		var r := WorldReader.new(w)
+		var kit := _kit()
+		w.step(InputFrame.make(Vector2i.ZERO, 0, 100, 0, InputFrame.PRIMARY))
+		kit.sync(r)
+		var b := kit.summoned
+		var centre := SimPlane.to_3d(r.player_pos(), KitView.BLADE_HEIGHT)
+		var root := r.player_radius() * KitView.ROOT_FRACTION
+		var tip := kit.blade_tip_m() - kit.blade_offset()
+		assert_almost_eq(
+			b.hilt_point().distance_to(centre), root, 0.001, "step %d: pommel at the body" % step
+		)
+		assert_almost_eq(b.span_m(), maxf(tip - root, SummonedBlade.MIN_SPAN_M), 0.001)
+		var s: Vector3 = b.get_child(0).scale
+		assert_almost_eq(s.x, b.span_m() / b.length_m(), 0.001, "scaled to the span")
+		assert_almost_eq(s.y, s.x, 0.0001, "uniformly")
+		assert_almost_eq(s.z, s.x, 0.0001, "uniformly")
+		if r.swing_motion() != WorldReader.MOTION_THRUST:
+			assert_gt(b.span_m(), 1.5, "larger than the model's 1.1 m")
+		kit.queue_free()
+
+
+func test_the_flash_and_motes_travel_with_a_walking_hero() -> void:
+	var w := _world_at(0)
+	var r := WorldReader.new(w)
+	var kit := _kit()
+	var walk := Vector2i(127, 0)
+	w.step(InputFrame.make(walk, 1024, 100, 0, InputFrame.PRIMARY))
+	kit.sync(r)
+	assert_eq(kit.summoned.riders(), 1, "the flash rides with the blade")
+	var start := r.player_pos()
+	var checked := 0
+	while r.swing_tick() > 0:
+		w.step(InputFrame.make(walk, 1024, 100, 0, 0))
+		kit.sync(r)
+		if kit.summoned.riders() > 0 and kit.summoned.blade_visible():
+			assert_almost_eq(
+				kit.summoned.rider_point(0).distance_to(kit.summoned.hilt_point()),
+				0.0,
+				0.001,
+				"the flash stays on the hilt"
+			)
+			checked += 1
+	assert_gt(r.player_pos().distance_to(start), 0.5, "the hero walked")
+	assert_gt(checked, 0)
+	assert_eq(kit.summoned.motes, 1)
+	var k := kit.summoned.riders() - 1
+	var off := kit.summoned.rider_point(k) - SimPlane.to_3d(r.player_pos(), KitView.BLADE_HEIGHT)
+	for i in 4:
+		w.step(InputFrame.make(walk, 1024, 100, 0, 0))
+		kit.sync(r)
+		if kit.summoned.riders() <= k:
+			break
+		var now := (
+			kit.summoned.rider_point(k) - SimPlane.to_3d(r.player_pos(), KitView.BLADE_HEIGHT)
+		)
+		assert_almost_eq(now.distance_to(off), 0.0, 0.001, "the motes keep their place by the hero")
+
+
+func test_fast_combos_keep_one_rider_per_burst_and_drop_the_finished() -> void:
+	var w := _world_at(0)
+	var r := WorldReader.new(w)
+	var kit := _kit()
+	for k in 240:
+		w.step(InputFrame.make(Vector2i.ZERO, 0, 100, 0, InputFrame.PRIMARY if k % 6 == 0 else 0))
+		kit.sync(r)
+		assert_lte(kit.summoned.riders(), _fx.live_count(&"hit"), "no rider without a live burst")
+		_fx.advance(1.0 / 60.0)
+	for k in 300:
+		w.step(InputFrame.new())
+		kit.sync(r)
+		_fx.advance(1.0 / 60.0)
+	assert_eq(kit.summoned.riders(), 0, "every burst played out and is dropped")

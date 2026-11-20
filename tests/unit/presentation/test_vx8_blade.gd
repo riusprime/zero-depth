@@ -1,9 +1,9 @@
 extends GutTest
 ## v0.10.0 VX8 (VFX_PACK N3): the Blade's existing swings in the pack's style. The swing ribbon wears the beam pack's
 ## scrolling-noise material (UV along the ribbon, held with the hit-stop, in the blade's or its element's colour), the
-## cut strikes vfx_hit_04 on the tip, the forms use the pack (eruption, parry spark, counter and finisher rings, the
-## crescents' rim material), the Lunge Cleave's sweep takes the ribbon and the flash; a full family or no pack keeps the
-## old looks. Presentation only: nothing here reads or writes the sim.
+## cut strikes vfx_hit_04 on the tip (riding with the hero), the forms use the pack (eruption, parry spark, counter and
+## finisher rings, the crescents' rim material), the Lunge Cleave's sweep takes the ribbon and the flash; a full family
+## or no pack keeps the old looks. Presentation only: nothing here reads or writes the sim.
 
 
 ## A stand-in for WorldViewRoot: the views find the pack on an ancestor's `pack_fx`.
@@ -156,6 +156,34 @@ func test_the_cut_strikes_a_pack_spark_on_the_tip() -> void:
 		w2.step(InputFrame.new())
 	assert_gt(fx2.cuts, 0)
 	assert_eq(fx2.pack_cuts, 0, "no pack: only the old flare")
+
+
+func test_the_cut_spark_rides_with_a_walking_hero() -> void:
+	var w := World.new(3, PlayerTable.starting_values())
+	var r := WorldReader.new(w)
+	var kit := KitView.new()
+	_host.add_child(kit)
+	var fx := BladeSwingFx.new(kit)
+	_host.add_child(fx)
+	var walk := Vector2i(127, 0)
+	var start := r.player_pos()
+	var off := Vector3.INF
+	var checked := 0
+	for t in 40:
+		w.step(InputFrame.make(walk, 1024, 100, 0, InputFrame.PRIMARY if t == 0 else 0))
+		kit.sync(r)
+		fx.sync(r)
+		if fx.riders() == 0:
+			continue
+		var from_hero := fx.rider_point(0) - SimPlane.to_3d(r.player_pos(), KitView.BLADE_HEIGHT)
+		if off == Vector3.INF:
+			off = from_hero
+		else:
+			assert_almost_eq(from_hero.distance_to(off), 0.0, 0.001, "tick %d: by the hero" % t)
+			checked += 1
+	assert_gt(fx.pack_cuts, 0, "the swing cut")
+	assert_gt(r.player_pos().distance_to(start), 0.5, "the hero walked")
+	assert_gt(checked, 0, "the spark was followed")
 
 
 func _forms(cards: Array, ticks: int, parent: Node) -> BladeFormView:
