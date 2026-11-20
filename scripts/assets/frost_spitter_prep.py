@@ -18,9 +18,9 @@ mi2_prep, which imports it):
    edges facing the part across the cut; the body's cap under the sac glows with it (when the sac empties, the throat
    still glows), the others charcoal (none on the shell: its underside is never seen);
 4. sorts each triangle into a surface by the colour map under it: `glow` (the whole sac; on the head, the gem visor),
-   `role` (the saturated blue plates of the shell and the leg cuffs: their texels turned greyscale in the map so the
-   game tints them in the kind's role colour) and `base` (the charcoal, the greys, the frost-white, the icicles, the
-   bone claws);
+   `role` (the saturated blue plates of the shell and the leg cuffs, by role_map's rules: the texels under the role
+   triangles turned greyscale in the map so the game tints them in the kind's role colour) and `base` (the charcoal, the
+   greys, the frost-white, the icicles, the bone claws);
 5. keeps every triangle (the raw mesh is already under the 5k budget: no simplification) and the owner's own UV layout
    and colour map, halved to TEX_PX;
 6. writes assets/models/enemies/frost_spitter.glb (one node per part, three materials base / role / glow).
@@ -48,6 +48,7 @@ try:
 except ImportError:
     sys.modules["xatlas"] = types.ModuleType("xatlas")
 import mi2_prep  # noqa: E402  (its mi_prep: the reader, normals and glb writer)
+import role_map  # noqa: E402
 
 mi_prep = mi2_prep.mi_prep
 
@@ -318,13 +319,17 @@ def main():
     report = {}
     cap_report = {}
     at = 0
+    role_tris, other_tris = [], []
     for pn in order:
         T = per_part[pn]
         cn = cn_all[at : at + len(T)]
         at += len(T)
         K = glow[part == pn].copy()
         rest = K != 2
-        K[rest] = role_texels(tri_colour(colour, UVw, T[rest])).astype(int)
+        # The royal-blue swirls are role where they cover a real share of a triangle (role_map); the pale ice is base.
+        K[rest] = (role_map.texel_share(colour, UVw, T[rest], role_texels) >= role_map.ROLE_SHARE).astype(int)
+        role_tris.append(T[K == 1])
+        other_tris.append(T[K != 1])
         pivot = pivots[pn] * s
         prims = []
         for k in (0, 1, 2):
@@ -350,13 +355,8 @@ def main():
             prims.append((k, pos, np.concatenate(nrm_l), np.concatenate(uv_l), np.arange(len(pos)).reshape(-1, 3)))
         nodes.append((pn, pivot, prims))
         report[pn] = [len(T), int((K == 2).sum()), int((K == 1).sum()), [round(float(v), 3) for v in pivot]]
-    # The colour map: the role plates' texels greyscale (the game multiplies them by the role colour), halved.
-    img = colour.copy()
-    role_px = role_texels(img)
-    lum_px = img @ np.array([0.299, 0.587, 0.114])
-    if role_px.any():
-        g = np.clip(lum_px / max(lum_px[role_px].mean(), 1e-3) * 0.82, 0, 1)
-        img[role_px] = g[role_px, None]
+    # The colour map: the role triangles' texels greyscale (the game multiplies them by the role colour), halved.
+    img = role_map.tinted_map(colour, UVw, np.concatenate(role_tris), np.concatenate(other_tris), role_texels)
     pil = Image.fromarray(np.clip(img * 255, 0, 255).round().astype(np.uint8))
     if pil.size[0] > TEX_PX:
         pil = pil.resize((TEX_PX, TEX_PX), Image.LANCZOS)

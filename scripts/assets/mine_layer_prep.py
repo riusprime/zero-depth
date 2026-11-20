@@ -13,9 +13,9 @@ script, reusing mi_prep's reader, normals, simplifier and glb writer and the Fro
    rear wall, hinged at its foot: it swings open to let a mine out), the mine (the rear one: it rolls to the hatch and
    drops), and each leg's upper and lower half (LEGS: hip, knee, the claw's tip, refined to the mesh's lowest points);
 4. caps the cuts, dark;
-5. sorts each triangle into a surface by the colour map: `glow` (the yellow face under the visor), `role` (the dark-yellow
-   plates: their texels greyscale in the map, tinted in the bomber's role colour) and `base` (the charcoal, the greys,
-   the bone claws, the mines);
+5. sorts each triangle into a surface by the colour map: `glow` (the yellow face under the visor), `role` (the
+   dark-yellow plates, by role_map's rules: the texels under them greyscale in the map, tinted in the bomber's role
+   colour) and `base` (the charcoal, the greys, the bone claws, the mines);
 6. keeps the owner's UVs and colour map (halved to TEX_PX) and writes assets/models/enemies/mine_layer.glb.
 It prints one JSON line (raw and kept triangles, parts, caps, size, file, sha256: pasted into the manifest by hand).
 With --labels <prefix> it saves each triangle's centre and part for looking at the cut.
@@ -35,6 +35,7 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import frost_spitter_prep as fsp  # noqa: E402
+import role_map  # noqa: E402
 import warden_prep  # noqa: E402
 
 mi_prep = fsp.mi_prep
@@ -161,15 +162,10 @@ def main():
     body_m = part == "body"
     dark_uv = UVw[J[body_m][np.argmin(np.where(lum[body_m] > 0.03, lum[body_m], 9.0))]].mean(0)
     glow_part = {pn: glow[part == pn] for pn in order}
-    nodes, report, cap_report = warden_prep.write_parts(
+    nodes, report, cap_report, tris = warden_prep.write_parts(
         order, per_part, glow_part, cn_all, caps, pivots, s, W, UVw, colour, dark_uv, role_texels
     )
-    img = colour.copy()
-    role_px = role_texels(img)
-    lum_px = img @ np.array([0.299, 0.587, 0.114])
-    if role_px.any():
-        g = np.clip(lum_px / max(lum_px[role_px].mean(), 1e-3) * 0.82, 0, 1)
-        img[role_px] = g[role_px, None]
+    img = role_map.tinted_map(colour, UVw, tris[0], tris[1], role_texels)
     pil = Image.fromarray(np.clip(img * 255, 0, 255).round().astype(np.uint8))
     if pil.size[0] > TEX_PX:
         pil = pil.resize((TEX_PX, TEX_PX), Image.LANCZOS)
