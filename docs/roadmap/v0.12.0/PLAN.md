@@ -304,10 +304,11 @@ explode twice, just one exploding animation".
 | 47a | Hatchling and Swarmer on the owner's models, animated, on VAT | Opus |
 | 47b | Needle and Sniper | Opus |
 | 47c | Warden and Mine Layer | Opus |
+| 47b2 | The Needle's shell shades like the owner's model: the clip sheet shows white facets and dark specks across the blue shell that the model does not have (owner: "what are those white things on the head of the needle the model does not look like that"). Likely the prep's re-computed normals (hard edges past `mi_prep.SMOOTH_DEG`) instead of the owner's own smooth normals; fix in the prep, and check the Sniper, Hatchling, Swarmer, Warden and Mine Layer for the same | Opus |
 | 47d | Arc Caster and Star Warper (floating; the owner, on the Warper's model having no legs: "might be a \"floating\" creature": it glides on the same path at the same speed, tail trailing, no walk) | Opus |
 | 47e | Bomb Drone (floating) | Opus |
 | 47f | Dust Mite, Ember Flea, Ice Crab (critters) | Opus |
 | 47g | Cave Bat and Star Mote (flying critters) | Opus |
 
 At most three Opus agents at once across the PC (owner), one Godot process each; no Sonnet. Order: 47a, 47b, 43; then
-47c, 47d, 47f, with 43b in the first free slot; then 47e, 47g, 45; then 46, 44.
+47c, 47d, 47f, with 43b in the first free slot, then 47b2; then 47e, 47g, 45; then 46, 44.
