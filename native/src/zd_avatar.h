@@ -58,6 +58,7 @@ enum Field {
 	H_IS_MODEL = 76,
 	H_MODEL_SCALE = 77,
 	H_HEIGHT = 78,
+	H_WALK_Z = 79, // the Mine Layer's stride along +Z (MineLayerModel; its H_WALK is along +X)
 	// ChargerAvatar (its own fields from 43)
 	C_VISOR = 43,
 	C_TELL = 44,

@@ -117,11 +117,14 @@ const KIND_PLANS := {
 	"mine_layer":
 	[
 		["idle", {}, "idle"],
-		["windup 31 % (hopper lowers)", {}, "windup_early"],
+		["scuttling", {}, "walk"],
+		["windup 31 % (hopper tips, hatch opens)", {}, "windup_early"],
 		["windup 90 %", {}, "windup_late"],
-		["mine dropped (active)", {}, "strike_snap"],
+		["mine at the hatch (active)", {}, "strike_snap"],
 		["active, 0.15 s", {}, "strike_out"],
 		["recovering (mine back)", {}, "strike_back"],
+		["death, 0.1 s in", {}, "death_early"],
+		["death, 0.3 s in", {}, "death_late"],
 		["flinch at its peak", {}, "flinch"],
 		["Blade knock", {}, "knock"],
 		["hit flash", {}, "flash"],

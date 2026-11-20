@@ -64,6 +64,15 @@ constexpr double BOB_RATE = 7.0;
 constexpr double BOB_M = 0.015;
 constexpr double SNIPER_AIM_MIN = -0.16;
 constexpr double SNIPER_AIM_SPAN = 0.28;
+// MineLayerModel
+constexpr double ML_FULL_MPS = 2.4;
+constexpr double ML_WALK_MAX = 1.0;
+constexpr double ML_STEP_HZ = 10.0;
+constexpr double ML_FLAIL_HZ = 5.0;
+constexpr double ML_IDLE_HZ = 0.3;
+constexpr double ML_DEATH_ROLL = 2.6;
+constexpr double ML_HALF_WIDTH = 0.31;
+constexpr double ML_TOP = 0.39;
 // ChargerAvatar, ChargerVat
 constexpr double STRIDE_M = 0.55;
 constexpr double MAX_CYCLES = 7.0;
@@ -296,6 +305,29 @@ void place_body(double *s, int c, const Vector3 &bp, double brz, double mrx, dou
 	put_xf(s, H_BODY, xf);
 }
 
+inline double loop01(double u) {
+	return u - std::floor(u);
+}
+
+// The owner's Mine Layer: MineLayerModel.body_at, death_roll and drives (its own clips; the idle loop, its fifth
+// drive, is reckoned when it is drawn).
+void ml_pose(double *s, int c, double energy, double d) {
+	double y = -(1.0 - s[H_RISE]) * s[H_HEIGHT];
+	const double r = ML_DEATH_ROLL * d * d * (3.0 - 2.0 * d);
+	if (d > 0.0) {
+		y += (ML_HALF_WIDTH * dsin(r) + ML_TOP * maxd(0.0, -dcos(r))) * (1.0 - 0.35 * d);
+	}
+	place_body(s, c, Vector3(0.0f, f32(y), 0.0f), 0.0, -r, 1.0 - 0.35 * d);
+	const double vx = lerpd(s[H_WALK], 1.0, d);
+	const double vz = s[H_WALK_Z] * (1.0 - d);
+	const double clip = s[H_STRIKE] > 0.0 ? 1.0 - 0.5 * s[H_STRIKE] : 0.5 * s[H_WIND];
+	s[H_D] = f32(loop01(s[H_WALK_T]));
+	s[H_D + 1] = f32((clampd(vx, -ML_WALK_MAX, ML_WALK_MAX) / ML_WALK_MAX + 1.0) * 0.5);
+	s[H_D + 2] = f32((clampd(vz, -ML_WALK_MAX, ML_WALK_MAX) / ML_WALK_MAX + 1.0) * 0.5);
+	s[H_D + 3] = f32(clip);
+	s[H_GLOW] = energy * lerpd(0.2, 1.0, s[H_RISE]) * (1.0 - d);
+}
+
 // SwarmerModel.place: the Swarmer on the owner's model.
 void sw_pose(double *s, int c, double energy, const States &st) {
 	const double wind = s[H_WIND], strike = s[H_STRIKE], rise = s[H_RISE];
@@ -322,6 +354,10 @@ void pose_model(double *s, int c, double energy, bool calm, Vector3 bp, double b
 	}
 	const double t = s[T];
 	const double d = s[H_DIE] >= 0.0 ? clampd(s[H_DIE] / DEATH_SECONDS, 0.0, 1.0) : 0.0;
+	if (c == MINE_LAYER) {
+		ml_pose(s, c, energy, d);
+		return;
+	}
 	double mrx = 0.0;
 	Vector4 drives(f32(s[H_WIND]), f32(s[H_STRIKE]), 0.0f, f32(dsin(s[H_WALK_T]) * s[H_WALK]));
 	if (leg_kind(c)) {
@@ -415,15 +451,41 @@ void h_advance(double *s, int c, double delta, const Frame &f, const Ctx &cx) {
 		const double speed = last == Vector3(inf, inf, inf)
 				? 0.0
 				: double(Vector2(f32(double(at.x) - double(last.x)), f32(double(at.z) - double(last.z))).length()) / dt;
+		if (c == MINE_LAYER) { // MineLayerModel.step: the stride's way in the facing's frame, and its phase
+			double vx = 0.0;
+			double vz = 0.0;
+			if (!(last == Vector3(inf, inf, inf))) {
+				const double dx = double(at.x) - double(last.x);
+				const double dz = double(at.z) - double(last.z);
+				const double cy = dcos(double(f.facing_yaw));
+				const double sy = dsin(double(f.facing_yaw));
+				vx = (dx * cy - dz * sy) / dt / ML_FULL_MPS;
+				vz = (dx * sy + dz * cy) / dt / ML_FULL_MPS;
+			}
+			s[H_WALK] = toward(s[H_WALK], clampd(vx, -ML_WALK_MAX, ML_WALK_MAX), dt * 6.0);
+			s[H_WALK_Z] = toward(s[H_WALK_Z], clampd(vz, -ML_WALK_MAX, ML_WALK_MAX), dt * 6.0);
+			double sp = std::sqrt(s[H_WALK] * s[H_WALK] + s[H_WALK_Z] * s[H_WALK_Z]);
+			if (sp > ML_WALK_MAX) { // kept in the disc (the stride's reach)
+				s[H_WALK] = s[H_WALK] / sp * ML_WALK_MAX;
+				s[H_WALK_Z] = s[H_WALK_Z] / sp * ML_WALK_MAX;
+				sp = ML_WALK_MAX;
+			}
+			double hz = ML_STEP_HZ * mind(1.0, sp * 20.0);
+			if (s[H_DIE] >= 0.0) {
+				hz = cx.calm ? 0.0 : ML_FLAIL_HZ;
+			}
+			s[H_WALK_T] += dt * hz;
+		} else {
+			s[H_WALK] = toward(s[H_WALK], clampd(speed / WALK_FULL_MPS, 0.0, 1.0), dt * 4.0);
+			if (c == SWARMER) { // its gait clock runs idle too (SwarmerModel.gait_rate)
+				s[H_WALK_T] += dt * (TAU_D * (SW_IDLE_HZ * (1.0 - s[H_WALK]) * (cx.calm ? 0.0 : 1.0) + SW_STEP_HZ * s[H_WALK]));
+			} else {
+				s[H_WALK_T] += dt * lerpd(0.0, WALK_HZ * TAU_D, s[H_WALK]);
+			}
+		}
 		s[H_LAST_AT] = at.x;
 		s[H_LAST_AT + 1] = at.y;
 		s[H_LAST_AT + 2] = at.z;
-		s[H_WALK] = toward(s[H_WALK], clampd(speed / WALK_FULL_MPS, 0.0, 1.0), dt * 4.0);
-		if (c == SWARMER) { // its gait clock runs idle too (SwarmerModel.gait_rate)
-			s[H_WALK_T] += dt * (TAU_D * (SW_IDLE_HZ * (1.0 - s[H_WALK]) * (cx.calm ? 0.0 : 1.0) + SW_STEP_HZ * s[H_WALK]));
-		} else {
-			s[H_WALK_T] += dt * lerpd(0.0, WALK_HZ * TAU_D, s[H_WALK]);
-		}
 	}
 	const int state = int(s[H_STATE]);
 	const bool spawning = state == cx.st.spawn;
@@ -703,6 +765,10 @@ int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 	}
 	for (int k = 0; k < 4; k++) {
 		out[k] = f32(s[H_D + k]);
+	}
+	if (cls == MINE_LAYER) { // MineLayerModel.idle_phase: its fifth drive
+		out[4] = f32(loop01(s[T] * ML_IDLE_HZ * (c.calm ? 0.5 : 1.0)));
+		return 5;
 	}
 	return 4;
 }

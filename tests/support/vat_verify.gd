@@ -282,10 +282,8 @@ static func apply(a: Node3D, s: Dictionary) -> void:
 	SoloVat.apply(a, s, _pose_of(a))
 
 
-## The avatar's own pose code (the Warden's takes a frame time: 0).
+## The avatar's own pose code.
 static func _pose_of(a: Node3D) -> Callable:
-	if a is WardenAvatar:
-		return Callable(a, &"_pose").bind(0.0)
 	return Callable(a, &"_pose")
 
 
@@ -480,14 +478,19 @@ static func ranges(a: Node3D, _rng: RandomNumberGenerator) -> Dictionary:
 	if a is WardenAvatar:
 		return {
 			"_t": [0.0, 40.0],
-			"_phase": [0.0, 40.0],
-			"_walk": [0.0, 1.0],
+			"_phase": [0.0, 1.0],
+			"_speed": [0.0, 2.2],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2.LEFT],
+			"_omega": [-3.0, 3.0],
+			"_stride": [0.0, 1.0],
 			"_raise": [0.0, 1.0],
 			"_slam": [0.0, 1.0],
 			"_rise": [0.0, 1.0],
 			"_shake": [0.0, 1.0],
 			"_windup": [0.0, 1.0],
-			"_state": [WorldReader.STATE_MOVE, WorldReader.STATE_WINDUP],
+			"_hurt_t": [-0.3, WardenAvatar.HURT_SECONDS],
+			"_die_t": [-0.8, WardenAvatar.DEATH_SECONDS],
+			"_state": states4,
 		}
 	push_error("VatVerify.ranges: no ranges for %s" % a)
 	return {}

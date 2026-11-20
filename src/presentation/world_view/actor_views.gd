@@ -743,16 +743,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 				root.set_meta(&"dazed_y", height + 0.35)
 			else:
 				root.set_meta(&"dazed", shared_parts.add_dazed(root, height + 0.35))
-		WorldReader.KIND_WARDEN:
-			# The rock golem: its own node, animated in frame time.
-			height = 1.25
-			var warden := WardenAvatar.new()
-			_solo_vat(root, warden, p_kind)  # v0.10.5 W3-V4c
-			warden.look_kind = p_kind
-			warden.setup()
-			facing.add_child(warden)
-			root.set_meta(&"enemy_avatar", warden)
-			root.set_meta(&"mats", warden.body_materials.duplicate())
+		WorldReader.KIND_WARDEN:  # The owner's model, animated in code, on VAT
+			height = WardenAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_NEEDLE:  # The owner's model, animated in code, on VAT
 			height = NeedleAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_SNIPER:  # The owner's model, animated in code, on VAT

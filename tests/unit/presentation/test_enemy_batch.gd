@@ -135,7 +135,7 @@ func test_its_bar_shows_its_health() -> void:
 
 func test_a_kill_removes_its_instances_the_same_frame() -> void:
 	var w := CombatLab.world()
-	var gone := w.add_enemy(ML, Vector2(2.0, 2.0))  # A code body: it goes at once
+	var gone := w.add_enemy(CH, Vector2(2.0, 2.0))  # A code body (the Charger): it goes at once
 	var falls := w.add_enemy(SB, Vector2(-2.0, 2.0))  # The owner's model: it falls a moment
 	var views := _views(w)
 	_ripen(w)

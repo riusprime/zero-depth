@@ -1,44 +1,93 @@
 class_name WardenAvatar
 extends AvatarBase
-## The Warden (owner, v0.2.0 L17; docs/art/enemies_visual_reference.png, the third creature): a hulking grey rock
-## golem. A long faceted red shell covers its head and back, with a dark visor frame and a glowing red slot at the
-## front; big boulder shoulders, heavy forearm rocks and fists that hang almost to the ground; a dark chest under the
-## shell and two short stumpy legs on lighter stone feet. No shield: the Warden takes less damage from the front and
-## more from the back, so the front reads armoured (fists, chest) and the shell's back is split by glowing cracks,
-## the weak spot. Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance()
-## animates in frame time, and nothing here feeds back into the sim.
-## +X is the front and +Z the right in every local frame; the node sits at the actor's feet under ActorViews' facing.
-## Its slam disc is no longer drawn on the ground; the windup reads from the body (AvatarBase
-## "tell"): the fists climb overhead, the knees bend into a crouch that deepens with the windup's progress, and the
-## visor brightens and flashes just before the slam.
-## A full overhead slam. The
-## fists climb overhead and the chest heaves back by STRIKE_RAISE_BY of the windup (AvatarBase.strike_raise) and hold
-## there, trembling, to the hit tick; then they come down hard in STRIKE_SNAP_S, the chest pitching forward and the
-## knees dropping, the fists land at the front and stay down through the first part of the recovery, and a dust ring
-## runs out over the slam's circle (its radius from the telegraph) from the impact. The red circle itself is back on
-## the ground (TelegraphViews; EnemyAi.telegraph "ground": true).
+## The Warden on the owner's model (EnemyModels &"warden", cut by scripts/assets/warden_prep.py into the body under
+## its bronze shell, the head, each arm's shoulder boulder and forearm with its fist, each leg's thigh, shin and foot):
+## a hulking rock golem that walks on its feet and its knuckles. Animated in code from the sim's state and drawn by the
+## VAT crowd (SoloVat) while the switch is on. The owner asked for the enemies to be "animated as good as you can, if
+## they can have multiple animations ... the better". The Warden takes less damage from the front and more from the
+## back; the seam that splits its shell glows (its cracks, the model's glow surface), the eye glows under the lip.
+## Its clips, each read from the sim through WorldReader (sync) and played in frame time (advance):
+## - idle: heavy breathing, the head's slow held glances, the weight shifting from foot to foot, a fist re-planted now
+##   and then; the feet and the knuckles stay planted (the limbs are posed by reach: hip, knee and foot, shoulder and
+##   elbow solved for where the foot or the fist stands);
+## - the walk: a heavy four-beat knuckle-walk (left foot, left fist, right foot, right fist), each foot and fist still
+##   on the ground while it is down and swung forward in the air, the body thumping down as each foot lands, rolling
+##   onto it, swaying, leaning into the walk; the same steps carry it round as it turns;
+## - the tell (WINDUP, the sim's own progress): the fists climb overhead and meet, the chest heaves back, the knees
+##   bend into a crouch that deepens with the windup, the head tips up, the eye brightens and flashes from
+##   TELL_FLASH_FROM (steady with reduced motion), trembling at the top;
+## - the slam (the hit tick: AvatarBase's strike snap): the fists come down hard on the ground in front, the chest
+##   pitching forward and the knees dropping; the impact shakes it and a dust ring runs out over the slam's circle (its
+##   radius from the telegraph); the fists stay down through the first part of the recovery, then push it back up;
+## - a hit (its HP fell): the body jolts back, the head ducks;
+## - the rise-in (SPAWN): it climbs out of the ground, leaning back, reaching up;
+## - the death (die(): DEATH_SECONDS): the cracks flare and go out with the eye, the knees buckle, it falls forward onto
+##   its fists and then its chest, tipping to one side, the head drooping;
+## - reduced motion (ViewPrefs.reduced_motion): the same clips at CALM of the body's amplitudes, no trembles or fist
+##   re-plants, the flashes steady.
+## The pose is a few plain numbers (the raw drives, _vd) worked out from the state first, then the nodes from them
+## through the joint table (_joints, the same transforms the VAT rig declares), so the baked pose is the live one.
+## Presentation only (EI-07). +X is the front, +Z its right; the node sits at the actor's feet under the facing.
 
-## Hips (leg pivots) and the chest pivot above them, in metres from the ground.
-const HIP_Y := 0.3
-## Shoulder pivots, in the chest frame: behind the middle, high, wide.
-const SHOULDER := Vector3(-0.08, 0.52, 0.5)
-## Walking speed the gait is tuned for (the Warden's 1.6 m/s) and the stride (metres per full two-step cycle).
-const WALK_SPEED := 1.6
-const STRIDE := 0.95
-## Faster than this between two ticks is a teleport (a new floor), not motion.
+const KIND := WorldReader.KIND_WARDEN
+const MODEL := &"warden"
+const HEIGHT := 1.25
+## The cracks' glow (the bronze shell takes the tank's role colour, EnemyPalettes' body).
+const CRACK_COLOR := Color("#FF8A3C")
 const TELEPORT_SPEED := 30.0
-## Shoulder angles (radians about the side axis; + swings the arm forward and up): fists overhead in the windup,
-## down on the ground at the front corners in the slam (the arms also swing out, so the iso camera sees the fists
-## land beside the shell, not under it).
-const ARM_UP := 2.75
-const ARM_SLAM := 0.25
-## The chest's heave back at the top of the raise and its pitch forward in the slam (radians), and how far
-## the hips drop when the fists land (metres).
-const RAISE_LEAN := 0.24
-const SLAM_PITCH := 0.42
-const SLAM_DROP := 0.12
-## The dust ring: it runs from DUST_START of the slam's radius to its full radius over DUST_SECONDS from the
-## impact, fading out; its band is DUST_BAND of the radius wide. Its colour is neutral dust, not a reserved role.
+## The clips' lengths (s): a hit's jolt, the death, the rise-in.
+const HURT_SECONDS := 0.4
+const DEATH_SECONDS := 1.3
+const RISE_SECONDS := 0.45
+## Recovery is the attack's 0.667 s (data/enemies/warden.tres, a starting value); the fists rise over its end.
+const RECOVER_TICKS := 40
+## The gait: the speed (m/s) a full stride is made at (the sim's 1.6 m/s), the share of a stride a foot or fist is
+## down, its sweep either side of its stride's middle (m) and its lift (m); the cadence that keeps a planted foot still.
+## A longer stride than STRIDE_MAX quickens the cadence instead.
+const MOVE_SPEED := 1.6
+const DUTY := 0.5
+const SWEEP := 0.13
+const LIFT := 0.075
+const STRIDE_MAX := 1.4
+const STEP_HZ := MOVE_SPEED * DUTY / (2.0 * SWEEP)
+const TURN_REF := 2.0
+const TURN_SWING := 0.18
+## The limbs that step (the legs, then the arms on their knuckles; r is +Z) and each one's place in the stride.
+const LIMBS: Array[StringName] = [&"leg_r", &"leg_l", &"arm_r", &"arm_l"]
+const STRIDE_AT := [0.5, 0.0, 0.75, 0.25]
+## The breath (Hz); reduced motion's share of the body's motion.
+const BREATH_HZ := 0.35
+const CALM := 0.45
+## The joints' pivots (m, the model's frame) when the model is missing (the prep's), and the fists' knuckles at rest.
+const PIVOTS := {
+	&"body": Vector3.ZERO,
+	&"head": Vector3(0.147, 0.686, 0.0),
+	&"arm_r_u": Vector3(-0.025, 0.76, 0.429),
+	&"arm_r_l": Vector3(0.037, 0.515, 0.466),
+	&"arm_l_u": Vector3(-0.025, 0.76, -0.429),
+	&"arm_l_l": Vector3(0.037, 0.515, -0.466),
+	&"leg_r_u": Vector3(-0.086, 0.368, 0.221),
+	&"leg_r_l": Vector3(-0.098, 0.184, 0.221),
+	&"leg_r_f": Vector3(-0.074, 0.086, 0.221),
+	&"leg_l_u": Vector3(-0.086, 0.368, -0.221),
+	&"leg_l_l": Vector3(-0.098, 0.184, -0.221),
+	&"leg_l_f": Vector3(-0.074, 0.086, -0.221),
+}
+const KNUCKLES := [Vector3(0.245, 0.098, 0.404), Vector3(0.245, 0.098, -0.404)]
+## Where the fists stand from their place in the model (a little in toward the feet, so the arms keep some bend to
+## reach forward with as they walk).
+const FIST_IN := Vector3(-0.08, 0.0, 0.0)
+## Where the fists land in the slam (m, the facing's frame: on the ground in front, a little in).
+const SLAM_AT := [Vector3(0.62, 0.1, 0.33), Vector3(0.62, 0.1, -0.33)]
+## The fists overhead: the shoulder's turn up, the elbow's bend, the roll in so they meet.
+const ARM_UP := 2.5
+const ELBOW_UP := 0.55
+const ROLL_UP := 0.4
+## The body's roll and pitch pivots (the pitch's at the hips).
+const ROLL_AT := Vector3(0.0, 0.32, 0.0)
+const PITCH_AT := Vector3(-0.09, 0.32, 0.0)
+## The slam's dust ring: it runs from DUST_START of the slam's radius to its full radius over DUST_SECONDS from the
+## impact, fading out; its band is DUST_BAND of the radius wide. Neutral dust, not a reserved role.
 const DUST_SECONDS := 0.45
 const DUST_START := 0.3
 const DUST_BAND := 0.22
@@ -47,149 +96,305 @@ const DUST_COLOR := Color("#F4EEE2")
 const DUST_SEGMENTS := 40
 ## The slam's radius when no telegraph gave one (data/enemies/warden.tres, slam radius_m).
 const SLAM_RADIUS := 2.4
-## Recovery is the attack's 0.667 s (data/enemies/warden.tres, a starting value); the fists rise over its end.
-const RECOVER_TICKS := 40
-## Seconds to rise out of the ground once the spawn-in ends.
-const RISE_SECONDS := 0.45
-
-## Colours sampled from the reference sheet (lit facets read lighter in game light). Each facet of the shell and the
-## rocks is tinted a little lighter or darker (vertex colours), so the planes stay distinct under any light.
-## The shell (body), the visor frame (trim), the rocks (grey) and the visor (eye) come from EnemyPalettes.
-const FACET_TINT := 0.16
-const FIST_COLOR := Color("#68564F")
-const CHEST_COLOR := Color("#2A2D33")
-const LEG_COLOR := Color("#3B383B")
-const FOOT_COLOR := Color("#705D55")
-## The weak spot's glow: hotter than the shell, so the back reads as the place to hit.
-const CRACK_COLOR := Color("#FF8A3C")
-
-## The shell's rings, back to front: x (chest frame), half-width, half-height, centre height. The back is a flat,
-## lower plate (the weak spot); the shell is longest over the back, as in the sheet's side view.
-const SHELL_RINGS := [
-	[-0.42, 0.27, 0.22, 0.53],
-	[-0.3, 0.34, 0.27, 0.56],
-	[0.0, 0.37, 0.29, 0.57],
-	[0.24, 0.36, 0.3, 0.58],
-	[0.36, 0.3, 0.3, 0.58],
-]
-## The front edge is notched up around the visor frame: the bottom pair of the last two rings rises to these
-## heights (unit section y), as on the sheet's front view.
-const SHELL_NOTCH := [-0.8, -0.25]
-
-## The shell's cross-section as unit points (z, y), round from the top centre through the right: a ridge on top,
-## sloped shoulders, near-vertical sides, and a bottom that narrows in to the visor.
-const SHELL_SECTION := [
-	Vector2(0.0, 1.08),
-	Vector2(0.62, 0.84),
-	Vector2(0.98, 0.42),
-	Vector2(0.9, -0.55),
-	Vector2(0.62, -1.0),
-	Vector2(0.3, -1.0),
-	Vector2(-0.3, -1.0),
-	Vector2(-0.62, -1.0),
-	Vector2(-0.9, -0.55),
-	Vector2(-0.98, 0.42),
-	Vector2(-0.62, 0.84),
-]
-
-## SoloVat: the raw drives (_vd) and their specs [lo, hi, loop]: the walk's swing (sin and cos of
-## the phase, times the walk), the spawn-in's sink, the chest's shift, height, lean and breath, the arms' roll (both,
-## mirrored), each arm's swing, the elbows' bend.
-const SW := 0
-const CW := 1
-const SINK := 2
-const CHX := 3
-const HIP := 4
-const LEAN := 5
-const BREATH := 6
-const ROLL := 7
-const SWING0 := 8
-const ELBOW := 10
+## SoloVat: the raw drives (_vd) and their specs [lo, hi, loop]: the body's surge (m), roll, pitch (+ the chest back)
+## and sway; the head's nod (+ up) and yaw; per arm (r, l) its yaw, roll, shoulder turn (+ forward and up) and elbow;
+## per leg (r, l) its yaw, hip, knee and foot turns; then the eye's glow (no grid: sent as it is).
+const SURGE := 0
+const ROLL := 1
+const PITCH := 2
+const SWAY := 3
+const HEAD_P := 4
+const HEAD_Y := 5
+const ARM0 := 6
+const LEG0 := 14
+const EYE := 22
 const VAT_DRIVES := [
-	[-1.02, 1.02, false],
-	[-1.02, 1.02, false],
-	[0.0, 1.0, false],
-	[-0.075, 0.02, false],
-	[0.05, 0.36, false],
-	[-0.5, 0.33, false],
-	[-1.02, 1.02, false],
-	[-0.01, 0.83, false],
-	[-0.22, 2.8, false],
-	[-0.22, 2.8, false],
-	[-0.12, 0.84, false],
+	[-0.15, 0.15, false],
+	[-0.45, 0.45, false],
+	[-0.75, 0.5, false],
+	[-0.3, 0.3, false],
+	[-0.6, 0.6, false],
+	[-0.7, 0.7, false],
+	[-1.0, 1.0, false],
+	[-0.8, 0.8, false],
+	[-1.6, 3.2, false],
+	[-2.6, 2.6, false],
+	[-1.0, 1.0, false],
+	[-0.8, 0.8, false],
+	[-1.6, 3.2, false],
+	[-2.6, 2.6, false],
+	[-0.8, 0.8, false],
+	[-1.6, 1.6, false],
+	[-2.4, 2.4, false],
+	[-1.6, 1.6, false],
+	[-0.8, 0.8, false],
+	[-1.6, 1.6, false],
+	[-2.4, 2.4, false],
+	[-1.6, 1.6, false],
+	[0.0, 0.0, false],
 ]
-const VAT_SAMPLES := [33, 9, 17, 2, 2, 65, 2, 33, 129, 129, 49]
+## Each drive's samples (a slide linear: exact on two; a turn finely).
+const VAT_SAMPLES := [
+	2, 37, 49, 25, 33, 33, 41, 33, 129, 97, 41, 33, 129, 97, 33, 65, 73, 49, 33, 65, 73, 49
+]
 
-## Body meshes, built once and shared by every Warden.
-static var _meshes := {}
-
-## Parts, read by tests and by ActorViews (flash materials).
-var shell: MeshInstance3D
-var visor: MeshInstance3D
-var weak_spot: Node3D
+## True (set before setup(), ActorViews from ViewPrefs.enemy_vat): a VatCrowd draws the body from baked poses; setup()
+## builds only the dust ring.
+var vat := false
+var kind := KIND
+## True when the body is the owner's model (else the code-made stand-in on the same joints).
+var has_model := false
+## The parts (tests): the rig's root (the body), the head, each arm's upper and lower node and each leg's upper,
+## lower and foot node (r, l).
+var rig: Node3D
+var head: Node3D
 var arms: Array[Node3D] = []
 var fists: Array[Node3D] = []
 var legs: Array[Node3D] = []
+var shins: Array[Node3D] = []
+var feet: Array[Node3D] = []
 ## The impact's dust ring (hidden between slams).
 var dust: MeshInstance3D
-## True (set before setup(), ActorViews from
-## ViewPrefs.enemy_vat): a VatCrowd draws the body from baked poses; setup() builds only the dust ring.
-var vat := false
-var kind := WorldReader.KIND_WARDEN
 
-var _body := Node3D.new()
-var _chest := Node3D.new()
-var _elbows: Array[Node3D] = []
-var _visor_mat := StandardMaterial3D.new()
+var _vd := PackedFloat32Array()
+var _lift := 0.0
+var _eye_mat := StandardMaterial3D.new()
 var _crack_mat := StandardMaterial3D.new()
-# Sim state from the last sync.
+var _crack := 1.8
+var _pivots := PIVOTS.duplicate()
+var _scale := 1.0
+## The joint table: [drive, parent joint, frame node or null, make (SoloVat's)], a parent before its children.
+var _joints: Array = []
+# Each limb's end offset from its rest (m, the facing's frame) the clips ask for (LIMBS order); the limbs reach for it.
+var _end: Array[Vector3] = []
+# The state the pose is made from (sync and advance keep it; VatVerify.sample sets it).
 var _state := WorldReader.STATE_MOVE
 var _state_ticks := 0
 var _windup := 0.0
-# Smoothed animation state.
+var _hp := -1
 var _speed := 0.0
-var _walk := 0.0
+var _dir := Vector2.RIGHT
+var _omega := 0.0
 var _phase := 0.0
+var _stride := 0.0
 var _raise := 0.0
 var _slam := 0.0
 var _rise := 1.0
 var _shake := 0.0
+var _hurt_t := -1.0
+var _die_t := -1.0
+var _last_fy := 0.0
+var _have_fy := false
 # The slam's radius (the telegraph's, read in the windup), and seconds since the impact (-1: no dust).
 var _slam_r := SLAM_RADIUS
 var _dust_t := -1.0
 var _dust_mat := StandardMaterial3D.new()
-var _vd := PackedFloat32Array()
-var _lift := 0.0
 
 
-## Builds the model.
+## Builds a Warden under `facing` for ActorViews (`views`: on VAT while its switch is on; `look`: the kind whose colours
+## it wears, a biome version's) and marks `root`; returns its height.
+static func attach(views: ActorViews, root: Node3D, facing: Node3D, look: int) -> float:
+	var w := WardenAvatar.new()
+	views._solo_vat(root, w, KIND)
+	w.look_kind = look
+	w.setup()
+	facing.add_child(w)
+	root.set_meta(&"enemy_avatar", w)
+	root.set_meta(&"mats", w.body_materials.duplicate())
+	return HEIGHT
+
+
 func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_vd.resize(VAT_DRIVES.size())
-	if vat:  # The crowd draws the body; the dust ring stays a node
-		_body.free()
-		_body = null
-		_chest.free()
-		_chest = null
-		_build_dust()
-		_pose(0.0)
-		return
-	add_child(_body)
-	_chest.position.y = HIP_Y
-	_body.add_child(_chest)
-	_piece(_chest, &"pelvis", Vector3(0.0, 0.02, 0), Vector3(0.42, 0.2, 0.44), CHEST_COLOR, 3)
-	_piece(_chest, &"chest", Vector3(0.02, 0.2, 0), Vector3(0.56, 0.42, 0.54), CHEST_COLOR, 4)
-	shell = _piece(_chest, &"shell", Vector3.ZERO, Vector3.ONE, _color(&"body"), 0)
-	_build_visor()
-	_build_weak_spot()
-	for side in [-1.0, 1.0]:
-		_build_arm(side)
-		_build_leg(side)
+	var eye := _look_color(KIND, &"eye")
+	_eye_mat.albedo_color = eye
+	_eye_mat.emission_enabled = true
+	_eye_mat.emission = eye
+	_eye_mat.emission_energy_multiplier = 2.4
+	_eye_mat.set_meta(SoloVat.GLOW, EYE + 1)  # a VAT Warden's eye glows at its EYE drive
+	_crack_mat.albedo_color = CRACK_COLOR
+	_crack_mat.emission_enabled = true
+	_crack_mat.emission = CRACK_COLOR
+	_crack_mat.emission_energy_multiplier = _crack
+	var m := EnemyModels.get_model(MODEL)
+	has_model = not m.is_empty()
+	if has_model:
+		_scale = float(m["scale"])
+		var parts_in: Dictionary = m["parts"]
+		for pname: StringName in parts_in:
+			_pivots[pname] = (parts_in[pname] as Dictionary)["pivot"] * _scale
+	for k in LIMBS.size():
+		_end.append(Vector3.ZERO)
 	_build_dust()
-	_pose(0.0)
+	if vat:  # the crowd draws the body; the dust ring stays a node
+		_pose()
+		return
+	rig = Node3D.new()
+	rig.name = "Rig"
+	add_child(rig)
+	head = _node(rig, "Head")
+	for side: String in ["r", "l"]:
+		var up := _node(rig, "Arm_%s_u" % side)
+		arms.append(up)
+		fists.append(_node(up, "Arm_%s_l" % side))
+		var thigh := _node(rig, "Leg_%s_u" % side)
+		legs.append(thigh)
+		var shin := _node(thigh, "Leg_%s_l" % side)
+		shins.append(shin)
+		feet.append(_node(shin, "Leg_%s_f" % side))
+	if has_model:
+		_build_model(m)
+	else:
+		_build_code()
+	_build_joints()
+	_pose()
 
 
-## Reads actor i's state after a sim tick.
+func _node(parent: Node3D, n: String) -> Node3D:
+	var node := Node3D.new()
+	node.name = n
+	parent.add_child(node)
+	return node
+
+
+func _pivot(part: String) -> Vector3:
+	return _pivots[StringName(part)]
+
+
+## The frame node a part's mesh hangs in and that frame's own pivot (m).
+func _frame_of(part: StringName) -> Array:
+	var s := String(part)
+	if part == &"head":
+		return [head, _pivot("head")]
+	var k := 0 if s.contains("_r_") else 1
+	if s.begins_with("arm_"):
+		return [arms[k] if s.ends_with("_u") else fists[k], _pivot(s)]
+	if s.begins_with("leg_"):
+		var nodes: Array[Node3D] = [legs[k], shins[k], feet[k]]
+		return [nodes["ulf".find(s.right(1))], _pivot(s)]
+	return [rig, Vector3.ZERO]
+
+
+## The owner's model: each part's mesh in its joint's frame, its surfaces on the base / role plates (the bronze shell
+## greyscale in the map, tinted in the role colour) and the glow (the eye on the head, the cracks on the body).
+func _build_model(m: Dictionary) -> void:
+	var tex: Texture2D = m["texture"]
+	var parts_in: Dictionary = m["parts"]
+	var mats := {}
+	for slot: StringName in [&"base", &"role"]:
+		var mat := StandardMaterial3D.new()
+		mat.albedo_texture = tex
+		mat.albedo_color = _look_color(KIND, &"body") if slot == &"role" else Color.WHITE
+		mat.roughness = 1.0
+		mat.set_meta(&"enemy_tex", true)
+		mats[slot] = ActorViews.flashable(mat)
+		body_materials.append(mat)
+	for pname: StringName in parts_in:
+		var part: Dictionary = parts_in[pname]
+		var f: Array = _frame_of(pname)
+		var mi := MeshInstance3D.new()
+		mi.name = String(pname)
+		mi.mesh = part["mesh"]
+		mi.position = _pivots[pname] - (f[1] as Vector3)
+		mi.scale = Vector3.ONE * _scale
+		var surfaces: Array = part["surfaces"]
+		var glow := _eye_mat if pname == &"head" else _crack_mat
+		for k in surfaces.size():
+			mi.set_surface_override_material(
+				k, glow if surfaces[k] == &"glow" else mats.get(surfaces[k], mats[&"base"])
+			)
+		(f[0] as Node3D).add_child(mi)
+
+
+## The code-made stand-in (the model file missing): boxes on the same joints, so every clip still plays.
+func _build_code() -> void:
+	var stone := Color("#3B383B")
+	_piece(rig, Vector3(0.5, 0.5, 0.6), Vector3(-0.05, 0.6, 0), stone)
+	_piece(rig, Vector3(0.7, 0.2, 0.7), Vector3(-0.08, 0.9, 0), _look_color(KIND, &"body"))
+	_piece(head, Vector3(0.14, 0.16, 0.2), Vector3(0.06, 0, 0), stone)
+	var eye := MeshInstance3D.new()
+	var em := BoxMesh.new()
+	em.size = Vector3(0.03, 0.04, 0.1)
+	eye.mesh = em
+	eye.material_override = _eye_mat
+	eye.position = Vector3(0.13, 0.0, 0)
+	head.add_child(eye)
+	for k in 2:
+		var s := "r" if k == 0 else "l"
+		var el := _pivot("arm_%s_l" % s)
+		var knuckles: Vector3 = KNUCKLES[k]
+		_piece(arms[k], Vector3(0.3, 0.3, 0.26), Vector3.ZERO, stone)
+		_piece(fists[k], Vector3(0.22, 0.22, 0.2), knuckles - el + Vector3(0, 0.08, 0), stone)
+		_piece(fists[k], Vector3(0.14, 0.3, 0.14), (knuckles - el) * 0.5, stone)
+		var hip := _pivot("leg_%s_u" % s)
+		var knee := _pivot("leg_%s_l" % s)
+		var ankle := _pivot("leg_%s_f" % s)
+		_piece(legs[k], Vector3(0.16, 0.2, 0.16), (knee - hip) * 0.5, stone)
+		_piece(shins[k], Vector3(0.14, 0.12, 0.14), (ankle - knee) * 0.5, stone)
+		_piece(feet[k], Vector3(0.26, 0.08, 0.16), Vector3(0.06, -0.04, 0), stone)
+
+
+func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color) -> MeshInstance3D:
+	var m := BoxMesh.new()
+	m.size = size
+	return _body_piece(parent, m, at, c)
+
+
+## The joint table (see _joints): the body's surge, roll, pitch and sway (the rig); the head's nod at its neck and its
+## yaw; per arm its yaw (about the vertical at the shoulder), roll, shoulder turn and elbow; per leg its yaw, hip, knee
+## and foot (at the ankle).
+func _build_joints() -> void:
+	var z := Vector3.BACK
+	_joints = [
+		[SURGE, -1, null, SoloVat.slide(Vector3.RIGHT)],
+		[
+			ROLL,
+			0,
+			null,
+			SoloVat.turn(Vector3.RIGHT, 1.0, SoloVat.at(ROLL_AT), SoloVat.at(-ROLL_AT))
+		],
+		[PITCH, 1, null, SoloVat.turn(z, 1.0, SoloVat.at(PITCH_AT), SoloVat.at(-PITCH_AT))],
+		[SWAY, 2, rig, SoloVat.turn(Vector3.UP)],
+		[HEAD_P, 3, null, SoloVat.turn(z, 1.0, SoloVat.at(_pivot("head")))],
+		[HEAD_Y, 4, head, SoloVat.turn(Vector3.UP)],
+	]
+	for k in 2:
+		var s := "r" if k == 0 else "l"
+		var sh := _pivot("arm_%s_u" % s)
+		var a := ARM0 + 4 * k
+		_joints.append([a, 3, null, SoloVat.turn(Vector3.UP, 1.0, SoloVat.at(sh))])
+		_joints.append([a + 1, _joints.size() - 1, null, SoloVat.turn(Vector3.RIGHT)])
+		_joints.append([a + 2, _joints.size() - 1, arms[k], SoloVat.turn(z)])
+		_joints.append(
+			[
+				a + 3,
+				_joints.size() - 1,
+				fists[k],
+				SoloVat.turn(z, 1.0, SoloVat.at(_pivot("arm_%s_l" % s) - sh))
+			]
+		)
+	for k in 2:
+		var s := "r" if k == 0 else "l"
+		var hip := _pivot("leg_%s_u" % s)
+		var knee := _pivot("leg_%s_l" % s)
+		var l := LEG0 + 4 * k
+		_joints.append([l, 3, null, SoloVat.turn(Vector3.UP, 1.0, SoloVat.at(hip))])
+		_joints.append([l + 1, _joints.size() - 1, legs[k], SoloVat.turn(z)])
+		_joints.append(
+			[l + 2, _joints.size() - 1, shins[k], SoloVat.turn(z, 1.0, SoloVat.at(knee - hip))]
+		)
+		_joints.append(
+			[
+				l + 3,
+				_joints.size() - 1,
+				feet[k],
+				SoloVat.turn(z, 1.0, SoloVat.at(_pivot("leg_%s_f" % s) - knee))
+			]
+		)
+
+
+# --- Sync ---------------------------------------------------------------------------------------------------------
 func sync(reader: WorldReader, i: int) -> void:
 	var tg := reader.telegraph(i)
 	apply_state(
@@ -199,23 +404,27 @@ func sync(reader: WorldReader, i: int) -> void:
 			"state": reader.actor_state(i),
 			"windup": float(tg.get("progress", 0)) / 1000.0,
 			"radius": float(tg.get("radius", _slam_r)),
+			"hp": reader.actor_hp(i),
 		}
 	)
 
 
 ## The same as sync(), from plain values (tests drive the avatar with this): tick, pos, state (a WorldReader
-## STATE_*), windup (0..1, the telegraph's progress), radius (optional: the slam's, from the telegraph).
+## STATE_*), windup (0..1, the telegraph's progress), radius (optional: the slam's), hp (optional).
 func apply_state(s: Dictionary) -> void:
 	var tick: int = s["tick"]
-	var pos: Vector2 = s["pos"]
 	var state: int = s["state"]
+	var hp: int = s.get("hp", -1)
 	var dt_ticks := tick - _last_tick
 	if _fresh or state != _state:
 		_state_ticks = 0
 	elif dt_ticks > 0:
 		_state_ticks += dt_ticks
-	_track_motion(tick, pos, TELEPORT_SPEED)
+	if not _fresh and hp >= 0 and _hp >= 0 and hp < _hp:
+		_hurt_t = 0.0
+	_track_motion(tick, s["pos"], TELEPORT_SPEED)
 	_state = state
+	_hp = hp
 	_windup = clampf(s.get("windup", 0.0), 0.0, 1.0)
 	if state == WorldReader.STATE_WINDUP and s.has("radius"):
 		_slam_r = maxf(float(s["radius"]), 0.5)
@@ -223,24 +432,35 @@ func apply_state(s: Dictionary) -> void:
 	if _fresh:
 		_fresh = false
 		_rise = 0.0 if state == WorldReader.STATE_SPAWN else 1.0
-		_pose(0.0)
+		_pose()
 
 
-## Advances the animation by `delta` seconds of frame time.
+# --- Frame time ---------------------------------------------------------------------------------------------------
 func advance(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
-	if dt <= 0.0 or (shell == null and not vat):
+	if dt <= 0.0:
 		return
 	_t += dt
-	_speed = lerpf(_speed, _vel.length(), _rate(10.0, dt))
+	var dying := _die_t >= 0.0
+	var busy := maxf(_raise, _slam)
+	var moving := _state == WorldReader.STATE_MOVE and not dying
+	_speed = lerpf(_speed, _vel.length() if moving else 0.0, _rate(8.0 if moving else 12.0, dt))
+	_turning(dt, dying)
+	var local := Vector3(_vel.x, 0.0, -_vel.y).rotated(Vector3.UP, -_last_fy)
+	if moving and local.length() > 0.2:
+		var to := _dir.lerp(Vector2(local.x, local.z).normalized(), _rate(8.0, dt))
+		_dir = to.normalized() if to.length() > 0.05 else _dir
+	var most := maxf(_speed / MOVE_SPEED, absf(_omega) / TURN_REF) * (1.0 - busy)
+	_stride = move_toward(_stride, minf(most, 1.0), dt * 4.0)
+	_phase = fposmod(_phase + STEP_HZ * maxf(1.0, most / STRIDE_MAX) * dt * signf(_stride), 1.0)
 	var spawning := _state == WorldReader.STATE_SPAWN
 	_rise = move_toward(_rise, 0.0 if spawning else 1.0, dt / RISE_SECONDS)
 	# Windup: the fists climb overhead by STRIKE_RAISE_BY of its progress and hold there, trembling.
 	# The hit tick: they come down hard (strike_swing's snap). Recover: they stay on the ground, then rise back.
 	var was_snapping := strike_snapping()
 	strike_advance(dt)
-	var winding := _state == WorldReader.STATE_WINDUP
-	_raise = strike_raised(winding, _windup, move_toward(_raise, 0.0, dt * 6.0))
+	var winding := _state == WorldReader.STATE_WINDUP and not dying
+	_raise = strike_raised(winding, _windup, move_toward(_raise, 0.0, dt * 5.0))
 	var hold := 0.0
 	if _state == WorldReader.STATE_RECOVER:
 		hold = 1.0 - smoothstep(0.35, 1.0, float(_state_ticks) / RECOVER_TICKS)
@@ -250,114 +470,428 @@ func advance(delta: float) -> void:
 	elif swing > 0.0 or hold > 0.0:
 		_slam = maxf(swing, hold)
 	else:
-		_slam = lerpf(_slam, 0.0, _rate(6.0, dt))
+		_slam = lerpf(_slam, 0.0, _rate(5.0, dt))
 	if was_snapping and not strike_snapping():
 		_shake = 1.0  # the impact
 		_dust_t = 0.0
 	_shake = move_toward(_shake, 0.0, dt * 4.0)
+	_hurt_t = _clip(_hurt_t, dt, HURT_SECONDS)
+	if dying:
+		_die_t += dt
 	_advance_dust(dt)
-	_pose(dt)
+	_pose()
 
 
-## 0..1: how far the fists are raised overhead (the windup pose).
+static func _clip(t: float, dt: float, length: float) -> float:
+	if t < 0.0:
+		return t
+	t += dt
+	return t if t < length else -1.0
+
+
+## The facing's turn rate (rad/s), from the facing node the sim's facing turns (ActorViews).
+func _turning(dt: float, dying: bool) -> void:
+	var fy := (get_parent() as Node3D).rotation.y if get_parent() is Node3D else 0.0
+	var w := 0.0
+	if _have_fy and not dying:
+		w = clampf(wrapf(fy - _last_fy, -PI, PI) / dt, -6.0, 6.0)
+	_omega = lerpf(_omega, w, _rate(10.0, dt))
+	_last_fy = fy
+	_have_fy = true
+
+
+## Starts the death (ActorViews, when the sim drops the Warden: freed DEATH_SECONDS later). True: it plays.
+func die() -> bool:
+	if _die_t < 0.0:
+		_die_t = 0.0
+	return true
+
+
+func dying() -> bool:
+	return _die_t >= 0.0
+
+
+## 0..1: how far the fists are raised overhead (the windup pose) and slammed down (the attack and its recovery).
 func raise_amount() -> float:
 	return _raise
 
 
-## 0..1: how far the fists are slammed down (the attack and its recovery).
 func slam_amount() -> float:
 	return _slam
 
 
 ## 0..1 how deep the windup crouch is (from the windup's progress).
 func crouch_amount() -> float:
-	return tell_crouch(_windup) if _state == WorldReader.STATE_WINDUP else 0.0
+	if _state != WorldReader.STATE_WINDUP or _die_t >= 0.0:
+		return 0.0
+	return tell_crouch(_windup)
 
 
-## The visor's current glow (emission energy).
+## The eye's glow (emission energy; the cracks': glow_energy).
 func visor_energy() -> float:
-	return _visor_mat.emission_energy_multiplier
+	return _vd[EYE]
 
 
-## The fists' mean height above the feet, in this node's frame.
-func fist_height() -> float:
-	var sum := 0.0
-	for f in fists:
-		sum += (global_transform.affine_inverse() * f.global_position).y
-	return sum / maxf(1.0, fists.size())
+## The raw drives now (tests).
+func drives() -> PackedFloat32Array:
+	return _vd
 
 
-func _pose(dt: float) -> void:
-	var busy := maxf(_raise, _slam)
-	var walk_target := 0.0 if busy > 0.3 else clampf(_speed / WALK_SPEED, 0.0, 1.0)
-	_walk = lerpf(_walk, walk_target, _rate(6.0, dt))
-	_phase += _speed * dt * TAU / STRIDE * (1.0 - busy)
-	var s := sin(_phase)
-	# Heavy breathing at rest; a rolling, lumbering sway when walking.
-	var breath := sin(_t * 1.7) * (1.0 - _walk) * (1.0 - busy)
-	var bob := absf(s) * 0.03 * _walk
-	# The windup's knees-bent crouch (no disc on the ground any more), deepening with its progress.
+## Where a limb's point stands now (m, the facing's frame; tests): `part` &"fist" (the knuckles), &"knee" or
+## &"ankle", of side `k` (0 the right, 1 the left), through its chain from the drives.
+func limb_at(part: StringName, k: int) -> Vector3:
+	var s := "r" if k == 0 else "l"
+	var body := _body_xf(_vd)
+	if part == &"fist":
+		var sh := _pivot("arm_%s_u" % s)
+		var el := _pivot("arm_%s_l" % s)
+		var a := ARM0 + 4 * k
+		var turn := (
+			Basis(Vector3.UP, _vd[a])
+			* Basis(Vector3.RIGHT, _vd[a + 1])
+			* Basis(Vector3.BACK, _vd[a + 2])
+		)
+		var elbow := (
+			body * Transform3D(turn, sh) * Transform3D(Basis(Vector3.BACK, _vd[a + 3]), el - sh)
+		)
+		return elbow * (KNUCKLES[k] * _scale - el)
+	var hip := _pivot("leg_%s_u" % s)
+	var knee := _pivot("leg_%s_l" % s)
+	var l := LEG0 + 4 * k
+	var turn := Basis(Vector3.UP, _vd[l]) * Basis(Vector3.BACK, _vd[l + 1])
+	var at_knee := (
+		body * Transform3D(turn, hip) * Transform3D(Basis(Vector3.BACK, _vd[l + 2]), knee - hip)
+	)
+	return at_knee * (_pivot("leg_%s_f" % s) - knee if part == &"ankle" else Vector3.ZERO)
+
+
+# --- The pose -----------------------------------------------------------------------------------------------------
+## The pose's numbers from the state (_vd, the lift, the glows): the clips' body drives and the limb ends' places
+## first, then the limbs reach for them under that body (the arms blended toward their raised pose); then (the code
+## path) the nodes from them.
+func _pose() -> void:
 	var calm := ViewPrefs.reduced_motion
-	var tell_c := crouch_amount()
-	var crouch := _raise * 0.03 + _slam * SLAM_DROP + tell_c * 0.07
-	var hip := HIP_Y + bob + breath * 0.008 - crouch
-	# Spawn-in: up out of the ground, leaning back as it comes.
-	var sink := 1.0 - _rise
-	sink = sink * sink * (3.0 - 2.0 * sink)
-	# The pose's numbers first (the VAT drives and the lift), then the nodes from them (the old path).
-	_lift = -1.35 * sink
-	_vd[SW] = s * _walk
-	_vd[CW] = cos(_phase) * _walk
-	_vd[SINK] = sink
-	var tremble := 0.0 if calm else sin(_t * 47.0) * 0.012 * _raise * smoothstep(0.6, 1.0, _windup)
-	_vd[CHX] = tremble - tell_c * 0.05
-	_vd[HIP] = hip
-	# The chest leans back to heave the fists up, then pitches forward into the slam.
-	_vd[LEAN] = 0.06 * _walk + _raise * RAISE_LEAN - _slam * SLAM_PITCH - _shake * 0.05
-	_vd[BREATH] = breath
-	# Raised, the arms come in over the head so the fists meet; slammed, they swing out to the front corners.
-	_vd[ROLL] = _raise * 0.42 + _slam * 0.4
+	var k := CALM if calm else 1.0
+	var d := PackedFloat32Array()
+	d.resize(VAT_DRIVES.size())
+	for j in LIMBS.size():
+		_end[j] = Vector3.ZERO
+	var breath := sin(TAU * _t * BREATH_HZ)
+	var lift := _walk_pose(d, k)
+	lift += _idle_pose(d, k, calm, breath)
+	lift += _tell_pose(d, k, calm)
+	lift += _slam_pose(d, k, calm)
+	lift += _hurt_pose(d, k)
+	lift += _rise_pose(d)
+	lift = _death_pose(d, lift, calm)
+	for j in ARM0:
+		d[j] = clampf(d[j], VAT_DRIVES[j][0], VAT_DRIVES[j][1])
+	_lift = lift
+	_reach_all(d)
+	for j in range(ARM0, EYE):
+		d[j] = clampf(d[j], VAT_DRIVES[j][0], VAT_DRIVES[j][1])
+	d[EYE] = _eye(calm)
+	_crack = _crack_energy(calm)
+	_vd = d
+	_eye_mat.emission_energy_multiplier = d[EYE]
+	_crack_mat.emission_energy_multiplier = _crack
+	if not vat and rig != null:
+		_apply()
+
+
+## The rig's transform (the body's: the lift, the surge, the roll, the pitch and the sway) from the drives `d`.
+func _body_xf(d: PackedFloat32Array) -> Transform3D:
+	return (
+		Transform3D(Basis.IDENTITY, Vector3(d[SURGE], _lift, 0.0))
+		* SoloVat.at(ROLL_AT)
+		* Transform3D(Basis(Vector3.RIGHT, d[ROLL]), Vector3.ZERO)
+		* SoloVat.at(-ROLL_AT)
+		* SoloVat.at(PITCH_AT)
+		* Transform3D(Basis(Vector3.BACK, d[PITCH]), Vector3.ZERO)
+		* SoloVat.at(-PITCH_AT)
+		* Transform3D(Basis(Vector3.UP, d[SWAY]), Vector3.ZERO)
+	)
+
+
+## The limbs reach for their ends: each leg's ankle (its foot then turned back flat, tipping its toe down as it
+## swings) and each arm's knuckles (toward the slam's spot as it slams), the arms then blended toward the raised pose.
+func _reach_all(d: PackedFloat32Array) -> void:
+	var inv := _body_xf(d).affine_inverse()
 	for k in 2:
-		var side := -1.0 if k == 0 else 1.0
-		# Walking: the arms swing against the legs; idle: they hang, a little forward.
-		var hang := 0.12 + side * s * 0.28 * _walk + breath * 0.02
-		_vd[SWING0 + k] = lerpf(lerpf(hang, ARM_UP, _raise), ARM_SLAM, _slam)
-	_vd[ELBOW] = _raise * 0.7 + 0.12 * (1.0 - busy) - _slam * 0.1
-	var winding := _state == WorldReader.STATE_WINDUP
+		var s := "r" if k == 0 else "l"
+		var ankle := _pivot("leg_%s_f" % s)
+		var r := _reach(
+			_pivot("leg_%s_u" % s), _pivot("leg_%s_l" % s), ankle, inv * (ankle + _end[k])
+		)
+		var l := LEG0 + 4 * k
+		d[l] = r.x
+		d[l + 1] = r.y
+		d[l + 2] = r.z
+		var swing := clampf(_end[k].y / LIFT, 0.0, 1.0)
+		d[l + 3] = -(r.y + r.z) - d[PITCH] - 0.35 * swing
+	var up := smoothstep(0.0, 1.0, _raise)
+	for k in 2:
+		var s := "r" if k == 0 else "l"
+		var rest: Vector3 = KNUCKLES[k] * _scale
+		var aim: Vector3 = (rest + FIST_IN + _end[2 + k]).lerp(
+			SLAM_AT[k], smoothstep(0.0, 1.0, _slam)
+		)
+		var r := _reach(_pivot("arm_%s_u" % s), _pivot("arm_%s_l" % s), rest, inv * aim)
+		var a := ARM0 + 4 * k
+		var side := 1.0 if k == 0 else -1.0
+		d[a] = lerpf(r.x, 0.0, up)
+		d[a + 1] = lerpf(0.0, -side * ROLL_UP, up)
+		d[a + 2] = lerpf(r.y, ARM_UP, up)
+		d[a + 3] = lerpf(r.z, ELBOW_UP, up)
+
+
+## A two-bone limb (root, joint and end at rest, the body's frame) reaching for `target`: (the yaw about the vertical
+## at the root that brings the target to the rest's distance across the limb's plane, the root's and the joint's turns
+## about +Z in that plane). Past its reach the end stops short.
+static func _reach(root: Vector3, mid: Vector3, end: Vector3, target: Vector3) -> Vector3:
+	var v := target - root
+	var r0 := end - root
+	var across := acos(clampf(r0.z / maxf(Vector2(v.x, v.z).length(), 0.0001), -1.0, 1.0))
+	var toward := atan2(v.x, v.z)
+	var y1 := wrapf(toward - across, -PI, PI)
+	var y2 := wrapf(toward + across, -PI, PI)
+	var yaw := y1 if absf(y1) < absf(y2) else y2
+	var t := v.rotated(Vector3.UP, -yaw)
+	var aim := Vector2(t.x, t.y)
+	var u0 := Vector2(mid.x - root.x, mid.y - root.y)
+	var l0 := Vector2(end.x - mid.x, end.y - mid.y)
+	var a := u0.length()
+	var b := l0.length()
+	var rch := clampf(aim.length(), absf(a - b) + 0.002, (a + b) * 0.998)
+	var bend := signf(Vector2(r0.x, r0.y).cross(u0))
+	var off := acos(clampf((a * a + rch * rch - b * b) / (2.0 * a * rch), -1.0, 1.0))
+	var root_turn := wrapf(aim.angle() + bend * off - u0.angle(), -PI, PI)
+	var l1 := aim.normalized() * rch - u0.rotated(root_turn)
+	return Vector3(yaw, root_turn, wrapf(l1.angle() - l0.angle() - root_turn, -PI, PI))
+
+
+## The walk (and the turn's stepping): each foot and fist through its stride at its place in the four beats, along
+## the way the body goes, the turn sweeping it round; the body thumping down as each foot lands, rolling onto it,
+## swaying, leaning into the walk, the head holding its line. Returns its lift.
+func _walk_pose(d: PackedFloat32Array, k: float) -> float:
+	var g := clampf(_stride, 0.0, 1.0)
+	var walk := clampf(_speed / MOVE_SPEED, 0.0, STRIDE_MAX)
+	var turn := clampf(_omega / TURN_REF, -1.0, 1.0)
+	var dir := Vector3(_dir.x, 0.0, _dir.y)
+	for j in LIMBS.size():
+		var c := _leg_cycle(fposmod(_phase - float(STRIDE_AT[j]), 1.0))
+		var rest := _limb_rest(j)
+		var th := turn * TURN_SWING * c.x
+		_end[j] += dir * (walk * SWEEP * c.x) + Vector3(th * rest.z, LIFT * g * c.y, -th * rest.x)
+	if g <= 0.0:
+		return 0.0
+	var p := _phase
+	var w := minf(walk, 1.0)
+	# The left foot lands at 0 and the right at 0.5: the body thumps down after each and rolls onto it.
+	var thump := _thump(p) + _thump(p - 0.5)
+	d[ROLL] += g * k * 0.045 * sin(TAU * (p - 0.12))
+	d[SWAY] += w * k * 0.07 * sin(TAU * (p + 0.1))
+	d[PITCH] -= w * 0.07 + w * k * 0.02 * sin(2.0 * TAU * p)
+	d[HEAD_Y] -= w * k * 0.06 * sin(TAU * (p + 0.1))
+	d[HEAD_P] += w * k * 0.04 * cos(2.0 * TAU * (p - 0.1))
+	return -0.05 * w - g * k * 0.03 * thump
+
+
+## A foot's landing at stride phase p (0 its touchdown): a sharp dip, then a slow rise.
+static func _thump(p: float) -> float:
+	var q := fposmod(p, 1.0)
+	if q < 0.06:
+		return sin(PI * 0.5 * q / 0.06)
+	return exp(-(q - 0.06) * 10.0) if q < 0.5 else 0.0
+
+
+## Limb `j`'s end at rest (m, the facing's frame): the ankle or the knuckles.
+func _limb_rest(j: int) -> Vector3:
+	if j < 2:
+		return _pivot("leg_%s_f" % ("r" if j == 0 else "l"))
+	return KNUCKLES[j - 2] * _scale + FIST_IN
+
+
+## One foot or fist through its stride at q (0 its touchdown): (the sweep: 1 ahead .. -1 behind; the lift 0..1).
+static func _leg_cycle(q: float) -> Vector2:
+	if q < DUTY:
+		return Vector2(1.0 - 2.0 * q / DUTY, 0.0)
+	var w := (q - DUTY) / (1.0 - DUTY)
+	var up := sin(PI * w)
+	return Vector2(-1.0 + 2.0 * smoothstep(0.0, 1.0, w), up * up * (3.0 - 2.0 * up))
+
+
+## Idle (fading as it walks, winds up, slams or dies): heavy breathing, the head's held glances, the weight shifting
+## from foot to foot, a fist re-planted now and then. Returns its lift.
+func _idle_pose(d: PackedFloat32Array, k: float, calm: bool, breath: float) -> float:
+	var busy := maxf(_raise, _slam)
+	var alive := 1.0 if _die_t < 0.0 else 0.0
+	var idle := (1.0 - clampf(_stride, 0.0, 1.0)) * (1.0 - busy) * alive
+	if idle <= 0.0:
+		return 0.0
+	d[PITCH] += idle * k * 0.025 * breath
+	d[HEAD_P] += idle * k * (0.06 * _scan(_t, 3.7, 5.0) + 0.02 * breath)
+	d[HEAD_Y] += idle * k * 0.3 * _scan(_t, 2.9, 0.0)
+	d[ROLL] += idle * k * 0.035 * sin(0.55 * _t)
+	d[SWAY] += idle * k * 0.04 * sin(0.37 * _t + 0.6)
+	d[SURGE] += idle * k * 0.01 * sin(0.55 * _t + 1.4)
+	if not calm:  # a fist re-planted now and then (a different one each time): lifted, set down a little on
+		var u := _t / 3.4
+		var seg := floorf(u)
+		if _hash(seg + 5.0) > 0.35:
+			var j := 2 + int(_hash(seg + 9.0) * 2.0) % 2
+			var e := sin(PI * clampf((u - seg - 0.25) / 0.18, 0.0, 1.0))
+			_end[j] += Vector3(0.03, 0.09, 0.0) * e * idle
+	return idle * k * 0.012 * breath
+
+
+## The tell (WINDUP): the fists climb overhead (_raise, held: the arms' blend in _reach_all), the chest heaves back,
+## the knees bend into a crouch that deepens with the windup's progress, the head tips up; a tremble at the top.
+## Returns its lift.
+func _tell_pose(d: PackedFloat32Array, k: float, calm: bool) -> float:
+	var r := _raise
+	var c := crouch_amount()
+	if r <= 0.0 and c <= 0.0:
+		return 0.0
+	d[PITCH] += 0.26 * r * k
+	d[SURGE] -= 0.05 * r * k
+	d[HEAD_P] += 0.3 * r * k
+	d[HEAD_Y] *= 1.0 - r
+	if not calm and _state == WorldReader.STATE_WINDUP:
+		var top := r * smoothstep(0.6, 1.0, _windup)
+		d[SURGE] += 0.012 * top * sin(_t * 47.0)
+		d[ROLL] += 0.015 * top * sin(_t * 39.0)
+	return -0.02 * r - 0.07 * c
+
+
+## The slam (_slam: the downswing's snap, held through the first of the recovery): the chest pitches forward, the
+## knees drop, the fists on the ground in front (their spot in _reach_all); the impact's shake. Returns its lift.
+func _slam_pose(d: PackedFloat32Array, k: float, calm: bool) -> float:
+	var s := _slam
+	if s <= 0.0 and _shake <= 0.0:
+		return 0.0
+	d[PITCH] -= 0.5 * s + 0.06 * _shake * k
+	d[SURGE] += 0.06 * s
+	d[HEAD_P] -= 0.15 * s
+	d[HEAD_Y] *= 1.0 - s
+	var lift := -0.08 * s
+	if not calm and _shake > 0.0:
+		lift += 0.02 * _shake * sin(_t * 60.0)
+		d[ROLL] += 0.03 * _shake * sin(_t * 53.0)
+	return lift
+
+
+## A hit (its HP fell): the body jolts back, the head ducks. Returns its lift.
+func _hurt_pose(d: PackedFloat32Array, k: float) -> float:
+	if _hurt_t < 0.0:
+		return 0.0
+	var h := _hurt_t / HURT_SECONDS
+	var e := sin(PI * 0.5 * minf(h / 0.25, 1.0)) * (1.0 - smoothstep(0.25, 1.0, h))
+	d[SURGE] -= 0.05 * e * k
+	d[PITCH] += 0.08 * e * k
+	d[HEAD_P] -= 0.2 * e * k
+	d[ROLL] += 0.04 * e * k
+	return -0.02 * e * k
+
+
+## The rise-in: climbing out of the ground, leaning back, the fists reaching up. Returns its lift.
+func _rise_pose(d: PackedFloat32Array) -> float:
+	var sink := 1.0 - _rise
+	if sink <= 0.0:
+		return 0.0
+	sink = sink * sink * (3.0 - 2.0 * sink)
+	d[PITCH] += 0.25 * sink
+	d[HEAD_P] += 0.2 * sink
+	for j in [2, 3]:
+		_end[j] += Vector3(0.05, 0.25, 0.0) * sink
+	return -1.35 * sink
+
+
+## The death: the knees buckle and it drops, falls forward onto its fists (sliding out ahead) and then its chest,
+## tipping to one side, the head drooping. Returns the lift.
+func _death_pose(d: PackedFloat32Array, lift: float, calm: bool) -> float:
+	if _die_t < 0.0:
+		return lift
+	var u := clampf(_die_t / DEATH_SECONDS, 0.0, 1.0)
+	var keep := 1.0 - smoothstep(0.0, 0.2, u)
+	for j in [SURGE, ROLL, PITCH, SWAY, HEAD_Y]:
+		d[j] *= keep
+	lift *= keep
+	var buckle := smoothstep(0.05, 0.4, u)
+	var fall := smoothstep(0.35, 0.8, u)
+	for j in LIMBS.size():
+		_end[j] *= keep
+	for j in [2, 3]:  # the fists slide out ahead as it falls on them
+		_end[j] += Vector3(0.22, 0.0, 0.0) * fall
+	d[PITCH] -= 0.3 * buckle + 0.32 * fall
+	d[SURGE] += 0.1 * fall
+	d[ROLL] += 0.3 * fall
+	d[HEAD_P] = lerpf(d[HEAD_P], -0.45, buckle)
+	if not calm:
+		d[ROLL] += 0.02 * buckle * (1.0 - fall) * sin(_die_t * 30.0)
+	return lift - 0.14 * buckle - 0.12 * fall
+
+
+## The eye's glow: rest; through the windup climbing and flashing (tell_glow: steady with reduced motion); flaring at
+## the impact; dim while it rises in; flickering out in the death.
+func _eye(calm: bool) -> float:
+	var winding := _state == WorldReader.STATE_WINDUP and _die_t < 0.0
 	var tell := tell_glow(_windup, _t, calm) if winding else 1.0
-	_visor_mat.emission_energy_multiplier = (2.4 + 4.0 * _raise) * tell + 2.0 * _shake
-	_crack_mat.emission_energy_multiplier = 1.8 + 0.5 * sin(_t * 3.4) + 1.5 * _raise
-	if vat:
-		return
-	_body.position = Vector3(0, _lift, 0)
-	_body.rotation = Vector3(0.06 * _vd[SW], 0, -0.25 * sink)
-	_chest.position = Vector3(_vd[CHX], hip, 0)
-	_chest.rotation = Vector3(-0.05 * _vd[SW], 0.06 * _vd[CW], _vd[LEAN])
-	_chest.scale = _chest_scale(breath)
-	for k in arms.size():
-		var side := -1.0 if k == 0 else 1.0
-		arms[k].rotation = Vector3(-side * _vd[ROLL], 0, _vd[SWING0 + k])
-		_elbows[k].rotation = Vector3(0, 0, _vd[ELBOW])
-		arms[k].position = _shoulder(side, breath)
-	for k in legs.size():
-		var sgn := -1.0 if k == 0 else 1.0
-		legs[k].rotation = Vector3(0, 0, 0.42 * sgn * _vd[SW])
-		legs[k].position = Vector3(0, hip, sgn * 0.19)
+	var e := ((2.4 + 4.0 * _raise) * tell + 2.0 * _shake) * lerpf(0.3, 1.0, _rise)
+	if _die_t >= 0.0:
+		var u := clampf(_die_t / DEATH_SECONDS, 0.0, 1.0)
+		var flicker := 1.0 if calm else 0.6 + 0.4 * absf(sin(_die_t * 23.0))
+		e = lerpf(e * flicker, 0.0, smoothstep(0.1, 0.7, u))
+	return e
 
 
-## The chest's breath (its scale) and a shoulder's place (`side` -1 left, 1 right), from the breath.
-static func _chest_scale(breath: float) -> Vector3:
-	return Vector3(1.0, 1.0 + breath * 0.012, 1.0 + breath * 0.01)
+## The cracks' glow: breathing at rest (steady with reduced motion), hotter as the fists rise and at the impact;
+## flaring once as it dies, then going out.
+func _crack_energy(calm: bool) -> float:
+	var e := 1.8 + (0.0 if calm else 0.5 * sin(_t * 3.4)) + 1.5 * _raise + 1.5 * _shake
+	if _die_t >= 0.0:
+		var u := clampf(_die_t / DEATH_SECONDS, 0.0, 1.0)
+		e += 3.0 * sin(PI * clampf(u / 0.3, 0.0, 1.0))
+		e = lerpf(e, 0.0, smoothstep(0.35, 0.9, u))
+	return e
 
 
-static func _shoulder(side: float, breath: float) -> Vector3:
-	return SHOULDER * Vector3(1, 1, side) + Vector3(0, breath * 0.01, 0)
+## A held glance: a pseudo-random value in -1..1 per `every` s that holds, then moves quickly to the next.
+static func _scan(t: float, every: float, seed_off: float) -> float:
+	var u := t / every + seed_off
+	var seg := floorf(u)
+	var a := _hash(seg) * 2.0 - 1.0
+	var b := _hash(seg + 1.0) * 2.0 - 1.0
+	return lerpf(a, b, smoothstep(0.55, 0.9, u - seg))
 
 
-# --- v0.10.5 W3-V4c: the VAT rig (SoloVat) -----------------------------------------------------------------------
+static func _hash(x: float) -> float:
+	var v := sin(x * 12.9898 + 78.233) * 43758.5453
+	return v - floorf(v)
 
 
-## The spawn-in's sink (m): the whole body's lift VatCrowd moves the instance by (the dust ring is its own node).
+## The nodes from the drives: each frame node's transform is its joints' makes composed since its parent frame (the
+## rig's with the lift under it), as the VAT rig chains them.
+func _apply() -> void:
+	var acc: Array[Transform3D] = []
+	acc.resize(_joints.size())
+	for j in _joints.size():
+		var jt: Array = _joints[j]
+		var parent: int = jt[1]
+		var base := Transform3D.IDENTITY
+		if parent >= 0 and (_joints[parent] as Array)[2] == null:
+			base = acc[parent]
+		acc[j] = base * (jt[3] as Callable).call([_vd[jt[0]]])
+		var frame: Node3D = jt[2]
+		if frame == null:
+			continue
+		frame.transform = (
+			Transform3D(Basis.IDENTITY, Vector3(0, _lift, 0)) * acc[j] if frame == rig else acc[j]
+		)
+
+
+# --- SoloVat: the VAT rig -----------------------------------------------------------------------------------------
+## The whole body's lift (m): VatCrowd moves the instance by it (the dust ring is its own node).
 func vat_lift() -> float:
 	return _lift
 
@@ -366,47 +900,28 @@ func vat_drives() -> PackedFloat32Array:
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
-## The visor's glow (the cracks are unshaded).
+## The cracks' glow (the instance's accent glow; the eye's is the EYE drive).
 func glow_energy() -> float:
-	return _visor_mat.emission_energy_multiplier
+	return _crack
 
 
-## Each node's transform split into its one-number parts as its position, rotation (Y, X, Z) and scale compose them:
-## the body (sway, then the sink's tilt), the chest (shift, height, the walk's yaw and roll, the lean, the breath),
-## the arms (shoulder with the breath, roll, swing), the elbows, the legs (hip height, swing).
+## The owner's colour map (VatLooks' textured variant), or null for the code-made body.
+func vat_texture() -> Texture2D:
+	return EnemyModels.get_model(MODEL).get("texture") if has_model else null
+
+
+## One grid per drive but the eye's, the joints as the table.
 func vat_rig() -> Dictionary:
-	var x := Vector3.RIGHT
-	var y := Vector3.UP
-	var z := Vector3.BACK
-	var j: Array = [
-		[SW, -1, null, SoloVat.turn(x, 0.06)],
-		[SINK, 0, _body, SoloVat.turn(z, -0.25)],
-		[CHX, 1, null, SoloVat.slide(x)],
-		[HIP, 2, null, SoloVat.slide(y)],
-		[CW, 3, null, SoloVat.turn(y, 0.06)],
-		[SW, 4, null, SoloVat.turn(x, -0.05)],
-		[LEAN, 5, null, SoloVat.turn(z)],
-		[BREATH, 6, _chest, SoloVat.stretch_by(Vector3.ONE, _chest_scale(1.0) - Vector3.ONE)],
-	]
-	for k in arms.size():
-		var side := -1.0 if k == 0 else 1.0
-		var shoulder := _shoulder(side, 0.0)
-		j.append([BREATH, 7, null, SoloVat.slide(_shoulder(side, 1.0) - shoulder, shoulder)])
-		j.append([ROLL, j.size() - 1, null, SoloVat.turn(x, -side)])
-		j.append([SWING0 + k, j.size() - 1, arms[k], SoloVat.turn(z)])
-		j.append(
-			[ELBOW, j.size() - 1, _elbows[k], SoloVat.turn(z, 1.0, SoloVat.at(_elbows[k].position))]
-		)
-	for k in legs.size():
-		var sgn := -1.0 if k == 0 else 1.0
-		j.append([HIP, 1, null, SoloVat.slide(y, Vector3(0, 0, sgn * 0.19))])
-		j.append([SW, j.size() - 1, legs[k], SoloVat.turn(z, 0.42 * sgn)])
 	var grids: Array = []
-	for d in VAT_DRIVES.size():
+	for d in VAT_SAMPLES.size():
 		grids.append([[d, VAT_SAMPLES[d]]])
-	return SoloVat.rig("warden", VAT_DRIVES, grids, j, true)
+	var out := SoloVat.rig("warden", VAT_DRIVES, grids, _joints, true)
+	if has_model:
+		out["albedo_tex"] = vat_texture()
+	return out
 
 
+# --- The slam's dust ring ---------------------------------------------------------------------------------------
 ## 0..1 how far the impact's dust ring has run (-1: none showing).
 func dust_amount() -> float:
 	return clampf(_dust_t / DUST_SECONDS, 0.0, 1.0) if _dust_t >= 0.0 else -1.0
@@ -436,14 +951,13 @@ func _advance_dust(dt: float) -> void:
 	_dust_mat.albedo_color = c
 
 
-## The dust ring: a flat band (unit outer radius) just above the floor, unshaded and see-through, laid flat
-## on the ground under the Warden (the node's own frame: its facing doesn't matter for a ring).
+## The dust ring: a flat band (unit outer radius) just above the floor, unshaded and see-through, laid flat on the
+## ground under the Warden (its facing doesn't matter for a ring); a node of a VAT Warden's too (not baked).
 func _build_dust() -> void:
 	dust = MeshInstance3D.new()
 	dust.name = "SlamDust"
-	dust.set_meta(SoloVat.LIVE, true)  # A node of a VAT Warden's too, not baked
+	dust.set_meta(SoloVat.LIVE, true)
 	dust.mesh = _dust_mesh()
-	# The code-made near-white band again (the owner's beige fx_dust_ring stays for the other slams).
 	_dust_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_dust_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_dust_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -456,9 +970,6 @@ func _build_dust() -> void:
 
 
 static func _dust_mesh() -> ArrayMesh:
-	var m: Mesh = _meshes.get(&"dust")
-	if m != null:
-		return m as ArrayMesh
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var inner := 1.0 - DUST_BAND
@@ -476,285 +987,4 @@ static func _dust_mesh() -> ArrayMesh:
 	arrays[Mesh.ARRAY_NORMAL] = normals
 	var out := ArrayMesh.new()
 	out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	_meshes[&"dust"] = out
 	return out
-
-
-func _build_visor() -> void:
-	_piece(
-		_chest, &"visor_frame", Vector3(0.39, 0.37, 0), Vector3(0.1, 0.28, 0.17), _color(&"trim"), 0
-	)
-	visor = MeshInstance3D.new()
-	var vb := BoxMesh.new()
-	vb.size = Vector3(0.02, 0.17, 0.075)
-	visor.mesh = vb
-	_visor_mat.albedo_color = _color(&"eye")
-	_visor_mat.emission_enabled = true
-	_visor_mat.emission = _color(&"eye")
-	_visor_mat.emission_energy_multiplier = 2.4
-	visor.material_override = _visor_mat
-	visor.position = Vector3(0.445, 0.37, 0)
-	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_chest.add_child(visor)
-
-
-## The weak spot: glowing cracks across the shell's flat back plate and a hot core showing through the split.
-func _build_weak_spot() -> void:
-	weak_spot = Node3D.new()
-	weak_spot.name = "WeakSpot"
-	weak_spot.position = Vector3(_shell_x(0) - 0.004, _shell_cy(0), 0)
-	weak_spot.scale = Vector3(1, 1.15, 1.3)
-	_chest.add_child(weak_spot)
-	_crack_mat.albedo_color = CRACK_COLOR
-	_crack_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_crack_mat.emission_enabled = true
-	_crack_mat.emission = CRACK_COLOR
-	_crack_mat.emission_energy_multiplier = 1.8
-	var cracks := MeshInstance3D.new()
-	cracks.mesh = _crack_mesh()
-	cracks.material_override = _crack_mat
-	cracks.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	weak_spot.add_child(cracks)
-
-
-func _build_arm(side: float) -> void:
-	var tag := "r" if side > 0 else "l"
-	var arm := Node3D.new()
-	arm.name = "Arm_" + tag
-	_chest.add_child(arm)
-	_piece(
-		arm, &"shoulder", Vector3(0, 0, side * 0.01), Vector3(0.36, 0.38, 0.34), _color(&"grey"), 11
-	)
-	var elbow := Node3D.new()
-	elbow.position = Vector3(0.0, -0.17, side * 0.03)
-	arm.add_child(elbow)
-	_piece(
-		elbow,
-		&"forearm",
-		Vector3(0.1, -0.19, side * 0.04),
-		Vector3(0.46, 0.4, 0.5),
-		_color(&"grey"),
-		23
-	)
-	var fist := Node3D.new()
-	fist.name = "Fist_" + tag
-	fist.position = Vector3(0.16, -0.5, -side * 0.01)
-	elbow.add_child(fist)
-	_piece(fist, &"fist", Vector3.ZERO, Vector3(0.38, 0.31, 0.4), FIST_COLOR, 37)
-	arms.append(arm)
-	_elbows.append(elbow)
-	fists.append(fist)
-
-
-func _build_leg(side: float) -> void:
-	var pivot := Node3D.new()
-	pivot.position = Vector3(0, HIP_Y, side * 0.19)
-	_body.add_child(pivot)
-	_piece(pivot, &"leg", Vector3(0, -0.12, 0), Vector3(0.2, 0.22, 0.19), LEG_COLOR, 5)
-	_piece(pivot, &"foot", Vector3(0.03, -0.245, 0), Vector3(0.29, 0.11, 0.25), FOOT_COLOR, 7)
-	legs.append(pivot)
-
-
-## The Warden's colour in `slot` under the active palette (a biome's own version's: AvatarBase._look_color).
-func _color(slot: StringName) -> Color:
-	return _look_color(WorldReader.KIND_WARDEN, slot)
-
-
-## One body piece: a faceted rock (or the shell), its material in
-## body_materials. Meshes are built once and shared by every Warden (the facets never change).
-func _piece(
-	parent: Node3D, key: StringName, at: Vector3, size: Vector3, c: Color, salt: int
-) -> MeshInstance3D:
-	var mesh: Mesh = _meshes.get(key)
-	if mesh == null:
-		if key == &"shell":
-			mesh = _shell_mesh()
-		elif key == &"visor_frame":
-			mesh = _box(size)
-		else:
-			mesh = _rock(size, salt)
-		_meshes[key] = mesh
-	return _body_piece(
-		parent, mesh, at, c, key != &"visor_frame", String(key).capitalize().replace(" ", "")
-	)
-
-
-# --- meshes -----------------------------------------------------------------------------------------------------
-
-
-func _shell_x(k: int) -> float:
-	return SHELL_RINGS[k][0]
-
-
-func _shell_cy(k: int) -> float:
-	return SHELL_RINGS[k][3]
-
-
-static func _shell_mesh() -> ArrayMesh:
-	var rings: Array = []
-	for k in SHELL_RINGS.size():
-		var r: Array = SHELL_RINGS[k]
-		var ring: Array[Vector3] = []
-		for j in SHELL_SECTION.size():
-			var p: Vector2 = SHELL_SECTION[j]
-			if k >= SHELL_RINGS.size() - 2 and (j == 5 or j == 6):
-				p.y = SHELL_NOTCH[k - (SHELL_RINGS.size() - 2)]
-			# A small fixed wobble breaks the rings into uneven facets, as on the sheet.
-			var w := 1.0 + (_noise(k * 31 + j * 7) - 0.5) * 0.08 * float(k > 0 and k < 4)
-			ring.append(Vector3(r[0], r[3] + p.y * r[2] * w, p.x * r[1] * w))
-		rings.append(ring)
-	var tris := []
-	var n := SHELL_SECTION.size()
-	for k in rings.size() - 1:
-		var a: Array[Vector3] = rings[k]
-		var b: Array[Vector3] = rings[k + 1]
-		for j in n:
-			var j2 := (j + 1) % n
-			if (j + k) % 2 == 0:
-				tris.append([a[j], a[j2], b[j2]])
-				tris.append([a[j], b[j2], b[j]])
-			else:
-				tris.append([a[j], a[j2], b[j]])
-				tris.append([a[j2], b[j2], b[j]])
-	# The back plate and the front face: fans round a centre point.
-	var back: Array[Vector3] = rings[0]
-	var front: Array[Vector3] = rings[rings.size() - 1]
-	var bc := Vector3(SHELL_RINGS[0][0], SHELL_RINGS[0][3], 0)
-	var fc := Vector3(SHELL_RINGS[4][0] + 0.06, SHELL_RINGS[4][3] + 0.08, 0)
-	for j in n:
-		var j2 := (j + 1) % n
-		tris.append([bc, back[j], back[j2]])
-		tris.append([fc, front[j], front[j2]])
-	return _mesh_from(tris, Vector3(-0.03, 0.56, 0), 3)
-
-
-## A chunky faceted boulder of the given size: a six-sided block with big near-vertical sides and bevelled top and
-## bottom rings closed by flat-ish caps, each vertex nudged by a fixed wobble from `salt` so the faces break unevenly.
-static func _rock(size: Vector3, salt: int) -> ArrayMesh:
-	const SIDES := 6
-	# [height, radius, turn (in half steps)] from the bottom cap up.
-	var levels := [[-0.5, 0.6, 1], [-0.3, 1.0, 0], [0.28, 1.0, 0], [0.5, 0.62, 1]]
-	var rings: Array = []
-	for k in levels.size():
-		var ring: Array[Vector3] = []
-		for j in SIDES:
-			var h := salt * 97 + k * 13 + j * 5
-			var turn: int = levels[k][2]
-			var ang := TAU * (float(j) + 0.5 * turn) / SIDES + (_noise(h) - 0.5) * 0.3
-			var rad: float = levels[k][1] * (0.9 + _noise(h + 1) * 0.16)
-			var y: float = levels[k][0] + (_noise(h + 2) - 0.5) * 0.1
-			ring.append(
-				Vector3(cos(ang) * rad * 0.5 * size.x, y * size.y, sin(ang) * rad * 0.5 * size.z)
-			)
-		rings.append(ring)
-	var tris := []
-	for k in rings.size() - 1:
-		var a: Array[Vector3] = rings[k]
-		var b: Array[Vector3] = rings[k + 1]
-		for j in SIDES:
-			var j2 := (j + 1) % SIDES
-			if levels[k][2] == levels[k + 1][2]:
-				tris.append([a[j], a[j2], b[j2]])
-				tris.append([a[j], b[j2], b[j]])
-			elif levels[k][2] == 1:
-				tris.append([a[j], b[j2], b[j]])
-				tris.append([a[j], a[(j + 1) % SIDES], b[j2]])
-			else:
-				tris.append([a[j], a[j2], b[j]])
-				tris.append([a[j2], b[j2], b[j]])
-	var bottom: Array[Vector3] = rings[0]
-	var top: Array[Vector3] = rings[rings.size() - 1]
-	var bc := Vector3(0, -0.52 * size.y, 0)
-	var tc := Vector3((_noise(salt) - 0.5) * 0.1 * size.x, 0.53 * size.y, 0)
-	for j in SIDES:
-		var j2 := (j + 1) % SIDES
-		tris.append([bc, bottom[j], bottom[j2]])
-		tris.append([tc, top[j], top[j2]])
-	return _mesh_from(tris, Vector3.ZERO, salt)
-
-
-static func _box(size: Vector3) -> BoxMesh:
-	var b := BoxMesh.new()
-	b.size = size
-	return b
-
-
-## The glowing cracks on the back plate (plane x = 0 of the weak-spot node, facing -X): a jagged split down the
-## middle with branches, as thin flat strips.
-static func _crack_mesh() -> ArrayMesh:
-	var lines := [
-		[
-			Vector2(0.0, 0.17),
-			Vector2(0.03, 0.08),
-			Vector2(-0.02, -0.01),
-			Vector2(0.025, -0.1),
-			Vector2(-0.01, -0.18)
-		],
-		[Vector2(-0.02, -0.01), Vector2(-0.1, 0.04), Vector2(-0.16, 0.0)],
-		[Vector2(0.025, -0.1), Vector2(0.11, -0.07), Vector2(0.17, -0.12)],
-		[Vector2(0.03, 0.08), Vector2(0.1, 0.13)],
-	]
-	var verts := PackedVector3Array()
-	var normals := PackedVector3Array()
-	for k in lines.size():
-		var line: Array = lines[k]
-		var w := 0.034 if k == 0 else 0.022
-		for j in line.size() - 1:
-			var a: Vector2 = line[j]
-			var b: Vector2 = line[j + 1]
-			var d := (b - a).normalized()
-			var nrm := Vector2(-d.y, d.x) * w * 0.5
-			var p := [a + nrm, a - nrm, b - nrm, b + nrm]
-			var q: Array[Vector3] = []
-			for v: Vector2 in p:
-				q.append(Vector3(0, v.y, v.x))
-			for t in [[q[0], q[1], q[2]], [q[0], q[2], q[3]]]:
-				_tri(verts, normals, t[0], t[1], t[2], Vector3(1, 0, 0))
-	# The core: a small diamond where the main split widens.
-	var c := Vector2(-0.0, -0.01)
-	var dm: Array[Vector3] = [
-		Vector3(0, c.y + 0.05, c.x),
-		Vector3(0, c.y, c.x + 0.035),
-		Vector3(0, c.y - 0.05, c.x),
-		Vector3(0, c.y, c.x - 0.035)
-	]
-	_tri(verts, normals, dm[0], dm[1], dm[2], Vector3(1, 0, 0))
-	_tri(verts, normals, dm[0], dm[2], dm[3], Vector3(1, 0, 0))
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	var m := ArrayMesh.new()
-	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return m
-
-
-## A fixed pseudo-random value in [0, 1) from an integer (an integer hash; no RNG, the same every run).
-static func _noise(n: int) -> float:
-	var h := (n * 374761393 + 668265263) & 0x7FFFFFFF
-	h = ((h ^ (h >> 13)) * 1274126177) & 0x7FFFFFFF
-	return float(h & 0xFFFF) / 65536.0
-
-
-## Flat-shaded triangles facing away from `centre`, each facet tinted by a fixed amount from `salt` (FACET_TINT)
-## and the downward ones shaded, so neighbouring planes read apart as on the sheet.
-static func _mesh_from(tris: Array, centre: Vector3, salt: int) -> ArrayMesh:
-	var verts := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var colors := PackedColorArray()
-	for k in tris.size():
-		var t: Array = tris[k]
-		_tri(verts, normals, t[0], t[1], t[2], centre)
-		var n := normals[normals.size() - 1]
-		var v := 1.0 + (_noise(salt * 131 + k * 17) - 0.5) * 2.0 * FACET_TINT
-		v *= lerpf(1.0, 0.72, clampf(-n.y, 0.0, 1.0))
-		var c := Color(v, v, v)
-		colors.append_array([c, c, c])
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_COLOR] = colors
-	var m := ArrayMesh.new()
-	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return m

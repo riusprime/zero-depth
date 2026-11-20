@@ -57,6 +57,12 @@ const SPECS := {
 	# NeedleAvatar / SniperAvatar pose them), at the request rows' 1.1 m and 1.3 m.
 	&"needle": {"height": NeedleAvatar.HEIGHT},
 	&"sniper": {"height": SniperAvatar.HEIGHT},
+	# The Warden (scripts/assets/warden_prep.py: body, head, two-part arms, three-part legs; WardenAvatar poses
+	# them), the old code golem's 1.2 m.
+	&"warden": {"height": 1.2},
+	# The Mine Layer (scripts/assets/mine_layer_prep.py: body, head, hopper, hatch, mine, six two-part legs;
+	# MineLayerModel poses them on HordeAvatar), 0.8 m long.
+	&"mine_layer": {"height": MineLayerModel.TOP},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

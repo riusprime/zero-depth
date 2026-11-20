@@ -52,6 +52,7 @@ const H_D := 72
 const H_IS_MODEL := 76
 const H_MODEL_SCALE := 77
 const H_HEIGHT := 78
+const H_WALK_Z := 79
 const C_VISOR := 43
 const C_TELL := 44
 const C_STATE := 45
@@ -81,7 +82,7 @@ const CLASS_OF := {
 	WorldReader.KIND_HATCHLING: 9,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
-const MODEL_CLASSES := [2, 3, 4, 5]
+const MODEL_CLASSES := [2, 3, 4, 5, 6]
 
 ## Whether the rows hold the state now.
 var on := false
@@ -514,6 +515,7 @@ func _export(k: int) -> void:
 		_st[o + H_STRIKE] = h._strike
 		_st[o + H_WALK] = h._walk
 		_st[o + H_WALK_T] = h._walk_t
+		_st[o + H_WALK_Z] = h._walk_z
 		_st[o + H_LAST_AT] = h._last_at.x
 		_st[o + H_LAST_AT + 1] = h._last_at.y
 		_st[o + H_LAST_AT + 2] = h._last_at.z
@@ -578,6 +580,7 @@ func _import(k: int) -> void:
 		h._strike = _st[o + H_STRIKE]
 		h._walk = _st[o + H_WALK]
 		h._walk_t = _st[o + H_WALK_T]
+		h._walk_z = _st[o + H_WALK_Z]
 		h._last_at = Vector3(_st[o + H_LAST_AT], _st[o + H_LAST_AT + 1], _st[o + H_LAST_AT + 2])
 		h._die_t = _st[o + H_DIE]
 		h._vat_lift = _st[o + H_LIFT]

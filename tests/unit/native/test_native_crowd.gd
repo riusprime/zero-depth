@@ -112,9 +112,9 @@ func test_the_native_writer_gives_the_script_writer_s_buffers() -> void:
 			var i := hp_rng.randi_range(0, w.actors.size() - 1)
 			if w.actors.teams[i] != 0 and w.actors.hp[i] > 1:
 				w.actors.hp[i] = maxi(1, w.actors.hp[i] - maxi(1, w.actors.max_hp[i] / 5))
-		if f == 150:  # A kill or two (a code body goes, an owner's model falls)
+		if f == 150:  # A kill: a code body (the Charger) goes; this pass never runs a fall's end
 			for i in w.actors.size():
-				if w.actors.teams[i] != 0 and w.actors.kinds[i] in [ML, SB]:
+				if w.actors.teams[i] != 0 and w.actors.kinds[i] == CH:
 					w.actors.hp[i] = 0
 					var at := w.actors.pos(i)
 					Damage.hit(w, i, 1 << 20, 0, 0, w.take_root(), 0, at, at)
@@ -157,7 +157,7 @@ func test_events_reach_the_buffers_on_their_frame() -> void:
 	var fti := get_tree().physics_interpolation
 	get_tree().physics_interpolation = false  # Each drawn at its latest tick
 	var w := CombatLab.world()
-	var layer := w.add_enemy(ML, Vector2(2.0, 2.0))
+	var layer := w.add_enemy(CH, Vector2(2.0, 2.0))  # A code body (the Mine Layer's model falls a moment)
 	var charger := w.add_enemy(CH, Vector2(-3.0, 1.0))
 	var views := _views(w)
 	_ripen(w)
@@ -339,13 +339,13 @@ func test_the_native_avatars_draw_the_script_avatars_bodies() -> void:
 					w.actors.state[i] = WorldReader.STATE_RECOVER
 					dazed += 1
 					break
-		if f == 150 or f == 240:  # Kills: a code body goes, an owner's model falls
+		if f == 150 or f == 240:  # Kills: an owner's model falls
 			for i in w.actors.size():
 				if (
 					w.actors.teams[i] != 0
 					and w.actors.kinds[i] in [ML, SB, ActorStore.Kind.SPLITTER]
 				):
-					fell += 1 if w.actors.kinds[i] != ML else 0
+					fell += 1
 					var at := w.actors.pos(i)
 					Damage.hit(w, i, 1 << 20, 0, 0, w.take_root(), 0, at, at)
 					break
