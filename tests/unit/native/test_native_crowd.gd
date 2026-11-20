@@ -350,6 +350,14 @@ func test_the_native_avatars_draw_the_script_avatars_bodies() -> void:
 					var at := w.actors.pos(i)
 					Damage.hit(w, i, 1 << 20, 0, 0, w.take_root(), 0, at, at)
 					break
+		if f == 180 or f == 260:  # The Swarmer and the Hatchling on the owner's models fall too
+			for kind: int in [SW, ActorStore.Kind.HATCHLING]:
+				for i in w.actors.size():
+					if w.actors.teams[i] != 0 and w.actors.kinds[i] == kind:
+						fell += 1
+						var at := w.actors.pos(i)
+						Damage.hit(w, i, 1 << 20, 0, 0, w.take_root(), 0, at, at)
+						break
 		if f % 2 == 0:
 			a.sync(WorldReader.new(w))
 			b.sync(WorldReader.new(w))

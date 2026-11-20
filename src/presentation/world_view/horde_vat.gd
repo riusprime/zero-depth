@@ -11,8 +11,12 @@ extends RefCounted
 ## - Mender: x the crystal raised while it heals (0 / 1); w the cross's turn (the gait, one turn a loop).
 ## - Mine Layer: x the windup (the hopper lowers), y the mine shown (0 / 1: hidden, its joint folds to a point).
 ## - Sniper: x the barrel's angle, y the muzzle's size; w the muzzle's own glow (no gait).
+## - Swarmer on the owner's model (SwarmerModel): x the raise, y the strike (the wing cases, the mandibles, the front
+##   legs); z the legs (the pace, or the death's curl) and w the gait's phase (the legs, the mandibles' working, the
+##   wing cases' breath) on one gait grid of both (SwarmerModel.GRIDS).
 ## - v0.11.0 O9, the horde critters (CritterBodies): w the gait loop (the legs, wings, claws or tail); x, y, z unused.
-## The Swarmer keeps the pilot's path (VatBake's own joint list and grids). Presentation only (EI-07).
+## The Swarmer's code body (its model missing) keeps the pilot's path (VatBake's own joint list and grids).
+## Presentation only (EI-07).
 
 ## Per kind: the stance grid's samples over the drives' x, y, z and the gait loop's samples over w (0: no gait).
 ## Starting values; the error they give: scripts/checks/vat_bake_report.gd.
@@ -58,6 +62,8 @@ static func rig(a: HordeAvatar) -> Dictionary:
 	var axes: Array = [[[0, sn.x, false], [1, sn.y, false], [2, sn.z, false]]]
 	if gait > 0:
 		axes.append([[3, gait, true]])
+	if a.kind == WorldReader.KIND_SWARMER:
+		axes = SwarmerModel.GRIDS.duplicate(true)
 	var out := {
 		"key": "horde%d" % a.kind,
 		"drives": 4,
@@ -113,6 +119,8 @@ static func joint_spec(a: HordeAvatar) -> Array:
 			out.append_array([[p["hopper"], g0], [p["mine"], g0]])
 		WorldReader.KIND_SNIPER:
 			out.append_array([[p["barrel"], g0], [p["muzzle"], g0]])
+		WorldReader.KIND_SWARMER:
+			out.append_array(SwarmerModel.joints(a))
 		_ when CritterBodies.is_critter(a.kind):  # Legs, wings, claws or tail on the gait
 			out.append_array(CritterBodies.joints(a))
 		_:
@@ -126,6 +134,8 @@ static func grid_of(a: HordeAvatar, d: Vector4) -> Vector4:
 	if CritterBodies.is_critter(a.kind):  # W is the gait's phase (0..1)
 		return Vector4(0.0, 0.0, 0.0, fposmod(d.w, 1.0))
 	match a.kind:
+		WorldReader.KIND_SWARMER:  # The legs -1..1 to 0..1
+			return Vector4(d.x, d.y, (d.z + 1.0) / 2.0, fposmod(d.w, 1.0))
 		WorldReader.KIND_MENDER:
 			return Vector4(d.x, 0.0, 0.0, fposmod(d.w / TAU, 1.0))
 		WorldReader.KIND_MINE_LAYER:
@@ -147,6 +157,8 @@ static func natural(kind: int, u: Vector3, phase: float) -> Vector4:
 	if CritterBodies.is_critter(kind):  # v0.11.0 O9
 		return Vector4(0.0, 0.0, 0.0, phase)
 	match kind:
+		WorldReader.KIND_SWARMER:
+			return Vector4(u.x, u.y, u.z * 2.0 - 1.0, phase)
 		WorldReader.KIND_MENDER:
 			return Vector4(u.x, 0.0, 0.0, phase * TAU)
 		WorldReader.KIND_MINE_LAYER:

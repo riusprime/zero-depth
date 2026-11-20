@@ -67,6 +67,7 @@ const C_LUNGE_NOW := 54
 const C_CROUCH_NOW := 55
 const C_Y_NOW := 56
 const C_LIFT := 57
+const C_DIE := 58
 ## The native classes (zd_avatar.h Class) by kind; 0: none.
 const CHARGER_CLASS := 8
 const CLASS_OF := {
@@ -542,6 +543,7 @@ func _export(k: int) -> void:
 	_st[o + C_CROUCH_NOW] = c._crouch_now
 	_st[o + C_Y_NOW] = c._y_now
 	_st[o + C_LIFT] = c._vat_lift
+	_st[o + C_DIE] = c._die_t
 
 
 ## Slot `k`'s row into its avatar's fields (then the object is as new as the row).
@@ -600,6 +602,7 @@ func _import(k: int) -> void:
 	c._crouch_now = _st[o + C_CROUCH_NOW]
 	c._y_now = _st[o + C_Y_NOW]
 	c._vat_lift = _st[o + C_LIFT]
+	c._die_t = _st[o + C_DIE]
 
 
 func _put_xf(o: int, xf: Transform3D) -> void:

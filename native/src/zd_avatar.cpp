@@ -73,6 +73,22 @@ constexpr double RISE_TIME = 0.35;
 constexpr double VISOR_ENERGY = 1.4;
 constexpr double BODY_Y_LO = -0.32;
 constexpr double BODY_Y_HI = 0.12;
+// HatchlingAvatar
+constexpr double HATCH_DEATH_SECONDS = 0.6;
+// SwarmerModel (the Swarmer on the owner's model)
+constexpr double SW_STEP_HZ = 8.0;
+constexpr double SW_IDLE_HZ = 1.1;
+constexpr double SW_LEAN_REAR = 0.3;
+constexpr double SW_LEAN_LUNGE = 0.2;
+constexpr double SW_LEAN_CROUCH = 0.08;
+constexpr double SW_REAR_X = -0.18;
+constexpr double SW_FRONT_X = 0.11;
+constexpr double SW_LUNGE_M = 0.09;
+constexpr double SW_DRAW_M = 0.03;
+constexpr double SW_BOB_M = 0.006;
+constexpr double SW_DEATH_ROLL = 2.4;
+constexpr double SW_BODY_Y = 0.1;
+constexpr double SW_HOP_M = 0.05;
 
 // GDScript's utility functions on doubles (clampf, maxf, minf, lerpf, smoothstep, move_toward).
 inline double clampd(double v, double lo, double hi) {
@@ -245,6 +261,9 @@ double h_crouch(const double *s, int c, const States &st) {
 void pose_parts(double *s, int c, const Vector4 &d) {
 	Vector4 g;
 	switch (c) {
+		case SWARMER: // the owner's model's (SwarmerModel): the legs -1..1 to 0..1
+			g = Vector4(d.x, d.y, f32((double(d.z) + 1.0) / 2.0), f32(Math::fposmod(double(d.w), 1.0)));
+			break;
 		case MENDER:
 			g = Vector4(d.x, 0.0f, 0.0f, f32(Math::fposmod(double(d.w) / TAU_D, 1.0)));
 			break;
@@ -277,7 +296,30 @@ void place_body(double *s, int c, const Vector3 &bp, double brz, double mrx, dou
 	put_xf(s, H_BODY, xf);
 }
 
-void pose_model(double *s, int c, double energy, bool calm, Vector3 bp, double brz) {
+// SwarmerModel.place: the Swarmer on the owner's model.
+void sw_pose(double *s, int c, double energy, const States &st) {
+	const double wind = s[H_WIND], strike = s[H_STRIKE], rise = s[H_RISE];
+	const double d = s[H_DIE] >= 0.0 ? clampd(s[H_DIE] / DEATH_SECONDS, 0.0, 1.0) : 0.0;
+	const double crouch = h_crouch(s, c, st);
+	const double lean = wind * SW_LEAN_REAR * (1.0 - strike) - strike * SW_LEAN_LUNGE - crouch * SW_LEAN_CROUCH;
+	const double px = lean > 0.0 ? SW_REAR_X : SW_FRONT_X;
+	const double roll = -d * SW_DEATH_ROLL;
+	const double x = px * (1.0 - dcos(lean)) - crouch * SW_DRAW_M + strike * SW_LUNGE_M;
+	const double y = -(1.0 - rise) * s[H_HEIGHT] - px * dsin(lean) + std::fabs(dsin(s[H_WALK_T])) * SW_BOB_M * s[H_WALK] +
+			SW_BODY_Y * (1.0 - dcos(roll)) + dsin(d * PI_D) * SW_HOP_M;
+	const double z = -SW_BODY_Y * dsin(roll);
+	place_body(s, c, Vector3(f32(x), f32(y), f32(z)), lean, roll, 1.0 - 0.35 * d);
+	const double legs = s[H_DIE] >= 0.0 ? -d : s[H_WALK];
+	const double phase = s[H_WALK_T] / TAU_D;
+	pose_parts(s, c, Vector4(f32(wind), f32(strike), f32(legs), f32(phase - std::floor(phase))));
+	s[H_GLOW] = energy * lerpd(0.2, 1.0, rise) * (1.0 - d);
+}
+
+void pose_model(double *s, int c, double energy, bool calm, Vector3 bp, double brz, const States &st) {
+	if (c == SWARMER) {
+		sw_pose(s, c, energy, st);
+		return;
+	}
 	const double t = s[T];
 	const double d = s[H_DIE] >= 0.0 ? clampd(s[H_DIE] / DEATH_SECONDS, 0.0, 1.0) : 0.0;
 	double mrx = 0.0;
@@ -323,7 +365,7 @@ void h_pose(double *s, int c, const Ctx &cx) {
 	const bool telling = tell_kind(c) && int(s[H_STATE]) == cx.st.windup;
 	const double tell = telling ? tell_glow(s[H_TELL], t, calm) : 1.0;
 	double energy = (1.5 + wind * 3.0) * tell + strike * 2.0;
-	if (c == SWARMER) {
+	if (c == SWARMER && s[H_IS_MODEL] == 0.0) { // the code body (the pilot's)
 		s[H_LIFT] = bob - (1.0 - rise) * height;
 		s[H_GLOW] = energy * lerpd(0.2, 1.0, rise);
 		return;
@@ -332,7 +374,7 @@ void h_pose(double *s, int c, const Ctx &cx) {
 			f32(bob - (1.0 - rise) * height - crouch * 0.1 * height), 0.0f);
 	const double brz = crouch * 0.12;
 	if (s[H_IS_MODEL] != 0.0) {
-		pose_model(s, c, energy, calm, bp, brz);
+		pose_model(s, c, energy, calm, bp, brz, cx.st);
 		return;
 	}
 	if (c == MINE_LAYER) {
@@ -377,7 +419,11 @@ void h_advance(double *s, int c, double delta, const Frame &f, const Ctx &cx) {
 		s[H_LAST_AT + 1] = at.y;
 		s[H_LAST_AT + 2] = at.z;
 		s[H_WALK] = toward(s[H_WALK], clampd(speed / WALK_FULL_MPS, 0.0, 1.0), dt * 4.0);
-		s[H_WALK_T] += dt * lerpd(0.0, WALK_HZ * TAU_D, s[H_WALK]);
+		if (c == SWARMER) { // its gait clock runs idle too (SwarmerModel.gait_rate)
+			s[H_WALK_T] += dt * (TAU_D * (SW_IDLE_HZ * (1.0 - s[H_WALK]) * (cx.calm ? 0.0 : 1.0) + SW_STEP_HZ * s[H_WALK]));
+		} else {
+			s[H_WALK_T] += dt * lerpd(0.0, WALK_HZ * TAU_D, s[H_WALK]);
+		}
 	}
 	const int state = int(s[H_STATE]);
 	const bool spawning = state == cx.st.spawn;
@@ -421,7 +467,9 @@ void c_pose(double *s, const Ctx &cx) {
 	s[C_LIFT] = sink_y;
 	const double shimmer = calm ? 0.0 : 0.5 * dsin(t * 30.0);
 	const double tell = winding ? tell_glow(s[C_TELL], t, calm) : 1.0;
-	const double glow = VISOR_ENERGY * (1.0 + wind * (1.6 + shimmer) + lunge * 1.2) * tell * (1.0 - daze * 0.7);
+	const double dead = s[C_DIE] >= 0.0 ? clampd(s[C_DIE] / HATCH_DEATH_SECONDS, 0.0, 1.0) : 0.0;
+	const double glow =
+			VISOR_ENERGY * (1.0 + wind * (1.6 + shimmer) + lunge * 1.2) * tell * (1.0 - daze * 0.7) * (1.0 - dead);
 	if (!(std::fabs(glow - s[C_VISOR]) <= 1e-4)) { // set_visor_energy: written on a change only
 		s[C_VISOR] = glow;
 	}
@@ -433,6 +481,9 @@ void c_advance(double *s, double delta, const Ctx &cx) {
 		return;
 	}
 	s[T] += dt;
+	if (s[C_DIE] >= 0.0) {
+		s[C_DIE] += dt;
+	}
 	const double vlen = double(Vector2(f32(s[VEL_X]), f32(s[VEL_Y])).length());
 	s[C_SPEED] = lerpd(s[C_SPEED], vlen, rate(12.0, dt));
 	const int st = int(s[C_STATE]);
@@ -614,7 +665,7 @@ Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
 	if (is_charger(cls)) {
 		return xf.translated_local(Vector3(0.0f, f32(s[C_LIFT]), 0.0f));
 	}
-	if (cls == SWARMER) {
+	if (cls == SWARMER && s[H_IS_MODEL] == 0.0) {
 		return xf * Transform3D(Basis(), Vector3(0.0f, f32(s[H_LIFT]), 0.0f));
 	}
 	return xf * get_xf(s, H_BODY);
@@ -635,10 +686,10 @@ int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 		out[8] = f32(loop(t * 0.9 / TAU_D));
 		out[9] = f32((1.0 - s[C_WALK]) * (1.0 - s[C_WIND]));
 		out[10] = f32(loop(t * 9.0 / TAU_D));
-		out[11] = 0.0f;
+		out[11] = f32(s[C_DIE] >= 0.0 ? clampd(s[C_DIE] / HATCH_DEATH_SECONDS, 0.0, 1.0) : 0.0);
 		return 12;
 	}
-	if (cls == SWARMER) {
+	if (cls == SWARMER && s[H_IS_MODEL] == 0.0) {
 		out[0] = f32(clampd(s[H_WIND], 0.0, 1.0));
 		out[1] = f32(clampd(s[H_STRIKE], 0.0, 1.0));
 		out[2] = f32(clampd(h_crouch(s, cls, c.st), 0.0, 1.0));

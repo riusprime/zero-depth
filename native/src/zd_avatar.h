@@ -74,6 +74,7 @@ enum Field {
 	C_CROUCH_NOW = 55,
 	C_Y_NOW = 56,
 	C_LIFT = 57,
+	C_DIE = 58, // the Hatchling's death (s in; -1 alive)
 	STRIDE = 80,
 };
 

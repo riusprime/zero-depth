@@ -41,6 +41,8 @@ const PLAN := [
 	["rise-in, half way", {}, "spawn"],
 	["biome cast + role glow", {"tint": Color(0.45, 0.65, 1.0, 0.5), "role": 0.45}, "idle"],
 	["reduced motion + flinch", {}, "calm"],
+	["walking", {}, "walk"],
+	["death, 75 %", {}, "death_late"],
 ]
 ## v0.10.5 W3-V4a: the Charger's states (build "hatchling": the Brood Mother's, at two thirds of the size).
 const CHARGER_PLAN := [
@@ -62,6 +64,7 @@ const CHARGER_PLAN := [
 	["reduced motion + windup", {}, "calm"],
 	["Hatchling, run", {"hatchling": true}, "run"],
 	["Hatchling, charge", {"hatchling": true}, "charge"],
+	["Hatchling, death 50 %", {"hatchling": true}, "death"],
 ]
 
 ## v0.10.5 W3-V4b: the other horde kinds by name (--kind=<name>).
@@ -218,15 +221,18 @@ var _pairs: Array = []  # [label, live SubViewport, vat SubViewport]
 var _frame := 0
 var _kind := KIND
 var _suffix := ""
+## `--kind=hatchling`: the Charger's states, every one on the Hatchling.
+var _hatch := false
 
 
 func _initialize() -> void:
 	_dir = "res://build/shots/%s/vat/" % GameVersion.label()
 	var plan: Array = PLAN
 	for arg in OS.get_cmdline_user_args():
-		if arg == "--kind=charger":
+		if arg == "--kind=charger" or arg == "--kind=hatchling":
 			_kind = WorldReader.KIND_CHARGER
-			_suffix = "_charger"
+			_hatch = arg == "--kind=hatchling"
+			_suffix = "_hatchling" if _hatch else "_charger"
 			plan = CHARGER_PLAN
 		elif arg.begins_with("--kind=") and KINDS.has(arg.trim_prefix("--kind=")):
 			var kname := arg.trim_prefix("--kind=")
@@ -386,14 +392,16 @@ func _avatar(vat: bool, build: Dictionary) -> AvatarBase:
 		s.role_glow = role
 		return s
 	if _kind == WorldReader.KIND_CHARGER:
-		var c := ChargerAvatar.new()
+		var hatch := _hatch or bool(build.get("hatchling", false))
+		var c := HatchlingAvatar.avatar_of(
+			WorldReader.KIND_HATCHLING if hatch else WorldReader.KIND_CHARGER
+		)
 		c.enemy_tint = tint
 		c.role_glow = role
 		c.vat = vat
-		var hatch := bool(build.get("hatchling", false))
 		c.setup(WorldReader.KIND_HATCHLING if hatch else WorldReader.KIND_CHARGER)
-		if hatch:
-			c.scale = Vector3.ONE * 0.66
+		if hatch and not (c as HatchlingAvatar).has_model:
+			c.scale = Vector3.ONE * HatchlingAvatar.FALLBACK_SCALE
 		return c
 	var a := HordeAvatar.new()
 	a.enemy_tint = tint
@@ -530,6 +538,10 @@ func _drive_charger(a: ChargerAvatar, steps: String) -> void:
 			a.show_hit(true, Color.WHITE, 1.6)
 		"tint":
 			a.show_hit(true, Color(1.0, 0.45, 0.1), 1.2)
+		"death":  # The Hatchling on its model falls
+			if a.has_method(&"die"):
+				a.call(&"die")
+			_run(a, 18)
 	ViewPrefs.reduced_motion = false
 
 

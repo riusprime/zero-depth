@@ -176,6 +176,8 @@ static func model_id(p_kind: int) -> StringName:
 			return &"shield_bearer"
 		WorldReader.KIND_MENDER:
 			return &"mender"
+		WorldReader.KIND_SWARMER:  # Posed by SwarmerModel
+			return &"swarmer"
 		WorldReader.KIND_LENS_DRONE:  # v0.11.0 S4 (VatCrowd.supports reads it; the Lens Drone is no HordeAvatar)
 			return &"lens_drone"
 	return &""
@@ -225,6 +227,8 @@ func setup(p_kind: int) -> void:
 	if not owner_model.is_empty():
 		_build_model(owner_model)
 		_is_model = true
+		if kind == WorldReader.KIND_SWARMER:
+			SwarmerModel.rig_nodes(self)
 		if kind == WorldReader.KIND_SPLITLING:
 			body.scale = Vector3.ONE * SPLITLING_SCALE
 	else:
@@ -299,7 +303,10 @@ func advance(delta: float) -> void:
 		)
 		_last_at = at
 		_walk = move_toward(_walk, clampf(speed / WALK_FULL_MPS, 0.0, 1.0), dt * 4.0)
-		_walk_t += dt * lerpf(0.0, WALK_HZ * TAU, _walk)
+		if kind == WorldReader.KIND_SWARMER:  # Its gait clock runs idle too
+			_walk_t += dt * SwarmerModel.gait_rate(_walk, ViewPrefs.reduced_motion)
+		else:
+			_walk_t += dt * lerpf(0.0, WALK_HZ * TAU, _walk)
 		_slide_step(dt)
 	var spawning := _state == WorldReader.STATE_SPAWN
 	_rise = move_toward(_rise, 0.0 if spawning else 1.0, dt * (6.0 if spawning else 2.5))
@@ -385,7 +392,7 @@ func _pose() -> void:
 	var telling := TELL_KINDS.has(kind) and _state == WorldReader.STATE_WINDUP
 	var tell := tell_glow(_tell_p, _t, calm) if telling else 1.0
 	var energy := (1.5 + _wind * 3.0) * tell + _strike * 2.0
-	if vat and kind == WorldReader.KIND_SWARMER:  # The crowd draws the body; its numbers only
+	if vat and kind == WorldReader.KIND_SWARMER and not _is_model:  # The pilot's numbers only
 		_vat_lift = bob - (1.0 - _rise) * height
 		_set_glow(energy * lerpf(0.2, 1.0, _rise))
 		return
@@ -497,6 +504,9 @@ func _pose_parts(d: Vector4) -> void:
 		return
 	if CritterBodies.is_critter(kind):  # v0.11.0 O9
 		CritterBodies.pose_parts(self, d.w)
+		return
+	if kind == WorldReader.KIND_SWARMER:  # The owner's model (the code body never comes here)
+		SwarmerModel.pose_parts(self, d)
 		return
 	if model != null:
 		for pname: String in parts:
@@ -623,6 +633,9 @@ func _body_material(c: Color, tex: Texture2D) -> ShaderMaterial:
 ## (the body's moves are reckoned into `bp` / `brz` and the model's sway and shrink, set by
 ## _place_body; the parts' through _pose_parts: the same arithmetic as before, split so the VAT bake poses the parts.)
 func _pose_model(energy: float, calm: bool, bp: Vector3, brz: float) -> void:
+	if kind == WorldReader.KIND_SWARMER:
+		SwarmerModel.place(self, energy)
+		return
 	var d := clampf(_die_t / DEATH_SECONDS, 0.0, 1.0) if _die_t >= 0.0 else 0.0
 	var mrx := 0.0
 	var drives := Vector4(_wind, _strike, 0.0, sin(_walk_t) * _walk)
@@ -655,7 +668,7 @@ func _pose_model(energy: float, calm: bool, bp: Vector3, brz: float) -> void:
 ## pose (the body's own moves are the crowd's instance transform, vat_offset, so the model stays at its rest scale).
 ## The Swarmer: pose_at, as the pilot baked it. Tools only (built with its pieces).
 func vat_bake_pose(u: Vector3, phase: float) -> void:
-	if kind == WorldReader.KIND_SWARMER:
+	if kind == WorldReader.KIND_SWARMER and not _is_model:
 		pose_at(u.x, u.y, u.z, VatBake.gait_period(kind) * phase, 1.0)
 		return
 	_pose_parts(HordeVat.natural(kind, u, phase))
@@ -673,7 +686,7 @@ func vat_grid_drives() -> PackedFloat32Array:
 ## VatCrowd: the body's transform in the avatar's space past the baked pose (the Swarmer's: its lift).
 func vat_offset() -> Transform3D:
 	_peek()
-	if kind == WorldReader.KIND_SWARMER:
+	if kind == WorldReader.KIND_SWARMER and not _is_model:
 		return Transform3D(Basis.IDENTITY, Vector3(0, _vat_lift, 0))
 	return _vat_body
 
