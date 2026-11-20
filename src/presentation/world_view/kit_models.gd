@@ -140,10 +140,11 @@ const SPECS := {
 	{"yaw": 0.0, "height": 2.0, "role": &"void", "foot": Vector2(2.0, 2.0), "tint": 0.0},
 	&"void_spike":
 	{"yaw": 0.0, "height": 2.5, "role": &"void", "foot": Vector2(1.0, 1.0), "tint": 0.0},
+	# 3.9 m: half again the model's own 2.6 m (its footprint is the sim's), so a big room's ruin is not lost in it.
 	&"ruined_observatory":
 	{
 		"yaw": 0.0,
-		"height": 2.6,
+		"height": 3.9,
 		"role": &"biome",
 		"foot": Vector2(2.5, 2.5),
 		"tint": 0.0,
@@ -164,6 +165,10 @@ const SPECS := {
 	&"mine_cart": {"yaw": 0.0, "height": 1.0, "role": &"room", "foot": Vector2(1.65, 0.66)},
 	&"stone_block": {"yaw": 0.0, "height": 0.8, "role": &"room", "foot": Vector2(1.46, 1.01)},
 	&"tool_rack": {"yaw": 0.0, "height": 1.6, "role": &"room", "foot": Vector2(1.46, 0.62)},
+	# The collapsed hall's centrepieces (scripts/assets/focal_v0120_prep.py, at their natural size: the arch 6 m wide,
+	# the monolith 6 m tall). The hall draws them on its focal blocker at the palette's height.
+	&"grand_arch": {"yaw": 0.0, "height": 3.71, "role": &"room", "foot": Vector2(6.0, 2.56)},
+	&"great_monolith": {"yaw": 0.0, "height": 6.0, "role": &"room", "foot": Vector2(3.23, 3.45)},
 	# The Ruins' own: the post and the sign frame stand in a wall's niche (pool wall_prop), the spool is square cover
 	# and the dumpster long cover.
 	&"metal_post": {"yaw": 0.0, "height": 1.8, "role": &"biome", "foot": Vector2(0.89, 0.57)},

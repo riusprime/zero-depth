@@ -586,11 +586,15 @@ func _build_walls(reader: WorldReader, draw := true) -> void:
 		if kind == 2:
 			continue
 		var w := reader.wall(i)
-		var height := EDGE_WALL_HEIGHT if kind == 0 else SLAB_HEIGHT
+		var piece := reader.wall_piece(i)
+		var lh := reader.wall_layout_height(i)
+		var height := (
+			EDGE_WALL_HEIGHT if kind == 0 else StageDresser.cover_top(piece, lh, SLAB_HEIGHT)
+		)
 		wall_specs.append([w.center, w.half, SimPlane.yaw_of(w.angle), height])
 		_wall_classes.append(kind)
-		_wall_pieces.append(reader.wall_piece(i))
-		_wall_layout_heights.append(reader.wall_layout_height(i))
+		_wall_pieces.append(piece)
+		_wall_layout_heights.append(lh)
 		if not draw:
 			continue
 		var box := BoxMesh.new()
@@ -664,17 +668,9 @@ func _build_contact_shadows() -> void:
 ## v0.5.9 Step 4: the floor dressed with the kit (StageDresser's rules), its pieces under a StageKit node.
 func _build_kit(reader: WorldReader) -> void:
 	var walls: Array = []
-	for i in wall_specs.size():
-		walls.append(
-			[
-				wall_specs[i][0],
-				wall_specs[i][1],
-				wall_specs[i][2],
-				_wall_classes[i],
-				_wall_pieces[i] if i < _wall_pieces.size() else &"",
-				_wall_layout_heights[i] if i < _wall_layout_heights.size() else -1.0
-			]
-		)
+	for i in wall_specs.size():  # _build_walls fills the four lists together, one entry per wall
+		var s: Array = wall_specs[i]
+		walls.append([s[0], s[1], s[2], _wall_classes[i], _wall_pieces[i], _wall_layout_heights[i]])
 	var rooms: Array = []
 	for i in reader.floor_room_count():
 		rooms.append(reader.floor_room(i))

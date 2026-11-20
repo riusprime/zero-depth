@@ -1123,7 +1123,8 @@ parts, `focal`, a `choice` and the `options` that keep it, `chance_permille`, `p
 `token`, `at` m, `yaw`, `height_scale`/`height_spread`, `side` 0/1/2, `chance_permille`), `choices:
 Array[RoomPurposeChoice]` (`id`, one weight per option), `min_cells` (3 x 3 and up), `weight`, `biomes`, `far_wall`
 (the focal wall prefers a far side from the camera), `shift_m` (< 1 m) and `turn_deg` (< 15), and one
-`RoomPurposePalette` per biome mapping each token to a `RoomPurposePiece` (`piece` from `PIECES`, `size`, `height`,
+`RoomPurposePalette` per biome mapping each token to a `RoomPurposePiece` (`piece` from `PIECES`, `size`, `height`
+(0..8 m, the drawn height: a focal piece stands up to the hall's 6 m monolith),
 `solid`; a drawn piece is low decoration (`DECOR`) or rests on its group's solids at `lift` m: a lintel). The pieces
 are kit stand-ins until the purpose-room models arrive (OWNER_TODO §3.6): a new model swaps in by its palette row.
 `RunContentCompiler.compile_room_purposes` → `RoomPurposeTable`; `RunSaver.floor_tables` passes them to

@@ -1225,7 +1225,7 @@ script = ExtResource("5_chsj4")
 token = &"face"
 piece = &"rock_large"
 size = Vector2(3.6, 3)
-height = 3.2
+height = 4.8
 
 [sub_resource type="Resource" id="Resource_hyyog"]
 script = ExtResource("5_chsj4")
@@ -1307,7 +1307,7 @@ script = ExtResource("5_chsj4")
 token = &"face"
 piece = &"rock_large"
 size = Vector2(3.6, 3)
-height = 3.2
+height = 4.8
 
 [sub_resource type="Resource" id="Resource_rylsy"]
 script = ExtResource("5_chsj4")

@@ -15,6 +15,8 @@ extends ContentDef
 ## The variation's bounds (G2_ROOMS.md: "small shifts and turns (under 1 m, under 15 degrees)").
 const SHIFT_MAX_M := 1.0
 const TURN_MAX_DEG := 15.0
+## A palette piece's drawn height bound: a big room's focal piece stands up to the hall's 6 m monolith.
+const MAX_HEIGHT_M := 8.0
 ## The kit pieces a palette may name: the designed rooms' (RoomLayoutDefinition.KIT), the biomes' own pieces and the
 ## purpose rooms' own (KitModels.SPECS; tests/content/test_room_purpose_validation.gd checks every one is installed).
 const PIECES: Array[StringName] = [
@@ -65,6 +67,8 @@ const PIECES: Array[StringName] = [
 	&"mine_cart",
 	&"stone_block",
 	&"tool_rack",
+	&"grand_arch",
+	&"great_monolith",
 ]
 ## The low pieces a palette may draw on open floor (never solid; "looks solid = is solid"). A taller drawn piece must
 ## rest on its group's solids (RoomPurposePiece.lift: a lintel), so nothing tall stands on open floor.
@@ -243,8 +247,8 @@ func _check_palette(issues: Array[ValidationIssue], pal: RoomPurposePalette) -> 
 			)
 		if p.size.x <= 0.0 or p.size.y <= 0.0 or maxf(p.size.x, p.size.y) > 12.0:
 			issues.append(ValidationIssue.new(&"range", resource_path, "%s: size 0..12 m" % where))
-		if p.height < 0.0 or p.height > 4.0:
-			issues.append(ValidationIssue.new(&"range", resource_path, "%s: height 0..4 m" % where))
+		if p.height < 0.0 or p.height > MAX_HEIGHT_M:
+			issues.append(ValidationIssue.new(&"range", resource_path, "%s: height 0..8 m" % where))
 		if p.solid and DECOR.has(p.piece):
 			issues.append(
 				ValidationIssue.new(

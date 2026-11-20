@@ -296,6 +296,17 @@ static func _niche(
 	return Rect2(c - size * 0.5, size)
 
 
+## The height the camera's cutaway takes for a cover blocker (StageView.wall_specs; Occlusion): the piece drawn on it
+## where that stands taller than `slab_h`, so a hero behind a tall piece (a 6 m monolith, a 3.6 m column) still shows.
+## `piece` and `layout_h` are its room's (WorldReader.wall_piece, wall_layout_height): the layout's height where the
+## dresser draws it (above 0, not a biome piece, which keeps its own), else the named piece's own height.
+static func cover_top(piece: StringName, layout_h: float, slab_h: float) -> float:
+	var spec: Dictionary = KitModels.SPECS.get(piece, {})
+	var own: bool = spec.get("role", &"") == &"biome"
+	var h := layout_h if layout_h > 0.0 and not own else float(spec.get("height", 0.0))
+	return maxf(slab_h, h)
+
+
 ## Every niche the placements ask for (the structural walls' light props).
 static func niches(placements: Array) -> Array:
 	var out: Array = []

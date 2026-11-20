@@ -15,6 +15,11 @@ const OUT := "res://data/rooms/purposes/"
 const AUTHOR_SEED := 20261107
 ## The G2 room's half-size (42.7 x 34.2 m), for the yaws that face a ring's pieces to its centre.
 const REF_HALF := Vector2(21.35, 17.1)
+## The hall's centrepieces stand on its focal blocker (3 x 1 m for the arch, 2.6 m square for the monolith), which
+## the sim keeps: so each is drawn as wide as that blocker and as tall as its request row is for that width (the arch
+## asked 6.0 wide and 5.0 tall), never past the row's height (the monolith asked 6.0 m).
+const FOCAL_ARCH_H := 2.5
+const FOCAL_MONOLITH_H := 6.0
 
 var _rng := RandomNumberGenerator.new()
 
@@ -121,6 +126,7 @@ func _scatter(token: StringName, n: int, rad_lo: float, rad_hi: float) -> RoomPu
 
 
 ## 1. Camp: a fire pit (the fire barrel, a ring of stones, two drying racks, a cook pot) and its seats in the middle,
+## the pit's stones half again the stones' own size (a big room's focal piece; their height the decoration cap),
 ## each seat across its radius as a bench round a fire sits; five shelters
 ## on a ring at 60 % of the room, each turned to face the fire with its lean-to on one side and its crates on the
 ## other, maybe a brazier, a worn path of stones toward the fire; supply piles in two opposite corners.
@@ -204,7 +210,7 @@ func _camp() -> RoomPurposeDefinition:
 			&"ruins",
 			{
 				&"fire": [&"fire_barrel", 1.0, 1.0, 1.0, true],
-				&"stone": [&"boulder_small", 0.6, 0.5, 0.0, false],
+				&"stone": [&"boulder_small", 0.9, 0.75, 0.4, false],
 				&"seat": [&"log_seat", 0.99, 0.33, 0.0, true],
 				&"pot": [&"cook_pot", 0.8, 0.8, 0.0, true],
 				&"shelter": [&"camp_tent", 2.35, 1.82, 0.0, true],
@@ -221,7 +227,7 @@ func _camp() -> RoomPurposeDefinition:
 			&"frozen_shore",
 			{
 				&"fire": [&"fire_barrel", 1.0, 1.0, 1.0, true],
-				&"stone": [&"ice_shard", 0.5, 0.5, 0.0, false],
+				&"stone": [&"ice_shard", 0.75, 0.75, 0.4, false],
 				&"seat": [&"log_seat", 0.99, 0.33, 0.0, true],
 				&"pot": [&"cook_pot", 0.8, 0.8, 0.0, true],
 				&"shelter": [&"boat_wreck", 4.6, 2.2, 0.0, true],
@@ -240,7 +246,7 @@ func _camp() -> RoomPurposeDefinition:
 			&"red_canyon",
 			{
 				&"fire": [&"fire_barrel", 1.0, 1.0, 1.0, true],
-				&"stone": [&"rubble_small", 0.6, 0.6, 0.0, false],
+				&"stone": [&"rubble_small", 0.9, 0.9, 0.38, false],
 				&"seat": [&"log_seat", 0.99, 0.33, 0.0, true],
 				&"pot": [&"cook_pot", 0.8, 0.8, 0.0, true],
 				&"shelter": [&"wagon_wreck", 3.4, 2.0, 0.0, true],
@@ -259,10 +265,10 @@ func _camp() -> RoomPurposeDefinition:
 
 ## 2. Collapsed hall, a ring of standing stones (owner 2026-11-07, after G2: "The hall ruins have the pillars way too
 ## organized, can we shape them kinda in a way as Stonehenge, not exactly like that but the vibe"): the focal ruin (an
-## arch or the observatory) in the middle between two towers, lit by two braziers; round it a loose ring of standing
-## stones at irregular spacing, each with its own turn: three trilithons (two uprights and a lintel across them, or
-## the pair without its lintel, or one fallen), the rest single stones standing, broken to stumps, fallen outward or
-## gone (a wider gap: the ring's gaps are the lanes in and out); a few stray outliers beyond the ring.
+## arch, or the monolith in Starfall) in the middle between two towers, lit by two braziers; round it a loose ring of
+## standing stones at irregular spacing, each with its own turn: three trilithons (two uprights and a lintel across
+## them, or the pair without its lintel, or one fallen), the rest single stones standing, broken to stumps, fallen
+## outward or gone (a wider gap: the ring's gaps are the lanes in and out); a few stray outliers beyond the ring.
 func _hall() -> RoomPurposeDefinition:
 	var d := RoomPurposeDefinition.new()
 	d.id = &"hall"
@@ -408,7 +414,7 @@ func _hall() -> RoomPurposeDefinition:
 		_palette(
 			&"ruins",
 			{
-				&"focal": [&"stone_arch", 3.0, 1.0, 0.0, true],
+				&"focal": [&"grand_arch", 3.0, 1.0, FOCAL_ARCH_H, true],
 				&"tower": [&"statue_whole", 1.19, 1.28, 0.0, true],
 				&"column": [&"column_round", 1.21, 1.26, 3.6, true],
 				&"outlier": [&"statue_broken", 3.2, 1.67, 0.0, true],
@@ -425,7 +431,7 @@ func _hall() -> RoomPurposeDefinition:
 		_palette(
 			&"starfall",
 			{
-				&"focal": [&"ruined_observatory", 2.6, 2.6, 0.0, true],
+				&"focal": [&"great_monolith", 2.6, 2.6, FOCAL_MONOLITH_H, true],
 				&"tower": [&"star_monolith", 1.4, 1.4, 0.0, true],
 				&"column": [&"star_monolith", 1.2, 1.2, 0.0, true],
 				&"outlier": [&"star_monolith", 1.2, 1.2, 0.0, true],
@@ -443,7 +449,7 @@ func _hall() -> RoomPurposeDefinition:
 		_palette(
 			&"night_rocks",
 			{
-				&"focal": [&"stone_arch", 3.0, 1.0, 0.0, true],
+				&"focal": [&"grand_arch", 3.0, 1.0, FOCAL_ARCH_H, true],
 				&"tower": [&"rock_spire", 1.4, 1.4, 0.0, true],
 				&"column": [&"rock_spire", 1.1, 1.1, 0.0, true],
 				&"outlier": [&"rock_spire", 1.1, 1.1, 0.0, true],
@@ -461,7 +467,8 @@ func _hall() -> RoomPurposeDefinition:
 	return d
 
 
-## 3. Quarry: the cut rock face against a long wall (seven masses, the middle three focal, the middle one the tallest),
+## 3. Quarry: the cut rock face against a long wall (seven masses, the middle three focal, the middle one the tallest;
+## 4.8 m, half again a cover rock's 3.2, on the blockers' footprints, so the face stands over a big room),
 ## scaffolds and lights at its foot, a tool rack inside each light; the cart where the stone is loaded, on one side,
 ## the crane that loads it beyond it; a haul road edged with rubble from the cart to the far wall, two markers at its
 ## end; a yard of cut-block stacks (stepped heights) with lanes.
@@ -640,7 +647,7 @@ func _quarry() -> RoomPurposeDefinition:
 		_palette(
 			&"red_canyon",
 			{
-				&"face": [&"rock_large", 3.6, 3.0, 3.2, true],
+				&"face": [&"rock_large", 3.6, 3.0, 4.8, true],
 				&"face_small": [&"mesa_chunk", 2.2, 2.2, 0.0, true],
 				&"block": [&"stone_block", 1.5, 1.5, 0.8, true],
 				&"cart": [&"mine_cart", 1.65, 0.66, 0.0, true],
@@ -657,7 +664,7 @@ func _quarry() -> RoomPurposeDefinition:
 		_palette(
 			&"night_rocks",
 			{
-				&"face": [&"rock_large", 3.6, 3.0, 3.2, true],
+				&"face": [&"rock_large", 3.6, 3.0, 4.8, true],
 				&"face_small": [&"rock_spire", 1.3, 1.3, 0.0, true],
 				&"block": [&"stone_block", 1.5, 1.5, 0.8, true],
 				&"cart": [&"mine_cart", 1.65, 0.66, 0.0, true],
