@@ -722,6 +722,11 @@
       "sha256": "2488d38f46d2011b2da00b7155fa3af35d615204935be54ca747a77478005caf"
     },
     {
+      "id": "hero_blade",
+      "path": "assets/models/fx/hero_blade.glb",
+      "sha256": "566da03bf309e4ead8f482a05c12471eb948ace5a277ab717ddac73a738aac82"
+    },
+    {
       "id": "floor_receiver",
       "path": "assets/models/devices/floor_receiver.glb",
       "sha256": "20f6202840d5e18dc1409e14cdb79d578dc8eb63ec91d667777aa0f775de2ff7"

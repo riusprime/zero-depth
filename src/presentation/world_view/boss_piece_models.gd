@@ -4,7 +4,8 @@ extends RefCounted
 ## clock (`hour_clock`) and the Siege Engine's ammo cart (`siege_cart`), at assets/models/fx/<id>.glb as
 ## scripts/assets/boss_pieces_v0120_prep.py writes them: already at their size in metres and cut into the parts the
 ## game moves, one node per part (the banner's pole, top and cloth; the clock and its minute hand; the cart's body and
-## four wheels). The javelin is BossSignatureViews' (one part, drawn as a MultiMesh).
+## four wheels). The javelin is BossSignatureViews' (one part, drawn as a MultiMesh). The hero's rune-summoned Blade
+## (`hero_blade`, scripts/assets/hero_blade_prep.py: its `steel` and its glowing `edge`) is SummonedBlade's.
 ## A piece is used when assets/models/manifest.json lists its id and its file is on disk; otherwise get_piece gives {}
 ## and the caller builds its code-made stand-in (L15: missing art never blocks a step). Each is read once (cached).
 ## Presentation only.
