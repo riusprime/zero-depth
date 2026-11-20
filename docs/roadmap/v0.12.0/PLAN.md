@@ -303,7 +303,7 @@ explode twice, just one exploding animation".
 | 47a | Hatchling and Swarmer on the owner's models, animated, on VAT | Opus |
 | 47b | Needle and Sniper | Opus |
 | 47c | Warden and Mine Layer | Opus |
-| 47d | Arc Caster and Star Warper (floating) | Opus |
+| 47d | Arc Caster and Star Warper (floating; the owner, on the Warper's model having no legs: "might be a \"floating\" creature": it glides on the same path at the same speed, tail trailing, no walk) | Opus |
 | 47e | Bomb Drone (floating) | Opus |
 | 47f | Dust Mite, Ember Flea, Ice Crab (critters) | Opus |
 | 47g | Cave Bat and Star Mote (flying critters) | Opus |
