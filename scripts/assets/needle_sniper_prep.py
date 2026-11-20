@@ -19,8 +19,9 @@ This script, reusing frost_spitter_prep's cutting helpers (and through it mi_pre
 3. caps the cuts (the hull is hollow): a fan over each part's cut edges facing the part across it (none on the shell:
    its underside is never seen from above);
 4. sorts each triangle into a surface by the colour map under it: `glow` (the cyan gem or lens on the body; on the
-   barrel its muzzle's end face, which charges up), `role` (the saturated blue plates: their texels greyscale in the
-   map so the game tints them in the kind's role colour) and `base` (the charcoal, the greys, the bone feet);
+   barrel its muzzle's end face, which charges up), `role` (the saturated blue plates and the pale wear
+   among them, by role_map's rules: the texels under the role triangles greyscale in the map so the game tints them in
+   the kind's role colour) and `base` (the charcoal, the greys, the bone feet);
 5. keeps every triangle (both under the 5k budget) and the owner's own UV layout and colour map, halved to TEX_PX;
 6. writes the glb (one node per part, three materials base / role / glow).
 It prints one JSON line: the raw triangles, the triangles after (per part: total, glow, role, the pivot), the caps,
@@ -42,6 +43,7 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import frost_spitter_prep as fs  # noqa: E402  (its cutting helpers; it stubs xatlas and imports mi_prep)
+import role_map  # noqa: E402
 
 mi_prep = fs.mi_prep
 
@@ -74,6 +76,7 @@ KINDS = {
         "cap_reach": 0.09,
         "barrel": {"x": 0.205, "y": (0.28, 0.48), "z": (0.0, 0.1), "pivot": (0.205, 0.38, 0.0), "muzzle": 0.492},
         "shell": {"y": 0.6, "top": 0.64, "top_x": 9.0, "pivot": (-0.36, 0.6, 0.0)},
+        "gem": ((0.18, 0.55, 0.02), 0.09),
     },
     "sniper": {
         "src": "unprocessed_images/models_v0120_b/sniper.glb",
@@ -93,6 +96,7 @@ KINDS = {
             "x": 0.075, "y": (0.42, 0.54), "z": (-0.025, 0.06), "pivot": (0.075, 0.478, -0.025), "muzzle": 0.492,
         },
         "shell": {"y": 0.5, "top": 0.6, "top_x": -0.02, "pivot": (-0.3, 0.56, -0.025)},
+        "gem": ((0.06, 0.57, -0.025), 0.09),
     },
 }
 TEX_PX = 1024
@@ -108,6 +112,16 @@ def role_texels(rgb):
     mx = rgb.max(-1)
     blue = rgb[..., 2] >= rgb[..., 0] + 0.1
     return (fs.sat_of(rgb) >= 0.45) & (mx >= 0.22) & blue & ~lens_texels(rgb)
+
+
+def surfaces(colour, UVw, J, glow, tcol, nb, part):
+    """Per triangle: 2 glow (as given), 1 role, 0 base (role_map's rules; the pale triangles that join the plates are
+    light and bluish, on the body or the shell: the painted wear and highlights, not the bone or the charcoal)."""
+    plate = role_map.texel_share(colour, UVw, J, role_texels) >= role_map.ROLE_SHARE
+    k = np.where(glow == 2, 2, plate.astype(int))
+    lum = tcol @ role_map.LUMA
+    pale = (k == 0) & (lum >= 0.3) & (tcol[:, 2] >= tcol[:, 0] + 0.05) & np.isin(part, ["body", "shell"])
+    return role_map.grow(k, nb, pale)
 
 
 def parts_of(cfg, c, tcol, nb, corners):
@@ -229,6 +243,7 @@ def centred(cfg):
     s["top_x"] -= cx
     s["pivot"] = np.asarray(s["pivot"]) - sh
     out["shell"] = s
+    out["gem"] = (np.asarray(cfg["gem"][0]) - sh, cfg["gem"][1])
     return out
 
 
@@ -240,10 +255,14 @@ def main():
     s = cfg["height"] / (hi[1] - lo[1])
     cen = Wr[J].mean(1)
     tcol = fs.tri_colour(colour, UVw, J)
-    part, pivots = parts_of(cfg, cen, tcol, fs.neighbours(pinv[J]), Wr[J])
+    nb = fs.neighbours(pinv[J])
+    part, pivots = parts_of(cfg, cen, tcol, nb, Wr[J])
     glow = np.zeros(len(J), int)
-    glow[(part == "body") & lens_texels(tcol)] = 2
+    # The gem: its cyan texels near the face plate (the shell's pale-cyan highlights have the same colour).
+    near_gem = np.linalg.norm(cen - cfg["gem"][0], axis=1) < cfg["gem"][1]
+    glow[(part == "body") & lens_texels(tcol) & near_gem] = 2
     glow[(part == "barrel") & (cen[:, 0] > cfg["barrel"]["muzzle"])] = 2
+    kinds = surfaces(colour, UVw, J, glow, tcol, nb, part)
     W = Wr * s
     order = [pn for pn in sorted(pivots) if (part == pn).any()]
     per_part = {pn: J[part == pn] for pn in order}
@@ -260,13 +279,14 @@ def main():
     report = {}
     cap_report = {}
     at = 0
+    role_tris, other_tris = [], []
     for pn in order:
         T = per_part[pn]
         cn = cn_all[at : at + len(T)]
         at += len(T)
-        K = glow[part == pn].copy()
-        rest = K != 2
-        K[rest] = role_texels(fs.tri_colour(colour, UVw, T[rest])).astype(int)
+        K = kinds[part == pn]
+        role_tris.append(T[K == 1])
+        other_tris.append(T[K != 1])
         pivot = pivots[pn] * s
         prims = []
         for k in (0, 1, 2):
@@ -292,12 +312,7 @@ def main():
             prims.append((k, pos, np.concatenate(nrm_l), np.concatenate(uv_l), np.arange(len(pos)).reshape(-1, 3)))
         nodes.append((pn, pivot, prims))
         report[pn] = [len(T), int((K == 2).sum()), int((K == 1).sum()), [round(float(v), 3) for v in pivot]]
-    img = colour.copy()
-    role_px = role_texels(img)
-    lum_px = img @ np.array([0.299, 0.587, 0.114])
-    if role_px.any():
-        g = np.clip(lum_px / max(lum_px[role_px].mean(), 1e-3) * 0.82, 0, 1)
-        img[role_px] = g[role_px, None]
+    img = role_map.tinted_map(colour, UVw, np.concatenate(role_tris), np.concatenate(other_tris), role_texels)
     pil = Image.fromarray(np.clip(img * 255, 0, 255).round().astype(np.uint8))
     if pil.size[0] > TEX_PX:
         pil = pil.resize((TEX_PX, TEX_PX), Image.LANCZOS)

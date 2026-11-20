@@ -15,8 +15,9 @@ Spitter's cutting helpers:
    raw mesh) within its reach; every part node's origin is its pivot;
 3. caps the cuts (a fan over each part's cut edges facing the part across the cut), dark stone;
 4. sorts each triangle into a surface by the colour map under it: `glow` (the eye's orange, and the dark seam that
-   splits the shell's top: the Warden's glowing cracks), `role` (the bronze shell: its texels made greyscale in the
-   map so the game tints them in the tank bronze) and `base` (the grey and charcoal stone);
+   splits the shell's top: the Warden's glowing cracks), `role` (the bronze shell, by role_map's rules: the texels under
+   the role triangles made greyscale in the map so the game tints them in the tank bronze) and `base` (the grey and
+   charcoal stone);
 5. keeps every triangle (under the 5k budget) and the owner's UVs and colour map, halved to TEX_PX;
 6. writes assets/models/enemies/warden.glb (one node per part, materials base / role / glow).
 It prints one JSON line (the raw and kept triangles, the parts, the caps, the size, the file and its sha256, pasted
@@ -38,6 +39,7 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import frost_spitter_prep as fsp  # noqa: E402  (its cutting helpers; it stubs xatlas)
+import role_map  # noqa: E402
 
 mi_prep = fsp.mi_prep
 
@@ -196,13 +198,10 @@ def main():
     body_m = part == "body"
     dark_uv = UVw[J[body_m][np.argmin(np.where(lum[body_m] > 0.03, lum[body_m], 9.0))]].mean(0)
     glow_part = {pn: glow[part == pn] for pn in order}
-    nodes, report, cap_report = write_parts(order, per_part, glow_part, cn_all, caps, pivots, s, W, UVw, colour, dark_uv)
-    img = colour.copy()
-    role_px = role_texels(img)
-    lum_px = img @ np.array([0.299, 0.587, 0.114])
-    if role_px.any():
-        g = np.clip(lum_px / max(lum_px[role_px].mean(), 1e-3) * 0.82, 0, 1)
-        img[role_px] = g[role_px, None]
+    nodes, report, cap_report, tris = write_parts(
+        order, per_part, glow_part, cn_all, caps, pivots, s, W, UVw, colour, dark_uv
+    )
+    img = role_map.tinted_map(colour, UVw, tris[0], tris[1], role_texels)
     pil = Image.fromarray(np.clip(img * 255, 0, 255).round().astype(np.uint8))
     if pil.size[0] > TEX_PX:
         pil = pil.resize((TEX_PX, TEX_PX), Image.LANCZOS)
@@ -222,10 +221,12 @@ def main():
 
 
 def write_parts(order, per_part, glow_part, cn_all, caps, pivots, s, W, UVw, colour, dark_uv, role_fn=None):
-    """Each part's primitives (base 0, role 1, glow 2: a triangle not glowing is role where its texels are), its caps
-    in the base surface at the dark texel; returns (nodes, report, cap report). Shared with mine_layer_prep."""
+    """Each part's primitives (base 0, role 1, glow 2: a triangle not glowing is role where role_map's share of its
+    texels pass role_fn), its caps in the base surface at the dark texel; returns (nodes, report, cap report, (the role
+    triangles, the others): the triangles role_map.tinted_map greys the map under). Shared with mine_layer_prep."""
     role_fn = role_fn or role_texels
     nodes, report, cap_report = [], {}, {}
+    role_tris, other_tris = [], []
     at = 0
     for pn in order:
         T = per_part[pn]
@@ -233,7 +234,9 @@ def write_parts(order, per_part, glow_part, cn_all, caps, pivots, s, W, UVw, col
         at += len(T)
         K = glow_part[pn].copy()
         rest = K != 2
-        K[rest] = role_fn(fsp.tri_colour(colour, UVw, T[rest])).astype(int)
+        K[rest] = (role_map.texel_share(colour, UVw, T[rest], role_fn) >= role_map.ROLE_SHARE).astype(int)
+        role_tris.append(T[K == 1])
+        other_tris.append(T[K != 1])
         pivot = pivots[pn] * s
         prims = []
         for k in (0, 1, 2):
@@ -259,7 +262,7 @@ def write_parts(order, per_part, glow_part, cn_all, caps, pivots, s, W, UVw, col
             prims.append((k, pos, np.concatenate(nrm_l), np.concatenate(uv_l), np.arange(len(pos)).reshape(-1, 3)))
         nodes.append((pn, pivot, prims))
         report[pn] = [len(T), int((K == 2).sum()), int((K == 1).sum()), [round(float(v), 3) for v in pivot]]
-    return nodes, report, cap_report
+    return nodes, report, cap_report, (np.concatenate(role_tris), np.concatenate(other_tris))
 
 
 if __name__ == "__main__":

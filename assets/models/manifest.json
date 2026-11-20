@@ -414,17 +414,17 @@
     {
       "id": "frost_spitter",
       "path": "assets/models/enemies/frost_spitter.glb",
-      "sha256": "63db78faa74c2ac8112aa1cabdafb8d92e899fbd0ad300e0f8b601e0f686136b"
+      "sha256": "fbf2c3a0a3bb3ab38294a5982a101946709cbaf7b1dcc6585286b09bfcf2d6b4"
     },
     {
       "id": "hatchling",
       "path": "assets/models/enemies/hatchling.glb",
-      "sha256": "86d49253e3e5ae85a794a86566a20aeffd6df5db83595e39ae6428a1cb29e171"
+      "sha256": "8cbcb77179a259efd053b8d242e5ffcab60af9502e863ef0c0ed0e524b908b03"
     },
     {
       "id": "swarmer",
       "path": "assets/models/enemies/swarmer.glb",
-      "sha256": "71b9f072627494390ccfe17ad7ddd946da3e9965bf222cbe98e200e4f195e122"
+      "sha256": "4528d34974cfe6f300635b9632d3ecbe0f144dda04a89d10d98f961faed33efe"
     },
     {
       "id": "glacier_turtle",
@@ -459,22 +459,22 @@
     {
       "id": "needle",
       "path": "assets/models/enemies/needle.glb",
-      "sha256": "e7644a011aa32a03dad49fb212e135df4388f624294d659ab69448e0cf4c964b"
+      "sha256": "9a554a0b4a7e8f9b93c375014e0633abb07d30655295ef486b7c46dd88ce7726"
     },
     {
       "id": "sniper",
       "path": "assets/models/enemies/sniper.glb",
-      "sha256": "03c0b40202cf77135c943ed1f03d0b8566e897cab331196c36490159a570e05f"
+      "sha256": "dce8df3ac2b23fff851d112094e00715da68c524494aa4b3700ac68c1ee9dce3"
     },
     {
       "id": "warden",
       "path": "assets/models/enemies/warden.glb",
-      "sha256": "cfd812d488d0700efbfb999816f8be5a723b2dcf0fc3b76f990a63981742b0c4"
+      "sha256": "acc96598ac3cf444c01a5db5a7a817ae1b1c67cf6b5ecf1c788929ef25ccb2a4"
     },
     {
       "id": "mine_layer",
       "path": "assets/models/enemies/mine_layer.glb",
-      "sha256": "ed78657eefde27b28fd27e23973c0fe73e345534140e99e5185fe707b252ae67"
+      "sha256": "16dcf1b9531fc9ce5e8ff9271843129b3ce65f83b86d7532dca796ec0dd0df3d"
     },
     {
       "id": "arc_caster",

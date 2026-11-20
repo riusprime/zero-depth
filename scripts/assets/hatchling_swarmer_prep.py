@@ -21,7 +21,8 @@ simplifier and glb writer):
 4. caps the cuts (the hull is hollow: a part turning would show through): a charcoal fan over each part's cut edges
    facing the part across the cut (none on the shells: their undersides are never seen);
 5. sorts each triangle into a surface by the colour map under it: `glow` (the eye), `role` (the saturated shell
-   plates: their texels greyscale in the map, so the game tints them in the kind's role colour) and `base`;
+   plates and the pale wear among them, by role_map's rules: the texels under the role triangles greyscale in the map,
+   so the game tints them in the kind's role colour) and `base`;
 6. keeps the owner's UV layout and colour map, halved to TEX_PX, and writes assets/models/enemies/<id>.glb (one node
    per part, three materials base / role / glow).
 It prints one JSON line per model: the raw triangles, the triangles after (per part: total, glow, role, the pivot),
@@ -50,6 +51,8 @@ except ImportError:
     sys.modules["xatlas"] = types.ModuleType("xatlas")
 import mi2_prep  # noqa: E402  (its mi_prep: the reader, normals, simplifier and glb writer)
 import o17_prep_kiln_beetle as beetle  # noqa: E402  (the colour sampling and the cut caps)
+import frost_spitter_prep as fs  # noqa: E402  (the triangles' edge neighbours)
+import role_map  # noqa: E402
 
 mi_prep = mi2_prep.mi_prep
 
@@ -218,15 +221,26 @@ def load(rid):
     return Wr, UVw, J, pinv.ravel(), colour, (lo, hi), len(I0)
 
 
-def surfaces_of(cfg, part, c, tcol):
-    """Per triangle: 2 glow (the eye), 1 role (the shell plates), 0 base."""
-    k = np.zeros(len(part), int)
-    k[role_texels(tcol) & ~eye_texels(tcol)] = 1
+def plate_texels(rgb):
+    return role_texels(rgb) & ~eye_texels(rgb)
+
+
+def plate_or_shade(rgb):
+    """The plates' colour from their shaded undersides' dark red (below role_texels' brightness floor) up to their
+    lit red (the eye's colour too: the eye is found by its place, not its colour)."""
+    return (sat_of(rgb) >= ROLE_SAT) & (rgb.max(-1) >= 0.08) & (rgb[..., 0] >= rgb[..., 2])
+
+
+def surfaces_of(cfg, part, c, tcol, colour, UVw, J, nb):
+    """Per triangle: 2 glow (the eye), 1 role (the shell plates, by role_map's rules: the pale triangles that join them
+    are light and warm, off the legs and mandibles: the plates' painted wear, not the bone), 0 base."""
+    k = (role_map.texel_share(colour, UVw, J, plate_or_shade) >= role_map.ROLE_SHARE).astype(int)
+    lum = tcol @ role_map.LUMA
+    limbs = np.array([p.startswith("leg") or p.startswith("mand") for p in part])
+    k = role_map.grow(k, nb, (lum >= 0.3) & (tcol[:, 0] >= tcol[:, 2] + 0.03) & ~limbs)
     e_at, e_r = cfg["eye"]
     eye = eye_texels(tcol) & (np.linalg.norm(c - np.asarray(e_at), axis=1) < e_r)
-    k[eye] = 2
-    legs = np.array([p.startswith("leg") or p.startswith("mand") for p in part])
-    k[legs & (k == 2)] = 0
+    k[eye & ~limbs] = 2
     return k
 
 
@@ -238,7 +252,7 @@ def debug(rid):
     cen = Wr[J].mean(1)
     tcol = beetle.tri_colour(colour, UVw, J)
     part, _ = parts_of(cfg, cen, tcol, pinv[J])
-    surf = surfaces_of(cfg, part, cen, tcol)
+    surf = surfaces_of(cfg, part, cen, tcol, colour, UVw, J, fs.neighbours(pinv[J]))
     size = 700
     sheet = Image.new("RGB", (size * 4, size), "white")
     views = ((0, 2, 1, 1.0), (0, 1, 2, 1.0), (2, 1, 0, 1.0), (0, 2, 1, -1.0))  # top, side, front, bottom
@@ -268,7 +282,7 @@ def prepare(rid):
     cen = Wr[J].mean(1)
     tcol = beetle.tri_colour(colour, UVw, J)
     part, pivots = parts_of(cfg, cen, tcol, pinv[J])
-    surf = surfaces_of(cfg, part, cen, tcol)
+    surf = surfaces_of(cfg, part, cen, tcol, colour, UVw, J, fs.neighbours(pinv[J]))
     W = Wr * s  # metres
     groups = sorted({(p, k) for p, k in zip(part, surf)})
     total = len(J)
@@ -286,6 +300,14 @@ def prepare(rid):
     order = [pn for pn in sorted(pivots) if any(g[0] == pn and len(simplified[g]) for g in groups)]
     per_part = {pn: np.concatenate([simplified[g] for g in groups if g[0] == pn]) for pn in order}
     per_surf = {pn: np.concatenate([np.full(len(simplified[g]), g[1]) for g in groups if g[0] == pn]) for pn in order}
+    # A simplified base triangle can stretch its UVs over the plates' colour (its collapsed corners moved): it joins the
+    # role plates when role_map's share holds for it, so no base triangle shows the greyscale map untinted.
+    for pn in order:
+        if pn.startswith("leg") or pn.startswith("mand"):
+            continue
+        base = per_surf[pn] == 0
+        share = role_map.texel_share(colour, UVw, per_part[pn][base], plate_or_shade)
+        per_surf[pn][np.where(base)[0][share >= role_map.ROLE_SHARE]] = 1
     # Normals over the whole position-welded mesh, every part at once (no crease where two parts meet, nor at the UV
     # seams); corners flat per face after.
     T_all = np.concatenate([per_part[pn] for pn in order])
@@ -334,12 +356,9 @@ def prepare(rid):
         nodes.append((pn, pivot, prims))
         report[pn] = [len(T), int((K == 2).sum()), int((K == 1).sum()), [round(float(v), 4) for v in pivot]]
     # The colour map: the role plates' texels greyscale (the game multiplies them by the role colour), halved.
-    img = colour.copy()
-    role_px = role_texels(img) & ~eye_texels(img)
-    lum_px = img @ np.array([0.299, 0.587, 0.114])
-    if role_px.any():
-        g = np.clip(lum_px / max(lum_px[role_px].mean(), 1e-3) * 0.82, 0, 1)
-        img[role_px] = g[role_px, None]
+    T_role = np.concatenate([per_part[pn][per_surf[pn] == 1] for pn in order])
+    T_other = np.concatenate([per_part[pn][per_surf[pn] != 1] for pn in order])
+    img = role_map.tinted_map(colour, UVw, T_role, T_other, plate_texels)
     pil = Image.fromarray(np.clip(img * 255, 0, 255).round().astype(np.uint8))
     if pil.size[0] > TEX_PX:
         pil = pil.resize((TEX_PX, TEX_PX), Image.LANCZOS)
