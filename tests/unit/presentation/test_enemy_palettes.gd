@@ -296,8 +296,8 @@ func test_the_avatars_build_from_the_active_palette() -> void:
 		for k in KINDS.size():
 			var node := views.actor_node(w.actors.ids[k + 1])
 			var got := _colours(node)
-			if KINDS[k] == WorldReader.KIND_ARC_CASTER:  # v0.11.0 F6: the Priest's model in its own palette
-				var role: Color = CinderPriestAvatar.LOOKS[KINDS[k]]["role"]
+			if KINDS[k] == WorldReader.KIND_ARC_CASTER:  # the owner's model in the request's violet
+				var role: Color = ArcCasterAvatar.COLOR
 				assert_true(
 					got.has(role.to_html(false)),
 					"%s: the Arc Caster draws its model's role colour" % p
@@ -355,7 +355,7 @@ func test_a_colour_blind_mode_still_recolours_the_ring_not_the_palette() -> void
 			if mi.mesh is TorusMesh and mi.get_parent() == node and mo != null:
 				ring_ok = ring_ok or mo.albedo_color == team
 		assert_true(ring_ok, "kind %d: the team ring takes the mode's enemy colour" % KINDS[k])
-		if KINDS[k] == WorldReader.KIND_ARC_CASTER:  # v0.11.0 F6: its own model palette
+		if KINDS[k] == WorldReader.KIND_ARC_CASTER:  # the owner's model: its own colour
 			continue
 		var got := _colours(node)
 		var body := EnemyPalettes.color(KINDS[k], &"body").to_html(false)

@@ -749,9 +749,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 			height = NeedleAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_SNIPER:  # The owner's model, animated in code, on VAT
 			height = SniperAvatar.attach(self, root, facing, p_kind)
-		WorldReader.KIND_ARC_CASTER:
-			# The Arc Caster wears the Cinder Priest's model in its own colours (CinderPriestAvatar.LOOKS).
-			height = CinderPriestAvatar.attach(self, root, facing, p_kind)
+		WorldReader.KIND_ARC_CASTER:  # The owner's model, animated in code, on VAT
+			height = ArcCasterAvatar.attach(self, root, facing)
 		WorldReader.KIND_BOMB_DRONE:
 			# The Bomb Drone: drawn hovering, its shadow on the ground where the sim has it.
 			var drone := BombDroneAvatar.new()
@@ -829,8 +828,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 			root.set_meta(&"mats", elite.body_materials.duplicate())
 			root.set_meta(&"hit_look", elite)
 			root.set_meta(&"elite", true)
-		_ when StarfallAvatar.takes(kind):  # The Star Warper's stand-in
-			height = StarfallAvatar.make(root, facing, kind)
+		WorldReader.KIND_STAR_WARPER:  # The owner's model, floating, animated in code, on VAT
+			height = StarWarperAvatar.attach(self, root, facing)
 		_ when HordeAvatar.is_horde_kind(kind):
 			# The horde kinds: one code-built model per kind.
 			var horde := HordeAvatar.new()

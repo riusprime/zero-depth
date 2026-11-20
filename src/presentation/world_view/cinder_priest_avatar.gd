@@ -36,18 +36,10 @@ const GREY := Color("#5A5560")
 const BONE := Color("#D9CDB8")
 const EMBER := Color("#FF7A2E")
 const GEM := Color("#C090FF")
-## The Arc Caster draws this very
-## model (KIND_ARC_CASTER) in its own colours. One block per kind: role (the plates), base (a multiplier on the frame
-## and bone: WHITE as delivered), gem (the visor), ember (the staff's crystal).
+## Its look: role (the plates), base (a multiplier on the frame and bone: WHITE as delivered), gem (the visor), ember
+## (the staff's crystal).
 const LOOKS := {
 	WorldReader.KIND_CINDER_PRIEST: {"role": ROLE, "base": Color.WHITE, "gem": GEM, "ember": EMBER},
-	WorldReader.KIND_ARC_CASTER:
-	{
-		"role": Color("#B0309A"),
-		"base": Color.WHITE,
-		"gem": Color("#FFFFFF"),
-		"ember": Color("#FF5AD0"),
-	},
 }
 ## The code-made body's joints (m; the model's own come from its file: the same places).
 const WAIST := Vector3(0, 0.752, 0)
@@ -379,9 +371,6 @@ func _glow_piece(parent: Node3D, size: Vector3, at: Vector3, mat: StandardMateri
 
 
 func sync(reader: WorldReader, i: int) -> void:
-	if kind == WorldReader.KIND_ARC_CASTER:
-		_sync_caster(reader, i)
-		return
 	var s := {
 		"tick": reader.tick(),
 		"state": reader.actor_state(i),
@@ -401,35 +390,14 @@ func sync(reader: WorldReader, i: int) -> void:
 	apply_state(s)
 
 
-## The Arc Caster's cast on the Priest's clips (it has no vent): its windup's progress (the sim's telegraph, 0..1000) is
-## the gather (staff raised, crystal brightening, the slam over the last tenth), entering ACTIVE is the strike (hold,
-## recoil, flare). Bolt, spread and rune share it: the same raised staff, the sim says what leaves it.
-func _sync_caster(reader: WorldReader, i: int) -> void:
-	var st := reader.actor_state(i)
-	var s := {
-		"tick": reader.tick(),
-		"state": st,
-		"pos": reader.actor_pos(i),
-		"facing": SimPlane.yaw_of(reader.actor_facing(i)),
-	}
-	if st == WorldReader.STATE_WINDUP:
-		s["pulse"] = int(reader.telegraph(i).get("progress", 0))
-	apply_state(s)
-
-
 ## The same as sync(), from plain values (tests and tools drive the avatar with this): tick, state, pos (the sim
 ## plane), pulse (0..1000, priest_pulse), erupt_age (ticks since its vent erupted; -1 or missing: none), vent_yaw
 ## (radians in the facing's frame; missing: no vent), facing (the facing's yaw, radians). Missing keys: at rest.
 func apply_state(s: Dictionary) -> void:
-	var was := _state
 	_state = int(s.get("state", WorldReader.STATE_MOVE))
 	_pulse = clampf(float(s.get("pulse", 0)) / 1000.0, 0.0, 1.0)
 	var age := int(s.get("erupt_age", -1))
-	if kind == WorldReader.KIND_ARC_CASTER:  # its strike starts as it enters ACTIVE; advance() ages it
-		if _state == WorldReader.STATE_ACTIVE and was != WorldReader.STATE_ACTIVE:
-			_erupt_s = 0.0
-	else:
-		_erupt_s = age / 60.0 if age >= 0 and age / 60.0 < STRIKE_END_S else -1.0
+	_erupt_s = age / 60.0 if age >= 0 and age / 60.0 < STRIKE_END_S else -1.0
 	_vent_yaw = float(s["vent_yaw"]) if s.has("vent_yaw") else NAN
 	_facing = float(s.get("facing", 0.0))
 	_track_motion(int(s.get("tick", 0)), s.get("pos", Vector2.ZERO) as Vector2, 30.0)
@@ -732,10 +700,7 @@ func vat_rig() -> Dictionary:
 		[[STAFF_F, SAMPLES[STAFF_F]]],
 		[[STAFF_S, SAMPLES[STAFF_S]]],
 	]
-	var key := (
-		("cinder_priest_" if kind == KIND else "cinder_priest_%d_" % kind)
-		+ ("model" if has_model else "code")
-	)
+	var key := "cinder_priest_" + ("model" if has_model else "code")
 	var out := SoloVat.rig(key, VAT_DRIVES, grids, joints, true)
 	if has_model:
 		out["albedo_tex"] = vat_texture()

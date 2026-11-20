@@ -92,7 +92,7 @@ const KIND_DIM_NEEDLE := ActorStore.Kind.DIM_NEEDLE
 const KIND_EMBER_CHARGER := ActorStore.Kind.EMBER_CHARGER
 const KIND_FROST_CHARGER := ActorStore.Kind.FROST_CHARGER
 const KIND_SPLIT_SNIPER := ActorStore.Kind.SPLIT_SNIPER
-## The Starfall signatures (StarfallKinds; their stand-in bodies: StarfallAvatar).
+## The Starfall signatures (StarfallKinds; their bodies: StarWarperAvatar, GravityNodeAvatar).
 const KIND_STAR_WARPER := ActorStore.Kind.STAR_WARPER
 const KIND_GRAVITY_NODE := ActorStore.Kind.GRAVITY_NODE
 const TRAIL_FIRE := Variants.TRAIL_FIRE
