@@ -67,7 +67,9 @@ func test_versions_of_a_kind_share_their_materials_and_never_the_bases() -> void
 	assert_gt(n, 1, "its hood and its flap in its own colours")
 	var s1 := _avatar(WorldReader.KIND_SNIPER, WorldReader.KIND_SPLIT_SNIPER)
 	var s2 := _avatar(WorldReader.KIND_SNIPER, WorldReader.KIND_SPLIT_SNIPER)
-	assert_eq(s1.body_looks(), s2.body_looks(), "every Split Sniper: the same shared materials")
+	assert_eq(
+		_albedos(s1), _albedos(s2), "every Split Sniper: the same colours on the owner's model"
+	)
 	for v: int in PAIRS:
 		assert_false(
 			VatCrowd.supports(v), "kind %d: drawn as its own nodes (no VAT bake per colour)" % v
@@ -100,6 +102,8 @@ func _avatar(body: int, look: int) -> AvatarBase:
 			a = WardenAvatar.new()
 		WorldReader.KIND_NEEDLE:
 			a = NeedleAvatar.new()
+		WorldReader.KIND_SNIPER:
+			a = SniperAvatar.new()
 		_:
 			a = HordeAvatar.new()
 	a.look_kind = look

@@ -10,8 +10,8 @@ extends SceneTree
 ## v0.10.5 W3-V4a: `-- --kind=charger` draws the Charger's states instead (CHARGER_PLAN: its run, wind-up, lunge,
 ## recovery and daze, and one Hatchling), into vat_sheet_charger.png and vat_diff_charger.txt; `--out=<res:// dir>`
 ## writes elsewhere than build/shots/<version>/vat/.
-## v0.10.5 W3-V4b: `-- --kind=<name>` (splitter, splitling, shield_bearer, mender, mine_layer, sniper) draws that kind
-## in its own states (KIND_PLANS: the walk, the death, the heal, the mine dropped, the muzzle) into
+## v0.10.5 W3-V4b: `-- --kind=<name>` (splitter, splitling, shield_bearer, mender, mine_layer) draws that kind
+## in its own states (KIND_PLANS: the walk, the death, the heal, the mine dropped) into
 ## vat_sheet_<name>.png and vat_diff_<name>.txt; `--version-dir=<v>` writes under build/shots/<v>/vat/. Every horde
 ## sheet also gives each state's largest vertex error (the shader's arithmetic on the CPU).
 ## v0.10.5 W3-V4c: `-- --kind=<name>` (needle, warden, arc_caster, bomb_drone; v0.11.0 O17c: stone_thrower) draws
@@ -71,7 +71,6 @@ const KINDS := {
 	"shield_bearer": WorldReader.KIND_SHIELD_BEARER,
 	"mender": WorldReader.KIND_MENDER,
 	"mine_layer": WorldReader.KIND_MINE_LAYER,
-	"sniper": WorldReader.KIND_SNIPER,
 }
 const CAST := {"tint": Color(0.45, 0.65, 1.0, 0.5), "role": 0.45}
 ## v0.10.5 W3-V4b: the other kinds' states (the Swarmer's: PLAN).
@@ -128,22 +127,6 @@ const KIND_PLANS := {
 		["biome cast + role glow", CAST, "idle"],
 		["reduced motion + flinch", {}, "calm"],
 	],
-	"sniper":
-	[
-		["idle", {}, "idle"],
-		["windup 31 % (muzzle)", {}, "windup_early"],
-		["windup 90 % (flash)", {}, "windup_late"],
-		["shot (0.05 s)", {}, "strike_snap"],
-		["shot (0.15 s)", {}, "strike_out"],
-		["easing back", {}, "strike_back"],
-		["flinch at its peak", {}, "flinch"],
-		["Blade knock", {}, "knock"],
-		["hit flash", {}, "flash"],
-		["status tint (burn)", {}, "tint"],
-		["rise-in, half way", {}, "spawn"],
-		["biome cast + role glow", CAST, "idle"],
-		["reduced motion + flinch", {}, "calm"],
-	],
 }
 
 ## v0.10.5 W3-V4c: the stand-alone kinds by name (--kind=<name>), their states, and their framing
@@ -162,9 +145,10 @@ const SOLO := {
 	"wire_weaver": WorldReader.KIND_WIRE_WEAVER,
 	"glacier_turtle": WorldReader.KIND_GLACIER_TURTLE,
 	"gravity_node": WorldReader.KIND_GRAVITY_NODE,
+	"sniper": WorldReader.KIND_SNIPER,
 }
 const SOLO_FRAME := {
-	WorldReader.KIND_NEEDLE: [1.5, 0.4],
+	WorldReader.KIND_NEEDLE: [2.2, 0.5],
 	WorldReader.KIND_WARDEN: [2.6, 0.75],
 	WorldReader.KIND_ARC_CASTER: [1.9, 0.65],
 	WorldReader.KIND_BOMB_DRONE: [2.8, 1.1],
@@ -177,6 +161,7 @@ const SOLO_FRAME := {
 	WorldReader.KIND_WIRE_WEAVER: [2.0, 0.5],
 	WorldReader.KIND_GLACIER_TURTLE: [2.4, 0.45],
 	WorldReader.KIND_GRAVITY_NODE: [2.4, 1.2],
+	WorldReader.KIND_SNIPER: [2.8, 0.6],
 }
 const SOLO_PLAN := [
 	["idle (t 1.5 s)", {}, "idle"],
@@ -556,6 +541,7 @@ func _drive_solo(a: AvatarBase, steps: String) -> void:
 			WorldReader.KIND_WIRE_WEAVER: 2.6,
 			WorldReader.KIND_GLACIER_TURTLE: 1.1,
 			WorldReader.KIND_GRAVITY_NODE: 0.1,
+			WorldReader.KIND_SNIPER: 2.6,
 		}[_kind]
 		/ 60.0
 	)

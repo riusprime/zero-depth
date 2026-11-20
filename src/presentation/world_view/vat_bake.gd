@@ -409,8 +409,6 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 	var uvs := PackedVector2Array()
 	for p: Dictionary in ps:
 		var look := surface_look(p["node"], p["surface"])
-		if HordeVat.alt_glow(avatar, p["node"]):  # The Sniper's muzzle (VatLooks' mode 3)
-			(look[0] as Array)[3] = 3.0
 		looks.append(look)
 		any_two = any_two or bool(look[2])
 	for i in ps.size():

@@ -76,7 +76,6 @@ const CLASS_OF := {
 	WorldReader.KIND_SHIELD_BEARER: 4,
 	WorldReader.KIND_MENDER: 5,
 	WorldReader.KIND_MINE_LAYER: 6,
-	WorldReader.KIND_SNIPER: 7,
 	WorldReader.KIND_CHARGER: 8,
 	WorldReader.KIND_HATCHLING: 9,
 }
@@ -503,7 +502,7 @@ func _export(k: int) -> void:
 	var h := a as HordeAvatar
 	if h != null:
 		_st[o + H_GLOW] = h._glow_e
-		_st[o + H_MUZZLE] = h._muzzle_e
+		_st[o + H_MUZZLE] = 0.0  # (the native row's muzzle column: no batched kind has one now)
 		_st[o + H_TELL] = h._tell_p
 		_st[o + H_STATE] = h._state
 		_st[o + H_STATE_TICK] = h._state_tick
@@ -567,7 +566,6 @@ func _import(k: int) -> void:
 	var h := a as HordeAvatar
 	if h != null:
 		h._glow_e = _st[o + H_GLOW]
-		h._muzzle_e = _st[o + H_MUZZLE]
 		h._tell_p = _st[o + H_TELL]
 		h._state = int(_st[o + H_STATE])
 		h._state_tick = int(_st[o + H_STATE_TICK])

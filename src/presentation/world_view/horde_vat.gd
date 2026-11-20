@@ -2,7 +2,7 @@ class_name HordeVat
 extends RefCounted
 ## What the VAT path
 ## (VatBake, VatCrowd, VatLooks) needs to know about the horde kinds past the Swarmer: the Splitter and Splitling, the
-## Shield Bearer and the Mender (the owner's models), the Mine Layer and the Sniper (code bodies). Each one's body
+## Shield Bearer and the Mender (the owner's models) and the Mine Layer (a code body). Each one's body
 ## (its pivot's place, lean and scale, the model's sway and death shrink) is the crowd's instance transform
 ## (HordeAvatar.vat_offset), worked out by the avatar's own pose code, so only the moving parts are baked, over drives
 ## that each set one part's pose (HordeAvatar._pose_parts):
@@ -10,7 +10,6 @@ extends RefCounted
 ## - Splitter, Splitling: x the raise, y the strike, z the death (the halves and claws); w the legs (the gait).
 ## - Mender: x the crystal raised while it heals (0 / 1); w the cross's turn (the gait, one turn a loop).
 ## - Mine Layer: x the windup (the hopper lowers), y the mine shown (0 / 1: hidden, its joint folds to a point).
-## - Sniper: x the barrel's angle, y the muzzle's size; w the muzzle's own glow (no gait).
 ## - v0.11.0 O9, the horde critters (CritterBodies): w the gait loop (the legs, wings, claws or tail); x, y, z unused.
 ## The Swarmer keeps the pilot's path (VatBake's own joint list and grids). Presentation only (EI-07).
 
@@ -22,7 +21,6 @@ const GRIDS := {
 	WorldReader.KIND_SHIELD_BEARER: [Vector3i(9, 9, 2), 48],
 	WorldReader.KIND_MENDER: [Vector3i(2, 2, 2), 48],
 	WorldReader.KIND_MINE_LAYER: [Vector3i(2, 2, 2), 0],
-	WorldReader.KIND_SNIPER: [Vector3i(17, 2, 2), 0],
 	# The horde critters: no stance (2 samples each way: unused), the gait loop poses their parts
 	WorldReader.KIND_DUST_MITE: [Vector3i(2, 2, 2), CritterBodies.GAIT_SAMPLES],
 	WorldReader.KIND_CAVE_BAT: [Vector3i(2, 2, 2), CritterBodies.GAIT_SAMPLES],
@@ -34,7 +32,7 @@ const GRIDS := {
 
 ## On W3-V4a's general path: the VatBake rig of `a` (built with its pieces; see VatBake's class
 ## notes), its key "horde<kind>" as the pilot's. Four drives (vat_grid_drives): the stance grid over x, y, z, the gait
-## loop over w (a kind without a gait has no gait grid; the Sniper's w is its muzzle's glow, read by VatLooks' mode 3).
+## loop over w (a kind without a gait has no gait grid).
 ## The body is the root joint, on the stance grid but always the identity (its moves are the instance's, vat_offset);
 ## a hidden joint (the dropped mine) is baked folded to a point (a zero basis), so its triangles draw nothing.
 static func rig(a: HordeAvatar) -> Dictionary:
@@ -111,8 +109,6 @@ static func joint_spec(a: HordeAvatar) -> Array:
 			out.append_array([[p["crystal"], g0], [p["cross"], g1]])
 		WorldReader.KIND_MINE_LAYER:
 			out.append_array([[p["hopper"], g0], [p["mine"], g0]])
-		WorldReader.KIND_SNIPER:
-			out.append_array([[p["barrel"], g0], [p["muzzle"], g0]])
 		_ when CritterBodies.is_critter(a.kind):  # Legs, wings, claws or tail on the gait
 			out.append_array(CritterBodies.joints(a))
 		_:
@@ -121,7 +117,7 @@ static func joint_spec(a: HordeAvatar) -> Array:
 
 
 ## The drives `d` (HordeAvatar._pose_parts' natural units) of `a` in its grid's units: x, y, z 0..1 over the stance
-## grid; w the gait loop's phase (any real: the shader wraps it) or, on the Sniper, the muzzle's glow.
+## grid; w the gait loop's phase (any real: the shader wraps it).
 static func grid_of(a: HordeAvatar, d: Vector4) -> Vector4:
 	if CritterBodies.is_critter(a.kind):  # W is the gait's phase (0..1)
 		return Vector4(0.0, 0.0, 0.0, fposmod(d.w, 1.0))
@@ -130,13 +126,6 @@ static func grid_of(a: HordeAvatar, d: Vector4) -> Vector4:
 			return Vector4(d.x, 0.0, 0.0, fposmod(d.w / TAU, 1.0))
 		WorldReader.KIND_MINE_LAYER:
 			return Vector4(d.x, d.y, 0.0, 0.0)
-		WorldReader.KIND_SNIPER:
-			return Vector4(
-				(d.x - HordeAvatar.SNIPER_AIM_MIN) / HordeAvatar.SNIPER_AIM_SPAN,
-				(d.y - 0.4) / 0.6,
-				0.0,
-				a.muzzle_energy()
-			)
 	# The owner's walking models: the swing (sin(stride) x walk, -1..1) as the phase of a full stride's loop (its asin),
 	# so the loop baked at a full walk gives sin(asin(swing)) = the swing.
 	return Vector4(d.x, d.y, d.z, asin(clampf(d.w, -1.0, 1.0)) / TAU)
@@ -151,13 +140,6 @@ static func natural(kind: int, u: Vector3, phase: float) -> Vector4:
 			return Vector4(u.x, 0.0, 0.0, phase * TAU)
 		WorldReader.KIND_MINE_LAYER:
 			return Vector4(u.x, u.y, 0.0, 0.0)
-		WorldReader.KIND_SNIPER:
-			return Vector4(
-				HordeAvatar.SNIPER_AIM_MIN + HordeAvatar.SNIPER_AIM_SPAN * u.x,
-				0.4 + 0.6 * u.y,
-				0.0,
-				0.0
-			)
 	return Vector4(u.x, u.y, u.z, sin(phase * TAU))
 
 
@@ -172,17 +154,6 @@ static func texture(avatar: Node3D) -> Texture2D:
 	if a == null or not a.has_model():
 		return null
 	return EnemyModels.get_model(HordeAvatar.model_id(a.kind)).get("texture")
-
-
-## True for the piece of `a` whose glow is the instance's second one (the Sniper's muzzle: the drives' w).
-static func alt_glow(avatar: Node3D, piece: Node) -> bool:
-	var a := avatar as HordeAvatar
-	return (
-		a != null
-		and a.kind == WorldReader.KIND_SNIPER
-		and piece != null
-		and piece.name == &"Muzzle"
-	)
 
 
 ## A random set of HordeAvatar.pose_with's inputs (the bake report, tests): about a third dying, a quarter fully risen.

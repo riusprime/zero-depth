@@ -447,6 +447,16 @@
       "sha256": "17c6da16db384b56e9b21439e350a7a0ea9da59398a7ef895e0b26cb774937f2"
     },
     {
+      "id": "needle",
+      "path": "assets/models/enemies/needle.glb",
+      "sha256": "e7644a011aa32a03dad49fb212e135df4388f624294d659ab69448e0cf4c964b"
+    },
+    {
+      "id": "sniper",
+      "path": "assets/models/enemies/sniper.glb",
+      "sha256": "03c0b40202cf77135c943ed1f03d0b8566e897cab331196c36490159a570e05f"
+    },
+    {
       "id": "loop_device",
       "path": "assets/models/devices/loop_device.glb",
       "sha256": "c52a01bbbef3c6f037baeb6eb2491960df98998372ada530d829d6708734c67f"

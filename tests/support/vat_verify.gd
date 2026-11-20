@@ -282,16 +282,15 @@ static func apply(a: Node3D, s: Dictionary) -> void:
 	SoloVat.apply(a, s, _pose_of(a))
 
 
-## The avatar's own pose code (the Needle's and the Warden's take a frame time: 0).
+## The avatar's own pose code (the Warden's takes a frame time: 0).
 static func _pose_of(a: Node3D) -> Callable:
-	if a is NeedleAvatar or a is WardenAvatar:
+	if a is WardenAvatar:
 		return Callable(a, &"_pose").bind(0.0)
 	return Callable(a, &"_pose")
 
 
 ## The inputs each stand-alone kind's pose reads ({private var: [lo, hi]}, or [values...] to pick from; SoloVat.sample).
-## The Needle's velocity is drawn from `rng` first.
-static func ranges(a: Node3D, rng: RandomNumberGenerator) -> Dictionary:
+static func ranges(a: Node3D, _rng: RandomNumberGenerator) -> Dictionary:
 	var states4 := [
 		WorldReader.STATE_MOVE,
 		WorldReader.STATE_WINDUP,
@@ -384,21 +383,31 @@ static func ranges(a: Node3D, rng: RandomNumberGenerator) -> Dictionary:
 			"_die_t": [-0.6, GlacierTurtleAvatar.DEATH_SECONDS],
 			"_state": states4,
 		}
-	if a is NeedleAvatar:
-		var dir := rng.randf() * TAU
-		return {
-			"_vel_s": Vector3(cos(dir), 0, sin(dir)) * rng.randf() * 4.0,
+	if a is NeedleAvatar or a is SniperAvatar:
+		var legged := {
 			"_t": [0.0, 40.0],
-			"_walk": [0.0, 1.0],
 			"_phase": [0.0, 1.0],
-			"_rise": [0.0, 1.0],
+			"_speed": [0.0, 3.6],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2.LEFT],
+			"_omega": [-4.0, 4.0],
+			"_stride": [0.0, 1.0],
 			"_brace": [0.0, 1.0],
 			"_charge": [0.0, 1.0],
-			"_kick": [0.0, 1.0],
+			"_tell": [0.0, 1.0],
+			"_rise": [0.0, 1.0],
 			"_heat": [0.0, 1.0],
-			"_tell_p": [0.0, 1.0],
+			"_shot_t": [-0.3, 0.5],
+			"_burst_t": [-0.3, 0.55],
+			"_vent_t": [-0.3, 0.6],
+			"_hurt_t": [-0.2, 0.35],
+			"_hurt_leg": [0, 1, 2],
+			"_die_t": [-0.6, 1.0],
 			"_state": states4,
 		}
+		if a is SniperAvatar:
+			legged["_settle_t"] = [-0.2, SniperAvatar.SETTLE_SECONDS]
+			legged["_double"] = [false, true, false]
+		return legged
 	if a is RockLurkerAvatar:
 		return {
 			"_t": [0.0, 40.0],

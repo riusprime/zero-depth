@@ -146,7 +146,10 @@ func _sync_splits(reader: WorldReader) -> void:
 				var first: Obb = lanes[0]
 				var mid := first.center + Kin.dir(first.angle) * first.half.x
 				pack_fx.spawn(
-					SPARK_ID, SimPlane.to_3d(mid, SimPlane.CORE_HEIGHT), SPARK_SCALE, SPARK_COLORS
+					SPARK_ID,
+					SimPlane.to_3d(mid, SniperAvatar.MUZZLE_AT.y),
+					SPARK_SCALE,
+					SPARK_COLORS
 				)
 		_states[id] = st
 	for id in _states.keys():

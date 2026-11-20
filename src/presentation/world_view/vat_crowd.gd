@@ -36,7 +36,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_SHIELD_BEARER,
 	WorldReader.KIND_MENDER,
 	WorldReader.KIND_MINE_LAYER,
-	WorldReader.KIND_SNIPER,
+	WorldReader.KIND_SNIPER,  # The owner's model (SoloVat)
 	WorldReader.KIND_NEEDLE,
 	WorldReader.KIND_WARDEN,
 	WorldReader.KIND_ARC_CASTER,

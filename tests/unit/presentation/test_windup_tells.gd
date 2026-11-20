@@ -17,7 +17,8 @@ func after_each() -> void:
 	ViewPrefs.reduced_motion = _calm
 
 
-## [name, a built avatar] for each avatar with a tell: Charger (and Hatchling), the horde kinds, Warden, Needle.
+## [name, a built avatar] for each avatar with a tell: Charger (and Hatchling), the horde kinds, Warden, Needle,
+## Sniper.
 func _avatars() -> Array:
 	var out := []
 	var charger := ChargerAvatar.new()
@@ -33,6 +34,9 @@ func _avatars() -> Array:
 	var needle := NeedleAvatar.new()
 	needle.setup()
 	out.append(["needle", needle])
+	var sniper := SniperAvatar.new()
+	sniper.setup()
+	out.append(["sniper", sniper])
 	for e: Array in out:
 		add_child_autofree(e[1])
 		(e[1] as Node).set_process(false)
@@ -46,6 +50,8 @@ func _glow(a: AvatarBase) -> float:
 		return (a as HordeAvatar).glow_energy()
 	if a is WardenAvatar:
 		return (a as WardenAvatar).visor_energy()
+	if a is SniperAvatar:
+		return (a as SniperAvatar).lens_energy()
 	return (a as NeedleAvatar).eye_energy()
 
 
@@ -113,8 +119,8 @@ func test_the_flash_flickers_only_without_reduced_motion() -> void:
 
 func test_the_snipers_muzzle_charges_in_the_air() -> void:
 	ViewPrefs.reduced_motion = true
-	var a := HordeAvatar.new()
-	a.setup(WorldReader.KIND_SNIPER)
+	var a := SniperAvatar.new()
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	_hold(a, 0, WorldReader.STATE_MOVE, 0.0)
@@ -124,14 +130,7 @@ func test_the_snipers_muzzle_charges_in_the_air() -> void:
 	_hold(a, 110, WorldReader.STATE_WINDUP, 0.95, 6)
 	assert_gt(mid, 0.0, "it charges")
 	assert_gt(a.muzzle_energy(), mid * 1.5, "and flares before the shot")
-	var muzzle: Node3D = a.parts["muzzle"]
-	assert_gt(muzzle.global_position.y, 0.5, "at the barrel's tip, in the air")
-	for other: int in [WorldReader.KIND_SWARMER, WorldReader.KIND_SHIELD_BEARER]:
-		var h := HordeAvatar.new()
-		h.setup(other)
-		add_child_autofree(h)
-		_hold(h, 0, WorldReader.STATE_WINDUP, 0.95, 6)
-		assert_eq(h.muzzle_energy(), 0.0, "kind %d has no muzzle" % other)
+	assert_gt(a.muzzle_at().y, 0.5, "at the barrel's tip, in the air")
 
 
 func test_the_body_faces_the_locked_attack_and_holds_it_before_the_strike() -> void:

@@ -5,7 +5,7 @@ extends GutTest
 ## GDScript pass taken without the library or with the switch off.
 
 const SW := ActorStore.Kind.SWARMER
-const SN := ActorStore.Kind.SNIPER
+const ML := ActorStore.Kind.MINE_LAYER
 const SB := ActorStore.Kind.SHIELD_BEARER
 const CH := ActorStore.Kind.CHARGER
 const MD := ActorStore.Kind.MENDER
@@ -18,7 +18,6 @@ const KINDS_ALL := [
 	ActorStore.Kind.SHIELD_BEARER,
 	ActorStore.Kind.MENDER,
 	ActorStore.Kind.MINE_LAYER,
-	ActorStore.Kind.SNIPER,
 	ActorStore.Kind.CHARGER,
 	ActorStore.Kind.HATCHLING,
 ]
@@ -97,7 +96,7 @@ func test_the_native_writer_gives_the_script_writer_s_buffers() -> void:
 		pending("the native library is not loaded")
 		return
 	var w := CombatLab.world()
-	var kinds := [SW, SW, SW, SN, SB, CH, MD]
+	var kinds := [SW, SW, SW, ML, SB, CH, MD]
 	for k in 40:
 		w.add_enemy(kinds[k % kinds.size()], Vector2(-12.0 + (k % 8) * 3.0, -6.0 + (k / 8) * 3.0))
 	var views := _views(w)
@@ -115,7 +114,7 @@ func test_the_native_writer_gives_the_script_writer_s_buffers() -> void:
 				w.actors.hp[i] = maxi(1, w.actors.hp[i] - maxi(1, w.actors.max_hp[i] / 5))
 		if f == 150:  # A kill or two (a code body goes, an owner's model falls)
 			for i in w.actors.size():
-				if w.actors.teams[i] != 0 and w.actors.kinds[i] in [SN, SB]:
+				if w.actors.teams[i] != 0 and w.actors.kinds[i] in [ML, SB]:
 					w.actors.hp[i] = 0
 					var at := w.actors.pos(i)
 					Damage.hit(w, i, 1 << 20, 0, 0, w.take_root(), 0, at, at)
@@ -158,7 +157,7 @@ func test_events_reach_the_buffers_on_their_frame() -> void:
 	var fti := get_tree().physics_interpolation
 	get_tree().physics_interpolation = false  # Each drawn at its latest tick
 	var w := CombatLab.world()
-	var sniper := w.add_enemy(SN, Vector2(2.0, 2.0))
+	var layer := w.add_enemy(ML, Vector2(2.0, 2.0))
 	var charger := w.add_enemy(CH, Vector2(-3.0, 1.0))
 	var views := _views(w)
 	_ripen(w)
@@ -174,15 +173,15 @@ func test_events_reach_the_buffers_on_their_frame() -> void:
 	assert_eq(disc.size(), 1, "the new one's disc")
 	assert_almost_eq(disc[0].origin.x, SimPlane.to_3d(Vector2(4.0, -1.0)).x, 1e-5, "where it came")
 	# A hurt bar: shown the frame its HP drops, at the trail's fill
-	var i := w.actors.index_of(sniper)
+	var i := w.actors.index_of(layer)
 	w.actors.hp[i] = w.actors.max_hp[i] / 2
 	views.sync(WorldReader.new(w))
 	views.bar_chunks.advance(DT)
 	views.batch.advance(DT)
-	var bar: Array[Transform3D] = views.batch.parts_of(sniper, EnemyBatch.Part.BAR)
+	var bar: Array[Transform3D] = views.batch.parts_of(layer, EnemyBatch.Part.BAR)
 	assert_eq(bar.size(), 1, "its bar")
 	assert_almost_eq(
-		bar[0].basis.x.x, maxf(views.bar_chunks.trail_of(sniper).fill, 0.001), 1e-6, "its fill"
+		bar[0].basis.x.x, maxf(views.bar_chunks.trail_of(layer).fill, 0.001), 1e-6, "its fill"
 	)
 	# The hit flash: the body's colour the frame after the hit (VatCrowd writes it from the avatar)
 	views.flash(charger)
@@ -205,13 +204,13 @@ func test_events_reach_the_buffers_on_their_frame() -> void:
 	var at := w.actors.pos(i)
 	Damage.hit(w, i, 1 << 20, 0, 0, w.take_root(), 0, at, at)
 	for t in 120:
-		if w.actors.index_of(sniper) < 0:
+		if w.actors.index_of(layer) < 0:
 			break
 		w.step(InputFrame.new())
 	views.sync(WorldReader.new(w))
 	views.batch.advance(DT)
-	assert_true(views.batch.parts_of(sniper, EnemyBatch.Part.DISC).is_empty(), "no disc")
-	assert_true(views.batch.parts_of(sniper, EnemyBatch.Part.BAR).is_empty(), "no bar")
+	assert_true(views.batch.parts_of(layer, EnemyBatch.Part.DISC).is_empty(), "no disc")
+	assert_true(views.batch.parts_of(layer, EnemyBatch.Part.BAR).is_empty(), "no bar")
 	assert_eq(views.batch.drawn[EnemyBatch.Part.DISC], 2, "the other two stay")
 	get_tree().physics_interpolation = fti
 
@@ -344,9 +343,9 @@ func test_the_native_avatars_draw_the_script_avatars_bodies() -> void:
 			for i in w.actors.size():
 				if (
 					w.actors.teams[i] != 0
-					and w.actors.kinds[i] in [SN, SB, ActorStore.Kind.SPLITTER]
+					and w.actors.kinds[i] in [ML, SB, ActorStore.Kind.SPLITTER]
 				):
-					fell += 1 if w.actors.kinds[i] != SN else 0
+					fell += 1 if w.actors.kinds[i] != ML else 0
 					var at := w.actors.pos(i)
 					Damage.hit(w, i, 1 << 20, 0, 0, w.take_root(), 0, at, at)
 					break

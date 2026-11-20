@@ -55,8 +55,8 @@ func _watch(e: E2e, main: Main, id: int, styles: Array, frames: int, face_it := 
 			if tg.get("ground", true):
 				styled = styled or main.view.telegraphs.count() > 0
 			else:
-				var avatar: HordeAvatar = main.view.actors.actor_node(id).get_meta(&"enemy_avatar")
-				styled = styled or avatar.crouch_amount() > 0.0
+				var avatar: AvatarBase = main.view.actors.actor_node(id).get_meta(&"enemy_avatar")
+				styled = styled or float(avatar.call(&"crouch_amount")) > 0.0  # (the Sniper's own avatar too)
 		for ev in w.events_since(seq):
 			seq = ev.seq
 			if ev.kind == SimEvent.Kind.HIT and ev.target_id == w.actors.ids[0]:

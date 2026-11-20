@@ -49,6 +49,10 @@ const SPECS := {
 	# The Gravity Node (scripts/assets/gravity_node_prep.py: face plate, core, two shell halves, two rings;
 	# GravityNodeAvatar poses them), about the request row's 0.9 m orb with its rings.
 	&"gravity_node": {"height": GravityNodeAvatar.MODEL_HEIGHT},
+	# The Needle and the Sniper (scripts/assets/needle_sniper_prep.py: body, shell, barrel, two-part legs;
+	# NeedleAvatar / SniperAvatar pose them), at the request rows' 1.1 m and 1.3 m.
+	&"needle": {"height": NeedleAvatar.HEIGHT},
+	&"sniper": {"height": SniperAvatar.HEIGHT},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 
