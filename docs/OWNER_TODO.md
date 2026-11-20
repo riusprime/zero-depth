@@ -95,6 +95,8 @@ with your biggest builds; bugs (what you did, saw, expected; a screenshot); anyt
 
 ## 3. 3D art: specs and prompts
 
+**What is still pending, in one list (2026-11-20):** [`art/requests/PENDING_ASSETS.md`](art/requests/PENDING_ASSETS.md). The tables below keep the prompts.
+
 **Shared rules (every model):** the look of your kit and `docs/art/look_reference.webp`: chunky, chipped, weathered
 low-poly; worn metal, concrete and stone; no baked lighting or shadows; no text, letters or logos; one object, no
 ground plane; readable from an isometric camera about 35° down. Rigged is always a bonus, never needed: without a rig
