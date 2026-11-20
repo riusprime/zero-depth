@@ -58,7 +58,7 @@ const LIFE := {
 	&"steel_arc": 18.0,
 	&"spears": 16.0,
 	&"beam": 16.0,
-	&"rail": 26.0,
+	&"rail": 40.0,  # its streak: laid over the shot's 12 active ticks, then burns and fades (RailStreakViews)
 	&"molten": 100.0,
 	&"fire_lanes": 40.0,
 	&"skid": 100.0,
@@ -78,6 +78,8 @@ const SLAM_SLOTS := 24
 var vfx: VfxCore
 ## The strikes' stone impacts (BossStrikeImpacts): faceted chunks of the floor, grit, dust and cracks.
 var slams := GroundSlamViews.new(SLAM_SLOTS)
+## The Siege Engine's rail streak, laid down behind the shot in the owner's tiles.
+var streak := RailStreakViews.new()
 ## Live strikes: {"look", "kind", "tick", "end" (-1 while sustained), "aid", "seed", "glow", "glow_i", and the
 ## geometry: "discs" [[centre, radius, fx?]], "ring" [centre, inner, outer], "arc" [centre, own_r, reach, a0, a1],
 ## "lanes" [Obb], or "lane" Obb with "from"/"to" (the skid)}.
@@ -137,6 +139,8 @@ func _init() -> void:
 		mi.material_override = m
 		add_child(mi)
 	add_child(slams)
+	add_child(streak)
+	_shapes.rail_streak = streak.installed
 
 
 ## The biome's floor colours: the impacts' stone and the strikes' dust are the floor's.
@@ -220,6 +224,7 @@ func sync(reader: WorldReader) -> void:
 			_last.erase(aid)
 	_bell_verdicts(reader)
 	_keep_up(reader)
+	_rail_fronts(reader)
 	_prune()
 	_draw(float(_tick))
 
@@ -440,6 +445,24 @@ func _keep_up(reader: WorldReader) -> void:
 			s["end"] = _tick
 
 
+## Each rail strike's shot, while its boss still strikes, lays its streak to where the shot has run this tick
+## (WorldReader.boss_lane_front); once the boss has left the strike the rest is laid at once.
+func _rail_fronts(reader: WorldReader) -> void:
+	if not streak.installed:
+		return  # the code rail stays
+	for s in _strikes:
+		if s["kind"] != &"rail" or bool(s.get("laid", false)) or not s.has("lanes"):
+			continue
+		var i := reader.actor_index(int(s["aid"]))
+		var on := i >= 0 and reader.boss_lane_front(i, 0) >= 0.0
+		var fronts := PackedFloat32Array()
+		for k in (s["lanes"] as Array).size():
+			fronts.append(reader.boss_lane_front(i, k) if on else INF)
+		if not on:
+			s["laid"] = true
+		RailStreakViews.lay(s, _tick, fronts)
+
+
 func _prune() -> void:
 	var keep: Array[Dictionary] = []
 	for s in _strikes:
@@ -561,6 +584,7 @@ func _draw(now: float) -> void:
 		p["drawn"] = p["used"]
 	_emit(_swoosh_add, _shapes.arc_add)
 	_emit(_swoosh_mix, _shapes.arc_mix)
+	streak.draw(_strikes, now)
 
 
 func _emit(mi: MeshInstance3D, verts: Array) -> void:

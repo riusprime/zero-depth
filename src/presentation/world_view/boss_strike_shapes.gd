@@ -35,6 +35,8 @@ var arc_add := []
 var arc_mix := []
 ## The strikes' dust: the floor's colour, lightened (BossStrikeViews.floor_palette).
 var dust := DUST
+## The rail's shot is the owner's streak (RailStreakViews), so its code core and haze tubes are not drawn.
+var rail_streak := false
 ## Which owner textures are installed (the rings and steam draw their code bands without them).
 var _dust_tex := BossStrikeMeshes.textured("fx_dust_ring")
 var _steam_tex := VfxCore.has_tex("fx_steam_puffs")
@@ -150,7 +152,8 @@ func _band(
 
 
 ## A beam from `a` to `b`, `rad` thick; `owner_art`: drawn with the owner's beam strip when it is
-## installed (the Focus Beam; the rail keeps its code look, its texture not delivered).
+## installed (the Focus Beam; the rail's shot is the owner's streak in RailStreakViews when installed, else this
+## code look).
 func _tube(
 	a: Vector3, b: Vector3, rad: float, col: Color, bright: float, sd: int, owner_art := false
 ) -> void:
@@ -423,7 +426,7 @@ func _beam(s: Dictionary, o: Obb, age: float, after: float, life: float, sd: int
 	var tip := a.lerp(b, reach)
 	var flick := 0.85 + 0.15 * _h(sd, int(age))
 	var focus: bool = s.get("look", &"") == &"hl_beam"
-	if fade > 0.0 and rail:
+	if fade > 0.0 and rail and not rail_streak:
 		_tube(a, tip, 0.12, Color(RAIL_CORE, fade), 1.3 * flick, sd)
 		_tube(a, tip, 0.26, Color(RAIL_HAZE, 0.4 * fade), 0.9 * flick, sd + 1)
 	elif fade > 0.0 and focus:
@@ -434,7 +437,7 @@ func _beam(s: Dictionary, o: Obb, age: float, after: float, life: float, sd: int
 		var core := o.half.y * 0.45
 		_tube(a, tip, core, Color(1.0, 0.97, 0.9, fade), 2.6 * flick, sd, true)
 		_tube(a, tip, core * 2.6, Color(glow, 0.55 * fade), 1.8 * flick, sd + 1, true)
-	if rail:  # its haze lingers longer than the streak
+	if rail and not rail_streak:  # its haze lingers longer than the streak
 		var haze := clampf(1.0 - age / life, 0.0, 1.0)
 		_tube(a, b, 0.4, Color(RAIL_HAZE, 0.16 * haze), 0.7, sd + 2)
 	var heat := clampf(1.0 - age / (life + 20.0), 0.0, 1.0) if rail else fade
