@@ -267,3 +267,46 @@ one to the prompt already and give them as much detail as possible so there is c
   audio ("still pending not gonna work on it now").
 - **The lead's, no art needed:** the eleven Twin Wardens and Warlord clips (OWNER_TODO §3.7), on the v0.11.1 Blender
   rigs. Not started.
+
+## The owner's models of 2026-11-20 (14 enemies, props, focal pieces, the Blade, the rail streak)
+
+The owner, 2026-11-20, with `new_assets.zip` and `hero_blade.glb` (raw files in `unprocessed_images/models_v0120_b/`;
+made from `docs/art/requests/v0.12.0_models.md`): "the breakables and hazzards come in 2 glb files, remember to animate
+enemies and then go through the VAT animation, keep the horde critters small and animated, if there is floating enemies
+like star mote make sure to animate them and give them some movement, these models can not walk or be static models
+that look out of place. I attached the fx_rails images separatedly, please dont make it strech it should be something
+that appears as the boss slides and not an streching texture like we have now, 3 opus agents at max, no sonnet for
+these animations and model implementations, for the explosive barrel add an vfx premade explosion, but dont make it
+explode twice, just one exploding animation".
+
+- **Enemies** (14, Tripo, one mesh each, ~4.7k tris): the 8 regular kinds (today code avatars on VAT), the Star Warper,
+  the 5 horde critters (critters simplified to about 1.5k tris and kept small). Each the O17 / step 37 path: cut into
+  moving parts, its own avatar with a full clip set, on VAT. Floating kinds (Bomb Drone, Star Warper, Arc Caster, Cave
+  Bat, Star Mote) hover, bob, bank and drift: never static.
+- **Props:** `props_pack_a.glb` holds the Ruins cables hazard, the crate, urn, barrel, explosive barrel and the approach
+  pylon; `props_pack_b.glb` the Night Rocks rock, Red Canyon vent, Frozen Shore ice and Starfall star hazards. The timed
+  door did not come (still pending). The explosive barrel bursts once, with one premade pack explosion (PD-13).
+- **Focal pieces:** `grand_arch`, `great_monolith`; the observatory, fire pit and quarry rock face scaled up about 1.5x
+  (the lead's proposal the owner made the pieces for).
+- **The Blade** (14.5k tris, three maps): the owner sent the model without picking a look; built as the lead's
+  recommended rune-summoned blade (PENDING_ASSETS §9): it forms for each swing and breaks into motes after. Open to the
+  owner's change.
+- **The rail streak** (`fx_rail_streak.png`, 1774 × 887, four strips): the Siege Engine's rail shot laid down as the
+  boss slides, revealed along its path in tiles, never one stretched quad.
+
+| Step | What | Agent |
+|---|---|---|
+| 43 | The props: hazards, breakables (one explosion for the barrel), the pylon | Opus |
+| 44 | The focal pieces in the halls; the other focal pieces scaled up | Opus |
+| 45 | The Siege Engine's rail streak laid down as it slides | Opus |
+| 46 | The rune-summoned Blade | Opus |
+| 47a | Hatchling and Swarmer on the owner's models, animated, on VAT | Opus |
+| 47b | Needle and Sniper | Opus |
+| 47c | Warden and Mine Layer | Opus |
+| 47d | Arc Caster and Star Warper (floating) | Opus |
+| 47e | Bomb Drone (floating) | Opus |
+| 47f | Dust Mite, Ember Flea, Ice Crab (critters) | Opus |
+| 47g | Cave Bat and Star Mote (flying critters) | Opus |
+
+At most three Opus agents at once across the PC (owner), one Godot process each; no Sonnet. Order: 47a, 47b, 43; then
+47c, 47d, 47f; then 47e, 47g, 45; then 46, 44.
