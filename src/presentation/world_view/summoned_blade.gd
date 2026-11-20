@@ -1,15 +1,18 @@
 class_name SummonedBlade
 extends Node3D
 ## The Blade as the hero summons it (docs/art/requests/PENDING_ASSETS.md §9): the owner's model (assets/models/fx/
-## hero_blade.glb, scripts/assets/hero_blade_prep.py), never carried. The hero's power is runes, not steel, so:
+## hero_blade.glb, scripts/assets/hero_blade_prep.py). The hero's power is runes, not steel, so:
 ## - on each swing it forms in a flash of blue runes at its hilt, already at the start of the arc;
-## - it sweeps the arc in one motion with no hand, its tip on the slash's tip (KitView's blade as drawn: the same yaw,
+## - it sweeps the arc in one motion, the hero's hands on its grip (HeroArms reads it), its tip on the slash's tip
+##   (KitView's blade as drawn: the same yaw,
 ##   centre and reach the sim hits with, WorldReader.swing_shape), the slash trailing it as before;
 ## - it spans the whole slash, from the body to the tip: its pommel sits on KitView's hidden root (inside the poncho,
 ##   the grip leaving the body where a hand would hold it) and the model is scaled uniformly to reach the tip, so a
 ##   longer reach (the finisher, Lunge Cleave) draws a larger blade, never a stretched one. A thrust's pull-back draws
 ##   the blade shorter, growing out of the hand as it stabs;
 ## - at the end of the recovery it breaks into blue motes and is gone; between swings nothing shows;
+## - held between swings instead (ViewPrefs.blade_held, a dev switch): it neither flashes nor breaks, and HeroArms
+##   carries a copy of it in the hands until the next swing;
 ## - the finisher spin and the Lunge Cleave keep it out for their whole move: the spin through KitView's pivot, the
 ##   cleave from WorldReader.skill_state() along the same sweep SkillVisuals draws (cleave_progress), held at the arc's
 ##   starting edge while the lunge drives in, crossing it as the cleave lands, held through its hold and fade.
@@ -55,6 +58,8 @@ var _kit: KitView
 var _holder := Node3D.new()
 var _length := 0.0
 var _span := 0.0
+## The length it draws at on a plain swing (the pommel at the body, the tip on the reach): the size it is carried at.
+var _rest_span := 0.0
 var _has_model := false
 var _mode := NONE
 var _last_t := 0
@@ -77,20 +82,27 @@ func _init(p_kit: KitView = null) -> void:
 
 
 func _build() -> void:
+	_length = build_model(_holder)
+	_span = _length
+	_rest_span = _length
+	_has_model = _length > 0.0
+
+
+## Puts the owner's model under `holder` (its steel, matte, and its glowing edge) and returns its length (m), or 0
+## without the model. The hero's arms carry a second copy between swings in held mode (HeroArms).
+static func build_model(holder: Node3D) -> float:
 	var piece := BossPieceModels.get_piece(MODEL_ID, ["steel", "edge"])
 	if piece.is_empty():
-		return
-	var steel := BossPieceModels.put(piece, "steel", _holder)
+		return 0.0
+	var steel := BossPieceModels.put(piece, "steel", holder)
 	var edge_mat := BossPieceModels.matte(piece["texture"])
 	edge_mat.emission_enabled = true
 	edge_mat.emission = EDGE_GLOW
 	edge_mat.emission_energy_multiplier = EDGE_ENERGY
-	var edge := BossPieceModels.put(piece, "edge", _holder, edge_mat)
+	var edge := BossPieceModels.put(piece, "edge", holder, edge_mat)
 	for mi: MeshInstance3D in [steel, edge]:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_length = maxf(steel.mesh.get_aabb().end.x, edge.mesh.get_aabb().end.x)
-	_span = _length
-	_has_model = _length > 0.0
+	return maxf(steel.mesh.get_aabb().end.x, edge.mesh.get_aabb().end.x)
 
 
 ## The owner's model is there (else KitView's laser blade draws the swing).
@@ -111,6 +123,10 @@ func _sync_blade(reader: WorldReader) -> void:
 	var t := reader.swing_tick()
 	var dead := reader.player_dead()
 	var root := reader.player_radius() * KitView.ROOT_FRACTION
+	if _kit != null:
+		_rest_span = maxf(
+			KitView.blade_span(reader.swing_shape(), _kit.length_scale).y - root, MIN_SPAN_M
+		)
 	if t > 0 and not dead and _kit != null and _kit.blade_visible():
 		var fresh := was != SWING or t < _last_t or reader.combo_step() != _last_step
 		_last_t = t
@@ -175,10 +191,7 @@ func _form() -> void:
 	_holder.reset_physics_interpolation()
 	for r: Array in _riders:  # the hilt is the new flash's; an older one stays by the hero
 		r[2] = false
-	if (
-		not ViewPrefs.reduced_motion
-		and _spawn(FLASH_ID, hilt_point(), FLASH_SCALE, FLASH_SPEED, true)
-	):
+	if not _quiet() and _spawn(FLASH_ID, hilt_point(), FLASH_SCALE, FLASH_SPEED, true):
 		flashes += 1
 
 
@@ -187,7 +200,7 @@ func _break() -> void:
 	for r: Array in _riders:
 		r[2] = false
 	if (
-		not ViewPrefs.reduced_motion
+		not _quiet()
 		and _spawn(
 			MOTES_ID, _holder.position + _axis() * (_span * MOTES_AT), MOTES_SCALE, MOTES_SPEED
 		)
@@ -228,6 +241,11 @@ func _follow() -> void:
 		node.global_position = _centre + r[1]
 
 
+## No flash and no motes: reduced motion, or the sword is held between swings (it never forms or breaks).
+func _quiet() -> bool:
+	return ViewPrefs.reduced_motion or ViewPrefs.blade_held
+
+
 func _pack() -> PackFx:
 	return BladePack.pack_of(self) if is_inside_tree() else null
 
@@ -254,6 +272,20 @@ func hilt_point() -> Vector3:
 
 func tip_point() -> Vector3:
 	return _holder.position + _axis() * _span
+
+
+## The blade as drawn this frame (world space, between two ticks: the pommel at the origin, +X to the tip, scaled),
+## the same as of the last sync, and the scale it is carried at between swings. The hero's hands read these.
+func drawn_transform() -> Transform3D:
+	return _holder.get_global_transform_interpolated() if is_inside_tree() else _holder.transform
+
+
+func tick_transform() -> Transform3D:
+	return _holder.global_transform if is_inside_tree() else _holder.transform
+
+
+func carry_scale() -> float:
+	return _rest_span / _length if _length > 0.0 else 1.0
 
 
 ## The model's own length (m), and the length it draws at now (its uniform scale times that).
