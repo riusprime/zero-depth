@@ -4,10 +4,11 @@ extends Node3D
 ## immediately before closure. A heavy impact when the door shuts. Include visual feedback, such as flashing runes, for
 ## accessibility"; Q23: the hidden room unseen until it opens; docs/art/requests/v0.9.0_ART_LIST.md §3.2): the floor's
 ## timed door and its two rune switches, reading only (WorldReader.timed_*, interactable_*).
-## - The door: a heavy stone slab in a thick carved frame, a circular rune seal in its middle and rune notches round
-##   the frame. The owner's `timed_door` through ShopModels when it is listed (cut by scripts/assets/props_v0120_prep.py
-##   into its two jambs, which stand just outside the doorway, the lintel and sill, stretched across it, and the slab
-##   with its carved seal, stretched the same; the frame as deep as the doorway), tinted per biome; else this code
+## - The door: a heavy stone slab with a circular rune seal in its middle, in a frame of the floor's own wall blocks
+##   (TimedDoorFrame: square jambs and a lintel in the walls' material, as deep as the doorway, a gate a little over
+##   the walls, so it reads as part of the wall), rune notches down the jambs. The slab is the owner's from
+##   `timed_door` through ShopModels when it is listed (cut by scripts/assets/props_v0120_prep.py; his rounded jambs,
+##   lintel and sill stay in the model but are not drawn, as they did not fit the walls), tinted per biome; else a code
 ##   stand-in. Shut it stands in the doorway; opened it sinks into the floor (SINK_S); on the shut it slams back up
 ##   (SLAM_S) and `slammed` asks the camera for the door's thud (the impact sound is AudioEvents'). The seal's lit ring
 ##   lies on the slab's carved one.
@@ -25,9 +26,9 @@ extends Node3D
 const AMBER := Color("#FFB347")
 const AMBER_CORE := Color("#FFE7B8")
 const STONE := Color("#5A544C")
-const SLAB_H := 3.0
+## The code stand-in slab's height (m): its top hidden in the lintel.
+const SLAB_H := 2.3
 const SLAB_T := 0.5
-const FRAME_W := 0.45
 const SWITCH_H := 1.0
 ## The slab's sink when the door opens and its slam when it shuts (s).
 const SINK_S := 1.1
@@ -42,20 +43,13 @@ const BEEP_FAST := 6
 ## A beep's flash fades over this many ticks.
 const FLASH_TICKS := 8
 const MODEL_DOOR := &"timed_door"
-## The owner's door as prepared (m): its depth (front to back), the frame's opening, how high the slab's top stands
-## (its foot on the sill), the slab's faces (x from the middle) and the middle of its carved seal (y), the jambs'
-## width, the frame's front face.
-const DOOR_DEPTH := 1.548
+## The owner's slab as prepared (m): its width (the frame's opening), how high its top stands (its foot on the
+## sill), its faces (x from the middle) and the middle of its carved seal (y).
 const DOOR_OPENING := 2.677
-const DOOR_SLAB_TOP := 3.39
+const DOOR_SLAB_TOP := 3.42
 const DOOR_SLAB_FACE := 0.377
 const DOOR_SEAL_Y := 1.9
-const DOOR_JAMB := 0.88
-const DOOR_FRONT := 0.52
-## The parts of the owner's door (ShopModels.parts).
-const DOOR_LEFT := 0
-const DOOR_RIGHT := 1
-const DOOR_MIDDLE := 2
+## The slab's part of the owner's door (ShopModels.parts; the others, his jambs and middle, are not drawn).
 const DOOR_SLAB := 3
 const MODEL_SWITCH := &"rune_switch"
 ## On the owner's switch (1.3 m, its slanted top falling toward the door) the lit rune disc lies on the
@@ -72,6 +66,8 @@ var switch_glow := PackedFloat32Array()
 var flash := 0.0
 var slab: Node3D
 var uses_model := false
+## The frame's material: the walls' own (tests read it).
+var frame_material: Material
 ## The switches are the owner's model (tests read it).
 var switch_uses_model := false
 var revealed := false
@@ -89,6 +85,7 @@ var _lever_arm: Node3D
 var _lever_mat: StandardMaterial3D
 var _seal_mat := StandardMaterial3D.new()
 var _stone := StandardMaterial3D.new()
+var _cover := Color()
 var _room_light: OmniLight3D
 var _state := -1
 ## The slab's height share: 0 standing, 1 sunk; and its target. How far it sinks (m): its top to the floor.
@@ -104,6 +101,7 @@ func setup(reader: WorldReader, stage: StageView, cover: Color) -> void:
 	var raw := InteractionLooks.of_stage(stage)
 	biome = InteractionLooks.resolve(raw)
 	rune_color = InteractionLooks.color(biome, "rune")
+	_cover = cover
 	_stone.albedo_color = cover.darkened(0.2) if cover != Color() else STONE
 	_stone.roughness = 1.0
 	_seal_mat.albedo_color = rune_color.darkened(0.6)
@@ -115,14 +113,15 @@ func setup(reader: WorldReader, stage: StageView, cover: Color) -> void:
 	door.position = SimPlane.to_3d(reader.timed_door_center())
 	door.rotation.y = SimPlane.yaw_of(reader.timed_door_angle())
 	add_child(door)
-	_build_door(door, reader.timed_door_width(), reader.timed_door_depth())
+	var depth := maxf(reader.timed_door_depth(), 0.6)
+	_build_door(door, reader.timed_door_width(), depth)
 	for side in [-1.0, 1.0]:  # The biome's touch at each jamb's foot, on the side you come from
 		var foot := Node3D.new()
 		foot.name = "Foot"
 		foot.position = Vector3(
-			-maxf(reader.timed_door_depth(), 0.6) * 0.5 - 0.5,
+			-depth * 0.5 - 0.5,
 			0,
-			side * (reader.timed_door_width() * 0.5 + FRAME_W * 0.5)
+			side * (reader.timed_door_width() * 0.5 + TimedDoorFrame.JAMB * 0.5)
 		)
 		door.add_child(foot)
 		InteractionLooks.add_accent(foot, raw, 0.35, 0.0)
@@ -250,49 +249,30 @@ static func beep_flash(reader: WorldReader) -> float:
 	return clampf(1.0 - float(since) / FLASH_TICKS, 0.0, 1.0)
 
 
-## The frame (two jambs, a lintel with rune notches) and the slab with its seal. Local +X points into the secret room.
+## The frame (TimedDoorFrame: the walls' own blocks, with rune notches on its jambs) and the slab with its seal. Local
+## +X points into the secret room.
 func _build_door(door: Node3D, width: float, depth: float) -> void:
-	var d := maxf(depth, 0.6) + 0.2
+	_build_frame(door, width, depth)
 	if ShopModels.parts(MODEL_DOOR).size() > DOOR_SLAB:
-		_build_model_door(door, width, d)
+		_build_model_slab(door, width, depth)
 		return
-	for side in [-1.0, 1.0]:
-		_box(
-			door,
-			Vector3(d, SLAB_H + 0.4, FRAME_W),
-			Vector3(0, (SLAB_H + 0.4) * 0.5, side * (width * 0.5 + FRAME_W * 0.5)),
-			_stone
-		)
-		for j in 3:
-			var notch := _box(
-				door,
-				Vector3(0.06, 0.22, 0.22),
-				Vector3(-d * 0.5 - 0.03, 0.7 + j * 0.9, side * (width * 0.5 + FRAME_W * 0.5)),
-				_seal_mat
-			)
-			notch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_box(
-		door,
-		Vector3(d + 0.1, 0.5, width + FRAME_W * 2.0 + 0.1),
-		Vector3(0, SLAB_H + 0.55, 0),
-		_stone
-	)
+	_sink_m = SLAB_H
 	slab = Node3D.new()
 	slab.name = "Slab"
 	door.add_child(slab)
 	_box(slab, Vector3(SLAB_T, SLAB_H, width - 0.04), Vector3(0, SLAB_H * 0.5, 0), _stone)
-	for bolt in [-0.6, 0.6]:  # the two iron bolts across it
+	for bolt in [-0.45, 0.45]:  # the two iron bolts across it
 		var b := _box(
 			slab,
 			Vector3(SLAB_T + 0.08, 0.14, width - 0.3),
-			Vector3(0, SLAB_H * 0.5 + bolt, 0),
+			Vector3(0, TimedDoorFrame.OPEN_H * 0.5 + bolt, 0),
 			_stone
 		)
 		b.material_override = _iron(InteractionLooks.color(biome, "metal"))
 	for face in [-1.0, 1.0]:  # the round rune seal, on both faces
 		var cyl := CylinderMesh.new()
-		cyl.top_radius = 0.5
-		cyl.bottom_radius = 0.5
+		cyl.top_radius = 0.45
+		cyl.bottom_radius = 0.45
 		cyl.height = 0.05
 		cyl.radial_segments = 20
 		var disc := MeshInstance3D.new()
@@ -300,33 +280,62 @@ func _build_door(door: Node3D, width: float, depth: float) -> void:
 		disc.mesh = cyl
 		disc.material_override = _seal_mat
 		disc.rotation.z = PI * 0.5
-		disc.position = Vector3(face * (SLAB_T * 0.5 + 0.06), SLAB_H * 0.5, 0)
+		disc.position = Vector3(face * (SLAB_T * 0.5 + 0.06), TimedDoorFrame.OPEN_H * 0.5, 0)
 		disc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		slab.add_child(disc)
 
 
-## The owner's door in a doorway `width` across and `d` deep: the jambs moved out to the doorway's sides, the lintel,
-## sill and slab stretched across it, all as deep as the stand-in's frame; the seal's lit ring and the frame's lit
-## notches on both faces.
-func _build_model_door(door: Node3D, width: float, d: float) -> void:
-	uses_model = true
-	_sink_m = DOOR_SLAB_TOP
-	var parts := ShopModels.parts(MODEL_DOOR)
-	var mat := InteractionLooks.tinted(ShopModels.get_model(MODEL_DOOR)["material"], biome)
-	var sx := d / DOOR_DEPTH
-	var sz := width / DOOR_OPENING
-	var shift := (width - DOOR_OPENING) * 0.5
+## The jambs and lintel in the walls' material, as deep as the doorway; three lit notches down each jamb's face on the
+## side you come from.
+func _build_frame(door: Node3D, width: float, depth: float) -> void:
 	var frame := Node3D.new()
 	frame.name = "Frame"
 	door.add_child(frame)
-	for k in [DOOR_LEFT, DOOR_RIGHT, DOOR_MIDDLE]:
-		var mi := MeshInstance3D.new()
-		mi.name = ["JambLeft", "JambRight", "Middle"][k]
-		mi.mesh = parts[k]
-		mi.set_surface_override_material(0, mat)
-		mi.scale = Vector3(sx, 1.0, sz if k == DOOR_MIDDLE else 1.0)
-		mi.position.z = -shift if k == DOOR_LEFT else (shift if k == DOOR_RIGHT else 0.0)
-		frame.add_child(mi)
+	var face_m := ProceduralWall.FACE_M_DEFAULT
+	var top_m := ProceduralWall.TOP_M_DEFAULT
+	if _stage != null and _stage.mood != null:
+		face_m = _stage.mood.wall_texture_m
+		top_m = _stage.mood.wall_top_texture_m
+	var blocks := MeshInstance3D.new()
+	blocks.name = "Blocks"
+	blocks.mesh = TimedDoorFrame.mesh(width, depth, face_m, top_m)
+	frame_material = _wall_material()
+	blocks.set_surface_override_material(0, frame_material)
+	frame.add_child(blocks)
+	for at in TimedDoorFrame.notch_spots(width, depth):
+		var notch := _box(frame, Vector3(0.06, 0.2, 0.2), at, _seal_mat)
+		notch.name = "Notch"
+		notch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+## The walls' own material: on a floor whose walls are the procedural ruin (a mood and the kit), ProceduralWall's in
+## the biome's wall textures and calm (StageView.wall_textures, WallCalm.look_of: what StageKit draws them with); else
+## the plain box walls' cover colour.
+func _wall_material() -> Material:
+	if _stage != null and _stage.mood != null and KitModels.has_structure():
+		var tex := StageView.wall_textures(_stage.prop_style)
+		tex.merge(WallCalm.look_of(_stage.mood))
+		return ProceduralWall.material(tex.get("face", null), tex.get("top", null), false, tex)
+	var m := StandardMaterial3D.new()
+	m.albedo_color = _cover if _cover != Color() else STONE
+	m.roughness = 1.0
+	return m
+
+
+## The owner's slab with its carved seal in a doorway `width` across: as wide as the opening, at most its own height
+## (so a wide doorway stretches the seal a little, never squashes it flat), its seal low enough in the opening that
+## the slab's top stays hidden in the lintel, as thick as the owner made it (thinner only under a gate shallower than
+## that); the seal's lit ring on its carved one, on both faces.
+func _build_model_slab(door: Node3D, width: float, depth: float) -> void:
+	uses_model = true
+	var parts := ShopModels.parts(MODEL_DOOR)
+	var mat := InteractionLooks.tinted(ShopModels.get_model(MODEL_DOOR)["material"], biome)
+	var sz := width / DOOR_OPENING
+	var sy := minf(sz, 1.0)
+	var sx := clampf((TimedDoorFrame.gate_depth(depth) - 0.1) / (DOOR_SLAB_FACE * 2.0), 0.3, 1.0)
+	var above := (DOOR_SLAB_TOP - DOOR_SEAL_Y) * sy
+	var seal_y := minf(TimedDoorFrame.OPEN_H * 0.5, TimedDoorFrame.TOP - 0.05 - above)
+	_sink_m = seal_y + above
 	slab = Node3D.new()
 	slab.name = "Slab"
 	door.add_child(slab)
@@ -334,7 +343,8 @@ func _build_model_door(door: Node3D, width: float, d: float) -> void:
 	body.name = "Model"
 	body.mesh = parts[DOOR_SLAB]
 	body.set_surface_override_material(0, mat)
-	body.scale = Vector3(sx, 1.0, sz)
+	body.scale = Vector3(sx, sy, sz)
+	body.position.y = seal_y - DOOR_SEAL_Y * sy
 	slab.add_child(body)
 	var ring := TorusMesh.new()
 	ring.inner_radius = 0.52
@@ -347,22 +357,10 @@ func _build_model_door(door: Node3D, width: float, d: float) -> void:
 		seal.mesh = ring
 		seal.material_override = _seal_mat
 		seal.rotation.z = PI * 0.5
-		seal.scale = Vector3(1.0, 0.3, 1.0)
-		seal.position = Vector3(face * (DOOR_SLAB_FACE * sx + 0.02), DOOR_SEAL_Y, 0)
+		seal.scale = Vector3(sy, 0.3, sz)
+		seal.position = Vector3(face * (DOOR_SLAB_FACE * sx + 0.02), seal_y, 0)
 		seal.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		slab.add_child(seal)
-	for side in [-1.0, 1.0]:  # three lit notches down each jamb's face, on the side you come from
-		for j in 3:
-			var notch := _box(
-				frame,
-				Vector3(0.06, 0.2, 0.2),
-				Vector3(
-					-DOOR_FRONT * sx - 0.03, 0.9 + j * 0.9, side * (width * 0.5 + DOOR_JAMB * 0.5)
-				),
-				_seal_mat
-			)
-			notch.name = "Notch"
-			notch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
 ## Switch k: an octagonal column with a slanted top holding its rune disc, turned to face the door.
