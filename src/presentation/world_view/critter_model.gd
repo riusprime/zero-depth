@@ -19,13 +19,16 @@ extends RefCounted
 ##   (no idle shuffle, no snapping, no hop, no pulse).
 ## No strike: the critters only touch (contact damage, no windup in the sim). Every part's pose is a function of one
 ## grid's drives only (pose_parts), so the VAT bake of the same code is the live pose. Presentation only (EI-07).
-## +X is the front, +Z its right.
+## +X is the front, +Z its right. The flying critters (the Cave Bat, the Star Mote) are FlyerModel's, on the same
+## drives and grids: the calls here hand them over.
 
-## The kinds on a model and their model ids.
+## The kinds on a model and their model ids (the flyers' posed by FlyerModel).
 const KINDS := {
 	WorldReader.KIND_DUST_MITE: &"dust_mite",
 	WorldReader.KIND_EMBER_FLEA: &"ember_flea",
 	WorldReader.KIND_ICE_CRAB: &"ice_crab",
+	WorldReader.KIND_CAVE_BAT: &"cave_bat",
+	WorldReader.KIND_STAR_MOTE: &"star_mote",
 }
 ## The flea's glow (its eye and its ember cracks); the mite's and the crab's eye are the family's crimson.
 const EMBER := Color("#FF7A2A")
@@ -118,8 +121,11 @@ static func eye_color(kind: int, family: Color) -> Color:
 	return EMBER if kind == WorldReader.KIND_EMBER_FLEA else family
 
 
-## The gait clock's rate (rad a second) at the walk's pace `walk`: the flea's is its hop (none with reduced motion).
-static func gait_rate(kind: int, walk: float, calm: bool) -> float:
+## The gait clock's rate (rad a second) at the walk's pace `walk`: the flea's is its hop (none with reduced motion);
+## a flyer's (FlyerModel.gait_rate) also reads its phase `ph` and the clock `t`.
+static func gait_rate(kind: int, walk: float, calm: bool, ph := 0.0, t := 0.0) -> float:
+	if FlyerModel.takes(kind):
+		return FlyerModel.gait_rate(kind, walk, calm, ph, t)
 	if kind == WorldReader.KIND_EMBER_FLEA:
 		return 0.0 if calm else TAU * float(STEP_HZ[kind])
 	return TAU * (IDLE_HZ * (1.0 - walk) * (0.0 if calm else 1.0) + float(STEP_HZ[kind]) * walk)
@@ -255,6 +261,9 @@ static func natural(u: Vector3, phase: float) -> Vector4:
 ## snap); the flea's shin under its thigh. Each limb's [name, pivot, lift axis, side, phase offset] is kept in the
 ## avatar's meta.
 static func rig_nodes(a: HordeAvatar) -> void:
+	if FlyerModel.takes(a.kind):
+		FlyerModel.rig_nodes(a)
+		return
 	var limbs: Array = []
 	var names: Array = a.parts.keys()
 	names.sort()
@@ -302,6 +311,8 @@ static func _set_index(pname: String) -> int:
 
 ## The joints (HordeVat.joint_spec) past the body, a parent before its children.
 static func joints(a: HordeAvatar) -> Array:
+	if FlyerModel.takes(a.kind):
+		return FlyerModel.joints(a)
 	var out: Array = []
 	for limb: Array in a.get_meta(&"critter_limbs"):
 		var pname: String = limb[0]
@@ -316,6 +327,9 @@ static func joints(a: HordeAvatar) -> Array:
 ## Poses the parts of `a` at drives `d` (natural units, see GRIDS): the live pose and the VAT bake both pose through
 ## here. Each node's transform is set whole from its own grid's drives.
 static func pose_parts(a: HordeAvatar, d: Vector4) -> void:
+	if FlyerModel.takes(a.kind):
+		FlyerModel.pose_parts(a, d)
+		return
 	var p := a.parts
 	var walk := maxf(d.z, 0.0)
 	var dead := clampf(-d.z, 0.0, 1.0)
@@ -367,6 +381,9 @@ static func pose_parts(a: HordeAvatar, d: Vector4) -> void:
 ## The body's place and the parts' drives of `a` this frame (HordeAvatar._pose_model; the crowd reckons the same with
 ## body_xf and drives): the body node's transform (a VAT avatar's offset), then the parts and the eye's glow.
 static func place(a: HordeAvatar) -> void:
+	if FlyerModel.takes(a.kind):
+		FlyerModel.place(a)
+		return
 	var calm := ViewPrefs.reduced_motion
 	var ph := phase(a.kind, a._t, fposmod(a._walk_t / TAU, 1.0))
 	var xf := body_xf(a.kind, a._t, ph, a._walk, a._slide, a._die_t, 0.0, a._rise, calm)

@@ -1,8 +1,8 @@
 class_name CritterBodies
 extends RefCounted
 ## PLAN H1, M4; ENEMIES.md H1-H5; owner Q14: "same rules, its own body": the five horde critters'
-## code-made stand-in bodies (the Dust Mite, Ember Flea and Ice Crab now draw on the owner's models, CritterModel: their
-## bodies here are the fallback when a model is missing), built on a HordeAvatar and drawn through
+## code-made stand-in bodies (all five now draw on the owner's models, CritterModel and FlyerModel: their bodies here
+## are the fallback when a model is missing), built on a HordeAvatar and drawn through
 ## VAT on its general path (HordeVat: the body is the instance's transform, one gait loop poses the moving parts). Each
 ## is small, low and one shape at a glance, unlike the Swarmer's red beetle:
 ## - Dust Mite (Ruins): a fist-sized stone tick, a flat brown dome on six legs that scuttle in two sets of three;

@@ -171,7 +171,7 @@ static func model_id(p_kind: int) -> StringName:
 			return MineLayerModel.MODEL
 		WorldReader.KIND_LENS_DRONE:  # v0.11.0 S4 (VatCrowd.supports reads it; the Lens Drone is no HordeAvatar)
 			return &"lens_drone"
-		_ when CritterModel.takes(p_kind):  # The walking critters (CritterModel poses them)
+		_ when CritterModel.takes(p_kind):  # The critters (CritterModel, FlyerModel pose them)
 			return CritterModel.KINDS[p_kind]
 	return &""
 
@@ -307,7 +307,12 @@ func advance(delta: float) -> void:
 			if kind == WorldReader.KIND_SWARMER:  # Its gait clock runs idle too
 				_walk_t += dt * SwarmerModel.gait_rate(_walk, ViewPrefs.reduced_motion)
 			elif _is_model and CritterModel.takes(kind):
-				_walk_t += dt * CritterModel.gait_rate(kind, _walk, ViewPrefs.reduced_motion)
+				_walk_t += (
+					dt
+					* CritterModel.gait_rate(
+						kind, _walk, ViewPrefs.reduced_motion, fposmod(_walk_t / TAU, 1.0), _t
+					)
+				)
 			else:
 				_walk_t += dt * lerpf(0.0, WALK_HZ * TAU, _walk)
 		_last_at = at
