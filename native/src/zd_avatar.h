@@ -149,6 +149,31 @@ enum Field {
 	L_RISE = 62,
 	L_REST = 63, // f32 x2: the body joint's rest place (x, y; set once)
 	L_VD = 65, // f32 x18: the raw drives
+	// WardenAvatar (its own fields from 43; zd_avatar_warden.cpp)
+	W_CRACK = 43, // the cracks' glow (_crack)
+	W_STATE = 44,
+	W_STATE_TICKS = 45,
+	W_WINDUP = 46,
+	W_HP = 47,
+	W_SPEED = 48,
+	W_DIR = 49, // f32 x2
+	W_OMEGA = 51,
+	W_PHASE = 52,
+	W_STRIDE = 53,
+	W_RAISE = 54,
+	W_SLAM = 55,
+	W_RISE = 56,
+	W_SHAKE = 57,
+	W_HURT = 58,
+	W_DIE = 59,
+	W_LAST_FY = 60,
+	W_HAVE_FY = 61,
+	W_SLAM_R = 62,
+	W_DUST_T = 63,
+	W_LIFT = 64,
+	W_SCALE = 65, // the model's scale (set once)
+	W_PIV = 66, // f32 x3 x11: the joints' pivots (BatchWarden.PIVOT_KEYS order; set once)
+	W_VD = 99, // f32 x23: the raw drives
 	// SniperAvatar (its own fields from 43 to 111; zd_avatar_sniper.cpp)
 	SN_LENS = 43, // f32: the lens material's emission energy
 	SN_STATE = 44,
@@ -194,6 +219,7 @@ enum Class {
 	HATCHLING = 9,
 	STONE_THROWER = 10,
 	NEEDLE = 11,
+	WARDEN = 12,
 	ROCK_LURKER = 13,
 	SNIPER_MODEL = 14, // the owner's model (SniperAvatar); SNIPER is its old horde body
 };
@@ -207,7 +233,8 @@ constexpr int MAX_DRIVES = 29;
 
 // A Stone Thrower's sync inputs past the common ones (BatchAvatars.MORE a slot): its ticks into the state, its facing
 // (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's and a Sniper's: its HP (the first). A
-// Rock Lurker's: whether it waits disguised, whether it rumbles.
+// Rock Lurker's: whether it waits disguised, whether it rumbles. A Warden's: its HP, the telegraph's slam radius and whether the
+// telegraph gave one (1) or not (0).
 constexpr int MORE = 6;
 
 // The sim states (WorldReader.STATE_*), handed in by the batch.
@@ -254,6 +281,17 @@ double cos_d(double x);
 double envelope(double u);
 double glow_of_tell(double p, double t, bool calm);
 double ease_rate(double per_second, double dt);
+// AvatarBase's strike clock and tell (the same functions the Charger's code calls).
+void strike_note_of(double *s, int state, const States &st);
+void strike_step(double *s, double dt);
+double strike_swing_of(const double *s);
+bool strike_snapping_of(const double *s);
+double strike_raised_of(const double *s, bool winding, double p, double rest);
+double crouch_of_tell(double p);
+// The engine's double exp, acos and atan2 (GDScript's).
+double exp_d(double x);
+double acos_d(double x);
+double atan2_d(double y, double x);
 
 // The Stone Thrower (zd_avatar_thrower.cpp): its sync, frame step (advance: the pose included) and drives.
 void s_apply(double *s, int64_t tick, int state, float pos_x, float pos_y, const double *more, const Ctx &c);
@@ -265,18 +303,24 @@ void n_apply(double *s, int64_t tick, int state, double windup, float pos_x, flo
 		const Ctx &c);
 void n_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int n_drives(const double *s, float *out);
-// The Rock Lurker (zd_avatar_lurker.cpp): its sync (`more`: hidden, rumbling), frame step (the pose included) and
-// drives.
-void l_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
-		const Ctx &c);
-void l_advance(double *s, double delta, const Ctx &c);
-int l_drives(const double *s, float *out);
 
 // The Sniper (zd_avatar_sniper.cpp): its sync (`more`: its HP first), frame step (the pose included) and drives.
 void sn_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
 		const Ctx &c);
 void sn_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int sn_drives(const double *s, float *out);
+// The Rock Lurker (zd_avatar_lurker.cpp): its sync (`more`: hidden, rumbling), frame step (the pose included) and
+// drives.
+void l_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void l_advance(double *s, double delta, const Ctx &c);
+int l_drives(const double *s, float *out);
+// The Warden (zd_avatar_warden.cpp): its sync, frame step (advance: the pose included; the facing's turn from `f`)
+// and drives.
+void w_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void w_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int w_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,

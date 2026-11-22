@@ -35,7 +35,9 @@ avatar then had no batch row or native class. No look reason: the same gap the N
 
 ## The look
 
-- Bit for bit: `tests/unit/native/test_native_crowd.gd` `test_the_native_snipers_draw_the_script_ones_bodies`: 12
+- Bit for bit: `tests/unit/native/test_native_crowd_sniper.gd` `test_the_native_snipers_draw_the_script_ones_bodies` (its
+  own file: `test_native_crowd.gd` reached 967 lines with the Warden's; the two share `CrowdTwins`,
+  `tests/support/crowd_twins.gd`, the views' compare helpers moved out of `test_native_crowd.gd`): 12
   Snipers round an invulnerable hero (two far out: the catch-up), 300 frames of 0, 1, 1, 2 ticks, reduced motion on
   frames 200-229, HP drops every 7 frames, hits with flashes, flinches, knocks, holds and tints, two spawns, a kill
   every 40 frames picked mid-attack when one is, the second kick set on the hit avatars before frame 150; the furniture
@@ -97,6 +99,15 @@ NOT YET RUN (measured once with every kind moved; owner, 2026-11-22, through the
 -gdir=tests/arch,tests/golden,tests/unit/native -ginclude_subdirs  -> exit 0, 49/49 tests, 28491 asserts (4 Godot lines before)
 gdformat --check src scripts tests && gdlint src scripts tests   -> 1970 unchanged; no problems
 ```
+After merging `lead-v0120` at `ab4b110c` (the Warden) and moving the test, the library rebuilt (`ensure.sh` exit 0, no
+compiler warning or error) and:
+```
+-gdir=tests/arch,tests/golden,tests/unit/native -ginclude_subdirs
+  -gtest=tests/unit/presentation/test_sniper_avatar.gd,tests/unit/presentation/test_enemy_batch.gd
+                                                               -> exit 0, 74/74 tests, 30034 asserts (0 Godot lines before)
+gdformat --check src scripts tests && gdlint src scripts tests   -> 1974 unchanged; no problems
+```
+The Sniper's print in that run is the same as above (the same states, flinches, holds and kills).
 No e2e or seams (the lead runs them with every kind moved).
 
 ## Not measured / left
@@ -104,4 +115,4 @@ No e2e or seams (the lead runs them with every kind moved).
 - The timings and the merged tree on a quiet machine: NOT YET RUN (the lead's).
 - Linux (gcc) equality of the new native code: NOT YET RUN (CI).
 - The Split Sniper stays on its nodes (above).
-- `test_native_crowd.gd` is 871 lines with the Lurker's and the Sniper's tests; the Warden's adds about 100 more.
+- `test_native_crowd.gd` is 862 lines (its compare helpers in `CrowdTwins`), the Sniper's test in its own file.
