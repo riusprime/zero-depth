@@ -126,6 +126,29 @@ enum Field {
 	N_HIPS = 88, // f32 x3 x4 each: the legs' rest hips, knees and feet (set once)
 	N_KNEES = 100,
 	N_FEET = 112,
+	// RockLurkerAvatar (its own fields from 43; zd_avatar_lurker.cpp)
+	L_VISOR = 43,
+	L_CRACK = 44, // f32: the cracks' glow (its last drive)
+	L_LIFT = 45,
+	L_STATE = 46,
+	L_STATE_TICKS = 47,
+	L_WINDUP = 48,
+	L_HIDDEN = 49,
+	L_RUMBLING = 50,
+	L_TUCK = 51,
+	L_RUMBLE = 52,
+	L_BURST = 53,
+	L_BURST_SLAM = 54,
+	L_SPEED = 55,
+	L_WALK = 56,
+	L_PHASE = 57,
+	L_REAR = 58,
+	L_SLAM = 59,
+	L_IMPACT = 60,
+	L_DIE = 61,
+	L_RISE = 62,
+	L_REST = 63, // f32 x2: the body joint's rest place (x, y; set once)
+	L_VD = 65, // f32 x18: the raw drives
 	STRIDE = 124,
 };
 
@@ -143,6 +166,7 @@ enum Class {
 	HATCHLING = 9,
 	STONE_THROWER = 10,
 	NEEDLE = 11,
+	ROCK_LURKER = 13,
 };
 
 inline bool is_charger(int c) {
@@ -153,7 +177,8 @@ inline bool is_charger(int c) {
 constexpr int MAX_DRIVES = 29;
 
 // A Stone Thrower's sync inputs past the common ones (BatchAvatars.MORE a slot): its ticks into the state, its facing
-// (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's: its HP (the first).
+// (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's: its HP (the first). A Rock Lurker's:
+// whether it waits disguised, whether it rumbles.
 constexpr int MORE = 6;
 
 // The sim states (WorldReader.STATE_*), handed in by the batch.
@@ -211,6 +236,12 @@ void n_apply(double *s, int64_t tick, int state, double windup, float pos_x, flo
 		const Ctx &c);
 void n_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int n_drives(const double *s, float *out);
+// The Rock Lurker (zd_avatar_lurker.cpp): its sync (`more`: hidden, rumbling), frame step (the pose included) and
+// drives.
+void l_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void l_advance(double *s, double delta, const Ctx &c);
+int l_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,

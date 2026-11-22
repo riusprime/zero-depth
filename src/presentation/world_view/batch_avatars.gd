@@ -1,8 +1,8 @@
 class_name BatchAvatars
 extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
-## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's or NeedleAvatar's (BatchNeedleRow) fields that change after
-## setup) is a row of packed doubles here, and ZdCrowd
+## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow) or RockLurkerAvatar's
+## (BatchLurker) fields that change after setup) is a row of packed doubles here, and ZdCrowd
 ## (native/src/zd_avatar*, the same arithmetic in the same order) applies each sync, steps each frame and writes
 ## VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
 ## The rows hold the state while `on`; the avatar objects then hold old numbers, except around an event:
@@ -93,12 +93,14 @@ const S_VD := 84
 ## The Stone Thrower's joint offsets in its row (S_OFF, three floats each).
 const S_OFF_KEYS := ["pelvis", "neck", "shoulder", "elbow", "wrist", "hip"]
 ## A Stone Thrower's sync inputs past the common ones, a slot (zd_avatar.h MORE): its ticks into the state, its
-## facing (x, y), the sim's lift, flight and recovery ticks; a Needle's: its HP (the first).
+## facing (x, y), the sim's lift, flight and recovery ticks; a Needle's: its HP (the first); a Rock Lurker's:
+## disguised, rumbling.
 const MORE := 6
 ## The native classes (zd_avatar.h Class) by kind; 0: none.
 const CHARGER_CLASS := 8
 const STONE_THROWER_CLASS := 10
 const NEEDLE_CLASS := 11
+const ROCK_LURKER_CLASS := 13
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -110,6 +112,7 @@ const CLASS_OF := {
 	WorldReader.KIND_HATCHLING: 9,
 	WorldReader.KIND_STONE_THROWER: STONE_THROWER_CLASS,
 	WorldReader.KIND_NEEDLE: NEEDLE_CLASS,
+	WorldReader.KIND_ROCK_LURKER: ROCK_LURKER_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -172,6 +175,9 @@ static func class_of(avatar: AvatarBase) -> int:
 	var nd := avatar as NeedleAvatar
 	if nd != null and nd.vat:
 		return NEEDLE_CLASS
+	var lk := avatar as RockLurkerAvatar
+	if lk != null and lk.vat:
+		return ROCK_LURKER_CLASS
 	return 0
 
 
@@ -345,6 +351,11 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 		_in_more[o + 3] = ticks.x
 		_in_more[o + 4] = ticks.y
 		_in_more[o + 5] = ticks.z
+	elif c == ROCK_LURKER_CLASS:  # (its sync reads the windup in any state, and its disguise)
+		var o := k * MORE
+		_in_windup[k] = float(reader.telegraph(i).get("progress", 0)) / 1000.0
+		_in_more[o] = 1.0 if RockLurkerAvatar.disguised(reader, i) else 0.0
+		_in_more[o + 1] = 1.0 if reader.lurker_rumbling(i) else 0.0
 	else:
 		_in_windup[k] = (
 			float(reader.telegraph(i).get("progress", 0)) / 1000.0
@@ -507,6 +518,20 @@ func _flush_inputs_in_script() -> void:
 						}
 					)
 				)
+			elif _cls[k] == ROCK_LURKER_CLASS:
+				(
+					(a as RockLurkerAvatar)
+					. apply_state(
+						{
+							"tick": _tick,
+							"pos": Vector2(_in_x[k], _in_y[k]),
+							"state": _in_state[k],
+							"windup": _in_windup[k],
+							"hidden": _in_more[o] != 0.0,
+							"rumbling": _in_more[o + 1] != 0.0,
+						}
+					)
+				)
 			elif _cls[k] >= CHARGER_CLASS:
 				(
 					(a as ChargerAvatar)
@@ -625,6 +650,12 @@ func _export(k: int) -> void:
 		for q in row.size():
 			_st[o + BatchNeedleRow.FIRST + q] = row[q]
 		return
+	var lk := a as RockLurkerAvatar
+	if lk != null:
+		var r := BatchLurker.fields(lk)
+		for q in BatchLurker.COUNT:
+			_st[o + BatchLurker.FIRST + q] = r[q]
+		return
 	var c := a as ChargerAvatar
 	_st[o + C_VISOR] = c._visor_e
 	_st[o + C_TELL] = c._tell_p
@@ -691,6 +722,10 @@ func _import(k: int) -> void:
 	var nd := a as NeedleAvatar
 	if nd != null:
 		BatchNeedleRow.load(nd, _st.slice(o + BatchNeedleRow.FIRST, o + STRIDE))
+		return
+	var lk := a as RockLurkerAvatar
+	if lk != null:
+		BatchLurker.take(lk, _st, o)
 		return
 	var c := a as ChargerAvatar
 	c._visor_e = _st[o + C_VISOR]
