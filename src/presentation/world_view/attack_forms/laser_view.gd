@@ -134,7 +134,11 @@ var pack_fx: PackFx = null:
 		pack_fx = v
 		hold.pack = v if PACK_LASER else null
 		_prewarm_tube()
+		_rested = false
 var hold := FormPackHold.new()
+## The last sync read no beam, Echo ghost or mine and hid everything: a sync that reads none again only moves the
+## clock (the rest of it would write the same hidden state again).
+var _rested := false
 
 var _ribbons: Array[MeshInstance3D] = []
 var _ghost_ribbons: Array[MeshInstance3D] = []
@@ -246,9 +250,19 @@ static func _shader(code: String) -> Shader:
 
 ## Each tick: the beams now and their look (v0.9.0 VX V48: read again only when the build changes).
 func sync(reader: WorldReader) -> void:
+	var read := reader.beams()
+	var ghosts := reader.laser_ghosts()
+	var mines := reader.laser_mines()
+	var none := read.is_empty() and ghosts.is_empty() and mines.is_empty()
+	if none and _rested:
+		_tick = float(reader.tick())
+		_since = 0.0
+		width_now = LaserWeight.width_mul(_tick, 0.0)
+		return
+	_rested = none
 	_beams = []
 	_rings = []
-	for b in reader.beams():
+	for b in read:
 		if b.has("circle"):
 			_rings.append(b)
 		else:
@@ -261,8 +275,8 @@ func sync(reader: WorldReader) -> void:
 		_glow_ticks = float(_beams[0].get("glow", 30))
 	if _beams.size() > 0 and shown == 0:
 		_fire_start = _tick  # W3-O8: a firing starts (the flash)
-	_ghosts = reader.laser_ghosts()
-	_mines = reader.laser_mines()
+	_ghosts = ghosts
+	_mines = mines
 	ghosts_shown = mini(_ghosts.size(), GHOSTS_MAX)
 	rings_shown = _rings.size()
 	mines_shown = _mines.size()

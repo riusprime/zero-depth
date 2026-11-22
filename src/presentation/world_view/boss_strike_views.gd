@@ -103,6 +103,8 @@ var _pools := {}
 var _swoosh_add := MeshInstance3D.new()
 var _swoosh_mix := MeshInstance3D.new()
 var _glow_mats: Array[ShaderMaterial] = []
+## Reduced motion as last written into the glow materials (-1: not yet).
+var _still_set := -1
 var _shapes := BossStrikeShapes.new()
 
 
@@ -570,8 +572,10 @@ func _draw(now: float) -> void:
 	_shapes.arc_add.clear()
 	_shapes.arc_mix.clear()
 	var still := ViewPrefs.reduced_motion
-	for m in _glow_mats:
-		m.set_shader_parameter("motion", 0.0 if still else 1.0)
+	if int(still) != _still_set:  # (a written parameter re-uploads the material)
+		_still_set = int(still)
+		for m in _glow_mats:
+			m.set_shader_parameter("motion", 0.0 if still else 1.0)
 	var dens: float = DENSITY.get(ViewPrefs.effects_density, 1.0)
 	for s in _strikes:
 		var age := now - float(s["tick"])
@@ -589,7 +593,9 @@ func _draw(now: float) -> void:
 
 func _emit(mi: MeshInstance3D, verts: Array) -> void:
 	var im := mi.mesh as ImmediateMesh
-	im.clear_surfaces()
+	# An empty mesh is left alone: clearing it still has the renderer update every instance of it
+	if im.get_surface_count() > 0:
+		im.clear_surfaces()
 	if verts.is_empty():
 		return
 	im.surface_begin(Mesh.PRIMITIVE_TRIANGLES)

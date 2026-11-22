@@ -190,7 +190,7 @@ func sync(reader: WorldReader) -> void:
 				batch.facing_leaned(id)
 		if parts[5] != null:  # Off-screen crowds don't animate
 			var t_an := PerfMarks.start()
-			_animate_if_seen(node, id, at, hero, parts[9])
+			_animate_if_seen(node, id, at, hero, parts[9], parts[5])
 			PerfMarks.add(&"actors.animate", t_an)
 		if fresh and not parts[9]:
 			node.reset_physics_interpolation()
@@ -256,9 +256,10 @@ func _grounded(at: Vector2) -> Vector3:
 ## reset_physics_interpolation, so it never glides from where it was) when it comes near. The hero and the camera are
 ## never touched. A batched enemy's interpolation is the batch's (EnemyBatch.set_interpolated), by the same test.
 func _animate_if_seen(
-	node: Node3D, id: int, pos: Vector2, hero: Vector2, batched: bool = false
+	node: Node3D, id: int, pos: Vector2, hero: Vector2, batched: bool = false, avatar: Node = null
 ) -> void:
-	var avatar := node.get_meta(&"enemy_avatar") as Node
+	if avatar == null:  # (the caller passes the one its parts hold)
+		avatar = node.get_meta(&"enemy_avatar") as Node
 	var was: bool = _anim_on.get(id, false)
 	var on := false
 	if cull != null and cull.active:

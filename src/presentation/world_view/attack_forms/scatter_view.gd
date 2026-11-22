@@ -160,9 +160,11 @@ func sync(reader: WorldReader) -> void:
 		_live.pop_front()
 	while not _live.is_empty() and _tick - float(_live[0][3]) >= CONE_TICKS:
 		_live.pop_front()
+	var pellets_was := pellets
 	pellets = _pellet_pos.size()
 	cones = _live.size()
-	for k in PELLETS_MAX:
+	# A new look writes every slug; otherwise only the ones shown now or at the last sync (the rest are hidden)
+	for k in PELLETS_MAX if changed else maxi(pellets, pellets_was):
 		_slugs[k].visible = k < pellets
 		if changed:
 			_slug_mat[k].set_shader_parameter(&"core", _form.core)
