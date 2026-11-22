@@ -39,7 +39,10 @@ extends AvatarBase
 ## The breath's held looks, twitches and its clips' timers use the Frost Spitter's helpers (FrostSpitterAvatar).
 ## The pose is a few plain numbers (the raw drives, _vd: each joint's turn, slide or stretch) worked out from the state
 ## first, then the nodes from them through the joint table (_joints, the same transforms the VAT rig declares), so the
-## baked pose is the live one. Presentation only (EI-07): nothing here reaches the sim. +X is the front, +Z its right.
+## baked pose is the live one. On the VAT crowd it is batched (EnemyBatch: nothing here reads the tree, its turn is its
+## facing node's; its death's timer is the batch's, drop), and the native batch runs the same sync, frame step and pose
+## (native/src/zd_avatar_glacier_turtle.cpp). Presentation only (EI-07): nothing here reaches the sim. +X is the front,
+## +Z its right.
 
 const KIND := WorldReader.KIND_GLACIER_TURTLE
 const MODEL := &"glacier_turtle"
@@ -178,6 +181,8 @@ var _vd := PackedFloat32Array()
 var _lift := 0.0
 var _visor_mat := StandardMaterial3D.new()
 var _pivots := PIVOTS.duplicate()
+## The model's scale (1 for the stand-in): the feet are FEET at it.
+var _scale := 1.0
 var _feet: Array[Vector3] = []
 ## The joint table: [drive, parent joint, frame node or null, make (SoloVat's)], a parent before its children.
 var _joints: Array = []
@@ -232,6 +237,7 @@ func setup() -> void:
 	var s := 1.0
 	if has_model:
 		s = float(m["scale"])
+		_scale = s
 		var parts_in: Dictionary = m["parts"]
 		for pname: StringName in parts_in:
 			_pivots[pname] = (parts_in[pname] as Dictionary)["pivot"] * float(m["scale"])
@@ -252,9 +258,9 @@ func setup() -> void:
 		uppers.append(up)
 		lowers.append(_node(up, "Leg_%s_l" % LEGS[k]))
 	if has_model:
-		_build_model(m)
+		GlacierTurtleBody.build_model(self, m)
 	else:
-		_build_code()
+		GlacierTurtleBody.build_code(self)
 	_build_joints()
 	_pose()
 
@@ -264,91 +270,6 @@ func _node(parent: Node3D, n: String) -> Node3D:
 	node.name = n
 	parent.add_child(node)
 	return node
-
-
-## The frame node a part's mesh hangs in and that frame's own pivot (m).
-func _frame_of(part: StringName) -> Array:
-	match part:
-		&"carapace":
-			return [carapace, _pivots[&"carapace"]]
-		&"head":
-			return [head, _pivots[&"head"]]
-		&"shield":
-			return [shield, _pivots[&"shield"]]
-	var s := String(part)
-	var k := LEGS.find(StringName(s.substr(4, 2)))
-	if not s.begins_with("leg_") or k < 0:
-		return [rig, Vector3.ZERO]
-	return [uppers[k] if s.ends_with("_u") else lowers[k], _pivots[part]]
-
-
-## The owner's model: each part's mesh in its joint's frame, its surfaces on the base plates (the colour map as
-## delivered; a role surface, if any, tinted COLOR) and the visor's glow.
-func _build_model(m: Dictionary) -> void:
-	var tex: Texture2D = m["texture"]
-	var s: float = m["scale"]
-	var parts_in: Dictionary = m["parts"]
-	var mats := {}
-	for slot: StringName in [&"base", &"role"]:
-		var mat := StandardMaterial3D.new()
-		mat.albedo_texture = tex
-		mat.albedo_color = COLOR if slot == &"role" else Color.WHITE
-		mat.roughness = 1.0
-		mat.set_meta(&"enemy_tex", true)
-		mats[slot] = ActorViews.flashable(mat)
-		body_materials.append(mat)
-	for pname: StringName in parts_in:
-		var part: Dictionary = parts_in[pname]
-		var f: Array = _frame_of(pname)
-		var mi := MeshInstance3D.new()
-		mi.name = String(pname)
-		mi.mesh = part["mesh"]
-		mi.position = _pivots[pname] - (f[1] as Vector3)
-		mi.scale = Vector3.ONE * s
-		var surfaces: Array = part["surfaces"]
-		for k in surfaces.size():
-			mi.set_surface_override_material(
-				k, _visor_mat if surfaces[k] == &"glow" else mats.get(surfaces[k], mats[&"base"])
-			)
-		(f[0] as Node3D).add_child(mi)
-
-
-## The code-made stand-in (the model file missing): boxes on the same joints, so every clip still plays.
-func _build_code() -> void:
-	var charcoal := Color("#2A2828")
-	var grey := Color("#5C5A58")
-	_piece(rig, Vector3(0.8, 0.26, 0.6), Vector3(-0.1, 0.32, 0), charcoal)
-	_piece(carapace, Vector3(0.84, 0.24, 0.8), Vector3(0.0, 0.06, 0), ICE)
-	_piece(carapace, Vector3(0.3, 0.08, 0.3), Vector3(0.0, 0.2, 0), COLOR)
-	_piece(head, Vector3(0.22, 0.18, 0.2), Vector3(0.12, -0.04, 0), charcoal)
-	_glow_box(head, Vector3(0.03, 0.06, 0.08), Vector3(0.24, -0.04, 0), _visor_mat)
-	_piece(shield, Vector3(0.12, 0.88, 0.56), Vector3(-0.1, 0.44, 0), ICE)
-	for k in LEGS.size():
-		var hip: Vector3 = _pivots[StringName("leg_%s_u" % LEGS[k])]
-		var knee: Vector3 = _pivots[StringName("leg_%s_l" % LEGS[k])]
-		_rod(uppers[k], Vector3.ZERO, knee - hip, grey)
-		_rod(lowers[k], Vector3.ZERO, _feet[k] - knee, grey)
-
-
-func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color) -> MeshInstance3D:
-	var m := BoxMesh.new()
-	m.size = size
-	return _body_piece(parent, m, at, c)
-
-
-func _glow_box(parent: Node3D, size: Vector3, at: Vector3, mat: StandardMaterial3D) -> void:
-	var mi := MeshInstance3D.new()
-	var bm := BoxMesh.new()
-	bm.size = size
-	mi.mesh = bm
-	mi.material_override = mat
-	mi.position = at
-	parent.add_child(mi)
-
-
-func _rod(parent: Node3D, from: Vector3, to: Vector3, c: Color) -> void:
-	var piece := _piece(parent, Vector3(0.12, (to - from).length(), 0.12), (from + to) * 0.5, c)
-	piece.basis = Basis(Quaternion(Vector3.UP, (to - from).normalized()))
 
 
 ## The joint table (see _joints): the body's surge, roll, pitch and sway (the rig), the head's nod at the neck and its
@@ -418,6 +339,7 @@ func sync(reader: WorldReader, i: int) -> void:
 ## The same as sync(), from plain values (tests, EnemyShadows): tick, state, pos, windup (0..1); hp and shell (the
 ## shield's HP left) optional.
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	var st: int = s["state"]
 	var hp: int = s.get("hp", -1)
 	var shell: int = s.get("shell", -1)
@@ -448,6 +370,7 @@ func apply_state(s: Dictionary) -> void:
 
 # --- Frame time ---------------------------------------------------------------------------------------------------
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0:
 		return
@@ -495,49 +418,58 @@ func _turning(dt: float, dying: bool) -> void:
 	_have_fy = true
 
 
-## Starts the death (ActorViews, when the sim drops the turtle: its bar hidden, freed DEATH_SECONDS later). True: it
-## plays.
+## Starts the death (ActorViews or the enemy batch, when the sim drops the turtle: its bar hidden, freed DEATH_SECONDS
+## later). True: it plays.
 func die() -> bool:
+	_touch()
 	if _die_t < 0.0:
 		_die_t = 0.0
 	return true
 
 
 func dying() -> bool:
+	_peek()
 	return _die_t >= 0.0
 
 
 ## The shield's size now (the SHIELD_ON drive: 1 held, 0 gone; tests, the e2e), how bare it stands, the visor's glow.
 func shield_shown() -> float:
+	_peek()
 	return _vd[SHIELD_ON]
 
 
 func bareness() -> float:
+	_peek()
 	return _bare
 
 
 func visor_energy() -> float:
+	_peek()
 	return _visor_mat.emission_energy_multiplier
 
 
 ## The raw drives now (tests).
 func drives() -> PackedFloat32Array:
+	_peek()
 	return _vd
 
 
 ## Where foot `k`'s tip and its knee stand now (m, the facing's frame; tests): the legs' chain from the drives.
 func foot_at(k: int) -> Vector3:
+	_peek()
 	var knee: Vector3 = _pivots[StringName("leg_%s_l" % LEGS[k])]
 	var low := Transform3D(Basis(Vector3.BACK, _vd[LEG0 + 3 * k + 2]), Vector3.ZERO)
 	return _upper_xf(k) * low * (_feet[k] - knee)
 
 
 func knee_at(k: int) -> Vector3:
+	_peek()
 	return _upper_xf(k) * Vector3.ZERO
 
 
 ## Where the shield's front foot stands now (m, the facing's frame; tests): it keeps to the ground while held.
 func shield_foot() -> Vector3:
+	_peek()
 	return _body_xf(_vd) * (_pivots[&"shield"] + Vector3(0.0, _vd[SHIELD_UP], 0.0))
 
 
@@ -961,15 +893,18 @@ func _apply() -> void:
 # --- SoloVat: the VAT rig -----------------------------------------------------------------------------------------
 ## The whole body's lift (m): VatCrowd moves the instance by it.
 func vat_lift() -> float:
+	_peek()
 	return _lift
 
 
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
 ## The visor's glow (the instance's accent glow).
 func glow_energy() -> float:
+	_peek()
 	return _visor_mat.emission_energy_multiplier
 
 

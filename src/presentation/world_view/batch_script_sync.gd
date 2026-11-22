@@ -102,6 +102,10 @@ static func apply(
 		BatchScrapHound.apply_in_script(a as ScrapHoundAvatar, tick, pos, state, windup, more, o)
 	elif cls == BatchAvatars.CINDER_PRIEST_CLASS:
 		BatchCinderPriest.apply_in_script(a as CinderPriestAvatar, tick, pos, state, more, o)
+	elif cls == BatchAvatars.GLACIER_TURTLE_CLASS:
+		BatchGlacierTurtle.apply_in_script(
+			a as GlacierTurtleAvatar, tick, pos, state, windup, more, o
+		)
 	elif cls >= BatchAvatars.CHARGER_CLASS:
 		(
 			(a as ChargerAvatar)
