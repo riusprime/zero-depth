@@ -337,3 +337,60 @@ func test_actor_views_draw_it_through_the_crowd_and_let_it_collapse() -> void:
 	assert_true(a.dying(), "it collapses")
 	assert_false(views.vat_crowd.instance_of(a).is_empty(), "drawn while it collapses")
 	ViewPrefs.enemy_vat = false
+
+
+## Its root's contact disc and team ring nodes (the path without the batch), each shown or not.
+func _ring_nodes_shown(node: Node3D) -> Array:
+	var out := []
+	for n in node.get_children():
+		if n is MeshInstance3D and n.name != EnemyShadows.BLOB_NAME:
+			out.append((n as MeshInstance3D).visible)
+	return out
+
+
+func test_on_the_vat_crowd_it_is_batched_its_disc_and_ring_hidden_while_it_waits_as_its_nodes_were(
+) -> void:
+	ViewPrefs.enemy_vat = true
+	var w := CombatLab.world()
+	w.actors.invuln[0] = 1 << 24
+	var id := w.add_enemy(ActorStore.Kind.ROCK_LURKER, Vector2(5.0, 0.0))
+	var batched: ActorViews = add_child_autofree(ActorViews.new())
+	var nodes: ActorViews = add_child_autofree(ActorViews.new())
+	nodes.batching = false
+	for v: ActorViews in [batched, nodes]:
+		v.set_process(false)
+		v.sync(WorldReader.new(w))
+	assert_true(EnemyBatch.KINDS.has(KIND), "a batched kind")
+	assert_eq(batched.batched_count(), 1, "drawn by the enemy batch")
+	var root := batched.actor_node(id)
+	assert_false(root.is_inside_tree(), "its root stays outside the tree")
+	var node := nodes.actor_node(id)
+	assert_eq(_ring_nodes_shown(node).size(), 2, "the node view's disc and ring")
+	var waited := 0
+	var out := 0
+	for t in 240:
+		if t == 120:  # A hit wakes it (it comes out walking)
+			var i := w.actors.index_of(id)
+			w.actors.hp[i] = w.actors.max_hp[i] - 1
+		w.step(InputFrame.new())
+		var reader := WorldReader.new(w)
+		batched.sync(reader)
+		nodes.sync(reader)
+		batched.batch.advance(DT)
+		var on: bool = batched.batch.parts_of(id, EnemyBatch.Part.DISC).size() == 1
+		var ring_on: bool = batched.batch.parts_of(id, EnemyBatch.Part.RING).size() == 1
+		assert_eq(
+			_ring_nodes_shown(node),
+			[on, ring_on],
+			"tick %d: the batch's disc and ring as the nodes" % t
+		)
+		var i := w.actors.index_of(id)
+		if RockLurkerAvatar.disguised(reader, i):
+			waited += 1
+			assert_false(on, "tick %d: no disc while it waits" % t)
+		else:
+			out += 1
+			assert_true(on, "tick %d: its disc once it is out" % t)
+	assert_gt(waited, 60, "it waited as a boulder")
+	assert_gt(out, 60, "then came out")
+	ViewPrefs.enemy_vat = false
