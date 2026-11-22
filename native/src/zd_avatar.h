@@ -331,6 +331,26 @@ enum Field {
 	FS_KNEES = 74,
 	FS_FEET = 86,
 	FS_VD = 98, // f32 x22: the raw drives
+	// WireWeaverAvatar (its own fields from 43 to 94; zd_avatar_wire_weaver.cpp)
+	WW_SPARK = 43, // the post tops' glow (the instance's accent glow)
+	WW_LIFT = 44,
+	WW_STATE = 45,
+	WW_TELL = 46,
+	WW_HP = 47,
+	WW_SPEED = 48,
+	WW_OMEGA = 49,
+	WW_PHASE = 50,
+	WW_STRIDE = 51,
+	WW_COIL = 52,
+	WW_RISE = 53,
+	WW_PLANT = 54,
+	WW_HURT = 55,
+	WW_HURT_LEG = 56,
+	WW_DIE = 57,
+	WW_LAST_FY = 58,
+	WW_HAVE_FY = 59,
+	WW_FOOT_Z = 60, // f32 x4: each leg's foot across the body (set once)
+	WW_VD = 64, // f32 x31: the raw drives
 	STRIDE = 124,
 };
 
@@ -358,6 +378,7 @@ enum Class {
 	KILN_BEETLE = 19,
 	CINDER_PRIEST = 20,
 	FROST_SPITTER = 21,
+	WIRE_WEAVER = 24,
 };
 
 inline bool is_charger(int c) {
@@ -493,6 +514,12 @@ void fs_apply(double *s, int64_t tick, int state, double windup, float pos_x, fl
 		const Ctx &c);
 void fs_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int fs_drives(const double *s, float *out);
+// The Wire Weaver (zd_avatar_wire_weaver.cpp): its sync (`more`: its HP first), frame step (the pose included; the
+// facing's turn from `f`) and drives.
+void ww_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void ww_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int ww_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,

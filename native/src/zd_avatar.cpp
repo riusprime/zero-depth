@@ -684,6 +684,8 @@ void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
 		cp_advance(s, delta, c);
 	} else if (cls == FROST_SPITTER) {
 		fs_advance(s, delta, f, c);
+	} else if (cls == WIRE_WEAVER) {
+		ww_advance(s, delta, f, c);
 	} else if (is_charger(cls)) {
 		c_advance(s, delta, c);
 	} else if (cls != NONE) {
@@ -747,6 +749,10 @@ void apply(double *s, int cls, int64_t tick, int state, bool healing, double win
 	}
 	if (cls == FROST_SPITTER) {
 		fs_apply(s, tick, state, windup, pos_x, pos_y, more, c);
+		return;
+	}
+	if (cls == WIRE_WEAVER) {
+		ww_apply(s, tick, state, windup, pos_x, pos_y, more, c);
 		return;
 	}
 	if (is_charger(cls)) {
@@ -834,6 +840,9 @@ double glow_energy(const double *s, int cls) {
 	if (cls == FROST_SPITTER) {
 		return s[FS_SAC_GLOW];
 	}
+	if (cls == WIRE_WEAVER) {
+		return s[WW_SPARK];
+	}
 	return is_charger(cls) ? s[C_VISOR] : s[H_GLOW];
 }
 
@@ -873,6 +882,9 @@ Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
 	}
 	if (cls == FROST_SPITTER) {
 		return xf.translated_local(Vector3(0.0f, f32(s[FS_LIFT]), 0.0f));
+	}
+	if (cls == WIRE_WEAVER) {
+		return xf.translated_local(Vector3(0.0f, f32(s[WW_LIFT]), 0.0f));
 	}
 	if (is_charger(cls)) {
 		return xf.translated_local(Vector3(0.0f, f32(s[C_LIFT]), 0.0f));
@@ -919,6 +931,9 @@ int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 	}
 	if (cls == FROST_SPITTER) {
 		return fs_drives(s, out);
+	}
+	if (cls == WIRE_WEAVER) {
+		return ww_drives(s, out);
 	}
 	if (is_charger(cls)) {
 		const double t = s[T];
