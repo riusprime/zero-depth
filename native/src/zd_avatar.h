@@ -358,6 +358,26 @@ enum Field {
 	GT_HIPS = 90, // f32 x3 x4 each: the legs' hips and knees (set once)
 	GT_KNEES = 102,
 	GT_SCALE = 114, // the model's scale (its feet are FEET at it; set once)
+	// WireWeaverAvatar (its own fields from 43 to 94; zd_avatar_wire_weaver.cpp)
+	WW_SPARK = 43, // the post tops' glow (the instance's accent glow)
+	WW_LIFT = 44,
+	WW_STATE = 45,
+	WW_TELL = 46,
+	WW_HP = 47,
+	WW_SPEED = 48,
+	WW_OMEGA = 49,
+	WW_PHASE = 50,
+	WW_STRIDE = 51,
+	WW_COIL = 52,
+	WW_RISE = 53,
+	WW_PLANT = 54,
+	WW_HURT = 55,
+	WW_HURT_LEG = 56,
+	WW_DIE = 57,
+	WW_LAST_FY = 58,
+	WW_HAVE_FY = 59,
+	WW_FOOT_Z = 60, // f32 x4: each leg's foot across the body (set once)
+	WW_VD = 64, // f32 x31: the raw drives
 	// StarWarperAvatar (its own fields from 43 to 85; zd_avatar_star_warper.cpp)
 	SW_SHARD_GLOW = 43, // the shards' glow (the instance's accent glow)
 	SW_SHADOW = 44, // f32: the ground disc's scale
@@ -409,6 +429,7 @@ enum Class {
 	CINDER_PRIEST = 20,
 	FROST_SPITTER = 21,
 	GLACIER_TURTLE = 22,
+	WIRE_WEAVER = 24,
 	STAR_WARPER = 25,
 };
 
@@ -552,6 +573,12 @@ void gt_apply(double *s, int64_t tick, int state, double windup, float pos_x, fl
 		const Ctx &c);
 void gt_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int gt_drives(const double *s, float *out);
+// The Wire Weaver (zd_avatar_wire_weaver.cpp): its sync (`more`: its HP first), frame step (the pose included; the
+// facing's turn from `f`) and drives.
+void ww_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void ww_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int ww_drives(const double *s, float *out);
 // The Star Warper (zd_avatar_star_warper.cpp): its sync (`more`: its HP, whether it is stunned), frame step (the pose
 // included; the facing's turn from `f`) and drives.
 void sw_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
