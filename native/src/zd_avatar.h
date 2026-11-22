@@ -97,7 +97,36 @@ enum Field {
 	S_SCALE = 65, // the model's scale (set once)
 	S_OFF = 66, // f32 x3 x6: the joints' offsets (pelvis, neck, shoulder, elbow, wrist, hip; set once)
 	S_VD = 84, // f32 x29: the raw drives
-	STRIDE = 113,
+	// NeedleAvatar (its own fields from 43; zd_avatar_needle.cpp)
+	N_GEM = 43, // f32: the gem material's emission energy
+	N_STATE = 44,
+	N_STATE_TICK = 45,
+	N_SHOTS = 46,
+	N_TELL = 47,
+	N_HP = 48,
+	N_SPEED = 49,
+	N_DIR = 50, // f32 x2: the way it goes in the facing's frame
+	N_OMEGA = 52,
+	N_PHASE = 53,
+	N_STRIDE = 54,
+	N_BRACE = 55,
+	N_CHARGE = 56,
+	N_RISE = 57,
+	N_SHOT_T = 58,
+	N_BURST_T = 59,
+	N_HEAT = 60,
+	N_VENT_T = 61,
+	N_HURT_T = 62,
+	N_HURT_LEG = 63,
+	N_DIE = 64,
+	N_LAST_FY = 65,
+	N_HAVE_FY = 66,
+	N_LIFT = 67,
+	N_VD = 68, // f32 x20: the raw drives
+	N_HIPS = 88, // f32 x3 x4 each: the legs' rest hips, knees and feet (set once)
+	N_KNEES = 100,
+	N_FEET = 112,
+	STRIDE = 124,
 };
 
 // A slot's class (BatchAvatars.CLASS_OF): which avatar code runs it (0: none native, its avatar steps in GDScript).
@@ -113,6 +142,7 @@ enum Class {
 	CHARGER = 8,
 	HATCHLING = 9,
 	STONE_THROWER = 10,
+	NEEDLE = 11,
 };
 
 inline bool is_charger(int c) {
@@ -123,7 +153,7 @@ inline bool is_charger(int c) {
 constexpr int MAX_DRIVES = 29;
 
 // A Stone Thrower's sync inputs past the common ones (BatchAvatars.MORE a slot): its ticks into the state, its facing
-// (Kin.dir: x, y) and the sim's lift, flight and recovery ticks.
+// (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's: its HP (the first).
 constexpr int MORE = 6;
 
 // The sim states (WorldReader.STATE_*), handed in by the batch.
@@ -175,6 +205,12 @@ double ease_rate(double per_second, double dt);
 void s_apply(double *s, int64_t tick, int state, float pos_x, float pos_y, const double *more, const Ctx &c);
 void s_advance(double *s, double delta, const Ctx &c);
 int s_drives(const double *s, float *out);
+
+// The Needle (zd_avatar_needle.cpp): its sync (`more`: its HP first), frame step (the pose included) and drives.
+void n_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void n_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int n_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,
