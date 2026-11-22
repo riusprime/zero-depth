@@ -11,7 +11,8 @@ extends RefCounted
 ## - the bar chunks drawn (BarChunks.drawn) and the bodies drawn (VatCrowd.drawn), each side;
 ## - a Warden's slam dust ring (a node on both sides: the batch keeps it in the tree, BatchWarden): whether it shows,
 ##   its interpolated global transform and its colour; a Rubble Warden's crust the same way (whether it shows, where);
-##   a Bomb Drone's ground disc (a node on both sides too, BatchBombDrone): whether it shows, where.
+##   a Bomb Drone's ground disc and a Lens Drone's ground shadow (nodes on both sides too, BatchBombDrone,
+##   BatchLensDrone): whether each shows, where and how large.
 ## The report line gives what was compared and the largest differences. Probe-only; the twin doubles the drawing.
 
 ## Differences under these count as equal (float rounding between the two ways of reckoning a transform).
@@ -90,6 +91,7 @@ func _compare() -> void:
 		_body(id, a, b)
 		_dust(id, a, b)
 		_ground_disc(id, a, b)
+		_lens_shadow(id, a, b)
 		if _live.batched_count() > 0:
 			_furniture(id, b)
 	_diff("bodies_drawn", absf(_live.vat_crowd.drawn - twin.vat_crowd.drawn), "")
@@ -190,22 +192,29 @@ func _dust(id: int, a: Node3D, b: Node3D) -> void:
 func _ground_disc(id: int, a: Node3D, b: Node3D) -> void:
 	var da := a.get_meta(&"enemy_avatar") as BombDroneAvatar
 	var db := b.get_meta(&"enemy_avatar") as BombDroneAvatar
-	if da == null or db == null:
-		return
-	var sa := da.shadow.is_inside_tree() and da.shadow.is_visible_in_tree()
-	var sb := db.shadow.is_visible_in_tree()
+	if da != null and db != null:
+		_held_part("ground_disc", id, da.shadow, db.shadow)
+
+
+func _lens_shadow(id: int, a: Node3D, b: Node3D) -> void:
+	var da := a.get_meta(&"enemy_avatar") as LensDroneAvatar
+	var db := b.get_meta(&"enemy_avatar") as LensDroneAvatar
+	if da != null and db != null:
+		_held_part("lens_shadow", id, da.shadow, db.shadow)
+
+
+## A node part the batch keeps in the tree (`pa`, the live side's) against the twin's (`pb`): whether it shows, its
+## interpolated global transform (its place, and its basis: its size and lean).
+func _held_part(what: String, id: int, pa: Node3D, pb: Node3D) -> void:
+	var sa := pa.is_inside_tree() and pa.is_visible_in_tree()
+	var sb := pb.is_visible_in_tree()
 	if sa != sb:
-		_note("ground_disc_shown", 1.0, "id %d batch %s twin %s" % [id, sa, sb])
+		_note(what + "_shown", 1.0, "id %d batch %s twin %s" % [id, sa, sb])
 		return
 	if not sa:
 		return
 	_parts += 1
-	_xf(
-		"ground_disc",
-		id,
-		da.shadow.get_global_transform_interpolated(),
-		db.shadow.get_global_transform_interpolated()
-	)
+	_xf(what, id, pa.get_global_transform_interpolated(), pb.get_global_transform_interpolated())
 
 
 func _furniture(id: int, b: Node3D) -> void:
