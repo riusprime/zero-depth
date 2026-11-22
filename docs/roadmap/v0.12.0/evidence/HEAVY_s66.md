@@ -89,3 +89,27 @@ Per the owner (2026-11-22: the tests run once with every kind moved), these are 
   native/src/zd_collide* native/src/zd_strike* native/src/zd_shots* native/src/zd_nav* native/src/zd_world*` is
   empty).
 - timing: none (owner: the lead measures once with every kind moved).
+
+## After the merge with `lead-v0120` (the Glacier Turtle, `0c8a5c4a`)
+
+Merge commit `61a522f2` (parents `22be7452`, `0c8a5c4a`). The shared files' conflicts were both kinds' additive lines
+side by side; every class's dispatch `return` / `}` lines and every enum field line kept (`git diff lead-v0120 --
+native/src/zd_avatar.cpp` holds only the Weaver's lines). The library rebuilt (`ensure.sh` exit 0), then, Godot
+processes before: 0:
+```
+"$GODOT" --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/native/test_native_crowd_wire_weaver.gd -gexit
+```
+Exit code 0:
+```
+* test_the_native_wire_weavers_draw_the_script_ones_bodies
+    weaver states seen (actor-frames): { 0: 560, 1: 2448, 2: 552, 4: 363 }; kills 5 (3 mid-attack)
+1/1 passed.
+Asserts             107
+---- All tests passed! ----
+```
+Since the merge touched the Glacier Turtle's dispatch lines, its own equality test once (Godot processes before: 4,
+none of them this step's), `-gtest=res://tests/unit/native/test_native_crowd_glacier_turtle.gd`, exit code 0:
+`1/1 passed`, `Asserts 109`, `---- All tests passed! ----`.
+
+Lint on the merged tree: gdformat exit 0 (`1996 files would be left unchanged`), gdlint exit 0 (`Success: no problems
+found`).
