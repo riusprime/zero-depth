@@ -228,6 +228,27 @@ enum Field {
 	LD_SHADOW = 48, // the ground shadow's scale across (its node's x and z)
 	LD_HAS_MODEL = 49, // the owner's model (set once)
 	LD_VD = 50, // f32 x3: the raw drives
+	// KilnBeetleAvatar (its own fields from 43 to 100; zd_avatar_kiln_beetle.cpp)
+	KB_HEAT_GLOW = 43, // the heat's glow (the instance's accent glow)
+	KB_LIFT = 44,
+	KB_STATE = 45,
+	KB_TELL = 46,
+	KB_HP = 47,
+	KB_HEAT = 48,
+	KB_SPEED = 49,
+	KB_OMEGA = 50,
+	KB_PHASE = 51,
+	KB_STRIDE = 52,
+	KB_COIL = 53,
+	KB_RISE = 54,
+	KB_SLAM = 55,
+	KB_HURT = 56,
+	KB_HURT_LEG = 57,
+	KB_DIE = 58,
+	KB_LAST_FY = 59,
+	KB_HAVE_FY = 60,
+	KB_FOOT_Z = 61, // f32 x8: each leg's foot across the body (set once)
+	KB_VD = 69, // f32 x32: the raw drives
 	STRIDE = 124,
 };
 
@@ -250,14 +271,15 @@ enum Class {
 	SNIPER_MODEL = 14, // the owner's model (SniperAvatar); SNIPER is its old horde body
 	ARC_CASTER = 15,
 	LENS_DRONE = 17,
+	KILN_BEETLE = 19,
 };
 
 inline bool is_charger(int c) {
 	return c == CHARGER || c == HATCHLING;
 }
 
-// The most drives a class gives VatCrowd (the Stone Thrower's 29).
-constexpr int MAX_DRIVES = 29;
+// The most drives a class gives VatCrowd (the Kiln Beetle's 32).
+constexpr int MAX_DRIVES = 32;
 
 // A Stone Thrower's sync inputs past the common ones (BatchAvatars.MORE a slot): its ticks into the state, its facing
 // (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's and a Sniper's: its HP (the first). A
@@ -357,6 +379,12 @@ int ac_drives(const double *s, float *out);
 void ld_apply(double *s, int state, const Ctx &c);
 void ld_advance(double *s, double delta, const Ctx &c);
 int ld_drives(const double *s, float *out);
+// The Kiln Beetle (zd_avatar_kiln_beetle.cpp): its sync (`more`: its HP, its full HP), frame step (the pose included;
+// the facing's turn from `f`) and drives.
+void kb_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void kb_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int kb_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,

@@ -2,8 +2,8 @@ class_name BatchAvatars
 extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
 ## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow), RockLurkerAvatar's
-## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow), ArcCasterAvatar's (BatchArcCaster) or
-## LensDroneAvatar's (BatchLensDrone)
+## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow), ArcCasterAvatar's (BatchArcCaster),
+## LensDroneAvatar's (BatchLensDrone) or KilnBeetleAvatar's (BatchKilnBeetle)
 ## fields that change after setup) is a row of packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same
 ## arithmetic in the same order) applies each sync, steps each frame and writes VatCrowd's body and shadow instances
 ## from the rows: one call each, none per enemy.
@@ -108,6 +108,7 @@ const ROCK_LURKER_CLASS := 13
 const SNIPER_CLASS := 14
 const ARC_CASTER_CLASS := 15
 const LENS_DRONE_CLASS := 17
+const KILN_BEETLE_CLASS := 19
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -125,6 +126,7 @@ const CLASS_OF := {
 	WorldReader.KIND_SNIPER: SNIPER_CLASS,
 	WorldReader.KIND_ARC_CASTER: ARC_CASTER_CLASS,
 	WorldReader.KIND_LENS_DRONE: LENS_DRONE_CLASS,
+	WorldReader.KIND_KILN_BEETLE: KILN_BEETLE_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -202,6 +204,9 @@ static func class_of(avatar: AvatarBase) -> int:
 	var ld := avatar as LensDroneAvatar
 	if ld != null and ld.vat:
 		return LENS_DRONE_CLASS
+	var kb := avatar as KilnBeetleAvatar
+	if kb != null and kb.vat:
+		return KILN_BEETLE_CLASS
 	return 0
 
 
@@ -393,8 +398,10 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 			if state == WorldReader.STATE_WINDUP
 			else 0.0
 		)
-		if c == NEEDLE_CLASS or c == SNIPER_CLASS:  # (its sync reads its HP: a hit's flinch)
+		if c == NEEDLE_CLASS or c == SNIPER_CLASS or c == KILN_BEETLE_CLASS:  # (its HP: a hit's flinch)
 			_in_more[k * MORE] = reader.actor_hp(i)
+		if c == KILN_BEETLE_CLASS:  # (and its full HP: the heat)
+			_in_more[k * MORE + 1] = reader.actor_max_hp(i)
 	if c >= CHARGER_CLASS:
 		var p := reader.actor_pos(i)
 		_in_x[k] = p.x
@@ -600,6 +607,12 @@ func _flush_inputs_in_script() -> void:
 				)
 			elif _cls[k] == LENS_DRONE_CLASS:
 				BatchLensDrone.apply_in_script(a as LensDroneAvatar, _tick, _in_state[k])
+			elif _cls[k] == KILN_BEETLE_CLASS:
+				var kb := a as KilnBeetleAvatar
+				var p := Vector2(_in_x[k], _in_y[k])
+				BatchKilnBeetle.apply_in_script(
+					kb, _tick, p, _in_state[k], _in_windup[k], _in_more, o
+				)
 			elif _cls[k] == ARC_CASTER_CLASS:
 				(
 					(a as ArcCasterAvatar)
@@ -866,6 +879,9 @@ func _export_solo(o: int, a: AvatarBase) -> bool:
 	elif a is LensDroneAvatar:
 		first = BatchLensDrone.FIRST
 		row = BatchLensDrone.fields(a as LensDroneAvatar)
+	elif a is KilnBeetleAvatar:
+		first = BatchKilnBeetle.FIRST
+		row = BatchKilnBeetle.fields(a as KilnBeetleAvatar)
 	else:
 		return false
 	for q in row.size():
@@ -889,6 +905,8 @@ func _import_solo(o: int, a: AvatarBase) -> bool:
 		BatchArcCaster.take(a as ArcCasterAvatar, _st, o)
 	elif a is LensDroneAvatar:
 		BatchLensDrone.load(a as LensDroneAvatar, _st, o)
+	elif a is KilnBeetleAvatar:
+		BatchKilnBeetle.take(a as KilnBeetleAvatar, _st, o)
 	else:
 		return false
 	return true
