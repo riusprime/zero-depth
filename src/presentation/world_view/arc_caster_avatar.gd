@@ -25,6 +25,9 @@ extends AvatarBase
 ##   the shards still (no orbit); the gather and the cast keep their poses (they are the tell).
 ## The pose is a few plain numbers (the raw drives, _vd) worked out from the state first, then the nodes from them
 ## through the joint table (_joints, the same transforms the VAT rig declares), so the baked pose is the live one.
+## On the VAT crowd it is batched (EnemyBatch: nothing here reads the tree, its turn is its facing node's; its death's
+## timer is the batch's, drop), and the native batch runs the same sync, frame step and pose
+## (native/src/zd_avatar_arc_caster.cpp).
 ## Presentation only (EI-07): nothing here reaches the sim. +X is the front, +Z its right.
 ## The class also keeps the shape kit other code-made bodies use (_frustum, _octahedron).
 
@@ -465,6 +468,7 @@ func sync(reader: WorldReader, i: int) -> void:
 
 ## The same as sync(), from plain values (tests and tools): tick, state, pos (the sim plane), windup (0..1).
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	var was := _state
 	_state = int(s.get("state", WorldReader.STATE_MOVE))
 	_wind = (
@@ -481,6 +485,7 @@ func apply_state(s: Dictionary) -> void:
 
 # --- Frame time ---------------------------------------------------------------------------------------------------
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0:
 		return
@@ -521,28 +526,33 @@ func _turning(dt: float, dying: bool) -> void:
 	_have_fy = true
 
 
-## Starts the death (ActorViews, when the sim drops it: freed DEATH_SECONDS later). True: it plays.
+## Starts the death (ActorViews or the enemy batch, when the sim drops it: freed DEATH_SECONDS later). True: it plays.
 func die() -> bool:
+	_touch()
 	if _die_t < 0.0:
 		_die_t = 0.0
 	return true
 
 
 func dying() -> bool:
+	_peek()
 	return _die_t >= 0.0
 
 
 ## 0..1: the gather shown (the windup's progress; tests).
 func gather_pose() -> float:
+	_peek()
 	return _wind
 
 
 ## The raw drives now (tests).
 func drives() -> PackedFloat32Array:
+	_peek()
 	return _vd
 
 
 func visor_energy() -> float:
+	_peek()
 	return _visor_mat.emission_energy_multiplier
 
 
@@ -733,15 +743,18 @@ func _apply() -> void:
 # --- SoloVat: the VAT rig -----------------------------------------------------------------------------------------
 ## The whole body's lift (m): VatCrowd moves the instance by it.
 func vat_lift() -> float:
+	_peek()
 	return _lift
 
 
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
 ## The crystal's glow (the instance's accent glow; the visor's is the VISOR drive).
 func glow_energy() -> float:
+	_peek()
 	return _crystal
 
 

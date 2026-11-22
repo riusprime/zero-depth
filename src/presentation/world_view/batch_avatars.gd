@@ -2,7 +2,8 @@ class_name BatchAvatars
 extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
 ## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow), RockLurkerAvatar's
-## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow) or LensDroneAvatar's (BatchLensDrone)
+## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow), ArcCasterAvatar's (BatchArcCaster) or
+## LensDroneAvatar's (BatchLensDrone)
 ## fields that change after setup) is a row of packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same
 ## arithmetic in the same order) applies each sync, steps each frame and writes VatCrowd's body and shadow instances
 ## from the rows: one call each, none per enemy.
@@ -105,6 +106,7 @@ const NEEDLE_CLASS := 11
 const WARDEN_CLASS := 12
 const ROCK_LURKER_CLASS := 13
 const SNIPER_CLASS := 14
+const ARC_CASTER_CLASS := 15
 const LENS_DRONE_CLASS := 17
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
@@ -121,6 +123,7 @@ const CLASS_OF := {
 	WorldReader.KIND_WARDEN: WARDEN_CLASS,
 	WorldReader.KIND_RUBBLE_WARDEN: WARDEN_CLASS,
 	WorldReader.KIND_SNIPER: SNIPER_CLASS,
+	WorldReader.KIND_ARC_CASTER: ARC_CASTER_CLASS,
 	WorldReader.KIND_LENS_DRONE: LENS_DRONE_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
@@ -193,6 +196,9 @@ static func class_of(avatar: AvatarBase) -> int:
 	var sn := avatar as SniperAvatar
 	if sn != null and sn.vat:
 		return SNIPER_CLASS
+	var ac := avatar as ArcCasterAvatar
+	if ac != null and ac.vat:
+		return ARC_CASTER_CLASS
 	var ld := avatar as LensDroneAvatar
 	if ld != null and ld.vat:
 		return LENS_DRONE_CLASS
@@ -594,6 +600,18 @@ func _flush_inputs_in_script() -> void:
 				)
 			elif _cls[k] == LENS_DRONE_CLASS:
 				BatchLensDrone.apply_in_script(a as LensDroneAvatar, _tick, _in_state[k])
+			elif _cls[k] == ARC_CASTER_CLASS:
+				(
+					(a as ArcCasterAvatar)
+					. apply_state(
+						{
+							"tick": _tick,
+							"pos": Vector2(_in_x[k], _in_y[k]),
+							"state": _in_state[k],
+							"windup": _in_windup[k],
+						}
+					)
+				)
 			elif _cls[k] >= CHARGER_CLASS:
 				(
 					(a as ChargerAvatar)
@@ -706,37 +724,25 @@ func _export(k: int) -> void:
 	if st != null:
 		_export_thrower(o, st)
 		return
-	var nd := a as NeedleAvatar
-	if nd != null:
-		var row := BatchNeedleRow.fields(nd)
-		for q in row.size():
-			_st[o + BatchNeedleRow.FIRST + q] = row[q]
+	if _export_solo(o, a):
 		return
-	var lk := a as RockLurkerAvatar
-	if lk != null:
-		var r := BatchLurker.fields(lk)
-		for q in BatchLurker.COUNT:
-			_st[o + BatchLurker.FIRST + q] = r[q]
-		return
-	var wd := a as WardenAvatar
-	if wd != null:
-		var row := BatchWarden.export_row(wd)
-		for q in row.size():
-			_st[o + BatchWarden.W_CRACK + q] = row[q]
-		return
-	var sn := a as SniperAvatar
-	if sn != null:
-		var row := BatchSniperRow.fields(sn)
-		for q in row.size():
-			_st[o + BatchSniperRow.FIRST + q] = row[q]
-		return
-	var ld := a as LensDroneAvatar
-	if ld != null:
-		var row := BatchLensDrone.fields(ld)
-		for q in row.size():
-			_st[o + BatchLensDrone.FIRST + q] = row[q]
-	else:
-		_export_charger(o, a as ChargerAvatar)
+	var c := a as ChargerAvatar
+	_st[o + C_VISOR] = c._visor_e
+	_st[o + C_TELL] = c._tell_p
+	_st[o + C_STATE] = c._state
+	_st[o + C_SPEED] = c._speed
+	_st[o + C_WALK] = c._walk
+	_st[o + C_PHASE] = c._phase
+	_st[o + C_WIND] = c._wind
+	_st[o + C_LUNGE] = c._lunge
+	_st[o + C_DAZE] = c._daze
+	_st[o + C_RISE] = c._rise
+	_st[o + C_RISE_NOW] = c._rise_now
+	_st[o + C_LUNGE_NOW] = c._lunge_now
+	_st[o + C_CROUCH_NOW] = c._crouch_now
+	_st[o + C_Y_NOW] = c._y_now
+	_st[o + C_LIFT] = c._vat_lift
+	_st[o + C_DIE] = c._die_t
 
 
 ## Slot `k`'s row into its avatar's fields (then the object is as new as the row).
@@ -783,51 +789,9 @@ func _import(k: int) -> void:
 	if st != null:
 		_import_thrower(o, st)
 		return
-	var nd := a as NeedleAvatar
-	if nd != null:
-		BatchNeedleRow.load(nd, _st.slice(o + BatchNeedleRow.FIRST, o + STRIDE))
+	if _import_solo(o, a):
 		return
-	var lk := a as RockLurkerAvatar
-	if lk != null:
-		BatchLurker.take(lk, _st, o)
-		return
-	var wd := a as WardenAvatar
-	if wd != null:
-		BatchWarden.import_row(wd, _st.slice(o + BatchWarden.W_CRACK, o + STRIDE))
-		return
-	var sn := a as SniperAvatar
-	if sn != null:
-		BatchSniperRow.load(sn, _st.slice(o + BatchSniperRow.FIRST, o + BatchSniperRow.END))
-		return
-	var ld := a as LensDroneAvatar
-	if ld != null:
-		BatchLensDrone.load(ld, _st, o)
-	else:
-		_import_charger(o, a as ChargerAvatar)
-
-
-## A Charger's (or Hatchling's) own fields into its row at `o`.
-func _export_charger(o: int, c: ChargerAvatar) -> void:
-	_st[o + C_VISOR] = c._visor_e
-	_st[o + C_TELL] = c._tell_p
-	_st[o + C_STATE] = c._state
-	_st[o + C_SPEED] = c._speed
-	_st[o + C_WALK] = c._walk
-	_st[o + C_PHASE] = c._phase
-	_st[o + C_WIND] = c._wind
-	_st[o + C_LUNGE] = c._lunge
-	_st[o + C_DAZE] = c._daze
-	_st[o + C_RISE] = c._rise
-	_st[o + C_RISE_NOW] = c._rise_now
-	_st[o + C_LUNGE_NOW] = c._lunge_now
-	_st[o + C_CROUCH_NOW] = c._crouch_now
-	_st[o + C_Y_NOW] = c._y_now
-	_st[o + C_LIFT] = c._vat_lift
-	_st[o + C_DIE] = c._die_t
-
-
-## A Charger's (or Hatchling's) row at `o` into its fields.
-func _import_charger(o: int, c: ChargerAvatar) -> void:
+	var c := a as ChargerAvatar
 	c._visor_e = _st[o + C_VISOR]
 	c._tell_p = _st[o + C_TELL]
 	c._state = int(_st[o + C_STATE])
@@ -878,6 +842,56 @@ func _export_thrower(o: int, st: StoneThrowerAvatar) -> void:
 		_st[o + S_OFF + j * 3 + 2] = v.z
 	for q in st._vd.size():
 		_st[o + S_VD + q] = st._vd[q]
+
+
+## A solo model kind's own fields (its row file's: from its first field on) into the row at `o`; false for the others.
+func _export_solo(o: int, a: AvatarBase) -> bool:
+	var first := 0
+	var row := PackedFloat64Array()
+	if a is NeedleAvatar:
+		first = BatchNeedleRow.FIRST
+		row = BatchNeedleRow.fields(a as NeedleAvatar)
+	elif a is RockLurkerAvatar:
+		first = BatchLurker.FIRST
+		row = BatchLurker.fields(a as RockLurkerAvatar)
+	elif a is WardenAvatar:
+		first = BatchWarden.W_CRACK
+		row = BatchWarden.export_row(a as WardenAvatar)
+	elif a is SniperAvatar:
+		first = BatchSniperRow.FIRST
+		row = BatchSniperRow.fields(a as SniperAvatar)
+	elif a is ArcCasterAvatar:
+		first = BatchArcCaster.FIRST
+		row = BatchArcCaster.fields(a as ArcCasterAvatar)
+	elif a is LensDroneAvatar:
+		first = BatchLensDrone.FIRST
+		row = BatchLensDrone.fields(a as LensDroneAvatar)
+	else:
+		return false
+	for q in row.size():
+		_st[o + first + q] = row[q]
+	return true
+
+
+## The row at `o` into a solo model kind's own fields (its row file's); false for the others.
+func _import_solo(o: int, a: AvatarBase) -> bool:
+	if a is NeedleAvatar:
+		BatchNeedleRow.load(a as NeedleAvatar, _st.slice(o + BatchNeedleRow.FIRST, o + STRIDE))
+	elif a is RockLurkerAvatar:
+		BatchLurker.take(a as RockLurkerAvatar, _st, o)
+	elif a is WardenAvatar:
+		BatchWarden.import_row(a as WardenAvatar, _st.slice(o + BatchWarden.W_CRACK, o + STRIDE))
+	elif a is SniperAvatar:
+		BatchSniperRow.load(
+			a as SniperAvatar, _st.slice(o + BatchSniperRow.FIRST, o + BatchSniperRow.END)
+		)
+	elif a is ArcCasterAvatar:
+		BatchArcCaster.take(a as ArcCasterAvatar, _st, o)
+	elif a is LensDroneAvatar:
+		BatchLensDrone.load(a as LensDroneAvatar, _st, o)
+	else:
+		return false
+	return true
 
 
 ## A Stone Thrower's row at `o` into its fields (the visor's material only when its glow changed).
