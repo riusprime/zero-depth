@@ -27,7 +27,9 @@ extends AvatarBase
 ##   re-plants, the flashes steady.
 ## The pose is a few plain numbers (the raw drives, _vd) worked out from the state first, then the nodes from them
 ## through the joint table (_joints, the same transforms the VAT rig declares), so the baked pose is the live one.
-## Presentation only (EI-07). +X is the front, +Z its right; the node sits at the actor's feet under the facing.
+## On the VAT crowd it is batched (EnemyBatch): nothing here reads the tree (the facing's turn is its parent's own
+## transform), and BatchWarden keeps its dust ring in the tree. Presentation only (EI-07). +X is the front, +Z its
+## right; the node sits at the actor's feet under the facing.
 
 const KIND := WorldReader.KIND_WARDEN
 const MODEL := &"warden"
@@ -86,14 +88,8 @@ const ROLL_UP := 0.4
 ## The body's roll and pitch pivots (the pitch's at the hips).
 const ROLL_AT := Vector3(0.0, 0.32, 0.0)
 const PITCH_AT := Vector3(-0.09, 0.32, 0.0)
-## The slam's dust ring: it runs from DUST_START of the slam's radius to its full radius over DUST_SECONDS from the
-## impact, fading out; its band is DUST_BAND of the radius wide. Neutral dust, not a reserved role.
-const DUST_SECONDS := 0.45
-const DUST_START := 0.3
-const DUST_BAND := 0.22
-const DUST_ALPHA := 0.9
-const DUST_COLOR := Color("#F4EEE2")
-const DUST_SEGMENTS := 40
+## The slam's dust ring's run (s from the impact; WardenDust draws it).
+const DUST_SECONDS := WardenDust.SECONDS
 ## The slam's radius when no telegraph gave one (data/enemies/warden.tres, slam radius_m).
 const SLAM_RADIUS := 2.4
 ## SoloVat: the raw drives (_vd) and their specs [lo, hi, loop]: the body's surge (m), roll, pitch (+ the chest back)
@@ -154,7 +150,7 @@ var legs: Array[Node3D] = []
 var shins: Array[Node3D] = []
 var feet: Array[Node3D] = []
 ## The impact's dust ring (hidden between slams).
-var dust: MeshInstance3D
+var dust: WardenDust
 
 var _vd := PackedFloat32Array()
 var _lift := 0.0
@@ -188,7 +184,6 @@ var _have_fy := false
 # The slam's radius (the telegraph's, read in the windup), and seconds since the impact (-1: no dust).
 var _slam_r := SLAM_RADIUS
 var _dust_t := -1.0
-var _dust_mat := StandardMaterial3D.new()
 
 
 ## Builds a Warden under `facing` for ActorViews (`views`: on VAT while its switch is on; `look`: the kind whose colours
@@ -226,7 +221,8 @@ func setup() -> void:
 			_pivots[pname] = (parts_in[pname] as Dictionary)["pivot"] * _scale
 	for k in LIMBS.size():
 		_end.append(Vector3.ZERO)
-	_build_dust()
+	dust = WardenDust.new()
+	add_child(dust)
 	if vat:  # the crowd draws the body; the dust ring stays a node
 		_pose()
 		return
@@ -412,6 +408,7 @@ func sync(reader: WorldReader, i: int) -> void:
 ## The same as sync(), from plain values (tests drive the avatar with this): tick, pos, state (a WorldReader
 ## STATE_*), windup (0..1, the telegraph's progress), radius (optional: the slam's), hp (optional).
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	var tick: int = s["tick"]
 	var state: int = s["state"]
 	var hp: int = s.get("hp", -1)
@@ -437,6 +434,7 @@ func apply_state(s: Dictionary) -> void:
 
 # --- Frame time ---------------------------------------------------------------------------------------------------
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0:
 		return
@@ -502,26 +500,35 @@ func _turning(dt: float, dying: bool) -> void:
 
 ## Starts the death (ActorViews, when the sim drops the Warden: freed DEATH_SECONDS later). True: it plays.
 func die() -> bool:
+	_touch()
 	if _die_t < 0.0:
 		_die_t = 0.0
 	return true
 
 
 func dying() -> bool:
+	_peek()
 	return _die_t >= 0.0
 
 
 ## 0..1: how far the fists are raised overhead (the windup pose) and slammed down (the attack and its recovery).
 func raise_amount() -> float:
+	_peek()
 	return _raise
 
 
 func slam_amount() -> float:
+	_peek()
 	return _slam
 
 
 ## 0..1 how deep the windup crouch is (from the windup's progress).
 func crouch_amount() -> float:
+	_peek()
+	return _crouch()
+
+
+func _crouch() -> float:
 	if _state != WorldReader.STATE_WINDUP or _die_t >= 0.0:
 		return 0.0
 	return tell_crouch(_windup)
@@ -529,17 +536,20 @@ func crouch_amount() -> float:
 
 ## The eye's glow (emission energy; the cracks': glow_energy).
 func visor_energy() -> float:
+	_peek()
 	return _vd[EYE]
 
 
 ## The raw drives now (tests).
 func drives() -> PackedFloat32Array:
+	_peek()
 	return _vd
 
 
 ## Where a limb's point stands now (m, the facing's frame; tests): `part` &"fist" (the knuckles), &"knee" or
 ## &"ankle", of side `k` (0 the right, 1 the left), through its chain from the drives.
 func limb_at(part: StringName, k: int) -> Vector3:
+	_peek()
 	var s := "r" if k == 0 else "l"
 	var body := _body_xf(_vd)
 	if part == &"fist":
@@ -750,7 +760,7 @@ func _idle_pose(d: PackedFloat32Array, k: float, calm: bool, breath: float) -> f
 ## Returns its lift.
 func _tell_pose(d: PackedFloat32Array, k: float, calm: bool) -> float:
 	var r := _raise
-	var c := crouch_amount()
+	var c := _crouch()
 	if r <= 0.0 and c <= 0.0:
 		return 0.0
 	d[PITCH] += 0.26 * r * k
@@ -893,15 +903,18 @@ func _apply() -> void:
 # --- SoloVat: the VAT rig -----------------------------------------------------------------------------------------
 ## The whole body's lift (m): VatCrowd moves the instance by it (the dust ring is its own node).
 func vat_lift() -> float:
+	_peek()
 	return _lift
 
 
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
 ## The cracks' glow (the instance's accent glow; the eye's is the EYE drive).
 func glow_energy() -> float:
+	_peek()
 	return _crack
 
 
@@ -924,67 +937,20 @@ func vat_rig() -> Dictionary:
 # --- The slam's dust ring ---------------------------------------------------------------------------------------
 ## 0..1 how far the impact's dust ring has run (-1: none showing).
 func dust_amount() -> float:
+	_peek()
 	return clampf(_dust_t / DUST_SECONDS, 0.0, 1.0) if _dust_t >= 0.0 else -1.0
 
 
 ## The slam's radius the dust ring runs out to (the telegraph's).
 func slam_radius() -> float:
+	_peek()
 	return _slam_r
 
 
+## The ring's clock (seconds since the impact; -1 once it has run), then the ring shown at it.
 func _advance_dust(dt: float) -> void:
-	if _dust_t < 0.0:
-		dust.visible = false
-		return
-	_dust_t += dt
-	var u := _dust_t / DUST_SECONDS
-	if u >= 1.0:
-		_dust_t = -1.0
-		dust.visible = false
-		return
-	var ease := 1.0 - (1.0 - u) * (1.0 - u)
-	var r := _slam_r * lerpf(DUST_START, 1.0, ease)
-	dust.visible = true
-	dust.scale = Vector3(r, 1.0, r)
-	var c := DUST_COLOR
-	c.a = DUST_ALPHA * (1.0 - u) * (1.0 - u * 0.5)
-	_dust_mat.albedo_color = c
-
-
-## The dust ring: a flat band (unit outer radius) just above the floor, unshaded and see-through, laid flat on the
-## ground under the Warden (its facing doesn't matter for a ring); a node of a VAT Warden's too (not baked).
-func _build_dust() -> void:
-	dust = MeshInstance3D.new()
-	dust.name = "SlamDust"
-	dust.set_meta(SoloVat.LIVE, true)
-	dust.mesh = _dust_mesh()
-	_dust_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_dust_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_dust_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	_dust_mat.albedo_color = Color(DUST_COLOR, 0.0)
-	dust.material_override = _dust_mat
-	dust.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	dust.position = Vector3(0, 0.05, 0)
-	dust.visible = false
-	add_child(dust)
-
-
-static func _dust_mesh() -> ArrayMesh:
-	var verts := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var inner := 1.0 - DUST_BAND
-	for k in DUST_SEGMENTS:
-		var a0 := TAU * k / DUST_SEGMENTS
-		var a1 := TAU * (k + 1) / DUST_SEGMENTS
-		var o0 := Vector3(cos(a0), 0, sin(a0))
-		var o1 := Vector3(cos(a1), 0, sin(a1))
-		verts.append_array([o0, o1 * inner, o0 * inner, o0, o1, o1 * inner])
-		for j in 6:
-			normals.append(Vector3.UP)
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	var out := ArrayMesh.new()
-	out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return out
+	if _dust_t >= 0.0:
+		_dust_t += dt
+		if _dust_t / DUST_SECONDS >= 1.0:
+			_dust_t = -1.0
+	dust.show_at(_dust_t, _slam_r)

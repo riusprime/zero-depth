@@ -25,12 +25,13 @@ extends Node3D
 ## The set kinds.
 enum Part { DISC, RING, DAZED, BAR, BLOB }
 
-## The kinds batched: the VAT crowd's horde kinds, the Charger, the Hatchling, the Stone Thrower, the Needle, the
-## Rock Lurker and the Arc Caster, whose avatars need nothing of the tree (their pose, rock, glows and death are
-## reckoned from their own clocks, the sim's state and their facing node's turn; the thrown rock flies from the sim's
-## place, RuinsRocksViews; the Lurker's disguise hides its disc and ring here, show_rings). The other VAT kinds (the
-## solo models: Warden, the drones, the other owner's models) still read the tree in their frame step or death (global
-## transforms, timers), so they keep their node.
+## The kinds batched: the VAT crowd's horde kinds, the Charger, the Hatchling, the Stone Thrower, the Needle, the Rock
+## Lurker, the Warden (and the Rubble Warden, on its avatar) and the Arc Caster, whose avatars need nothing of the tree
+## (their pose, rock, glows and death are reckoned from their own clocks, the sim's state and their facing node's turn;
+## the thrown rock flies from the sim's place, RuinsRocksViews; the Lurker's disguise hides its disc and ring here,
+## show_rings; the Warden's dust ring and the Rubble Warden's crust hang in the tree from its anchor, BatchWarden). The
+## other VAT kinds (the solo models: the drones, the other owner's models) still read the tree in their frame step or
+## death (global transforms, timers), so they keep their node.
 const KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_SPLITTER,
@@ -43,6 +44,8 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_STONE_THROWER,
 	WorldReader.KIND_NEEDLE,
 	WorldReader.KIND_ROCK_LURKER,
+	WorldReader.KIND_WARDEN,
+	WorldReader.KIND_RUBBLE_WARDEN,
 	WorldReader.KIND_ARC_CASTER,
 ]
 ## After the views' sync and the other nodes' _process, before VatCrowd (which draws the bodies at these places).
@@ -127,6 +130,8 @@ var _phys_seen := -1
 ## trail's fill (BarChunks.fill_to; 1 without a trail) and whether its root, facing and avatar all show (each sync).
 var _fill := PackedFloat64Array()
 var _shown := PackedByteArray()
+## The batched Wardens' dust rings (and Rubble Wardens' crusts) in the tree, by id (BatchWarden.hold).
+var _held := {}
 ## Slots whose body falls (their root is freed when the fall ends: the frame's drop looks only while there are any).
 var _falls := 0
 var _crowd: RefCounted
@@ -221,6 +226,8 @@ func add(
 		_set_index(Part.BLOB, 0.0)
 	avatar.detached = true
 	avatars.add(id, avatar, _facings[k], root.get_meta(&"vat_sets", Vector2i(-1, -1)))
+	if avatar is WardenAvatar:
+		_held[id] = BatchWarden.hold(self, id, avatar as WardenAvatar, root, _facings[k])
 	_bo_fresh = false
 	synced_frame = Engine.get_process_frames()
 
@@ -291,6 +298,9 @@ func update(id: int, reader: WorldReader, i: int, parts: Array, cols: Array) -> 
 	PerfMarks.add(&"actors.enemy_sync", t_en)
 	show_parts(id, bar and shown, state == WorldReader.STATE_RECOVER, shown and avatar.visible)
 	_shown[k] = 1 if shown and avatar.visible and (_roots[k] as Node3D).visible else 0
+	if _held.has(id):
+		BatchWarden.follow(_held[id])
+		VariantLooks.show_crust(_roots[k], reader, i)  # The Rubble Warden's (a node with none is left alone)
 	if avatar is RockLurkerAvatar:  # Its disguise: no contact disc or team ring while it waits as a boulder
 		show_rings(id, not RockLurkerAvatar.disguised(reader, i))
 
@@ -344,6 +354,8 @@ func facing_leaned(id: int) -> void:
 	var k: int = _slot_of.get(id, -1)
 	if k >= 0:
 		avatars.facing_moved(k, _facings[k], true)
+		if _held.has(id):
+			BatchWarden.follow(_held[id])
 
 
 ## VatCrowd: its sets `sets` ([index, body, period, drive floats, capacity] each) written natively from the avatars'
@@ -492,6 +504,7 @@ func _remove(k: int) -> void:
 		_falls -= 1
 	_slot_of.erase(id)
 	_rings_off.erase(id)
+	_held.erase(id)
 	if _anchors.has(id):
 		(_anchors[id] as Node).queue_free()
 		_anchors.erase(id)
@@ -575,6 +588,8 @@ func advance(delta: float) -> void:
 			var a: AvatarBase = _avatars[j]
 			if a.is_processing() and _born[j] != frame:
 				a._process(delta)  # (as the tree ran it, from the frame after it came)
+	for id: int in _held:  # The Wardens' dust rings, as their step left them
+		BatchWarden.show(_held[id], avatars, _slot_of[id])
 	PerfMarks.add(&"batch.avatars", t_av)  # The avatars' frame step (the tree ran it before)
 	var t_wr := PerfMarks.start()
 	write_furniture()

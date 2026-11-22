@@ -567,8 +567,8 @@ func _batch() -> EnemyBatch:
 	return batch
 
 
-## Whether a new actor of kind `p_kind` is batched: an enemy of EnemyBatch.KINDS the VAT crowd draws, while batching
-## is on.
+## Whether a new actor of kind `p_kind` is batched: an enemy of EnemyBatch.KINDS whose body the VAT crowd draws (a
+## biome variant's is its base's: the Rubble Warden's avatar is the Warden's), while batching is on.
 func _batches(p_kind: int, is_player: bool) -> bool:
 	var on := batch_enemies if batching == null else bool(batching)
 	return (
@@ -576,7 +576,7 @@ func _batches(p_kind: int, is_player: bool) -> bool:
 		and not is_player
 		and ViewPrefs.enemy_vat
 		and EnemyBatch.takes(p_kind)
-		and VatCrowd.supports(p_kind)
+		and VatCrowd.supports(WorldReader.body_kind(p_kind))
 	)
 
 
