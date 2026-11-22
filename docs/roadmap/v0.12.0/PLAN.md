@@ -377,8 +377,8 @@ Told step 51's numbers (42 Stone Throwers about 18 → 14 ms a frame), the owner
 probably all of the enemies that could make use of this c++ rework is worth doing, queue them all and work on the
 whole rework, we'll test before and after with all enemies changed". So the bar above is no longer checked kind by
 kind: every enemy kind that keeps a node tree and a script avatar moves to the native batch. Each kind is still proven
-the same look (the native equality test bit for bit, which must be shown able to fail, and the twin probe), and each
-step measures its own kind as an indication. The owner's verdict comes from one before/after with every kind moved:
+the same look (the native equality test bit for bit, which must be shown able to fail, and the twin probe), and no step times its own kind (owner, then: "you don't need to run tests on each separatedly, let's do
+the test when all are moved"). The owner's verdict comes from one before/after with every kind moved:
 the lead's quiet floor-fight runs per biome on `e1c0a233` against the merged tree, then the owner's `--perf-log`.
 
 The queue, one kind a step (a variant on the same avatar goes with its kind):
@@ -411,5 +411,5 @@ in its own files (`native/src/zd_avatar_<kind>.cpp`; its GDScript row export and
 a file of its own when that file would pass the 1,000-line cap), so the shared files (`batch_avatars.gd`,
 `enemy_batch.gd`, `zd_avatar.h`, `zd_crowd*`, `test_native_crowd.gd`) take only small additions the lead merges. Both
 halves of a kind land in one commit: a batched kind with no native class puts every batched avatar on the GDScript
-path. The lead merges each kind as it is done, runs seams at the end of each three, and the next agent starts from the
-merged tree.
+path. The lead merges each kind as it is done and the next agent starts from the merged tree; seams and the timing run once,
+with every kind moved.
