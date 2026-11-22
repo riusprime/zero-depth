@@ -174,6 +174,34 @@ enum Field {
 	W_SCALE = 65, // the model's scale (set once)
 	W_PIV = 66, // f32 x3 x11: the joints' pivots (BatchWarden.PIVOT_KEYS order; set once)
 	W_VD = 99, // f32 x23: the raw drives
+	// SniperAvatar (its own fields from 43 to 111; zd_avatar_sniper.cpp)
+	SN_LENS = 43, // f32: the lens material's emission energy
+	SN_STATE = 44,
+	SN_TELL = 45,
+	SN_HP = 46,
+	SN_SPEED = 47,
+	SN_DIR = 48, // f32 x2: the way it goes in the facing's frame
+	SN_OMEGA = 50,
+	SN_PHASE = 51,
+	SN_STRIDE = 52,
+	SN_BRACE = 53,
+	SN_CHARGE = 54,
+	SN_RISE = 55,
+	SN_SETTLE_T = 56,
+	SN_SHOT_T = 57,
+	SN_DOUBLE = 58, // the Split Sniper's second kick (set once)
+	SN_HEAT = 59,
+	SN_VENT_T = 60,
+	SN_HURT_T = 61,
+	SN_HURT_LEG = 62,
+	SN_DIE = 63,
+	SN_LAST_FY = 64,
+	SN_HAVE_FY = 65,
+	SN_LIFT = 66,
+	SN_VD = 67, // f32 x17: the raw drives
+	SN_HIPS = 84, // f32 x3 x3 each: the legs' rest hips, knees and feet (set once)
+	SN_KNEES = 93,
+	SN_FEET = 102,
 	STRIDE = 124,
 };
 
@@ -193,6 +221,7 @@ enum Class {
 	NEEDLE = 11,
 	WARDEN = 12,
 	ROCK_LURKER = 13,
+	SNIPER_MODEL = 14, // the owner's model (SniperAvatar); SNIPER is its old horde body
 };
 
 inline bool is_charger(int c) {
@@ -203,8 +232,8 @@ inline bool is_charger(int c) {
 constexpr int MAX_DRIVES = 29;
 
 // A Stone Thrower's sync inputs past the common ones (BatchAvatars.MORE a slot): its ticks into the state, its facing
-// (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's: its HP (the first). A Rock Lurker's:
-// whether it waits disguised, whether it rumbles. A Warden's: its HP, the telegraph's slam radius and whether the
+// (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's and a Sniper's: its HP (the first). A
+// Rock Lurker's: whether it waits disguised, whether it rumbles. A Warden's: its HP, the telegraph's slam radius and whether the
 // telegraph gave one (1) or not (0).
 constexpr int MORE = 6;
 
@@ -274,6 +303,12 @@ void n_apply(double *s, int64_t tick, int state, double windup, float pos_x, flo
 		const Ctx &c);
 void n_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int n_drives(const double *s, float *out);
+
+// The Sniper (zd_avatar_sniper.cpp): its sync (`more`: its HP first), frame step (the pose included) and drives.
+void sn_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void sn_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int sn_drives(const double *s, float *out);
 // The Rock Lurker (zd_avatar_lurker.cpp): its sync (`more`: hidden, rumbling), frame step (the pose included) and
 // drives.
 void l_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,

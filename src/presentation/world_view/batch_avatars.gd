@@ -2,9 +2,9 @@ class_name BatchAvatars
 extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
 ## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow), RockLurkerAvatar's
-## (BatchLurker) or WardenAvatar's (BatchWarden) fields that change after setup) is a row of packed doubles here, and
-## ZdCrowd (native/src/zd_avatar*, the same arithmetic in the same order) applies each sync, steps each frame and writes
-## VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
+## (BatchLurker), WardenAvatar's (BatchWarden) or SniperAvatar's (BatchSniperRow) fields that change after setup) is a
+## row of packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same arithmetic in the same order) applies each
+## sync, steps each frame and writes VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
 ## The rows hold the state while `on`; the avatar objects then hold old numbers, except around an event:
 ## - an event on an avatar (a flinch, a hold, a death, a sync or a step called on it: AvatarBase._touch) first copies
 ##   its row into it (pull) and marks it the holder (dirty); its own GDScript runs the event as before, and the batch
@@ -93,8 +93,8 @@ const S_VD := 84
 ## The Stone Thrower's joint offsets in its row (S_OFF, three floats each).
 const S_OFF_KEYS := ["pelvis", "neck", "shoulder", "elbow", "wrist", "hip"]
 ## A Stone Thrower's sync inputs past the common ones, a slot (zd_avatar.h MORE): its ticks into the state, its
-## facing (x, y), the sim's lift, flight and recovery ticks; a Needle's: its HP (the first); a Rock Lurker's:
-## disguised, rumbling.
+## facing (x, y), the sim's lift, flight and recovery ticks; a Needle's and a Sniper's: its HP (the first); a Rock
+## Lurker's: disguised, rumbling.
 ## A Warden's: its HP, the telegraph's slam radius, whether it gave one (BatchWarden.note).
 const MORE := 6
 ## The native classes (zd_avatar.h Class) by kind; 0: none.
@@ -103,6 +103,7 @@ const STONE_THROWER_CLASS := 10
 const NEEDLE_CLASS := 11
 const WARDEN_CLASS := 12
 const ROCK_LURKER_CLASS := 13
+const SNIPER_CLASS := 14
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -117,6 +118,7 @@ const CLASS_OF := {
 	WorldReader.KIND_ROCK_LURKER: ROCK_LURKER_CLASS,
 	WorldReader.KIND_WARDEN: WARDEN_CLASS,
 	WorldReader.KIND_RUBBLE_WARDEN: WARDEN_CLASS,
+	WorldReader.KIND_SNIPER: SNIPER_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -185,6 +187,9 @@ static func class_of(avatar: AvatarBase) -> int:
 	var wd := avatar as WardenAvatar
 	if wd != null and wd.vat:
 		return WARDEN_CLASS
+	var sn := avatar as SniperAvatar
+	if sn != null and sn.vat:
+		return SNIPER_CLASS
 	return 0
 
 
@@ -376,7 +381,7 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 			if state == WorldReader.STATE_WINDUP
 			else 0.0
 		)
-		if c == NEEDLE_CLASS:  # (its sync reads its HP: a hit's flinch)
+		if c == NEEDLE_CLASS or c == SNIPER_CLASS:  # (its sync reads its HP: a hit's flinch)
 			_in_more[k * MORE] = reader.actor_hp(i)
 	if c >= CHARGER_CLASS:
 		var p := reader.actor_pos(i)
@@ -568,6 +573,19 @@ func _flush_inputs_in_script() -> void:
 					_in_more,
 					o
 				)
+			elif _cls[k] == SNIPER_CLASS:
+				(
+					(a as SniperAvatar)
+					. apply_state(
+						{
+							"tick": _tick,
+							"pos": Vector2(_in_x[k], _in_y[k]),
+							"state": _in_state[k],
+							"windup": _in_windup[k],
+							"hp": int(_in_more[o]),
+						}
+					)
+				)
 			elif _cls[k] >= CHARGER_CLASS:
 				(
 					(a as ChargerAvatar)
@@ -698,6 +716,12 @@ func _export(k: int) -> void:
 		for q in row.size():
 			_st[o + BatchWarden.W_CRACK + q] = row[q]
 		return
+	var sn := a as SniperAvatar
+	if sn != null:
+		var row := BatchSniperRow.fields(sn)
+		for q in row.size():
+			_st[o + BatchSniperRow.FIRST + q] = row[q]
+		return
 	var c := a as ChargerAvatar
 	_st[o + C_VISOR] = c._visor_e
 	_st[o + C_TELL] = c._tell_p
@@ -772,6 +796,10 @@ func _import(k: int) -> void:
 	var wd := a as WardenAvatar
 	if wd != null:
 		BatchWarden.import_row(wd, _st.slice(o + BatchWarden.W_CRACK, o + STRIDE))
+		return
+	var sn := a as SniperAvatar
+	if sn != null:
+		BatchSniperRow.load(sn, _st.slice(o + BatchSniperRow.FIRST, o + BatchSniperRow.END))
 		return
 	var c := a as ChargerAvatar
 	c._visor_e = _st[o + C_VISOR]

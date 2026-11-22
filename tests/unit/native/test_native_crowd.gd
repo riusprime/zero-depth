@@ -60,47 +60,6 @@ func _ripen(w: World) -> void:
 		w.step(InputFrame.new())
 
 
-## What a write left: each set's instances (count x 12 floats), and the slot columns it reckons.
-func _taken(b: EnemyBatch) -> Dictionary:
-	var sets: Array = []
-	for s: Array in b.get(&"_sets"):
-		var mm: MultiMesh = s[2]
-		var n := mm.visible_instance_count
-		var buf: PackedFloat32Array = s[3]
-		sets.append([mm.instance_count, n, buf.slice(0, n * EnemyBatch.STRIDE)])
-	var out := {"sets": sets, "drawn": b.drawn.duplicate()}
-	for col: StringName in [&"_px", &"_py", &"_pz", &"_sx", &"_s0", &"_s1", &"_bo"]:
-		out[col] = b.get(col).duplicate()
-	return out
-
-
-func _first_difference(a: Dictionary, b: Dictionary) -> String:
-	for col: StringName in [&"_px", &"_py", &"_pz", &"_sx", &"_s0", &"_s1", &"_bo"]:
-		if a[col] != b[col]:
-			return "column %s %s" % [col, _at(a[col], b[col])]
-	if a["drawn"] != b["drawn"]:
-		return "drawn %s vs %s" % [a["drawn"], b["drawn"]]
-	var sa: Array = a["sets"]
-	var sb: Array = b["sets"]
-	for j in sa.size():
-		for q in 3:
-			if sa[j][q] != sb[j][q]:
-				return "set %d field %d %s" % [j, q, _at(sa[j][q], sb[j][q])]
-	return ""
-
-
-## Where two values first differ (an array's first index), shortly.
-static func _at(a: Variant, b: Variant) -> String:
-	if typeof(a) != typeof(b) or not (a is PackedFloat32Array or a is PackedVector3Array):
-		return "%s vs %s" % [a, b]
-	if a.size() != b.size():
-		return "sizes %d vs %d" % [a.size(), b.size()]
-	for k in a.size():
-		if a[k] != b[k]:
-			return "at %d: %s vs %s" % [k, var_to_str(a[k]), var_to_str(b[k])]
-	return "alike"
-
-
 func test_the_native_writer_gives_the_script_writer_s_buffers() -> void:
 	if not ClassDB.class_exists(EnemyBatch.NATIVE_CLASS):
 		pending("the native library is not loaded")
@@ -140,7 +99,7 @@ func test_the_native_writer_gives_the_script_writer_s_buffers() -> void:
 		for s: Array in b.get(&"_sets"):
 			caps.append((s[2] as MultiMesh).instance_count)
 		b.write_furniture()
-		var native := _taken(b)
+		var native := CrowdTwins.taken(b)
 		b.set(&"_s0", s0)  # The same inputs again for the GDScript pass
 		b.set(&"_s1", s1)
 		b.set(&"_phys_seen", seen)
@@ -148,8 +107,8 @@ func test_the_native_writer_gives_the_script_writer_s_buffers() -> void:
 		for j in sets.size():
 			(sets[j][2] as MultiMesh).instance_count = caps[j]
 		b.write_furniture(true)
-		var script := _taken(b)
-		var diff := _first_difference(native, script)
+		var script := CrowdTwins.taken(b)
+		var diff := CrowdTwins.first_difference(native, script)
 		if diff != "":
 			fail_test("frame %d: %s" % [f, diff])
 			return
@@ -247,70 +206,6 @@ func test_the_script_pass_is_taken_without_the_library_or_with_the_switch_off() 
 # --- The avatars: their sync, frame step and body instances (BatchAvatars, ZdCrowd's avatar calls) -------------------
 
 
-## A view of `w` stepped by hand (its batch, crowd and flash clock), its batch native or not (`native`).
-func _hand_views(w: World, native: bool) -> ActorViews:
-	var views: ActorViews = add_child_autofree(ActorViews.new())
-	views.set_process(false)
-	var was := EnemyBatch.native
-	EnemyBatch.native = native  # (its batch is made by this first sync)
-	views.sync(WorldReader.new(w))
-	EnemyBatch.native = was
-	views.batch.native_override = native
-	views.batch.set_process(false)
-	views.vat_crowd.set_process(false)
-	return views
-
-
-func _frame(views: ActorViews) -> void:
-	views._process(DT)
-	views.bar_chunks.advance(DT)
-	views.batch.advance(DT)
-	views.vat_crowd._process(DT)
-
-
-## Every VAT set's instances (count, capacity, the floats drawn, the drive floats drawn) by look, and the furniture.
-func _drawn(views: ActorViews) -> Dictionary:
-	var out := {"furniture": _taken(views.batch)}
-	var crowd := views.vat_crowd
-	for group: StringName in [&"_looks", &"_shadows"]:
-		var sets: Dictionary = crowd.get(group)
-		for key: Variant in sets:
-			var s: Dictionary = sets[key]
-			var mm: MultiMesh = s["mm"]
-			var n := mm.visible_instance_count
-			var stride: int = s["stride"]
-			var row := [mm.instance_count, n, (s["buf"] as PackedFloat32Array).slice(0, n * stride)]
-			var dn := int((s["pose"] as Dictionary).get("drive_texels", 0)) * 4
-			if s.has("dbuf") and dn > 0:
-				row.append((s["dbuf"] as PackedFloat32Array).slice(0, n * dn))
-			out["%s %s" % [group, key]] = row
-	return out
-
-
-func _drawn_difference(a: Dictionary, b: Dictionary) -> String:
-	var fd := _first_difference(a["furniture"], b["furniture"])
-	if fd != "":
-		return "furniture " + fd
-	if a.keys() != b.keys():
-		return "sets %s vs %s" % [a.keys(), b.keys()]
-	for key: String in a:
-		if key == "furniture":
-			continue
-		for q in (a[key] as Array).size():
-			if a[key][q] != b[key][q]:
-				return "%s field %d %s" % [key, q, _at(a[key][q], b[key][q])]
-	return ""
-
-
-## Every batched enemy's avatar in both views (the same id).
-func _both(a: ActorViews, b: ActorViews, id: int) -> Array:
-	var na := a.actor_node(id)
-	var nb := b.actor_node(id)
-	if na == null or nb == null or not na.has_meta(&"enemy_avatar"):
-		return []
-	return [na.get_meta(&"enemy_avatar"), nb.get_meta(&"enemy_avatar")]
-
-
 func test_the_native_avatars_draw_the_script_avatars_bodies() -> void:
 	if not ClassDB.class_exists(EnemyBatch.NATIVE_CLASS):
 		pending("the native library is not loaded")
@@ -323,8 +218,8 @@ func test_the_native_avatars_draw_the_script_avatars_bodies() -> void:
 			KINDS_ALL[k % KINDS_ALL.size()],
 			Vector2(-12.0 + (k % 9) * 3.0 + far, -7.0 + (k / 9) * 3.0)
 		)
-	var a := _hand_views(w, true)
-	var b := _hand_views(w, false)
+	var a := CrowdTwins.hand_views(self, w, true)
+	var b := CrowdTwins.hand_views(self, w, false)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5506
 	var compared := 0
@@ -376,7 +271,7 @@ func test_the_native_avatars_draw_the_script_avatars_bodies() -> void:
 				var id := ids[rng.randi_range(0, ids.size() - 1)]
 				var away := Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0))
 				var knock := 1.0 if f % 6 == 1 else 0.0
-				var pair := _both(a, b, id)
+				var pair := CrowdTwins.both(a, b, id)
 				for v: ActorViews in [a, b]:
 					v.flash(id)
 				if not pair.is_empty():
@@ -392,9 +287,9 @@ func test_the_native_avatars_draw_the_script_avatars_bodies() -> void:
 					for v: ActorViews in [a, b]:
 						v.set_tint(id, Color(0.3, 1.0, 0.4), 0.8)
 		await get_tree().process_frame  # A real frame: the fraction and the physics frames move on
-		_frame(a)
-		_frame(b)
-		var diff := _drawn_difference(_drawn(a), _drawn(b))
+		CrowdTwins.frame(a)
+		CrowdTwins.frame(b)
+		var diff := CrowdTwins.drawn_difference(CrowdTwins.drawn(a), CrowdTwins.drawn(b))
 		if diff != "":
 			ViewPrefs.reduced_motion = calm_was
 			fail_test("frame %d: %s" % [f, diff])
@@ -417,16 +312,16 @@ func test_an_avatar_read_during_native_play_has_the_latest_numbers() -> void:
 		return
 	var w := CombatLab.world()
 	var id := w.add_enemy(CH, Vector2(2.0, 1.0))
-	var a := _hand_views(w, true)
-	var b := _hand_views(w, false)
+	var a := CrowdTwins.hand_views(self, w, true)
+	var b := CrowdTwins.hand_views(self, w, false)
 	_ripen(w)
 	for f in 30:
 		a.sync(WorldReader.new(w))
 		b.sync(WorldReader.new(w))
 		await get_tree().process_frame
-		_frame(a)
-		_frame(b)
-	var pair := _both(a, b, id)
+		CrowdTwins.frame(a)
+		CrowdTwins.frame(b)
+	var pair := CrowdTwins.both(a, b, id)
 	var na: ChargerAvatar = pair[0]
 	var nb: ChargerAvatar = pair[1]
 	assert_eq(na.native_owner, a.batch.avatars, "the batch's rows hold it")
@@ -435,12 +330,12 @@ func test_an_avatar_read_during_native_play_has_the_latest_numbers() -> void:
 	assert_eq(na.vat_drives(), nb.vat_drives(), "its drives, read back")
 	assert_eq(na.flinch(Vector2.LEFT), nb.flinch(Vector2.LEFT), "a flinch on the latest state")
 	await get_tree().process_frame
-	_frame(a)
-	_frame(b)
+	CrowdTwins.frame(a)
+	CrowdTwins.frame(b)
 	assert_eq(na.flinch_amount(), nb.flinch_amount(), "the flinch stepped natively")
 	a.batch.native_override = false  # Its switch off (the dev panel's): the objects take the state back
 	await get_tree().process_frame
-	_frame(a)
+	CrowdTwins.frame(a)
 	assert_null(na.native_owner, "switched off: the object holds its state")
 	assert_eq(na.get(&"_t"), nb.get(&"_t") + DT, "and steps on from it")
 
@@ -456,8 +351,8 @@ func test_the_native_stone_throwers_draw_the_script_ones_bodies() -> void:
 		var r := 6.0 + (k % 4) * 1.5 + (30.0 if k % 7 == 3 else 0.0)
 		var a0 := TAU * k / 14.0
 		w.add_enemy(ST, Vector2(cos(a0), sin(a0)) * r)
-	var a := _hand_views(w, true)
-	var b := _hand_views(w, false)
+	var a := CrowdTwins.hand_views(self, w, true)
+	var b := CrowdTwins.hand_views(self, w, false)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5507
 	var compared := 0
@@ -514,7 +409,7 @@ func test_the_native_stone_throwers_draw_the_script_ones_bodies() -> void:
 				var id := ids[rng.randi_range(0, ids.size() - 1)]
 				var away := Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0))
 				var knock := 1.0 if f % 6 == 1 else 0.0
-				var pair := _both(a, b, id)
+				var pair := CrowdTwins.both(a, b, id)
 				for v: ActorViews in [a, b]:
 					v.flash(id)
 				if not pair.is_empty():
@@ -530,9 +425,9 @@ func test_the_native_stone_throwers_draw_the_script_ones_bodies() -> void:
 					for v: ActorViews in [a, b]:
 						v.set_tint(id, Color(0.3, 1.0, 0.4), 0.8)
 		await get_tree().process_frame  # A real frame: the fraction and the physics frames move on
-		_frame(a)
-		_frame(b)
-		var diff := _drawn_difference(_drawn(a), _drawn(b))
+		CrowdTwins.frame(a)
+		CrowdTwins.frame(b)
+		var diff := CrowdTwins.drawn_difference(CrowdTwins.drawn(a), CrowdTwins.drawn(b))
 		if diff != "":
 			ViewPrefs.reduced_motion = calm_was
 			fail_test("frame %d: %s" % [f, diff])
@@ -563,8 +458,8 @@ func test_the_native_needles_draw_the_script_ones_bodies() -> void:
 		var r := 5.0 + (k % 4) * 1.5 + (30.0 if k % 7 == 3 else 0.0)
 		var a0 := TAU * k / 14.0
 		w.add_enemy(NE, Vector2(cos(a0), sin(a0)) * r)
-	var a := _hand_views(w, true)
-	var b := _hand_views(w, false)
+	var a := CrowdTwins.hand_views(self, w, true)
+	var b := CrowdTwins.hand_views(self, w, false)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5508
 	var compared := 0
@@ -617,7 +512,7 @@ func test_the_native_needles_draw_the_script_ones_bodies() -> void:
 				var id := ids[rng.randi_range(0, ids.size() - 1)]
 				var away := Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0))
 				var knock := 1.0 if f % 6 == 1 else 0.0
-				var pair := _both(a, b, id)
+				var pair := CrowdTwins.both(a, b, id)
 				for v: ActorViews in [a, b]:
 					v.flash(id)
 				if not pair.is_empty():
@@ -633,9 +528,9 @@ func test_the_native_needles_draw_the_script_ones_bodies() -> void:
 					for v: ActorViews in [a, b]:
 						v.set_tint(id, Color(0.3, 1.0, 0.4), 0.8)
 		await get_tree().process_frame  # A real frame: the fraction and the physics frames move on
-		_frame(a)
-		_frame(b)
-		var diff := _drawn_difference(_drawn(a), _drawn(b))
+		CrowdTwins.frame(a)
+		CrowdTwins.frame(b)
+		var diff := CrowdTwins.drawn_difference(CrowdTwins.drawn(a), CrowdTwins.drawn(b))
 		if diff != "":
 			ViewPrefs.reduced_motion = calm_was
 			fail_test("frame %d: %s" % [f, diff])
@@ -666,8 +561,8 @@ func test_the_native_rock_lurkers_draw_the_script_ones_bodies() -> void:
 		var r: float = [2.4, 4.0, 5.5, 7.0][k % 4] + (30.0 if k % 7 == 3 else 0.0)
 		var a0 := TAU * k / 14.0
 		w.add_enemy(LK, Vector2(cos(a0), sin(a0)) * r)
-	var a := _hand_views(w, true)
-	var b := _hand_views(w, false)
+	var a := CrowdTwins.hand_views(self, w, true)
+	var b := CrowdTwins.hand_views(self, w, false)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5508
 	var compared := 0
@@ -733,7 +628,7 @@ func test_the_native_rock_lurkers_draw_the_script_ones_bodies() -> void:
 				var id := ids[rng.randi_range(0, ids.size() - 1)]
 				var away := Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0))
 				var knock := 1.0 if f % 6 == 1 else 0.0
-				var pair := _both(a, b, id)
+				var pair := CrowdTwins.both(a, b, id)
 				for v: ActorViews in [a, b]:
 					v.flash(id)
 				if not pair.is_empty():
@@ -749,9 +644,9 @@ func test_the_native_rock_lurkers_draw_the_script_ones_bodies() -> void:
 					for v: ActorViews in [a, b]:
 						v.set_tint(id, Color(0.3, 1.0, 0.4), 0.8)
 		await get_tree().process_frame  # A real frame: the fraction and the physics frames move on
-		_frame(a)
-		_frame(b)
-		var diff := _drawn_difference(_drawn(a), _drawn(b))
+		CrowdTwins.frame(a)
+		CrowdTwins.frame(b)
+		var diff := CrowdTwins.drawn_difference(CrowdTwins.drawn(a), CrowdTwins.drawn(b))
 		if diff != "":
 			ViewPrefs.reduced_motion = calm_was
 			fail_test("frame %d: %s" % [f, diff])
@@ -784,7 +679,7 @@ func test_the_native_rock_lurkers_draw_the_script_ones_bodies() -> void:
 ## first differ between two views, or "".
 func _dust_difference(a: ActorViews, b: ActorViews) -> String:
 	for id in a.batch.ids():
-		var pair := _both(a, b, id)
+		var pair := CrowdTwins.both(a, b, id)
 		if pair.is_empty() or not pair[0] is WardenAvatar:
 			continue
 		var diff := _crust_difference(a.actor_node(id), b.actor_node(id))
@@ -834,8 +729,8 @@ func test_the_native_wardens_draw_the_script_ones_bodies() -> void:
 		var r := 2.0 + (k % 4) * 0.8 + (30.0 if k % 7 == 3 else 0.0)
 		var a0 := TAU * k / 12.0
 		w.add_enemy(RW if k % 5 == 1 else WD, Vector2(cos(a0), sin(a0)) * r)  # Three in their crust
-	var a := _hand_views(w, true)
-	var b := _hand_views(w, false)
+	var a := CrowdTwins.hand_views(self, w, true)
+	var b := CrowdTwins.hand_views(self, w, false)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5412
 	var compared := 0
@@ -898,7 +793,7 @@ func test_the_native_wardens_draw_the_script_ones_bodies() -> void:
 				var id := ids[rng.randi_range(0, ids.size() - 1)]
 				var away := Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0))
 				var knock := 1.0 if f % 6 == 1 else 0.0
-				var pair := _both(a, b, id)
+				var pair := CrowdTwins.both(a, b, id)
 				for v: ActorViews in [a, b]:
 					v.flash(id)
 				if not pair.is_empty():
@@ -914,9 +809,9 @@ func test_the_native_wardens_draw_the_script_ones_bodies() -> void:
 					for v: ActorViews in [a, b]:
 						v.set_tint(id, Color(0.3, 1.0, 0.4), 0.8)
 		await get_tree().process_frame  # A real frame: the fraction and the physics frames move on
-		_frame(a)
-		_frame(b)
-		var diff := _drawn_difference(_drawn(a), _drawn(b))
+		CrowdTwins.frame(a)
+		CrowdTwins.frame(b)
+		var diff := CrowdTwins.drawn_difference(CrowdTwins.drawn(a), CrowdTwins.drawn(b))
 		if diff == "":
 			diff = _dust_difference(a, b)
 		if diff != "":
@@ -924,7 +819,7 @@ func test_the_native_wardens_draw_the_script_ones_bodies() -> void:
 			fail_test("frame %d: %s" % [f, diff])
 			return
 		for id in a.batch.ids():
-			var pair := _both(a, b, id)
+			var pair := CrowdTwins.both(a, b, id)
 			if pair.is_empty() or not pair[0] is WardenAvatar:
 				continue
 			var wa: WardenAvatar = pair[0]
