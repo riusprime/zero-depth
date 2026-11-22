@@ -58,7 +58,7 @@ func sync(reader: WorldReader) -> void:
 	_vent.visible = not h.is_empty()
 	_vent_plate.visible = _vent.visible
 	if _vent.visible:
-		_vent.text = tr("HUD_KEY_HINT") % [key_text(&"vent"), tr("HUD_VENT")]
+		var text := tr("HUD_KEY_HINT") % [key_text(&"vent"), tr("HUD_VENT")]
 		var hot: bool = h["vent_ready"]
 		# The 6 s cooldown, as the ability squares show theirs: a sweep and the seconds left.
 		var left := int(h["vent_cd"])
@@ -67,7 +67,9 @@ func sync(reader: WorldReader) -> void:
 			_vent_sweep.share = share
 			_vent_sweep.queue_redraw()
 		if left > 0:
-			_vent.text += " %d" % ceili(left / float(SimTick.TICKS_PER_SECOND))
+			text += " %d" % ceili(left / float(SimTick.TICKS_PER_SECOND))
+		if _vent.text != text:  # One write of the whole line: each write shapes the label again
+			_vent.text = text
 		_vent.modulate = _hot_color() if hot else Color(1, 1, 1, DIM_ALPHA)
 	_place()
 
