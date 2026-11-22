@@ -378,6 +378,25 @@ enum Field {
 	WW_HAVE_FY = 59,
 	WW_FOOT_Z = 60, // f32 x4: each leg's foot across the body (set once)
 	WW_VD = 64, // f32 x31: the raw drives
+	// GravityNodeAvatar (its own fields from 43 to 76; zd_avatar_gravity_node.cpp)
+	GN_CORE_GLOW = 43, // the core's glow (the instance's accent glow)
+	GN_LIFT = 44,
+	GN_SHADOW = 45, // f32: the ground disc's scale across (its x and z)
+	GN_STATE = 46,
+	GN_HP = 47,
+	GN_DRAW = 48,
+	GN_DRAW_TO = 49,
+	GN_RISE = 50,
+	GN_SPIN_A = 51,
+	GN_SPIN_B = 52,
+	GN_BEAT = 53,
+	GN_OMEGA = 54,
+	GN_HURT = 55,
+	GN_HURT_SIDE = 56,
+	GN_DIE = 57,
+	GN_LAST_FY = 58,
+	GN_HAVE_FY = 59,
+	GN_VD = 60, // f32 x17: the raw drives
 	STRIDE = 124,
 };
 
@@ -407,6 +426,7 @@ enum Class {
 	FROST_SPITTER = 21,
 	GLACIER_TURTLE = 22,
 	WIRE_WEAVER = 24,
+	GRAVITY_NODE = 23,
 };
 
 inline bool is_charger(int c) {
@@ -555,6 +575,11 @@ void ww_apply(double *s, int64_t tick, int state, double windup, float pos_x, fl
 		const Ctx &c);
 void ww_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int ww_drives(const double *s, float *out);
+// The Gravity Node (zd_avatar_gravity_node.cpp): its sync (`more`: its HP, then its draw on the hero), frame step
+// (the pose included; the facing's turn from `f`) and drives.
+void gn_apply(double *s, int state, const double *more, const Ctx &c);
+void gn_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int gn_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,

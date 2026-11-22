@@ -84,6 +84,8 @@ static func apply(
 		)
 	elif cls == BatchAvatars.WIRE_WEAVER_CLASS:
 		BatchWireWeaver.apply_in_script(a as WireWeaverAvatar, tick, pos, state, windup, more, o)
+	elif cls == BatchAvatars.GRAVITY_NODE_CLASS:
+		BatchGravityNode.apply_in_script(a as GravityNodeAvatar, state, more, o)
 	elif cls == BatchAvatars.ARC_CASTER_CLASS:
 		(
 			(a as ArcCasterAvatar)

@@ -42,6 +42,7 @@ const CINDER_PRIEST_CLASS := 20
 const FROST_SPITTER_CLASS := 21
 const GLACIER_TURTLE_CLASS := 22
 const WIRE_WEAVER_CLASS := 24
+const GRAVITY_NODE_CLASS := 23
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -66,6 +67,7 @@ const CLASS_OF := {
 	WorldReader.KIND_FROST_SPITTER: FROST_SPITTER_CLASS,
 	WorldReader.KIND_GLACIER_TURTLE: GLACIER_TURTLE_CLASS,
 	WorldReader.KIND_WIRE_WEAVER: WIRE_WEAVER_CLASS,
+	WorldReader.KIND_GRAVITY_NODE: GRAVITY_NODE_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -159,6 +161,8 @@ static func class_of(avatar: AvatarBase) -> int:
 		return GLACIER_TURTLE_CLASS
 	if avatar is WireWeaverAvatar and (avatar as WireWeaverAvatar).vat:
 		return WIRE_WEAVER_CLASS
+	if avatar is GravityNodeAvatar and (avatar as GravityNodeAvatar).vat:
+		return GRAVITY_NODE_CLASS
 	return 0
 
 
@@ -360,6 +364,8 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 			_in_more[k * MORE + 1] = reader.shell_hp(i)
 		elif c == WIRE_WEAVER_CLASS:  # (its HP: a hit's flinch)
 			_in_more[k * MORE] = reader.actor_hp(i)
+		elif c == GRAVITY_NODE_CLASS:  # (its HP: a hit's wobble; its draw on the hero)
+			BatchGravityNode.note(reader, i, _in_more, k * MORE)
 	if c >= CHARGER_CLASS:
 		var p := reader.actor_pos(i)
 		_in_x[k] = p.x
