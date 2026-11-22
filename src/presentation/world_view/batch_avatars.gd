@@ -41,6 +41,7 @@ const KILN_BEETLE_CLASS := 19
 const CINDER_PRIEST_CLASS := 20
 const FROST_SPITTER_CLASS := 21
 const GLACIER_TURTLE_CLASS := 22
+const WIRE_WEAVER_CLASS := 24
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -64,6 +65,7 @@ const CLASS_OF := {
 	WorldReader.KIND_CINDER_PRIEST: CINDER_PRIEST_CLASS,
 	WorldReader.KIND_FROST_SPITTER: FROST_SPITTER_CLASS,
 	WorldReader.KIND_GLACIER_TURTLE: GLACIER_TURTLE_CLASS,
+	WorldReader.KIND_WIRE_WEAVER: WIRE_WEAVER_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -155,6 +157,8 @@ static func class_of(avatar: AvatarBase) -> int:
 		return FROST_SPITTER_CLASS
 	if avatar is GlacierTurtleAvatar and (avatar as GlacierTurtleAvatar).vat:
 		return GLACIER_TURTLE_CLASS
+	if avatar is WireWeaverAvatar and (avatar as WireWeaverAvatar).vat:
+		return WIRE_WEAVER_CLASS
 	return 0
 
 
@@ -354,6 +358,8 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 		elif c == GLACIER_TURTLE_CLASS:  # (its HP and its shield's: a hit's flinch, the brace, the break)
 			_in_more[k * MORE] = reader.actor_hp(i)
 			_in_more[k * MORE + 1] = reader.shell_hp(i)
+		elif c == WIRE_WEAVER_CLASS:  # (its HP: a hit's flinch)
+			_in_more[k * MORE] = reader.actor_hp(i)
 	if c >= CHARGER_CLASS:
 		var p := reader.actor_pos(i)
 		_in_x[k] = p.x
