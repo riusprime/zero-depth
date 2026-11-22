@@ -5,7 +5,9 @@ extends GutTest
 ## GDScript pass taken without the library or with the switch off; the Stone Throwers' native avatars against their
 ## GDScript (lifts, throws, a kill with the rock in its hands, hits, flinches, holds, spawns); the Needles' likewise
 ## (windups, bursts, kills mid-attack, hits, flinches, holds, spawns); the Rock Lurkers' (the disguise, the rumble, the
-## burst, the slam, kills mid-slam and while waiting, hits, flinches, holds, spawns).
+## burst, the slam, kills mid-slam and while waiting, hits, flinches, holds, spawns); the Wardens' (walks, turns,
+## tells, slams and their dust rings, hurts, kills mid-attack, hits, flinches, holds, spawns; the Rubble Warden's
+## crust).
 
 const SW := ActorStore.Kind.SWARMER
 const ML := ActorStore.Kind.MINE_LAYER
@@ -15,6 +17,8 @@ const MD := ActorStore.Kind.MENDER
 const ST := ActorStore.Kind.STONE_THROWER
 const NE := ActorStore.Kind.NEEDLE
 const LK := ActorStore.Kind.ROCK_LURKER
+const WD := ActorStore.Kind.WARDEN
+const RW := ActorStore.Kind.RUBBLE_WARDEN
 const DT := 1.0 / 60.0
 const FRAMES := 300
 const KINDS_ALL := [
@@ -772,5 +776,192 @@ func test_the_native_rock_lurkers_draw_the_script_ones_bodies() -> void:
 	assert_gt(int(seen.get(WorldReader.STATE_RECOVER, 0)), 0, "recoveries compared")
 	assert_gt(killed_striking, 0, "a kill mid-slam")
 	assert_gt(killed_hidden, 0, "a kill while it waits (its disc and ring stay hidden as it falls)")
+	assert_eq(spawned, 2, "spawns compared")
+	assert_gt(a.vat_crowd.drawn, 8, "a crowd drawn")
+
+
+## Where the batched Wardens' dust rings (shown, placed in the tree, faded) or Rubble Wardens' crusts (shown, placed)
+## first differ between two views, or "".
+func _dust_difference(a: ActorViews, b: ActorViews) -> String:
+	for id in a.batch.ids():
+		var pair := _both(a, b, id)
+		if pair.is_empty() or not pair[0] is WardenAvatar:
+			continue
+		var diff := _crust_difference(a.actor_node(id), b.actor_node(id))
+		if diff == "":
+			diff = _ring_difference(pair[0].dust, pair[1].dust)
+		if diff != "":
+			return "id %d %s" % [id, diff]
+	return ""
+
+
+## Where two Rubble Wardens' crusts differ (shown, placed in the tree), or "" (none: not a Rubble Warden).
+func _crust_difference(ra: Node3D, rb: Node3D) -> String:
+	if not ra.has_meta(&"crust"):
+		return ""
+	var ka: Node3D = ra.get_meta(&"crust")
+	var kb: Node3D = rb.get_meta(&"crust")
+	if not ka.is_inside_tree() or ka.is_visible_in_tree() != kb.is_visible_in_tree():
+		return "crust shown %s vs %s" % [ka.is_visible_in_tree(), kb.is_visible_in_tree()]
+	if ka.global_transform != kb.global_transform:
+		return "crust at %s vs %s" % [ka.global_transform, kb.global_transform]
+	return ""
+
+
+## Where two dust rings differ (in the tree, shown, placed, faded), or "".
+func _ring_difference(da: WardenDust, db: WardenDust) -> String:
+	if not da.is_inside_tree() or not db.is_inside_tree():
+		return "dust out of the tree"
+	if da.visible != db.visible or da.is_visible_in_tree() != db.is_visible_in_tree():
+		return "dust shown %s vs %s" % [da.visible, db.visible]
+	if not da.visible:
+		return ""
+	if da.global_transform != db.global_transform:
+		return "dust at %s vs %s" % [da.global_transform, db.global_transform]
+	var ca: Color = (da.material_override as StandardMaterial3D).albedo_color
+	var cb: Color = (db.material_override as StandardMaterial3D).albedo_color
+	return "" if ca == cb else "dust colour %s vs %s" % [ca, cb]
+
+
+func test_the_native_wardens_draw_the_script_ones_bodies() -> void:
+	if not ClassDB.class_exists(EnemyBatch.NATIVE_CLASS):
+		pending("the native library is not loaded")
+		return
+	var calm_was := ViewPrefs.reduced_motion
+	var w := CombatLab.world()
+	w.actors.invuln[0] = 1 << 24
+	for k in 12:  # A ring round the hero, a step or two off its slam; two far out (they come on screen: the catch-up)
+		var r := 2.0 + (k % 4) * 0.8 + (30.0 if k % 7 == 3 else 0.0)
+		var a0 := TAU * k / 12.0
+		w.add_enemy(RW if k % 5 == 1 else WD, Vector2(cos(a0), sin(a0)) * r)  # Three in their crust
+	var a := _hand_views(w, true)
+	var b := _hand_views(w, false)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5412
+	var compared := 0
+	var flinched := 0
+	var held := 0
+	var tells := 0
+	var slams := 0
+	var dusty := 0
+	var hurt := 0
+	var walking := 0
+	var turning := 0
+	var jolted := 0
+	var crusted := 0
+	var shed := 0
+	var killed_busy := 0
+	var killed := 0
+	var spawned := 0
+	for f in FRAMES:
+		ViewPrefs.reduced_motion = f >= 200 and f < 230  # A stretch of reduced motion (calm)
+		for t in [0, 1, 1, 2][f % 4]:  # Frames with no tick, one and two
+			w.step(InputFrame.new())
+		for i in w.actors.size():
+			if (w.actors.kinds[i] == WD or w.actors.kinds[i] == RW) and w.actors.dead[i] == 0:
+				if w.actors.state[i] == WorldReader.STATE_WINDUP:
+					tells += 1
+				elif w.actors.state[i] == WorldReader.STATE_ACTIVE:
+					slams += 1
+		if f % 7 == 3:  # Hurt someone (the bar, the Warden's jolt)
+			var i := rng.randi_range(0, w.actors.size() - 1)
+			if w.actors.teams[i] != 0 and w.actors.hp[i] > 1:
+				w.actors.hp[i] = maxi(1, w.actors.hp[i] - maxi(1, w.actors.max_hp[i] / 5))
+				hurt += 1
+		if f == 90 or f == 190:  # Spawns (one rises in on screen)
+			w.add_enemy(WD, Vector2(rng.randf_range(-4.0, 4.0), rng.randf_range(-4.0, 4.0)))
+			spawned += 1
+		if f % 40 == 20 and f > 60:  # A kill, mid-tell or mid-slam when one is
+			var pick := -1
+			for i in w.actors.size():
+				var wardenish := w.actors.kinds[i] == WD or w.actors.kinds[i] == RW
+				if w.actors.teams[i] == 0 or not wardenish or w.actors.dead[i] != 0:
+					continue
+				var node := a.actor_node(w.actors.ids[i])
+				var av: WardenAvatar = node.get_meta(&"enemy_avatar") if node != null else null
+				if av != null and (av.raise_amount() > 0.0 or av.slam_amount() > 0.0):
+					pick = i
+					killed_busy += 1
+					break
+				if pick < 0:
+					pick = i
+			if pick >= 0:
+				killed += 1
+				var at := w.actors.pos(pick)
+				Damage.hit(w, pick, 1 << 20, 0, 0, w.take_root(), 0, at, at)
+		if f % 2 == 0:
+			a.sync(WorldReader.new(w))
+			b.sync(WorldReader.new(w))
+		if f % 3 == 1:  # Hits: the flash, a flinch (a Blade's knock now and then), a hold, a tint
+			var ids := a.batch.ids()
+			if ids.size() > 0:
+				var id := ids[rng.randi_range(0, ids.size() - 1)]
+				var away := Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0))
+				var knock := 1.0 if f % 6 == 1 else 0.0
+				var pair := _both(a, b, id)
+				for v: ActorViews in [a, b]:
+					v.flash(id)
+				if not pair.is_empty():
+					var fa: bool = pair[0].flinch(away, 1.0, knock)
+					var fb: bool = pair[1].flinch(away, 1.0, knock)
+					assert_eq(fa, fb, "the same flinch decision")
+					flinched += 1 if fa else 0
+					if f % 9 == 4:
+						pair[0].hold(0.06)
+						pair[1].hold(0.06)
+						held += 1
+				if f % 11 == 0:
+					for v: ActorViews in [a, b]:
+						v.set_tint(id, Color(0.3, 1.0, 0.4), 0.8)
+		await get_tree().process_frame  # A real frame: the fraction and the physics frames move on
+		_frame(a)
+		_frame(b)
+		var diff := _drawn_difference(_drawn(a), _drawn(b))
+		if diff == "":
+			diff = _dust_difference(a, b)
+		if diff != "":
+			ViewPrefs.reduced_motion = calm_was
+			fail_test("frame %d: %s" % [f, diff])
+			return
+		for id in a.batch.ids():
+			var pair := _both(a, b, id)
+			if pair.is_empty() or not pair[0] is WardenAvatar:
+				continue
+			var wa: WardenAvatar = pair[0]
+			wa.drives()  # (a read: the native row into the object)
+			dusty += 1 if wa.dust.visible else 0
+			walking += 1 if wa._stride > 0.2 else 0
+			turning += 1 if absf(wa._omega) > 0.2 else 0
+			jolted += 1 if wa._hurt_t >= 0.0 else 0
+			var root := a.actor_node(id)
+			if root.has_meta(&"crust"):
+				var crust: Node3D = root.get_meta(&"crust")
+				crusted += 1 if crust.visible else 0
+				shed += 0 if crust.visible else 1
+		compared += 1
+	ViewPrefs.reduced_motion = calm_was
+	assert_true(a.batch.avatars.on, "the native avatars ran")
+	assert_false(b.batch.avatars.on, "the reference ran in GDScript")
+	assert_eq(compared, FRAMES, "every frame alike")
+	assert_gt(flinched, 10, "flinches compared")
+	assert_gt(held, 3, "holds compared")
+	assert_gt(tells, 0, "tells compared")
+	assert_gt(slams, 0, "slams compared")
+	assert_gt(dusty, 0, "dust rings compared")
+	assert_gt(hurt, 3, "hurts compared")
+	assert_gt(walking, 0, "walks compared")
+	assert_gt(turning, 0, "turns compared")
+	assert_gt(jolted, 0, "hurt jolts compared")
+	assert_gt(crusted, 0, "Rubble Wardens in their crust compared")
+	assert_gt(shed, 0, "a crust shed compared")
+	var fmt := (
+		"wardens: %d frames, tells %d, slams %d, dust %d, walking %d, turning %d, jolts %d, "
+		+ "flinches %d, holds %d, kills %d (%d mid-attack), spawns %d, crust %d, shed %d"
+	)
+	var counts := [compared, tells, slams, dusty, walking, turning, jolted]
+	counts.append_array([flinched, held, killed, killed_busy, spawned, crusted, shed])
+	gut.p(fmt % counts)
+	assert_gt(killed_busy, 0, "a kill mid-tell or mid-slam")
+	assert_gt(killed, 1, "kills compared")
 	assert_eq(spawned, 2, "spawns compared")
 	assert_gt(a.vat_crowd.drawn, 8, "a crowd drawn")
