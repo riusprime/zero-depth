@@ -362,3 +362,11 @@ bit, still frames before and after.
 
 Order: the two at once (one Godot process each). Step 52 does not touch the avatars, `EnemyBatch`, `BatchAvatars`,
 `VatCrowd`, `ActorViews`, `RuinsRocksViews` or `native/`.
+
+**The other model kinds follow (owner, 2026-11-22):** "if the Stone Thrower into the C++ batch turns out as a good
+improvement move with the others". The lead's bar for "good": on a quiet machine, the 42-Stone-Thrower run is at
+least 2 ms a frame shorter after step 51, with the twin probe and the native equality test clean. If so, the other
+display-by-script kinds follow, one kind a step, the heaviest first: Needle, Warden, Rock Lurker (Night Rocks), then
+the other biomes' (Arc Caster, Bomb Drone, Lens Drone, Scrap Hound, Kiln Beetle, Cinder Priest, Sniper, Frost
+Spitter, Glacier Turtle, Gravity Node, Wire Weaver, Star Warper), each measured and proven the same way. If not, the
+numbers go to the owner and the lead stops there.
