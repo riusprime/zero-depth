@@ -28,6 +28,8 @@ extends AvatarBase
 ##   or kicks, the flashes steady.
 ## The pose is a few plain numbers (the raw drives, _vd) worked out from the state first, then the nodes from them
 ## through the joint table (_joints, the same transforms the VAT rig declares), so the baked pose is the live one.
+## On the VAT crowd it is batched (EnemyBatch: nothing here reads the tree, its turn is its facing node's), and the
+## native batch runs the same sync, frame step and pose (native/src/zd_avatar_needle.cpp).
 ## Presentation only (EI-07): nothing here reaches the sim. +X is the front (the barrel), +Z its right.
 
 const KIND := WorldReader.KIND_NEEDLE
@@ -396,6 +398,7 @@ func sync(reader: WorldReader, i: int) -> void:
 
 ## The same as sync(), from plain values (tests, EnemyShadows): tick, state, pos, windup (0..1); hp optional.
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	var st: int = s["state"]
 	var tick: int = s["tick"]
 	var hp: int = s.get("hp", -1)
@@ -429,6 +432,7 @@ func apply_state(s: Dictionary) -> void:
 
 # --- Frame time ---------------------------------------------------------------------------------------------------
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0:
 		return
@@ -465,52 +469,62 @@ func advance(delta: float) -> void:
 	_pose()
 
 
-## Starts the death (ActorViews, when the sim drops the Needle: its bar hidden, freed DEATH_SECONDS later). True: it
-## plays.
+## Starts the death (ActorViews or the enemy batch, when the sim drops the Needle: its bar hidden, freed DEATH_SECONDS
+## later). True: it plays.
 func die() -> bool:
+	_touch()
 	if _die_t < 0.0:
 		_die_t = 0.0
 	return true
 
 
 func dying() -> bool:
+	_peek()
 	return _die_t >= 0.0
 
 
 ## The barrel's recoil now (m it has slid back from rest; 0 at rest).
 func barrel_recoil() -> float:
+	_peek()
 	return maxf(0.0, -_vd[BARREL])
 
 
 ## The gem's glow and the muzzle's now (emission energies; the muzzle 0 when cold).
 func eye_energy() -> float:
+	_peek()
 	return _gem_mat.emission_energy_multiplier
 
 
 func muzzle_energy() -> float:
+	_peek()
 	return _hole_mat.emission_energy_multiplier
 
 
 ## The windup's progress the tell reads (0 outside the windup) and how deep its brace is (0..1).
 func tell_progress() -> float:
+	_peek()
 	return _tell if _state == WorldReader.STATE_WINDUP else 0.0
 
 
 func crouch_amount() -> float:
+	_peek()
 	return tell_crouch(_tell) if _state == WorldReader.STATE_WINDUP else 0.0
 
 
 ## The raw drives now (tests).
 func drives() -> PackedFloat32Array:
+	_peek()
 	return _vd
 
 
 ## Where foot `k`'s tip and its knee stand now (m, the facing's frame; tests).
 func foot_at(k: int) -> Vector3:
+	_peek()
 	return LeggedRig.tip_at(_vd, LEG0, k, _body_xf(_vd), _hips[k], _knees[k], _feet[k])
 
 
 func knee_at(k: int) -> Vector3:
+	_peek()
 	return (
 		LeggedRig.knee_xf(_vd, LEG0, k, _body_xf(_vd), _hips[k], _knees[k], _feet[k]) * Vector3.ZERO
 	)
@@ -518,6 +532,7 @@ func knee_at(k: int) -> Vector3:
 
 ## Where the barrel's tip is now (m, the facing's frame): the muzzle the bolts leave.
 func muzzle_at() -> Vector3:
+	_peek()
 	return _body_xf(_vd) * (_muzzle_rest + Vector3(_vd[BARREL], 0, 0))
 
 
@@ -785,15 +800,18 @@ func _alive() -> float:
 # --- SoloVat: the VAT rig -----------------------------------------------------------------------------------------
 ## The whole body's lift (m): VatCrowd moves the instance by it.
 func vat_lift() -> float:
+	_peek()
 	return _lift
 
 
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
 ## The gem's glow (the instance's accent glow; the muzzle's is the MUZZLE drive).
 func glow_energy() -> float:
+	_peek()
 	return _gem_mat.emission_energy_multiplier
 
 
