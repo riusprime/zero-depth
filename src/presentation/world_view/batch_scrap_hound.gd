@@ -96,24 +96,19 @@ static func note(reader: WorldReader, i: int, more: PackedFloat64Array, o: int) 
 	more[o + 1] = 1.0 if reader.hound_yelped(i) else 0.0
 
 
-## ScrapHoundAvatar.sync's values from those inputs, run on the object (the rows turned off with a sync pending).
-static func apply_in_script(
-	a: ScrapHoundAvatar,
-	tick: int,
-	pos: Vector2,
-	state: int,
-	windup: float,
-	more: PackedFloat64Array,
-	o: int
-) -> void:
+## ScrapHoundAvatar.sync's values from slot `k`'s inputs kept in `batch` (BatchAvatars.note_sync), run on the object
+## (the rows turned off with a sync pending).
+static func apply_in_script(a: ScrapHoundAvatar, batch: BatchAvatars, k: int) -> void:
+	var o := k * BatchAvatars.MORE
+	var more: PackedFloat64Array = batch._in_more
 	(
 		a
 		. apply_state(
 			{
-				"tick": tick,
-				"pos": pos,
-				"state": state,
-				"windup": windup,
+				"tick": batch._tick,
+				"pos": Vector2(batch._in_x[k], batch._in_y[k]),
+				"state": batch._in_state[k],
+				"windup": batch._in_windup[k],
 				"yelped": more[o + 1] != 0.0,
 				"hp": int(more[o]),
 			}
