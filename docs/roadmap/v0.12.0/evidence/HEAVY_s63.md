@@ -79,3 +79,22 @@ Per the owner (2026-11-22: the tests run once with every kind moved), these are 
   are untouched (`git diff cc740a31 -- src/sim native/src/zd_ai* native/src/zd_collide* native/src/zd_strike*
   native/src/zd_shots* native/src/zd_nav* native/src/zd_world*` is empty).
 - timing: none (owner: the lead measures once with every kind moved).
+
+## After `git merge lead-v0120` (the Cinder Priest, class 20), merge commit `c448ad7e`
+
+Both kinds' dispatch branches, fields, classes and KINDS lines kept. `GODOT="$GODOT" bash scripts/native/ensure.sh`:
+exit code 0 (the library rebuilt with `zd_avatar_cinder_priest.cpp` and `zd_avatar_frost_spitter.cpp`). The same
+equality test, Godot processes before: 2 (other agents' runs; none of this step's). Exit code 0:
+```
+* test_the_native_frost_spitters_draw_the_script_ones_bodies
+    spitter states seen (actor-frames): { 0: 560, 1: 1909, 2: 902, 3: 105, 4: 447 }; kills 5 (3 mid-attack)
+1/1 passed.
+Passing Tests         1
+Asserts             107
+Time              2.324s
+---- All tests passed! ----
+```
+gdformat and gdlint on the four merged GDScript files: `4 files would be left unchanged`, `Success: no problems found`.
+
+`native/src/zd_avatar.cpp` is 1,019 lines after the merge (1,004 on `lead-v0120` before it); `tests/arch/test_line_cap.gd`
+checks only GDScript. Not split here (a shared file; the lead decides).
