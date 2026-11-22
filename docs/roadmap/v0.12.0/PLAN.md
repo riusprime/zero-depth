@@ -419,3 +419,8 @@ with every kind moved.
 thought we were gonna run all the test together after all were done right?". From then on each kind's agent runs only
 its own equality test (native against GDScript, bit for bit, and once shown able to fail) and lint. The twin probe,
 the test folders, e2e, seams and timing run once, by the lead, with every kind moved.
+The owner then: "i meant godot play tests, wait untill all are moved and then we will run them with mixed enemies, if
+the work is done to pass it to c++ we can just test the full result, tell me when you are ready for the tests so the
+computer is at idle". So the agents keep their own equality test; once every kind is moved and merged, the lead runs
+the one round of checks, makes sure no Godot process is left running, and tells the owner the machine is idle and the
+build is ready for their play test with mixed enemies.
