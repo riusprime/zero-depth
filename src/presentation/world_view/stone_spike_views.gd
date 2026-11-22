@@ -744,7 +744,9 @@ static func _instance(b: Basis, o: Vector3, heat: float, sd: int) -> PackedFloat
 ## pulse hits, over a faint dark outline of that radius; as it strikes, a thin bright edge flashes at that radius and
 ## fades. Rebuilt every draw.
 func _draw_rings(now: float, still: bool) -> void:
-	_ring_mesh.clear_surfaces()
+	# An empty mesh is left alone: clearing it still has the renderer update every instance of it
+	if _ring_mesh.get_surface_count() > 0:
+		_ring_mesh.clear_surfaces()
 	var bands := []
 	for q: Dictionary in _quakes:
 		var c: Vector2 = q["center"]

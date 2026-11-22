@@ -73,8 +73,8 @@ func _process(delta: float) -> void:
 
 ## Redraws only when a square's look changed (a ready row with no flash draws nothing a tick).
 func sync(reader: WorldReader) -> void:
-	var was := _slots.duplicate(true)
-	_slots.clear()
+	var was := _slots  # The last sync's row, kept whole: this one is built in a new array (no copy)
+	_slots = []
 	var blade := reader.weapon_id() == &"combo_sword"
 	_slots.append(
 		_slot(

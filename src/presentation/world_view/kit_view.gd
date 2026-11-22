@@ -313,8 +313,11 @@ func _sync_blade(reader: WorldReader) -> void:
 	if not on:
 		_last_t = 0
 		_history.clear()
-		_trail_mesh.clear_surfaces()
-		_edge_mesh.clear_surfaces()
+		# An empty mesh is left alone: clearing it still has the renderer update every instance of it
+		if _trail_mesh.get_surface_count() > 0:
+			_trail_mesh.clear_surfaces()
+		if _edge_mesh.get_surface_count() > 0:
+			_edge_mesh.clear_surfaces()
 		_edge_drawn = 0
 		_release_ribbon()
 		return
@@ -471,8 +474,10 @@ func _size_blade() -> void:
 func _build_trail(head: Array) -> void:
 	if _ribbon_on:
 		_tint_ribbon()
-	_trail_mesh.clear_surfaces()
-	_edge_mesh.clear_surfaces()
+	if _trail_mesh.get_surface_count() > 0:
+		_trail_mesh.clear_surfaces()
+	if _edge_mesh.get_surface_count() > 0:
+		_edge_mesh.clear_surfaces()
 	_edge_drawn = 0
 	if trail_count == 0:
 		return
