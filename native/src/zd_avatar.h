@@ -149,6 +149,23 @@ enum Field {
 	L_RISE = 62,
 	L_REST = 63, // f32 x2: the body joint's rest place (x, y; set once)
 	L_VD = 65, // f32 x18: the raw drives
+	// ArcCasterAvatar (its own fields from 43; zd_avatar_arc_caster.cpp)
+	AC_CRYSTAL = 43, // the crystal's glow (the instance's accent glow)
+	AC_LIFT = 44,
+	AC_STATE = 45,
+	AC_WIND = 46,
+	AC_CAST = 47,
+	AC_RISE = 48,
+	AC_GLIDE = 49,
+	AC_DIR = 50, // f32 x2: the glide's direction in the facing's frame
+	AC_STEP = 52,
+	AC_ORBIT = 53,
+	AC_OMEGA = 54,
+	AC_DIE = 55,
+	AC_LAST_FY = 56,
+	AC_HAVE_FY = 57,
+	AC_HEM_Y = 58, // f32: the robe's waist pivot height (set once)
+	AC_VD = 59, // f32 x23: the raw drives
 	STRIDE = 124,
 };
 
@@ -167,6 +184,7 @@ enum Class {
 	STONE_THROWER = 10,
 	NEEDLE = 11,
 	ROCK_LURKER = 13,
+	ARC_CASTER = 15,
 };
 
 inline bool is_charger(int c) {
@@ -242,6 +260,10 @@ void l_apply(double *s, int64_t tick, int state, double windup, float pos_x, flo
 		const Ctx &c);
 void l_advance(double *s, double delta, const Ctx &c);
 int l_drives(const double *s, float *out);
+// The Arc Caster (zd_avatar_arc_caster.cpp): its sync, frame step (the pose included) and drives.
+void ac_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const Ctx &c);
+void ac_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int ac_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,

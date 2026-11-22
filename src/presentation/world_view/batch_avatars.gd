@@ -1,8 +1,9 @@
 class_name BatchAvatars
 extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
-## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow) or RockLurkerAvatar's
-## (BatchLurker) fields that change after setup) is a row of packed doubles here, and ZdCrowd
+## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow), RockLurkerAvatar's
+## (BatchLurker) or ArcCasterAvatar's (BatchArcCaster) fields that change after setup) is a row of packed doubles
+## here, and ZdCrowd
 ## (native/src/zd_avatar*, the same arithmetic in the same order) applies each sync, steps each frame and writes
 ## VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
 ## The rows hold the state while `on`; the avatar objects then hold old numbers, except around an event:
@@ -101,6 +102,7 @@ const CHARGER_CLASS := 8
 const STONE_THROWER_CLASS := 10
 const NEEDLE_CLASS := 11
 const ROCK_LURKER_CLASS := 13
+const ARC_CASTER_CLASS := 15
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -113,6 +115,7 @@ const CLASS_OF := {
 	WorldReader.KIND_STONE_THROWER: STONE_THROWER_CLASS,
 	WorldReader.KIND_NEEDLE: NEEDLE_CLASS,
 	WorldReader.KIND_ROCK_LURKER: ROCK_LURKER_CLASS,
+	WorldReader.KIND_ARC_CASTER: ARC_CASTER_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -178,6 +181,9 @@ static func class_of(avatar: AvatarBase) -> int:
 	var lk := avatar as RockLurkerAvatar
 	if lk != null and lk.vat:
 		return ROCK_LURKER_CLASS
+	var ac := avatar as ArcCasterAvatar
+	if ac != null and ac.vat:
+		return ARC_CASTER_CLASS
 	return 0
 
 
@@ -532,6 +538,18 @@ func _flush_inputs_in_script() -> void:
 						}
 					)
 				)
+			elif _cls[k] == ARC_CASTER_CLASS:
+				(
+					(a as ArcCasterAvatar)
+					. apply_state(
+						{
+							"tick": _tick,
+							"pos": Vector2(_in_x[k], _in_y[k]),
+							"state": _in_state[k],
+							"windup": _in_windup[k],
+						}
+					)
+				)
 			elif _cls[k] >= CHARGER_CLASS:
 				(
 					(a as ChargerAvatar)
@@ -656,6 +674,12 @@ func _export(k: int) -> void:
 		for q in BatchLurker.COUNT:
 			_st[o + BatchLurker.FIRST + q] = r[q]
 		return
+	var ac := a as ArcCasterAvatar
+	if ac != null:
+		var r := BatchArcCaster.fields(ac)
+		for q in BatchArcCaster.COUNT:
+			_st[o + BatchArcCaster.FIRST + q] = r[q]
+		return
 	var c := a as ChargerAvatar
 	_st[o + C_VISOR] = c._visor_e
 	_st[o + C_TELL] = c._tell_p
@@ -726,6 +750,10 @@ func _import(k: int) -> void:
 	var lk := a as RockLurkerAvatar
 	if lk != null:
 		BatchLurker.take(lk, _st, o)
+		return
+	var ac := a as ArcCasterAvatar
+	if ac != null:
+		BatchArcCaster.take(ac, _st, o)
 		return
 	var c := a as ChargerAvatar
 	c._visor_e = _st[o + C_VISOR]
