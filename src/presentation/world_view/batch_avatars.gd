@@ -2,9 +2,10 @@ class_name BatchAvatars
 extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
 ## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow), RockLurkerAvatar's
-## (BatchLurker), WardenAvatar's (BatchWarden) or SniperAvatar's (BatchSniperRow) fields that change after setup) is a
-## row of packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same arithmetic in the same order) applies each
-## sync, steps each frame and writes VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
+## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow) or ArcCasterAvatar's (BatchArcCaster)
+## fields that change after setup) is a row of packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same
+## arithmetic in the same order) applies each sync, steps each frame and writes VatCrowd's body and shadow instances
+## from the rows: one call each, none per enemy.
 ## The rows hold the state while `on`; the avatar objects then hold old numbers, except around an event:
 ## - an event on an avatar (a flinch, a hold, a death, a sync or a step called on it: AvatarBase._touch) first copies
 ##   its row into it (pull) and marks it the holder (dirty); its own GDScript runs the event as before, and the batch
@@ -104,6 +105,7 @@ const NEEDLE_CLASS := 11
 const WARDEN_CLASS := 12
 const ROCK_LURKER_CLASS := 13
 const SNIPER_CLASS := 14
+const ARC_CASTER_CLASS := 15
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -119,6 +121,7 @@ const CLASS_OF := {
 	WorldReader.KIND_WARDEN: WARDEN_CLASS,
 	WorldReader.KIND_RUBBLE_WARDEN: WARDEN_CLASS,
 	WorldReader.KIND_SNIPER: SNIPER_CLASS,
+	WorldReader.KIND_ARC_CASTER: ARC_CASTER_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -190,6 +193,9 @@ static func class_of(avatar: AvatarBase) -> int:
 	var sn := avatar as SniperAvatar
 	if sn != null and sn.vat:
 		return SNIPER_CLASS
+	var ac := avatar as ArcCasterAvatar
+	if ac != null and ac.vat:
+		return ARC_CASTER_CLASS
 	return 0
 
 
@@ -586,6 +592,18 @@ func _flush_inputs_in_script() -> void:
 						}
 					)
 				)
+			elif _cls[k] == ARC_CASTER_CLASS:
+				(
+					(a as ArcCasterAvatar)
+					. apply_state(
+						{
+							"tick": _tick,
+							"pos": Vector2(_in_x[k], _in_y[k]),
+							"state": _in_state[k],
+							"windup": _in_windup[k],
+						}
+					)
+				)
 			elif _cls[k] >= CHARGER_CLASS:
 				(
 					(a as ChargerAvatar)
@@ -698,29 +716,7 @@ func _export(k: int) -> void:
 	if st != null:
 		_export_thrower(o, st)
 		return
-	var nd := a as NeedleAvatar
-	if nd != null:
-		var row := BatchNeedleRow.fields(nd)
-		for q in row.size():
-			_st[o + BatchNeedleRow.FIRST + q] = row[q]
-		return
-	var lk := a as RockLurkerAvatar
-	if lk != null:
-		var r := BatchLurker.fields(lk)
-		for q in BatchLurker.COUNT:
-			_st[o + BatchLurker.FIRST + q] = r[q]
-		return
-	var wd := a as WardenAvatar
-	if wd != null:
-		var row := BatchWarden.export_row(wd)
-		for q in row.size():
-			_st[o + BatchWarden.W_CRACK + q] = row[q]
-		return
-	var sn := a as SniperAvatar
-	if sn != null:
-		var row := BatchSniperRow.fields(sn)
-		for q in row.size():
-			_st[o + BatchSniperRow.FIRST + q] = row[q]
+	if _export_solo(o, a):
 		return
 	var c := a as ChargerAvatar
 	_st[o + C_VISOR] = c._visor_e
@@ -785,21 +781,7 @@ func _import(k: int) -> void:
 	if st != null:
 		_import_thrower(o, st)
 		return
-	var nd := a as NeedleAvatar
-	if nd != null:
-		BatchNeedleRow.load(nd, _st.slice(o + BatchNeedleRow.FIRST, o + STRIDE))
-		return
-	var lk := a as RockLurkerAvatar
-	if lk != null:
-		BatchLurker.take(lk, _st, o)
-		return
-	var wd := a as WardenAvatar
-	if wd != null:
-		BatchWarden.import_row(wd, _st.slice(o + BatchWarden.W_CRACK, o + STRIDE))
-		return
-	var sn := a as SniperAvatar
-	if sn != null:
-		BatchSniperRow.load(sn, _st.slice(o + BatchSniperRow.FIRST, o + BatchSniperRow.END))
+	if _import_solo(o, a):
 		return
 	var c := a as ChargerAvatar
 	c._visor_e = _st[o + C_VISOR]
@@ -852,6 +834,51 @@ func _export_thrower(o: int, st: StoneThrowerAvatar) -> void:
 		_st[o + S_OFF + j * 3 + 2] = v.z
 	for q in st._vd.size():
 		_st[o + S_VD + q] = st._vd[q]
+
+
+## A solo model kind's own fields (its row file's: from its first field on) into the row at `o`; false for the others.
+func _export_solo(o: int, a: AvatarBase) -> bool:
+	var first := 0
+	var row := PackedFloat64Array()
+	if a is NeedleAvatar:
+		first = BatchNeedleRow.FIRST
+		row = BatchNeedleRow.fields(a as NeedleAvatar)
+	elif a is RockLurkerAvatar:
+		first = BatchLurker.FIRST
+		row = BatchLurker.fields(a as RockLurkerAvatar)
+	elif a is WardenAvatar:
+		first = BatchWarden.W_CRACK
+		row = BatchWarden.export_row(a as WardenAvatar)
+	elif a is SniperAvatar:
+		first = BatchSniperRow.FIRST
+		row = BatchSniperRow.fields(a as SniperAvatar)
+	elif a is ArcCasterAvatar:
+		first = BatchArcCaster.FIRST
+		row = BatchArcCaster.fields(a as ArcCasterAvatar)
+	else:
+		return false
+	for q in row.size():
+		_st[o + first + q] = row[q]
+	return true
+
+
+## The row at `o` into a solo model kind's own fields (its row file's); false for the others.
+func _import_solo(o: int, a: AvatarBase) -> bool:
+	if a is NeedleAvatar:
+		BatchNeedleRow.load(a as NeedleAvatar, _st.slice(o + BatchNeedleRow.FIRST, o + STRIDE))
+	elif a is RockLurkerAvatar:
+		BatchLurker.take(a as RockLurkerAvatar, _st, o)
+	elif a is WardenAvatar:
+		BatchWarden.import_row(a as WardenAvatar, _st.slice(o + BatchWarden.W_CRACK, o + STRIDE))
+	elif a is SniperAvatar:
+		BatchSniperRow.load(
+			a as SniperAvatar, _st.slice(o + BatchSniperRow.FIRST, o + BatchSniperRow.END)
+		)
+	elif a is ArcCasterAvatar:
+		BatchArcCaster.take(a as ArcCasterAvatar, _st, o)
+	else:
+		return false
+	return true
 
 
 ## A Stone Thrower's row at `o` into its fields (the visor's material only when its glow changed).
