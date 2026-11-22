@@ -293,6 +293,21 @@ enum Field {
 	KB_HAVE_FY = 60,
 	KB_FOOT_Z = 61, // f32 x8: each leg's foot across the body (set once)
 	KB_VD = 69, // f32 x32: the raw drives
+	// CinderPriestAvatar (its own fields from 43 to 74; zd_avatar_cinder_priest.cpp)
+	CP_CRYSTAL = 43, // the crystal's glow (the instance's accent glow)
+	CP_LIFT = 44,
+	CP_STATE = 45,
+	CP_PULSE = 46,
+	CP_ERUPT = 47,
+	CP_VENT_YAW = 48, // NAN: no vent
+	CP_FACING = 49,
+	CP_RISE = 50,
+	CP_GLIDE = 51,
+	CP_DIR = 52, // f32 x2: the glide's direction in the facing's frame
+	CP_TURN = 54,
+	CP_YAW = 55,
+	CP_DIE = 56,
+	CP_VD = 57, // f32 x18: the raw drives
 	// FrostSpitterAvatar (its own fields from 43 to 119; zd_avatar_frost_spitter.cpp)
 	FS_SAC_GLOW = 43, // the sac's glow (the instance's accent glow)
 	FS_LIFT = 44,
@@ -341,6 +356,7 @@ enum Class {
 	BOMB_DRONE = 16,
 	SCRAP_HOUND = 18,
 	KILN_BEETLE = 19,
+	CINDER_PRIEST = 20,
 	FROST_SPITTER = 21,
 };
 
@@ -466,6 +482,11 @@ void kb_apply(double *s, int64_t tick, int state, double windup, float pos_x, fl
 		const Ctx &c);
 void kb_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int kb_drives(const double *s, float *out);
+// The Cinder Priest (zd_avatar_cinder_priest.cpp): its sync (`more`: the vent's pulse, the eruption's age, the vent's
+// direction, the facing's yaw), frame step (the pose included) and drives.
+void cp_apply(double *s, int64_t tick, int state, float pos_x, float pos_y, const double *more, const Ctx &c);
+void cp_advance(double *s, double delta, const Ctx &c);
+int cp_drives(const double *s, float *out);
 // The Frost Spitter (zd_avatar_frost_spitter.cpp): its sync (`more`: its HP first), frame step (the pose included;
 // the facing's turn from `f`) and drives.
 void fs_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
