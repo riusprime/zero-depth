@@ -82,6 +82,8 @@ static func apply(
 		BatchFrostSpitter.apply_in_script(
 			a as FrostSpitterAvatar, tick, pos, state, windup, more, o
 		)
+	elif cls == BatchAvatars.GRAVITY_NODE_CLASS:
+		BatchGravityNode.apply_in_script(a as GravityNodeAvatar, state, more, o)
 	elif cls == BatchAvatars.ARC_CASTER_CLASS:
 		(
 			(a as ArcCasterAvatar)
