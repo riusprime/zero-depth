@@ -46,6 +46,15 @@ const KINDS: Array[int] = [
 const LOOK := &"zd_look"
 const GLOW := &"zd_glow"
 const LIVE := &"zd_live"
+## How normalized sends a drive: as it is (its spec spans nothing), over its span, or over its span wrapped (a loop).
+const SPEC_FLAT := 0
+const SPEC_SPAN := 1
+const SPEC_LOOP := 2
+## The most drive tables normalized keeps unpacked (each avatar kind has one constant table).
+const SPEC_CACHE_MAX := 64
+
+## [[drives, [lo, span, how]], ...]: the drive tables normalized has unpacked.
+static var _spec_cache: Array = []
 
 
 static func is_solo(kind: int) -> bool:
@@ -195,19 +204,45 @@ static func _row(
 ## The drives VatCrowd sends for the raw numbers `raw` (each 0..1 over its spec's [lo, hi], a loop wrapped; a drive
 ## whose spec spans nothing as it is).
 static func normalized(raw: PackedFloat32Array, drives: Array) -> PackedFloat32Array:
+	var spec := _specs_of(drives)
+	var lo: PackedFloat64Array = spec[0]
+	var span: PackedFloat64Array = spec[1]
+	var how: PackedByteArray = spec[2]
+	var n := lo.size()
 	var out := PackedFloat32Array()
-	out.resize(drives.size())
-	for i in drives.size():
-		var spec: Array = drives[i]
-		var lo: float = spec[0]
-		var span: float = float(spec[1]) - lo
-		var v: float = raw[i] if i < raw.size() else 0.0
-		if is_zero_approx(span):
+	out.resize(n)
+	var have := raw.size()
+	for i in n:
+		var v: float = raw[i] if i < have else 0.0
+		var h := how[i]
+		if h == SPEC_FLAT:
 			out[i] = v
 			continue
-		var u := (v - lo) / span
-		out[i] = u - floor(u) if bool(spec[2]) else u
+		var u := (v - lo[i]) / span[i]
+		out[i] = u - floor(u) if h == SPEC_LOOP else u
 	return out
+
+
+## A drive table's numbers unpacked once ([lo, span, how]: each drive's low end, its span, SPEC_*), kept for the
+## tables seen (the avatars' constant VAT_DRIVES, the same object every frame); normalized runs every frame for every
+## drawn enemy, and unpacking each spec there was most of its time.
+static func _specs_of(drives: Array) -> Array:
+	for c: Array in _spec_cache:
+		if is_same(c[0], drives):
+			return c[1]
+	var lo := PackedFloat64Array()
+	var span := PackedFloat64Array()
+	var how := PackedByteArray()
+	for spec: Array in drives:
+		var l: float = spec[0]
+		var s: float = float(spec[1]) - l
+		lo.append(l)
+		span.append(s)
+		how.append(SPEC_FLAT if is_zero_approx(s) else (SPEC_LOOP if bool(spec[2]) else SPEC_SPAN))
+	var unpacked := [lo, span, how]
+	if _spec_cache.size() < SPEC_CACHE_MAX:
+		_spec_cache.append([drives, unpacked])
+	return unpacked
 
 
 ## The transform of `node` in the frame of its ancestor `top` (the nodes between, as the tree composes them).

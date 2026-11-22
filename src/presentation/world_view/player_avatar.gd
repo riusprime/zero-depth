@@ -34,6 +34,7 @@ const LEG_W := 0.13
 const NECK_Y := 0.91
 ## Hem points: the four diamond corners (front, right, back, left) and a fold point between each pair.
 const CLOAK_SIDES := 8
+const PlayerCloakMesh := preload("res://src/presentation/world_view/player_cloak_mesh.gd")
 ## Hem corner heights and reaches (front, side, back), in metres from the ground / the body axis.
 const HEM_FRONT := Vector2(0.32, 0.36)
 const HEM_SIDE := Vector2(0.5, 0.39)
@@ -833,76 +834,12 @@ func _rebuild_cloak() -> void:
 		p.y = maxf(p.y, 0.03)
 		ring.append(p)
 	var centre := xf * Vector3(0, 0.62 - HIP_Y, 0)
-	var verts := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var colors := PackedColorArray()
-	for j in CLOAK_SIDES:
-		var j2 := (j + 1) % CLOAK_SIDES
-		_tri2(
-			verts, normals, colors, [top[j], top[j2], ring[j]], 2, centre, cloak_color, under_color
-		)
-		_tri2(
-			verts,
-			normals,
-			colors,
-			[top[j2], ring[j2], ring[j]],
-			1,
-			centre,
-			cloak_color,
-			under_color
-		)
 	_place_back_rune(xf, top[4], ring[4])
-	# A dark collar across the neck ring, both ways round: looking into the V-neck from a 3/4 view shows shadow,
-	# not the poncho's lit inside.
-	var mid := Vector3.ZERO
-	for p in top:
-		mid += p
-	mid /= top.size()
-	var up := xf.basis.y.normalized()
-	for j in CLOAK_SIDES:
-		var j2 := (j + 1) % CLOAK_SIDES
-		verts.append_array([mid, top[j], top[j2], mid, top[j2], top[j]])
-		normals.append_array([up, up, up, -up, -up, -up])
-		for _k in 6:
-			colors.append(NECK_SHADE)
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_COLOR] = colors
+	var arrays := PlayerCloakMesh.arrays(
+		top, ring, centre, xf.basis.y.normalized(), cloak_color, under_color
+	)
 	_cloak_mesh.clear_surfaces()
 	_cloak_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-
-
-## One poncho facet, both sides: the outside in cream, the underside (wound the other way) in the shaded cream,
-## darkening to near-black at the neck (the first `tops` points of t), so the inside never shows as a light sliver
-## between the hood and the shoulders.
-static func _tri2(
-	verts: PackedVector3Array,
-	normals: PackedVector3Array,
-	colors: PackedColorArray,
-	t: Array,
-	tops: int,
-	centre: Vector3,
-	outside: Color = CLOAK_COLOR,
-	under: Color = UNDER_COLOR
-) -> void:
-	var n0 := verts.size()
-	_tri(verts, normals, t[0], t[1], t[2], centre)
-	var a := verts[n0]
-	var b := verts[n0 + 1]
-	var c := verts[n0 + 2]
-	var n := normals[n0]
-	# A centimetre inside, so the two sides never share a depth (no shadow acne between them).
-	var d := -n * 0.01
-	verts.append_array([a + d, c + d, b + d])
-	normals.append_array([-n, -n, -n])
-	colors.append_array([outside, outside, outside])
-	for v in [a, c, b]:
-		var at_neck := false
-		for k in tops:
-			at_neck = at_neck or v.is_equal_approx(t[k])
-		colors.append(NECK_SHADE if at_neck else under)
 
 
 ## The rune on the robe's back, flat on the back facet between the neck's back point `top` and the hem's
