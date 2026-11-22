@@ -57,6 +57,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_CINDER_PRIEST,
 	WorldReader.KIND_FROST_SPITTER,
 	WorldReader.KIND_GLACIER_TURTLE,
+	WorldReader.KIND_STAR_WARPER,
 ]
 ## After the views' sync and the other nodes' _process, before VatCrowd (which draws the bodies at these places).
 const PROCESS_PRIORITY := VatCrowd.PROCESS_PRIORITY - 1
@@ -140,8 +141,9 @@ var _phys_seen := -1
 ## trail's fill (BarChunks.fill_to; 1 without a trail) and whether its root, facing and avatar all show (each sync).
 var _fill := PackedFloat64Array()
 var _shown := PackedByteArray()
-## The batched Wardens' dust rings (and Rubble Wardens' crusts) and the drones' ground shadows in the tree, by id
-## (BatchHeld.hold, through BatchWarden.hold, BatchLensDrone.hold, BatchBombDrone.hold).
+## The batched Wardens' dust rings (and Rubble Wardens' crusts) and the drones' and Warpers' ground shadows in the
+## tree, by id (BatchHeld.hold, through BatchWarden.hold, BatchLensDrone.hold, BatchBombDrone.hold,
+## BatchStarWarper.hold).
 var _held := {}
 ## Slots whose body falls (their root is freed when the fall ends: the frame's drop looks only while there are any).
 var _falls := 0
@@ -243,6 +245,8 @@ func add(
 		_held[id] = BatchLensDrone.hold(self, id, avatar as LensDroneAvatar, root, _facings[k])
 	elif avatar is BombDroneAvatar:
 		_held[id] = BatchBombDrone.hold(self, id, avatar as BombDroneAvatar, root, _facings[k])
+	elif avatar is StarWarperAvatar:
+		_held[id] = BatchStarWarper.hold(self, id, avatar as StarWarperAvatar, root, _facings[k])
 	_bo_fresh = false
 	synced_frame = Engine.get_process_frames()
 
@@ -348,6 +352,8 @@ func flush_avatars() -> void:
 				BatchBombDrone.show(h, self, id, _slot_of[id])
 			elif is_instance_valid(a) and a is LensDroneAvatar:
 				BatchLensDrone.show(h, self, id, _slot_of[id])
+			elif is_instance_valid(a) and a is StarWarperAvatar:
+				BatchStarWarper.show(h, self, id, _slot_of[id])
 			else:
 				BatchHeld.place(h, self, id)
 
@@ -620,6 +626,8 @@ func advance(delta: float) -> void:
 			BatchLensDrone.show(h, self, id, _slot_of[id])
 		elif is_instance_valid(h[2]) and h[2] is BombDroneAvatar:
 			BatchBombDrone.show(h, self, id, _slot_of[id])
+		elif is_instance_valid(h[2]) and h[2] is StarWarperAvatar:
+			BatchStarWarper.show(h, self, id, _slot_of[id])
 		else:
 			BatchWarden.show(h, self, id, _slot_of[id])
 	PerfMarks.add(&"batch.avatars", t_av)  # The avatars' frame step (the tree ran it before)
