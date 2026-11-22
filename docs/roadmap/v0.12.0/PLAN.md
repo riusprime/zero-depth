@@ -414,3 +414,8 @@ a file of its own when that file would pass the 1,000-line cap), so the shared f
 halves of a kind land in one commit: a batched kind with no native class puts every batched avatar on the GDScript
 path. The lead merges each kind as it is done and the next agent starts from the merged tree; seams and the timing run once,
 with every kind moved.
+
+**Fewer checks per kind (owner, 2026-11-22):** seeing test runs on the PC, the owner: "there are some test running, i
+thought we were gonna run all the test together after all were done right?". From then on each kind's agent runs only
+its own equality test (native against GDScript, bit for bit, and once shown able to fail) and lint. The twin probe,
+the test folders, e2e, seams and timing run once, by the lead, with every kind moved.
