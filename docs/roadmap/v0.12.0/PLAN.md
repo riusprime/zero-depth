@@ -315,3 +315,28 @@ explode twice, just one exploding animation".
 
 At most three Opus agents at once across the PC (owner), one Godot process each; no Sonnet. Order: 47a, 47b, 43; then
 47c, 47d, 47f, with 43b in the first free slot, then 47b2; then 47e, 47g, 45; then 46, 44; then 44b and 46b; then the 46c trial.
+
+## The processor pass on the average frame (owner, 2026-11-22)
+
+The owner's log `perf_20261122_122528` (Red Canyon then Night Rocks, 2560 × 1440, 144 Hz): the average play frame is
+12.04 ms (83 fps), CPU-bound 74 %; the GPU takes 7.85 ms. The frame, in order: the process step 6.43 ms (other nodes'
+`_process` 3.60, untimed by the log; the world views 2.25; the HUD 0.57), the engine between the process and the draw
+1.08, the draw 2.80 (waiting 1.49, recording the viewports 1.04, setup 0.27), the physics steps 1.50 (the sim 0.90, the
+tick listeners 0.47), events 0.23. Shown the table and asked what to do, the owner: "graphic card not yet, because we
+still have room on the processor before touching the graphics, let's go for A, B and C, remember that the main
+objective of an optimization is keeping the game as close as it is right now, it shouldnt change the feeling or view".
+
+**The rule for all three steps:** nothing the player sees, hears or feels changes. No lower animation rate, no skipped
+frames of a visible effect, no LOD, no dropped particles, no changed light. A cut that would change anything visible
+is not made: it is reported, and the owner decides. Proof: still frames before and after at the same moments
+(`--fixed-fps 60`), and where a view's state can be dumped, `view_dump.gd` the same before and after.
+
+| Step | What | Agent |
+|---|---|---|
+| 48 | **A: the untimed 3.6 ms of nodes' `_process`.** Name all of it on the current tree (the frame probe's `--process`, and the engine's own work the script timers cannot see: animation players and trees, particles, skeletons), then cut what can be cut without a visible change. Known from steps 38 and 40: the effects layer (`attack_form_view.gd` → `VfxCore.finish`, the drawers, the pack scenes' spawns, about 1.2-1.6 ms), the avatars (about 1.0 ms), `vat_crowd.gd` (0.55), `empty_draw_cull.gd` (0.22). Owns the effects layer, the drawers, `PackFx`, the avatar scripts and `vat_crowd` | Opus |
+| 49 | **B: idle views and HUD panels.** The world views' sync (2.25 ms) is about 60 views each run every frame, most with nothing to show; the HUD (0.57 ms) redraws panels whose content did not change. Each one returns at once when it has nothing to show or nothing changed. Owns `world_view_root`'s sync loop, the `view.*` views (`actor_views` included; not the effects layer's drawers) and the HUD panels | Opus |
+| 50 | **C: fewer separate things to draw.** The engine's 1.08 ms before the draw and the 1.04 ms recording the viewports grow with what the scene holds (on average 39,000 objects, 1,144 visible geometry, 795 meshes, 333 MultiMeshes, 21 lights). Count first (`draw_census.gd`), then merge what never moves (the rooms' static pieces into batches) and stop the engine updating what does not change; the same pixels. Owns the room and stage building, props and lights | Opus |
+
+Order: the three at once (three Opus agents, one Godot process each). Their timings overlap each other's runs, so each
+reports indications; the lead measures the merged tree once on a quiet machine (`floor_fight_probe.gd` with
+`--perf-log`, before and after), and the owner's next log is the real result.
