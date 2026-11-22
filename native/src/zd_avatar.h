@@ -272,6 +272,21 @@ enum Field {
 	SH_HURT = 61,
 	SH_DIE = 62,
 	SH_VD = 63, // f32 x18: the raw drives
+	// CinderPriestAvatar (its own fields from 43 to 74; zd_avatar_cinder_priest.cpp)
+	CP_CRYSTAL = 43, // the crystal's glow (the instance's accent glow)
+	CP_LIFT = 44,
+	CP_STATE = 45,
+	CP_PULSE = 46,
+	CP_ERUPT = 47,
+	CP_VENT_YAW = 48, // NAN: no vent
+	CP_FACING = 49,
+	CP_RISE = 50,
+	CP_GLIDE = 51,
+	CP_DIR = 52, // f32 x2: the glide's direction in the facing's frame
+	CP_TURN = 54,
+	CP_YAW = 55,
+	CP_DIE = 56,
+	CP_VD = 57, // f32 x18: the raw drives
 	STRIDE = 124,
 };
 
@@ -296,6 +311,7 @@ enum Class {
 	LENS_DRONE = 17,
 	BOMB_DRONE = 16,
 	SCRAP_HOUND = 18,
+	CINDER_PRIEST = 20,
 };
 
 inline bool is_charger(int c) {
@@ -414,6 +430,11 @@ void sh_apply(double *s, int64_t tick, int state, double windup, float pos_x, fl
 		const Ctx &c);
 void sh_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int sh_drives(const double *s, float *out);
+// The Cinder Priest (zd_avatar_cinder_priest.cpp): its sync (`more`: the vent's pulse, the eruption's age, the vent's
+// direction, the facing's yaw), frame step (the pose included) and drives.
+void cp_apply(double *s, int64_t tick, int state, float pos_x, float pos_y, const double *more, const Ctx &c);
+void cp_advance(double *s, double delta, const Ctx &c);
+int cp_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,
