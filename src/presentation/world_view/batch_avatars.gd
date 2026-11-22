@@ -4,8 +4,8 @@ extends RefCounted
 ## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow), RockLurkerAvatar's
 ## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow), ArcCasterAvatar's (BatchArcCaster),
 ## LensDroneAvatar's (BatchLensDrone), BombDroneAvatar's (BatchBombDrone), ScrapHoundAvatar's (BatchScrapHound),
-## KilnBeetleAvatar's (BatchKilnBeetle), CinderPriestAvatar's (BatchCinderPriest) or GlacierTurtleAvatar's
-## (BatchGlacierTurtle) fields that change after setup) is a
+## KilnBeetleAvatar's (BatchKilnBeetle), CinderPriestAvatar's (BatchCinderPriest), GlacierTurtleAvatar's
+## (BatchGlacierTurtle) or StarWarperAvatar's (BatchStarWarper) fields that change after setup) is a
 ## row of packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same arithmetic in the same order) applies each
 ## sync, steps each frame and writes VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
 ## The rows hold the state while `on`; the avatar objects then hold old numbers, except around an event:
@@ -24,7 +24,8 @@ extends RefCounted
 ## facing (x, y), the sim's lift, flight and recovery ticks; a Needle's and a Sniper's: its HP (the first); a Rock
 ## Lurker's: disguised, rumbling. A Warden's: its HP, the telegraph's slam radius, whether it gave one
 ## (BatchWarden.note). A Scrap Hound's: its HP, whether a hit stopped it (BatchScrapHound.note). A Cinder Priest's:
-## its vent's numbers (BatchCinderPriest.note). A Glacier Turtle's: its HP, its shield's HP.
+## its vent's numbers (BatchCinderPriest.note). A Glacier Turtle's: its HP, its shield's HP. A Star Warper's: its
+## HP, whether it is stunned (BatchStarWarper.note).
 const MORE := 6
 ## The native classes (zd_avatar.h Class) by kind; 0: none.
 const CHARGER_CLASS := 8
@@ -43,6 +44,7 @@ const FROST_SPITTER_CLASS := 21
 const GLACIER_TURTLE_CLASS := 22
 const WIRE_WEAVER_CLASS := 24
 const GRAVITY_NODE_CLASS := 23
+const STAR_WARPER_CLASS := 25
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -68,6 +70,7 @@ const CLASS_OF := {
 	WorldReader.KIND_GLACIER_TURTLE: GLACIER_TURTLE_CLASS,
 	WorldReader.KIND_WIRE_WEAVER: WIRE_WEAVER_CLASS,
 	WorldReader.KIND_GRAVITY_NODE: GRAVITY_NODE_CLASS,
+	WorldReader.KIND_STAR_WARPER: STAR_WARPER_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -163,6 +166,8 @@ static func class_of(avatar: AvatarBase) -> int:
 		return WIRE_WEAVER_CLASS
 	if avatar is GravityNodeAvatar and (avatar as GravityNodeAvatar).vat:
 		return GRAVITY_NODE_CLASS
+	if avatar is StarWarperAvatar and (avatar as StarWarperAvatar).vat:
+		return STAR_WARPER_CLASS
 	return 0
 
 
@@ -366,6 +371,8 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 			_in_more[k * MORE] = reader.actor_hp(i)
 		elif c == GRAVITY_NODE_CLASS:  # (its HP: a hit's wobble; its draw on the hero)
 			BatchGravityNode.note(reader, i, _in_more, k * MORE)
+		elif c == STAR_WARPER_CLASS:  # (its HP and its stun: a hit's sag, the reel)
+			BatchStarWarper.note(reader, i, _in_more, k * MORE)
 	if c >= CHARGER_CLASS:
 		var p := reader.actor_pos(i)
 		_in_x[k] = p.x

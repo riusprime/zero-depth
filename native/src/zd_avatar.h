@@ -397,6 +397,29 @@ enum Field {
 	GN_LAST_FY = 58,
 	GN_HAVE_FY = 59,
 	GN_VD = 60, // f32 x17: the raw drives
+	// StarWarperAvatar (its own fields from 43 to 85; zd_avatar_star_warper.cpp)
+	SW_SHARD_GLOW = 43, // the shards' glow (the instance's accent glow)
+	SW_SHADOW = 44, // f32: the ground disc's scale
+	SW_LIFT = 45,
+	SW_STATE = 46,
+	SW_WIND = 47,
+	SW_STUN = 48,
+	SW_HP = 49,
+	SW_GONE = 50,
+	SW_SLASH = 51,
+	SW_RISE = 52,
+	SW_REEL = 53,
+	SW_GLIDE = 54,
+	SW_DIR = 55, // f32 x2: the glide's direction in the facing's frame
+	SW_WAVE = 57,
+	SW_ORBIT = 58,
+	SW_OMEGA = 59,
+	SW_HURT_T = 60,
+	SW_HURT_SIDE = 61,
+	SW_DIE = 62,
+	SW_LAST_FY = 63,
+	SW_HAVE_FY = 64,
+	SW_VD = 65, // f32 x21: the raw drives (the visor's glow the last)
 	STRIDE = 124,
 };
 
@@ -427,6 +450,7 @@ enum Class {
 	GLACIER_TURTLE = 22,
 	WIRE_WEAVER = 24,
 	GRAVITY_NODE = 23,
+	STAR_WARPER = 25,
 };
 
 inline bool is_charger(int c) {
@@ -440,7 +464,7 @@ constexpr int MAX_DRIVES = 32;
 // (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's and a Sniper's: its HP (the first). A
 // Rock Lurker's: whether it waits disguised, whether it rumbles. A Warden's: its HP, the telegraph's slam radius and whether the
 // telegraph gave one (1) or not (0). A Bomb Drone's: its HP (the first).
-// A Glacier Turtle's: its HP, its shield's HP.
+// A Glacier Turtle's: its HP, its shield's HP. A Star Warper's: its HP, whether it is stunned (1) or not (0).
 constexpr int MORE = 6;
 
 // The sim states (WorldReader.STATE_*), handed in by the batch.
@@ -580,6 +604,12 @@ int ww_drives(const double *s, float *out);
 void gn_apply(double *s, int state, const double *more, const Ctx &c);
 void gn_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int gn_drives(const double *s, float *out);
+// The Star Warper (zd_avatar_star_warper.cpp): its sync (`more`: its HP, whether it is stunned), frame step (the pose
+// included; the facing's turn from `f`) and drives.
+void sw_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void sw_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int sw_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,

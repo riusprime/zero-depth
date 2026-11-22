@@ -341,6 +341,9 @@ func _export_solo(o: int, a: AvatarBase) -> bool:
 	elif a is GravityNodeAvatar:
 		first = BatchGravityNode.FIRST
 		row = BatchGravityNode.fields(a as GravityNodeAvatar)
+	elif a is StarWarperAvatar:
+		first = BatchStarWarper.FIRST
+		row = BatchStarWarper.fields(a as StarWarperAvatar)
 	else:
 		return false
 	for q in row.size():
@@ -380,6 +383,8 @@ func _import_solo(o: int, a: AvatarBase) -> bool:
 		BatchWireWeaver.take(a as WireWeaverAvatar, st, o)
 	elif a is GravityNodeAvatar:
 		BatchGravityNode.take(a as GravityNodeAvatar, st, o)
+	elif a is StarWarperAvatar:
+		BatchStarWarper.take(a as StarWarperAvatar, st, o)
 	else:
 		return false
 	return true

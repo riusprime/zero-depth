@@ -108,6 +108,8 @@ static func apply(
 		BatchGlacierTurtle.apply_in_script(
 			a as GlacierTurtleAvatar, tick, pos, state, windup, more, o
 		)
+	elif cls == BatchAvatars.STAR_WARPER_CLASS:
+		BatchStarWarper.apply_in_script(a as StarWarperAvatar, tick, pos, state, windup, more, o)
 	elif cls >= BatchAvatars.CHARGER_CLASS:
 		(
 			(a as ChargerAvatar)
