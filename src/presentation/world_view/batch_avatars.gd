@@ -1,7 +1,8 @@
 class_name BatchAvatars
 extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
-## HordeAvatar's or ChargerAvatar's fields that change after setup) is a row of packed doubles here, and ZdCrowd
+## HordeAvatar's, ChargerAvatar's or StoneThrowerAvatar's fields that change after setup) is a row of packed doubles
+## here, and ZdCrowd
 ## (native/src/zd_avatar.*, the same arithmetic in the same order) applies each sync, steps each frame and writes
 ## VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
 ## The rows hold the state while `on`; the avatar objects then hold old numbers, except around an event:
@@ -16,7 +17,7 @@ extends RefCounted
 ## Presentation only (EI-07).
 
 ## A row's fields (native/src/zd_avatar.h, the same numbers).
-const STRIDE := 80
+const STRIDE := 113
 const T := 0
 const FLINCH_T := 1
 const FLINCH_S := 2
@@ -69,8 +70,34 @@ const C_CROUCH_NOW := 55
 const C_Y_NOW := 56
 const C_LIFT := 57
 const C_DIE := 58
+const S_VISOR := 43
+const S_STATE := 44
+const S_STATE_TICKS := 45
+const S_TICKS := 46
+const S_ATK := 49
+const S_ATK_SIM := 50
+const S_WALK := 51
+const S_PHASE := 52
+const S_SPEED := 53
+const S_FWD := 54
+const S_RISE := 56
+const S_PUFF := 57
+const S_DIE := 58
+const S_DROP := 59
+const S_DROP_FROM := 60
+const S_ROCK_SHOWN := 63
+const S_LIFT := 64
+const S_SCALE := 65
+const S_OFF := 66
+const S_VD := 84
+## The Stone Thrower's joint offsets in its row (S_OFF, three floats each).
+const S_OFF_KEYS := ["pelvis", "neck", "shoulder", "elbow", "wrist", "hip"]
+## A Stone Thrower's sync inputs past the common ones, a slot (zd_avatar.h MORE): its ticks into the state, its
+## facing (x, y), the sim's lift, flight and recovery ticks.
+const MORE := 6
 ## The native classes (zd_avatar.h Class) by kind; 0: none.
 const CHARGER_CLASS := 8
+const STONE_THROWER_CLASS := 10
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -80,6 +107,7 @@ const CLASS_OF := {
 	WorldReader.KIND_MINE_LAYER: 6,
 	WorldReader.KIND_CHARGER: 8,
 	WorldReader.KIND_HATCHLING: 9,
+	WorldReader.KIND_STONE_THROWER: STONE_THROWER_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -109,6 +137,7 @@ var _in_heal := PackedByteArray()
 var _in_windup := PackedFloat64Array()
 var _in_x := PackedFloat32Array()
 var _in_y := PackedFloat32Array()
+var _in_more := PackedFloat64Array()
 var _warm := PackedByteArray()
 var _tick := 0
 var _any_pending := false
@@ -135,6 +164,9 @@ static func class_of(avatar: AvatarBase) -> int:
 	var ch := avatar as ChargerAvatar
 	if ch != null and ch.vat:
 		return CLASS_OF.get(ch.kind, 0)
+	var st := avatar as StoneThrowerAvatar
+	if st != null and st.vat:
+		return STONE_THROWER_CLASS
 	return 0
 
 
@@ -171,6 +203,8 @@ func add(id: int, avatar: AvatarBase, facing: Node3D, sets: Vector2i) -> void:
 	_in_windup.append(0.0)
 	_in_x.append(0.0)
 	_in_y.append(0.0)
+	for q in MORE:
+		_in_more.append(0.0)
 	_warm.append(0)
 	_proc.append(1 if avatar.is_processing() else 0)
 	_dirty.append(0)
@@ -200,10 +234,13 @@ func remove(k: int) -> void:
 			_st[k * STRIDE + q] = _st[last * STRIDE + q]
 		for q in 12:
 			_fx[k * 12 + q] = _fx[last * 12 + q]
+		for q in MORE:
+			_in_more[k * MORE + q] = _in_more[last * MORE + q]
 	_ids.resize(last)
 	_avatars.resize(last)
 	_st.resize(last * STRIDE)
 	_fx.resize(last * 12)
+	_in_more.resize(last * MORE)
 	for col: StringName in [
 		&"_cls",
 		&"_seq",
@@ -292,12 +329,23 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 	var state := reader.actor_state(i)
 	_tick = reader.tick()
 	_in_state[k] = state
-	_in_windup[k] = (
-		float(reader.telegraph(i).get("progress", 0)) / 1000.0
-		if state == WorldReader.STATE_WINDUP
-		else 0.0
-	)
 	var c := _cls[k]
+	if c == STONE_THROWER_CLASS:  # (its sync reads no windup: its own ticks into the state, its facing, the ticks)
+		var o := k * MORE
+		var fwd := Kin.dir(reader.actor_facing(i))
+		var ticks := reader.thrower_ticks(i)
+		_in_more[o] = reader.actor_state_ticks(i)
+		_in_more[o + 1] = fwd.x
+		_in_more[o + 2] = fwd.y
+		_in_more[o + 3] = ticks.x
+		_in_more[o + 4] = ticks.y
+		_in_more[o + 5] = ticks.z
+	else:
+		_in_windup[k] = (
+			float(reader.telegraph(i).get("progress", 0)) / 1000.0
+			if state == WorldReader.STATE_WINDUP
+			else 0.0
+		)
 	if c >= CHARGER_CLASS:
 		var p := reader.actor_pos(i)
 		_in_x[k] = p.x
@@ -344,6 +392,7 @@ func flush(crowd: Object, frame: Array) -> void:
 		_in_windup,
 		_in_x,
 		_in_y,
+		_in_more,
 		_warm,
 		_consts()
 	)
@@ -420,7 +469,25 @@ func _flush_inputs_in_script() -> void:
 		var a := _avatars[k]
 		a.native_owner = null
 		if _pending[k] == 1:
-			if _cls[k] >= CHARGER_CLASS:
+			var o := k * MORE
+			if _cls[k] == STONE_THROWER_CLASS:
+				(
+					(a as StoneThrowerAvatar)
+					. apply_state(
+						{
+							"tick": _tick,
+							"pos": Vector2(_in_x[k], _in_y[k]),
+							"state": _in_state[k],
+							"state_ticks": int(_in_more[o]),
+							"facing": Vector2(_in_more[o + 1], _in_more[o + 2]),
+							"ticks":
+							Vector3i(
+								int(_in_more[o + 3]), int(_in_more[o + 4]), int(_in_more[o + 5])
+							),
+						}
+					)
+				)
+			elif _cls[k] >= CHARGER_CLASS:
 				(
 					(a as ChargerAvatar)
 					. apply_state(
@@ -528,6 +595,10 @@ func _export(k: int) -> void:
 		_st[o + H_MODEL_SCALE] = h._model_scale
 		_st[o + H_HEIGHT] = h.height
 		return
+	var st := a as StoneThrowerAvatar
+	if st != null:
+		_export_thrower(o, st)
+		return
 	var c := a as ChargerAvatar
 	_st[o + C_VISOR] = c._visor_e
 	_st[o + C_TELL] = c._tell_p
@@ -587,6 +658,10 @@ func _import(k: int) -> void:
 		h._vat_body = _get_xf(o + H_BODY)
 		h._vat_d = Vector4(_st[o + H_D], _st[o + H_D + 1], _st[o + H_D + 2], _st[o + H_D + 3])
 		return
+	var st := a as StoneThrowerAvatar
+	if st != null:
+		_import_thrower(o, st)
+		return
 	var c := a as ChargerAvatar
 	c._visor_e = _st[o + C_VISOR]
 	c._tell_p = _st[o + C_TELL]
@@ -604,6 +679,69 @@ func _import(k: int) -> void:
 	c._y_now = _st[o + C_Y_NOW]
 	c._vat_lift = _st[o + C_LIFT]
 	c._die_t = _st[o + C_DIE]
+
+
+## A Stone Thrower's own fields into its row at `o` (its model's scale and joint offsets too: they never change).
+func _export_thrower(o: int, st: StoneThrowerAvatar) -> void:
+	_st[o + S_VISOR] = st._visor_mat.emission_energy_multiplier
+	_st[o + S_STATE] = st._state
+	_st[o + S_STATE_TICKS] = st._state_ticks
+	_st[o + S_TICKS] = st._ticks.x
+	_st[o + S_TICKS + 1] = st._ticks.y
+	_st[o + S_TICKS + 2] = st._ticks.z
+	_st[o + S_ATK] = st._atk
+	_st[o + S_ATK_SIM] = st._atk_sim
+	_st[o + S_WALK] = st._walk
+	_st[o + S_PHASE] = st._phase
+	_st[o + S_SPEED] = st._speed
+	_st[o + S_FWD] = st._fwd.x
+	_st[o + S_FWD + 1] = st._fwd.y
+	_st[o + S_RISE] = st._rise
+	_st[o + S_PUFF] = st._puff
+	_st[o + S_DIE] = st._die_t
+	_st[o + S_DROP] = 1.0 if st._drop else 0.0
+	_st[o + S_DROP_FROM] = st._drop_from.x
+	_st[o + S_DROP_FROM + 1] = st._drop_from.y
+	_st[o + S_DROP_FROM + 2] = st._drop_from.z
+	_st[o + S_ROCK_SHOWN] = st._rock_shown
+	_st[o + S_LIFT] = st._lift
+	_st[o + S_SCALE] = st._scale
+	for j in S_OFF_KEYS.size():
+		var v: Vector3 = st._off[S_OFF_KEYS[j]]
+		_st[o + S_OFF + j * 3] = v.x
+		_st[o + S_OFF + j * 3 + 1] = v.y
+		_st[o + S_OFF + j * 3 + 2] = v.z
+	for q in st._vd.size():
+		_st[o + S_VD + q] = st._vd[q]
+
+
+## A Stone Thrower's row at `o` into its fields (the visor's material only when its glow changed).
+func _import_thrower(o: int, st: StoneThrowerAvatar) -> void:
+	var visor := _st[o + S_VISOR]
+	if st._visor_mat.emission_energy_multiplier != visor:
+		st._visor_mat.emission_energy_multiplier = visor
+	st._state = int(_st[o + S_STATE])
+	st._state_ticks = int(_st[o + S_STATE_TICKS])
+	st._ticks = Vector3i(
+		int(_st[o + S_TICKS]), int(_st[o + S_TICKS + 1]), int(_st[o + S_TICKS + 2])
+	)
+	st._atk = _st[o + S_ATK]
+	st._atk_sim = _st[o + S_ATK_SIM]
+	st._walk = _st[o + S_WALK]
+	st._phase = _st[o + S_PHASE]
+	st._speed = _st[o + S_SPEED]
+	st._fwd = Vector2(_st[o + S_FWD], _st[o + S_FWD + 1])
+	st._rise = _st[o + S_RISE]
+	st._puff = _st[o + S_PUFF]
+	st._die_t = _st[o + S_DIE]
+	st._drop = _st[o + S_DROP] != 0.0
+	st._drop_from = Vector3(
+		_st[o + S_DROP_FROM], _st[o + S_DROP_FROM + 1], _st[o + S_DROP_FROM + 2]
+	)
+	st._rock_shown = _st[o + S_ROCK_SHOWN]
+	st._lift = _st[o + S_LIFT]
+	for q in st._vd.size():
+		st._vd[q] = _st[o + S_VD + q]
 
 
 func _put_xf(o: int, xf: Transform3D) -> void:

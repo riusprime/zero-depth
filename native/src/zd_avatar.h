@@ -76,7 +76,28 @@ enum Field {
 	C_Y_NOW = 56,
 	C_LIFT = 57,
 	C_DIE = 58, // the Hatchling's death (s in; -1 alive)
-	STRIDE = 80,
+	// StoneThrowerAvatar (its own fields from 43; zd_avatar_thrower.cpp)
+	S_VISOR = 43, // f32: the visor material's emission energy
+	S_STATE = 44,
+	S_STATE_TICKS = 45,
+	S_TICKS = 46, // int x3: the lift, the flight, the recovery
+	S_ATK = 49,
+	S_ATK_SIM = 50,
+	S_WALK = 51,
+	S_PHASE = 52,
+	S_SPEED = 53,
+	S_FWD = 54, // f32 x2
+	S_RISE = 56,
+	S_PUFF = 57,
+	S_DIE = 58,
+	S_DROP = 59,
+	S_DROP_FROM = 60, // f32 x3
+	S_ROCK_SHOWN = 63,
+	S_LIFT = 64,
+	S_SCALE = 65, // the model's scale (set once)
+	S_OFF = 66, // f32 x3 x6: the joints' offsets (pelvis, neck, shoulder, elbow, wrist, hip; set once)
+	S_VD = 84, // f32 x29: the raw drives
+	STRIDE = 113,
 };
 
 // A slot's class (BatchAvatars.CLASS_OF): which avatar code runs it (0: none native, its avatar steps in GDScript).
@@ -91,11 +112,19 @@ enum Class {
 	SNIPER = 7,
 	CHARGER = 8,
 	HATCHLING = 9,
+	STONE_THROWER = 10,
 };
 
 inline bool is_charger(int c) {
 	return c == CHARGER || c == HATCHLING;
 }
+
+// The most drives a class gives VatCrowd (the Stone Thrower's 29).
+constexpr int MAX_DRIVES = 29;
+
+// A Stone Thrower's sync inputs past the common ones (BatchAvatars.MORE a slot): its ticks into the state, its facing
+// (Kin.dir: x, y) and the sim's lift, flight and recovery ticks.
+constexpr int MORE = 6;
 
 // The sim states (WorldReader.STATE_*), handed in by the batch.
 struct States {
@@ -129,13 +158,27 @@ void put_xf(double *s, int at, const godot::Transform3D &xf);
 void process(double *s, int cls, double delta, const Frame &f, const Ctx &c);
 // HordeAvatar.advance / ChargerAvatar.advance.
 void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c);
-// HordeAvatar._apply / ChargerAvatar.apply_state (`pos`: the sim place, the Charger's motion).
+// HordeAvatar._apply / ChargerAvatar.apply_state / StoneThrowerAvatar.apply_state (`pos`: the sim place, the
+// Charger's and the Stone Thrower's motion; `more`: the Stone Thrower's MORE inputs).
 void apply(double *s, int cls, int64_t tick, int state, bool healing, double windup, float pos_x, float pos_y,
-		const Ctx &c);
+		const double *more, const Ctx &c);
+
+// AvatarBase's helpers the classes share (zd_avatar.cpp): the engine's double sine and cosine, the flinch's envelope,
+// the tell's glow, an exponential ease's share.
+double sin_d(double x);
+double cos_d(double x);
+double envelope(double u);
+double glow_of_tell(double p, double t, bool calm);
+double ease_rate(double per_second, double dt);
+
+// The Stone Thrower (zd_avatar_thrower.cpp): its sync, frame step (advance: the pose included) and drives.
+void s_apply(double *s, int64_t tick, int state, float pos_x, float pos_y, const double *more, const Ctx &c);
+void s_advance(double *s, double delta, const Ctx &c);
+int s_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
-// vat_offset, a Charger's lift), and the drives (`out` holds 12: four for a horde kind, ChargerVat.DRIVES for a
-// Charger; returns how many). `period`: the set's gait period (VatBake.gait_phase).
+// vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,
+// ChargerVat.DRIVES for a Charger, VAT_DRIVES for a Stone Thrower; returns how many). `period`: the set's gait period (VatBake.gait_phase).
 double glow_energy(const double *s, int cls);
 godot::Transform3D body_offset(const double *s, int cls, const godot::Transform3D &xf);
 int drives(const double *s, int cls, double period, const Ctx &c, float *out);

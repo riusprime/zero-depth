@@ -325,6 +325,35 @@ func test_actor_views_draw_it_and_play_its_death() -> void:
 	assert_false(is_instance_valid(node), "then freed")
 
 
+func test_on_the_vat_crowd_it_is_batched_with_no_node_and_still_plays_its_death() -> void:
+	ViewPrefs.enemy_vat = true
+	var w := World.new(5, PlayerTable.starting_values())
+	w.set_enemy_tables(_tables)
+	w.actors.invuln[0] = 1 << 24
+	var id := w.add_enemy(ActorStore.Kind.STONE_THROWER, Vector2(6, 0))
+	var views: ActorViews = add_child_autofree(ActorViews.new())
+	var reader := WorldReader.new(w)
+	views.sync(reader)
+	assert_true(EnemyBatch.KINDS.has(KIND), "a batched kind")
+	assert_eq(views.batched_count(), 1, "drawn by the enemy batch")
+	var node := views.actor_node(id)
+	assert_false(node.is_inside_tree(), "its root stays outside the tree")
+	var av: StoneThrowerAvatar = node.get_meta(&"enemy_avatar")
+	assert_true(av.vat, "its body on the VAT crowd")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert_false(views.vat_crowd.instance_of(av).is_empty(), "its body drawn at the batch's place")
+	w.actors.dead[w.actors.index_of(id)] = 1
+	w.step(InputFrame.new())
+	views.sync(reader)
+	assert_true(views.batch.has(id), "its slot stays while it falls")
+	assert_true(av.dying(), "it kneels and topples")
+	assert_true(views.batch.parts_of(id, EnemyBatch.Part.BAR).is_empty(), "its bar goes at once")
+	await wait_seconds(StoneThrowerAvatar.DEATH_SECONDS + 0.3)
+	assert_false(is_instance_valid(node), "then freed")
+	assert_false(views.batch.has(id), "and its slot gone")
+
+
 func test_the_views_fly_the_owners_rock_land_it_and_let_it_crumble() -> void:
 	var w := World.new(11, PlayerTable.starting_values())
 	w.set_enemy_tables(_tables)
