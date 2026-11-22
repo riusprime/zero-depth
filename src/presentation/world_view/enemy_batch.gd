@@ -25,11 +25,12 @@ extends Node3D
 ## The set kinds.
 enum Part { DISC, RING, DAZED, BAR, BLOB }
 
-## The kinds batched: the VAT crowd's horde kinds, the Charger, the Hatchling, the Stone Thrower and the Needle, whose
-## avatars need nothing of the tree (their pose, rock, glows and death are reckoned from their own clocks, the sim's
-## state and their facing node's turn; the thrown rock flies from the sim's place, RuinsRocksViews). The other VAT kinds
-## (the solo models: Warden, the drones, the other owner's models) still read the tree in their frame step or death
-## (global transforms, timers), so they keep their node.
+## The kinds batched: the VAT crowd's horde kinds, the Charger, the Hatchling, the Stone Thrower, the Needle and the
+## Rock Lurker, whose avatars need nothing of the tree (their pose, rock, glows and death are reckoned from their own
+## clocks, the sim's state and their facing node's turn; the thrown rock flies from the sim's place, RuinsRocksViews;
+## the Lurker's disguise hides its disc and ring here, show_rings). The other VAT kinds (the solo models: Warden, the
+## drones, the other owner's models) still read the tree in their frame step or death (global transforms, timers), so
+## they keep their node.
 const KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_SPLITTER,
@@ -41,6 +42,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_HATCHLING,
 	WorldReader.KIND_STONE_THROWER,
 	WorldReader.KIND_NEEDLE,
+	WorldReader.KIND_ROCK_LURKER,
 ]
 ## After the views' sync and the other nodes' _process, before VatCrowd (which draws the bodies at these places).
 const PROCESS_PRIORITY := VatCrowd.PROCESS_PRIORITY - 1
@@ -127,6 +129,8 @@ var _shown := PackedByteArray()
 ## Slots whose body falls (their root is freed when the fall ends: the frame's drop looks only while there are any).
 var _falls := 0
 var _crowd: RefCounted
+## The slots whose disc and ring are hidden (show_rings): id -> their sets (disc, ring), put back when they show.
+var _rings_off := {}
 
 
 func _init() -> void:
@@ -286,6 +290,25 @@ func update(id: int, reader: WorldReader, i: int, parts: Array, cols: Array) -> 
 	PerfMarks.add(&"actors.enemy_sync", t_en)
 	show_parts(id, bar and shown, state == WorldReader.STATE_RECOVER, shown and avatar.visible)
 	_shown[k] = 1 if shown and avatar.visible and (_roots[k] as Node3D).visible else 0
+	if avatar is RockLurkerAvatar:  # Its disguise: no contact disc or team ring while it waits as a boulder
+		show_rings(id, not RockLurkerAvatar.disguised(reader, i))
+
+
+## Whether enemy `id`'s contact disc and team ring show after this sync (as a node enemy's whose disc and ring nodes
+## are hidden): hidden, they draw nothing (their sets out of its slot); shown again, in their sets as before.
+func show_rings(id: int, on: bool) -> void:
+	var k: int = _slot_of[id]
+	if on != _rings_off.has(id):
+		return
+	if on:
+		var sets: Vector2i = _rings_off[id]
+		_disc[k] = sets.x
+		_ring[k] = sets.y
+		_rings_off.erase(id)
+	else:
+		_rings_off[id] = Vector2i(_disc[k], _ring[k])
+		_disc[k] = -1
+		_ring[k] = -1
 
 
 ## The end of the views' sync: the batched avatars' syncs noted this sync, applied natively in one call.
@@ -467,6 +490,7 @@ func _remove(k: int) -> void:
 	if _live[k] == 0:
 		_falls -= 1
 	_slot_of.erase(id)
+	_rings_off.erase(id)
 	if _anchors.has(id):
 		(_anchors[id] as Node).queue_free()
 		_anchors.erase(id)
