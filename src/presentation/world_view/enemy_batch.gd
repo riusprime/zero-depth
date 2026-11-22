@@ -58,6 +58,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_FROST_SPITTER,
 	WorldReader.KIND_GLACIER_TURTLE,
 	WorldReader.KIND_WIRE_WEAVER,
+	WorldReader.KIND_GRAVITY_NODE,
 	WorldReader.KIND_STAR_WARPER,
 ]
 ## After the views' sync and the other nodes' _process, before VatCrowd (which draws the bodies at these places).
@@ -246,6 +247,8 @@ func add(
 		_held[id] = BatchLensDrone.hold(self, id, avatar as LensDroneAvatar, root, _facings[k])
 	elif avatar is BombDroneAvatar:
 		_held[id] = BatchBombDrone.hold(self, id, avatar as BombDroneAvatar, root, _facings[k])
+	elif avatar is GravityNodeAvatar:
+		_held[id] = BatchGravityNode.hold(self, id, avatar as GravityNodeAvatar, root, _facings[k])
 	elif avatar is StarWarperAvatar:
 		_held[id] = BatchStarWarper.hold(self, id, avatar as StarWarperAvatar, root, _facings[k])
 	_bo_fresh = false
@@ -353,6 +356,8 @@ func flush_avatars() -> void:
 				BatchBombDrone.show(h, self, id, _slot_of[id])
 			elif is_instance_valid(a) and a is LensDroneAvatar:
 				BatchLensDrone.show(h, self, id, _slot_of[id])
+			elif is_instance_valid(a) and a is GravityNodeAvatar:
+				BatchGravityNode.show(h, self, id, _slot_of[id])
 			elif is_instance_valid(a) and a is StarWarperAvatar:
 				BatchStarWarper.show(h, self, id, _slot_of[id])
 			else:
@@ -627,6 +632,8 @@ func advance(delta: float) -> void:
 			BatchLensDrone.show(h, self, id, _slot_of[id])
 		elif is_instance_valid(h[2]) and h[2] is BombDroneAvatar:
 			BatchBombDrone.show(h, self, id, _slot_of[id])
+		elif is_instance_valid(h[2]) and h[2] is GravityNodeAvatar:
+			BatchGravityNode.show(h, self, id, _slot_of[id])
 		elif is_instance_valid(h[2]) and h[2] is StarWarperAvatar:
 			BatchStarWarper.show(h, self, id, _slot_of[id])
 		else:

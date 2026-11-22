@@ -25,7 +25,11 @@ extends AvatarBase
 ##   slowly at one steady rate (no speed-up, no flicker of the studs), no beats, a hit eased once instead of swinging.
 ## The pose is a few plain numbers (the raw drives, _vd: each joint's turn, slide or stretch) worked out from the state
 ## first, then the nodes from them through the joint table (_joints, the same transforms the VAT rig declares), so the
-## baked pose is the live one. Presentation only (EI-07): nothing here reaches the sim. +X is the front, +Z its right.
+## baked pose is the live one. On the VAT crowd it is batched (EnemyBatch: nothing here reads the tree, its turn is its
+## facing node's; its death's timer is the batch's, drop; its ground disc hangs in the tree from nodes the batch places,
+## BatchGravityNode), and the native batch runs the same sync, frame step and pose
+## (native/src/zd_avatar_gravity_node.cpp). Presentation only (EI-07): nothing here reaches the sim. +X is the front,
+## +Z its right.
 
 const KIND := WorldReader.KIND_GRAVITY_NODE
 const MODEL := &"gravity_node"
@@ -383,6 +387,7 @@ func sync(reader: WorldReader, i: int) -> void:
 
 ## The same as sync(), from plain values (tests, the shot scripts): state, draw (0..1); hp optional.
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	var st: int = s["state"]
 	var hp: int = s.get("hp", -1)
 	if _fresh:
@@ -400,6 +405,7 @@ func apply_state(s: Dictionary) -> void:
 
 # --- Frame time ---------------------------------------------------------------------------------------------------
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0:
 		return
@@ -444,33 +450,39 @@ func _turning(dt: float, dying: bool) -> void:
 	_have_fy = true
 
 
-## Starts the death (ActorViews, when the sim drops the node: its bar hidden, freed DEATH_SECONDS later). True: it
-## plays.
+## Starts the death (ActorViews or the enemy batch, when the sim drops the node: its bar hidden, freed DEATH_SECONDS
+## later). True: it plays.
 func die() -> bool:
+	_touch()
 	if _die_t < 0.0:
 		_die_t = 0.0
 	return true
 
 
 func dying() -> bool:
+	_peek()
 	return _die_t >= 0.0
 
 
 ## The draw on the hero as the body shows it now (0..1, eased), the core's glow and the gem's (tests, the e2e).
 func draw_pose() -> float:
+	_peek()
 	return _draw
 
 
 func core_energy() -> float:
+	_peek()
 	return _core_glow
 
 
 func visor_energy() -> float:
+	_peek()
 	return _visor_mat.emission_energy_multiplier
 
 
 ## The raw drives now (tests).
 func drives() -> PackedFloat32Array:
+	_peek()
 	return _vd
 
 
@@ -672,15 +684,18 @@ func _apply() -> void:
 # --- SoloVat: the VAT rig -----------------------------------------------------------------------------------------
 ## The whole body's lift (m): VatCrowd moves the instance by it.
 func vat_lift() -> float:
+	_peek()
 	return _lift
 
 
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
 ## The core's glow (the instance's accent glow; the gem's is the VISOR drive).
 func glow_energy() -> float:
+	_peek()
 	return _core_glow
 
 

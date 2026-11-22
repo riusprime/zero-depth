@@ -688,6 +688,8 @@ void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
 		gt_advance(s, delta, f, c);
 	} else if (cls == WIRE_WEAVER) {
 		ww_advance(s, delta, f, c);
+	} else if (cls == GRAVITY_NODE) {
+		gn_advance(s, delta, f, c);
 	} else if (cls == STAR_WARPER) {
 		sw_advance(s, delta, f, c);
 	} else if (is_charger(cls)) {
@@ -761,6 +763,10 @@ void apply(double *s, int cls, int64_t tick, int state, bool healing, double win
 	}
 	if (cls == WIRE_WEAVER) {
 		ww_apply(s, tick, state, windup, pos_x, pos_y, more, c);
+		return;
+	}
+	if (cls == GRAVITY_NODE) {
+		gn_apply(s, state, more, c);
 		return;
 	}
 	if (cls == STAR_WARPER) {
@@ -858,6 +864,9 @@ double glow_energy(const double *s, int cls) {
 	if (cls == WIRE_WEAVER) {
 		return s[WW_SPARK];
 	}
+	if (cls == GRAVITY_NODE) {
+		return s[GN_CORE_GLOW];
+	}
 	if (cls == STAR_WARPER) {
 		return s[SW_SHARD_GLOW];
 	}
@@ -906,6 +915,9 @@ Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
 	}
 	if (cls == WIRE_WEAVER) {
 		return xf.translated_local(Vector3(0.0f, f32(s[WW_LIFT]), 0.0f));
+	}
+	if (cls == GRAVITY_NODE) {
+		return xf.translated_local(Vector3(0.0f, f32(s[GN_LIFT]), 0.0f));
 	}
 	if (cls == STAR_WARPER) {
 		return xf.translated_local(Vector3(0.0f, f32(s[SW_LIFT]), 0.0f));
@@ -961,6 +973,9 @@ int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 	}
 	if (cls == WIRE_WEAVER) {
 		return ww_drives(s, out);
+	}
+	if (cls == GRAVITY_NODE) {
+		return gn_drives(s, out);
 	}
 	if (cls == STAR_WARPER) {
 		return sw_drives(s, out);
