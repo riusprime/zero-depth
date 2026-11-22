@@ -96,15 +96,15 @@ static func note(reader: WorldReader, i: int, more: PackedFloat64Array, o: int) 
 	more[o + 3] = facing
 
 
-## CinderPriestAvatar.sync's values from slot `k`'s inputs kept in `batch` (BatchAvatars.note_sync), run on the object
-## (the rows turned off with a sync pending).
-static func apply_in_script(a: CinderPriestAvatar, batch: BatchAvatars, k: int) -> void:
-	var o := k * BatchAvatars.MORE
-	var more: PackedFloat64Array = batch._in_more
+## CinderPriestAvatar.sync's values from the batch's inputs (its vent's numbers and facing at `more[o]`,
+## BatchAvatars.note_sync), run on the object (the rows turned off with a sync pending).
+static func apply_in_script(
+	a: CinderPriestAvatar, tick: int, pos: Vector2, state: int, more: PackedFloat64Array, o: int
+) -> void:
 	var s := {
-		"tick": batch._tick,
-		"state": batch._in_state[k],
-		"pos": Vector2(batch._in_x[k], batch._in_y[k]),
+		"tick": tick,
+		"state": state,
+		"pos": pos,
 		"pulse": int(more[o]),
 		"facing": more[o + 3],
 	}
