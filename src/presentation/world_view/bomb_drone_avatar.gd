@@ -22,6 +22,9 @@ extends AvatarBase
 ## - reduced motion (ViewPrefs.reduced_motion): no bob, the sways at CALM of their size, slower rotors, one eased dip.
 ## The pose is a few plain numbers (the raw drives, _vd) worked out from the state first, then the nodes from them
 ## through the joint table (_joints, the same transforms the VAT rig declares), so the baked pose is the live one.
+## On the VAT crowd it is batched (EnemyBatch: nothing here reads the tree, its turn is its facing node's; its ground
+## disc hangs in the tree from the batch's anchor, BatchBombDrone), and the native batch runs the same sync, frame step
+## and pose (native/src/zd_avatar_bomb_drone.cpp).
 ## Presentation only (EI-07): nothing here reaches the sim. +X is the front, +Z its right.
 
 const KIND := WorldReader.KIND_BOMB_DRONE
@@ -444,6 +447,7 @@ func sync(reader: WorldReader, i: int) -> void:
 
 ## The same as sync(), from plain values (tests and tools): tick, state, pos (the sim plane), hp. Missing keys: at rest.
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	var was := _state
 	_state = int(s.get("state", WorldReader.STATE_MOVE))
 	var hp: int = s.get("hp", -1)
@@ -463,6 +467,7 @@ func apply_state(s: Dictionary) -> void:
 
 # --- Frame time ---------------------------------------------------------------------------------------------------
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0:
 		return
@@ -516,12 +521,14 @@ func _turning(dt: float, dying: bool) -> void:
 
 ## Starts the death (ActorViews, when the sim drops it: freed DEATH_SECONDS later). True: it plays.
 func die() -> bool:
+	_touch()
 	if _die_t < 0.0:
 		_die_t = 0.0
 	return true
 
 
 func dying() -> bool:
+	_peek()
 	return _die_t >= 0.0
 
 
@@ -532,24 +539,29 @@ func _flinch_pivot() -> float:
 
 ## The hull's middle's current height above the ground (the hover plus the bob).
 func hover_height() -> float:
+	_peek()
 	return _lift + HULL.y
 
 
 ## True while a bomb hangs in the bay (it is drawn).
 func bomb_armed() -> bool:
+	_peek()
 	return _armed > 0.05
 
 
 ## The raw drives now, the visor's glow, the rotors' spin (rad/s) (tests).
 func drives() -> PackedFloat32Array:
+	_peek()
 	return _vd
 
 
 func visor_energy() -> float:
+	_peek()
 	return _visor_mat.emission_energy_multiplier
 
 
 func spin_rate() -> float:
+	_peek()
 	return _spin
 
 
@@ -697,15 +709,18 @@ func _apply() -> void:
 # --- SoloVat: the VAT rig -----------------------------------------------------------------------------------------
 ## The whole body's lift (m): VatCrowd moves the instance by it (the ground disc is its own node).
 func vat_lift() -> float:
+	_peek()
 	return _lift
 
 
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
 ## The visor's glow (the instance's accent glow and its VISOR drive; the bomb's iron has none, the fuse is unshaded).
 func glow_energy() -> float:
+	_peek()
 	return _visor_mat.emission_energy_multiplier
 
 

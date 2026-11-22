@@ -10,7 +10,8 @@ extends RefCounted
 ##   interpolated global transform, and whether each shows;
 ## - the bar chunks drawn (BarChunks.drawn) and the bodies drawn (VatCrowd.drawn), each side;
 ## - a Warden's slam dust ring (a node on both sides: the batch keeps it in the tree, BatchWarden): whether it shows,
-##   its interpolated global transform and its colour; a Rubble Warden's crust the same way (whether it shows, where).
+##   its interpolated global transform and its colour; a Rubble Warden's crust the same way (whether it shows, where);
+##   a Bomb Drone's ground disc (a node on both sides too, BatchBombDrone): whether it shows, where.
 ## The report line gives what was compared and the largest differences. Probe-only; the twin doubles the drawing.
 
 ## Differences under these count as equal (float rounding between the two ways of reckoning a transform).
@@ -88,6 +89,7 @@ func _compare() -> void:
 			continue
 		_body(id, a, b)
 		_dust(id, a, b)
+		_ground_disc(id, a, b)
 		if _live.batched_count() > 0:
 			_furniture(id, b)
 	_diff("bodies_drawn", absf(_live.vat_crowd.drawn - twin.vat_crowd.drawn), "")
@@ -182,6 +184,27 @@ func _dust(id: int, a: Node3D, b: Node3D) -> void:
 		"dust_color",
 		Vector4(ca.r - cb.r, ca.g - cb.g, ca.b - cb.b, ca.a - cb.a).length(),
 		"id %d" % id
+	)
+
+
+func _ground_disc(id: int, a: Node3D, b: Node3D) -> void:
+	var da := a.get_meta(&"enemy_avatar") as BombDroneAvatar
+	var db := b.get_meta(&"enemy_avatar") as BombDroneAvatar
+	if da == null or db == null:
+		return
+	var sa := da.shadow.is_inside_tree() and da.shadow.is_visible_in_tree()
+	var sb := db.shadow.is_visible_in_tree()
+	if sa != sb:
+		_note("ground_disc_shown", 1.0, "id %d batch %s twin %s" % [id, sa, sb])
+		return
+	if not sa:
+		return
+	_parts += 1
+	_xf(
+		"ground_disc",
+		id,
+		da.shadow.get_global_transform_interpolated(),
+		db.shadow.get_global_transform_interpolated()
 	)
 
 

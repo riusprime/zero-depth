@@ -228,6 +228,50 @@ enum Field {
 	LD_SHADOW = 48, // the ground shadow's scale across (its node's x and z)
 	LD_HAS_MODEL = 49, // the owner's model (set once)
 	LD_VD = 50, // f32 x3: the raw drives
+	// BombDroneAvatar (its own fields from 43 to 75; zd_avatar_bomb_drone.cpp)
+	BD_VISOR = 43, // f32: the visor material's emission energy
+	BD_SHADOW = 44, // f32: the ground disc's scale across (its x and z)
+	BD_LIFT = 45,
+	BD_STATE = 46,
+	BD_HP = 47,
+	BD_RISE = 48,
+	BD_ARMED = 49,
+	BD_FUSE = 50,
+	BD_LOB = 51,
+	BD_AIM = 52,
+	BD_ROT = 53,
+	BD_SPIN = 54,
+	BD_GLIDE = 55,
+	BD_DIR = 56, // f32 x2: the glide's direction in the facing's frame
+	BD_OMEGA = 58,
+	BD_HURT_T = 59,
+	BD_HURT_SIDE = 60,
+	BD_DIE = 61,
+	BD_LAST_FY = 62,
+	BD_HAVE_FY = 63,
+	BD_VD = 64, // f32 x12: the raw drives
+	// ScrapHoundAvatar (its own fields from 43 to 80; zd_avatar_scrap_hound.cpp)
+	SH_GLOW = 43, // the visor's glow (the instance's accent glow)
+	SH_LIFT = 44,
+	SH_STATE = 45,
+	SH_TELL = 46,
+	SH_HP = 47,
+	SH_SPEED = 48,
+	SH_GALLOP = 49,
+	SH_PHASE = 50,
+	SH_YAW = 51,
+	SH_TURN = 52,
+	SH_BANK = 53,
+	SH_LAST_H = 54,
+	SH_HAVE_H = 55,
+	SH_COIL = 56,
+	SH_DART = 57,
+	SH_RISE = 58,
+	SH_BITE = 59,
+	SH_YELP = 60,
+	SH_HURT = 61,
+	SH_DIE = 62,
+	SH_VD = 63, // f32 x18: the raw drives
 	// KilnBeetleAvatar (its own fields from 43 to 100; zd_avatar_kiln_beetle.cpp)
 	KB_HEAT_GLOW = 43, // the heat's glow (the instance's accent glow)
 	KB_LIFT = 44,
@@ -271,6 +315,8 @@ enum Class {
 	SNIPER_MODEL = 14, // the owner's model (SniperAvatar); SNIPER is its old horde body
 	ARC_CASTER = 15,
 	LENS_DRONE = 17,
+	BOMB_DRONE = 16,
+	SCRAP_HOUND = 18,
 	KILN_BEETLE = 19,
 };
 
@@ -284,7 +330,7 @@ constexpr int MAX_DRIVES = 32;
 // A Stone Thrower's sync inputs past the common ones (BatchAvatars.MORE a slot): its ticks into the state, its facing
 // (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's and a Sniper's: its HP (the first). A
 // Rock Lurker's: whether it waits disguised, whether it rumbles. A Warden's: its HP, the telegraph's slam radius and whether the
-// telegraph gave one (1) or not (0).
+// telegraph gave one (1) or not (0). A Bomb Drone's: its HP (the first).
 constexpr int MORE = 6;
 
 // The sim states (WorldReader.STATE_*), handed in by the batch.
@@ -379,6 +425,17 @@ int ac_drives(const double *s, float *out);
 void ld_apply(double *s, int state, const Ctx &c);
 void ld_advance(double *s, double delta, const Ctx &c);
 int ld_drives(const double *s, float *out);
+// The Bomb Drone (zd_avatar_bomb_drone.cpp): its sync (`more`: its HP first), frame step (the pose included; the
+// facing's turn from `f`) and drives.
+void bd_apply(double *s, int64_t tick, int state, float pos_x, float pos_y, const double *more, const Ctx &c);
+void bd_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int bd_drives(const double *s, float *out);
+// The Scrap Hound (zd_avatar_scrap_hound.cpp): its sync (`more`: its HP, whether a hit stopped it), frame step (the
+// pose included; the facing's turn from `f`) and drives.
+void sh_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void sh_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int sh_drives(const double *s, float *out);
 // The Kiln Beetle (zd_avatar_kiln_beetle.cpp): its sync (`more`: its HP, its full HP), frame step (the pose included;
 // the facing's turn from `f`) and drives.
 void kb_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,

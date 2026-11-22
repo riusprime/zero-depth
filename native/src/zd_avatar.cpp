@@ -147,9 +147,10 @@ double consume_hold(double *s, double delta) {
 	return delta - used;
 }
 
-// _flinch_pivot(): the height the flinch leans about (a hovering body about itself; 0 for the others).
+// _flinch_pivot(): the height the flinch leans about (a hovering body about itself: the Lens Drone's 1.3, the
+// Bomb Drone's HOVER_Y; 0 for the others).
 float flinch_pivot(int cls) {
-	return cls == LENS_DRONE ? 1.3f : 0.0f;
+	return cls == LENS_DRONE ? 1.3f : (cls == BOMB_DRONE ? 1.8f : 0.0f);
 }
 
 void advance_flinch(double *s, int cls, double delta, const Frame &f) {
@@ -673,6 +674,10 @@ void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
 		ac_advance(s, delta, f, c);
 	} else if (cls == LENS_DRONE) {
 		ld_advance(s, delta, c);
+	} else if (cls == BOMB_DRONE) {
+		bd_advance(s, delta, f, c);
+	} else if (cls == SCRAP_HOUND) {
+		sh_advance(s, delta, f, c);
 	} else if (cls == KILN_BEETLE) {
 		kb_advance(s, delta, f, c);
 	} else if (is_charger(cls)) {
@@ -718,6 +723,14 @@ void apply(double *s, int cls, int64_t tick, int state, bool healing, double win
 	}
 	if (cls == LENS_DRONE) {
 		ld_apply(s, state, c);
+		return;
+	}
+	if (cls == BOMB_DRONE) {
+		bd_apply(s, tick, state, pos_x, pos_y, more, c);
+		return;
+	}
+	if (cls == SCRAP_HOUND) {
+		sh_apply(s, tick, state, windup, pos_x, pos_y, more, c);
 		return;
 	}
 	if (cls == KILN_BEETLE) {
@@ -794,6 +807,12 @@ double glow_energy(const double *s, int cls) {
 	if (cls == LENS_DRONE) {
 		return s[LD_EYE];
 	}
+	if (cls == BOMB_DRONE) {
+		return s[BD_VISOR];
+	}
+	if (cls == SCRAP_HOUND) {
+		return s[SH_GLOW];
+	}
 	if (cls == KILN_BEETLE) {
 		return s[KB_HEAT_GLOW];
 	}
@@ -821,6 +840,12 @@ Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
 	}
 	if (cls == LENS_DRONE) {
 		return xf.translated_local(Vector3(0.0f, f32(s[LD_LIFT]), 0.0f));
+	}
+	if (cls == BOMB_DRONE) {
+		return xf.translated_local(Vector3(0.0f, f32(s[BD_LIFT]), 0.0f));
+	}
+	if (cls == SCRAP_HOUND) {
+		return xf.translated_local(Vector3(0.0f, f32(s[SH_LIFT]), 0.0f));
 	}
 	if (cls == KILN_BEETLE) {
 		return xf.translated_local(Vector3(0.0f, f32(s[KB_LIFT]), 0.0f));
@@ -855,6 +880,12 @@ int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 	}
 	if (cls == LENS_DRONE) {
 		return ld_drives(s, out);
+	}
+	if (cls == BOMB_DRONE) {
+		return bd_drives(s, out);
+	}
+	if (cls == SCRAP_HOUND) {
+		return sh_drives(s, out);
 	}
 	if (cls == KILN_BEETLE) {
 		return kb_drives(s, out);
