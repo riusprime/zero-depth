@@ -147,7 +147,12 @@ double consume_hold(double *s, double delta) {
 	return delta - used;
 }
 
-void advance_flinch(double *s, double delta, const Frame &f) {
+// _flinch_pivot(): the height the flinch leans about (a hovering body about itself; 0 for the others).
+float flinch_pivot(int cls) {
+	return cls == LENS_DRONE ? 1.3f : 0.0f;
+}
+
+void advance_flinch(double *s, int cls, double delta, const Frame &f) {
 	if (!flinching(s)) {
 		return;
 	}
@@ -165,7 +170,7 @@ void advance_flinch(double *s, double delta, const Frame &f) {
 	const Vector3 squash(f32(1.0 + 0.5 * FLINCH_SQUASH * k), f32(1.0 - FLINCH_SQUASH * k),
 			f32(1.0 + 0.5 * FLINCH_SQUASH * k));
 	const Basis b = axis_angle(axis, f32(FLINCH_LEAN * k)) * Basis::from_scale(squash);
-	const Vector3 p(0, 0, 0); // _flinch_pivot(): 0 for the batched kinds
+	const Vector3 p(0, flinch_pivot(cls), 0);
 	const double knock = maxd(flinch_envelope(s[FLINCH_T] / FLINCH_SECONDS), 0.0) * s[FLINCH_KNOCK];
 	put_xf(s, XF, rest * Transform3D(b, p - b.xform(p) + d * f32(knock)));
 }
@@ -666,6 +671,8 @@ void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
 		sn_advance(s, delta, f, c);
 	} else if (cls == ARC_CASTER) {
 		ac_advance(s, delta, f, c);
+	} else if (cls == LENS_DRONE) {
+		ld_advance(s, delta, c);
 	} else if (is_charger(cls)) {
 		c_advance(s, delta, c);
 	} else if (cls != NONE) {
@@ -677,7 +684,7 @@ void process(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
 	const double dt = consume_hold(s, delta);
 	if (dt > 0.0) {
 		advance(s, cls, dt, f, c);
-		advance_flinch(s, dt, f);
+		advance_flinch(s, cls, dt, f);
 	}
 }
 
@@ -705,6 +712,10 @@ void apply(double *s, int cls, int64_t tick, int state, bool healing, double win
 	}
 	if (cls == ARC_CASTER) {
 		ac_apply(s, tick, state, windup, pos_x, pos_y, c);
+		return;
+	}
+	if (cls == LENS_DRONE) {
+		ld_apply(s, state, c);
 		return;
 	}
 	if (is_charger(cls)) {
@@ -774,6 +785,9 @@ double glow_energy(const double *s, int cls) {
 	if (cls == ARC_CASTER) {
 		return s[AC_CRYSTAL];
 	}
+	if (cls == LENS_DRONE) {
+		return s[LD_EYE];
+	}
 	return is_charger(cls) ? s[C_VISOR] : s[H_GLOW];
 }
 
@@ -795,6 +809,9 @@ Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
 	}
 	if (cls == ARC_CASTER) {
 		return xf.translated_local(Vector3(0.0f, f32(s[AC_LIFT]), 0.0f));
+	}
+	if (cls == LENS_DRONE) {
+		return xf.translated_local(Vector3(0.0f, f32(s[LD_LIFT]), 0.0f));
 	}
 	if (is_charger(cls)) {
 		return xf.translated_local(Vector3(0.0f, f32(s[C_LIFT]), 0.0f));
@@ -823,6 +840,9 @@ int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 	}
 	if (cls == ARC_CASTER) {
 		return ac_drives(s, out);
+	}
+	if (cls == LENS_DRONE) {
+		return ld_drives(s, out);
 	}
 	if (is_charger(cls)) {
 		const double t = s[T];

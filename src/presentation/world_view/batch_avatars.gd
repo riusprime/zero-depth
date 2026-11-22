@@ -2,7 +2,8 @@ class_name BatchAvatars
 extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
 ## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow), RockLurkerAvatar's
-## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow) or ArcCasterAvatar's (BatchArcCaster)
+## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow), ArcCasterAvatar's (BatchArcCaster) or
+## LensDroneAvatar's (BatchLensDrone)
 ## fields that change after setup) is a row of packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same
 ## arithmetic in the same order) applies each sync, steps each frame and writes VatCrowd's body and shadow instances
 ## from the rows: one call each, none per enemy.
@@ -106,6 +107,7 @@ const WARDEN_CLASS := 12
 const ROCK_LURKER_CLASS := 13
 const SNIPER_CLASS := 14
 const ARC_CASTER_CLASS := 15
+const LENS_DRONE_CLASS := 17
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -122,6 +124,7 @@ const CLASS_OF := {
 	WorldReader.KIND_RUBBLE_WARDEN: WARDEN_CLASS,
 	WorldReader.KIND_SNIPER: SNIPER_CLASS,
 	WorldReader.KIND_ARC_CASTER: ARC_CASTER_CLASS,
+	WorldReader.KIND_LENS_DRONE: LENS_DRONE_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -196,6 +199,9 @@ static func class_of(avatar: AvatarBase) -> int:
 	var ac := avatar as ArcCasterAvatar
 	if ac != null and ac.vat:
 		return ARC_CASTER_CLASS
+	var ld := avatar as LensDroneAvatar
+	if ld != null and ld.vat:
+		return LENS_DRONE_CLASS
 	return 0
 
 
@@ -592,6 +598,8 @@ func _flush_inputs_in_script() -> void:
 						}
 					)
 				)
+			elif _cls[k] == LENS_DRONE_CLASS:
+				BatchLensDrone.apply_in_script(a as LensDroneAvatar, _tick, _in_state[k])
 			elif _cls[k] == ARC_CASTER_CLASS:
 				(
 					(a as ArcCasterAvatar)
@@ -855,6 +863,9 @@ func _export_solo(o: int, a: AvatarBase) -> bool:
 	elif a is ArcCasterAvatar:
 		first = BatchArcCaster.FIRST
 		row = BatchArcCaster.fields(a as ArcCasterAvatar)
+	elif a is LensDroneAvatar:
+		first = BatchLensDrone.FIRST
+		row = BatchLensDrone.fields(a as LensDroneAvatar)
 	else:
 		return false
 	for q in row.size():
@@ -876,6 +887,8 @@ func _import_solo(o: int, a: AvatarBase) -> bool:
 		)
 	elif a is ArcCasterAvatar:
 		BatchArcCaster.take(a as ArcCasterAvatar, _st, o)
+	elif a is LensDroneAvatar:
+		BatchLensDrone.load(a as LensDroneAvatar, _st, o)
 	else:
 		return false
 	return true
