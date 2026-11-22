@@ -331,6 +331,33 @@ enum Field {
 	FS_KNEES = 74,
 	FS_FEET = 86,
 	FS_VD = 98, // f32 x22: the raw drives
+	// GlacierTurtleAvatar (its own fields from 43 to 114; zd_avatar_glacier_turtle.cpp)
+	GT_VISOR = 43, // f32: the visor material's emission energy (the instance's accent glow)
+	GT_LIFT = 44,
+	GT_STATE = 45,
+	GT_TELL = 46,
+	GT_HP = 47,
+	GT_SHELL = 48, // the shield's HP left (-1: not read yet)
+	GT_BARE = 49,
+	GT_SPEED = 50,
+	GT_DIR = 51, // f32 x2: the way it goes in the facing's frame
+	GT_OMEGA = 53,
+	GT_PHASE = 54,
+	GT_STRIDE = 55,
+	GT_COIL = 56,
+	GT_RISE = 57,
+	GT_SLAM = 58,
+	GT_BRACE = 59,
+	GT_BREAK = 60,
+	GT_HURT = 61,
+	GT_HURT_LEG = 62,
+	GT_DIE = 63,
+	GT_LAST_FY = 64,
+	GT_HAVE_FY = 65,
+	GT_VD = 66, // f32 x24: the raw drives
+	GT_HIPS = 90, // f32 x3 x4 each: the legs' hips and knees (set once)
+	GT_KNEES = 102,
+	GT_SCALE = 114, // the model's scale (its feet are FEET at it; set once)
 	// WireWeaverAvatar (its own fields from 43 to 94; zd_avatar_wire_weaver.cpp)
 	WW_SPARK = 43, // the post tops' glow (the instance's accent glow)
 	WW_LIFT = 44,
@@ -378,6 +405,7 @@ enum Class {
 	KILN_BEETLE = 19,
 	CINDER_PRIEST = 20,
 	FROST_SPITTER = 21,
+	GLACIER_TURTLE = 22,
 	WIRE_WEAVER = 24,
 };
 
@@ -392,6 +420,7 @@ constexpr int MAX_DRIVES = 32;
 // (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's and a Sniper's: its HP (the first). A
 // Rock Lurker's: whether it waits disguised, whether it rumbles. A Warden's: its HP, the telegraph's slam radius and whether the
 // telegraph gave one (1) or not (0). A Bomb Drone's: its HP (the first).
+// A Glacier Turtle's: its HP, its shield's HP.
 constexpr int MORE = 6;
 
 // The sim states (WorldReader.STATE_*), handed in by the batch.
@@ -514,6 +543,12 @@ void fs_apply(double *s, int64_t tick, int state, double windup, float pos_x, fl
 		const Ctx &c);
 void fs_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int fs_drives(const double *s, float *out);
+// The Glacier Turtle (zd_avatar_glacier_turtle.cpp): its sync (`more`: its HP, its shield's HP), frame step (the pose
+// included; the facing's turn from `f`) and drives.
+void gt_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void gt_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int gt_drives(const double *s, float *out);
 // The Wire Weaver (zd_avatar_wire_weaver.cpp): its sync (`more`: its HP first), frame step (the pose included; the
 // facing's turn from `f`) and drives.
 void ww_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
