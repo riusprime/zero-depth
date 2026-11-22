@@ -686,6 +686,8 @@ void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
 		fs_advance(s, delta, f, c);
 	} else if (cls == GLACIER_TURTLE) {
 		gt_advance(s, delta, f, c);
+	} else if (cls == WIRE_WEAVER) {
+		ww_advance(s, delta, f, c);
 	} else if (cls == GRAVITY_NODE) {
 		gn_advance(s, delta, f, c);
 	} else if (is_charger(cls)) {
@@ -755,6 +757,10 @@ void apply(double *s, int cls, int64_t tick, int state, bool healing, double win
 	}
 	if (cls == GLACIER_TURTLE) {
 		gt_apply(s, tick, state, windup, pos_x, pos_y, more, c);
+		return;
+	}
+	if (cls == WIRE_WEAVER) {
+		ww_apply(s, tick, state, windup, pos_x, pos_y, more, c);
 		return;
 	}
 	if (cls == GRAVITY_NODE) {
@@ -849,6 +855,9 @@ double glow_energy(const double *s, int cls) {
 	if (cls == GLACIER_TURTLE) {
 		return s[GT_VISOR];
 	}
+	if (cls == WIRE_WEAVER) {
+		return s[WW_SPARK];
+	}
 	if (cls == GRAVITY_NODE) {
 		return s[GN_CORE_GLOW];
 	}
@@ -894,6 +903,9 @@ Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
 	}
 	if (cls == GLACIER_TURTLE) {
 		return xf.translated_local(Vector3(0.0f, f32(s[GT_LIFT]), 0.0f));
+	}
+	if (cls == WIRE_WEAVER) {
+		return xf.translated_local(Vector3(0.0f, f32(s[WW_LIFT]), 0.0f));
 	}
 	if (cls == GRAVITY_NODE) {
 		return xf.translated_local(Vector3(0.0f, f32(s[GN_LIFT]), 0.0f));
@@ -946,6 +958,9 @@ int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 	}
 	if (cls == GLACIER_TURTLE) {
 		return gt_drives(s, out);
+	}
+	if (cls == WIRE_WEAVER) {
+		return ww_drives(s, out);
 	}
 	if (cls == GRAVITY_NODE) {
 		return gn_drives(s, out);
