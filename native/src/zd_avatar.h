@@ -149,6 +149,34 @@ enum Field {
 	L_RISE = 62,
 	L_REST = 63, // f32 x2: the body joint's rest place (x, y; set once)
 	L_VD = 65, // f32 x18: the raw drives
+	// SniperAvatar (its own fields from 43 to 111; zd_avatar_sniper.cpp)
+	SN_LENS = 43, // f32: the lens material's emission energy
+	SN_STATE = 44,
+	SN_TELL = 45,
+	SN_HP = 46,
+	SN_SPEED = 47,
+	SN_DIR = 48, // f32 x2: the way it goes in the facing's frame
+	SN_OMEGA = 50,
+	SN_PHASE = 51,
+	SN_STRIDE = 52,
+	SN_BRACE = 53,
+	SN_CHARGE = 54,
+	SN_RISE = 55,
+	SN_SETTLE_T = 56,
+	SN_SHOT_T = 57,
+	SN_DOUBLE = 58, // the Split Sniper's second kick (set once)
+	SN_HEAT = 59,
+	SN_VENT_T = 60,
+	SN_HURT_T = 61,
+	SN_HURT_LEG = 62,
+	SN_DIE = 63,
+	SN_LAST_FY = 64,
+	SN_HAVE_FY = 65,
+	SN_LIFT = 66,
+	SN_VD = 67, // f32 x17: the raw drives
+	SN_HIPS = 84, // f32 x3 x3 each: the legs' rest hips, knees and feet (set once)
+	SN_KNEES = 93,
+	SN_FEET = 102,
 	STRIDE = 124,
 };
 
@@ -167,6 +195,7 @@ enum Class {
 	STONE_THROWER = 10,
 	NEEDLE = 11,
 	ROCK_LURKER = 13,
+	SNIPER_MODEL = 14, // the owner's model (SniperAvatar); SNIPER is its old horde body
 };
 
 inline bool is_charger(int c) {
@@ -177,8 +206,8 @@ inline bool is_charger(int c) {
 constexpr int MAX_DRIVES = 29;
 
 // A Stone Thrower's sync inputs past the common ones (BatchAvatars.MORE a slot): its ticks into the state, its facing
-// (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's: its HP (the first). A Rock Lurker's:
-// whether it waits disguised, whether it rumbles.
+// (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's and a Sniper's: its HP (the first). A
+// Rock Lurker's: whether it waits disguised, whether it rumbles.
 constexpr int MORE = 6;
 
 // The sim states (WorldReader.STATE_*), handed in by the batch.
@@ -242,6 +271,12 @@ void l_apply(double *s, int64_t tick, int state, double windup, float pos_x, flo
 		const Ctx &c);
 void l_advance(double *s, double delta, const Ctx &c);
 int l_drives(const double *s, float *out);
+
+// The Sniper (zd_avatar_sniper.cpp): its sync (`more`: its HP first), frame step (the pose included) and drives.
+void sn_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void sn_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int sn_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,

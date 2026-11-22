@@ -262,7 +262,7 @@ charging kind whose table has a trail), `BOLT` (the Dim Needle's look, applied i
 | `native/src/zd_strike.{h,cpp}` | `strike`, its entry codes and shapes, `strike_layout` |
 | `native/src/zd_shots.{h,cpp}` | `sweep_shots`, `shot_events`, `shot_t`, `sweep_one` |
 | `native/src/zd_nav.{h,cpp}` | the nav grid cache, `nav_flood`, `nav_dist`, `nav::direction` |
-| `native/src/zd_crowd.{h,cpp}`, `zd_crowd_avatars.cpp`, `zd_avatar.{h,cpp}`, `zd_avatar_thrower.cpp`, `zd_avatar_needle.cpp`, `zd_legged_rig.{h,cpp}`, `zd_avatar_lurker.cpp` | `ZdCrowd`: presentation only ([`PRESENTATION_CONTRACTS.md`](PRESENTATION_CONTRACTS.md) §11) |
+| `native/src/zd_crowd.{h,cpp}`, `zd_crowd_avatars.cpp`, `zd_avatar.{h,cpp}`, `zd_avatar_thrower.cpp`, `zd_avatar_needle.cpp`, `zd_legged_rig.{h,cpp}`, `zd_avatar_lurker.cpp`, `zd_avatar_sniper.cpp` | `ZdCrowd`: presentation only ([`PRESENTATION_CONTRACTS.md`](PRESENTATION_CONTRACTS.md) §11) |
 | `native/src/register_types.cpp` | registers `ZdWorld` and `ZdCrowd` |
 | `native/SConstruct`, `scripts/native/build.sh`, `fetch_bindings.sh` | the build, its float flags, the bindings at `native/GODOT_CPP_COMMIT` |
 | `src/app/native_check.gd` | `NativeCheck`: the game's start without the library: reports `NativeWorld.MISSING`, shows it in a dialog when there is a display, quits with exit code 1 |
