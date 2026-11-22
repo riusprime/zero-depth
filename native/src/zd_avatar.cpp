@@ -656,6 +656,10 @@ Basis euler_yxz(const Vector3 &e) {
 void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
 	if (cls == STONE_THROWER) {
 		s_advance(s, delta, c);
+	} else if (cls == NEEDLE) {
+		n_advance(s, delta, f, c);
+	} else if (cls == ROCK_LURKER) {
+		l_advance(s, delta, c);
 	} else if (cls == WARDEN) {
 		w_advance(s, delta, f, c);
 	} else if (is_charger(cls)) {
@@ -677,6 +681,14 @@ void apply(double *s, int cls, int64_t tick, int state, bool healing, double win
 		const double *more, const Ctx &c) {
 	if (cls == STONE_THROWER) {
 		s_apply(s, tick, state, pos_x, pos_y, more, c);
+		return;
+	}
+	if (cls == NEEDLE) {
+		n_apply(s, tick, state, windup, pos_x, pos_y, more, c);
+		return;
+	}
+	if (cls == ROCK_LURKER) {
+		l_apply(s, tick, state, windup, pos_x, pos_y, more, c);
 		return;
 	}
 	if (cls == WARDEN) {
@@ -735,6 +747,12 @@ double glow_energy(const double *s, int cls) {
 	if (cls == STONE_THROWER) {
 		return s[S_VISOR];
 	}
+	if (cls == NEEDLE) {
+		return s[N_GEM];
+	}
+	if (cls == ROCK_LURKER) {
+		return s[L_VISOR];
+	}
 	if (cls == WARDEN) {
 		return s[W_CRACK];
 	}
@@ -744,6 +762,12 @@ double glow_energy(const double *s, int cls) {
 Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
 	if (cls == STONE_THROWER) {
 		return xf.translated_local(Vector3(0.0f, f32(s[S_LIFT]), 0.0f));
+	}
+	if (cls == NEEDLE) {
+		return xf.translated_local(Vector3(0.0f, f32(s[N_LIFT]), 0.0f));
+	}
+	if (cls == ROCK_LURKER) {
+		return xf.translated_local(Vector3(0.0f, f32(s[L_LIFT]), 0.0f));
 	}
 	if (cls == WARDEN) {
 		return xf.translated_local(Vector3(0.0f, f32(s[W_LIFT]), 0.0f));
@@ -760,6 +784,12 @@ Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
 int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 	if (cls == STONE_THROWER) {
 		return s_drives(s, out);
+	}
+	if (cls == NEEDLE) {
+		return n_drives(s, out);
+	}
+	if (cls == ROCK_LURKER) {
+		return l_drives(s, out);
 	}
 	if (cls == WARDEN) {
 		return w_drives(s, out);

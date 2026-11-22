@@ -103,7 +103,17 @@ On the step's own commit (parent `1bf5e52c`):
 gdformat --check src scripts tests                       -> 1969 files would be left unchanged
 gdlint src scripts tests                                 -> Success: no problems found
 ```
-After merging `lead-v0120` (the Needle and the Rock Lurker): see the merge section below.
+After merging `lead-v0120` at `d2ed8e89`/`62ed3094` (the Needle, `zd_legged_rig` and the Rock Lurker; the Warden needs
+nothing of `LeggedRig`): its fields stay from 43 (up to 121), so `STRIDE` stays the lead's 124; classes Needle 11,
+Warden 12, Rock Lurker 13. Library rebuilt (`bash scripts/native/build.sh debug`, exit 0), imported twice:
+```
+the same -gtest list + test_rock_lurker_avatar, and -gdir=tests/arch,tests/golden,tests/unit/native (one process,
+  Godot lines 4 before / 4 after: another agent's)    -> exit 0, 32 scripts, 217/217 tests, 94703 asserts
+    wardens: 300 frames, tells 541, slams 19, dust 205, walking 1168, turning 623, jolts 1211, flinches 69, holds 32, kills 5 (5 mid-attack), spawns 2, crust 620, shed 122
+gdformat --check src scripts tests                   -> 1971 files would be left unchanged
+gdlint src scripts tests                             -> Success: no problems found
+```
+The twin probes above ran before the merge (the Warden's code is unchanged by it).
 
 ## Not done / left
 

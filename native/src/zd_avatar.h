@@ -97,6 +97,58 @@ enum Field {
 	S_SCALE = 65, // the model's scale (set once)
 	S_OFF = 66, // f32 x3 x6: the joints' offsets (pelvis, neck, shoulder, elbow, wrist, hip; set once)
 	S_VD = 84, // f32 x29: the raw drives
+	// NeedleAvatar (its own fields from 43; zd_avatar_needle.cpp)
+	N_GEM = 43, // f32: the gem material's emission energy
+	N_STATE = 44,
+	N_STATE_TICK = 45,
+	N_SHOTS = 46,
+	N_TELL = 47,
+	N_HP = 48,
+	N_SPEED = 49,
+	N_DIR = 50, // f32 x2: the way it goes in the facing's frame
+	N_OMEGA = 52,
+	N_PHASE = 53,
+	N_STRIDE = 54,
+	N_BRACE = 55,
+	N_CHARGE = 56,
+	N_RISE = 57,
+	N_SHOT_T = 58,
+	N_BURST_T = 59,
+	N_HEAT = 60,
+	N_VENT_T = 61,
+	N_HURT_T = 62,
+	N_HURT_LEG = 63,
+	N_DIE = 64,
+	N_LAST_FY = 65,
+	N_HAVE_FY = 66,
+	N_LIFT = 67,
+	N_VD = 68, // f32 x20: the raw drives
+	N_HIPS = 88, // f32 x3 x4 each: the legs' rest hips, knees and feet (set once)
+	N_KNEES = 100,
+	N_FEET = 112,
+	// RockLurkerAvatar (its own fields from 43; zd_avatar_lurker.cpp)
+	L_VISOR = 43,
+	L_CRACK = 44, // f32: the cracks' glow (its last drive)
+	L_LIFT = 45,
+	L_STATE = 46,
+	L_STATE_TICKS = 47,
+	L_WINDUP = 48,
+	L_HIDDEN = 49,
+	L_RUMBLING = 50,
+	L_TUCK = 51,
+	L_RUMBLE = 52,
+	L_BURST = 53,
+	L_BURST_SLAM = 54,
+	L_SPEED = 55,
+	L_WALK = 56,
+	L_PHASE = 57,
+	L_REAR = 58,
+	L_SLAM = 59,
+	L_IMPACT = 60,
+	L_DIE = 61,
+	L_RISE = 62,
+	L_REST = 63, // f32 x2: the body joint's rest place (x, y; set once)
+	L_VD = 65, // f32 x18: the raw drives
 	// WardenAvatar (its own fields from 43; zd_avatar_warden.cpp)
 	W_CRACK = 43, // the cracks' glow (_crack)
 	W_STATE = 44,
@@ -120,9 +172,9 @@ enum Field {
 	W_DUST_T = 63,
 	W_LIFT = 64,
 	W_SCALE = 65, // the model's scale (set once)
-	W_PIV = 66, // f32 x3 x11: the joints' pivots (BatchWardenRow.PIVOT_KEYS order; set once)
+	W_PIV = 66, // f32 x3 x11: the joints' pivots (BatchWarden.PIVOT_KEYS order; set once)
 	W_VD = 99, // f32 x23: the raw drives
-	STRIDE = 122,
+	STRIDE = 124,
 };
 
 // A slot's class (BatchAvatars.CLASS_OF): which avatar code runs it (0: none native, its avatar steps in GDScript).
@@ -138,7 +190,9 @@ enum Class {
 	CHARGER = 8,
 	HATCHLING = 9,
 	STONE_THROWER = 10,
+	NEEDLE = 11,
 	WARDEN = 12,
+	ROCK_LURKER = 13,
 };
 
 inline bool is_charger(int c) {
@@ -149,10 +203,10 @@ inline bool is_charger(int c) {
 constexpr int MAX_DRIVES = 29;
 
 // A Stone Thrower's sync inputs past the common ones (BatchAvatars.MORE a slot): its ticks into the state, its facing
-// (Kin.dir: x, y) and the sim's lift, flight and recovery ticks.
+// (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's: its HP (the first). A Rock Lurker's:
+// whether it waits disguised, whether it rumbles. A Warden's: its HP, the telegraph's slam radius and whether the
+// telegraph gave one (1) or not (0).
 constexpr int MORE = 6;
-
-// A Warden's MORE inputs: its HP, the telegraph's slam radius and whether the telegraph gave one (1) or not (0).
 
 // The sim states (WorldReader.STATE_*), handed in by the batch.
 struct States {
@@ -215,6 +269,17 @@ void s_apply(double *s, int64_t tick, int state, float pos_x, float pos_y, const
 void s_advance(double *s, double delta, const Ctx &c);
 int s_drives(const double *s, float *out);
 
+// The Needle (zd_avatar_needle.cpp): its sync (`more`: its HP first), frame step (the pose included) and drives.
+void n_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void n_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int n_drives(const double *s, float *out);
+// The Rock Lurker (zd_avatar_lurker.cpp): its sync (`more`: hidden, rumbling), frame step (the pose included) and
+// drives.
+void l_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void l_advance(double *s, double delta, const Ctx &c);
+int l_drives(const double *s, float *out);
 // The Warden (zd_avatar_warden.cpp): its sync, frame step (advance: the pose included; the facing's turn from `f`)
 // and drives.
 void w_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,

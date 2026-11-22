@@ -1,9 +1,9 @@
 class_name BatchAvatars
 extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
-## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's or WardenAvatar's (BatchWarden) fields that change after setup)
-## is a row of packed doubles here, and ZdCrowd
-## (native/src/zd_avatar.*, the same arithmetic in the same order) applies each sync, steps each frame and writes
+## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow), RockLurkerAvatar's
+## (BatchLurker) or WardenAvatar's (BatchWarden) fields that change after setup) is a row of packed doubles here, and
+## ZdCrowd (native/src/zd_avatar*, the same arithmetic in the same order) applies each sync, steps each frame and writes
 ## VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
 ## The rows hold the state while `on`; the avatar objects then hold old numbers, except around an event:
 ## - an event on an avatar (a flinch, a hold, a death, a sync or a step called on it: AvatarBase._touch) first copies
@@ -17,7 +17,7 @@ extends RefCounted
 ## Presentation only (EI-07).
 
 ## A row's fields (native/src/zd_avatar.h, the same numbers).
-const STRIDE := 122
+const STRIDE := 124
 const T := 0
 const FLINCH_T := 1
 const FLINCH_S := 2
@@ -93,13 +93,16 @@ const S_VD := 84
 ## The Stone Thrower's joint offsets in its row (S_OFF, three floats each).
 const S_OFF_KEYS := ["pelvis", "neck", "shoulder", "elbow", "wrist", "hip"]
 ## A Stone Thrower's sync inputs past the common ones, a slot (zd_avatar.h MORE): its ticks into the state, its
-## facing (x, y), the sim's lift, flight and recovery ticks.
+## facing (x, y), the sim's lift, flight and recovery ticks; a Needle's: its HP (the first); a Rock Lurker's:
+## disguised, rumbling.
 ## A Warden's: its HP, the telegraph's slam radius, whether it gave one (BatchWarden.note).
 const MORE := 6
 ## The native classes (zd_avatar.h Class) by kind; 0: none.
 const CHARGER_CLASS := 8
 const STONE_THROWER_CLASS := 10
+const NEEDLE_CLASS := 11
 const WARDEN_CLASS := 12
+const ROCK_LURKER_CLASS := 13
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -110,6 +113,8 @@ const CLASS_OF := {
 	WorldReader.KIND_CHARGER: 8,
 	WorldReader.KIND_HATCHLING: 9,
 	WorldReader.KIND_STONE_THROWER: STONE_THROWER_CLASS,
+	WorldReader.KIND_NEEDLE: NEEDLE_CLASS,
+	WorldReader.KIND_ROCK_LURKER: ROCK_LURKER_CLASS,
 	WorldReader.KIND_WARDEN: WARDEN_CLASS,
 	WorldReader.KIND_RUBBLE_WARDEN: WARDEN_CLASS,
 }
@@ -171,6 +176,12 @@ static func class_of(avatar: AvatarBase) -> int:
 	var st := avatar as StoneThrowerAvatar
 	if st != null and st.vat:
 		return STONE_THROWER_CLASS
+	var nd := avatar as NeedleAvatar
+	if nd != null and nd.vat:
+		return NEEDLE_CLASS
+	var lk := avatar as RockLurkerAvatar
+	if lk != null and lk.vat:
+		return ROCK_LURKER_CLASS
 	var wd := avatar as WardenAvatar
 	if wd != null and wd.vat:
 		return WARDEN_CLASS
@@ -347,6 +358,11 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 		_in_more[o + 3] = ticks.x
 		_in_more[o + 4] = ticks.y
 		_in_more[o + 5] = ticks.z
+	elif c == ROCK_LURKER_CLASS:  # (its sync reads the windup in any state, and its disguise)
+		var o := k * MORE
+		_in_windup[k] = float(reader.telegraph(i).get("progress", 0)) / 1000.0
+		_in_more[o] = 1.0 if RockLurkerAvatar.disguised(reader, i) else 0.0
+		_in_more[o + 1] = 1.0 if reader.lurker_rumbling(i) else 0.0
 	elif c == WARDEN_CLASS:
 		var v := BatchWarden.note(reader, i)
 		var o := k * MORE
@@ -360,6 +376,8 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 			if state == WorldReader.STATE_WINDUP
 			else 0.0
 		)
+		if c == NEEDLE_CLASS:  # (its sync reads its HP: a hit's flinch)
+			_in_more[k * MORE] = reader.actor_hp(i)
 	if c >= CHARGER_CLASS:
 		var p := reader.actor_pos(i)
 		_in_x[k] = p.x
@@ -513,6 +531,33 @@ func _flush_inputs_in_script() -> void:
 						}
 					)
 				)
+			elif _cls[k] == NEEDLE_CLASS:
+				(
+					(a as NeedleAvatar)
+					. apply_state(
+						{
+							"tick": _tick,
+							"pos": Vector2(_in_x[k], _in_y[k]),
+							"state": _in_state[k],
+							"windup": _in_windup[k],
+							"hp": int(_in_more[o]),
+						}
+					)
+				)
+			elif _cls[k] == ROCK_LURKER_CLASS:
+				(
+					(a as RockLurkerAvatar)
+					. apply_state(
+						{
+							"tick": _tick,
+							"pos": Vector2(_in_x[k], _in_y[k]),
+							"state": _in_state[k],
+							"windup": _in_windup[k],
+							"hidden": _in_more[o] != 0.0,
+							"rumbling": _in_more[o + 1] != 0.0,
+						}
+					)
+				)
 			elif _cls[k] == WARDEN_CLASS:
 				BatchWarden.apply_in_script(
 					a as WardenAvatar,
@@ -635,6 +680,18 @@ func _export(k: int) -> void:
 	if st != null:
 		_export_thrower(o, st)
 		return
+	var nd := a as NeedleAvatar
+	if nd != null:
+		var row := BatchNeedleRow.fields(nd)
+		for q in row.size():
+			_st[o + BatchNeedleRow.FIRST + q] = row[q]
+		return
+	var lk := a as RockLurkerAvatar
+	if lk != null:
+		var r := BatchLurker.fields(lk)
+		for q in BatchLurker.COUNT:
+			_st[o + BatchLurker.FIRST + q] = r[q]
+		return
 	var wd := a as WardenAvatar
 	if wd != null:
 		var row := BatchWarden.export_row(wd)
@@ -703,6 +760,14 @@ func _import(k: int) -> void:
 	var st := a as StoneThrowerAvatar
 	if st != null:
 		_import_thrower(o, st)
+		return
+	var nd := a as NeedleAvatar
+	if nd != null:
+		BatchNeedleRow.load(nd, _st.slice(o + BatchNeedleRow.FIRST, o + STRIDE))
+		return
+	var lk := a as RockLurkerAvatar
+	if lk != null:
+		BatchLurker.take(lk, _st, o)
 		return
 	var wd := a as WardenAvatar
 	if wd != null:

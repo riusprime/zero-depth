@@ -15,7 +15,6 @@ const W_DUST_T := 63
 const W_SLAM_R := 62
 const W_PIV := 66
 const W_VD := 99
-const W_END := 122
 ## The joints' pivots in the row (W_PIV, three floats each), zd_avatar_warden.cpp's order.
 const PIVOT_KEYS: Array[StringName] = [
 	&"head",
