@@ -94,6 +94,8 @@ static func apply(
 		BatchBombDrone.apply_in_script(a as BombDroneAvatar, tick, pos, state, more, o)
 	elif cls == BatchAvatars.SCRAP_HOUND_CLASS:
 		BatchScrapHound.apply_in_script(a as ScrapHoundAvatar, tick, pos, state, windup, more, o)
+	elif cls == BatchAvatars.CINDER_PRIEST_CLASS:
+		BatchCinderPriest.apply_in_script(a as CinderPriestAvatar, tick, pos, state, more, o)
 	elif cls >= BatchAvatars.CHARGER_CLASS:
 		(
 			(a as ChargerAvatar)

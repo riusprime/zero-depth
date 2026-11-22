@@ -20,6 +20,9 @@ extends AvatarBase
 ## The model's parts hang in a chain of joints (Body > Waist > Hem / Torso > Hood, ArmL, ArmR > Staff); every joint's
 ## transform is made of its own drives (SoloVat's one-number joints), so the VAT crowd draws it from a bake of this very
 ## pose code (vat_rig). Without the model file a code-made body of the same parts stands in.
+## On the VAT crowd it is batched (EnemyBatch: nothing here reads the tree, its turn is the sim's facing; its death's
+## timer is the batch's, drop), and the native batch runs the same sync, frame step and pose
+## (native/src/zd_avatar_cinder_priest.cpp; its vent's numbers worked out by BatchCinderPriest.note).
 ## Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame
 ## time; nothing here reaches the sim. ActorViews puts it under the actor's facing node: +X is the front.
 
@@ -394,6 +397,7 @@ func sync(reader: WorldReader, i: int) -> void:
 ## plane), pulse (0..1000, priest_pulse), erupt_age (ticks since its vent erupted; -1 or missing: none), vent_yaw
 ## (radians in the facing's frame; missing: no vent), facing (the facing's yaw, radians). Missing keys: at rest.
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	_state = int(s.get("state", WorldReader.STATE_MOVE))
 	_pulse = clampf(float(s.get("pulse", 0)) / 1000.0, 0.0, 1.0)
 	var age := int(s.get("erupt_age", -1))
@@ -408,6 +412,7 @@ func apply_state(s: Dictionary) -> void:
 
 
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0 or (parts.is_empty() and not vat):
 		return
@@ -435,8 +440,9 @@ func advance(delta: float) -> void:
 	_pose()
 
 
-## Starts the death (ActorViews, when the sim drops it): false when it is already dying.
+## Starts the death (ActorViews or the enemy batch, when the sim drops it): false when it is already dying.
 func die() -> bool:
+	_touch()
 	if _die_t >= 0.0:
 		return false
 	_die_t = 0.0
@@ -444,6 +450,7 @@ func die() -> bool:
 
 
 func dying() -> bool:
+	_peek()
 	return _die_t >= 0.0
 
 
@@ -634,15 +641,18 @@ func _apply() -> void:
 
 ## The body's lift (m): the hover, the bob, the cycle's rise and drop (VatCrowd moves the instance by it).
 func vat_lift() -> float:
+	_peek()
 	return _lift
 
 
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
 ## The crystal's glow (the instance's; the visor's is the VISOR drive).
 func glow_energy() -> float:
+	_peek()
 	return _crystal
 
 

@@ -125,4 +125,9 @@ probe's proof (`lens_shadow_pos` 0.000002 above). The test's comment says so.
 "$GODOT" --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/native/test_native_crowd_lens.gd -gexit
 exit=0  Tests 2  Passing Tests 2   (lens drone shadows compared: 720)
 ```
-The final run, after merging `lead-v0120`, is in the step's report.
+After merging `lead-v0120` at `75a5fa97` (the Cinder Priest, whose row lines were already in BatchRows and
+BatchScriptSync), the library was rebuilt (`ensure.sh`, exit 0) and the ten files above ran again:
+```
+exit=0  Scripts 10  Tests 90  Passing Tests 90  Asserts 55320
+```
+Lint (`gdformat --check src scripts tests && gdlint src scripts tests`): clean.
