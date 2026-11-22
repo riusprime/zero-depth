@@ -47,7 +47,6 @@ const HOOD_MID_Y := 0.015
 const FACE_X := HOOD_HALF_LEN - 0.02
 ## The face's point, below the hood's bottom (hood-local y).
 const CHIN_Y := -0.3
-## The avatar's rim is thinner than the other actors' (the sheet has a light line, not a heavy one).
 ## Walking speed the gait is tuned for (the sim's 6 m/s) and the stride (metres per full two-step cycle).
 const WALK_SPEED := 6.0
 const STRIDE := 1.25
@@ -121,6 +120,8 @@ var under_color := UNDER_COLOR
 var runes: AffinityRunes
 ## An epic robe's pieces (EpicRobeView: The Fallen's or the divine; null for a colour robe).
 var epic: EpicRobeView
+## The arms and gauntlets, and the Blade in their hands (HeroArms).
+var arms := HeroArms.new()
 var _style := &""
 var _hood_mat: StandardMaterial3D
 
@@ -191,7 +192,7 @@ var _accent := Vector3.ZERO
 func _notification(what: int) -> void:
 	if what != NOTIFICATION_PREDELETE:
 		return
-	for n: Variant in [_leg_root, _head_yaw, _pelvis]:
+	for n: Variant in [_leg_root, _head_yaw, _pelvis, arms]:
 		AvatarBase.free_if_loose(n)
 
 
@@ -260,6 +261,8 @@ func setup() -> void:
 		pivot.add_child(toe_at)
 		_mesh_piece(toe_at, toe, BOOT_COLOR)
 		legs.append(pivot)
+	add_child(arms)
+	arms.build(self)
 	runes = AffinityRunes.new()
 	add_child(runes)
 	add_child(runes.back)
@@ -502,6 +505,7 @@ func advance(delta: float) -> void:
 		else Vector3.ZERO
 	)
 	_pose(dt)
+	arms.pose(dt, _cloak_frame(), _pelvis.basis, not (_gun or _dead))
 	_step_springs(dt, accel)
 	_rebuild_cloak()
 	if epic != null:
@@ -784,7 +788,7 @@ func _update_targets() -> void:
 	var m := flare * (1.0 + sin(_t * 2.1) * 0.012 * (1.0 - _slump))
 	for k in _spring_rest.size():
 		var r := _spring_rest[k]
-		_spring_target[k] = xf * Vector3(r.x * m, r.y - 0.1 * _slump, r.z * m)
+		_spring_target[k] = arms.lifted(xf * Vector3(r.x * m, r.y - 0.1 * _slump, r.z * m))
 
 
 func _reset_springs() -> void:
