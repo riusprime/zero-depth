@@ -55,6 +55,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_SCRAP_HOUND,
 	WorldReader.KIND_KILN_BEETLE,
 	WorldReader.KIND_CINDER_PRIEST,
+	WorldReader.KIND_FROST_SPITTER,
 ]
 ## After the views' sync and the other nodes' _process, before VatCrowd (which draws the bodies at these places).
 const PROCESS_PRIORITY := VatCrowd.PROCESS_PRIORITY - 1

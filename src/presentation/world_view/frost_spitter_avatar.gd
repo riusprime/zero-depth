@@ -28,7 +28,10 @@ extends AvatarBase
 ##   or kicks, the flashes steady.
 ## The pose is a few plain numbers (the raw drives, _vd: each joint's turn, slide or stretch) worked out from the state
 ## first, then the nodes from them through the joint table (_joints, the same transforms the VAT rig declares), so the
-## baked pose is the live one. Presentation only (EI-07): nothing here reaches the sim. +X is the front, +Z its right.
+## baked pose is the live one. On the VAT crowd it is batched (EnemyBatch: nothing here reads the tree, its turn is its
+## facing node's; its death's timer is the batch's, drop), and the native batch runs the same sync, frame step and pose
+## (native/src/zd_avatar_frost_spitter.cpp). Presentation only (EI-07): nothing here reaches the sim. +X is the front,
+## +Z its right.
 
 const KIND := WorldReader.KIND_FROST_SPITTER
 const MODEL := &"frost_spitter"
@@ -394,6 +397,7 @@ func sync(reader: WorldReader, i: int) -> void:
 
 ## The same as sync(), from plain values (tests, EnemyShadows): tick, state, pos, windup (0..1); hp optional.
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	var st: int = s["state"]
 	var hp: int = s.get("hp", -1)
 	if _fresh:
@@ -417,6 +421,7 @@ func apply_state(s: Dictionary) -> void:
 
 # --- Frame time ---------------------------------------------------------------------------------------------------
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0:
 		return
@@ -462,44 +467,52 @@ func _turning(dt: float, dying: bool) -> void:
 	_have_fy = true
 
 
-## Starts the death (ActorViews, when the sim drops the spitter: its bar hidden, freed DEATH_SECONDS later). True: it
-## plays.
+## Starts the death (ActorViews or the enemy batch, when the sim drops the spitter: its bar hidden, freed
+## DEATH_SECONDS later). True: it plays.
 func die() -> bool:
+	_touch()
 	if _die_t < 0.0:
 		_die_t = 0.0
 	return true
 
 
 func dying() -> bool:
+	_peek()
 	return _die_t >= 0.0
 
 
 ## The sac's swell now (the SAC drive: over 0 swollen, under 0 emptied; tests, the e2e), its glow and the visor's.
 func sac_swell() -> float:
+	_peek()
 	return _vd[SAC]
 
 
 func sac_energy() -> float:
+	_peek()
 	return _sac_glow
 
 
 func visor_energy() -> float:
+	_peek()
 	return _visor_mat.emission_energy_multiplier
 
 
 ## The raw drives now (tests).
 func drives() -> PackedFloat32Array:
+	_peek()
 	return _vd
 
 
 ## Where foot `k`'s tip and its knee stand now (m, the facing's frame; tests): the legs' chain from the drives.
 func foot_at(k: int) -> Vector3:
+	_peek()
 	var knee: Vector3 = _pivots[StringName("leg_%s_l" % LEGS[k])]
 	var low := Transform3D(Basis(Vector3.BACK, _vd[LEG0 + 3 * k + 2]), Vector3.ZERO)
 	return _upper_xf(k) * low * (_feet[k] - knee)
 
 
 func knee_at(k: int) -> Vector3:
+	_peek()
 	return _upper_xf(k) * Vector3.ZERO
 
 
@@ -881,15 +894,18 @@ func _apply() -> void:
 # --- SoloVat: the VAT rig -----------------------------------------------------------------------------------------
 ## The whole body's lift (m): VatCrowd moves the instance by it.
 func vat_lift() -> float:
+	_peek()
 	return _lift
 
 
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
 ## The sac's glow (the instance's accent glow; the visor's is the VISOR drive).
 func glow_energy() -> float:
+	_peek()
 	return _sac_glow
 
 
