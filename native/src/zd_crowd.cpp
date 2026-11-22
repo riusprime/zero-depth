@@ -205,7 +205,7 @@ void ZdCrowd::_bind_methods() {
 								 "synced_now", "ticked", "heights"),
 			&ZdCrowd::write_furniture);
 	ClassDB::bind_method(D_METHOD("apply_sync", "state", "cls", "frame", "pending", "tick", "in_state", "in_heal",
-								 "in_windup", "in_x", "in_y", "warm", "consts"),
+								 "in_windup", "in_x", "in_y", "in_more", "warm", "consts"),
 			&ZdCrowd::apply_sync);
 	ClassDB::bind_method(D_METHOD("step_avatars", "state", "cls", "frame", "proc", "born", "frame_no", "delta", "consts"),
 			&ZdCrowd::step_avatars);

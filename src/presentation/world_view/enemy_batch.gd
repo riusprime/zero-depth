@@ -25,9 +25,11 @@ extends Node3D
 ## The set kinds.
 enum Part { DISC, RING, DAZED, BAR, BLOB }
 
-## The kinds batched: the VAT crowd's horde kinds and the Charger and Hatchling, whose avatars need nothing of the tree.
-## The other VAT kinds (the solo models: Needle, Warden, the drones, the owner's models) still read the tree in their
-## frame step or death (global transforms, timers), so they keep their node.
+## The kinds batched: the VAT crowd's horde kinds, the Charger, the Hatchling and the Stone Thrower, whose avatars need
+## nothing of the tree (their pose, rock, visor and death are reckoned from their own clocks and the sim's state; the
+## thrown rock flies from the sim's place, RuinsRocksViews). The other VAT kinds (the solo models: Needle, Warden, the
+## drones, the other owner's models) still read the tree in their frame step or death (global transforms, timers), so
+## they keep their node.
 const KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_SPLITTER,
@@ -37,6 +39,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_MINE_LAYER,
 	WorldReader.KIND_CHARGER,
 	WorldReader.KIND_HATCHLING,
+	WorldReader.KIND_STONE_THROWER,
 ]
 ## After the views' sync and the other nodes' _process, before VatCrowd (which draws the bodies at these places).
 const PROCESS_PRIORITY := VatCrowd.PROCESS_PRIORITY - 1

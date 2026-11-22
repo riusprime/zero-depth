@@ -654,7 +654,9 @@ Basis euler_yxz(const Vector3 &e) {
 }
 
 void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
-	if (is_charger(cls)) {
+	if (cls == STONE_THROWER) {
+		s_advance(s, delta, c);
+	} else if (is_charger(cls)) {
 		c_advance(s, delta, c);
 	} else if (cls != NONE) {
 		h_advance(s, cls, delta, f, c);
@@ -670,7 +672,11 @@ void process(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
 }
 
 void apply(double *s, int cls, int64_t tick, int state, bool healing, double windup, float pos_x, float pos_y,
-		const Ctx &c) {
+		const double *more, const Ctx &c) {
+	if (cls == STONE_THROWER) {
+		s_apply(s, tick, state, pos_x, pos_y, more, c);
+		return;
+	}
 	if (is_charger(cls)) {
 		s[C_TELL] = clampd(windup, 0.0, 1.0);
 		// _track_motion(tick, pos, TELEPORT_SPEED)
@@ -720,10 +726,16 @@ void apply(double *s, int cls, int64_t tick, int state, bool healing, double win
 }
 
 double glow_energy(const double *s, int cls) {
+	if (cls == STONE_THROWER) {
+		return s[S_VISOR];
+	}
 	return is_charger(cls) ? s[C_VISOR] : s[H_GLOW];
 }
 
 Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
+	if (cls == STONE_THROWER) {
+		return xf.translated_local(Vector3(0.0f, f32(s[S_LIFT]), 0.0f));
+	}
 	if (is_charger(cls)) {
 		return xf.translated_local(Vector3(0.0f, f32(s[C_LIFT]), 0.0f));
 	}
@@ -734,6 +746,9 @@ Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
 }
 
 int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
+	if (cls == STONE_THROWER) {
+		return s_drives(s, out);
+	}
 	if (is_charger(cls)) {
 		const double t = s[T];
 		out[0] = f32(s[C_WIND]);
@@ -771,6 +786,26 @@ int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 		return 5;
 	}
 	return 4;
+}
+
+double sin_d(double x) {
+	return dsin(x);
+}
+
+double cos_d(double x) {
+	return dcos(x);
+}
+
+double envelope(double u) {
+	return flinch_envelope(u);
+}
+
+double glow_of_tell(double p, double t, bool calm) {
+	return tell_glow(p, t, calm);
+}
+
+double ease_rate(double per_second, double dt) {
+	return rate(per_second, dt);
 }
 
 } // namespace av

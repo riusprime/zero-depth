@@ -19,14 +19,15 @@ extends AvatarBase
 ##   folding into the follow-through and settling;
 ## - recovery (RECOVER): it straightens up, the arms swinging back to hang, a heavy breath;
 ## - hit flinch: on top of AvatarBase's lean and squash, the head snaps back and the arms flare;
-## - death (die(); ActorViews keeps the node DEATH_SECONDS): it staggers back, drops to its knees and topples forward,
+## - death (die(); the enemy batch keeps it DEATH_SECONDS): it staggers back, drops to its knees and topples forward,
 ##   then sinks; a rock it held falls and rolls;
 ## - the rise-in (SPAWN): up out of the floor.
 ## Reduced motion (ViewPrefs.reduced_motion): smaller breathing, sway and bob, no strain shudder, no flail; the poses
 ## that carry the read (the lift, the throw) stay.
 ## VAT (SoloVat, like the Warden): every joint is one number (a turn, a slide, a stretch) of the raw drives (_vd), so a
-## VatCrowd draws it from baked poses; the code avatar is the reference. Missing model: a code-made body on the same
-## joints. Presentation only (EI-07): nothing here decides. +X is the front.
+## VatCrowd draws it from baked poses; the code avatar is the reference. On the VAT crowd it is batched (EnemyBatch:
+## nothing here reads the tree). Missing model: a code-made body on the same joints. Presentation only (EI-07):
+## nothing here decides. +X is the front.
 
 const KIND := WorldReader.KIND_STONE_THROWER
 const MODEL_ID := &"stone_thrower"
@@ -390,6 +391,7 @@ func sync(reader: WorldReader, i: int) -> void:
 ## (0..1 of the lift: the shot tools' way of giving it), facing (the sim's facing as a unit vector; else the walk is
 ## taken as forward) and ticks (Vector3i: the lift, the flight with its landing tick, the recovery).
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	var tick: int = s["tick"]
 	var state: int = s["state"]
 	var dt_ticks := tick - _last_tick
@@ -433,6 +435,7 @@ func _attack_clock() -> float:
 
 ## v0.8.0 MI's way (ActorViews keeps the node DEATH_SECONDS): starts the death. A rock in its hands falls.
 func die() -> bool:
+	_touch()
 	if _die_t >= 0.0:
 		return true
 	_die_t = 0.0
@@ -442,6 +445,7 @@ func die() -> bool:
 
 
 func dying() -> bool:
+	_peek()
 	return _die_t >= 0.0
 
 
@@ -449,6 +453,7 @@ func dying() -> bool:
 
 
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0:
 		return
@@ -479,24 +484,29 @@ func advance(delta: float) -> void:
 
 ## The pose code's clocks (tests and the shot tools): seconds into the attack (-1: none), the walk (0..1).
 func attack_time() -> float:
+	_peek()
 	return _atk
 
 
 func walk_amount() -> float:
+	_peek()
 	return _walk
 
 
 ## Whether the rock is in its hands now (shown: ripped and not yet thrown), and the visor's glow.
 func rock_lifted() -> bool:
+	_peek()
 	return _rock_shown > 0.5 and _die_t < 0.0
 
 
 func visor_energy() -> float:
+	_peek()
 	return _visor_mat.emission_energy_multiplier
 
 
 ## The rock's centre now, in this node's frame (metres).
 func rock_position() -> Vector3:
+	_peek()
 	return Vector3(_vd[RKX], _vd[RKY], _vd[RKZ])
 
 
@@ -659,6 +669,7 @@ func _locals() -> Array[Transform3D]:
 ## Both hands' grip points now (right, left), in this node's frame, from the drives (no nodes needed: the VAT avatar
 ## holds its rock between the same hands).
 func grip_points() -> Array[Vector3]:
+	_peek()
 	var xs := _locals()
 	var torso_xf := xs[0] * xs[1] * xs[2]
 	var out: Array[Vector3] = []
@@ -674,15 +685,18 @@ func grip_points() -> Array[Vector3]:
 
 ## The rise-in's and the death's sink (m): the whole body's lift VatCrowd moves the instance by.
 func vat_lift() -> float:
+	_peek()
 	return _lift
 
 
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
 ## The visor's glow (climbing and flashing through the lift).
 func glow_energy() -> float:
+	_peek()
 	return _visor_mat.emission_energy_multiplier
 
 

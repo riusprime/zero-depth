@@ -17,7 +17,7 @@ this page and the code win). How to build the library: [`../../native/README.md`
   rewards and every random draw stay GDScript. A kernel never decides what a hit does; it says that a hit happened.
 - **It holds no state of its own.** Between two calls `ZdWorld` keeps only caches derived from the world (§3). The
   hashed truth is the GDScript columns, so the snapshot, the state hash and the views do not know the library exists.
-- **Presentation has its own class**, `ZdCrowd` (`native/src/zd_crowd.h`, `zd_crowd_avatars.cpp`, `zd_avatar.*`):
+- **Presentation has its own class**, `ZdCrowd` (`native/src/zd_crowd.h`, `zd_crowd_avatars.cpp`, `zd_avatar*`):
   the batched enemies' instance writer. It reads only what the views give it and is described in
   [`PRESENTATION_CONTRACTS.md`](PRESENTATION_CONTRACTS.md) §11. It is not a sim kernel.
 
@@ -262,7 +262,7 @@ charging kind whose table has a trail), `BOLT` (the Dim Needle's look, applied i
 | `native/src/zd_strike.{h,cpp}` | `strike`, its entry codes and shapes, `strike_layout` |
 | `native/src/zd_shots.{h,cpp}` | `sweep_shots`, `shot_events`, `shot_t`, `sweep_one` |
 | `native/src/zd_nav.{h,cpp}` | the nav grid cache, `nav_flood`, `nav_dist`, `nav::direction` |
-| `native/src/zd_crowd.{h,cpp}`, `zd_crowd_avatars.cpp`, `zd_avatar.{h,cpp}` | `ZdCrowd`: presentation only ([`PRESENTATION_CONTRACTS.md`](PRESENTATION_CONTRACTS.md) §11) |
+| `native/src/zd_crowd.{h,cpp}`, `zd_crowd_avatars.cpp`, `zd_avatar.{h,cpp}`, `zd_avatar_thrower.cpp` | `ZdCrowd`: presentation only ([`PRESENTATION_CONTRACTS.md`](PRESENTATION_CONTRACTS.md) §11) |
 | `native/src/register_types.cpp` | registers `ZdWorld` and `ZdCrowd` |
 | `native/SConstruct`, `scripts/native/build.sh`, `fetch_bindings.sh` | the build, its float flags, the bindings at `native/GODOT_CPP_COMMIT` |
 | `src/app/native_check.gd` | `NativeCheck`: the game's start without the library: reports `NativeWorld.MISSING`, shows it in a dialog when there is a display, quits with exit code 1 |
