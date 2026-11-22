@@ -2,10 +2,10 @@ class_name BatchAvatars
 extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
 ## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow), RockLurkerAvatar's
-## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow) or ArcCasterAvatar's (BatchArcCaster)
-## fields that change after setup) is a row of packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same
-## arithmetic in the same order) applies each sync, steps each frame and writes VatCrowd's body and shadow instances
-## from the rows: one call each, none per enemy.
+## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow), ArcCasterAvatar's (BatchArcCaster)
+## or ScrapHoundAvatar's (BatchScrapHound) fields that change after setup) is a row of packed doubles here, and
+## ZdCrowd (native/src/zd_avatar*, the same arithmetic in the same order) applies each sync, steps each frame and
+## writes VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
 ## The rows hold the state while `on`; the avatar objects then hold old numbers, except around an event:
 ## - an event on an avatar (a flinch, a hold, a death, a sync or a step called on it: AvatarBase._touch) first copies
 ##   its row into it (pull) and marks it the holder (dirty); its own GDScript runs the event as before, and the batch
@@ -97,6 +97,7 @@ const S_OFF_KEYS := ["pelvis", "neck", "shoulder", "elbow", "wrist", "hip"]
 ## facing (x, y), the sim's lift, flight and recovery ticks; a Needle's and a Sniper's: its HP (the first); a Rock
 ## Lurker's: disguised, rumbling.
 ## A Warden's: its HP, the telegraph's slam radius, whether it gave one (BatchWarden.note).
+## A Scrap Hound's: its HP, whether a hit stopped it (BatchScrapHound.note).
 const MORE := 6
 ## The native classes (zd_avatar.h Class) by kind; 0: none.
 const CHARGER_CLASS := 8
@@ -106,6 +107,7 @@ const WARDEN_CLASS := 12
 const ROCK_LURKER_CLASS := 13
 const SNIPER_CLASS := 14
 const ARC_CASTER_CLASS := 15
+const SCRAP_HOUND_CLASS := 18
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -122,6 +124,7 @@ const CLASS_OF := {
 	WorldReader.KIND_RUBBLE_WARDEN: WARDEN_CLASS,
 	WorldReader.KIND_SNIPER: SNIPER_CLASS,
 	WorldReader.KIND_ARC_CASTER: ARC_CASTER_CLASS,
+	WorldReader.KIND_SCRAP_HOUND: SCRAP_HOUND_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -196,6 +199,9 @@ static func class_of(avatar: AvatarBase) -> int:
 	var ac := avatar as ArcCasterAvatar
 	if ac != null and ac.vat:
 		return ARC_CASTER_CLASS
+	var sh := avatar as ScrapHoundAvatar
+	if sh != null and sh.vat:
+		return SCRAP_HOUND_CLASS
 	return 0
 
 
@@ -389,6 +395,8 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 		)
 		if c == NEEDLE_CLASS or c == SNIPER_CLASS:  # (its sync reads its HP: a hit's flinch)
 			_in_more[k * MORE] = reader.actor_hp(i)
+		elif c == SCRAP_HOUND_CLASS:  # (and whether a hit stopped it: the yelp)
+			BatchScrapHound.note(reader, i, _in_more, k * MORE)
 	if c >= CHARGER_CLASS:
 		var p := reader.actor_pos(i)
 		_in_x[k] = p.x
@@ -603,6 +611,16 @@ func _flush_inputs_in_script() -> void:
 							"windup": _in_windup[k],
 						}
 					)
+				)
+			elif _cls[k] == SCRAP_HOUND_CLASS:
+				BatchScrapHound.apply_in_script(
+					a as ScrapHoundAvatar,
+					_tick,
+					Vector2(_in_x[k], _in_y[k]),
+					_in_state[k],
+					_in_windup[k],
+					_in_more,
+					o
 				)
 			elif _cls[k] >= CHARGER_CLASS:
 				(
@@ -855,6 +873,9 @@ func _export_solo(o: int, a: AvatarBase) -> bool:
 	elif a is ArcCasterAvatar:
 		first = BatchArcCaster.FIRST
 		row = BatchArcCaster.fields(a as ArcCasterAvatar)
+	elif a is ScrapHoundAvatar:
+		first = BatchScrapHound.FIRST
+		row = BatchScrapHound.fields(a as ScrapHoundAvatar)
 	else:
 		return false
 	for q in row.size():
@@ -876,6 +897,8 @@ func _import_solo(o: int, a: AvatarBase) -> bool:
 		)
 	elif a is ArcCasterAvatar:
 		BatchArcCaster.take(a as ArcCasterAvatar, _st, o)
+	elif a is ScrapHoundAvatar:
+		BatchScrapHound.take(a as ScrapHoundAvatar, _st, o)
 	else:
 		return false
 	return true

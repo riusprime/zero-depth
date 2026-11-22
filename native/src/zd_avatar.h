@@ -219,6 +219,28 @@ enum Field {
 	AC_HAVE_FY = 57,
 	AC_HEM_Y = 58, // f32: the robe's waist pivot height (set once)
 	AC_VD = 59, // f32 x23: the raw drives
+	// ScrapHoundAvatar (its own fields from 43 to 80; zd_avatar_scrap_hound.cpp)
+	SH_GLOW = 43, // the visor's glow (the instance's accent glow)
+	SH_LIFT = 44,
+	SH_STATE = 45,
+	SH_TELL = 46,
+	SH_HP = 47,
+	SH_SPEED = 48,
+	SH_GALLOP = 49,
+	SH_PHASE = 50,
+	SH_YAW = 51,
+	SH_TURN = 52,
+	SH_BANK = 53,
+	SH_LAST_H = 54,
+	SH_HAVE_H = 55,
+	SH_COIL = 56,
+	SH_DART = 57,
+	SH_RISE = 58,
+	SH_BITE = 59,
+	SH_YELP = 60,
+	SH_HURT = 61,
+	SH_DIE = 62,
+	SH_VD = 63, // f32 x18: the raw drives
 	STRIDE = 124,
 };
 
@@ -240,6 +262,7 @@ enum Class {
 	ROCK_LURKER = 13,
 	SNIPER_MODEL = 14, // the owner's model (SniperAvatar); SNIPER is its old horde body
 	ARC_CASTER = 15,
+	SCRAP_HOUND = 18,
 };
 
 inline bool is_charger(int c) {
@@ -343,6 +366,12 @@ int w_drives(const double *s, float *out);
 void ac_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const Ctx &c);
 void ac_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int ac_drives(const double *s, float *out);
+// The Scrap Hound (zd_avatar_scrap_hound.cpp): its sync (`more`: its HP, whether a hit stopped it), frame step (the
+// pose included; the facing's turn from `f`) and drives.
+void sh_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void sh_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int sh_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,
