@@ -340,3 +340,25 @@ is not made: it is reported, and the owner decides. Proof: still frames before a
 Order: the three at once (three Opus agents, one Godot process each). Their timings overlap each other's runs, so each
 reports indications; the lead measures the merged tree once on a quiet machine (`floor_fight_probe.gd` with
 `--perf-log`, before and after), and the owner's next log is the real result.
+
+## The heavy fights: the model enemies into the batch (owner, 2026-11-22)
+
+Asked what costs most when the frame rate drops, not on average ("during heavy loads when the fps drop what takes the
+highest, maybe we can targert the problem better like that, before doing these big rewrites"), the lead split the slow
+frames of the owner's log and reproduced the fight (`evidence/HEAVY_FIGHTS.md`). The slow frames are the Night Rocks
+fights with about 42 enemies, at 18.2 ms. The same 42 enemies cost 14.1 ms a frame as batched kinds and 21.7 ms as
+the owner's model kinds (a node tree and a script avatar each). The estimated saving from moving them into the batch
+is 3-5 ms in such a fight. Asked to go ahead, the owner: "yes, go ahead moving the model enemies into the C++ batch, is
+there anything else from our findings?"
+
+The rule of the processor pass stands: nothing the player sees, hears or feels changes. The proof is the batch's own
+(PRESENTATION_CONTRACTS §11.5): the twin probe against a node enemy, the native writer against the GDScript one bit for
+bit, still frames before and after.
+
+| Step | What | Agent |
+|---|---|---|
+| 51 | **The Stone Thrower into the batch, then measured.** First its avatar stops reading the tree (global transforms, timers) and it joins `EnemyBatch.KINDS` on the GDScript path. That takes its nodes out of the tree, and it is checked by the twin probe. Then its frame step, sync and pose run in `ZdCrowd`, ported line by line in the same float width, and checked bit for bit against the GDScript. The 42-model-enemy run is measured before and after each half. The other model kinds (Needle, Warden, Rock Lurker, then the other biomes') follow one kind a step, once this one's numbers are in | Opus |
+| 52 | **The smaller named costs, in script.** From the same runs: the audio director's sync (0.44 ms a tick in the owner's log), the telegraphs view (0.25 ms), the DPS meter, the game cursor and the HUD panels still over about 50 µs. Each one does the same work cheaper, or skips work that changes nothing | Opus |
+
+Order: the two at once (one Godot process each). Step 52 does not touch the avatars, `EnemyBatch`, `BatchAvatars`,
+`VatCrowd`, `ActorViews`, `RuinsRocksViews` or `native/`.
