@@ -3,7 +3,8 @@ extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
 ## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow), RockLurkerAvatar's
 ## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow), ArcCasterAvatar's (BatchArcCaster),
-## LensDroneAvatar's (BatchLensDrone), BombDroneAvatar's (BatchBombDrone) or ScrapHoundAvatar's (BatchScrapHound)
+## LensDroneAvatar's (BatchLensDrone), BombDroneAvatar's (BatchBombDrone), ScrapHoundAvatar's (BatchScrapHound) or
+## KilnBeetleAvatar's (BatchKilnBeetle)
 ## fields that change after setup) is a row of packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same
 ## arithmetic in the same order) applies each sync, steps each frame and writes VatCrowd's body and shadow instances
 ## from the rows: one call each, none per enemy.
@@ -110,6 +111,7 @@ const ARC_CASTER_CLASS := 15
 const LENS_DRONE_CLASS := 17
 const BOMB_DRONE_CLASS := 16
 const SCRAP_HOUND_CLASS := 18
+const KILN_BEETLE_CLASS := 19
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -129,6 +131,7 @@ const CLASS_OF := {
 	WorldReader.KIND_LENS_DRONE: LENS_DRONE_CLASS,
 	WorldReader.KIND_BOMB_DRONE: BOMB_DRONE_CLASS,
 	WorldReader.KIND_SCRAP_HOUND: SCRAP_HOUND_CLASS,
+	WorldReader.KIND_KILN_BEETLE: KILN_BEETLE_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -211,6 +214,9 @@ static func class_of(avatar: AvatarBase) -> int:
 		return BOMB_DRONE_CLASS
 	if avatar is ScrapHoundAvatar and (avatar as ScrapHoundAvatar).vat:
 		return SCRAP_HOUND_CLASS
+	var kb := avatar as KilnBeetleAvatar
+	if kb != null and kb.vat:
+		return KILN_BEETLE_CLASS
 	return 0
 
 
@@ -406,6 +412,9 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 			_in_more[k * MORE] = reader.actor_hp(i)
 		elif c == SCRAP_HOUND_CLASS:  # (and whether a hit stopped it: the yelp)
 			BatchScrapHound.note(reader, i, _in_more, k * MORE)
+		elif c == KILN_BEETLE_CLASS:  # (its HP and full HP: a hit's scrabble, the heat)
+			_in_more[k * MORE] = reader.actor_hp(i)
+			_in_more[k * MORE + 1] = reader.actor_max_hp(i)
 	if c >= CHARGER_CLASS:
 		var p := reader.actor_pos(i)
 		_in_x[k] = p.x
@@ -611,6 +620,12 @@ func _flush_inputs_in_script() -> void:
 				)
 			elif _cls[k] == LENS_DRONE_CLASS:
 				BatchLensDrone.apply_in_script(a as LensDroneAvatar, _tick, _in_state[k])
+			elif _cls[k] == KILN_BEETLE_CLASS:
+				var kb := a as KilnBeetleAvatar
+				var p := Vector2(_in_x[k], _in_y[k])
+				BatchKilnBeetle.apply_in_script(
+					kb, _tick, p, _in_state[k], _in_windup[k], _in_more, o
+				)
 			elif _cls[k] == ARC_CASTER_CLASS:
 				(
 					(a as ArcCasterAvatar)
@@ -894,6 +909,9 @@ func _export_solo(o: int, a: AvatarBase) -> bool:
 	elif a is ScrapHoundAvatar:
 		first = BatchScrapHound.FIRST
 		row = BatchScrapHound.fields(a as ScrapHoundAvatar)
+	elif a is KilnBeetleAvatar:
+		first = BatchKilnBeetle.FIRST
+		row = BatchKilnBeetle.fields(a as KilnBeetleAvatar)
 	else:
 		return false
 	for q in row.size():
@@ -921,6 +939,8 @@ func _import_solo(o: int, a: AvatarBase) -> bool:
 		BatchBombDrone.take(a as BombDroneAvatar, _st, o)
 	elif a is ScrapHoundAvatar:
 		BatchScrapHound.take(a as ScrapHoundAvatar, _st, o)
+	elif a is KilnBeetleAvatar:
+		BatchKilnBeetle.take(a as KilnBeetleAvatar, _st, o)
 	else:
 		return false
 	return true
