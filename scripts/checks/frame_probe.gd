@@ -51,6 +51,7 @@ const ENEMIES := 20
 ## The build (the default cards, --heavy, --cards=<id[:level],...>): scripts/checks/probe_build.gd.
 const ProbeBuild := preload("res://scripts/checks/probe_build.gd")
 const LightCensus := preload("res://scripts/checks/light_census.gd")
+const ProcessCensus := preload("res://scripts/checks/process_census.gd")
 ## v0.10.5 O12: the pack families the hero's own effects use (enemy_shot is the hostile one).
 const HERO_PACK_FAMILIES: Array[StringName] = [
 	&"hit",
@@ -134,6 +135,12 @@ var _lights := LightCensus.new()  # --fx: the rings and lights a frame
 var _fx := false  # --fx (O12)
 var _fx_rows := {}  # counter name -> PackedFloat64Array, one value per measured frame
 var _spans := FrameSpans.new()
+## --weapon=<build id>: the Playground build the hero holds (gun, blade); the Blade takes --cards (the default
+## build is the Gun's).
+var _weapon := &"gun"
+## --proc-census: what the engine processes each frame, counted once halfway through the measure (process_census.gd).
+var _pcensus := false
+var _pcensus_lines: PackedStringArray = []
 
 
 func _initialize() -> void:
@@ -160,6 +167,10 @@ func _initialize() -> void:
 			pass
 		elif s == "fx":
 			_fx = true
+		elif s.begins_with("weapon="):
+			_weapon = StringName(s.trim_prefix("weapon="))
+		elif s == "proc-census":
+			_pcensus = true
 		elif s == "process":
 			_bd = true
 			_proc = true
@@ -225,6 +236,8 @@ func _process(delta: float) -> bool:
 			_frames.append(dt_ms)
 			if _fx:
 				_count_fx()
+			if _pcensus and _pcensus_lines.is_empty() and (now - _t0) >= int(_secs * 0.5e6):
+				_pcensus_lines = ProcessCensus.lines(root)
 			var vp := root.get_viewport_rid()
 			_cpu += RenderingServer.viewport_get_measured_render_time_cpu(vp)
 			_gpu += RenderingServer.viewport_get_measured_render_time_gpu(vp)
@@ -261,7 +274,7 @@ func _next_biome() -> void:
 		_restore()
 		quit(0)
 		return
-	_main._start_playground(&"gun", StringName(_biomes[_bi]))
+	_main._start_playground(_weapon, StringName(_biomes[_bi]))
 	_phase = &"settle"
 	_frame = 0
 
@@ -538,8 +551,8 @@ func _finish_biome() -> void:
 		lines
 		. append(
 			(
-				"scenario: Playground room seed 4404, Gun, %d live enemies, warm-up %.1f s, measured %.1f s"
-				% [_enemies, _warm, _secs]
+				"scenario: Playground room seed 4404, %s, %d live enemies, warm-up %.1f s, measured %.1f s"
+				% [_weapon, _enemies, _warm, _secs]
 			)
 		)
 	)
@@ -612,12 +625,16 @@ func _finish_biome() -> void:
 		lines.append_array(_census_lines())
 	if _bd:
 		lines.append_array(_class_histogram())
+	lines.append_array(_pcensus_lines)
+	_pcensus_lines = []
 	if _bd or _spans.on or _spans.redraws:
 		lines.append_array(_breakdown_lines())
 	lines.append_array(_spans.report_lines(_bk))
 	var text := "\n".join(lines) + "\n"
 	print(text)
 	var tag := "" if _ab.is_empty() else "_ab-" + "-".join(_ab)
+	if _weapon != &"gun":
+		tag += "_" + String(_weapon)
 	if _build.heavy or _enemies != ENEMIES:
 		tag += "_heavy%d" % _enemies
 	if _build.exact:

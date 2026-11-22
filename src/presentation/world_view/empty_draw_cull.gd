@@ -99,7 +99,15 @@ func _process(_delta: float) -> void:
 			_told.remove_at(k)
 			continue
 		if n.is_inside_tree() and n.is_visible_in_tree():
-			var want := TOLD_HIDDEN if is_empty(n) else TOLD_SHOWN
+			# is_empty's test, inline and with the count read first (a pool showing none needs no mesh read):
+			# this loop runs over every pool every frame, and the call and the reads were most of its time
+			var mm := n.multimesh
+			var empty := true
+			if mm != null:
+				var shown := mm.visible_instance_count
+				if shown != 0:
+					empty = mm.mesh == null or (shown < 0 and mm.instance_count == 0)
+			var want := TOLD_HIDDEN if empty else TOLD_SHOWN
 			if _told[k] != want:
 				RenderingServer.instance_set_visible(n.get_instance(), want == TOLD_SHOWN)
 				_told[k] = want

@@ -208,11 +208,17 @@ func _process(_delta: float) -> void:
 	shadows_drawn = 0
 	var native := _write_native()
 	for s: Dictionary in _looks.values():
-		if not native.has(s["index"]):
+		if not native.has(s["index"]) and not _idle(s):
 			drawn += _write(s, true)
 	for s: Dictionary in _shadows.values():
-		if not native.has(s["index"]):
+		if not native.has(s["index"]) and not _idle(s):
 			shadows_drawn += _write(s, false)
+
+
+## A set with no enemy left that already shows none: writing it again would change nothing (its MultiMesh shows 0
+## instances and its buffers are not read while none are shown).
+static func _idle(s: Dictionary) -> bool:
+	return (s["entries"] as Array).is_empty() and int(s["drawn"]) == 0
 
 
 ## The sets of batched enemies only, written by the batch's native avatars in one call (EnemyBatch.write_bodies),
@@ -370,8 +376,10 @@ func _write(s: Dictionary, body: bool) -> int:
 ## The drive texture of set `s` (`texels` wide, a row per instance of its capacity) from `dbuf`; a new
 ## texture (given to the material) when the capacity grew.
 func _upload_drives(s: Dictionary, dbuf: PackedFloat32Array, texels: int, rows: int) -> void:
+	var want := texels * rows * 4
+	var floats := dbuf if dbuf.size() == want else dbuf.slice(0, want)  # (a copy only when it is longer)
 	var img := Image.create_from_data(
-		texels, rows, false, Image.FORMAT_RGBAF, dbuf.slice(0, texels * rows * 4).to_byte_array()
+		texels, rows, false, Image.FORMAT_RGBAF, floats.to_byte_array()
 	)
 	var tex: ImageTexture = s.get("dtex")
 	if tex != null and tex.get_height() == rows:
