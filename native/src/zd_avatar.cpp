@@ -1,3 +1,7 @@
+// AvatarBase's shared code on a batch row (its clocks, hold, flinch, strike and tell, the engine's sine and cosine,
+// the Basis builders, the row's transforms) and the avatars of the horde kinds (HordeAvatar) and the Chargers
+// (ChargerAvatar). Which class's code runs a slot is zd_avatar_dispatch.cpp's.
+
 #include "zd_avatar.h"
 
 #include <cmath>
@@ -145,12 +149,6 @@ double consume_hold(double *s, double delta) {
 	const double used = mind(s[HOLD], maxd(delta, 0.0));
 	s[HOLD] -= used;
 	return delta - used;
-}
-
-// _flinch_pivot(): the height the flinch leans about (a hovering body about itself: the Lens Drone's 1.3, the
-// Bomb Drone's HOVER_Y; 0 for the others).
-float flinch_pivot(int cls) {
-	return cls == LENS_DRONE ? 1.3f : (cls == BOMB_DRONE ? 1.8f : 0.0f);
 }
 
 void advance_flinch(double *s, int cls, double delta, const Frame &f) {
@@ -441,6 +439,8 @@ Vector3 view_position(const double *s, const Frame &f) {
 	return xf.origin;
 }
 
+} // namespace
+
 void h_advance(double *s, int c, double delta, const Frame &f, const Ctx &cx) {
 	const double dt = clampd(delta, 0.0, 0.05);
 	if (dt <= 0.0) {
@@ -512,6 +512,8 @@ void h_advance(double *s, int c, double delta, const Frame &f, const Ctx &cx) {
 	h_pose(s, c, cx);
 }
 
+namespace {
+
 // --- ChargerAvatar ---
 
 void c_pose(double *s, const Ctx &cx) {
@@ -543,6 +545,8 @@ void c_pose(double *s, const Ctx &cx) {
 	}
 }
 
+} // namespace
+
 void c_advance(double *s, double delta, const Ctx &cx) {
 	const double dt = clampd(delta, 0.0, 0.05);
 	if (dt <= 0.0) {
@@ -568,6 +572,8 @@ void c_advance(double *s, double delta, const Ctx &cx) {
 	s[C_PHASE] += mind(s[C_SPEED] / STRIDE_M, MAX_CYCLES) * TAU_D * dt;
 	c_pose(s, cx);
 }
+
+namespace {
 
 inline double loop(double u) {
 	return u - std::floor(u);
@@ -659,152 +665,7 @@ Basis euler_yxz(const Vector3 &e) {
 	return ymat * xmat * zmat;
 }
 
-void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
-	if (cls == STONE_THROWER) {
-		s_advance(s, delta, c);
-	} else if (cls == NEEDLE) {
-		n_advance(s, delta, f, c);
-	} else if (cls == ROCK_LURKER) {
-		l_advance(s, delta, c);
-	} else if (cls == WARDEN) {
-		w_advance(s, delta, f, c);
-	} else if (cls == SNIPER_MODEL) {
-		sn_advance(s, delta, f, c);
-	} else if (cls == ARC_CASTER) {
-		ac_advance(s, delta, f, c);
-	} else if (cls == LENS_DRONE) {
-		ld_advance(s, delta, c);
-	} else if (cls == BOMB_DRONE) {
-		bd_advance(s, delta, f, c);
-	} else if (cls == SCRAP_HOUND) {
-		sh_advance(s, delta, f, c);
-	} else if (cls == KILN_BEETLE) {
-		kb_advance(s, delta, f, c);
-	} else if (cls == CINDER_PRIEST) {
-		cp_advance(s, delta, c);
-	} else if (cls == FROST_SPITTER) {
-		fs_advance(s, delta, f, c);
-	} else if (cls == GLACIER_TURTLE) {
-		gt_advance(s, delta, f, c);
-	} else if (cls == WIRE_WEAVER) {
-		ww_advance(s, delta, f, c);
-	} else if (cls == GRAVITY_NODE) {
-		gn_advance(s, delta, f, c);
-	} else if (cls == STAR_WARPER) {
-		sw_advance(s, delta, f, c);
-	} else if (is_charger(cls)) {
-		c_advance(s, delta, c);
-	} else if (cls != NONE) {
-		h_advance(s, cls, delta, f, c);
-	}
-}
-
-void process(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
-	const double dt = consume_hold(s, delta);
-	if (dt > 0.0) {
-		advance(s, cls, dt, f, c);
-		advance_flinch(s, cls, dt, f);
-	}
-}
-
-void apply(double *s, int cls, int64_t tick, int state, bool healing, double windup, float pos_x, float pos_y,
-		const double *more, const Ctx &c) {
-	if (cls == STONE_THROWER) {
-		s_apply(s, tick, state, pos_x, pos_y, more, c);
-		return;
-	}
-	if (cls == NEEDLE) {
-		n_apply(s, tick, state, windup, pos_x, pos_y, more, c);
-		return;
-	}
-	if (cls == ROCK_LURKER) {
-		l_apply(s, tick, state, windup, pos_x, pos_y, more, c);
-		return;
-	}
-	if (cls == WARDEN) {
-		w_apply(s, tick, state, windup, pos_x, pos_y, more, c);
-		return;
-	}
-	if (cls == SNIPER_MODEL) {
-		sn_apply(s, tick, state, windup, pos_x, pos_y, more, c);
-		return;
-	}
-	if (cls == ARC_CASTER) {
-		ac_apply(s, tick, state, windup, pos_x, pos_y, c);
-		return;
-	}
-	if (cls == LENS_DRONE) {
-		ld_apply(s, state, c);
-		return;
-	}
-	if (cls == BOMB_DRONE) {
-		bd_apply(s, tick, state, pos_x, pos_y, more, c);
-		return;
-	}
-	if (cls == SCRAP_HOUND) {
-		sh_apply(s, tick, state, windup, pos_x, pos_y, more, c);
-		return;
-	}
-	if (cls == KILN_BEETLE) {
-		kb_apply(s, tick, state, windup, pos_x, pos_y, more, c);
-		return;
-	}
-	if (cls == CINDER_PRIEST) {
-		cp_apply(s, tick, state, pos_x, pos_y, more, c);
-		return;
-	}
-	if (cls == FROST_SPITTER) {
-		fs_apply(s, tick, state, windup, pos_x, pos_y, more, c);
-		return;
-	}
-	if (cls == GLACIER_TURTLE) {
-		gt_apply(s, tick, state, windup, pos_x, pos_y, more, c);
-		return;
-	}
-	if (cls == WIRE_WEAVER) {
-		ww_apply(s, tick, state, windup, pos_x, pos_y, more, c);
-		return;
-	}
-	if (cls == GRAVITY_NODE) {
-		gn_apply(s, state, more, c);
-		return;
-	}
-	if (cls == STAR_WARPER) {
-		sw_apply(s, tick, state, windup, pos_x, pos_y, more, c);
-		return;
-	}
-	if (is_charger(cls)) {
-		s[C_TELL] = clampd(windup, 0.0, 1.0);
-		// _track_motion(tick, pos, TELEPORT_SPEED)
-		const bool fresh = s[FRESH] != 0.0;
-		const int64_t last = int64_t(s[LAST_TICK]);
-		if (!fresh && tick > last) {
-			const Vector2 v = (Vector2(pos_x, pos_y) - Vector2(f32(s[LAST_PX]), f32(s[LAST_PY]))) *
-					f32(60.0 / double(tick - last));
-			const bool keep = double(v.length()) <= TELEPORT_SPEED && tick - last <= MOTION_GAP_TICKS;
-			s[VEL_X] = keep ? v.x : 0.0f;
-			s[VEL_Y] = keep ? v.y : 0.0f;
-		} else if (tick < last) {
-			s[VEL_X] = 0.0;
-			s[VEL_Y] = 0.0;
-		}
-		s[LAST_TICK] = double(tick);
-		s[LAST_PX] = pos_x;
-		s[LAST_PY] = pos_y;
-		const int prev = int(s[C_STATE]);
-		s[C_STATE] = state;
-		strike_note(s, state, c.st);
-		if (state == c.st.spawn) {
-			s[C_RISE] = 0.0;
-		} else if (fresh && prev != c.st.spawn) {
-			s[C_RISE] = 1.0;
-		}
-		s[FRESH] = 0.0;
-		return;
-	}
-	if (cls == NONE) {
-		return;
-	}
+void h_apply(double *s, int cls, int64_t tick, int state, bool healing, double windup, const Ctx &c) {
 	s[H_HEALING] = healing ? 1.0 : 0.0;
 	s[H_TELL] = clampd(windup, 0.0, 1.0);
 	const bool fresh = s[FRESH] != 0.0;
@@ -821,182 +682,36 @@ void apply(double *s, int cls, int64_t tick, int state, bool healing, double win
 	}
 }
 
-double glow_energy(const double *s, int cls) {
-	if (cls == STONE_THROWER) {
-		return s[S_VISOR];
+void c_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const Ctx &c) {
+	s[C_TELL] = clampd(windup, 0.0, 1.0);
+	// _track_motion(tick, pos, TELEPORT_SPEED)
+	const bool fresh = s[FRESH] != 0.0;
+	const int64_t last = int64_t(s[LAST_TICK]);
+	if (!fresh && tick > last) {
+		const Vector2 v = (Vector2(pos_x, pos_y) - Vector2(f32(s[LAST_PX]), f32(s[LAST_PY]))) *
+				f32(60.0 / double(tick - last));
+		const bool keep = double(v.length()) <= TELEPORT_SPEED && tick - last <= MOTION_GAP_TICKS;
+		s[VEL_X] = keep ? v.x : 0.0f;
+		s[VEL_Y] = keep ? v.y : 0.0f;
+	} else if (tick < last) {
+		s[VEL_X] = 0.0;
+		s[VEL_Y] = 0.0;
 	}
-	if (cls == NEEDLE) {
-		return s[N_GEM];
+	s[LAST_TICK] = double(tick);
+	s[LAST_PX] = pos_x;
+	s[LAST_PY] = pos_y;
+	const int prev = int(s[C_STATE]);
+	s[C_STATE] = state;
+	strike_note(s, state, c.st);
+	if (state == c.st.spawn) {
+		s[C_RISE] = 0.0;
+	} else if (fresh && prev != c.st.spawn) {
+		s[C_RISE] = 1.0;
 	}
-	if (cls == ROCK_LURKER) {
-		return s[L_VISOR];
-	}
-	if (cls == WARDEN) {
-		return s[W_CRACK];
-	}
-	if (cls == SNIPER_MODEL) {
-		return s[SN_LENS];
-	}
-	if (cls == ARC_CASTER) {
-		return s[AC_CRYSTAL];
-	}
-	if (cls == LENS_DRONE) {
-		return s[LD_EYE];
-	}
-	if (cls == BOMB_DRONE) {
-		return s[BD_VISOR];
-	}
-	if (cls == SCRAP_HOUND) {
-		return s[SH_GLOW];
-	}
-	if (cls == KILN_BEETLE) {
-		return s[KB_HEAT_GLOW];
-	}
-	if (cls == CINDER_PRIEST) {
-		return s[CP_CRYSTAL];
-	}
-	if (cls == FROST_SPITTER) {
-		return s[FS_SAC_GLOW];
-	}
-	if (cls == GLACIER_TURTLE) {
-		return s[GT_VISOR];
-	}
-	if (cls == WIRE_WEAVER) {
-		return s[WW_SPARK];
-	}
-	if (cls == GRAVITY_NODE) {
-		return s[GN_CORE_GLOW];
-	}
-	if (cls == STAR_WARPER) {
-		return s[SW_SHARD_GLOW];
-	}
-	return is_charger(cls) ? s[C_VISOR] : s[H_GLOW];
+	s[FRESH] = 0.0;
 }
 
-Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
-	if (cls == STONE_THROWER) {
-		return xf.translated_local(Vector3(0.0f, f32(s[S_LIFT]), 0.0f));
-	}
-	if (cls == NEEDLE) {
-		return xf.translated_local(Vector3(0.0f, f32(s[N_LIFT]), 0.0f));
-	}
-	if (cls == ROCK_LURKER) {
-		return xf.translated_local(Vector3(0.0f, f32(s[L_LIFT]), 0.0f));
-	}
-	if (cls == WARDEN) {
-		return xf.translated_local(Vector3(0.0f, f32(s[W_LIFT]), 0.0f));
-	}
-	if (cls == SNIPER_MODEL) {
-		return xf.translated_local(Vector3(0.0f, f32(s[SN_LIFT]), 0.0f));
-	}
-	if (cls == ARC_CASTER) {
-		return xf.translated_local(Vector3(0.0f, f32(s[AC_LIFT]), 0.0f));
-	}
-	if (cls == LENS_DRONE) {
-		return xf.translated_local(Vector3(0.0f, f32(s[LD_LIFT]), 0.0f));
-	}
-	if (cls == BOMB_DRONE) {
-		return xf.translated_local(Vector3(0.0f, f32(s[BD_LIFT]), 0.0f));
-	}
-	if (cls == SCRAP_HOUND) {
-		return xf.translated_local(Vector3(0.0f, f32(s[SH_LIFT]), 0.0f));
-	}
-	if (cls == KILN_BEETLE) {
-		return xf.translated_local(Vector3(0.0f, f32(s[KB_LIFT]), 0.0f));
-	}
-	if (cls == CINDER_PRIEST) {
-		return xf.translated_local(Vector3(0.0f, f32(s[CP_LIFT]), 0.0f));
-	}
-	if (cls == FROST_SPITTER) {
-		return xf.translated_local(Vector3(0.0f, f32(s[FS_LIFT]), 0.0f));
-	}
-	if (cls == GLACIER_TURTLE) {
-		return xf.translated_local(Vector3(0.0f, f32(s[GT_LIFT]), 0.0f));
-	}
-	if (cls == WIRE_WEAVER) {
-		return xf.translated_local(Vector3(0.0f, f32(s[WW_LIFT]), 0.0f));
-	}
-	if (cls == GRAVITY_NODE) {
-		return xf.translated_local(Vector3(0.0f, f32(s[GN_LIFT]), 0.0f));
-	}
-	if (cls == STAR_WARPER) {
-		return xf.translated_local(Vector3(0.0f, f32(s[SW_LIFT]), 0.0f));
-	}
-	if (is_charger(cls)) {
-		return xf.translated_local(Vector3(0.0f, f32(s[C_LIFT]), 0.0f));
-	}
-	if (cls == SWARMER && s[H_IS_MODEL] == 0.0) {
-		return xf * Transform3D(Basis(), Vector3(0.0f, f32(s[H_LIFT]), 0.0f));
-	}
-	return xf * get_xf(s, H_BODY);
-}
-
-int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
-	if (cls == STONE_THROWER) {
-		return s_drives(s, out);
-	}
-	if (cls == NEEDLE) {
-		return n_drives(s, out);
-	}
-	if (cls == ROCK_LURKER) {
-		return l_drives(s, out);
-	}
-	if (cls == WARDEN) {
-		return w_drives(s, out);
-	}
-	if (cls == SNIPER_MODEL) {
-		return sn_drives(s, out);
-	}
-	if (cls == ARC_CASTER) {
-		return ac_drives(s, out);
-	}
-	if (cls == LENS_DRONE) {
-		return ld_drives(s, out);
-	}
-	if (cls == BOMB_DRONE) {
-		return bd_drives(s, out);
-	}
-	if (cls == SCRAP_HOUND) {
-		return sh_drives(s, out);
-	}
-	if (cls == KILN_BEETLE) {
-		return kb_drives(s, out);
-	}
-	if (cls == CINDER_PRIEST) {
-		return cp_drives(s, out);
-	}
-	if (cls == FROST_SPITTER) {
-		return fs_drives(s, out);
-	}
-	if (cls == GLACIER_TURTLE) {
-		return gt_drives(s, out);
-	}
-	if (cls == WIRE_WEAVER) {
-		return ww_drives(s, out);
-	}
-	if (cls == GRAVITY_NODE) {
-		return gn_drives(s, out);
-	}
-	if (cls == STAR_WARPER) {
-		return sw_drives(s, out);
-	}
-	if (is_charger(cls)) {
-		const double t = s[T];
-		out[0] = f32(s[C_WIND]);
-		out[1] = f32(s[C_LUNGE_NOW]);
-		out[2] = f32(s[C_DAZE]);
-		out[3] = f32(loop(s[C_PHASE] / TAU_D));
-		out[4] = f32(s[C_WALK]);
-		out[5] = f32(s[C_CROUCH_NOW]);
-		out[6] = f32(s[C_RISE_NOW]);
-		const double lo = BODY_Y_LO;
-		out[7] = f32((s[C_Y_NOW] - lo) / (BODY_Y_HI - lo));
-		out[8] = f32(loop(t * 0.9 / TAU_D));
-		out[9] = f32((1.0 - s[C_WALK]) * (1.0 - s[C_WIND]));
-		out[10] = f32(loop(t * 9.0 / TAU_D));
-		out[11] = f32(s[C_DIE] >= 0.0 ? clampd(s[C_DIE] / HATCH_DEATH_SECONDS, 0.0, 1.0) : 0.0);
-		return 12;
-	}
+int h_drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 	if (cls == SWARMER && s[H_IS_MODEL] == 0.0) {
 		out[0] = f32(clampd(s[H_WIND], 0.0, 1.0));
 		out[1] = f32(clampd(s[H_STRIKE], 0.0, 1.0));
@@ -1017,6 +732,32 @@ int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 		return 5;
 	}
 	return 4;
+}
+
+int c_drives(const double *s, float *out) {
+	const double t = s[T];
+	out[0] = f32(s[C_WIND]);
+	out[1] = f32(s[C_LUNGE_NOW]);
+	out[2] = f32(s[C_DAZE]);
+	out[3] = f32(loop(s[C_PHASE] / TAU_D));
+	out[4] = f32(s[C_WALK]);
+	out[5] = f32(s[C_CROUCH_NOW]);
+	out[6] = f32(s[C_RISE_NOW]);
+	const double lo = BODY_Y_LO;
+	out[7] = f32((s[C_Y_NOW] - lo) / (BODY_Y_HI - lo));
+	out[8] = f32(loop(t * 0.9 / TAU_D));
+	out[9] = f32((1.0 - s[C_WALK]) * (1.0 - s[C_WIND]));
+	out[10] = f32(loop(t * 9.0 / TAU_D));
+	out[11] = f32(s[C_DIE] >= 0.0 ? clampd(s[C_DIE] / HATCH_DEATH_SECONDS, 0.0, 1.0) : 0.0);
+	return 12;
+}
+
+void process(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
+	const double dt = consume_hold(s, delta);
+	if (dt > 0.0) {
+		advance(s, cls, dt, f, c);
+		advance_flinch(s, cls, dt, f);
+	}
 }
 
 double sin_d(double x) {

@@ -497,12 +497,25 @@ void put_xf(double *s, int at, const godot::Transform3D &xf);
 
 // AvatarBase._process (consume_hold, advance, advance_flinch) for a native class.
 void process(double *s, int cls, double delta, const Frame &f, const Ctx &c);
-// HordeAvatar.advance / ChargerAvatar.advance.
+// The class's frame step and sync, dispatched per class (zd_avatar_dispatch.cpp, with glow_energy, body_offset,
+// drives and flinch_pivot): HordeAvatar.advance / ChargerAvatar.advance / a model kind's own.
 void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c);
 // HordeAvatar._apply / ChargerAvatar.apply_state / StoneThrowerAvatar.apply_state (`pos`: the sim place, the
 // Charger's and the Stone Thrower's motion; `more`: the Stone Thrower's MORE inputs).
 void apply(double *s, int cls, int64_t tick, int state, bool healing, double windup, float pos_x, float pos_y,
 		const double *more, const Ctx &c);
+// AvatarBase._flinch_pivot: the height the class's flinch leans about.
+float flinch_pivot(int cls);
+
+// The horde kinds (HordeAvatar, zd_avatar.cpp): their frame step (the pose included), sync and drives.
+void h_advance(double *s, int c, double delta, const Frame &f, const Ctx &cx);
+void h_apply(double *s, int cls, int64_t tick, int state, bool healing, double windup, const Ctx &c);
+int h_drives(const double *s, int cls, double period, const Ctx &c, float *out);
+// The Charger and the Hatchling (ChargerAvatar, zd_avatar.cpp): their frame step (the pose included), sync (`pos`:
+// the sim place, for the motion) and drives (ChargerVat.DRIVES).
+void c_advance(double *s, double delta, const Ctx &cx);
+void c_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const Ctx &c);
+int c_drives(const double *s, float *out);
 
 // AvatarBase's helpers the classes share (zd_avatar.cpp): the engine's double sine and cosine, the flinch's envelope,
 // the tell's glow, an exponential ease's share.
