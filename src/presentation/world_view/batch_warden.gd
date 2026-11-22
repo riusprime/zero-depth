@@ -3,11 +3,9 @@ extends RefCounted
 ## The Warden in the enemy batch (EnemyBatch, BatchAvatars): its own fields in its batch row (the W_* columns,
 ## native/src/zd_avatar.h: the same numbers; ZdCrowd runs its sync, frame step and pose in zd_avatar_warden.cpp), its
 ## sync's extra inputs, and its slam's dust ring kept in the tree. The ring is the one node of a VAT Warden's that is
-## drawn as a node (SoloVat.LIVE): a batched Warden's root is outside the tree, so the ring hangs from nodes in the tree
-## that stand as the root, the facing and the avatar stood (the batch's anchor, moved and interpolated as the root was;
-## a copy of the facing's transform, interpolated as it was; the avatar's transform, not interpolated, as the avatar
-## was not), so the engine draws it where it drew the node Warden's. The Rubble Warden's crust (VariantLooks.dress: a
-## node under its facing) hangs from the facing's copy the same way. Presentation only (EI-07).
+## drawn as a node (SoloVat.LIVE): it hangs from the avatar's copy in BatchHeld's holder (the root's place, the facing,
+## the avatar), so the engine draws it where it drew the node Warden's. The Rubble Warden's crust (VariantLooks.dress:
+## a node under its facing) hangs from the facing's copy the same way. Presentation only (EI-07).
 
 ## The Warden's fields in its row (zd_avatar.h W_*), from W_CRACK on.
 const W_CRACK := 43
@@ -141,54 +139,34 @@ static func apply_in_script(
 	)
 
 
-## Batched Warden `id`'s dust ring into the tree: under the batch's anchor for it, a copy of its facing and its avatar's
-## transform. Returns the holder [facing copy, avatar copy, avatar, root, facing].
+## Batched Warden `id`'s dust ring into the tree, under the avatar's copy in its holder (BatchHeld.hold), and the
+## Rubble Warden's crust under the facing's copy.
 static func hold(
 	batch: EnemyBatch, id: int, w: WardenAvatar, root: Node3D, facing: Node3D
 ) -> Array:
-	var turn := Node3D.new()
-	turn.name = "Facing"
-	turn.transform = facing.transform
-	batch.anchor(id).add_child(turn)
-	var body := Node3D.new()
-	body.name = "Avatar"
-	body.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # (as the avatar's own)
-	body.transform = w.transform
-	turn.add_child(body)
+	var h := BatchHeld.hold(batch, id, w, root, facing)
 	w.remove_child(w.dust)
-	body.add_child(w.dust)
+	(h[BatchHeld.BODY] as Node3D).add_child(w.dust)
 	if root.has_meta(&"crust"):  # The Rubble Warden's, where it hung from the facing
 		var crust: Node3D = root.get_meta(&"crust")
 		facing.remove_child(crust)
-		turn.add_child(crust)
-	var h := [turn, body, w, root, facing]
-	follow(h)
+		(h[BatchHeld.TURN] as Node3D).add_child(crust)
+	BatchHeld.follow(h)
 	return h
 
 
-## The facing's transform and the shown flags copied when they changed (the batch's sync, the Void's lean).
-static func follow(h: Array) -> void:
-	var turn: Node3D = h[0]
-	var facing: Node3D = h[4]
-	if turn.transform != facing.transform:
-		turn.transform = facing.transform
-	var shown: bool = facing.visible and (h[3] as Node3D).visible and (h[2] as Node3D).visible
-	if turn.visible != shown:
-		turn.visible = shown
-
-
-## After the avatars' frame step: the ring shown from the row's clock (the native rows: the avatar's own step shows it
-## otherwise), and while it shows, the avatar's transform now (slot `k` of `avatars`).
-static func show(h: Array, avatars: BatchAvatars, k: int) -> void:
-	var w: WardenAvatar = h[2]
+## After the avatars' frame step (batched Warden `id`, slot `k` of the batch's avatars): the root's place now, the ring
+## shown from the row's clock (the native rows: the avatar's own step shows it otherwise), and while it shows, the
+## avatar's transform now.
+static func show(h: Array, batch: EnemyBatch, id: int, k: int) -> void:
+	var w: WardenAvatar = h[BatchHeld.AVATAR]
 	if not is_instance_valid(w) or not is_instance_valid(w.dust):
 		return
+	BatchHeld.place(h, batch, id)
+	var avatars := batch.avatars
 	if avatars.on:
 		var t := avatars.row_value(k, W_DUST_T)
 		if t >= 0.0 or w.dust.visible:
 			w.dust.show_at(t, avatars.row_value(k, W_SLAM_R))
 	if w.dust.visible:
-		var body: Node3D = h[1]
-		var xf := avatars.avatar_xf(k)
-		if body.transform != xf:
-			body.transform = xf
+		BatchHeld.lean(h, avatars, k)

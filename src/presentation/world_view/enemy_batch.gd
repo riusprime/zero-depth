@@ -30,10 +30,10 @@ enum Part { DISC, RING, DAZED, BAR, BLOB }
 ## Drone, the Scrap Hound and the Kiln Beetle, whose avatars need nothing of the tree (their pose, rock, glows and death
 ## are reckoned from their own clocks, the sim's state and their facing node's turn; the Hound's body turns on its
 ## avatar's own transform; the thrown rock flies from the sim's place, RuinsRocksViews; the Lurker's disguise hides its
-## disc and ring here, show_rings; the Warden's dust ring and the Rubble Warden's crust hang in the tree from its
-## anchor, BatchWarden, the Lens Drone's ground shadow the same way, BatchLensDrone, and the Bomb Drone's ground disc
-## from a node the batch places, BatchBombDrone). The other VAT kinds (the solo models: the other owner's models) still
-## read the tree in their frame step or death (global transforms, timers), so they keep their node.
+## disc and ring here, show_rings; the Warden's dust ring and the Rubble Warden's crust, the Lens Drone's ground
+## shadow and the Bomb Drone's ground disc hang in the tree from nodes the batch places, BatchHeld). The other VAT
+## kinds (the solo models: the other owner's models) still read the tree in their frame step or death (global
+## transforms, timers), so they keep their node.
 const KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_SPLITTER,
@@ -138,7 +138,7 @@ var _phys_seen := -1
 var _fill := PackedFloat64Array()
 var _shown := PackedByteArray()
 ## The batched Wardens' dust rings (and Rubble Wardens' crusts) and the drones' ground shadows in the tree, by id
-## (BatchWarden.hold, BatchLensDrone.hold, BatchBombDrone.hold).
+## (BatchHeld.hold, through BatchWarden.hold, BatchLensDrone.hold, BatchBombDrone.hold).
 var _held := {}
 ## Slots whose body falls (their root is freed when the fall ends: the frame's drop looks only while there are any).
 var _falls := 0
@@ -311,7 +311,7 @@ func update(id: int, reader: WorldReader, i: int, parts: Array, cols: Array) -> 
 	show_parts(id, bar and shown, state == WorldReader.STATE_RECOVER, shown and avatar.visible)
 	_shown[k] = 1 if shown and avatar.visible and (_roots[k] as Node3D).visible else 0
 	if _held.has(id):
-		BatchWarden.follow(_held[id])
+		BatchHeld.follow(_held[id])
 		VariantLooks.show_crust(_roots[k], reader, i)  # The Rubble Warden's (a node with none is left alone)
 	if avatar is RockLurkerAvatar:  # Its disguise: no contact disc or team ring while it waits as a boulder
 		show_rings(id, not RockLurkerAvatar.disguised(reader, i))
@@ -338,10 +338,15 @@ func show_rings(id: int, on: bool) -> void:
 func flush_avatars() -> void:
 	if _avatars_native():
 		avatars.flush(_crowd, avatars.frame_columns(_x1, _y1, _z1))
-		for id: int in _held:  # A drone's disc as its sync's pose left it (a batch made this sync steps next frame)
+		for id: int in _held:  # The parts as the sync left them (a batch made this sync steps next frame)
 			var h: Array = _held[id]
-			if is_instance_valid(h[2]) and h[2] is BombDroneAvatar:
+			var a: Variant = h[BatchHeld.AVATAR]
+			if is_instance_valid(a) and a is BombDroneAvatar:
 				BatchBombDrone.show(h, self, id, _slot_of[id])
+			elif is_instance_valid(a) and a is LensDroneAvatar:
+				BatchLensDrone.show(h, self, id, _slot_of[id])
+			else:
+				BatchHeld.place(h, self, id)
 
 
 ## Whether enemy `id`'s avatar runs its frame step (its set_process, as ActorViews' culling turns it).
@@ -371,7 +376,7 @@ func facing_leaned(id: int) -> void:
 	if k >= 0:
 		avatars.facing_moved(k, _facings[k], true)
 		if _held.has(id):
-			BatchWarden.follow(_held[id])
+			BatchHeld.follow(_held[id])
 
 
 ## VatCrowd: its sets `sets` ([index, body, period, drive floats, capacity] each) written natively from the avatars'
@@ -520,8 +525,8 @@ func _remove(k: int) -> void:
 		_falls -= 1
 	_slot_of.erase(id)
 	_rings_off.erase(id)
-	if _held.has(id) and (_held[id] as Array).size() > 5:  # A drone's ground disc's place (BatchBombDrone.hold)
-		(_held[id][5] as Node).queue_free()
+	if _held.has(id):  # Its held parts' place (BatchHeld.hold)
+		(_held[id][BatchHeld.PLACE] as Node).queue_free()
 	_held.erase(id)
 	if _anchors.has(id):
 		(_anchors[id] as Node).queue_free()
@@ -609,11 +614,11 @@ func advance(delta: float) -> void:
 	for id: int in _held:  # The Wardens' dust rings and the drones' shadows, as their step left them
 		var h: Array = _held[id]
 		if is_instance_valid(h[2]) and h[2] is LensDroneAvatar:
-			BatchLensDrone.show(h, avatars, _slot_of[id])
+			BatchLensDrone.show(h, self, id, _slot_of[id])
 		elif is_instance_valid(h[2]) and h[2] is BombDroneAvatar:
 			BatchBombDrone.show(h, self, id, _slot_of[id])
 		else:
-			BatchWarden.show(h, avatars, _slot_of[id])
+			BatchWarden.show(h, self, id, _slot_of[id])
 	PerfMarks.add(&"batch.avatars", t_av)  # The avatars' frame step (the tree ran it before)
 	var t_wr := PerfMarks.start()
 	write_furniture()

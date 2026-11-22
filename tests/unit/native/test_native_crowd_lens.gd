@@ -146,7 +146,10 @@ func _shadow_difference(a: ActorViews, b: ActorViews, counts: Dictionary) -> Str
 
 
 ## The batched drones' shadows stand where a view of nodes stands its drones' (the same world, both stepped by hand):
-## the same global transform (its hover's size, its flinch's lean) and shown alike.
+## the same global transform (its hover's size, its flinch's lean) under the root's place, and shown alike. The batch
+## hangs the shadow from where it draws the drone's contact disc (EnemyBatch.origin, not interpolated): the node's
+## transform is taken to that place, which the frame probe's --twin measures equal to where the engine draws a node
+## root (hand-stepped here, the nodes' interpolation is not run as the game runs it).
 func test_the_batched_shadows_stand_where_the_nodes_ones_do() -> void:
 	if not ClassDB.class_exists(EnemyBatch.NATIVE_CLASS):
 		pending("the native library is not loaded")
@@ -186,9 +189,10 @@ func test_the_batched_shadows_stand_where_the_nodes_ones_do() -> void:
 		for id in a.batch.ids():
 			var sa := (a.actor_node(id).get_meta(&"enemy_avatar") as LensDroneAvatar).shadow
 			var sb := (nodes.actor_node(id).get_meta(&"enemy_avatar") as LensDroneAvatar).shadow
+			var drawn := a.batch.origin(id) - nodes.actor_node(id).global_position
 			var ga := [sa.global_transform, sa.is_visible_in_tree()]
-			var gb := [sb.global_transform, sb.is_visible_in_tree()]
-			if ga != gb:
+			var gb := [sb.global_transform.translated(drawn), sb.is_visible_in_tree()]
+			if not _same_look(ga, gb):
 				fail_test("frame %d: drone %d's shadow %s vs the node's %s" % [f, id, ga, gb])
 				return
 			compared += 1
@@ -205,3 +209,8 @@ func _hand_stepped(drones: Array[LensDroneAvatar]) -> Dictionary:
 			out[d] = true
 			d.set_process(false)
 	return out
+
+
+## Two [transform, shown] looks alike, the transforms to float rounding.
+static func _same_look(ga: Array, gb: Array) -> bool:
+	return ga[1] == gb[1] and (ga[0] as Transform3D).is_equal_approx(gb[0] as Transform3D)
