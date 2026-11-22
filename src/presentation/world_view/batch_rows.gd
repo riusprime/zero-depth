@@ -326,6 +326,9 @@ func _export_solo(o: int, a: AvatarBase) -> bool:
 	elif a is KilnBeetleAvatar:
 		first = BatchKilnBeetle.FIRST
 		row = BatchKilnBeetle.fields(a as KilnBeetleAvatar)
+	elif a is FrostSpitterAvatar:
+		first = BatchFrostSpitter.FIRST
+		row = BatchFrostSpitter.fields(a as FrostSpitterAvatar)
 	else:
 		return false
 	for q in row.size():
@@ -355,6 +358,8 @@ func _import_solo(o: int, a: AvatarBase) -> bool:
 		BatchScrapHound.take(a as ScrapHoundAvatar, st, o)
 	elif a is KilnBeetleAvatar:
 		BatchKilnBeetle.take(a as KilnBeetleAvatar, st, o)
+	elif a is FrostSpitterAvatar:
+		BatchFrostSpitter.take(a as FrostSpitterAvatar, st, o)
 	else:
 		return false
 	return true

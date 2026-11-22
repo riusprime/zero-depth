@@ -37,6 +37,7 @@ const LENS_DRONE_CLASS := 17
 const BOMB_DRONE_CLASS := 16
 const SCRAP_HOUND_CLASS := 18
 const KILN_BEETLE_CLASS := 19
+const FROST_SPITTER_CLASS := 21
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -57,6 +58,7 @@ const CLASS_OF := {
 	WorldReader.KIND_BOMB_DRONE: BOMB_DRONE_CLASS,
 	WorldReader.KIND_SCRAP_HOUND: SCRAP_HOUND_CLASS,
 	WorldReader.KIND_KILN_BEETLE: KILN_BEETLE_CLASS,
+	WorldReader.KIND_FROST_SPITTER: FROST_SPITTER_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -142,6 +144,8 @@ static func class_of(avatar: AvatarBase) -> int:
 	var kb := avatar as KilnBeetleAvatar
 	if kb != null and kb.vat:
 		return KILN_BEETLE_CLASS
+	if avatar is FrostSpitterAvatar and (avatar as FrostSpitterAvatar).vat:
+		return FROST_SPITTER_CLASS
 	return 0
 
 
@@ -334,6 +338,8 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 		elif c == KILN_BEETLE_CLASS:  # (its HP and full HP: a hit's scrabble, the heat)
 			_in_more[k * MORE] = reader.actor_hp(i)
 			_in_more[k * MORE + 1] = reader.actor_max_hp(i)
+		elif c == FROST_SPITTER_CLASS:  # (its HP: a hit's flinch)
+			_in_more[k * MORE] = reader.actor_hp(i)
 	if c >= CHARGER_CLASS:
 		var p := reader.actor_pos(i)
 		_in_x[k] = p.x
