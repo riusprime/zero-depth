@@ -1,8 +1,8 @@
 class_name BatchAvatars
 extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
-## HordeAvatar's, ChargerAvatar's or StoneThrowerAvatar's fields that change after setup) is a row of packed doubles
-## here, and ZdCrowd
+## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's or WardenAvatar's (BatchWarden) fields that change after setup)
+## is a row of packed doubles here, and ZdCrowd
 ## (native/src/zd_avatar.*, the same arithmetic in the same order) applies each sync, steps each frame and writes
 ## VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
 ## The rows hold the state while `on`; the avatar objects then hold old numbers, except around an event:
@@ -17,7 +17,7 @@ extends RefCounted
 ## Presentation only (EI-07).
 
 ## A row's fields (native/src/zd_avatar.h, the same numbers).
-const STRIDE := 113
+const STRIDE := 122
 const T := 0
 const FLINCH_T := 1
 const FLINCH_S := 2
@@ -94,10 +94,12 @@ const S_VD := 84
 const S_OFF_KEYS := ["pelvis", "neck", "shoulder", "elbow", "wrist", "hip"]
 ## A Stone Thrower's sync inputs past the common ones, a slot (zd_avatar.h MORE): its ticks into the state, its
 ## facing (x, y), the sim's lift, flight and recovery ticks.
+## A Warden's: its HP, the telegraph's slam radius, whether it gave one (BatchWarden.note).
 const MORE := 6
 ## The native classes (zd_avatar.h Class) by kind; 0: none.
 const CHARGER_CLASS := 8
 const STONE_THROWER_CLASS := 10
+const WARDEN_CLASS := 12
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -108,6 +110,8 @@ const CLASS_OF := {
 	WorldReader.KIND_CHARGER: 8,
 	WorldReader.KIND_HATCHLING: 9,
 	WorldReader.KIND_STONE_THROWER: STONE_THROWER_CLASS,
+	WorldReader.KIND_WARDEN: WARDEN_CLASS,
+	WorldReader.KIND_RUBBLE_WARDEN: WARDEN_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -167,6 +171,9 @@ static func class_of(avatar: AvatarBase) -> int:
 	var st := avatar as StoneThrowerAvatar
 	if st != null and st.vat:
 		return STONE_THROWER_CLASS
+	var wd := avatar as WardenAvatar
+	if wd != null and wd.vat:
+		return WARDEN_CLASS
 	return 0
 
 
@@ -340,6 +347,13 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 		_in_more[o + 3] = ticks.x
 		_in_more[o + 4] = ticks.y
 		_in_more[o + 5] = ticks.z
+	elif c == WARDEN_CLASS:
+		var v := BatchWarden.note(reader, i)
+		var o := k * MORE
+		_in_windup[k] = v[0]
+		_in_more[o] = v[1]
+		_in_more[o + 1] = v[2]
+		_in_more[o + 2] = v[3]
 	else:
 		_in_windup[k] = (
 			float(reader.telegraph(i).get("progress", 0)) / 1000.0
@@ -452,6 +466,18 @@ func write_bodies(crowd: Object, frame: Array, bo: PackedVector3Array, sets: Arr
 	)
 
 
+## Slot `k`'s row's value at `field` (BatchWarden).
+func row_value(k: int, field: int) -> float:
+	return _st[k * STRIDE + field]
+
+
+## Slot `k`'s avatar's own transform now (its row's while the rows hold the state).
+func avatar_xf(k: int) -> Transform3D:
+	if on and _dirty[k] == 0:
+		return _get_xf(k * STRIDE + XF)
+	return _avatars[k].transform
+
+
 ## The frame columns the native calls read beside the rows (the root at the batch's latest place).
 func frame_columns(x1: PackedFloat32Array, y1: PackedFloat32Array, z1: PackedFloat32Array) -> Array:
 	return [x1, y1, z1, _fyaw, _fmode, _fx]
@@ -486,6 +512,16 @@ func _flush_inputs_in_script() -> void:
 							),
 						}
 					)
+				)
+			elif _cls[k] == WARDEN_CLASS:
+				BatchWarden.apply_in_script(
+					a as WardenAvatar,
+					_tick,
+					Vector2(_in_x[k], _in_y[k]),
+					_in_state[k],
+					_in_windup[k],
+					_in_more,
+					o
 				)
 			elif _cls[k] >= CHARGER_CLASS:
 				(
@@ -599,6 +635,12 @@ func _export(k: int) -> void:
 	if st != null:
 		_export_thrower(o, st)
 		return
+	var wd := a as WardenAvatar
+	if wd != null:
+		var row := BatchWarden.export_row(wd)
+		for q in row.size():
+			_st[o + BatchWarden.W_CRACK + q] = row[q]
+		return
 	var c := a as ChargerAvatar
 	_st[o + C_VISOR] = c._visor_e
 	_st[o + C_TELL] = c._tell_p
@@ -661,6 +703,10 @@ func _import(k: int) -> void:
 	var st := a as StoneThrowerAvatar
 	if st != null:
 		_import_thrower(o, st)
+		return
+	var wd := a as WardenAvatar
+	if wd != null:
+		BatchWarden.import_row(wd, _st.slice(o + BatchWarden.W_CRACK, o + STRIDE))
 		return
 	var c := a as ChargerAvatar
 	c._visor_e = _st[o + C_VISOR]

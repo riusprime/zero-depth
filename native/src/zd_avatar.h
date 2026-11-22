@@ -97,7 +97,32 @@ enum Field {
 	S_SCALE = 65, // the model's scale (set once)
 	S_OFF = 66, // f32 x3 x6: the joints' offsets (pelvis, neck, shoulder, elbow, wrist, hip; set once)
 	S_VD = 84, // f32 x29: the raw drives
-	STRIDE = 113,
+	// WardenAvatar (its own fields from 43; zd_avatar_warden.cpp)
+	W_CRACK = 43, // the cracks' glow (_crack)
+	W_STATE = 44,
+	W_STATE_TICKS = 45,
+	W_WINDUP = 46,
+	W_HP = 47,
+	W_SPEED = 48,
+	W_DIR = 49, // f32 x2
+	W_OMEGA = 51,
+	W_PHASE = 52,
+	W_STRIDE = 53,
+	W_RAISE = 54,
+	W_SLAM = 55,
+	W_RISE = 56,
+	W_SHAKE = 57,
+	W_HURT = 58,
+	W_DIE = 59,
+	W_LAST_FY = 60,
+	W_HAVE_FY = 61,
+	W_SLAM_R = 62,
+	W_DUST_T = 63,
+	W_LIFT = 64,
+	W_SCALE = 65, // the model's scale (set once)
+	W_PIV = 66, // f32 x3 x11: the joints' pivots (BatchWardenRow.PIVOT_KEYS order; set once)
+	W_VD = 99, // f32 x23: the raw drives
+	STRIDE = 122,
 };
 
 // A slot's class (BatchAvatars.CLASS_OF): which avatar code runs it (0: none native, its avatar steps in GDScript).
@@ -113,6 +138,7 @@ enum Class {
 	CHARGER = 8,
 	HATCHLING = 9,
 	STONE_THROWER = 10,
+	WARDEN = 12,
 };
 
 inline bool is_charger(int c) {
@@ -125,6 +151,8 @@ constexpr int MAX_DRIVES = 29;
 // A Stone Thrower's sync inputs past the common ones (BatchAvatars.MORE a slot): its ticks into the state, its facing
 // (Kin.dir: x, y) and the sim's lift, flight and recovery ticks.
 constexpr int MORE = 6;
+
+// A Warden's MORE inputs: its HP, the telegraph's slam radius and whether the telegraph gave one (1) or not (0).
 
 // The sim states (WorldReader.STATE_*), handed in by the batch.
 struct States {
@@ -170,11 +198,29 @@ double cos_d(double x);
 double envelope(double u);
 double glow_of_tell(double p, double t, bool calm);
 double ease_rate(double per_second, double dt);
+// AvatarBase's strike clock and tell (the same functions the Charger's code calls).
+void strike_note_of(double *s, int state, const States &st);
+void strike_step(double *s, double dt);
+double strike_swing_of(const double *s);
+bool strike_snapping_of(const double *s);
+double strike_raised_of(const double *s, bool winding, double p, double rest);
+double crouch_of_tell(double p);
+// The engine's double exp, acos and atan2 (GDScript's).
+double exp_d(double x);
+double acos_d(double x);
+double atan2_d(double y, double x);
 
 // The Stone Thrower (zd_avatar_thrower.cpp): its sync, frame step (advance: the pose included) and drives.
 void s_apply(double *s, int64_t tick, int state, float pos_x, float pos_y, const double *more, const Ctx &c);
 void s_advance(double *s, double delta, const Ctx &c);
 int s_drives(const double *s, float *out);
+
+// The Warden (zd_avatar_warden.cpp): its sync, frame step (advance: the pose included; the facing's turn from `f`)
+// and drives.
+void w_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void w_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int w_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,

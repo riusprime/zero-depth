@@ -564,8 +564,8 @@ look does not change**, and a probe or a test proves it.
 
 | What | Drawn by | How |
 |---|---|---|
-| Enemies of the batched kinds (`EnemyBatch.KINDS`: Swarmer, Splitter, Splitling, Shield Bearer, Mender, Mine Layer, Charger, Hatchling, Stone Thrower) | `EnemyBatch` (`src/presentation/world_view/enemy_batch.gd`) | No node in the tree. Each keeps its root, facing and avatar as plain objects outside it. The **furniture** (contact disc, team ring, dazed ring, health bar, blob) is one MultiMesh per mesh, written in one pass a frame |
-| Their avatars' state (clocks, strike, tell, flinch, hold, pose drives) | `BatchAvatars` (`batch_avatars.gd`) | One row of `STRIDE` (113) packed doubles a slot (the Stone Thrower's pose drives, clocks and rock in it too). While `on`, `ZdCrowd` applies each sync, steps each frame and writes the bodies from the rows: one call each, none per enemy. An event on an avatar (a flinch, a hold, a death) copies its row into the object, runs the avatar's own GDScript, and copies it back before the next native call |
+| Enemies of the batched kinds (`EnemyBatch.KINDS`: Swarmer, Splitter, Splitling, Shield Bearer, Mender, Mine Layer, Charger, Hatchling, Stone Thrower, Warden) | `EnemyBatch` (`src/presentation/world_view/enemy_batch.gd`) | No node in the tree. Each keeps its root, facing and avatar as plain objects outside it. The **furniture** (contact disc, team ring, dazed ring, health bar, blob) is one MultiMesh per mesh, written in one pass a frame. A Warden's slam dust ring stays a node, hung in the tree from the batch's anchor for it through a copy of its facing and its avatar's transform (`BatchWarden`), so the engine draws and interpolates it as it did the node Warden's |
+| Their avatars' state (clocks, strike, tell, flinch, hold, pose drives) | `BatchAvatars` (`batch_avatars.gd`) | One row of `STRIDE` (122) packed doubles a slot (the Stone Thrower's pose drives, clocks and rock, the Warden's pose drives, clocks, pivots and dust ring's clock in it too). While `on`, `ZdCrowd` applies each sync, steps each frame and writes the bodies from the rows: one call each, none per enemy. An event on an avatar (a flinch, a hold, a death) copies its row into the object, runs the avatar's own GDScript, and copies it back before the next native call |
 | Every VAT enemy body and its proxy shadow | `VatCrowd` (`vat_crowd.gd`) | One MultiMesh per kind and look (bodies) and per kind (shadows). A batched enemy's body is drawn at `EnemyBatch.body_at` |
 | Horde critters | `CritterCrowd` (`critter_crowd.gd`) | No node each; reads the `WorldReader` columns once a sync |
 | A dead enemy's cubes | `ShardPool` (`shard_pool.gd`) | One MultiMesh per look, `CAPACITY` 1,024 pieces; a piece lives `LIFE` 0.5 s of real time, so the pop lasts as long at any frame rate |
@@ -595,7 +595,7 @@ the test reference and the fallback without the library.
 
 | What | Why |
 |---|---|
-| The other solo VAT kinds: Needle, Warden, Sniper, Arc Caster, Bomb Drone, Lens Drone, Scrap Hound, Rock Lurker, Kiln Beetle, Cinder Priest and the other biomes' owner's models | Their bodies are `VatCrowd` instances, but their avatars read the tree in their frame step or their death (global transforms, timers) (`EnemyBatch.KINDS`' comment) |
+| The other solo VAT kinds: Needle, Sniper, Arc Caster, Bomb Drone, Lens Drone, Scrap Hound, Rock Lurker, Kiln Beetle, Cinder Priest and the other biomes' owner's models | Their bodies are `VatCrowd` instances, but their avatars read the tree in their frame step or their death (global transforms, timers) (`EnemyBatch.KINDS`' comment) |
 | Bosses and elites | Their own rigs, models and views |
 | The hero | One, with its own rig and effects |
 | A batched enemy's status marks | An anchor node made only for an enemy that shows one (`EnemyBatch.anchor`) |

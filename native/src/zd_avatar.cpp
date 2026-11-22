@@ -656,6 +656,8 @@ Basis euler_yxz(const Vector3 &e) {
 void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
 	if (cls == STONE_THROWER) {
 		s_advance(s, delta, c);
+	} else if (cls == WARDEN) {
+		w_advance(s, delta, f, c);
 	} else if (is_charger(cls)) {
 		c_advance(s, delta, c);
 	} else if (cls != NONE) {
@@ -675,6 +677,10 @@ void apply(double *s, int cls, int64_t tick, int state, bool healing, double win
 		const double *more, const Ctx &c) {
 	if (cls == STONE_THROWER) {
 		s_apply(s, tick, state, pos_x, pos_y, more, c);
+		return;
+	}
+	if (cls == WARDEN) {
+		w_apply(s, tick, state, windup, pos_x, pos_y, more, c);
 		return;
 	}
 	if (is_charger(cls)) {
@@ -729,12 +735,18 @@ double glow_energy(const double *s, int cls) {
 	if (cls == STONE_THROWER) {
 		return s[S_VISOR];
 	}
+	if (cls == WARDEN) {
+		return s[W_CRACK];
+	}
 	return is_charger(cls) ? s[C_VISOR] : s[H_GLOW];
 }
 
 Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
 	if (cls == STONE_THROWER) {
 		return xf.translated_local(Vector3(0.0f, f32(s[S_LIFT]), 0.0f));
+	}
+	if (cls == WARDEN) {
+		return xf.translated_local(Vector3(0.0f, f32(s[W_LIFT]), 0.0f));
 	}
 	if (is_charger(cls)) {
 		return xf.translated_local(Vector3(0.0f, f32(s[C_LIFT]), 0.0f));
@@ -748,6 +760,9 @@ Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
 int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 	if (cls == STONE_THROWER) {
 		return s_drives(s, out);
+	}
+	if (cls == WARDEN) {
+		return w_drives(s, out);
 	}
 	if (is_charger(cls)) {
 		const double t = s[T];
@@ -806,6 +821,42 @@ double glow_of_tell(double p, double t, bool calm) {
 
 double ease_rate(double per_second, double dt) {
 	return rate(per_second, dt);
+}
+
+void strike_note_of(double *s, int state, const States &st) {
+	strike_note(s, state, st);
+}
+
+void strike_step(double *s, double dt) {
+	strike_advance(s, dt);
+}
+
+double strike_swing_of(const double *s) {
+	return strike_swing(s);
+}
+
+bool strike_snapping_of(const double *s) {
+	return strike_snapping(s);
+}
+
+double strike_raised_of(const double *s, bool winding, double p, double rest) {
+	return strike_raised(s, winding, p, rest);
+}
+
+double crouch_of_tell(double p) {
+	return tell_crouch(p);
+}
+
+double exp_d(double x) {
+	return dexp(x);
+}
+
+double acos_d(double x) {
+	return UtilityFunctions::acos(x);
+}
+
+double atan2_d(double y, double x) {
+	return UtilityFunctions::atan2(y, x);
 }
 
 } // namespace av
