@@ -15,9 +15,17 @@ var first_tick := -1
 var last_tick := -1
 ## Damage per source (effect id, or BASIC).
 var by_source := {}
+## Counted each time a hit is added or the tally resets (the meter writes its source lines again only then).
+var revision := 0
 var _bucket := PackedInt64Array()
 var _stamp := PackedInt32Array()
 var _last_seq := -1
+## The recent window's damage for the window ending at `_win_end`, kept as hits come in and the window moves, so
+## dps_recent adds the ticks that entered and takes off the ones that left instead of reading all WINDOW_TICKS
+## slots each frame. Kept only once the window starts at tick 0 or later (before, an empty slot's stamp, -1, would
+## be inside it); -1: not kept.
+var _win_end := -1
+var _win_sum := 0
 
 
 func _init() -> void:
@@ -46,24 +54,53 @@ func add(tick: int, source: StringName, amount: int) -> void:
 		first_tick = tick
 	last_tick = maxi(last_tick, tick)
 	total += amount
+	revision += 1
 	by_source[source] = int(by_source.get(source, 0)) + amount
 	var k := tick % WINDOW_TICKS
 	if _stamp[k] != tick:
+		if _in_window(_stamp[k]):
+			_win_sum -= _bucket[k]
 		_stamp[k] = tick
 		_bucket[k] = 0
 	_bucket[k] += amount
+	if _in_window(tick):
+		_win_sum += amount
 
 
 ## Damage per second over the last WINDOW_TICKS up to `now` (or since the first hit, when that is sooner).
 func dps_recent(now: int) -> float:
 	if first_tick < 0:
 		return 0.0
-	var sum := 0
-	for k in WINDOW_TICKS:
-		if _stamp[k] > now - WINDOW_TICKS and _stamp[k] <= now:
-			sum += _bucket[k]
+	var sum := _window_sum(now)
 	var span := mini(WINDOW_TICKS, now - first_tick + 1)
 	return float(sum) * SimTick.TICKS_PER_SECOND / maxi(span, 1)
+
+
+## The damage of the slots stamped in (now - WINDOW_TICKS, now]: moved from the kept window when it is a little
+## behind `now`, else read from every slot.
+func _window_sum(now: int) -> int:
+	var from := _win_end
+	if from < WINDOW_TICKS or now < from or now - from >= WINDOW_TICKS or now < WINDOW_TICKS:
+		var sum := 0
+		for k in WINDOW_TICKS:
+			if _stamp[k] > now - WINDOW_TICKS and _stamp[k] <= now:
+				sum += _bucket[k]
+		_win_end = now if now >= WINDOW_TICKS else -1
+		_win_sum = sum
+		return sum
+	for t in range(from + 1, now + 1):  # Entered: a slot stamped with the tick itself holds its damage
+		var k := t % WINDOW_TICKS
+		if _stamp[k] == t:
+			_win_sum += _bucket[k]
+		k = (t - WINDOW_TICKS) % WINDOW_TICKS  # Left: the tick a window earlier, if its slot still holds it
+		if _stamp[k] == t - WINDOW_TICKS:
+			_win_sum -= _bucket[k]
+	_win_end = now
+	return _win_sum
+
+
+func _in_window(tick: int) -> bool:
+	return _win_end >= 0 and tick > _win_end - WINDOW_TICKS and tick <= _win_end
 
 
 ## Damage per second from the first hit to `now`.
@@ -93,6 +130,9 @@ func ranked() -> Array:
 ## Starts again from now: what happened before is not counted.
 func reset(reader: WorldReader = null) -> void:
 	total = 0
+	revision += 1
+	_win_end = -1
+	_win_sum = 0
 	first_tick = -1
 	last_tick = -1
 	by_source = {}

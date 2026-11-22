@@ -73,6 +73,8 @@ const ELEMENT_CUES := {
 
 var _last_seq := 0
 var _kinds := {}
+## Stored actor kind -> _kind_info_of's answer (the kinds' bodies and bosses never change).
+var _kind_info := {}
 var _states := {}
 var _phases := {}
 ## Per Clockwork Judge, the echo tick whose ghost strikes last sounded (each strikes once).
@@ -407,11 +409,14 @@ static func final_cue_at(reader: WorldReader) -> float:
 ## Floor 1's altar hum and pop
 ## start so the file's peak (AltarStage.Look.cue_peak_s in) lands on the altar's pop (C18: "synchronized with the main
 ## audio cue"). An arrival shorter than the hum (reduced motion's fade-in) plays none.
+## The cue's start is worked out only while an arrival plays (progress 0 or more): it is never negative when it
+## plays, so a progress below 0 never reaches it.
 func _arrival(reader: WorldReader, out: Array) -> void:
 	var p := reader.arrival_progress()
-	var at := arrival_cue_at(reader)
-	if reader.arrival_altar() and at >= 0.0 and p >= at and _arrive_progress < at:
-		out.append([AltarStage.arrival().cue, null, 1.0])
+	if p >= 0.0 and reader.arrival_altar():
+		var at := arrival_cue_at(reader)
+		if at >= 0.0 and p >= at and _arrive_progress < at:
+			out.append([AltarStage.arrival().cue, null, 1.0])
 	_arrive_progress = p
 
 
@@ -567,11 +572,26 @@ func _is_boss(actor_id: int) -> bool:
 	return WorldReader.is_boss_kind(_kinds.get(actor_id, -1))
 
 
+## A stored actor kind's body kind (a variant's base) times 2, plus 1 when that body is a boss's (kept in _kind_info).
+func _kind_info_of(raw: int) -> int:
+	var body := WorldReader.body_kind(raw)
+	var info := body * 2 + (1 if WorldReader.is_boss_kind(body) else 0)
+	_kind_info[raw] = info
+	return info
+
+
 ## Enemy windups, boss telegraphs, boss attacks landing, staggers and phase changes: edges in each actor's state.
+## The ids and kinds are read as whole columns, and each stored kind's body and boss test once (_kind_info): a
+## fight's every actor each tick then costs a few lookups, not a call per field.
 func _scan_actors(reader: WorldReader, out: Array) -> void:
-	for i in range(1, reader.actor_count()):
-		var id := reader.actor_id(i)
-		var kind := WorldReader.body_kind(reader.actor_kind(i))  # A variant sounds as its base
+	var ids := reader.actor_ids_column()
+	var raw_kinds := reader.actor_kinds_column()
+	for i in range(1, ids.size()):
+		var id := ids[i]
+		var info: int = _kind_info.get(raw_kinds[i], -1)
+		if info < 0:
+			info = _kind_info_of(raw_kinds[i])
+		var kind := info >> 1  # A variant sounds as its base
 		_kinds[id] = kind
 		if kind >= WorldReader.KIND_DUST_MITE and kind <= WorldReader.KIND_STAR_MOTE:
 			continue  # A critter has no windup and no attack: no state cue (a surge skips the rest)
@@ -580,10 +600,13 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 		var st := reader.actor_state(i)
 		var was: int = _states.get(id, st)
 		_states[id] = st
-		var boss := WorldReader.is_boss_kind(kind)
-		var phase := reader.boss_phase(i) if boss else 0
-		var was_phase: int = _phases.get(id, phase)
-		_phases[id] = phase
+		var boss := (info & 1) == 1
+		var phase := 0
+		var was_phase := 0
+		if boss:  # Only a boss has a phase: the others' would be 0 now and before
+			phase = reader.boss_phase(i)
+			was_phase = _phases.get(id, phase)
+			_phases[id] = phase
 		if kind == WorldReader.KIND_CLOCKWORK_JUDGE:  # Each ghost strike of its echo chimes
 			_echo_strikes(reader, i, id, out)
 		if kind == WorldReader.KIND_LANTERN_SHADE:  # The dark falling, a lantern out or relit

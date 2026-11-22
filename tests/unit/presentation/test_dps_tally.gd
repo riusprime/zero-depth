@@ -77,3 +77,34 @@ func test_it_counts_the_players_damage_from_a_world() -> void:
 	t.reset(reader)
 	t.observe(reader)
 	assert_eq(t.total, 0, "what came before the reset is not counted again")
+
+
+## The recent window is kept as hits come in and the window moves: every read is the full read of the slots.
+func test_the_kept_window_matches_a_full_read() -> void:
+	var t := DpsTally.new()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 52
+	var now := 0
+	for step in 4000:
+		var roll := rng.randi_range(0, 9)
+		if roll < 6:  # A hit this tick, a little in the past, or far behind
+			var back := 0 if roll < 4 else rng.randi_range(0, 700)
+			t.add(maxi(0, now - back), DpsTally.BASIC, rng.randi_range(1, 50))
+		elif roll < 9:  # The clock moves a tick or a few (a frame that ran several)
+			now += rng.randi_range(1, 4)
+		elif rng.randi_range(0, 30) == 0:  # A long quiet, or a reset
+			now += rng.randi_range(200, 900)
+			if rng.randi_range(0, 2) == 0:
+				t.reset()
+		assert_eq(t.dps_recent(now), _full_read(t, now), "tick %d (step %d)" % [now, step])
+
+
+func _full_read(t: DpsTally, now: int) -> float:
+	if t.first_tick < 0:
+		return 0.0
+	var sum := 0
+	for k in DpsTally.WINDOW_TICKS:
+		if t._stamp[k] > now - DpsTally.WINDOW_TICKS and t._stamp[k] <= now:
+			sum += t._bucket[k]
+	var span := mini(DpsTally.WINDOW_TICKS, now - t.first_tick + 1)
+	return float(sum) * SimTick.TICKS_PER_SECOND / maxi(span, 1)
