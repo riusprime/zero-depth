@@ -370,3 +370,46 @@ display-by-script kinds follow, one kind a step, the heaviest first: Needle, War
 the other biomes' (Arc Caster, Bomb Drone, Lens Drone, Scrap Hound, Kiln Beetle, Cinder Priest, Sniper, Frost
 Spitter, Glacier Turtle, Gravity Node, Wire Weaver, Star Warper), each measured and proven the same way. If not, the
 numbers go to the owner and the lead stops there.
+
+### Every model kind into the batch (owner, 2026-11-22)
+
+Told step 51's numbers (42 Stone Throwers about 18 → 14 ms a frame), the owner: "improvements are so great that
+probably all of the enemies that could make use of this c++ rework is worth doing, queue them all and work on the
+whole rework, we'll test before and after with all enemies changed". So the bar above is no longer checked kind by
+kind: every enemy kind that keeps a node tree and a script avatar moves to the native batch. Each kind is still proven
+the same look (the native equality test bit for bit, which must be shown able to fail, and the twin probe), and each
+step measures its own kind as an indication. The owner's verdict comes from one before/after with every kind moved:
+the lead's quiet floor-fight runs per biome on `e1c0a233` against the merged tree, then the owner's `--perf-log`.
+
+The queue, one kind a step (a variant on the same avatar goes with its kind):
+
+| Step | Kind | Biome |
+|---|---|---|
+| 51 | Stone Thrower | Night Rocks (done) |
+| 53 | Needle (and Dim Needle) | Night Rocks |
+| 54 | Warden (and Rubble Warden) | Night Rocks |
+| 55 | Rock Lurker | Night Rocks |
+| 56 | Sniper (and Split Sniper) | |
+| 57 | Arc Caster | |
+| 58 | Bomb Drone | |
+| 59 | Lens Drone | |
+| 60 | Scrap Hound | |
+| 61 | Kiln Beetle | |
+| 62 | Cinder Priest | |
+| 63 | Frost Spitter | |
+| 64 | Glacier Turtle | |
+| 65 | Gravity Node | |
+| 66 | Wire Weaver | |
+| 67 | Star Warper | |
+
+Not in the queue: the bosses and elites (their own rigs and views, one or a few a room: little to gain per frame),
+the hero, and the critters (`CritterCrowd` draws them already). The chargers' variants and any other kind found still
+on a node tree are added to the queue when an agent finds them.
+
+How it runs: at most three Opus agents at once, one Godot process each, each kind in its own branch. A kind's code goes
+in its own files (`native/src/zd_avatar_<kind>.cpp`; its GDScript row export and import out of `batch_avatars.gd` into
+a file of its own when that file would pass the 1,000-line cap), so the shared files (`batch_avatars.gd`,
+`enemy_batch.gd`, `zd_avatar.h`, `zd_crowd*`, `test_native_crowd.gd`) take only small additions the lead merges. Both
+halves of a kind land in one commit: a batched kind with no native class puts every batched avatar on the GDScript
+path. The lead merges each kind as it is done, runs seams at the end of each three, and the next agent starts from the
+merged tree.
