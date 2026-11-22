@@ -676,6 +676,10 @@ void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
 		ld_advance(s, delta, c);
 	} else if (cls == BOMB_DRONE) {
 		bd_advance(s, delta, f, c);
+	} else if (cls == SCRAP_HOUND) {
+		sh_advance(s, delta, f, c);
+	} else if (cls == KILN_BEETLE) {
+		kb_advance(s, delta, f, c);
 	} else if (is_charger(cls)) {
 		c_advance(s, delta, c);
 	} else if (cls != NONE) {
@@ -723,6 +727,14 @@ void apply(double *s, int cls, int64_t tick, int state, bool healing, double win
 	}
 	if (cls == BOMB_DRONE) {
 		bd_apply(s, tick, state, pos_x, pos_y, more, c);
+		return;
+	}
+	if (cls == SCRAP_HOUND) {
+		sh_apply(s, tick, state, windup, pos_x, pos_y, more, c);
+		return;
+	}
+	if (cls == KILN_BEETLE) {
+		kb_apply(s, tick, state, windup, pos_x, pos_y, more, c);
 		return;
 	}
 	if (is_charger(cls)) {
@@ -798,6 +810,12 @@ double glow_energy(const double *s, int cls) {
 	if (cls == BOMB_DRONE) {
 		return s[BD_VISOR];
 	}
+	if (cls == SCRAP_HOUND) {
+		return s[SH_GLOW];
+	}
+	if (cls == KILN_BEETLE) {
+		return s[KB_HEAT_GLOW];
+	}
 	return is_charger(cls) ? s[C_VISOR] : s[H_GLOW];
 }
 
@@ -825,6 +843,12 @@ Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
 	}
 	if (cls == BOMB_DRONE) {
 		return xf.translated_local(Vector3(0.0f, f32(s[BD_LIFT]), 0.0f));
+	}
+	if (cls == SCRAP_HOUND) {
+		return xf.translated_local(Vector3(0.0f, f32(s[SH_LIFT]), 0.0f));
+	}
+	if (cls == KILN_BEETLE) {
+		return xf.translated_local(Vector3(0.0f, f32(s[KB_LIFT]), 0.0f));
 	}
 	if (is_charger(cls)) {
 		return xf.translated_local(Vector3(0.0f, f32(s[C_LIFT]), 0.0f));
@@ -859,6 +883,12 @@ int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 	}
 	if (cls == BOMB_DRONE) {
 		return bd_drives(s, out);
+	}
+	if (cls == SCRAP_HOUND) {
+		return sh_drives(s, out);
+	}
+	if (cls == KILN_BEETLE) {
+		return kb_drives(s, out);
 	}
 	if (is_charger(cls)) {
 		const double t = s[T];

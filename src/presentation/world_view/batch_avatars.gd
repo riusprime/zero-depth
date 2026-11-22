@@ -3,9 +3,11 @@ extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
 ## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow), RockLurkerAvatar's
 ## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow), ArcCasterAvatar's (BatchArcCaster),
-## LensDroneAvatar's (BatchLensDrone) or BombDroneAvatar's (BatchBombDrone) fields that change after setup) is a row of
-## packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same arithmetic in the same order) applies each sync,
-## steps each frame and writes VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
+## LensDroneAvatar's (BatchLensDrone), BombDroneAvatar's (BatchBombDrone), ScrapHoundAvatar's (BatchScrapHound) or
+## KilnBeetleAvatar's (BatchKilnBeetle)
+## fields that change after setup) is a row of packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same
+## arithmetic in the same order) applies each sync, steps each frame and writes VatCrowd's body and shadow instances
+## from the rows: one call each, none per enemy.
 ## The rows hold the state while `on`; the avatar objects then hold old numbers, except around an event:
 ## - an event on an avatar (a flinch, a hold, a death, a sync or a step called on it: AvatarBase._touch) first copies
 ##   its row into it (pull) and marks it the holder (dirty); its own GDScript runs the event as before, and the batch
@@ -20,8 +22,8 @@ extends RefCounted
 
 ## A Stone Thrower's sync inputs past the common ones, a slot (zd_avatar.h MORE): its ticks into the state, its
 ## facing (x, y), the sim's lift, flight and recovery ticks; a Needle's and a Sniper's: its HP (the first); a Rock
-## Lurker's: disguised, rumbling.
-## A Warden's: its HP, the telegraph's slam radius, whether it gave one (BatchWarden.note).
+## Lurker's: disguised, rumbling. A Warden's: its HP, the telegraph's slam radius, whether it gave one
+## (BatchWarden.note). A Scrap Hound's: its HP, whether a hit stopped it (BatchScrapHound.note).
 const MORE := 6
 ## The native classes (zd_avatar.h Class) by kind; 0: none.
 const CHARGER_CLASS := 8
@@ -33,6 +35,8 @@ const SNIPER_CLASS := 14
 const ARC_CASTER_CLASS := 15
 const LENS_DRONE_CLASS := 17
 const BOMB_DRONE_CLASS := 16
+const SCRAP_HOUND_CLASS := 18
+const KILN_BEETLE_CLASS := 19
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -51,6 +55,8 @@ const CLASS_OF := {
 	WorldReader.KIND_ARC_CASTER: ARC_CASTER_CLASS,
 	WorldReader.KIND_LENS_DRONE: LENS_DRONE_CLASS,
 	WorldReader.KIND_BOMB_DRONE: BOMB_DRONE_CLASS,
+	WorldReader.KIND_SCRAP_HOUND: SCRAP_HOUND_CLASS,
+	WorldReader.KIND_KILN_BEETLE: KILN_BEETLE_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -131,6 +137,11 @@ static func class_of(avatar: AvatarBase) -> int:
 	var bd := avatar as BombDroneAvatar
 	if bd != null and bd.vat:
 		return BOMB_DRONE_CLASS
+	if avatar is ScrapHoundAvatar and (avatar as ScrapHoundAvatar).vat:
+		return SCRAP_HOUND_CLASS
+	var kb := avatar as KilnBeetleAvatar
+	if kb != null and kb.vat:
+		return KILN_BEETLE_CLASS
 	return 0
 
 
@@ -318,6 +329,11 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 		)
 		if c == NEEDLE_CLASS or c == SNIPER_CLASS or c == BOMB_DRONE_CLASS:  # (its HP: a hit's flinch)
 			_in_more[k * MORE] = reader.actor_hp(i)
+		elif c == SCRAP_HOUND_CLASS:  # (and whether a hit stopped it: the yelp)
+			BatchScrapHound.note(reader, i, _in_more, k * MORE)
+		elif c == KILN_BEETLE_CLASS:  # (its HP and full HP: a hit's scrabble, the heat)
+			_in_more[k * MORE] = reader.actor_hp(i)
+			_in_more[k * MORE + 1] = reader.actor_max_hp(i)
 	if c >= CHARGER_CLASS:
 		var p := reader.actor_pos(i)
 		_in_x[k] = p.x

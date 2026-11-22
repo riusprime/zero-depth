@@ -26,14 +26,14 @@ extends Node3D
 enum Part { DISC, RING, DAZED, BAR, BLOB }
 
 ## The kinds batched: the VAT crowd's horde kinds, the Charger, the Hatchling, the Stone Thrower, the Needle, the Rock
-## Lurker, the Warden (and the Rubble Warden, on its avatar), the Sniper, the Arc Caster, the Lens Drone and the Bomb
-## Drone, whose avatars need nothing of the tree (their pose, rock, glows and death are reckoned from their own clocks,
-## the sim's state and their facing node's turn; the thrown rock flies from the sim's place, RuinsRocksViews; the
-## Lurker's disguise hides its disc and ring here, show_rings; the Warden's dust ring and the Rubble Warden's crust hang
-## in the tree from its anchor, BatchWarden, the Lens Drone's ground shadow the same way, BatchLensDrone, and the Bomb
-## Drone's ground disc from a node the batch places, BatchBombDrone). The other VAT kinds (the solo models: the other
-## owner's models) still read the tree in their frame step or death (global transforms, timers), so they keep their
-## node.
+## Lurker, the Warden (and the Rubble Warden, on its avatar), the Sniper, the Arc Caster, the Lens Drone, the Bomb
+## Drone, the Scrap Hound and the Kiln Beetle, whose avatars need nothing of the tree (their pose, rock, glows and death
+## are reckoned from their own clocks, the sim's state and their facing node's turn; the Hound's body turns on its
+## avatar's own transform; the thrown rock flies from the sim's place, RuinsRocksViews; the Lurker's disguise hides its
+## disc and ring here, show_rings; the Warden's dust ring and the Rubble Warden's crust hang in the tree from its
+## anchor, BatchWarden, the Lens Drone's ground shadow the same way, BatchLensDrone, and the Bomb Drone's ground disc
+## from a node the batch places, BatchBombDrone). The other VAT kinds (the solo models: the other owner's models) still
+## read the tree in their frame step or death (global transforms, timers), so they keep their node.
 const KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_SPLITTER,
@@ -52,6 +52,8 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_ARC_CASTER,
 	WorldReader.KIND_LENS_DRONE,
 	WorldReader.KIND_BOMB_DRONE,
+	WorldReader.KIND_SCRAP_HOUND,
+	WorldReader.KIND_KILN_BEETLE,
 ]
 ## After the views' sync and the other nodes' _process, before VatCrowd (which draws the bodies at these places).
 const PROCESS_PRIORITY := VatCrowd.PROCESS_PRIORITY - 1

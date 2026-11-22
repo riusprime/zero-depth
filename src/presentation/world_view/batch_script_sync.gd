@@ -76,6 +76,8 @@ static func apply(
 		)
 	elif cls == BatchAvatars.LENS_DRONE_CLASS:
 		BatchLensDrone.apply_in_script(a as LensDroneAvatar, tick, state)
+	elif cls == BatchAvatars.KILN_BEETLE_CLASS:
+		BatchKilnBeetle.apply_in_script(a as KilnBeetleAvatar, tick, pos, state, windup, more, o)
 	elif cls == BatchAvatars.ARC_CASTER_CLASS:
 		(
 			(a as ArcCasterAvatar)
@@ -90,6 +92,8 @@ static func apply(
 		)
 	elif cls == BatchAvatars.BOMB_DRONE_CLASS:
 		BatchBombDrone.apply_in_script(a as BombDroneAvatar, tick, pos, state, more, o)
+	elif cls == BatchAvatars.SCRAP_HOUND_CLASS:
+		BatchScrapHound.apply_in_script(a as ScrapHoundAvatar, tick, pos, state, windup, more, o)
 	elif cls >= BatchAvatars.CHARGER_CLASS:
 		(
 			(a as ChargerAvatar)

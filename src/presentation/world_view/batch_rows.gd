@@ -320,6 +320,12 @@ func _export_solo(o: int, a: AvatarBase) -> bool:
 	elif a is BombDroneAvatar:
 		first = BatchBombDrone.FIRST
 		row = BatchBombDrone.fields(a as BombDroneAvatar)
+	elif a is ScrapHoundAvatar:
+		first = BatchScrapHound.FIRST
+		row = BatchScrapHound.fields(a as ScrapHoundAvatar)
+	elif a is KilnBeetleAvatar:
+		first = BatchKilnBeetle.FIRST
+		row = BatchKilnBeetle.fields(a as KilnBeetleAvatar)
 	else:
 		return false
 	for q in row.size():
@@ -345,6 +351,10 @@ func _import_solo(o: int, a: AvatarBase) -> bool:
 		BatchLensDrone.load(a as LensDroneAvatar, st, o)
 	elif a is BombDroneAvatar:
 		BatchBombDrone.take(a as BombDroneAvatar, st, o)
+	elif a is ScrapHoundAvatar:
+		BatchScrapHound.take(a as ScrapHoundAvatar, st, o)
+	elif a is KilnBeetleAvatar:
+		BatchKilnBeetle.take(a as KilnBeetleAvatar, st, o)
 	else:
 		return false
 	return true

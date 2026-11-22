@@ -250,6 +250,49 @@ enum Field {
 	BD_LAST_FY = 62,
 	BD_HAVE_FY = 63,
 	BD_VD = 64, // f32 x12: the raw drives
+	// ScrapHoundAvatar (its own fields from 43 to 80; zd_avatar_scrap_hound.cpp)
+	SH_GLOW = 43, // the visor's glow (the instance's accent glow)
+	SH_LIFT = 44,
+	SH_STATE = 45,
+	SH_TELL = 46,
+	SH_HP = 47,
+	SH_SPEED = 48,
+	SH_GALLOP = 49,
+	SH_PHASE = 50,
+	SH_YAW = 51,
+	SH_TURN = 52,
+	SH_BANK = 53,
+	SH_LAST_H = 54,
+	SH_HAVE_H = 55,
+	SH_COIL = 56,
+	SH_DART = 57,
+	SH_RISE = 58,
+	SH_BITE = 59,
+	SH_YELP = 60,
+	SH_HURT = 61,
+	SH_DIE = 62,
+	SH_VD = 63, // f32 x18: the raw drives
+	// KilnBeetleAvatar (its own fields from 43 to 100; zd_avatar_kiln_beetle.cpp)
+	KB_HEAT_GLOW = 43, // the heat's glow (the instance's accent glow)
+	KB_LIFT = 44,
+	KB_STATE = 45,
+	KB_TELL = 46,
+	KB_HP = 47,
+	KB_HEAT = 48,
+	KB_SPEED = 49,
+	KB_OMEGA = 50,
+	KB_PHASE = 51,
+	KB_STRIDE = 52,
+	KB_COIL = 53,
+	KB_RISE = 54,
+	KB_SLAM = 55,
+	KB_HURT = 56,
+	KB_HURT_LEG = 57,
+	KB_DIE = 58,
+	KB_LAST_FY = 59,
+	KB_HAVE_FY = 60,
+	KB_FOOT_Z = 61, // f32 x8: each leg's foot across the body (set once)
+	KB_VD = 69, // f32 x32: the raw drives
 	STRIDE = 124,
 };
 
@@ -273,14 +316,16 @@ enum Class {
 	ARC_CASTER = 15,
 	LENS_DRONE = 17,
 	BOMB_DRONE = 16,
+	SCRAP_HOUND = 18,
+	KILN_BEETLE = 19,
 };
 
 inline bool is_charger(int c) {
 	return c == CHARGER || c == HATCHLING;
 }
 
-// The most drives a class gives VatCrowd (the Stone Thrower's 29).
-constexpr int MAX_DRIVES = 29;
+// The most drives a class gives VatCrowd (the Kiln Beetle's 32).
+constexpr int MAX_DRIVES = 32;
 
 // A Stone Thrower's sync inputs past the common ones (BatchAvatars.MORE a slot): its ticks into the state, its facing
 // (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's and a Sniper's: its HP (the first). A
@@ -385,6 +430,18 @@ int ld_drives(const double *s, float *out);
 void bd_apply(double *s, int64_t tick, int state, float pos_x, float pos_y, const double *more, const Ctx &c);
 void bd_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int bd_drives(const double *s, float *out);
+// The Scrap Hound (zd_avatar_scrap_hound.cpp): its sync (`more`: its HP, whether a hit stopped it), frame step (the
+// pose included; the facing's turn from `f`) and drives.
+void sh_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void sh_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int sh_drives(const double *s, float *out);
+// The Kiln Beetle (zd_avatar_kiln_beetle.cpp): its sync (`more`: its HP, its full HP), frame step (the pose included;
+// the facing's turn from `f`) and drives.
+void kb_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void kb_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int kb_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,

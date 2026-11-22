@@ -31,7 +31,10 @@ extends AvatarBase
 ##   quivers or scrabbles, the flashes steady.
 ## The pose is a few plain numbers (the raw drives, _vd: each joint's turn) worked out from the state first, then the
 ## nodes from them through the joint table (_joints, the same transforms the VAT rig declares), so the baked pose is
-## the live one. Presentation only (EI-07): nothing here reaches the sim. +X is the front, +Z its right.
+## the live one. On the VAT crowd it is batched (EnemyBatch: nothing here reads the tree, its turn is its facing
+## node's; its death's timer is the batch's, drop), and the native batch runs the same sync, frame step and pose
+## (native/src/zd_avatar_kiln_beetle.cpp). Presentation only (EI-07): nothing here reaches the sim. +X is the front,
+## +Z its right.
 
 const KIND := WorldReader.KIND_KILN_BEETLE
 const MODEL := &"kiln_beetle"
@@ -437,6 +440,7 @@ func sync(reader: WorldReader, i: int) -> void:
 
 ## The same as sync(), from plain values (tests, EnemyShadows): tick, state, pos, windup (0..1); hp, max_hp optional.
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	var st: int = s["state"]
 	var hp: int = s.get("hp", -1)
 	var full: int = s.get("max_hp", -1)
@@ -463,6 +467,7 @@ func apply_state(s: Dictionary) -> void:
 
 # --- Frame time ---------------------------------------------------------------------------------------------------
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0:
 		return
@@ -506,34 +511,40 @@ func _turning(dt: float, dying: bool) -> void:
 	_have_fy = true
 
 
-## Starts the death (ActorViews, when the sim drops the beetle: its bar hidden, freed DEATH_SECONDS later). True: it
-## plays.
+## Starts the death (ActorViews or the enemy batch, when the sim drops the beetle: its bar hidden, freed DEATH_SECONDS
+## later). True: it plays.
 func die() -> bool:
+	_touch()
 	if _die_t < 0.0:
 		_die_t = 0.0
 	return true
 
 
 func dying() -> bool:
+	_peek()
 	return _die_t >= 0.0
 
 
 ## The heat's and the visor's glow now (tests, the e2e).
 func heat_energy() -> float:
+	_peek()
 	return _heat_glow
 
 
 func visor_energy() -> float:
+	_peek()
 	return _visor_mat.emission_energy_multiplier
 
 
 ## The heat now (0 at full HP, 1 at none; tests).
 func heat() -> float:
+	_peek()
 	return _heat
 
 
 ## The raw drives now (tests).
 func drives() -> PackedFloat32Array:
+	_peek()
 	return _vd
 
 
@@ -880,15 +891,18 @@ func _apply() -> void:
 # --- SoloVat: the VAT rig -----------------------------------------------------------------------------------------
 ## The whole body's lift (m): VatCrowd moves the instance by it.
 func vat_lift() -> float:
+	_peek()
 	return _lift
 
 
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
 ## The heat's glow (the instance's accent glow; the visor's is the VISOR drive).
 func glow_energy() -> float:
+	_peek()
 	return _heat_glow
 
 
