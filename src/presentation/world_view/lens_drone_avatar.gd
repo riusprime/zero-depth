@@ -6,6 +6,9 @@ extends AvatarBase
 ## the ground, so melee and shots hit it there). It flies the Needle's behaviour: its eye flares through a windup.
 ## Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame
 ## time. ActorViews puts it under the actor's facing node: +X is the front. Flash materials: ActorViews.flashable.
+## On the VAT crowd it is batched (EnemyBatch: nothing here reads the tree, its ground shadow hangs in the tree from the
+## batch's anchor, BatchLensDrone), and the native batch runs the same sync, frame step and pose
+## (native/src/zd_avatar_lens.cpp).
 
 const HOVER_Y := 1.3
 const BOB_M := 0.07
@@ -161,6 +164,7 @@ func sync(reader: WorldReader, i: int) -> void:
 
 ## The same as sync(), from plain values (tests drive the avatar with this).
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	_state = s["state"]
 	if _fresh:
 		_fresh = false
@@ -169,6 +173,7 @@ func apply_state(s: Dictionary) -> void:
 
 
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0 or (pod == null and not vat):
 		return
@@ -187,6 +192,7 @@ func _flinch_pivot() -> float:
 
 ## The pod's current height above the ground (the hover plus the bob).
 func hover_height() -> float:
+	_peek()
 	return _lift
 
 
@@ -215,15 +221,18 @@ func _pose() -> void:
 
 ## The pod's height (m): the whole body's lift VatCrowd moves the instance by (the ground disc is its own node).
 func vat_lift() -> float:
+	_peek()
 	return _lift
 
 
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
 ## The eye slit's glow (flaring through the windup).
 func glow_energy() -> float:
+	_peek()
 	return _eye_mat.emission_energy_multiplier
 
 

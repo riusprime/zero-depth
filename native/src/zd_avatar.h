@@ -202,6 +202,15 @@ enum Field {
 	SN_HIPS = 84, // f32 x3 x3 each: the legs' rest hips, knees and feet (set once)
 	SN_KNEES = 93,
 	SN_FEET = 102,
+	// LensDroneAvatar (its own fields from 43 to 53; zd_avatar_lens.cpp)
+	LD_EYE = 43, // f32: the eye material's emission energy
+	LD_STATE = 44,
+	LD_RISE = 45,
+	LD_CHARGE = 46,
+	LD_LIFT = 47,
+	LD_SHADOW = 48, // the ground shadow's scale across (its node's x and z)
+	LD_HAS_MODEL = 49, // the owner's model (set once)
+	LD_VD = 50, // f32 x3: the raw drives
 	STRIDE = 124,
 };
 
@@ -222,6 +231,7 @@ enum Class {
 	WARDEN = 12,
 	ROCK_LURKER = 13,
 	SNIPER_MODEL = 14, // the owner's model (SniperAvatar); SNIPER is its old horde body
+	LENS_DRONE = 17,
 };
 
 inline bool is_charger(int c) {
@@ -321,6 +331,10 @@ void w_apply(double *s, int64_t tick, int state, double windup, float pos_x, flo
 		const Ctx &c);
 void w_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int w_drives(const double *s, float *out);
+// The Lens Drone (zd_avatar_lens.cpp): its sync (the state alone), frame step (the pose included) and drives.
+void ld_apply(double *s, int state, const Ctx &c);
+void ld_advance(double *s, double delta, const Ctx &c);
+int ld_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
 // vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,

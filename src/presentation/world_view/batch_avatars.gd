@@ -2,9 +2,10 @@ class_name BatchAvatars
 extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
 ## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow), RockLurkerAvatar's
-## (BatchLurker), WardenAvatar's (BatchWarden) or SniperAvatar's (BatchSniperRow) fields that change after setup) is a
-## row of packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same arithmetic in the same order) applies each
-## sync, steps each frame and writes VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
+## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow) or LensDroneAvatar's (BatchLensDrone)
+## fields that change after setup) is a row of packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same
+## arithmetic in the same order) applies each sync, steps each frame and writes VatCrowd's body and shadow instances
+## from the rows: one call each, none per enemy.
 ## The rows hold the state while `on`; the avatar objects then hold old numbers, except around an event:
 ## - an event on an avatar (a flinch, a hold, a death, a sync or a step called on it: AvatarBase._touch) first copies
 ##   its row into it (pull) and marks it the holder (dirty); its own GDScript runs the event as before, and the batch
@@ -104,6 +105,7 @@ const NEEDLE_CLASS := 11
 const WARDEN_CLASS := 12
 const ROCK_LURKER_CLASS := 13
 const SNIPER_CLASS := 14
+const LENS_DRONE_CLASS := 17
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -119,6 +121,7 @@ const CLASS_OF := {
 	WorldReader.KIND_WARDEN: WARDEN_CLASS,
 	WorldReader.KIND_RUBBLE_WARDEN: WARDEN_CLASS,
 	WorldReader.KIND_SNIPER: SNIPER_CLASS,
+	WorldReader.KIND_LENS_DRONE: LENS_DRONE_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
 const MODEL_CLASSES := [2, 3, 4, 5, 6]
@@ -190,6 +193,9 @@ static func class_of(avatar: AvatarBase) -> int:
 	var sn := avatar as SniperAvatar
 	if sn != null and sn.vat:
 		return SNIPER_CLASS
+	var ld := avatar as LensDroneAvatar
+	if ld != null and ld.vat:
+		return LENS_DRONE_CLASS
 	return 0
 
 
@@ -586,6 +592,8 @@ func _flush_inputs_in_script() -> void:
 						}
 					)
 				)
+			elif _cls[k] == LENS_DRONE_CLASS:
+				BatchLensDrone.apply_in_script(a as LensDroneAvatar, _tick, _in_state[k])
 			elif _cls[k] >= CHARGER_CLASS:
 				(
 					(a as ChargerAvatar)
@@ -722,23 +730,13 @@ func _export(k: int) -> void:
 		for q in row.size():
 			_st[o + BatchSniperRow.FIRST + q] = row[q]
 		return
-	var c := a as ChargerAvatar
-	_st[o + C_VISOR] = c._visor_e
-	_st[o + C_TELL] = c._tell_p
-	_st[o + C_STATE] = c._state
-	_st[o + C_SPEED] = c._speed
-	_st[o + C_WALK] = c._walk
-	_st[o + C_PHASE] = c._phase
-	_st[o + C_WIND] = c._wind
-	_st[o + C_LUNGE] = c._lunge
-	_st[o + C_DAZE] = c._daze
-	_st[o + C_RISE] = c._rise
-	_st[o + C_RISE_NOW] = c._rise_now
-	_st[o + C_LUNGE_NOW] = c._lunge_now
-	_st[o + C_CROUCH_NOW] = c._crouch_now
-	_st[o + C_Y_NOW] = c._y_now
-	_st[o + C_LIFT] = c._vat_lift
-	_st[o + C_DIE] = c._die_t
+	var ld := a as LensDroneAvatar
+	if ld != null:
+		var row := BatchLensDrone.fields(ld)
+		for q in row.size():
+			_st[o + BatchLensDrone.FIRST + q] = row[q]
+	else:
+		_export_charger(o, a as ChargerAvatar)
 
 
 ## Slot `k`'s row into its avatar's fields (then the object is as new as the row).
@@ -801,7 +799,35 @@ func _import(k: int) -> void:
 	if sn != null:
 		BatchSniperRow.load(sn, _st.slice(o + BatchSniperRow.FIRST, o + BatchSniperRow.END))
 		return
-	var c := a as ChargerAvatar
+	var ld := a as LensDroneAvatar
+	if ld != null:
+		BatchLensDrone.load(ld, _st, o)
+	else:
+		_import_charger(o, a as ChargerAvatar)
+
+
+## A Charger's (or Hatchling's) own fields into its row at `o`.
+func _export_charger(o: int, c: ChargerAvatar) -> void:
+	_st[o + C_VISOR] = c._visor_e
+	_st[o + C_TELL] = c._tell_p
+	_st[o + C_STATE] = c._state
+	_st[o + C_SPEED] = c._speed
+	_st[o + C_WALK] = c._walk
+	_st[o + C_PHASE] = c._phase
+	_st[o + C_WIND] = c._wind
+	_st[o + C_LUNGE] = c._lunge
+	_st[o + C_DAZE] = c._daze
+	_st[o + C_RISE] = c._rise
+	_st[o + C_RISE_NOW] = c._rise_now
+	_st[o + C_LUNGE_NOW] = c._lunge_now
+	_st[o + C_CROUCH_NOW] = c._crouch_now
+	_st[o + C_Y_NOW] = c._y_now
+	_st[o + C_LIFT] = c._vat_lift
+	_st[o + C_DIE] = c._die_t
+
+
+## A Charger's (or Hatchling's) row at `o` into its fields.
+func _import_charger(o: int, c: ChargerAvatar) -> void:
 	c._visor_e = _st[o + C_VISOR]
 	c._tell_p = _st[o + C_TELL]
 	c._state = int(_st[o + C_STATE])
