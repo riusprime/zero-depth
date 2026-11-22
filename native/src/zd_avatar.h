@@ -308,6 +308,29 @@ enum Field {
 	CP_YAW = 55,
 	CP_DIE = 56,
 	CP_VD = 57, // f32 x18: the raw drives
+	// FrostSpitterAvatar (its own fields from 43 to 119; zd_avatar_frost_spitter.cpp)
+	FS_SAC_GLOW = 43, // the sac's glow (the instance's accent glow)
+	FS_LIFT = 44,
+	FS_STATE = 45,
+	FS_TELL = 46,
+	FS_HP = 47,
+	FS_SPEED = 48,
+	FS_DIR = 49, // f32 x2: the way it goes in the facing's frame
+	FS_OMEGA = 51,
+	FS_PHASE = 52,
+	FS_STRIDE = 53,
+	FS_COIL = 54,
+	FS_RISE = 55,
+	FS_SPIT = 56,
+	FS_HURT = 57,
+	FS_HURT_LEG = 58,
+	FS_DIE = 59,
+	FS_LAST_FY = 60,
+	FS_HAVE_FY = 61,
+	FS_HIPS = 62, // f32 x3 x4 each: the legs' hips, knees and feet (set once)
+	FS_KNEES = 74,
+	FS_FEET = 86,
+	FS_VD = 98, // f32 x22: the raw drives
 	// GlacierTurtleAvatar (its own fields from 43 to 114; zd_avatar_glacier_turtle.cpp)
 	GT_VISOR = 43, // f32: the visor material's emission energy (the instance's accent glow)
 	GT_LIFT = 44,
@@ -361,6 +384,7 @@ enum Class {
 	SCRAP_HOUND = 18,
 	KILN_BEETLE = 19,
 	CINDER_PRIEST = 20,
+	FROST_SPITTER = 21,
 	GLACIER_TURTLE = 22,
 };
 
@@ -492,6 +516,12 @@ int kb_drives(const double *s, float *out);
 void cp_apply(double *s, int64_t tick, int state, float pos_x, float pos_y, const double *more, const Ctx &c);
 void cp_advance(double *s, double delta, const Ctx &c);
 int cp_drives(const double *s, float *out);
+// The Frost Spitter (zd_avatar_frost_spitter.cpp): its sync (`more`: its HP first), frame step (the pose included;
+// the facing's turn from `f`) and drives.
+void fs_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void fs_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int fs_drives(const double *s, float *out);
 // The Glacier Turtle (zd_avatar_glacier_turtle.cpp): its sync (`more`: its HP, its shield's HP), frame step (the pose
 // included; the facing's turn from `f`) and drives.
 void gt_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,

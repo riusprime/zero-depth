@@ -1,7 +1,7 @@
 class_name BatchNeedleRow
 extends RefCounted
 ## A Needle's own fields in its batch row (BatchAvatars; native/src/zd_avatar.h N_*, the same numbers): its state,
-## clocks, raw drives, glows and its legs' rest joints, from FIRST to BatchAvatars.STRIDE. fields() gives them in row
+## clocks, raw drives, glows and its legs' rest joints, from FIRST to BatchRows.STRIDE. fields() gives them in row
 ## order (BatchAvatars copies them in), load() takes them back into the avatar (the gem's and the muzzle's materials
 ## only when their glow changed). Presentation only (EI-07).
 

@@ -329,6 +329,9 @@ func _export_solo(o: int, a: AvatarBase) -> bool:
 	elif a is CinderPriestAvatar:
 		first = BatchCinderPriest.FIRST
 		row = BatchCinderPriest.fields(a as CinderPriestAvatar)
+	elif a is FrostSpitterAvatar:
+		first = BatchFrostSpitter.FIRST
+		row = BatchFrostSpitter.fields(a as FrostSpitterAvatar)
 	elif a is GlacierTurtleAvatar:
 		first = BatchGlacierTurtle.FIRST
 		row = BatchGlacierTurtle.fields(a as GlacierTurtleAvatar)
@@ -363,6 +366,8 @@ func _import_solo(o: int, a: AvatarBase) -> bool:
 		BatchKilnBeetle.take(a as KilnBeetleAvatar, st, o)
 	elif a is CinderPriestAvatar:
 		BatchCinderPriest.take(a as CinderPriestAvatar, st, o)
+	elif a is FrostSpitterAvatar:
+		BatchFrostSpitter.take(a as FrostSpitterAvatar, st, o)
 	elif a is GlacierTurtleAvatar:
 		BatchGlacierTurtle.take(a as GlacierTurtleAvatar, st, o)
 	else:

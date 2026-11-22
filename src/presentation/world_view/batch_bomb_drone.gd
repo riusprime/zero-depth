@@ -3,14 +3,8 @@ extends RefCounted
 ## The Bomb Drone in the enemy batch (EnemyBatch, BatchAvatars): its own fields in its batch row (the BD_* columns,
 ## native/src/zd_avatar.h: the same numbers; ZdCrowd runs its sync, frame step and pose in zd_avatar_bomb_drone.cpp),
 ## its sync run on the object, and its ground disc kept in the tree. The disc is the one node of a VAT drone's that is
-## drawn as a node (SoloVat.LIVE): a batched drone's root is outside the tree, so the disc hangs from nodes in the tree
-## that stand as the root, the facing and the avatar stood, so the engine draws it where it drew the node drone's:
-## - the root's place: a node not interpolated, put each frame where the batch draws the drone's contact disc
-##   (EnemyBatch.origin: the place the engine drew a node root at, as the frame probe's --twin measures). The batch's
-##   anchor is not used: the twin probe measured its interpolated place a part of a tick behind the root's;
-## - the facing: a copy of its transform, interpolated as it was;
-## - the avatar: its transform, not interpolated, as the avatar was not.
-## Presentation only (EI-07).
+## drawn as a node (SoloVat.LIVE): it hangs from the avatar's copy in BatchHeld's holder (the root's place, the facing,
+## the avatar), so the engine draws it where it drew the node drone's. Presentation only (EI-07).
 
 const VISOR := 43
 const SHADOW := 44
@@ -110,32 +104,14 @@ static func apply_in_script(
 	a.apply_state({"tick": tick, "pos": pos, "state": state, "hp": int(more[o])})
 
 
-## Batched drone `id`'s ground disc into the tree: under a node at its root's place, a copy of its facing and its
-## avatar's transform. Returns the holder [facing copy, avatar copy, avatar, root, facing, the place's node]
-## (BatchWarden.follow reads the first five); EnemyBatch frees the place's node with the slot.
+## Batched drone `id`'s ground disc into the tree, under the avatar's copy in its holder (BatchHeld.hold).
 static func hold(
 	batch: EnemyBatch, id: int, a: BombDroneAvatar, root: Node3D, facing: Node3D
 ) -> Array:
-	var at := Node3D.new()
-	at.name = "Ground%d" % id
-	at.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # (placed by hand each frame)
-	at.position = batch.origin(id)
-	batch.add_child(at)
-	var turn := Node3D.new()
-	turn.name = "Facing"
-	turn.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_ON  # (as the facing's own, under the root's)
-	turn.transform = facing.transform
-	at.add_child(turn)
-	turn.reset_physics_interpolation()
-	var body := Node3D.new()
-	body.name = "Avatar"
-	body.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # (as the avatar's own)
-	body.transform = a.transform
-	turn.add_child(body)
+	var h := BatchHeld.hold(batch, id, a, root, facing)
 	a.remove_child(a.shadow)
-	body.add_child(a.shadow)
-	var h := [turn, body, a, root, facing, at]
-	BatchWarden.follow(h)
+	(h[BatchHeld.BODY] as Node3D).add_child(a.shadow)
+	BatchHeld.follow(h)
 	return h
 
 
@@ -143,20 +119,14 @@ static func hold(
 ## disc's scale from the row (the native rows: the avatar's own pose sets it otherwise) and the avatar's transform now
 ## (the flinch leans the disc with the body).
 static func show(h: Array, batch: EnemyBatch, id: int, k: int) -> void:
-	var a: BombDroneAvatar = h[2]
+	var a: BombDroneAvatar = h[BatchHeld.AVATAR]
 	if not is_instance_valid(a) or not is_instance_valid(a.shadow):
 		return
-	var at: Node3D = h[5]
-	var p := batch.origin(id)
-	if at.position != p:
-		at.position = p
+	BatchHeld.place(h, batch, id)
 	var avatars := batch.avatars
 	if avatars.on:
 		var s := avatars.row_value(k, SHADOW)
 		var sh := Vector3(s, 1, s)
 		if a.shadow.scale != sh:
 			a.shadow.scale = sh
-	var body: Node3D = h[1]
-	var xf := avatars.avatar_xf(k)
-	if body.transform != xf:
-		body.transform = xf
+	BatchHeld.lean(h, avatars, k)
