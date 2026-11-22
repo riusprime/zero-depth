@@ -402,6 +402,7 @@ The queue, one kind a step (a variant on the same avatar goes with its kind):
 | 66 | Wire Weaver | |
 | 67 | Star Warper | |
 | 68 | **Held parts and the shared files.** The Bomb Drone's step measured that a node part hung from the batch's anchor (the Lens Drone's shadow, likely the Warden's dust ring and crust) sits a part of a tick behind where its node drew it (twin `ground_disc_pos` 0.297 m against 0.000002 when held from `EnemyBatch.origin`); move those to the Bomb Drone's hold, proven by the twin. Split `batch_avatars.gd` (986 lines) by responsibility so the remaining kinds fit under the cap | |
+| 69 | **The native dispatch file under the cap.** `native/src/zd_avatar.cpp` passed 1,000 lines as the kinds were added (1,019 at the Frost Spitter); split it by responsibility once no port runs in parallel (the shared avatar helpers apart from the per-class dispatch), the same code. Bit for bit by every kind's equality test | |
 
 Not in the queue: the bosses and elites (their own rigs and views, one or a few a room: little to gain per frame),
 the hero, and the critters (`CritterCrowd` draws them already). The chargers' variants and any other kind found still
