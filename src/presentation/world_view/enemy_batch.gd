@@ -26,13 +26,13 @@ extends Node3D
 enum Part { DISC, RING, DAZED, BAR, BLOB }
 
 ## The kinds batched: the VAT crowd's horde kinds, the Charger, the Hatchling, the Stone Thrower, the Needle, the Rock
-## Lurker, the Warden (and the Rubble Warden, on its avatar), the Sniper, the Arc Caster and the Scrap Hound, whose
-## avatars need nothing of the tree (their pose, rock, glows and death are reckoned from their own clocks, the sim's
-## state and their facing node's turn; the Hound's body turns on its avatar's own transform; the thrown rock flies from
-## the sim's place, RuinsRocksViews; the Lurker's disguise hides its disc and ring here, show_rings; the Warden's dust
-## ring and the Rubble Warden's crust hang in the tree from its anchor, BatchWarden). The other VAT kinds (the solo
-## models: the drones, the other owner's models) still read the tree in their frame step or death (global transforms,
-## timers), so they keep their node.
+## Lurker, the Warden (and the Rubble Warden, on its avatar), the Sniper, the Arc Caster, the Lens Drone and the Scrap
+## Hound, whose avatars need nothing of the tree (their pose, rock, glows and death are reckoned from their own clocks,
+## the sim's state and their facing node's turn; the Hound's body turns on its avatar's own transform; the thrown rock
+## flies from the sim's place, RuinsRocksViews; the Lurker's disguise hides its disc and ring here, show_rings; the
+## Warden's dust ring and the Rubble Warden's crust hang in the tree from its anchor, BatchWarden, and the Lens Drone's
+## ground shadow the same way, BatchLensDrone). The other VAT kinds (the solo models: the Bomb Drone, the other owner's
+## models) still read the tree in their frame step or death (global transforms, timers), so they keep their node.
 const KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_SPLITTER,
@@ -49,6 +49,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_RUBBLE_WARDEN,
 	WorldReader.KIND_SNIPER,
 	WorldReader.KIND_ARC_CASTER,
+	WorldReader.KIND_LENS_DRONE,
 	WorldReader.KIND_SCRAP_HOUND,
 ]
 ## After the views' sync and the other nodes' _process, before VatCrowd (which draws the bodies at these places).
@@ -133,7 +134,8 @@ var _phys_seen := -1
 ## trail's fill (BarChunks.fill_to; 1 without a trail) and whether its root, facing and avatar all show (each sync).
 var _fill := PackedFloat64Array()
 var _shown := PackedByteArray()
-## The batched Wardens' dust rings (and Rubble Wardens' crusts) in the tree, by id (BatchWarden.hold).
+## The batched Wardens' dust rings (and Rubble Wardens' crusts) and Lens Drones' shadows in the tree, by id
+## (BatchWarden.hold, BatchLensDrone.hold).
 var _held := {}
 ## Slots whose body falls (their root is freed when the fall ends: the frame's drop looks only while there are any).
 var _falls := 0
@@ -231,6 +233,8 @@ func add(
 	avatars.add(id, avatar, _facings[k], root.get_meta(&"vat_sets", Vector2i(-1, -1)))
 	if avatar is WardenAvatar:
 		_held[id] = BatchWarden.hold(self, id, avatar as WardenAvatar, root, _facings[k])
+	elif avatar is LensDroneAvatar:
+		_held[id] = BatchLensDrone.hold(self, id, avatar as LensDroneAvatar, root, _facings[k])
 	_bo_fresh = false
 	synced_frame = Engine.get_process_frames()
 
@@ -591,8 +595,12 @@ func advance(delta: float) -> void:
 			var a: AvatarBase = _avatars[j]
 			if a.is_processing() and _born[j] != frame:
 				a._process(delta)  # (as the tree ran it, from the frame after it came)
-	for id: int in _held:  # The Wardens' dust rings, as their step left them
-		BatchWarden.show(_held[id], avatars, _slot_of[id])
+	for id: int in _held:  # The Wardens' dust rings and the Lens Drones' shadows, as their step left them
+		var h: Array = _held[id]
+		if is_instance_valid(h[2]) and h[2] is LensDroneAvatar:
+			BatchLensDrone.show(h, avatars, _slot_of[id])
+		else:
+			BatchWarden.show(h, avatars, _slot_of[id])
 	PerfMarks.add(&"batch.avatars", t_av)  # The avatars' frame step (the tree ran it before)
 	var t_wr := PerfMarks.start()
 	write_furniture()

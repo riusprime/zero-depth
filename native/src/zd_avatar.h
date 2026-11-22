@@ -219,6 +219,15 @@ enum Field {
 	AC_HAVE_FY = 57,
 	AC_HEM_Y = 58, // f32: the robe's waist pivot height (set once)
 	AC_VD = 59, // f32 x23: the raw drives
+	// LensDroneAvatar (its own fields from 43 to 53; zd_avatar_lens.cpp)
+	LD_EYE = 43, // f32: the eye material's emission energy
+	LD_STATE = 44,
+	LD_RISE = 45,
+	LD_CHARGE = 46,
+	LD_LIFT = 47,
+	LD_SHADOW = 48, // the ground shadow's scale across (its node's x and z)
+	LD_HAS_MODEL = 49, // the owner's model (set once)
+	LD_VD = 50, // f32 x3: the raw drives
 	// ScrapHoundAvatar (its own fields from 43 to 80; zd_avatar_scrap_hound.cpp)
 	SH_GLOW = 43, // the visor's glow (the instance's accent glow)
 	SH_LIFT = 44,
@@ -262,6 +271,7 @@ enum Class {
 	ROCK_LURKER = 13,
 	SNIPER_MODEL = 14, // the owner's model (SniperAvatar); SNIPER is its old horde body
 	ARC_CASTER = 15,
+	LENS_DRONE = 17,
 	SCRAP_HOUND = 18,
 };
 
@@ -366,6 +376,10 @@ int w_drives(const double *s, float *out);
 void ac_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const Ctx &c);
 void ac_advance(double *s, double delta, const Frame &f, const Ctx &c);
 int ac_drives(const double *s, float *out);
+// The Lens Drone (zd_avatar_lens.cpp): its sync (the state alone), frame step (the pose included) and drives.
+void ld_apply(double *s, int state, const Ctx &c);
+void ld_advance(double *s, double delta, const Ctx &c);
+int ld_drives(const double *s, float *out);
 // The Scrap Hound (zd_avatar_scrap_hound.cpp): its sync (`more`: its HP, whether a hit stopped it), frame step (the
 // pose included; the facing's turn from `f`) and drives.
 void sh_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
