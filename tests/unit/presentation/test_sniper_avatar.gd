@@ -373,7 +373,8 @@ func test_the_vat_bake_matches_the_live_pose() -> void:
 	assert_true(VatCrowd.supports(KIND), "drawn by the VAT crowd")
 	assert_true(SoloVat.is_solo(KIND))
 	assert_false(HordeAvatar.is_horde_kind(KIND), "no horde body left")
-	assert_false(EnemyBatch.KINDS.has(KIND), "keeps its node (not batched)")
+	assert_true(EnemyBatch.KINDS.has(KIND), "batched (no node in the tree)")
+	assert_false(EnemyBatch.KINDS.has(WorldReader.KIND_SPLIT_SNIPER), "its variant keeps its nodes")
 	for calm: bool in [false, true]:
 		ViewPrefs.reduced_motion = calm
 		var pose := VatBake.pose_for(KIND)

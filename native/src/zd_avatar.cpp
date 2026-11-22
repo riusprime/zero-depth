@@ -662,6 +662,8 @@ void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
 		l_advance(s, delta, c);
 	} else if (cls == WARDEN) {
 		w_advance(s, delta, f, c);
+	} else if (cls == SNIPER_MODEL) {
+		sn_advance(s, delta, f, c);
 	} else if (cls == ARC_CASTER) {
 		ac_advance(s, delta, f, c);
 	} else if (is_charger(cls)) {
@@ -695,6 +697,10 @@ void apply(double *s, int cls, int64_t tick, int state, bool healing, double win
 	}
 	if (cls == WARDEN) {
 		w_apply(s, tick, state, windup, pos_x, pos_y, more, c);
+		return;
+	}
+	if (cls == SNIPER_MODEL) {
+		sn_apply(s, tick, state, windup, pos_x, pos_y, more, c);
 		return;
 	}
 	if (cls == ARC_CASTER) {
@@ -762,6 +768,9 @@ double glow_energy(const double *s, int cls) {
 	if (cls == WARDEN) {
 		return s[W_CRACK];
 	}
+	if (cls == SNIPER_MODEL) {
+		return s[SN_LENS];
+	}
 	if (cls == ARC_CASTER) {
 		return s[AC_CRYSTAL];
 	}
@@ -780,6 +789,9 @@ Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
 	}
 	if (cls == WARDEN) {
 		return xf.translated_local(Vector3(0.0f, f32(s[W_LIFT]), 0.0f));
+	}
+	if (cls == SNIPER_MODEL) {
+		return xf.translated_local(Vector3(0.0f, f32(s[SN_LIFT]), 0.0f));
 	}
 	if (cls == ARC_CASTER) {
 		return xf.translated_local(Vector3(0.0f, f32(s[AC_LIFT]), 0.0f));
@@ -805,6 +817,9 @@ int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 	}
 	if (cls == WARDEN) {
 		return w_drives(s, out);
+	}
+	if (cls == SNIPER_MODEL) {
+		return sn_drives(s, out);
 	}
 	if (cls == ARC_CASTER) {
 		return ac_drives(s, out);
