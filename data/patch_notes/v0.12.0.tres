@@ -1,0 +1,134 @@
+[gd_resource type="Resource" script_class="PatchNotesDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/patch_notes_definition.gd" id="1_7rjuu"]
+
+[resource]
+script = ExtResource("1_7rjuu")
+version = "0.12.0"
+body_en = "# Zero Depth v0.12.0 — Bosses You Learn
+_2026-11-23_ · Seven bosses rebuilt around a mechanic you learn in every phase, a final boss that remembers your run and steals your best card, new models for every enemy, new props and hall centrepieces, and faster big fights.
+
+## New Features
+### Bosses you learn
+Every reworked boss now asks you to do something in each phase: stand in the right place, use what it gives you, or turn its own attack against it. Missing one hurts a lot, but a single miss is not meant to kill you from full health. None of it is explained in words: arrows and glows point at what matters when you first meet it.
+- **The Clockwork Judge** fights with time. Every 25 s its Time Wave takes 75 % of your attack speed; walk through its three hour orbs to win back 25 % each. From phase 2, stopped gears block the ways to the orbs, slow fields between you and the Judge slow your shots, and its Bell throws you back to where you stood 4 s ago, onto a Verdict square that drops a moment later: step off it. In phase 3 the orbs last only 10 s and the Bell tolls twice.
+- **The Tidecaller** dances, one thing at a time with calm in between. Its Pull drags you in and its push throws you clear (and pops the enemy shots around you). From phase 2, Riptide floods three of four strips of the room: find the dry one. In the last phase it walks to the middle of the room and stays there; its whirlpool carries you round it, its eye throws you out, and High Tide floods everything but one dry circle.
+- **The Twin Wardens** fight apart, with no chain between them. Amber is a fast swordsman: combos and an overhead up close, a Sword Lane from range, and a charge that comes with only a white-hot flash and aims where you are going. Violet raises a Mirror Ward that sends your shots back and blocks your swings, and cuts the floor with Shadow Swords that leave burning rifts. In phase 3 Violet hides under a whole ward: bait Amber's long charge through her to break it and stun her.
+- **The Siege Engine** makes its own cover. From phase 2 a Target Lock follows you and lands a shell that wrecks the Engine's turrets beneath it and leaves a boulder. In phase 3 its Shockwave hits you anywhere it can see you, so hide behind a boulder. Ammo carts roll toward it: let one arrive and a Doom Shell falls unless you are in cover; destroy it next to the Engine and its armour comes off for a while.
+- **The Foundry** forges a plate that cuts its damage taken by 60 %. Its own bomb drones throw at you: make a bomb land next to the Foundry to blow the plate off. In phase 3 its lava cools into slabs, Overpressure burns the open floor while the slabs stay safe, and you heat up with every shot and step in lava until you cool off on a slab.
+- **The Warlord** lunges fast and the lunge bursts where it stops. In phase 2 it plants a War Banner: inside it the Warlord attacks faster and you hit it harder, and a lunge baited through the pole knocks the banner down. In phase 3 a javelin cage closes on you both: a duel with its shield down, then the javelins return through the centre.
+- **The Hive Lens** is fed by its drones: each living drone makes it take less damage. Its Focus Beam kills any drone in its path, so put a drone between you and the Lens. In phase 3 the beam leaves burning glass, and in its Lattice the drones circle it, joined to it by strands of light; killing a drone cuts its strands.
+- **The Gatekeeper's** shock lanes now run from its edge toward where you stood, three of them, and their spikes rise outward one slice at a time.
+- Boss warnings and states no longer show text on the boss bar or over the boss; the fight shows them.
+
+### The Fallen remembers
+The Hollow Crown's last body no longer vanishes between its phases. It stays in the room and, at two thirds and one third of its health and every so often between, casts a mechanic of a boss you killed this run: the Judge's Time Wave and hour orbs, the Tidecaller's Riptide, the Gatekeeper's quake pillars, or the Twin Wardens' ward with an amber shade that charges at you. A ghost of that boss rises over it while it casts.
+- **It steals your best card.** At two thirds and one third of its health your strongest card goes dark in its slot and The Fallen casts it at you. Hit the violet mark on its back eight times to win the oldest one back. Every card comes back when it dies.
+
+### Enemies on new models
+Every regular enemy, the Star Warper and the five horde critters now have new models of their own, animated: Hatchling, Swarmer, Needle, Sniper, Warden, Mine Layer, Arc Caster, Bomb Drone, Wire Weaver, Frost Spitter, Glacier Turtle and Gravity Node. Floating enemies (Bomb Drone, Star Warper, Arc Caster, Cave Bat, Star Mote) hover, bob and bank instead of walking.
+- Each biome's own versions of the shared enemies wear that biome's colour.
+- The Gravity Node now gently pulls you when you are within 5 m (never more than about half your run speed, and never your dash).
+- The Warlord's javelins and War Banner, the Clockwork Judge's hour clocks and the Siege Engine's ammo cart are new models too.
+
+### Rooms, props and halls
+- **Room pieces:** the camps get a tent, log seats and a cook pot; the collapsed halls statues, a round column and fallen column drums; the quarries a crane, a mine cart, stone blocks and a tool rack. The Ruins add metal posts, dumpsters, cable spools and sign frames, and the Frozen Shore ice floes.
+- **Props:** new crates, urns, barrels and an explosive barrel that bursts once, new hazards for every biome, the approach pylon, and a timed door built from the walls' own stone blocks, whose slab sinks to open.
+- **Hall centrepieces:** a grand arch stands at full size in the Ruins and Night Rocks halls, and you can walk through its opening; a great monolith stands in Starfall. The observatory, fire pit and quarry rock face are larger.
+
+### The summoned Blade
+The Blade forms from runes for each swing and breaks into motes after it. It starts at your body, and its sparks travel with you as you move.
+
+### Graphics options
+Options has a resolution list (windowed and fullscreen) and a Graphics page: upscaler (with FSR 2), shadows, ambient occlusion, glow, anti-aliasing and texture filtering. The defaults look as before.
+
+## Combat
+### Boss style
+Every boss effect was gone over to fit the game's look:
+- Warnings crack the floor in dark lines instead of glowing lava.
+- Stone hits break stone: craters, slams, landings and shells throw faceted debris instead of smoke columns.
+- Bosses wind up with a rim in their own colour instead of turning red, and every boss model is matte, lit like the walls, with a soft light so it reads in every room.
+- Hostile shots are faceted stones and gems; the Judge's gears are iron and gold; the Siege Engine's cart is a wooden wagon and its rail shot leaves a streak behind it as it slides.
+
+### After the playtests
+Two rounds of playtest feedback reached the Tidecaller's rhythm, the Twin Wardens, the Gatekeeper and the Foundry:
+- **The Twin Wardens:** Amber chases you, and his charge in phase 1 comes every 10–15 s from any distance. Phase 2's Crossfire is a ring of shots with one marked gap close to you. Phase 3 starts without the ward, which Violet raises a few seconds in.
+- **The Tidecaller:** its Pull, Riptide and High Tide take turns, never two at once, with at least 3 s of calm between. The dry Riptide strip is bare floor.
+- **The Foundry:** its fireballs share one look, its slag fountains leave room to pass between shots, and its Furnace Waves' walls alternate.
+
+## Performance
+- **Big fights:** every enemy on a model is now drawn by the native batch. In a 42-enemy fight in Night Rocks a frame takes about 5 ms less (from about 54 to about 75 fps on the test PC, an i7-10700K with an RTX 3060), and 2–4 ms less in the Frozen Shore.
+- **The processor:** the hero's cloak, idle views, the HUD rows, the sound director and the damage meter skip work that changes nothing. The picture is the same.
+
+## Bug Fixes
+- The corner minimap draws the rooms again.
+- Blood Price offers only an ability that can still level up.
+- Pack explosions play once (one blast used to read as two or three).
+- Enemies leave no smoke behind, and Starfall's glowing pools fade out before their edges.
+- Night Rocks enemies stand on the same dark disc as in every other biome.
+- The long stalls in Night Rocks fights, the first time some effects were drawn, are fixed: those effects are now prepared behind the loading screen.
+"
+body_es = "# Zero Depth v0.12.0 — Jefes que se aprenden
+_2026-11-23_ · Siete jefes rehechos con una mecánica que se aprende en cada fase, un jefe final que recuerda tu partida y te roba tu mejor carta, modelos nuevos para todos los enemigos, accesorios y piezas centrales nuevas en los salones, y combates grandes más fluidos.
+
+## Novedades
+### Jefes que se aprenden
+Cada jefe rehecho te pide ahora algo en cada fase: ponerte en el sitio justo, usar lo que te da o volver su propio ataque contra él. Fallar duele mucho, pero un solo fallo no está pensado para matarte con la vida llena. Nada de esto se explica con palabras: flechas y brillos señalan lo importante la primera vez que te lo encuentras.
+- **The Clockwork Judge** lucha con el tiempo. Cada 25 s su Onda del Tiempo te quita un 75 % de la velocidad de ataque; atraviesa sus tres orbes horarios para recuperar un 25 % con cada uno. Desde la fase 2, engranajes parados cierran los caminos a los orbes, campos lentos entre tú y él frenan tus disparos, y su Campana te devuelve a donde estabas hace 4 s, sobre un cuadro de Veredicto que cae un instante después: sal de él. En la fase 3 los orbes duran solo 10 s y la Campana suena dos veces.
+- **The Tidecaller** baila, una cosa cada vez y con calma entre medias. Su Tirón te arrastra hacia él y su empujón te lanza lejos (y deshace los disparos enemigos que tienes cerca). Desde la fase 2, la Resaca inunda tres de las cuatro franjas de la sala: busca la seca. En la última fase camina al centro de la sala y se queda allí; su remolino te hace girar a su alrededor, su ojo te expulsa y la Marea Alta lo inunda todo menos un círculo seco.
+- **The Twin Wardens** luchan por separado, sin cadena entre ellos. Ámbar es un espadachín rápido: combos y un tajo desde arriba de cerca, un Carril de Espada a distancia y una embestida que solo avisa con un destello al rojo blanco y apunta hacia donde vas. Violeta alza un Escudo Espejo que te devuelve los disparos y para tus tajos, y corta el suelo con Espadas de Sombra que dejan grietas ardientes. En la fase 3 Violeta se esconde bajo un escudo completo: atrae la embestida larga de Ámbar a través de ella para romperlo y aturdirla.
+- **The Siege Engine** crea su propia cobertura. Desde la fase 2 una Fijación de Blanco te sigue y suelta un proyectil que destroza las torretas de The Siege Engine que tiene debajo y deja una roca. En la fase 3 su Onda de Choque te alcanza en cualquier sitio desde el que te vea, así que escóndete tras una roca. Carros de munición ruedan hacia ella: si uno llega, cae un Proyectil Fatal salvo que estés a cubierto; si lo destruyes junto a The Siege Engine, pierde su blindaje un rato.
+- **The Foundry** forja una placa que reduce en un 60 % el daño que recibe. Sus propios drones bomba te lanzan bombas: haz que una caiga junto a The Foundry para arrancarle la placa. En la fase 3 su lava se enfría en losas, la Sobrepresión quema el suelo descubierto mientras las losas siguen a salvo, y te vas calentando con cada disparo y cada paso por la lava hasta que te enfrías sobre una losa.
+- **The Warlord** se lanza rápido, y su embestida estalla donde se detiene. En la fase 2 clava un Estandarte de Guerra: dentro de él, The Warlord ataca más rápido y tú le golpeas más fuerte, y una embestida atraída a través del mástil derriba el estandarte. En la fase 3 una jaula de jabalinas se cierra sobre los dos: un duelo con su escudo bajado, y después las jabalinas vuelven por el centro.
+- **The Hive Lens** se alimenta de sus drones: cada dron vivo hace que reciba menos daño. Su Rayo Concentrado mata a cualquier dron que se cruce en su camino, así que pon un dron entre tú y The Hive Lens. En la fase 3 el rayo deja cristal ardiente, y en su Retícula los drones giran a su alrededor unidos a ella por hilos de luz; matar a un dron corta sus hilos.
+- **Las líneas de choque de The Gatekeeper** salen ahora de su borde hacia donde estabas, tres a la vez, y sus púas brotan hacia fuera tramo a tramo.
+- Los avisos y estados de los jefes ya no muestran texto en la barra del jefe ni sobre él; los enseña el propio combate.
+
+### The Fallen recuerda
+El último cuerpo de Hollow Crown ya no desaparece entre sus fases. Se queda en la sala y, a dos tercios y a un tercio de su vida y cada cierto tiempo entre medias, lanza una mecánica de un jefe que hayas matado en esta partida: la Onda del Tiempo y los orbes horarios de The Clockwork Judge, la Resaca de The Tidecaller, los pilares sísmicos de The Gatekeeper, o el escudo de The Twin Wardens con una sombra ámbar que te embiste. Mientras la lanza, el fantasma de ese jefe se alza sobre él.
+- **Te roba tu mejor carta.** A dos tercios y a un tercio de su vida, tu carta más fuerte se apaga en su hueco y The Fallen la lanza contra ti. Golpea ocho veces la marca violeta de su espalda para recuperar la más antigua. Todas las cartas vuelven cuando muere.
+
+### Enemigos con modelos nuevos
+Todos los enemigos normales, el Saltaestrellas y los cinco bichos de horda tienen ahora modelos nuevos propios, animados: Cría, Enjambre, Aguja, Francotirador, Guardián, Minador, Lanzarrayos, Dron Bombardero, Tejedor de Cables, Escupidor de Escarcha, Tortuga Glaciar y Nodo Gravitatorio. Los enemigos que flotan (Dron Bombardero, Saltaestrellas, Lanzarrayos, Murciélago de Cueva, Mota Estelar) se ciernen, se mecen y se inclinan en lugar de caminar.
+- Las versiones propias de cada bioma de los enemigos comunes llevan el color de ese bioma.
+- El Nodo Gravitatorio ahora te atrae con suavidad cuando estás a menos de 5 m (nunca más de la mitad de tu velocidad de carrera, más o menos, y nunca durante la esquiva).
+- Las jabalinas y el Estandarte de Guerra de The Warlord, los relojes horarios de The Clockwork Judge y el carro de munición de The Siege Engine también tienen modelos nuevos.
+
+### Salas, accesorios y salones
+- **Piezas de sala:** los campamentos tienen una tienda, asientos de tronco y una olla; los salones derruidos, estatuas, una columna redonda y tambores de columna caídos; las canteras, una grúa, una vagoneta, bloques de piedra y un estante de herramientas. Las Ruinas suman postes metálicos, contenedores, bobinas de cable y marcos de cartel, y la Costa Helada, témpanos de hielo.
+- **Accesorios:** cajas, urnas, barriles nuevos y un barril explosivo que estalla una sola vez, peligros nuevos en cada bioma, el pilón de la llegada y una puerta con tiempo hecha con los propios bloques de piedra de los muros, cuya losa se hunde para abrirse.
+- **Piezas centrales de los salones:** un gran arco se alza a tamaño completo en los salones de las Ruinas y de las Rocas Nocturnas, y se puede pasar por su hueco; un gran monolito se alza en la Caída Estelar. El observatorio, la hoguera y la pared de roca de la cantera son más grandes.
+
+### La Espada invocada
+La Espada se forma con runas en cada tajo y se deshace en motas después. Nace de tu cuerpo, y sus chispas te acompañan al moverte.
+
+### Opciones gráficas
+Opciones tiene una lista de resoluciones (en ventana y a pantalla completa) y una página de Gráficos: escalador (con FSR 2), sombras, oclusión ambiental, resplandor, suavizado de bordes y filtrado de texturas. Los valores por defecto se ven como antes.
+
+## Combate
+### El estilo de los jefes
+Se han repasado todos los efectos de los jefes para que encajen con el aspecto del juego:
+- Los avisos agrietan el suelo con líneas oscuras en lugar de lava brillante.
+- Los golpes de piedra rompen piedra: cráteres, golpes al suelo, aterrizajes y proyectiles levantan cascotes facetados en lugar de columnas de humo.
+- Los jefes cargan sus ataques con un borde de su propio color en lugar de ponerse rojos, y todos los modelos de jefe son mates, iluminados como los muros, con una luz suave para que se lean en cualquier sala.
+- Los disparos enemigos son piedras y gemas facetadas; los engranajes de The Clockwork Judge son de hierro y oro; el carro de The Siege Engine es una carreta de madera y su disparo de riel deja una estela tras ella al deslizarse.
+
+### Tras las pruebas de juego
+Dos rondas de comentarios de las pruebas de juego llegaron al ritmo de The Tidecaller, a The Twin Wardens, a The Gatekeeper y a The Foundry:
+- **The Twin Wardens:** Ámbar te persigue, y su embestida de la fase 1 llega cada 10–15 s desde cualquier distancia. El Fuego Cruzado de la fase 2 es un anillo de disparos con un solo hueco marcado cerca de ti. La fase 3 empieza sin el escudo, que Violeta alza a los pocos segundos.
+- **The Tidecaller:** su Tirón, la Resaca y la Marea Alta se turnan, nunca dos a la vez, con al menos 3 s de calma entre medias. La franja seca de la Resaca es suelo desnudo.
+- **The Foundry:** sus bolas de fuego tienen un solo aspecto, sus fuentes de escoria dejan sitio para pasar entre disparos y los muros de sus Oleadas del Horno se alternan.
+
+## Rendimiento
+- **Combates grandes:** todos los enemigos con modelo se dibujan ahora con el lote nativo. En un combate con 42 enemigos en las Rocas Nocturnas cada fotograma tarda unos 5 ms menos (de unos 54 a unos 75 fps en el PC de pruebas, un i7-10700K con una RTX 3060), y entre 2 y 4 ms menos en la Costa Helada.
+- **El procesador:** la capa del héroe, las vistas en reposo, las filas del HUD, el director de sonido y el medidor de daño se saltan el trabajo que no cambia nada. La imagen es la misma.
+
+## Correcciones
+- El minimapa de la esquina vuelve a dibujar las salas.
+- Precio de sangre solo ofrece una habilidad que aún pueda subir de nivel.
+- Las explosiones del paquete se reproducen una sola vez (una explosión parecía dos o tres).
+- Los enemigos ya no dejan humo, y los charcos brillantes de la Caída Estelar se desvanecen antes de sus bordes.
+- Los enemigos de las Rocas Nocturnas pisan el mismo disco oscuro que en los demás biomas.
+- Los parones largos en los combates de las Rocas Nocturnas, la primera vez que se dibujaban algunos efectos, están corregidos: esos efectos se preparan ahora tras la pantalla de carga.
+"
+id = &"v0_12_0"

@@ -105,7 +105,7 @@ Deathventory once shipped an agent-written "human playtest" and a smoke test wit
 |---|---|
 | Only docs, or scripts that write only under `docs/` | Nothing local; CI covers it |
 | Installed assets or manifests (`assets/`) | The asset tests |
-| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead, after merging agents' branches: `bash scripts/ci/seams.sh` (the seams: 674 tests in 1,396 s, 27 min with import and lint, on 2026-11-10, owner's PC; it was 3,185 s before v0.11.1), then push. **No local full suite** |
+| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead, after merging agents' branches: `bash scripts/ci/seams.sh` (the seams: 760 tests in 1,997 s with the native build, on 2026-11-23, owner's PC; it was 3,185 s before v0.11.1), then push. **No local full suite** |
 
 **The native library is required** (the sim runs only in C++, `native/README.md`): `verify.sh`, `seams.sh` and
 `gut_shard.sh` build it first (`scripts/native/ensure.sh`); a GUT run without it stops before its first test with
