@@ -32,6 +32,7 @@ func before_each() -> void:
 func after_each() -> void:
 	ViewPrefs.reduced_motion = false
 	ViewPrefs.blade_held = false
+	ViewPrefs.enemy_vat = false  # apply_settings turns it on (the game default); the later files expect it off
 	BossPieceModels.dir = BossPieceModels.DIR
 	BossPieceModels.clear_cache()
 
