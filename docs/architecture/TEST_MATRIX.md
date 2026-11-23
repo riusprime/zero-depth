@@ -49,7 +49,11 @@ Deathventory's GUT exits 0 when it can't start (for example when `class_name`s w
   Step 2. The lead raises it at the end of every step and at every release, and never lowers it without an
   owner-approved reason in PROGRESS;
 - the log contains `SCRIPT ERROR`, `Parse Error` or `Failed to load script`;
-- the import step logs an error (no `|| true`).
+- the import step logs an error (no `|| true`);
+- a test does not pass, unless it reports a missed target (owner, 2026-11-23: "Yes, allow NOT MET"): every line
+  under it in the run summary is a pending whose message starts with `NOT MET`, followed by the numbers. The shard
+  lists those misses and they don't count toward `tests/MIN_TEST_COUNT`; any other pending, a failure, a risky test or
+  a skipped script fails the run.
 
 ## 4. Proof each kind of change needs
 
