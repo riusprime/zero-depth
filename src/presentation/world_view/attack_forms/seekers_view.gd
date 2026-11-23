@@ -253,6 +253,8 @@ func _place() -> void:
 		if hold.has(_mote_id[k] >> 3):  # a javelin's own trail replaces its motes
 			_motes[k].visible = false
 			continue
+		if not _motes[k].visible:  # the effects layer's sprite draws it instead (vfx_on): nothing to place
+			continue
 		var b := Basis(right * MOTE, up * MOTE, view)
 		_motes[k].transform = Transform3D(b, SimPlane.to_3d(_mote_pos[k], HEIGHT))
 

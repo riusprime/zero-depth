@@ -28,7 +28,10 @@ extends AvatarBase
 ##   shivers or twitches, the flash steady.
 ## The pose is a few plain numbers (the raw drives, _vd: each joint's turn) worked out from the state first, then the
 ## nodes from them through the joint table (_joints, the same transforms the VAT rig declares), so the baked pose is
-## the live one. Presentation only (EI-07): nothing here reaches the sim. +X is the front.
+## the live one. On the VAT crowd it is batched (EnemyBatch: nothing here reads the tree, its facing's turn is its
+## parent node's, its yaw its own transform's; its death's timer is the batch's, drop), and the native batch runs the
+## same sync, frame step and pose (native/src/zd_avatar_scrap_hound.cpp).
+## Presentation only (EI-07): nothing here reaches the sim. +X is the front.
 
 const KIND := WorldReader.KIND_SCRAP_HOUND
 const MODEL := &"scrap_hound"
@@ -370,6 +373,7 @@ func sync(reader: WorldReader, i: int) -> void:
 
 ## The same as sync(), from plain values (tests, EnemyShadows): tick, state, pos, windup (0..1); yelped, hp optional.
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	var st: int = s["state"]
 	var yelped: bool = s.get("yelped", false)
 	var hp: int = s.get("hp", -1)
@@ -395,6 +399,7 @@ func apply_state(s: Dictionary) -> void:
 
 # --- Frame time ---------------------------------------------------------------------------------------------------
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0:
 		return
@@ -464,29 +469,35 @@ func _steer(dt: float, dying: bool) -> void:
 		transform.basis = b
 
 
-## Starts the death (ActorViews, when the sim drops the hound): DEATH_SECONDS, then it is freed. True: it plays.
+## Starts the death (ActorViews or the enemy batch, when the sim drops the hound): DEATH_SECONDS, then it is freed.
+## True: it plays.
 func die() -> bool:
+	_touch()
 	if _die_t < 0.0:
 		_die_t = 0.0
 	return true
 
 
 func dying() -> bool:
+	_peek()
 	return _die_t >= 0.0
 
 
 ## The body's yaw against its facing now (radians; tests).
 func body_yaw() -> float:
+	_peek()
 	return _yaw
 
 
 ## The visor's glow now (tests, the e2e): rest, climbing through the tell, flashing near its end.
 func visor_energy() -> float:
+	_peek()
 	return _glow
 
 
 ## The raw drives now (tests).
 func drives() -> PackedFloat32Array:
+	_peek()
 	return _vd
 
 
@@ -810,15 +821,18 @@ func _apply() -> void:
 # --- SoloVat: the VAT rig -----------------------------------------------------------------------------------------
 ## The whole body's lift (m): VatCrowd moves the instance by it.
 func vat_lift() -> float:
+	_peek()
 	return _lift
 
 
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
 ## The visor's glow (the instance's accent glow).
 func glow_energy() -> float:
+	_peek()
 	return _glow
 
 

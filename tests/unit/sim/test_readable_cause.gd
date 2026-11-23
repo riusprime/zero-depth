@@ -68,6 +68,9 @@ func test_every_cause_line_exists_in_both_languages() -> void:
 	var keys: Array = EndPanel.CAUSES.values()
 	for t in BossLab.tables():
 		for atk in t.attacks:
+			# A cast that never hits (the Judge's Time Wave) can end no run, so it has no line
+			if atk.damage == 0 and String(atk.cause_key).is_empty():
+				continue
 			keys.append(String(atk.cause_key))
 	for k: String in keys:
 		assert_true(rows.has(k), "%s is in strings.csv" % k)

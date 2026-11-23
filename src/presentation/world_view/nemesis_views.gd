@@ -2,9 +2,9 @@ class_name NemesisViews
 extends Node3D
 ## The Nemesis's tells beside its avatar, read from
 ## the sim (WorldReader.nemesis; EI-07), never decided here:
-## - a card's cast: through its windup the card's own name (the player's card, tr of its name key) floats over the
-##   Nemesis's head and a violet sigil opens at its feet, brightening until the cast lands (its parts on the ground are
-##   TelegraphViews', its shots FireballViews', its strikes BossStrikeViews');
+## - a card's cast: through its windup a dim violet sigil opens at its feet, brightening until the cast lands; no word
+##   names the card (its parts on the ground, TelegraphViews', its shots, FireballViews', and its strikes,
+##   BossStrikeViews', tell it);
 ## - its dash: dark afterimages left along its way, fading (as the hero's DashTrail, in the Nemesis's colours).
 ## Ticks are the sim's (the views pause with it); reduced motion: no pulse, the afterimages still fade.
 ## The Fallen's mimic window: through its warning a thin violet ring
@@ -13,11 +13,15 @@ extends Node3D
 
 const SIGIL := Color(0.75, 0.2, 1.0)
 const GHOST := Color(0.16, 0.06, 0.22)
-## The card's name floats this high (m); the sigil's radius (m).
-const LABEL_Y := 2.1
+## The sigil's radius (m).
 const SIGIL_R := 1.1
-## The cast sigil is a MagicArea in the blood element; false: the owner's sigil texture.
+## The cast sigil is a MagicArea circle in The Fallen's violet (SIGIL_COLOR, SIGIL_EDGE) at a low intensity, from
+## SIGIL_DIM to SIGIL_DIM + SIGIL_RISE as the cast fills; false: the owner's sigil texture.
 const PACK_SIGIL := true
+const SIGIL_COLOR := Color(0.62, 0.42, 0.86)
+const SIGIL_EDGE := Color(0.4, 0.16, 0.72)
+const SIGIL_DIM := 0.3
+const SIGIL_RISE := 0.3
 ## An afterimage every GHOST_EVERY ticks of a dash, at most GHOSTS alive, each fading over GHOST_TICKS.
 const GHOST_EVERY := 2
 const GHOSTS := 8
@@ -26,7 +30,6 @@ const GHOST_TICKS := 18
 const CUE := Color(0.82, 0.45, 1.0)
 const CUE_R := 1.0
 
-var label := Label3D.new()
 var _sigil := MeshInstance3D.new()
 var _sigil_mat := StandardMaterial3D.new()
 ## The owner's sigil (FxTextures.sigil_material; null: the code disc).
@@ -38,6 +41,8 @@ var _ghost_tick := PackedInt32Array()
 var _next := 0
 var _tick := 0
 var _casting := -1
+## The code of the card being cast now (-1 none).
+var _card := -1
 var _progress := 0.0
 var _t := 0.0
 ## The window cue (the rings at the hero's and The Fallen's feet, the thread between them).
@@ -51,17 +56,6 @@ var _cue_left := 0.0
 
 func _init() -> void:
 	name = "NemesisViews"
-	label.name = "CardName"
-	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.no_depth_test = true
-	label.fixed_size = false
-	label.pixel_size = 0.006
-	label.font_size = 48
-	label.outline_size = 12
-	label.modulate = Color(0.92, 0.75, 1.0)
-	label.outline_modulate = Color(0.06, 0.0, 0.1)
-	label.visible = false
-	add_child(label)
 	var disc := CylinderMesh.new()
 	disc.top_radius = SIGIL_R
 	disc.bottom_radius = SIGIL_R
@@ -134,28 +128,35 @@ func sync(reader: WorldReader) -> void:
 	var n := reader.nemesis(i) if i >= 0 else {}
 	_casting = int(n.get("casting", -1))
 	_progress = float(n.get("cast_progress", 0)) / 1000.0
+	_card = -1
 	if n.is_empty() or _casting < 0:
-		label.visible = false
 		_sigil.visible = false
 		_end_area()
 	else:
 		var cards: Array = n["cards"]
 		var c: Dictionary = cards[_casting] if _casting < cards.size() else {}
-		var info := reader.card_info(int(c.get("code", -1))) if not c.is_empty() else {}
-		label.text = tr(StringName(info.get("name_key", &""))) if not info.is_empty() else ""
-		label.visible = label.text != ""
+		_card = int(c.get("code", -1))
 		var at := reader.actor_pos(i)
-		label.position = SimPlane.to_3d(at, LABEL_Y)
 		_sigil.position = SimPlane.to_3d(at, 0.03)
 		_sigil.visible = true
 		_sigil.layers = 1
 		if PACK_SIGIL and MagicArea.kinds().has("circle"):
 			# The cast sigil is a blood magic circle at its feet (the old sigil stays as the flag the tests read)
 			if _area == null or not is_instance_valid(_area):
-				_area = MagicArea.add(
-					self,
-					"blood_circle",
-					{&"radius": SIGIL_R, &"light": false, &"position": _sigil.position}
+				_area = (
+					MagicArea
+					. add(
+						self,
+						"arcane_circle",
+						{
+							&"radius": SIGIL_R,
+							&"light": false,
+							&"position": _sigil.position,
+							&"color": SIGIL_COLOR,
+							&"edge_color": SIGIL_EDGE,
+							&"intensity": SIGIL_DIM,
+						}
+					)
 				)
 			_area.position = _sigil.position
 			_sigil.layers = 0
@@ -217,7 +218,7 @@ func _process(delta: float) -> void:
 			)
 		_sigil.scale = Vector3.ONE * (0.6 + 0.4 * _progress)
 	if _area != null and is_instance_valid(_area):
-		_area.intensity = 0.5 + 0.5 * _progress  # brightening until the cast lands, as the sigil did
+		_area.intensity = SIGIL_DIM + SIGIL_RISE * _progress  # brightening until the cast lands
 
 
 ## The cast is over: the circle fades out and frees itself.
@@ -240,9 +241,9 @@ func _fade() -> void:
 # --- Counts (tests and the tour) ---------------------------------------------------------------------------------
 
 
-## The card name showing over the Nemesis ("" none).
-func card_shown() -> String:
-	return label.text if label.visible else ""
+## The code of the card being cast now, its sigil showing (-1 none; the view names no card).
+func casting_card() -> int:
+	return _card if _sigil.visible else -1
 
 
 func sigil_shown() -> bool:

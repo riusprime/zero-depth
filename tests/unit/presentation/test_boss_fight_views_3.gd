@@ -30,15 +30,20 @@ func test_the_two_looks_are_set_and_keep_off_the_heros_colours() -> void:
 		var look := FireballViews.look_of(key)
 		for c: Color in hero:
 			assert_gt(_dist(look["core"], c), 0.2, "%s is not a hero colour" % key)
-		assert_gt((look["core"] as Color).get_luminance(), 0.55, "a bright core")
+		assert_gt(
+			(look["core"] as Color).get_luminance(),
+			FireballViews.MIN_CORE_LUMINANCE,
+			"a bright core"
+		)
 		assert_lt((look["edge"] as Color).get_luminance(), 0.15, "a dark edge")
 	assert_true(FireballViews.look_of(&"cannon_ember").get("smoke", false), "a smoke trail")
 	var core: Color = FireballViews.look_of(&"cannon_ember")["core"]
 	assert_gt(core.r, core.g, "orange: red over green")
 	assert_gt(core.g, core.b, "and green over blue")
 	var drop: Color = FireballViews.look_of(&"molten_drop")["core"]
-	assert_gt(drop.g, 0.85, "white-yellow")
-	assert_lt(drop.b, drop.g, "yellow, not white")
+	assert_gt(drop.r, 0.7, "orange-red")
+	assert_lt(drop.b, 0.3, "no white in it")
+	assert_lt(drop.g, drop.r * 0.6, "red over green: not yellow")
 
 
 func test_the_cannon_embers_draw_with_an_unlit_smoke_trail() -> void:

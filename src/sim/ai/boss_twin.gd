@@ -1,8 +1,8 @@
 class_name BossTwin
 extends RefCounted
-## The Twin
-## Wardens, one boss in two bodies. Two linked actors, both boss kinds with their own BossStore entry (so each runs
-## the boss framework: its windup, its markers, its stagger), but one boss:
+## The Twin Wardens, one boss in two bodies that fight apart (nothing joins them). Two linked actors, both boss kinds
+## with their own BossStore entry (so each runs the boss framework: its windup, its markers, its stagger), but one
+## boss:
 ## - The boss (the amber Warden, its table's kind) is what World.spawn_boss made: it is the boss bar
 ##   (WorldReader.boss_index, the first live boss), World.boss_id, the codex's fight, its BOSS_DEFEATED, its reward
 ##   and its legendary core. Its twin (the violet Warden, the table's twin_kind) rises beside it (on_spawn) with its
@@ -10,31 +10,30 @@ extends RefCounted
 ## - One HP: every change to one body's HP is the other's too (Damage._apply: share_hp), so both cross the phase gates
 ##   on the same tick and fall on the same hit (fall_together: the twin's KILL after its boss's). Only the boss's gate
 ##   brings adds.
-## - v0.11.0 O5 (owner L7, Q11 a, Q29): two roles, three phases, each a full bar (the thresholds split the HP in
+## - Two roles, three phases, each a full bar (the thresholds split the HP in
 ##   thirds; the gate's floor holds each bar, and the boss bar shows the phase's own: WorldReader.boss_phase_permille).
-##   Two movesets: the boss's (yellow, physical: Shield Bash, Chain Sweep, Charge, Ground Slam) and the twin's
-##   (BossAttackTable.twin_body; violet, magic: Crossfire, Orb Volley, Rune Ring, Blink); each body picks only its own.
+##   Two movesets: the boss's (amber, physical: the sword combo, the Sword Lane, the charge that bursts, the
+##   overhead; BossWardenAmber, BossChargeBurst) and the twin's (BossAttackTable.twin_body; violet, magic: Crossfire,
+##   Orb Volley, Rune Ring, Blink, the Mirror Ward, Shadow Swords; BossWard, BossShadowSwords); each picks only its own.
 ##   Phase 1 the boss leads and its twin stands back; phase 2 they swap; phase 3 both fight, taking turns (twin_turn:
 ##   a body starts an attack only on its turn and while the other isn't winding up or striking, so their attacks
 ##   alternate and never overlap). The body standing back keeps behind the leader (REST_M), casts one bolt (the
 ##   table's twin_bolt) every twin_bolt_ticks, and can be hit but takes nothing: the hit sparks off (Damage._blocked,
-##   TAG_BLOCKED: "not now"); no long immunity, one body is always open. Phase 3: every twin_expose_ticks the exposed
-##   body swaps (the boss first), taking twin_expose_permille while the other takes twin_guard_permille. The body to
-##   hit now (twin_focus: the leader, then the exposed one) is the hint arrow's (ObjectiveMarkers.TWINS_ACTIVE) and
-##   gets STATUS_APPLY EFFECT_FOCUS when it changes.
-## - The chain: held between chain_min_m and chain_max_m (the twin is drawn in or out along it each tick: _tether);
-##   it is not solid (it never pushes, so it can't pin the player on a wall) and burns a player touching its line
-##   chain_burn every chain_burn_ticks (damage over time, the hurt iframes apply), never while they dash, never while
-##   they stand against a wall, never during either body's rise or gate, and not while the Chain Sweep has it.
+##   TAG_BLOCKED: "not now"). Phase 3: the amber Warden takes hits as ever and the violet one stands under a whole
+##   ward until his charge breaks it (BossWard); once, Through the Rift (BossRift). The body to hit now (twin_focus:
+##   the leader; in phase 3 the amber Warden, or the violet one while she is stunned) gets STATUS_APPLY
+##   EFFECT_FOCUS when it changes.
 ## - Anger: a hit from the player on one body angers the other for anger_ticks (its steps × anger_permille); at most
 ##   one is angry at a time (a hit on the angry one calms it and angers the other).
 ## - Steps: the leading boss pursues the player as any boss; the leading twin keeps flank_m from the player at a right
 ##   angle from its boss (on its own side); a body standing back keeps REST_M behind the leader, away from the player.
-## - Crossfire (`crossfire`, the twin's): its safe spot stands distance_m off the middle of the chain on the player's
-##   side; the twin fires its fan (its pattern) at the spot and leaves out the shots within gap_m of it there.
-## - Chain Sweep (`chain_sweep`, a lock, the boss's): the boss's line runs from it through the player and reach_m past
-##   them (held between the chain's lengths, cut short by walls), tracking until the lock, then flashing; on the strike
-##   the chain lashes the lane (half_width_m each side). Its late cause names the burn.
+## - Crossfire (`crossfire`, the twin's): the fan (its pattern) is fired at the player, and its gap faces directly
+##   away from the other Warden: the safe spot stands on the far side of the caster from the other body, as far out
+##   as the player (at least distance_m), and the shots within gap_m of it there are left out. Keep the caster
+##   between you and the other Warden. A body alone leaves the gap on the player.
+## - The Sword Lane (`chain_sweep`, a lock, the boss's): its line runs from the body through the player and reach_m
+##   past them (at most BossWardensTable.lane_max_m, cut short by walls), tracking until the lock, then flashing; on
+##   the strike the sword cuts the lane (half_width_m each side).
 ## Pure: no stream is drawn here; everything follows from the bodies, the player and the attack's clock.
 
 const M := BossAttackTable.Move
@@ -47,10 +46,10 @@ const REST_M := 4.0
 const P_YELLOW := 0
 const P_VIOLET := 1
 const P_BOTH := 2
+## A Sword Lane's longest run for a pair without BossWardensTable.
+const LANE_MAX_M := 9.0
 ## STATUS_APPLY's effect when a body turns angry (its actor is the target; the views and the sound read it).
 const EFFECT_ANGER := &"twin_anger"
-## The chain's burn's effect id (Damage.tick_dot).
-const EFFECT_BURN := &"twin_chain"
 ## STATUS_APPLY's effect on the body to hit now when it changes (amount: the phase).
 const EFFECT_FOCUS := &"twin_focus"
 ## STATUS_APPLY's effect when the body standing back casts its bolt.
@@ -63,7 +62,13 @@ static func is_twin_kind(kind: int) -> bool:
 
 
 static func is_move(move: int) -> bool:
-	return move == M.CROSSFIRE or move == M.CHAIN_SWEEP
+	return (
+		move == M.CROSSFIRE
+		or move == M.CHAIN_SWEEP
+		or move == M.SWORD_COMBO
+		or move == M.MIRROR_WARD
+		or move == M.SHADOW_SWORDS
+	)
 
 
 ## The twin pair actor i belongs to (BossStore's twin entry), or -1.
@@ -104,7 +109,7 @@ static func on_spawn(w: World, i: int) -> void:
 	var pos := at
 	for turn in [0, 2048, 512, 1536, 3584, 2560]:
 		pos = BossAi.spot(w, at, (side + turn) & 4095, t.twin_m)
-		if Kin.length(pos - at) >= t.chain_min_m:
+		if Kin.length(pos - at) >= t.twin_m * 0.6:
 			break
 	var id := w.take_id()
 	var j := a.add(id, t.twin_kind, ActorStore.TEAM_ENEMY, pos, t.radius_m, a.hp[i], 0)
@@ -116,6 +121,7 @@ static func on_spawn(w: World, i: int) -> void:
 	a.facing[j] = Kin.angle_of(w.player_pos() - pos)
 	w.bosses.add(id, w.bosses.table[BossAi.entry_of(w, i)])
 	w.bosses.add_twin(a.ids[i], id)
+	BossWardens.begin(w, i)  # The pair's own clocks
 
 
 ## Damage._apply: the HP actor `target` holds now is its twin's too (one HP for the pair).
@@ -160,12 +166,12 @@ static func leaves(w: World, i: int) -> bool:
 	return true
 
 
-## BossSignatures.on_boss_gone: the pair goes with either body (and its hint).
+## BossSignatures.on_boss_gone: the pair goes with either body.
 static func on_boss_gone(w: World, boss_id: int) -> void:
 	var k := w.bosses.twin_of(boss_id) if not w.bosses.twin_lead.is_empty() else -1
 	if k >= 0:
+		BossWardens.on_boss_gone(w, boss_id)  # Its wards, its set piece
 		w.bosses.remove_twin(k)
-		w.objectives.clear(ObjectiveMarkers.TWINS_ACTIVE)
 
 
 ## Damage._apply: a hit from the player on one body angers the other (the only angry one; STATUS_APPLY when it turns).
@@ -191,7 +197,7 @@ static func angry(w: World, i: int) -> bool:
 	return k >= 0 and w.bosses.twin_angry[k] == w.actors.ids[i] and w.bosses.twin_anger_t[k] > 0
 
 
-# --- v0.11.0 O5: the roles ----------------------------------------------------------------------------------------
+# --- the roles ---------------------------------------------------------------------------------------------------
 
 
 ## True while body i leads (fights): the boss in phase 1, its twin in phase 2, both in phase 3 (and any other boss).
@@ -210,11 +216,22 @@ static func resting(w: World, i: int) -> bool:
 	return pair_of(w, i) >= 0 and not leads(w, i)
 
 
-## BossAi._choose and its punish and gap-closer: true when body i may use attack `atk` (its own moveset; any attack for
-## every other boss).
+## BossAi._choose and its punish and gap-closer: true when body i may use attack `atk` (its own moveset, never one its
+## clock starts, and the amber Warden's close attacks only within ranged_beyond_m, his ranged ones only beyond it; any
+## attack for every other boss).
 static func may_use(w: World, i: int, atk: BossAttackTable) -> bool:
 	if pair_of(w, i) < 0:
 		return true
+	if atk.move == M.MIRROR_WARD and (BossWard.mirror_up(w) or BossWard.full(w, i)):
+		return false  # One ward at a time
+	var t := BossAi.table_of(w, i)
+	var wt := t.wardens
+	if wt != null and BossWardenAmber.on_clock(wt, t.attacks.find(atk)):
+		return false  # Only its clock starts it
+	if wt != null and wt.ranged_beyond_m > 0.0 and not is_twin(w, i):
+		var far := Kin.length(w.player_pos() - w.actors.pos(i)) > wt.ranged_beyond_m
+		if far == (atk.max_range_m <= wt.ranged_beyond_m):
+			return false  # Close attacks up close, ranged ones only at range
 	return atk.twin_body == is_twin(w, i)
 
 
@@ -242,36 +259,43 @@ static func may_start(w: World, i: int, k: int) -> bool:
 	return bs.twin_turn[k] == 0 or bs.twin_turn[k] == w.actors.ids[i]
 
 
-## Damage.hit and tick_dot: the per-mille body i takes from the player: phase 3's exposed body twin_expose_permille,
-## the other twin_guard_permille; 1000 otherwise (and for every other actor).
+## Damage.hit and tick_dot: the per-mille body i takes from the player: the violet Warden stunned by her broken ward
+## BossWardensTable.stun_permille; the amber Warden while her whole ward stands amber_warded_permille; 1000 otherwise
+## (and for every other actor).
 static func taken_permille(w: World, i: int) -> int:
-	var k := pair_of(w, i)
-	if k < 0 or w.bosses.twin_phase[k] < P_BOTH:
+	if w.boss_fight.wd_boss < 0:
 		return 1000
-	var t := BossAi.table_of(w, i)
-	return (
-		t.twin_expose_permille
-		if w.bosses.twin_focus[k] == w.actors.ids[i]
-		else t.twin_guard_permille
-	)
+	if warded_lead(w, i):
+		return BossAi.table_of(w, i).wardens.amber_warded_permille
+	if w.boss_fight.wd_break_at < 0 or not BossWard.stunned(w, i):
+		return 1000
+	return BossAi.table_of(w, i).wardens.stun_permille
 
 
-## The body to hit now (an actor id): the leader; in phase 3 the exposed one (the boss first, then every
-## twin_expose_ticks the other).
+## True while body i is the amber Warden sheltered by the violet one's whole ward (taking amber_warded_permille).
+static func warded_lead(w: World, i: int) -> bool:
+	if w.boss_fight.wd_boss != w.actors.ids[i]:
+		return false
+	var wt := BossAi.table_of(w, i).wardens
+	return wt.amber_warded_permille < 1000 and BossWard.full(w, partner_of(w, i))
+
+
+## The body to hit now (an actor id): the leader; in phase 3 the amber Warden, or the violet one while her broken
+## ward leaves her stunned.
 static func focus_id(w: World, k: int) -> int:
 	var bs := w.bosses
 	var ph := bs.twin_phase[k]
 	if ph == P_VIOLET:
 		return bs.twin_body[k]
 	if ph >= P_BOTH:
-		var t: BossTable = w.boss_tables[bs.table[bs.index_of(bs.twin_lead[k])]]
-		if (bs.twin_clock[k] / maxi(1, t.twin_expose_ticks)) % 2 == 1:
+		var j := w.actors.index_of(bs.twin_body[k])
+		if j >= 0 and BossWard.stunned(w, j):
 			return bs.twin_body[k]
 	return bs.twin_lead[k]
 
 
 ## The boss's turn (tick phase 3): the roles' clocks. A new phase resets the clock (phase 3 opens on the twin's turn);
-## the body to hit is followed by the hint (and flagged when it changes).
+## the body to hit is flagged when it changes.
 static func _roles(w: World, i: int, k: int) -> void:
 	var bs := w.bosses
 	var ph := bs.phase[BossAi.entry_of(w, i)]
@@ -285,8 +309,6 @@ static func _roles(w: World, i: int, k: int) -> void:
 	if focus == bs.twin_focus[k]:
 		return
 	bs.twin_focus[k] = focus
-	w.objectives.clear(ObjectiveMarkers.TWINS_ACTIVE)
-	w.objectives.follow(ObjectiveMarkers.TWINS_ACTIVE, focus)
 	var j := w.actors.index_of(focus)
 	if j >= 0:
 		var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, focus, focus, focus, w.actors.pos(j))
@@ -318,37 +340,55 @@ static func _bolt(w: World, i: int, k: int, t: BossTable, aim: int) -> void:
 # --- phase 3 ------------------------------------------------------------------------------------------------------
 
 
-## BossAi.think, before its states: the boss runs the pair's clocks (the anger, the chain's burn, the roles). A free
-## body standing back, or one whose turn it isn't, turns to the player and picks nothing (true: BossAi skips the rest);
-## standing back it casts its bolt.
+## BossAi.think, before its states: the boss runs the pair's clocks (the anger, the roles, its side dash). A free
+## body standing back, or one whose turn it isn't, or one the set piece holds or that dashes, turns to the player and
+## picks nothing (true: BossAi skips the rest); standing back it casts its bolt.
 static func think(w: World, i: int, aim: int) -> bool:
 	var k := pair_of(w, i)
 	if k < 0:
 		return false
 	var a := w.actors
 	var bs := w.bosses
+	var fs := w.boss_fight
 	if bs.twin_lead[k] == a.ids[i]:
 		if bs.twin_anger_t[k] > 0:
 			bs.twin_anger_t[k] -= 1
 			if bs.twin_anger_t[k] == 0:
 				bs.twin_angry[k] = 0
-		if bs.twin_burn_cd[k] > 0:
-			bs.twin_burn_cd[k] -= 1
 		_roles(w, i, k)
+		if fs.wd_boss == a.ids[i] and leads(w, i) and not BossRift.holds(w):
+			BossWardenAmber.dash_think(w, i, BossAi.table_of(w, i).wardens)
 	if a.state[i] != S.MOVE:
 		return false
+	if fs.wd_boss >= 0 and not BossRift.holds(w) and _clocks(w, i):
+		return true  # A clock started its attack
 	var rest := resting(w, i)
-	if not rest and may_start(w, i, k):
+	var held := fs.wd_boss >= 0 and (BossRift.holds(w) or (lead_body(w, i) and fs.wd_dash_t > 0))
+	if not rest and not held and may_start(w, i, k):
 		return false
 	var t := BossAi.table_of(w, i)
 	a.facing[i] = aim if t.turn_rate <= 0 else Kin.turn_toward(a.facing[i], aim, t.turn_rate)
-	if rest:
+	if rest and not held:
 		_bolt(w, i, k, t, aim)
 	return true
 
 
-## BossAi.start_attack: a Crossfire's safe spot and its fan's aim; a Chain Sweep's line from the start; in phase 3
-## the turn passes to the other body.
+## The attacks on their own clocks, body i free: the amber Warden's clock charges, the violet one's whole-ward cast
+## (true: one started now).
+static func _clocks(w: World, i: int) -> bool:
+	if lead_body(w, i):
+		return BossWardenAmber.charge_think(w, i, BossAi.table_of(w, i).wardens)
+	return BossWard.cast_think(w, i)
+
+
+## True for the pair's boss body (the amber Warden).
+static func lead_body(w: World, i: int) -> bool:
+	var k := pair_of(w, i)
+	return k >= 0 and w.bosses.twin_lead[k] == w.actors.ids[i]
+
+
+## BossAi.start_attack: a Crossfire's safe spot and its fan's aim; a Sword Lane's line from the start; the Shadow
+## Swords' spots; in phase 3 the turn passes to the other body.
 static func on_start(w: World, i: int, k: int) -> void:
 	var pk := pair_of(w, i)
 	if pk < 0:
@@ -358,17 +398,22 @@ static func on_start(w: World, i: int, k: int) -> void:
 	if w.bosses.twin_phase[pk] >= P_BOTH:
 		var j := partner_of(w, i)
 		w.bosses.twin_turn[pk] = a.ids[j] if j >= 0 else 0
+	var wt := BossAi.table_of(w, i).wardens
 	if atk.move == M.CROSSFIRE:
 		var safe := w.player_pos() if atk.lines_turn_milli > 0 else safe_spot(w, i, atk)
+		var shelter := wt != null and k == wt.shelter_attack
 		for body in [i, partner_of(w, i)]:
 			if body < 0 or BossAi.attack_of(w, body) != atk:
 				continue
 			w.bosses.set_pt(BossAi.entry_of(w, body), 0, safe)
 			w.bosses.pts_y[BossAi.entry_of(w, body) * BossStore.MAX_PTS + BossHard.REM_SLOT] = 0.0
-			a.lock_a[body] = Kin.angle_of(safe - a.pos(body))
+			# The fan flies at the player; a shelter's ring is aimed through its shelter (its own gap there)
+			a.lock_a[body] = Kin.angle_of((safe if shelter else w.player_pos()) - a.pos(body))
 			a.facing[body] = a.lock_a[body]
 	elif atk.move == M.CHAIN_SWEEP:
 		track_sweep(w, i, atk)
+	elif atk.move == M.SHADOW_SWORDS:
+		BossShadowSwords.lock(w, i)
 
 
 ## v0.9.5 BH3, tick phase 3, a tracking Crossfire's windup (BossAi, the boss's turn): for lines_ticks each body's
@@ -412,28 +457,45 @@ static func crossing_point(p1: Vector2, a1: int, p2: Vector2, a2: int, p: Vector
 	return (p1 + d1 * Kin.length(p - p1) + p2 + d2 * Kin.length(p - p2)) * 0.5
 
 
-## Crossfire's safe spot: distance_m off the chain's middle on the player's side (pulled in toward the chain when a
-## wall stands there); the player's own spot for a body alone.
+## Crossfire's safe spot: on the far side of body i from the other Warden, as far out as the player stands (at least
+## distance_m); the player's own spot for a body alone, or when the two stand on one spot.
 static func safe_spot(w: World, i: int, atk: BossAttackTable) -> Vector2:
 	var p := w.player_pos()
+	var wt := BossAi.table_of(w, i).wardens
+	if wt != null and BossAi.table_of(w, i).attacks.find(atk) == wt.shelter_attack:
+		return shelter_spot(w, i, wt.shelter_m)
 	var j := partner_of(w, i)
 	if j < 0 or w.actors.dead[j] == 1:
 		return p
 	var at := w.actors.pos(i)
-	var mid := (at + w.actors.pos(j)) * 0.5
-	var along := w.actors.pos(j) - at
-	var n := Vector2(-along.y, along.x) / maxf(Kin.length(along), 0.0001)
-	if n.dot(p - mid) < 0.0:
-		n = -n
-	for f: float in [1.0, 0.75, 0.5]:
-		var s := mid + n * (atk.distance_m * f)
-		if EnemyAi.clear_of_walls(w, s, w.player.radius_m):
-			return s
-	return mid + n * (atk.distance_m * 0.5)
+	var away := at - w.actors.pos(j)
+	var d := Kin.length(away)
+	if d < 0.0001:
+		return p
+	return at + away / d * maxf(Kin.length(p - at), atk.distance_m)
 
 
-## Tick phase 3, a Chain Sweep's windup: the boss's line follows the player (from its body, through them, reach_m on,
-## held to the chain's lengths and cut by walls) until the lock; the twin's copy only swings (moves).
+## A sheltering Crossfire's spot: `away` from the hero at a right angle to the line from caster i, on the side away
+## from the other Warden (the other side when a wall leaves less than half of it), never past a wall.
+static func shelter_spot(w: World, i: int, away: float) -> Vector2:
+	var p := w.player_pos()
+	var at := w.actors.pos(i)
+	var side := Kin.angle_of(p - at) + 1024
+	var j := partner_of(w, i)
+	if j >= 0 and w.actors.dead[j] == 0 and Kin.dir(side).dot(w.actors.pos(j) - at) > 0.0:
+		side += 2048
+	var best := p
+	for turn: int in [0, 2048]:
+		var spot := BossAi.spot(w, p, (side + turn) & 4095, away)
+		if Kin.length(spot - p) >= away * 0.5:
+			return spot
+		if Kin.length(spot - p) > Kin.length(best - p):
+			best = spot
+	return best
+
+
+## Tick phase 3, a Sword Lane's windup: the boss's line follows the player (from its body, through them, reach_m on,
+## at most the table's lane_max_m and cut by walls) until the lock.
 static func track_sweep(w: World, i: int, atk: BossAttackTable) -> void:
 	var a := w.actors
 	if is_twin(w, i) or w.player_dead() or a.state_t[i] >= atk.windup_ticks - atk.lock_ticks:
@@ -442,7 +504,8 @@ static func track_sweep(w: World, i: int, atk: BossAttackTable) -> void:
 	var at := a.pos(i)
 	var to := w.player_pos() - at
 	var aim := Kin.angle_of(to)
-	var want := clampf(Kin.length(to) + atk.reach_m, t.chain_min_m, t.chain_max_m)
+	var most := t.wardens.lane_max_m if t.wardens != null else LANE_MAX_M
+	var want := minf(Kin.length(to) + atk.reach_m, most)
 	a.lock_x[i] = at.x
 	a.lock_y[i] = at.y
 	a.lock_a[i] = aim
@@ -450,7 +513,7 @@ static func track_sweep(w: World, i: int, atk: BossAttackTable) -> void:
 	a.lock_len[i] = maxf(0.01, minf(want, EnemyAi.clear_run(w, at, aim, want, atk.half_width_m)))
 
 
-## The Chain Sweep's lane (boss i's, as it tracks or as it locked).
+## The Sword Lane's lane (boss i's, as it tracks or as it locked).
 static func sweep_lane(w: World, i: int, atk: BossAttackTable) -> Obb:
 	var a := w.actors
 	return AttackShapes.lane(
@@ -458,7 +521,7 @@ static func sweep_lane(w: World, i: int, atk: BossAttackTable) -> Obb:
 	)
 
 
-## Where the Chain Sweep's line ends (boss i's).
+## Where the Sword Lane's line ends (boss i's).
 static func sweep_end(w: World, i: int) -> Vector2:
 	var a := w.actors
 	return Vector2(a.lock_x[i], a.lock_y[i]) + Kin.dir(a.lock_a[i]) * a.lock_len[i]
@@ -467,8 +530,9 @@ static func sweep_end(w: World, i: int) -> Vector2:
 # --- phase 5 ------------------------------------------------------------------------------------------------------
 
 
-## BossAi.move for a Warden (true: nothing else moves it): free and leading, the boss pursues the player and the twin
-## keeps its flank; standing back, behind the leader; each the faster while angry; then the chain's length.
+## BossAi.move for a Warden (true: nothing else moves it): the set piece's steps and the amber Warden's dash and
+## combo steps first; else free and leading, the boss pursues the player and the twin keeps its flank; standing back,
+## behind the leader; each the faster while angry.
 static func moves(w: World, i: int, slow: float) -> bool:
 	var k := pair_of(w, i)
 	if k < 0:
@@ -483,6 +547,16 @@ static func moves(w: World, i: int, slow: float) -> bool:
 		* slow
 		* (t.anger_permille / 1000.0 if angry(w, i) else 1.0)
 	)
+	if t.wardens != null and w.boss_fight.wd_boss >= 0:
+		if (
+			BossRift.moves(w, i, t.wardens, slow)
+			or (lead and BossWardenAmber.dash_move(w, i, slow))
+		):
+			return true
+		var now := BossAi.attack_of(w, i)
+		if now != null and now.move == M.SWORD_COMBO and a.state[i] in [S.WINDUP, S.ACTIVE]:
+			BossWardenAmber.combo_move(w, i, now, slow)
+			return true
 	if a.state[i] == S.ACTIVE:
 		var atk := BossAi.attack_of(w, i)
 		if atk != null and (atk.move == M.CHARGE or atk.move == M.LEAP):
@@ -494,8 +568,6 @@ static func moves(w: World, i: int, slow: float) -> bool:
 			_pursue(w, i, t, speed)
 		else:
 			_go_to(w, i, flank_goal(w, i, t), speed, t)
-	if not lead:
-		_tether(w, i, t)
 	return true
 
 
@@ -548,68 +620,43 @@ static func _go_to(w: World, i: int, goal: Vector2, speed: float, t: BossTable) 
 	w.actors.set_pos(i, at + EnemyAi.steer(w, at, to / dist, t.radius_m) * minf(speed, dist))
 
 
-## The chain's length rule: the twin is drawn in or out along the chain to chain_min_m..chain_max_m from its boss; when
-## a wall stands where the twin would go, the boss gives way instead (along the same line), else the two share it.
-## Run after the steps (phase 5) and again after the walls and bodies have pushed (phase 6, resolve), so the length
-## holds at every tick's end.
-static func _tether(w: World, i: int, t: BossTable) -> void:
-	var a := w.actors
-	var j := partner_of(w, i)
-	if j < 0 or a.dead[j] == 1:
-		return
-	var lp := a.pos(j)
-	var at := a.pos(i)
-	var v := at - lp
-	var d := Kin.length(v)
-	if d < 0.0001:
-		v = Kin.dir((a.facing[j] + 1024) & 4095)
-		d = 0.0001
-	else:
-		v /= d
-	var want := clampf(d, t.chain_min_m, t.chain_max_m)
-	if absf(want - d) < 0.0001:
-		return
-	var moved := lp + v * want
-	if EnemyAi.clear_of_walls(w, moved, t.radius_m):
-		a.set_pos(i, moved)
-		return
-	var lead_to := at - v * want
-	if EnemyAi.clear_of_walls(w, lead_to, t.radius_m):
-		a.set_pos(j, lead_to)
-		return
-	var half := (want - d) * 0.5
-	a.set_pos(i, at + v * half)
-	a.set_pos(j, lp - v * half)
-
-
 # --- phase 6 ------------------------------------------------------------------------------------------------------
 
 
-## BossAi.resolve for a Warden: the boss's chain burns; a Crossfire's waves and the Chain Sweep's lash (true: the
-## attack was one of these, so BossAi's own resolve has nothing more to do).
+## BossAi.resolve for a Warden: the amber one's charge against the violet one's ward; a Crossfire's waves, the Sword
+## Lane's cut, the sword combo's hits, the Mirror Ward's cast and the Shadow Swords' cuts (true: the attack was one of
+## these, so BossAi's own resolve has nothing more to do).
 static func resolve(w: World, i: int) -> bool:
 	var k := pair_of(w, i)
 	if k < 0:
 		return false
 	var a := w.actors
 	var lead := w.bosses.twin_lead[k] == a.ids[i]
-	if lead:
-		_burn(w, i, k)
-	else:
-		_tether(w, i, BossAi.table_of(w, i))  # after the walls' and bodies' pushes
+	if lead and w.boss_fight.wd_boss == a.ids[i]:
+		BossWard.charge_check(w, i, partner_of(w, i))
 	var atk := BossAi.attack_of(w, i)
 	if a.state[i] != S.ACTIVE or atk == null or not is_move(atk.move) or w.player_dead():
 		return false
-	if atk.move == M.CROSSFIRE:
-		_fire_crossfire(w, i, atk, a.state_t[i])
-	elif lead and a.state_t[i] == 0:
-		var lane := sweep_lane(w, i, atk)
-		if Collide.circle_vs_obb(w.player_pos(), w.player.radius_m, lane) != Vector2.ZERO:
-			BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, a.pos(i))
+	var st := a.state_t[i]
+	match atk.move:
+		M.CROSSFIRE:
+			_fire_crossfire(w, i, atk, st)
+		M.CHAIN_SWEEP:
+			var lane := sweep_lane(w, i, atk)
+			var touch := Collide.circle_vs_obb(w.player_pos(), w.player.radius_m, lane)
+			if lead and st == 0 and touch != Vector2.ZERO:
+				BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, a.pos(i))
+		M.SWORD_COMBO:
+			BossWardenAmber.combo_resolve(w, i, atk, st)
+		M.MIRROR_WARD:
+			if st == 0:
+				BossWard.cast(w, i)
+		M.SHADOW_SWORDS:
+			BossShadowSwords.resolve(w, i, atk, st)
 	return true
 
 
-## Crossfire's wave from body i: its fan toward the safe spot, without the shots within gap_m of the spot there.
+## Crossfire's wave from body i: its fan along its aim, without the shots within gap_m of the safe spot there.
 static func _fire_crossfire(w: World, i: int, atk: BossAttackTable, st: int) -> void:
 	var pat := atk.pattern
 	if pat == null:
@@ -618,8 +665,10 @@ static func _fire_crossfire(w: World, i: int, atk: BossAttackTable, st: int) -> 
 	if wave < 0:
 		return
 	var at := w.actors.pos(i)
-	var d := maxf(Kin.length(w.bosses.pt(BossAi.entry_of(w, i), 0) - at), 0.5)
-	var gap := Vector2i(w.actors.lock_a[i], Kin.angle_of(Vector2(d, atk.gap_m)))
+	var to_safe := w.bosses.pt(BossAi.entry_of(w, i), 0) - at
+	var d := maxf(Kin.length(to_safe), 0.5)
+	var toward := Kin.angle_of(to_safe) if atk.lines_turn_milli <= 0 else w.actors.lock_a[i]
+	var gap := Vector2i(toward, Kin.angle_of(Vector2(d, atk.gap_m)))
 	var r := w.actors.radius[i] + pat.radius_m + BulletPatterns.MUZZLE_M
 	var n := BulletPatterns.fire(
 		w, i, pat, wave, at, w.actors.lock_a[i], r, BossAi.orb_damage(w, i, atk), -2, gap
@@ -628,89 +677,18 @@ static func _fire_crossfire(w: World, i: int, atk: BossAttackTable, st: int) -> 
 		w.relook_pending(n, atk.twin_look)  # the twin's embers in its own colour
 
 
-## The chain's burn (tick phase 6, the boss's turn): a player touching its line, when it is hot and its clock allows.
-static func _burn(w: World, i: int, k: int) -> void:
-	var bs := w.bosses
-	if bs.twin_burn_cd[k] > 0 or w.player_dead() or w.is_dashing() or not chain_hot(w, i):
-		return
-	var ends := chain_ends(w, i)
-	var t := BossAi.table_of(w, i)
-	var p := w.player_pos()
-	if dist_to_chain(p, ends[0], ends[1]) > w.player.radius_m + t.chain_half_m:
-		return
-	if BossTide.press(w, p) > 0.0:
-		return  # against a wall: the chain never pins the player there
-	bs.twin_burn_cd[k] = t.chain_burn_ticks
-	var id := w.actors.ids[i]
-	Damage.tick_dot(w, 0, BossAi.powered(w, i, t.chain_burn), id, id, EFFECT_BURN)
-	if w.player_dead() and w.killer_attack < 0:
-		w.killer_attack = BossSignatures.LATE_CAUSE + sweep_index(t)
-
-
-## The chain's two ends (the boss's centre, its twin's), or [] when either is gone. `i` is either body.
-static func chain_ends(w: World, i: int) -> Array[Vector2]:
-	var out: Array[Vector2] = []
-	var k := pair_of(w, i)
-	if k < 0:
-		return out
-	var lead := w.actors.index_of(w.bosses.twin_lead[k])
-	var body := w.actors.index_of(w.bosses.twin_body[k])
-	if lead < 0 or body < 0 or w.actors.dead[lead] == 1 or w.actors.dead[body] == 1:
-		return out
-	out.append(w.actors.pos(lead))
-	out.append(w.actors.pos(body))
-	return out
-
-
-## True while the chain burns: both bodies up (risen, not in a gate) and no Chain Sweep holding it.
-static func chain_hot(w: World, i: int) -> bool:
-	var k := pair_of(w, i)
-	if chain_ends(w, i).is_empty():
-		return false
-	var a := w.actors
-	for id in [w.bosses.twin_lead[k], w.bosses.twin_body[k]]:
-		var j := a.index_of(id)
-		if a.state[j] == S.SPAWN or a.state[j] == BossAi.GATE:
-			return false
-	return not lifted(w, i)
-
-
-## True while the boss's Chain Sweep has the chain (its windup and strike): it doesn't burn meanwhile.
-static func lifted(w: World, i: int) -> bool:
-	var k := pair_of(w, i)
-	if k < 0:
-		return false
-	var lead := w.actors.index_of(w.bosses.twin_lead[k])
-	if lead < 0:
-		return false
-	var s := w.actors.state[lead]
-	var atk := BossAi.attack_of(w, lead)
-	return atk != null and atk.move == M.CHAIN_SWEEP and (s == S.WINDUP or s == S.ACTIVE)
-
-
-## The distance from p to the chain's line between a and b.
-static func dist_to_chain(p: Vector2, a: Vector2, b: Vector2) -> float:
-	var ab := b - a
-	var l2 := ab.dot(ab)
-	var f := 0.0 if l2 <= 0.0 else clampf((p - a).dot(ab) / l2, 0.0, 1.0)
-	return Kin.length(p - (a + ab * f))
-
-
-## The table's first Chain Sweep (the burn's late cause names it), or 0.
-static func sweep_index(t: BossTable) -> int:
-	for k in t.attacks.size():
-		if t.attacks[k].move == M.CHAIN_SWEEP:
-			return k
-	return 0
-
-
 # --- the view -----------------------------------------------------------------------------------------------------
 
 
-## BossAi.telegraph for the two moves: Crossfire draws nothing on the ground (its gaps are boss_twin's); the boss's
-## Chain Sweep its lane, tracked then locked, through its windup (the twin's copy nothing).
+## BossAi.telegraph for the pair's moves: Crossfire and the Mirror Ward's cast draw nothing on the ground (the gap
+## is boss_twin's, the ward BossWardens'); the sword combo its pending arc; Shadow Swords the lanes not cut yet; the
+## Sword Lane its lane, tracked then locked, through its windup.
 static func telegraph(w: World, i: int, atk: BossAttackTable, progress: int) -> Dictionary:
-	if atk.move == M.CROSSFIRE:
+	if atk.move == M.SWORD_COMBO:
+		return BossWardenAmber.combo_telegraph(w, i, atk)
+	if atk.move == M.SHADOW_SWORDS:
+		return BossShadowSwords.telegraph(w, i, atk, progress)
+	if atk.move == M.CROSSFIRE or atk.move == M.MIRROR_WARD:
 		return {"shape": &"signature", "ground": false, "progress": progress, "move": atk.move}
 	var a := w.actors
 	if is_twin(w, i) or a.state[i] != S.WINDUP:
@@ -726,12 +704,13 @@ static func telegraph(w: World, i: int, atk: BossAttackTable, progress: int) -> 
 
 
 ## WorldReader.boss_twin: {} for a body that isn't a Warden; else "lead" (the boss's body), "partner" (the other's
-## index), "angry", "anger" (0..1000 of its anger left), "chain" ([] or [from, to]), "hot" (it burns), "lifted"
-## (the Chain Sweep has it), "burned" (ticks since the chain last burned the player, or -1), v0.11.0 O5: "phase" (the
-## roles': P_YELLOW, P_VIOLET, P_BOTH), "resting" (standing back), "focus" (the body to hit now), "exposed" (phase 3's
-## exposed body), and while a Crossfire
-## runs "safe" (the spot) and "gap" ([from, to]: this body's gap lane through the spot), while the boss's Chain Sweep
-## runs "sweep" ({"from", "to", "half_width", "locked", "progress", "struck"}).
+## index), "angry", "anger" (0..1000 of its anger left), "phase" (the roles': P_YELLOW, P_VIOLET, P_BOTH), "resting"
+## (standing back), "focus" (the body to hit now), "exposed" (the violet Warden stunned by her broken ward, taking
+## more), "warded" (under her whole ward, taking nothing), "sheltered" (the amber Warden while her whole ward stands,
+## taking less), "flash" (0..1000 through the wind-up of the amber Warden's phase-1 clock charge, its only tell),
+## and while a Crossfire runs "safe" (the spot) and "gap"
+## ([from, to]: this body's gap lane through the spot), while the boss's Sword Lane runs "sweep" ({"from", "to",
+## "half_width", "locked", "progress", "struck"}).
 static func state(w: World, i: int) -> Dictionary:
 	var k := pair_of(w, i)
 	if k < 0:
@@ -746,20 +725,20 @@ static func state(w: World, i: int) -> Dictionary:
 		"partner": partner_of(w, i),
 		"angry": mad,
 		"anger": bs.twin_anger_t[k] * 1000 / maxi(1, t.anger_ticks) if mad else 0,
-		"chain": chain_ends(w, i),
-		"hot": chain_hot(w, i),
-		"lifted": lifted(w, i),
-		"burned": t.chain_burn_ticks - bs.twin_burn_cd[k] if bs.twin_burn_cd[k] > 0 else -1,
 		"phase": bs.twin_phase[k],  # The roles
 		"resting": resting(w, i),
 		"focus": bs.twin_focus[k] == a.ids[i],
-		"exposed": bs.twin_phase[k] >= P_BOTH and bs.twin_focus[k] == a.ids[i],
+		"exposed": BossWard.stunned(w, i),
+		"warded": BossWard.full(w, i),
+		"sheltered": warded_lead(w, i),
 	}
 	var atk := BossAi.attack_of(w, i)
 	var busy := a.state[i] == S.WINDUP or a.state[i] == S.ACTIVE
 	if atk == null or not busy:
 		return out
 	var progress := clampi(a.state_t[i] * 1000 / maxi(1, atk.windup_ticks), 0, 1000)
+	if BossWardenAmber.flashing(w, i):
+		out["flash"] = progress
 	if atk.move == M.CROSSFIRE:
 		var safe := bs.pt(BossAi.entry_of(w, i), 0)
 		out["safe"] = safe

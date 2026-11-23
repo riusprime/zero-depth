@@ -19,6 +19,7 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 		var bt := BossAi.table_of(w, target)
 		var off := Kin.angle_diff(to_attacker, a.facing[target])
 		var lifted := bt.weak_drops_armour and w.bosses.exposed_t[BossAi.entry_of(w, target)] > 0
+		lifted = lifted or BossDuel.shield_down(w, target)  # The Warlord's shield is down in its cage
 		if bt.front_half_arc > 0 and off <= bt.front_half_arc and not lifted:  # Shield up
 			# A 0 multiplier is a shield that blocks the hit outright (the Warlord's).
 			var tag := (
@@ -136,6 +137,13 @@ static func hit(
 	if owner_id != 0 and target != 0 and _blocked(w, target):  # It sparks off the shield
 		h.tags |= SimEvent.TAG_BLOCKED
 		return 0
+	if (
+		target != 0
+		and w.boss_fight.wd_mirror_on == 1
+		and BossWard.turns(w, target, from, tags, owner_id)
+	):
+		h.tags |= SimEvent.TAG_BLOCKED  # The violet Warden's Mirror Ward turns it
+		return 0
 	if target != 0 and CanyonShore.shell_takes(w, target, from, amount):  # The turtle's shell
 		h.tags |= SimEvent.TAG_BLOCKED
 		return 0
@@ -151,12 +159,21 @@ static func hit(
 		m = [m[0] * c[0] / 1000, m[1] | c[1]]
 		c = BossShade.hit_mult(w, target)  # The Lantern Shade's 40 % in the dark, 150 % in a lit pool
 		m = [m[0] * c[0] / 1000, m[1] | c[1]]
-		var tw := BossTwin.taken_permille(w, target)  # Phase 3's exposed Warden, its guarded twin
+		var tw := BossTwin.taken_permille(w, target)  # The violet Warden stunned by her broken ward
 		if tw != 1000:
 			m = [
 				m[0] * tw / 1000,
 				m[1] | (SimEvent.TAG_WEAK_SPOT if tw > 1000 else SimEvent.TAG_ARMOURED)
 			]
+		var fp := BossForge.taken_permille(w, target)  # The Foundry's plate, its blown-off hull
+		if fp != 1000:
+			m = [
+				m[0] * fp / 1000,
+				m[1] | (SimEvent.TAG_WEAK_SPOT if fp > 1000 else SimEvent.TAG_ARMOURED)
+			]
+		var lp := BossLens.taken_permille(w, target)  # The Hive Lens fed by its drones
+		if lp != 1000:
+			m = [m[0] * lp / 1000, m[1] | SimEvent.TAG_ARMOURED]
 	h.tags |= m[1]
 	var scaled := amount * m[0] / 1000
 	if mu[1] != 0 and owner_id == a.ids[0] and target != 0:
@@ -177,6 +194,8 @@ static func hit(
 			return 0
 	var got := 0
 	if scaled > 0:
+		if owner_id == a.ids[0] and target != 0:  # Landed on The Fallen's marked back: it counts, whatever the pace
+			FallenTheft.on_hit(w, target, from)
 		got = _apply(
 			w, target, scaled, source_id, owner_id, root_id, h.tags, at, h.seq, 1, effect_id
 		)
@@ -236,11 +255,15 @@ static func tick_dot(
 		amount = Constellations.scale(amount, Constellations.hunt_permille(w, target))  # C8
 		if BossQuake.stunned(w, target):  # Q9 a: the stunned Gatekeeper takes +50 % ticks too
 			amount = amount * BossQuake.taken_permille(w, target) / 1000
+		amount = amount * BossSiege.taken_permille(w, target) / 1000  # The Siege Engine's armour stripped
 		var sh := BossShade.hit_mult(w, target)  # The Lantern Shade's light scales its ticks too
 		if sh[1] != 0:
 			amount = maxi(1, amount * sh[0] / 1000)
 			tags |= sh[1]
-		amount = amount * BossTwin.taken_permille(w, target) / 1000  # The Wardens' swap
+		amount = amount * BossTwin.taken_permille(w, target) / 1000  # The stunned violet Warden
+		amount = amount * BossForge.taken_permille(w, target) / 1000  # The Foundry's plate
+		amount = amount * BossWarlord.taken_permille(w, target) / 1000  # The Warlord's banner
+		amount = amount * BossLens.taken_permille(w, target) / 1000  # The Hive Lens fed by its drones
 	var root := w.take_root()
 	return _apply(
 		w, target, amount, source_id, owner_id, root, tags, a.pos(target), -1, 0, effect_id
@@ -318,6 +341,7 @@ static func _apply(
 		BossTwin.on_hit(w, target, applied, owner_id)  # A hit on one Warden angers the other
 	if target == 0:
 		ItemProcs.on_player_hurt(w)  # Items: Thorn Mantle.
+		BossForge.on_hero_hurt(w, owner_id, tags, applied)  # The Foundry's shots fill the scald gauge
 		if applied > 0 and not (tags & SimEvent.TAG_DOT) and owner_id != a.ids[0]:
 			Curses.on_player_hit(w)  # Brittle
 		if saved:
@@ -326,7 +350,12 @@ static func _apply(
 
 
 ## A boss's signature shield holds. (the dark round a Lantern Shade no longer blocks; it
-## scales the hit instead, BossShade.hit_mult.) v0.11.0 O5: a Twin Warden standing back blocks (BossTwin.resting:
-## "not now", the other leads).
+## scales the hit instead, BossShade.hit_mult.) A Twin Warden standing back blocks (BossTwin.resting: "not now", the
+## other leads), and so does the violet one under her whole ward (BossWard.full), and The Fallen under the ward it
+## remembers (FallenWard.blocks).
 static func _blocked(w: World, target: int) -> bool:
-	return BossDodge.shielded(w, target) or BossTwin.resting(w, target)
+	if BossDodge.shielded(w, target) or BossTwin.resting(w, target):
+		return true
+	if w.boss_fight.fl_ward == 1 and FallenWard.blocks(w, target):
+		return true
+	return w.boss_fight.wd_full == 1 and BossWard.full(w, target)

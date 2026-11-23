@@ -12,9 +12,15 @@ extends RefCounted
 ##   or dead player isn't moved.
 ## - Cadence: a boss whose table has sig_every_ticks performs its phase's first `tide` attack every sig_every_ticks
 ##   (start to start; a phase may also open with it), not by the weighted pick; the next due tick is BossStore's sig
-##   list (one entry per such boss, created the first time it may attack).
+##   list (one entry per such boss, created the first time it may attack). A boss with a dance has its rhythm
+##   instead (BossTideBeats): its Pull is one beat of its phase's order and is never picked by weight either.
 ## - The Undertow: a `marks` attack with drag_m drags a player within drag_reach_m of each struck circle drag_m
 ##   toward its centre (never past it, by the same wall rule).
+## - A boss with a dance (BossTable.dance) pulls by a share of the hero's own run speed now (run_speed), so walking
+##   straight out barely gains ground whatever the build, and its push is a throw: push_m over the push's ticks.
+##   Neither is held to MAX_MPS; the wall rule and the body gap stay. Where the throw sets the hero down (its last
+##   tick) every hostile shot within push_clear_m of the hero pops (no damage; PUSH_POP), so a push never lands the
+##   hero in a ring. Its Pull comes on its rhythm, not on sig_every_ticks (BossTideBeats.pull_due).
 ## Pure: no stream is drawn here; everything follows from the attack's clock and positions.
 
 ## The fastest the room may ever move the player (BOSSES_4_5.md: 1.5 m/s; 2.2). Each tide attack sets its
@@ -30,6 +36,9 @@ const PULL := 1
 const PUSH := 2
 ## due() while the signature is due but the boss's cooldown still runs.
 const HOLD := -2
+## STATUS_APPLY effect (source the boss, pos the hero): the push set the hero down and `amount` hostile shots near it
+## popped (sent only when one did).
+const PUSH_POP := &"tide_push_pop"
 
 const M := BossAttackTable.Move
 
@@ -39,9 +48,12 @@ static func cap_of(atk: BossAttackTable) -> float:
 	return atk.tide_max if atk.tide_max > 0.0 else MAX_MPS / SimTick.TICKS_PER_SECOND
 
 
-## True for an attack the cadence starts (so the weighted pick leaves it out).
+## True for an attack a cadence starts (so the weighted pick leaves it out): the signature's (a dance's rhythm is a
+## cadence too), and the Clockwork Judge's Time Wave on its own clock (BossTime.wave_due).
 static func on_cadence(t: BossTable, atk: BossAttackTable) -> bool:
-	return t.sig_every_ticks > 0 and is_cadence(atk)
+	return (
+		((t.sig_every_ticks > 0 or t.dance != null) and is_cadence(atk)) or atk.move == M.TIME_WAVE
+	)
 
 
 ## The moves a cadence starts: the Tidecaller's Pull and the Clockwork Judge's echo (BossJudge).
@@ -68,7 +80,20 @@ static func signature_of(t: BossTable, phase: int) -> int:
 ## Tick phase 3, boss i pursuing: its signature's index when the cadence says it is due now and its cooldown `cd` is
 ## over, else -1. The first call starts the clock (the first one sig_first_ticks on). HOLD when it is
 ## due but the cooldown still runs: the punish and the gap-closer wait for it (a far player can't starve the cadence).
+## With no signature due, the Clockwork Judge's Time Wave by the same rule on its own clock (BossTime.wave_due), then
+## the Hive Lens's split sent again (BossLens.due).
 static func due(w: World, i: int, b: int, t: BossTable, cd: int = 0) -> int:
+	var sig := _signature_due(w, i, b, t, cd)
+	if sig == -1:
+		sig = BossTime.wave_due(w, i, b, t, cd)
+	if sig == -1:
+		sig = BossWarlord.due(w, i)  # The Warlord holds for its banner's and duel's casts
+	return sig if sig != -1 else BossLens.due(w, i, b, t, cd)
+
+
+static func _signature_due(w: World, i: int, b: int, t: BossTable, cd: int) -> int:
+	if t.dance != null:
+		return BossTideBeats.pull_due(w, i, b, t, cd)
 	if t.sig_every_ticks <= 0 or w.player_dead():
 		return -1
 	var bs := w.bosses
@@ -127,19 +152,67 @@ static func drift_of(w: World, i: int) -> Vector2:
 	var d := Kin.length(to)
 	if d <= 0.0001:
 		return Vector2.ZERO
-	var most := cap_of(atk)
 	if ph == PULL:
 		var gap := d - w.actors.radius[i] - w.player.radius_m - BODY_GAP_M
-		return to * (clampf(minf(atk.tide_pull, most), 0.0, maxf(gap, 0.0)) / d)
-	return -to * (minf(atk.tide_push, most) / d)
+		return to * (clampf(rate_of(w, i, atk, ph), 0.0, maxf(gap, 0.0)) / d)
+	return -to * (rate_of(w, i, atk, ph) / d)
 
 
-## Tick phase 5, boss i's `tide` attack active: the room moves the player (the wall rule: shift()), and in the pull the
-## boss's shots bend toward it.
+## The hero's own run speed now (metres a tick): what World's walk gives a full push of the stick (the build's
+## speed, the overheat stall, a curse, the beam, a hazard's drag, the guard).
+static func run_speed(w: World) -> float:
+	var speed := ItemProcs.move_speed(w) * Heat.move_factor(w) * Curses.move_factor(w)
+	speed *= Laser.move_factor(w) * BossHazard.move_factor(w)
+	return speed * w.player.guard_move_permille / 1000.0 if w.guarding() else speed
+
+
+## How fast boss i's tide attack moves the hero in part `ph` (metres a tick, before the body gap and the wall rule):
+## the attack's own speed under its cap; for a boss with a dance, its share of the hero's run speed (the pull) and
+## its throw (the push).
+static func rate_of(w: World, i: int, atk: BossAttackTable, ph: int) -> float:
+	var dance := BossAi.table_of(w, i).dance
+	if ph == PULL:
+		var share := dance.pull_share(w.bosses.phase[BossAi.entry_of(w, i)]) if dance != null else 0
+		return run_speed(w) * share / 1000.0 if share > 0 else minf(atk.tide_pull, cap_of(atk))
+	if dance != null and dance.push_m > 0.0:
+		return dance.push_m / maxi(1, atk.tide_push_ticks)
+	return minf(atk.tide_push, cap_of(atk))
+
+
+## Tick phase 5, boss i's `tide` attack active: the room moves the player (the wall rule: shift()), in the pull the
+## boss's shots bend toward it, and where a dance's throw sets the hero down the shots near it pop.
 static func move(w: World, i: int, atk: BossAttackTable) -> void:
 	shift(w, drift_of(w, i))
 	if phase_of(w, i) == PULL and atk.tide_bend > 0:
 		bend(w, i, atk.tide_bend)
+	var dance := BossAi.table_of(w, i).dance
+	if dance != null and w.actors.state_t[i] == atk.tide_pull_ticks + atk.tide_push_ticks - 1:
+		pop_near(w, i, dance.push_clear_m)
+
+
+## Every hostile shot within `reach` metres of the hero (its edge) is removed, without damage. Returns how many.
+static func pop_near(w: World, i: int, reach: float) -> int:
+	if reach <= 0.0 or w.player_dead():
+		return 0
+	var ps := w.projectiles
+	var p := w.player_pos()
+	var gone := PackedInt32Array()
+	for k in ps.size():
+		if ps.team[k] == ActorStore.TEAM_PLAYER:
+			continue
+		var r := reach + ps.radius[k]
+		var dx := ps.pos_x[k] - p.x
+		var dy := ps.pos_y[k] - p.y
+		if dx * dx + dy * dy <= r * r:
+			gone.append(k)
+	if gone.is_empty():
+		return 0
+	ps.remove_sorted(gone)
+	var id := w.actors.ids[i]
+	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, id, id, w.actors.ids[0], p)
+	e.effect_id = PUSH_POP
+	e.amount = gone.size()
+	return gone.size()
 
 
 ## Tick phase 6: the Tide Rings fire (the attack's pattern) only while the pull is on; none spawn in the push.
@@ -239,7 +312,7 @@ static func state(w: World, i: int) -> Dictionary:
 	var st := a.state_t[i]
 	var from := 0 if ph == PULL else atk.tide_pull_ticks
 	var span := atk.tide_pull_ticks if ph == PULL else atk.tide_push_ticks
-	var speed := minf(atk.tide_pull if ph == PULL else atk.tide_push, cap_of(atk))
+	var speed := rate_of(w, i, atk, ph)
 	return {
 		"phase": ph,
 		"windup": false,

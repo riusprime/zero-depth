@@ -22,6 +22,19 @@ extends WorldReader
 ## interpolation moved from where the last sync put them: each tick's actor places are noted, and actor_pos_before(i)
 ## gives actor i's place at the tick before the latest for such a frame (ActorViews starts the interpolation there).
 
+## Which form draws each projectile (projectile_is_bomb, _dart, …) is asked by most shot views for every shot in one
+## sync, and each answer looks the shot's spec up by name: each projectile's answers are kept, as bits, until the
+## world may have changed (_kind_known).
+const KIND_BOMB := 1
+const KIND_PELLET := 2
+const KIND_DISC := 4
+const KIND_DART := 8
+const KIND_VOID := 16
+const KIND_WAVE := 32
+const KIND_WISP := 64
+## Off only for the frame probe's before/after (--ab=no_kind_memo): every call asks the sim.
+static var keep_kinds := true
+
 var _shots := 0
 var _active := {}
 ## What this sync shows (set by `settle`).
@@ -50,6 +63,9 @@ var _a_was_xs := PackedFloat32Array()
 var _a_was_ys := PackedFloat32Array()
 var _a_was := {}
 var _a_was_made := false
+var _kind_tick := -1
+var _kind_asked := PackedInt32Array()
+var _kind_is := PackedInt32Array()
 
 
 func _init(r: WorldReader) -> void:
@@ -60,6 +76,7 @@ func _init(r: WorldReader) -> void:
 ## at a time); the earlier tick's places by id are built only when a sync asks for them.
 func note() -> void:
 	_tg.clear()
+	_kind_drop()
 	if super.shot_fired():
 		_shots += 1
 	for i in indices_in_state(STATE_ACTIVE):
@@ -83,6 +100,7 @@ func note() -> void:
 ## (a test, the Playground's edit, the first sync) reads the latest tick only.
 func settle() -> void:
 	_tg.clear()
+	_kind_drop()
 	_shot = _shots > 0
 	_shots = 0
 	_struck = _active
@@ -141,3 +159,67 @@ func telegraph(i: int) -> Dictionary:
 		tg = super.telegraph(i)
 		_tg[i] = tg
 	return tg
+
+
+func projectile_is_bomb(i: int) -> bool:
+	var k := _kind_known(i, KIND_BOMB)
+	return k == 1 if k >= 0 else _kind_note(i, KIND_BOMB, super.projectile_is_bomb(i))
+
+
+func projectile_is_pellet(i: int) -> bool:
+	var k := _kind_known(i, KIND_PELLET)
+	return k == 1 if k >= 0 else _kind_note(i, KIND_PELLET, super.projectile_is_pellet(i))
+
+
+func projectile_is_disc(i: int) -> bool:
+	var k := _kind_known(i, KIND_DISC)
+	return k == 1 if k >= 0 else _kind_note(i, KIND_DISC, super.projectile_is_disc(i))
+
+
+func projectile_is_dart(i: int) -> bool:
+	var k := _kind_known(i, KIND_DART)
+	return k == 1 if k >= 0 else _kind_note(i, KIND_DART, super.projectile_is_dart(i))
+
+
+func projectile_is_void(i: int) -> bool:
+	var k := _kind_known(i, KIND_VOID)
+	return k == 1 if k >= 0 else _kind_note(i, KIND_VOID, super.projectile_is_void(i))
+
+
+func projectile_is_wave(i: int) -> bool:
+	var k := _kind_known(i, KIND_WAVE)
+	return k == 1 if k >= 0 else _kind_note(i, KIND_WAVE, super.projectile_is_wave(i))
+
+
+func projectile_is_wisp(i: int) -> bool:
+	var k := _kind_known(i, KIND_WISP)
+	return k == 1 if k >= 0 else _kind_note(i, KIND_WISP, super.projectile_is_wisp(i))
+
+
+## 1 or 0 when projectile i's answer to `bit` is known for the world as it is now, -1 when it must be asked. The
+## answers are dropped whenever the world may have changed: a new tick, a note or a settle.
+func _kind_known(i: int, bit: int) -> int:
+	if not keep_kinds:
+		return -1
+	if _w.tick != _kind_tick or _kind_asked.size() != _w.projectiles.size():
+		_kind_tick = _w.tick
+		_kind_asked.resize(_w.projectiles.size())
+		_kind_asked.fill(0)
+		_kind_is.resize(_w.projectiles.size())
+		_kind_is.fill(0)
+	if (_kind_asked[i] & bit) == 0:
+		return -1
+	return 1 if (_kind_is[i] & bit) != 0 else 0
+
+
+func _kind_note(i: int, bit: int, yes: bool) -> bool:
+	if not keep_kinds:
+		return yes
+	_kind_asked[i] |= bit
+	if yes:
+		_kind_is[i] |= bit
+	return yes
+
+
+func _kind_drop() -> void:
+	_kind_tick = -1

@@ -6,17 +6,19 @@ extends Node3D
 ## - The Warlord's javelins stuck in the floor (WorldReader.boss_javelins): a code-made 3D javelin each (a dark shaft,
 ##   an iron head with a red-hot edge), its head planted where it stopped, its shaft leaning back the way it flew in,
 ##   so the line it will come back along reads at a glance. Over the last RECALL_WARN_TICKS before the recall they
-##   tremble and their heads glow hotter: the second dodge's warning. An owner model `javelin` listed in
-##   assets/models/manifest.json at MODEL_PATH replaces the code mesh (normalised to the same length along +X).
+##   tremble and their heads glow hotter: the second dodge's warning. The owner's `javelin` (listed in
+##   assets/models/manifest.json, at MODEL_PATH) replaces the code mesh: the same length along +X, its own colour map,
+##   matte and lit like the walls, its red crystal head (from HEAD_FROM of its length) the part that glows.
 ## - The Brood Mother's eggs (WorldReader.actor_egg_permille): a speckled egg on the floor where the egg actor lies,
 ##   its veins glowing brighter as it nears its hatch, wobbling harder and faster (the hatch wobble), and an HP pip
 ##   bar over it (its HP over its max: break it before it hatches). A bursting egg swells and splits. The Hatchling
 ##   inside is hidden meanwhile (ActorViews).
 ## S4-S6:
-## - The Hive Lens's Gaze (WorldReader.boss_gaze): through its windup the eye brightens (a flare and a light at the
-##   eye) and a thin aim line runs the way the beam will open; then a real 3D beam, a hot core and a wider glow (two
-##   cylinders, a scrolling noise shader) from the eye down to where it strikes, a burning strip on the floor under
-##   it, and where a wall stopped it a flare, a light and scorch marks left on the floor (fading over SCORCH_TICKS).
+## - The Hive Lens's Gaze (WorldReader.boss_gaze): through its windup the eye brightens (a small rose glow and a
+##   light at the eye) and a thin aim line runs the way the beam will open; then the beam (the pack's, in the Lens's
+##   rose-violet at a low glow, narrower than its hit) from the eye down to where it strikes, a burning strip on the
+##   floor under it as wide as the hit, and where a wall stopped it chips of stone knocked out (GroundSlamViews' grit)
+##   and scorch marks left on the floor (fading over SCORCH_TICKS).
 ##   Built here, not in the telegraph or VFX drawers (the Focus Beam's are AV2's).
 ## - The Siege Engine's ricochets: a spark burst where a hostile shot bounced off a wall (its bounce tick).
 ## - The Foundry's molten floor (WorldReader.boss_lava): each piece a churning lava quad that wells up and crusts over
@@ -44,20 +46,25 @@ const PIP_FILL := Color(0.6, 1.0, 0.3, 0.95)
 const MODEL_ID := "javelin"
 const MODEL_PATH := "res://assets/models/fx/javelin.glb"
 const MANIFEST := "res://assets/models/manifest.json"
+## Where along the owner's javelin (a share of its length from the butt) its crystal head starts
+## (scripts/assets/boss_pieces_v0120_prep.py prints it as head_from).
+const HEAD_FROM := 0.79
 
 const JAVELIN_SHADER := """
 shader_type spatial;
 render_mode cull_disabled, diffuse_lambert, specular_schlick_ggx;
 uniform vec4 hot : source_color = vec4(1.0, 0.27, 0.12, 1.0);
+uniform sampler2D albedo_tex : source_color, filter_linear_mipmap;
+uniform float textured = 0.0;
 varying float glow;
 void vertex() {
 	glow = INSTANCE_CUSTOM.r;
 }
 void fragment() {
-	ALBEDO = COLOR.rgb;
+	ALBEDO = mix(COLOR.rgb, texture(albedo_tex, UV).rgb, textured);
 	EMISSION = hot.rgb * COLOR.a * (0.6 + 4.0 * glow);
-	ROUGHNESS = mix(0.85, 0.45, COLOR.a);
-	METALLIC = 0.4 * COLOR.a;
+	ROUGHNESS = mix(mix(0.85, 0.45, COLOR.a), 1.0, textured);
+	METALLIC = 0.4 * COLOR.a * (1.0 - textured);
 }
 """
 
@@ -88,6 +95,18 @@ void fragment() {
 ## height at its far end; the aim line's radius; scorch marks, sparks and the lava's timing.
 const GAZE := Color(1.0, 0.22, 0.52)
 const GAZE_CORE := Color(1.0, 0.86, 0.95)
+## The beam as drawn: the Lens's rose-violet at a low glow (the pack beam's own colours and strength washed the
+## screen white-pink), and narrower than the burning strip on the floor, which keeps the hit width.
+const GAZE_BEAM := {
+	&"primary": Color(0.86, 0.52, 0.74),
+	&"secondary": Color(0.62, 0.2, 0.48),
+	&"tertiary": Color(0.3, 0.07, 0.24),
+	&"emission": 1.15,
+}
+const GAZE_THIN := 0.6
+## Where the beam meets a wall it chips it: a kick of floor-stone grit every CHIP_EVERY ticks (no flare, no light).
+const CHIP_EVERY := 9
+const CHIP_SIZE := 0.3
 const EYE_Y := HiveLensAvatar.HOVER_Y
 const BEAM_END_Y := 0.7
 ## The eye's front, this far out from the body's centre along the beam (m): the flare sits on it.
@@ -112,7 +131,10 @@ const PACK_GAZE := true
 static var model_path := MODEL_PATH
 static var _mesh: Mesh
 static var _from_model := false
+static var _texture: Texture2D
 
+## The chips the Gaze knocks off the wall it strikes (WorldViewRoot hands it the floor's stone).
+var chips := GroundSlamViews.new(6)
 var _javelins := MultiMeshInstance3D.new()
 var _jav_mat := ShaderMaterial.new()
 var _egg_mesh := SphereMesh.new()
@@ -136,9 +158,7 @@ var _beam_glow := MeshInstance3D.new()
 var _beam_floor := MeshInstance3D.new()
 var _aim := MeshInstance3D.new()
 var _eye_flare := MeshInstance3D.new()
-var _impact := MeshInstance3D.new()
 var _eye_light := OmniLight3D.new()
-var _impact_light := OmniLight3D.new()
 var _scorch := MultiMeshInstance3D.new()
 var _scorch_rows: Array = []
 var _scorch_tick := -1
@@ -172,6 +192,7 @@ func _init() -> void:
 	sh.code = JAVELIN_SHADER
 	_jav_mat.shader = sh
 	_jav_mat.set_shader_parameter("hot", HOT)
+	dress_javelin(_jav_mat)
 	_javelins.material_override = _jav_mat
 	_javelins.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	_javelins.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
@@ -417,6 +438,16 @@ static func javelin_mesh() -> Mesh:
 static func clear_cache() -> void:
 	_mesh = null
 	_from_model = false
+	_texture = null
+
+
+## Gives a javelin material (JAVELIN_SHADER or WarlordLooks.JAVELIN_SHADER) the owner's colour map when his model is
+## the javelin; the code mesh keeps its vertex colours.
+static func dress_javelin(mat: ShaderMaterial) -> void:
+	var on := from_model()
+	mat.set_shader_parameter("textured", 1.0 if on else 0.0)
+	if on:
+		mat.set_shader_parameter("albedo_tex", _texture)
 
 
 ## A shaft (a thin octagonal rod), a leather grip and a leaf-shaped iron head with a hot edge.
@@ -474,13 +505,17 @@ static func _append(
 		st.add_vertex(at * verts[k])
 
 
-## The owner's javelin (javelin.glb), normalised to JAVELIN_LENGTH along its longest axis turned to +X from x = 0, or
-## null when it isn't listed in the manifest or isn't on disk.
+## The owner's javelin (javelin.glb), normalised to JAVELIN_LENGTH along its longest axis turned to +X from x = 0, its
+## vertex alpha the head (HEAD_FROM on) and its colour map kept for dress_javelin, or null when it isn't listed in the
+## manifest, isn't on disk or has no map.
 static func _model_mesh() -> Mesh:
 	if not _listed() or not ResourceLoader.exists(model_path):
 		return null
 	var surface := ModelLibrary.first_surface(load(model_path) as PackedScene)
-	if surface.is_empty():
+	if surface.is_empty() or surface["material"] == null:
+		return null
+	_texture = (surface["material"] as StandardMaterial3D).albedo_texture
+	if _texture == null:
 		return null
 	var arrays: Array = surface["arrays"]
 	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
@@ -500,11 +535,12 @@ static func _model_mesh() -> Mesh:
 		var b := v[(axis + 2) % 3]
 		verts[i] = Vector3(along * k, a * k, b * k)
 	arrays[Mesh.ARRAY_VERTEX] = verts
-	if arrays[Mesh.ARRAY_COLOR] == null:
-		var cols := PackedColorArray()
-		cols.resize(verts.size())
-		cols.fill(Color(IRON, 0.0))
-		arrays[Mesh.ARRAY_COLOR] = cols
+	var cols := PackedColorArray()
+	cols.resize(verts.size())
+	for i in verts.size():
+		var head := smoothstep(HEAD_FROM - 0.02, HEAD_FROM + 0.02, verts[i].x / JAVELIN_LENGTH)
+		cols[i] = Color(1.0, 1.0, 1.0, head)
+	arrays[Mesh.ARRAY_COLOR] = cols
 	var m := ArrayMesh.new()
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return m
@@ -526,6 +562,7 @@ static func _listed() -> bool:
 
 
 func _init_bs2() -> void:
+	add_child(chips)
 	var beam_sh := Shader.new()
 	beam_sh.code = BossSignatureShaders.BEAM
 	for part: Array in [[_beam, 1.0], [_beam_glow, 0.35], [_aim, 0.6]]:
@@ -574,31 +611,22 @@ func _init_bs2() -> void:
 	flare.height = 1.0
 	flare.radial_segments = 10
 	flare.rings = 5
-	for mi: MeshInstance3D in [_eye_flare, _impact]:
-		mi.mesh = flare
-		var m := StandardMaterial3D.new()
-		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-		m.albedo_color = GAZE_CORE
-		mi.material_override = m
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		mi.visible = false
-		add_child(mi)
-	var impact := FxTextures.flare_material(GAZE, GAZE_CORE, 2)  # The owner's impact flare
-	if impact != null:
-		_impact.mesh = FxTextures.flare_mesh()
-		_impact.material_override = impact
+	_eye_flare.mesh = flare
+	var em := StandardMaterial3D.new()
+	em.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	em.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	em.albedo_color = (GAZE_BEAM[&"secondary"] as Color)  # the eye's glow in the beam's rose, not white
+	_eye_flare.material_override = em
+	_eye_flare.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_eye_flare.visible = false
+	add_child(_eye_flare)
 	_eye_flare.name = "GazeEye"
-	_impact.name = "GazeImpact"
-	for l: OmniLight3D in [_eye_light, _impact_light]:
-		l.light_color = GAZE
-		l.omni_range = 4.0
-		l.shadow_enabled = false
-		l.visible = false
-		add_child(l)
+	_eye_light.light_color = GAZE
+	_eye_light.omni_range = 4.0
+	_eye_light.shadow_enabled = false
+	_eye_light.visible = false
+	add_child(_eye_light)
 	_eye_light.name = "GazeEyeLight"
-	_impact_light.name = "GazeImpactLight"
-	_impact_light.omni_range = 5.0
 	_scorch.name = "Scorch"
 	_scorch.multimesh = _flat_multimesh(SCORCH_MAX, 0.9)
 	var sm := ShaderMaterial.new()
@@ -654,6 +682,8 @@ func _sync_bs2(reader: WorldReader, boss: int) -> void:
 			):
 				_scorch_tick = _tick
 				_scorch_rows.append([g["to"], float(_tick), float(_scorch_rows.size() % 7)])
+				if _tick % CHIP_EVERY == 0:
+					chips.kick([SimPlane.to_3d(g["to"], 0.0)], CHIP_SIZE)
 	while (
 		_scorch_rows.size() > SCORCH_MAX
 		or (not _scorch_rows.is_empty() and float(_tick) - float(_scorch_rows[0][1]) > SCORCH_TICKS)
@@ -740,9 +770,7 @@ func _draw_bs2(now: float, still: bool) -> void:
 func _draw_gaze(now: float, still: bool) -> void:
 	_gaze_ends = []
 	var on := not _gaze.is_empty()
-	for n: Node3D in [
-		_beam, _beam_glow, _beam_floor, _aim, _eye_flare, _eye_light, _impact, _impact_light
-	]:
+	for n: Node3D in [_beam, _beam_glow, _beam_floor, _aim, _eye_flare, _eye_light]:
 		n.visible = false
 	if not on:
 		return
@@ -756,9 +784,9 @@ func _draw_gaze(now: float, still: bool) -> void:
 	_eye_light.visible = true
 	_eye_flare.position = eye
 	var bright := p if g["winding"] else 1.0
-	_eye_flare.scale = Vector3.ONE * (0.3 + 0.5 * bright)
+	_eye_flare.scale = Vector3.ONE * (0.2 + 0.3 * bright)
 	_eye_light.position = eye
-	_eye_light.light_energy = 0.4 + 3.0 * bright * flicker
+	_eye_light.light_energy = 0.3 + 1.2 * bright * flicker
 	if g["winding"]:
 		_aim.visible = true
 		_place_cylinder(_aim, eye, to, AIM_RADIUS * (0.6 + 0.4 * p))
@@ -768,16 +796,17 @@ func _draw_gaze(now: float, still: bool) -> void:
 	var hw := float(g["half_width"])
 	var pack_beam: Node3D = null
 	if PACK_GAZE and _hold != null:  # The pack's beam in the Gaze's colour, in place of the two cylinders
-		pack_beam = _hold.hold(&"gaze", BossPackHold.beam_id(GAZE), eye, 1.0, {}, false)
+		pack_beam = _hold.hold(&"gaze", BossPackHold.beam_id(GAZE), eye, 1.0, GAZE_BEAM, false)
 	if pack_beam != null:
-		BossPackHold.beam_place(pack_beam, eye, to, hw)
+		BossPackHold.beam_place(pack_beam, eye, to, hw * GAZE_THIN)
+		BossPackHold.no_end_ball(pack_beam)
 		_gaze_packed = true
 	else:
 		_beam.visible = true
 		_beam_glow.visible = true
-		_place_cylinder(_beam, eye, to, hw * 0.45)
+		_place_cylinder(_beam, eye, to, hw * 0.45 * GAZE_THIN)
 		_place_cylinder(
-			_beam_glow, eye, to, hw * (1.05 + (0.0 if still else 0.08 * sin(now * 1.7)))
+			_beam_glow, eye, to, hw * GAZE_THIN * (1.05 + (0.0 if still else 0.08 * sin(now * 1.7)))
 		)
 	_gaze_ends = [eye, to]
 	var from2: Vector2 = g["from"]
@@ -792,17 +821,7 @@ func _draw_gaze(now: float, still: bool) -> void:
 		),
 		SimPlane.to_3d(mid, 0.03)
 	)
-	if g["hit"]:
-		_impact.visible = true
-		_impact_light.visible = true
-		_impact.position = to
-		_impact.scale = Vector3.ONE * (0.7 + (0.0 if still else 0.2 * sin(now * 2.3)))
-		if _impact.material_override is ShaderMaterial:
-			(_impact.material_override as ShaderMaterial).set_shader_parameter(
-				"motion", 0.0 if still else 1.0
-			)
-		_impact_light.position = to + Vector3(0, 0.4, 0)
-		_impact_light.light_energy = 3.5 * flicker
+	# Where a wall stops it, its chips fly (_sync_bs2): no flare and no light on the wall.
 
 
 ## Puts a unit cylinder (its axis +Y, height 1, radius 1) from a to b with radius r.

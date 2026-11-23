@@ -23,7 +23,9 @@ extends RefCounted
 ##   build (BossNemesis: your weapon, combo, shot, dash and cards; FinalFight.copying for the attack begun in it) and
 ##   pulls you to its level: your damage on it × nerf_permille (pace_ref_dps / the dps its HP was set from, at least
 ##   nerf_min_permille: the base hero's damage), your move speed at most the base (Stats.move_permille). Outside, it
-##   fights with its own kit and you with yours.
+##   fights with its own kit and you with yours. A window does not begin while The Fallen casts a remembered
+##   mechanic or in the calm after one (BossRemembered.holds_window): its clock waits (BossFightStore.fl_delay counts
+##   the ticks it waited), so every later window moves by as much.
 ## - v0.9.5 BH1: each loop finished (n = min(loop - 1, loop_ease_max)) shortens the fight:
 ##   pace_ref_ticks and the floor pace_min_ticks (and the rate cap, which is that floor) are cut by
 ##   loop_time_ease_permille (120) per loop before the square root and the clamp (ease_permille); the final bodies'
@@ -125,8 +127,6 @@ static func advance(w: World, i: int, t: BossTable) -> void:
 	var a := w.actors
 	if a.state[i] == EnemyAi.State.SPAWN or a.dead[i] == 1:
 		return
-	if f.ip_stage >= BossInterphase.STAGE_VANISHED:
-		return  # Vanished, the bucket does not fill and no window cue comes
 	if t.pace:
 		if not f.paced:
 			_try_set(w, i, t)
@@ -134,6 +134,12 @@ static func advance(w: World, i: int, t: BossTable) -> void:
 		f.pace_budget = mini(f.pace_budget + rate, rate * maxi(1, t.pace_burst_ticks))
 	if t.mimic and t.window_ticks > 0:
 		_cue(w, i, t)
+		if (
+			BossRemembered.holds_window(w)
+			and window(w) == Mimic.OFF
+			and window_at(w, w.tick + 1) != Mimic.OFF
+		):
+			w.boss_fight.fl_delay += 1  # The next warning waits for the remembered mechanic and its calm
 
 
 ## The bucket's gain a tick (× 1000) for a body of `max_hp`.
@@ -173,12 +179,10 @@ static func window_at(w: World, tick: int) -> int:
 	var i := FinalBoss.body_index(w)
 	if i < 0 or w.actors.dead[i] == 1 or w.actors.state[i] == EnemyAi.State.SPAWN:
 		return Mimic.OFF
-	if f.ip_stage >= BossInterphase.STAGE_VANISHED:
-		return Mimic.OFF  # No window while it is vanished
 	var u := (
 		tick
 		- f.phase_tick
-		- f.ip_total
+		- w.boss_fight.fl_delay
 		- w.tuning.boss_intro_ticks
 		- t.window_first_ticks
 		+ t.window_warn_ticks
@@ -228,7 +232,7 @@ static func window_clock(w: World) -> Array[int]:
 	var u := (
 		w.tick
 		- f.phase_tick
-		- f.ip_total
+		- w.boss_fight.fl_delay
 		- w.tuning.boss_intro_ticks
 		- t.window_first_ticks
 		+ t.window_warn_ticks

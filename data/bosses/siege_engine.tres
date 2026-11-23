@@ -226,7 +226,7 @@ shape_params = {
 "inner_radius_m": 4.4,
 "radius_m": 50.0
 }
-telegraph_seconds = 0.9
+telegraph_seconds = 2.0
 active_seconds = 0.0167
 recovery_seconds = 1.5
 damage = 50
@@ -321,4 +321,34 @@ hazard = {
 "warn_seconds": 1.2
 }
 hazard_cause_key = &"CAUSE_SIEGE_ROCK"
+siege = {
+"boulder_max": 4,
+"boulder_seconds": 30.0,
+"boulder_size_m": 3.0,
+"cart_blast_m": 6.0,
+"cart_blast_permille": 250,
+"cart_hp_permille": 60,
+"cart_radius_m": 1.0,
+"cart_roll_seconds": 10.0,
+"cover_phase": 2,
+"doom_count": 1,
+"doom_delay_seconds": 1.0,
+"doom_every_seconds": 35.0,
+"doom_first_seconds": 14.0,
+"doom_late_count": 2,
+"doom_late_phase": 2,
+"doom_permille": 400,
+"doom_phase": 1,
+"lock_every_seconds": 14.0,
+"lock_first_seconds": 6.0,
+"lock_follow_permille": 800,
+"lock_hold_seconds": 0.6,
+"lock_permille": 350,
+"lock_phase": 1,
+"lock_radius_m": 2.2,
+"lock_seconds": 4.0,
+"shockwave_cap_permille": 400,
+"strip_seconds": 8.0,
+"strip_taken_permille": 1500
+}
 id = &"siege_engine"

@@ -20,6 +20,9 @@ static var enemy_shadows := "proxy"
 ## (owner, 2026-11-06: "Yes, make it default"); "off" is the old path. GameSettings key "enemy_vat", the launch flag
 ## `-- --enemy-vat=on|off` over it, and the dev panel's switch (rebuilds those enemies at once).
 static var enemy_vat := false  # until apply_settings reads the profile (the game: on unless "off")
+## A trial of the hero holding the Blade (HeroArms): off, the sword forms in the hands for each swing and is gone
+## after it; on, it stays in the hands between swings, in a guard. The dev panel's switch only; never saved.
+static var blade_held := false
 
 
 static func apply_settings(profile: ProfileStore) -> void:
@@ -27,6 +30,9 @@ static func apply_settings(profile: ProfileStore) -> void:
 	# script that made it, and the engine crashed on quit
 	DebugApi.register_view_switch(
 		&"enemy_vat", "UI_DEV_ENEMY_VAT", ViewPrefs.flip_enemy_vat, ViewPrefs.enemy_vat_on
+	)
+	DebugApi.register_view_switch(
+		&"blade_held", "UI_DEV_BLADE_HELD", ViewPrefs.flip_blade_held, ViewPrefs.blade_held_on
 	)
 	reduced_motion = String(GameSettings.get_value(profile, "reduced_motion")) == "on"
 	HudStyle.reduced_motion = reduced_motion  # Steady HUD pulses
@@ -51,6 +57,15 @@ static func flip_enemy_vat() -> void:
 ## The dev panel's enemy VAT switch's state.
 static func enemy_vat_on() -> bool:
 	return enemy_vat
+
+
+## The dev panel's "Blade held" switch, and its state.
+static func flip_blade_held() -> void:
+	blade_held = not blade_held
+
+
+static func blade_held_on() -> bool:
+	return blade_held
 
 
 ## How many of `n` sparks a burst throws.

@@ -82,6 +82,7 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   deepens with the progress, an accent glow that climbs and flashes over the last fifth, steady under reduced
   motion; the body faces the locked attack). Elites follow their kind; the bosses' markers are unchanged.
   `tests/unit/sim/test_enemy_ground_marks.gd` lists the ground marks per kind.
+- **A boss attack whose tell is the body** (owner: no aiming line for the amber Warden's phase-1 charge). Its windup telegraph is `{"shape": &"signature", "ground": false, "run": Obb}` while `BossWardenAmber.flashing`: nothing is drawn on the ground, `WorldReader.boss_twin(i)["flash"]` (0..1000) is the tell (the body's white-hot flash), and `"run"` is the lane it will run, read only so `BossStrikeViews` draws the run on the sim's strike tick and the end circle's burst still shows. The ground-marker tests accept such an attack only if the body flashes.
 - **Boss ground attacks in 3D** (v0.8.0 AV, owner O7). The Gatekeeper's shock lanes (a `row_lanes` marks telegraph,
   `TelegraphViews.is_cracked`) are drawn as cracked ground on the exact lane quads (a procedural crack shader, still
   unshaded and over shadows): faint glowing cracks under the dull outline while they track, charred ground with wide
@@ -98,6 +99,189 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   that tick), a leap at `boss_leap` 1.0, a burrow when `boss_hidden` turns false; the geometry is the telegraph's.
   Sustained strikes (spears, beams, molten and burning lanes, a charge's skid) last while the boss stays active in
   that move. The Gatekeeper's shock lanes stay `StoneSpikeViews`'.
+- **The Clockwork Judge's time mechanics** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10n, §10o). Read
+  from `WorldReader.boss_time`, `boss_pickups`, `boss_shot_fields` and `boss_attack_slow` only. `JudgeTimeViews`: the
+  cast (a dial under the Judge whose hand goes round once, a closing ring, the pack's `cj_cast`), the wave's gold ring
+  from the `time_wave` event, each hour orb (the pack's `cj_orb`, Basic Area 04, over a dial of the exact radius the
+  hero must touch, a small clock above it; a running orb's hand and effect run down with `left`), each stopped gear (a
+  cog over a strip of the wall's exact `centre` / `half` / `angle`, rising with `age` and sinking with `left`), each
+  slow field (a cool disc of its radius under the pack's `cj_field`). `JudgeRewindViews`: the pale copy at `copy`
+  (drawn through anything in front of it), the Bell's ring closing on it and the line from the hero while `bell` runs,
+  a flash at both ends on `judge_rewind` and `judge_return`; what follows the copy hangs under `copy_parts`.
+  `AttackSlowHud`: the share lost and a pip per orb's share won back, over the HP plate, while the cut is above 0.
+  Hint arrows: `ObjectiveMarkers.JUDGE_ORB`, drawn as the pillars' arrow, no text. Every slot is built hidden at the
+  view's start (the shader warm-up draws it); the pack rows are `data/vfx/pack_fx_cj.tres`. A hero shot inside a
+  field needs nothing here: its views draw between its last two tick positions, which the sim already slows.
+- **The Tidecaller's dance** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10p). Read from
+  `WorldReader.boss_dance`, `boss_hazards` and `objectives` only. `TideDanceViews`: each Riptide strip a floor quad
+  of the reader's exact `strips` rectangle while a cast runs; the three `struck` fill with water rising with `warn`
+  (the pack's `tc_rip_water` on each), the safe one stays clear inside a bright pulsing border; on the wave a wall of
+  water (the crossing waves' band, `TideWaveViews.wave_mesh`, three times as tall) stands on `front` down each
+  struck strip, the strip behind it flooded; `riptide_hit` bursts `tc_splash` on the hero. High Tide: a room-sized
+  water plane rising through `cast` and full through `flood`, with a hole of the exact `radius` at `centre` (drained
+  on `high_tide_end`); the dry circle a warm disc of that radius with a rim, the pack's `tc_dry`, and a ring that
+  fills through the cast and shrinks with the flood's time left; a hero outside it in the flood is splashed each
+  0.5 s step and the HUD shows the low-HP edge glow's look (`Hud.tide_flood`, `TideDanceViews.flooding`). The
+  pack's `tc_cast` rises under the Tidecaller through a Riptide warning or a High Tide cast, and its avatar plays
+  its ring stream's clip (bell_toll) or its Pull's (bell_raise) while no attack runs (`BossAvatar._side_clip`).
+  `MaelstromViews`: four log-spiral arms on the floor round `centre`, wound at the sim's `inward` / `around` and
+  turning the `spin` way, brighter toward the eye, with dashes pointing inward; the eye a dark core of radius `eye`
+  with a bright rim (dim through `grace`) under the pack's `tc_eye`; `maelstrom_throw` a splash and a spray streak.
+  Reduced motion stills the arms (the dashes and rings stay). The floor layers draw under every telegraph
+  (`render_priority` -2). Hint arrows: `ObjectiveMarkers.TIDE_DRY`, drawn as the pillars' arrow, no text. The tide
+  pools (data look `venom`) draw as water while the Tidecaller fights (`HazardViews`: the frost ring, then the
+  pack's `tc_pool`). Sounds: `TideDanceCues`. The pack rows are `data/vfx/pack_fx_tc.tres`.
+- **The Twin Wardens fight apart** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10q). Read from
+  `WorldReader.boss_wardens`, `boss_charge_bursts`, `boss_twin`, `telegraph`, `boss_hazards` and the `STATUS_APPLY`
+  events only. Nothing is drawn between the two bodies (`TwinViews` keeps Crossfire's gap lanes and safe spot and the
+  Sword Lane's slash). `ChargeBurstViews` (any boss whose charge bursts): a red-orange circle of the telegraph's
+  `burst` radius at its `center`, dull while the aim tracks and flashing once `locked`, the pack's `tw_burst_rim` on
+  it; an armed burst's circle stays put and fills with `progress`; when it goes the pack's `tw_burst`, sized to the
+  radius. `WardenWardViews`: the resting Warden's dome (the pack's forcefield in its colour, `tw_dome_amber` /
+  `tw_dome_violet`, each wearing its own material copy); the Mirror Ward a curved wall on the reader's `centre` /
+  `half_arc` round the violet Warden (a sheet of violet light) with the pack's ripple at its foot, rising through the cast toward the hero and
+  sinking over its last 0.3 s; `warden_reflect` the pack's hit where it struck, `warden_block` its pulse on the hero;
+  the whole ward a larger brighter dome (`tw_dome_full`) and a floor rim; the charge's lane glowing under it,
+  white-hot while `breaks`; on `warden_ward_break` the pack's shatter and stun flash, stars while `stun_left`, a
+  ring filling to `return_in` and the pack's rising light for its last 2 s. `WardenBladeViews`: a dark blade over
+  each sword's `from`, pointing down its line, flying it on `cut` with a slash and the pack's hit; the side dash an
+  amber streak while `dash` runs; the rifts the pack's violet ripple at each `centre`, the exit's light pillar only
+  while the reader marks it `exit`, its `lane` on the floor, a flash on `warden_rift_enter` / `warden_rift_exit` (the
+  amber Warden sinks while `boss_hidden`). The swords' rifts (data look `venom`) draw violet while the Wardens fight
+  (`HazardViews`: the pack's rim, then `tw_rift`). The bar's fill shimmers gold (`BossBarTones.VULNERABLE`) while the violet Warden is
+  stunned. Hint arrow: `ObjectiveMarkers.TWINS_WARD`, drawn as the pillars' arrow, no text. Clips: the sword combo
+  and the overhead play the files' swipe, the Mirror Ward and the Shadow Swords their cast (`OWNER_PLAYS`). Sounds:
+  `WardenCues`. The pack rows are `data/vfx/pack_fx_tw.tres`.
+- **The Siege Engine's cover and Doom Shell** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10r). Read
+  from `WorldReader.boss_siege`, `telegraph`, `objectives` and the `STATUS_APPLY` events only; shared looks in
+  `SiegeLooks`. `SiegeFieldViews`: the Target Lock a red-orange reticle of `lock.radius` on `lock.centre` (ring,
+  four turning ticks, a cross, a countdown arc to `left`) with the pack's `se_lock_rim`, still and white-hot once
+  `locked`; the shell the pack's javelin (`se_shell`) falling into it over its last 24 ticks, `siege_shell` the
+  pack's `se_blast`. Each boulder the kit's `rock_large` stretched to `size` × 1.1 m × `size` on `centre` (its own
+  material copy), rising in the pack's rock dust (`vx1_impact_other`) on `siege_boulder`, its cracks glowing over its
+  last 5 s, shaking and sinking while `crumbling`, dust on a `siege_boulder_down` that is not `END_EXPIRED`. The
+  cover only while a blast that needs cover comes (`doom` ≥ 0, the cart's last 120 ticks, or `cover_rule` with the
+  Engine's ring telegraph up): a teal shadow behind each boulder away from the Engine's centre, clipped to `room`
+  (`SiegeLooks.shadow_of`), and a ring on the hero drawn over the rocks (no depth test): teal with the pack's
+  `se_cover` while `covered`, red and pulsing otherwise. The Shockwave's ring telegraph reads `inner` 0 under the cover
+  rule, so its fill covers the whole room and suggests no safe ring round the Engine. `SiegeCartViews`: the cart a
+  code-made wagon (`SiegeLooks.cart`) on `cart.position`, facing `to - from`, wheels rolling with the distance, its
+  own billboard HP bar from full (`ActorViews` hides the sim's warden body: the actor whose id is `cart.id`); a rail
+  from `from` to `to`, dim ahead and lit behind; a faint red circle of the blast's radius (the reader's
+  `cart_blast`) stronger as its HP falls and gold while the Engine stands in it; a countdown ring under
+  the Engine filling with `progress`, flashing once `doom` ≥ 0 with the pack's `se_cast` and `se_doom` on it;
+  `siege_doom_shell` the pack's `se_blast` on the Engine (and on the hero when `amount_applied` is -1),
+  `siege_cart_destroyed` one of the blast's size. `BossVulnerableViews` (any boss): the pack's gold `se_strip` pulse
+  round the body and the stun stars (`o13d_star_ring`) over it while `boss_stunned` or the siege's `stripped` runs.
+  Hint arrows: `ObjectiveMarkers.SIEGE_BOULDER` (`MechanicHints.SIEGE_BOULDER`). Sounds: `SiegeCues`. The pack rows
+  are `data/vfx/pack_fx_se.tres`.
+- **The Fallen remembers the run** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10t). Each remembered
+  mechanic is drawn by its source boss's own views, which read the same readers: the Time Wave by `JudgeTimeViews`
+  (the `time_wave` ring from The Fallen, the orbs and their clocks from `boss_pickups`), `AttackSlowHud` and the
+  `JUDGE_ORB` arrows; the Riptide by `TideDanceViews` (`boss_dance`), its strips and walls drawn only inside the
+  circle round `boss_fallen().room` (the final floor is round; the square's corners lie past it); the pillars by
+  `StoneSpikeViews` (`boss_quake_pillars`: rings, pulses, the shatter when one goes) and the stun by
+  `BossVulnerableViews` (`boss_stunned`: The Fallen's table carries a quake table); the ward by `WardenWardViews`
+  (the whole dome and rim on The Fallen while `ward.up`, the shade's `lane` under it, white-hot when the lane touches
+  The Fallen (the reader's `shade.breaks`), the shatter and stun flash on
+  `fallen_ward_break`) and `ChargeBurstViews` (the end circle at `shade.end`, then `burst` armed and going off).
+  `FallenRememberedViews` adds what has no source view: through the cast (`cast` ≥ 0) a ghost of the remembered boss
+  (`FallenLooks.ghost`: its own model from `BossModels`, unshaded light in its colours, the Twins as a pair) rising
+  over The Fallen and fading out, with the pack's `tw_portal_exit` in those colours at its feet; while it runs
+  (`stage` 2) the pack's `tw_ward_rim` in those colours at its feet (not under the ward's dome); while
+  `pillar_dash` shows, a strip along it in the Gatekeeper's colour, and from where it enters a pillar (grown by the
+  body's radius) to the pillar's middle a white-hot strip when `through`; the shade a ghost of the amber Warden's
+  model at `shade.position`, facing its lane, brightening through its wind-up. Colours (`FallenLooks.COLOURS`): the
+  Judge gold, the Tidecaller sea blue, the Gatekeeper stone amber, the Twins amber over violet. No text. Sounds:
+  `FallenCues` (the cast plays the remembered boss's own telegraph cue; the ward and the shade borrow the Wardens').
+  No hint arrow to The Fallen during the ward: the sim sets no marker for it.
+  **The theft** (§10t "The theft"), no word and no tooltip change: `FallenTheftHud` (HUD, over the build row's still)
+  draws the pip of each card in `boss_fallen().taken` dark under a breathing violet glow (drawn rings, as the HUD's
+  other glows; the 3D packs are not HUD art) and flies the card's icon (`CardFly`) from its pip to The Fallen's
+  screen point as it is taken and back as it returns; the Build page's `WandRow` darkens the tile of a card whose
+  `wand()` entry says `taken` (`TAKEN_TINT`) under a violet rim. `FallenMarkView` (owned and synced by
+  `FallenRememberedViews`) puts the pack's orb flare (`hl_glow`, recoloured violet) on The Fallen's back at
+  `mark.dir`, one small `hl_glow` per hit still needed in a ring round it (8 down to 0), an `hl_flash` and a swell on
+  each `fallen_mark_hit`, and grows the glow through the theft's cast (`theft_cast`). Reduced motion stills the
+  breathing and the swell; nothing flies.
+- **The Foundry's forge** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10s). Read from
+  `WorldReader.boss_forge`, `telegraph` (the bomb drones' `lob`), `boss_hazards`, `objectives` and the `STATUS_APPLY`
+  events only; shared looks in `ForgeLooks`; no word anywhere. `ForgePlateViews`: through the forging cast the pack's
+  hot lift (`fo_forge`) round the Foundry's feet and hammer sparks (`fo_spark`) on its body, faster as `forging`
+  fills; while `on`, each drone's bomb in the air carries the pack's ember flare (`fo_bomb`) on FireballViews' arc,
+  and a faint ring (`fo_reach`) of the Foundry's radius plus the reader's `plate.blast` lies round it, gold (`fo_reach_on`) while a bomb is aimed inside;
+  none while no bomb flies; `plate_blown` bursts steel shards (`fo_shards`) where it landed and on the Foundry.
+  `FoundryAvatar` wears a steel shell while plated (a lit metallic pass grown 3.5 cm off the owner's model, the glow
+  overlay's `next_pass`; it builds glowing orange through the cast and drops at once when blown; none on the
+  code-built body); the hero's hits on the plate keep HitFeel's dull grey ARMOURED spark. `exposed_left` > 0 is
+  `BossVulnerableViews`' gold pulse and stars and `BossBarTones.VULNERABLE`; plated is `BossBarTones.PLATED` (dull
+  iron, still). `ForgeSlagViews`: a cooling pool (`slab` false) a crust disc of its `centre` and `radius` whose dark
+  patches grow with `cooling` over HazardViews' lava; a slab a basalt disc of its `centre` and `radius` with a cool
+  blue rim, cracks spreading as `left` runs out (against the most `left` seen), fading over its last 45 ticks, dust
+  (`vx1_impact_other`, dark) on `slab_crumbled` and `slab_shattered`, not drawn once `shattered`; a `slag_drop` a
+  molten blob (`fo_drop`) falling into its pool's warning ring with `warn`, landing in `vx1_impact_ember`; the
+  Overpressure a room plane (`HEAT_SHADER`, under the bodies and telegraphs, at most half opaque) rising to 0.75 with
+  `cast`, full and flickering once `burn` ≥ 0, fading 0.5 s after, with every whole slab cut out and ringed cool, the
+  `safe` ones also carrying the pack's cool rim (`fo_safe`). `ForgeHeroViews`: `scald` share ≥ 0.15 an ember lift
+  (`fo_ember`) growing on the hero, `burning` the burning status's flames (`status_burn_a`), `draining` turning on a
+  white steam puff (`bx_smoke_thin`). HUD: `ScaldHud` over the HP plate's right end, a dark thermometer whose fill is
+  `gauge / max` (orange to white-hot), its rim and bulb pulsing red while `burning`, a blue down tick and a blue top
+  edge while `draining`, hidden while `scald` is {}; it is not `HeatMeter` (the Overclock heat: another class, place,
+  shape and colour family). `ForgeBurnEdge` (a `LowHpVignette` in fire orange) while `burn` ≥ 0 and not `on_slab`.
+  Hint arrows: `ObjectiveMarkers.FOUNDRY_SLAB` (`MechanicHints.FOUNDRY_SLAB`). Sounds: `ForgeCues` (no `heat_*` cue).
+  The pack rows are `data/vfx/pack_fx_fo.tres`.
+- **The Warlord's charge, War Banner and Duel** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10u). Read
+  from `WorldReader.boss_warlord`, the charge's telegraph (`"burst"`), `boss_charge_bursts` and the `STATUS_APPLY`
+  and `DAMAGE` events only; shared looks in `WarlordLooks`; no word anywhere. The charge: `ChargeBurstViews` draws its
+  end circle and burst (any boss whose lane telegraph carries `"burst"`; nothing in it is the Twins'); the lane, the
+  lock flash and the owner's `lunge` clip follow the sim's wind-up, which BossAnimator maps onto the clip's own strike
+  time (its 0.93 s couch plays in the 0.6 s wind-up). `WarBannerViews`: through `cast` the code-made banner (a
+  stand-in, `WarlordLooks.banner`) is raised from lying to upright in the pack's warm lift (`wl_banner_cast`), its
+  circle fading in; standing, a quiet ring of `radius` on `centre` (`RING_SHADER`: a thin band, a 7 % warm wash) and
+  the pack's warm rim (`wl_banner_rim`, flattened to stay low); `boss_inside` lays the pack's red embers
+  (`wl_rage`) at the Warlord's feet and `WarlordAvatar` glows hot (the glow overlay's `_extra_glow`); `hero_inside`
+  holds a warm flare (`wl_hand`) at the hero's casting hand (HeroCastFx's hand point) and each of the hero's hits on
+  the Warlord then also bursts in the pack's warm hit (`wl_hit`). The cloth begins to burn over the last 90 ticks of
+  `left`; `warlord_banner_fallen` with `FELL_TIME` burns it away in the pack's flames (`status_burn_b`) as it sinks,
+  with `FELL_CHARGE` bursts the pack's shards (`wl_snap`) at the pole while its top and cloth fly off; `FELL_CLEARED`
+  just goes. `DuelCageViews`: `DuelCageViews.SHAFTS` (28) of the Warlord's javelins (`BossSignatureViews.javelin_mesh`
+  and its shader, one MultiMesh) at fixed angles; through the cast they rain in one after another onto the circle the
+  cage would close on now, a third landing in the pack's dust (`bx_smoke_dust`); through the cage they stand on the
+  fence's exact `radius` round `centre`, leaning outward, and slide in as it closes, dust kicked up at one shaft every
+  0.3 s; a faint breathing danger rim (`RING_SHADER`) under them and no glow inside (a pack rim there drowned the
+  recall's circle in the shots);
+  `warlord_fence_touch` sparks at the hero (`wl_fence`). Through the recall's warning the shafts glow hotter with
+  `warn` and the centre's `zone` is the charge burst's floor circle (`WardenLooks`, with `tw_burst_rim`) filling to
+  `warn`, flashing locked from 70 %; `warlord_recall` flies every shaft inward through the centre (0.32 s, frame
+  time, after the cage is gone) and bursts the pack's impact (`wl_recall`) there. `WarlordAvatar` lowers its shield to
+  its side while `shield_down` (a layer over the owner's animations; the sim then tags a front hit as a plain one, so
+  HitFeel shows no block spark). The boss bar keeps its plain tone through the duel. Sounds: `WarlordCues`. The pack
+  rows are `data/vfx/pack_fx_wl.tres`.
+- **The Hive Lens's drones, Lattice and burnt glass** (v0.12.0; the sim: [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10v). Read from
+  `WorldReader.boss_lens`, `boss_move` and `telegraph` (a Focus Beam's `lanes`) and the `STATUS_APPLY` events only; shared looks in
+  `LensLooks`; no word anywhere. `LensFeedViews`: each feeding drone's thread, the pack's beam (`hl_thread`, the strand's scene in a dim
+  rose, 0.06 m drawn radius) from the drone's body into the Lens's; one floating ring (`hl_layer`) per feeding drone round the
+  Lens, the outermost gone with a flash (`hl_flash`) as the count drops; a drone a drawn Focus Beam lane touches wears a gold
+  glow (`hl_glow`); `lens_drone_cut` bursts in the beam's gold (`hl_cut`, `hl_flash`) and its thread snaps back into the Lens
+  over 0.25 s; the threads hide while the web stands. The hero's hits keep HitFeel's ARMOURED spark (the sim tags them).
+  `BossBarTones.FED` (a muted rose, still) with a pink pip per feeding drone. `LensLatticeViews`: through the cast the pack's
+  big orb (`hl_charge`) grows on the Lens and each drone brightens (`hl_glow`); each listed strand a pack beam (`hl_strand`) from
+  its `from` to its `to` at 0.8 m, its drawn radius the reader's `half_width`, keyed by its two actor ids, so a strand the reader
+  drops is gone the same frame; each web drone trails a world-space ember (`hl_orbit`); `lattice_strand_hit` sparks on the hero
+  (`hl_spark`). Each glass row a floor strip (`GLASS_SHADER`) on its exact rectangle (`from`, `to`, `half_width`), its heat going
+  from 1 to 0.35 with `progress`, a smoke (`hl_sizzle`) on `lens_glass_laid`. A beam the pack refuses is a plain glowing rod; a refused key tries again the next frame
+  (`LensPackHold`).
+  Reduced motion: the glass's shimmer holds still; nothing pulses. Sounds: `LensCues`. The pack rows are
+  `data/vfx/pack_fx_hl.tres`.
+- **Boss mechanics carry no words** (owner, 2026-11-15: "too much text … we need to make it subtle so the player
+  discovers it while playing, with arrows or glows"). `ObjectiveHints` draws arrows only (a small arrow over the
+  target on screen, an edge arrow off it) for every reason, never a line of text. The boss bar keeps the boss's
+  name and its phase line ("Phase 2 / 3"; the final boss's body names) and shows every state as a tone of its fill
+  (`BossBarTones`): the phase gate breathes pale, a boss taking more damage (a quake stun, the violet Warden's broken
+  ward, the Engine's stripped armour) shimmers gold, an invulnerable boss is steel blue with a pip per shield left, the Hive Lens fed by its drones a muted rose with a pip per drone,
+  the Lantern Shade's bar dims in the dark and turns lantern gold in a lit pool, The Fallen's window breathes and then
+  shimmers violet. `AttackSlowHud` shows its clock and pips only. Names, the death recap, sound captions, the Codex
+  and Options keep their words.
 
 - **The player's attacks are drawn from their final specs** (v0.6.0 MX1; design
   [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §4): `AttackView` reads `WorldReader.attack_spec`
@@ -164,8 +348,9 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
 - **Crowds (v0.4.0 SC):** projectile nodes are pooled per look (hidden and reused, at most
   `ActorViews.PROJECTILE_POOL_MAX` idle) and share one mesh and one kept material per look; an enemy's floating HP
   bar shows only once it is hurt (the hero's always); enemy models beyond `ActorViews.ANIMATE_RADIUS_M` (24 m, off
-  screen) stop their frame-time animation; no enemy carries a light (a boss has its weak-point light only). The
-  damage-lag rule stands: materials are built flashable (`ActorViews.flashable`), and nothing toggles
+  screen) stop their frame-time animation; no enemy carries a light (a boss has its weak-point light only; one
+  stage-wide `BossKeyLight`, cull-masked to the bosses' bodies, lights them from the camera's side so a boss never
+  reads as a black silhouette against a low sun). The damage-lag rule stands: materials are built flashable (`ActorViews.flashable`), and nothing toggles
   `emission_enabled` or another feature flag at runtime. Enemy models are not MultiMesh instances: each kind's model
   animates its own parts, so a crowd stays one node tree per enemy (measured in `docs/roadmap/v0.4.0/evidence/
   HORDES.md`).
@@ -379,8 +564,8 @@ look does not change**, and a probe or a test proves it.
 
 | What | Drawn by | How |
 |---|---|---|
-| Enemies of the nine batched kinds (`EnemyBatch.KINDS`: Swarmer, Splitter, Splitling, Shield Bearer, Mender, Mine Layer, Sniper, Charger, Hatchling) | `EnemyBatch` (`src/presentation/world_view/enemy_batch.gd`) | No node in the tree. Each keeps its root, facing and avatar as plain objects outside it. The **furniture** (contact disc, team ring, dazed ring, health bar, blob) is one MultiMesh per mesh, written in one pass a frame |
-| Their avatars' state (clocks, strike, tell, flinch, hold, pose drives) | `BatchAvatars` (`batch_avatars.gd`) | One row of `STRIDE` (80) packed doubles a slot. While `on`, `ZdCrowd` applies each sync, steps each frame and writes the bodies from the rows: one call each, none per enemy. An event on an avatar (a flinch, a hold, a death) copies its row into the object, runs the avatar's own GDScript, and copies it back before the next native call |
+| Enemies of the batched kinds (`EnemyBatch.KINDS`: Swarmer, Splitter, Splitling, Shield Bearer, Mender, Mine Layer, Charger, Hatchling, Stone Thrower, Needle, Rock Lurker, Warden, Rubble Warden, Sniper, Arc Caster, Lens Drone, Bomb Drone, Scrap Hound, Kiln Beetle, Cinder Priest, Frost Spitter, Glacier Turtle, Wire Weaver, Gravity Node, Star Warper) | `EnemyBatch` (`src/presentation/world_view/enemy_batch.gd`) | No node in the tree. Each keeps its root, facing and avatar as plain objects outside it. The **furniture** (contact disc, team ring, dazed ring, health bar, blob) is one MultiMesh per mesh, written in one pass a frame. A Warden's slam dust ring and a Rubble Warden's crust stay nodes, hung in the tree from the batch's anchor for it through a copy of its facing and its avatar's transform (`BatchWarden`), so the engine draws and interpolates them as it did the node Warden's. A Lens Drone's soft ground shadow hangs the same way (`BatchLensDrone`), its size set from its row each frame. A Bomb Drone's ground disc hangs from a node of the batch's, not interpolated, put each frame at `EnemyBatch.origin` (where the contact disc is drawn: the anchor's interpolated place measured a part of a tick behind the node root's), then a copy of its facing and its avatar's transform (`BatchBombDrone`). A Gravity Node's ground disc hangs the same way (`BatchGravityNode`, through `BatchHeld`), its size set from its row each frame; a Star Warper's the same way (`BatchStarWarper`) |
+| Their avatars' state (clocks, strike, tell, flinch, hold, pose drives) | `BatchAvatars` (`batch_avatars.gd`) | One row of `STRIDE` (124) packed doubles a slot (the Stone Thrower's pose drives, clocks and rock, the Needle's clocks, drives and legs' rest joints in it too: `BatchNeedleRow`; the Rock Lurker's, `BatchLurker`; the Warden's clocks, drives, pivots and dust ring's clock, `BatchWarden`; the Sniper's clocks, drives and legs' rest joints, `BatchSniperRow`; the Arc Caster's, `BatchArcCaster`; the Lens Drone's rise, charge, hover, drives and shadow size, `BatchLensDrone`; the Bomb Drone's clocks, drives and ground disc's scale, `BatchBombDrone`; the Scrap Hound's, `BatchScrapHound`; the Kiln Beetle's clocks, heat, drives and feet across its body, `BatchKilnBeetle`; the Cinder Priest's, `BatchCinderPriest`; the Frost Spitter's clocks, direction, drives and legs' hips, knees and feet, `BatchFrostSpitter`; the Glacier Turtle's clocks, shield, drives, legs' hips and knees and scale, `BatchGlacierTurtle`; the Wire Weaver's clocks, drives and feet across its body, `BatchWireWeaver`; the Gravity Node's clocks, draw, spins, glow, drives and ground disc's scale, `BatchGravityNode`; the Star Warper's clocks, form, reel, glide, drives, glows and ground disc's scale, `BatchStarWarper`). A Rock Lurker waiting as a boulder has its disc and ring taken out of their sets (`EnemyBatch.show_rings`), as its nodes were hidden. While `on`, `ZdCrowd` applies each sync, steps each frame and writes the bodies from the rows: one call each, none per enemy. An event on an avatar (a flinch, a hold, a death) copies its row into the object, runs the avatar's own GDScript, and copies it back before the next native call |
 | Every VAT enemy body and its proxy shadow | `VatCrowd` (`vat_crowd.gd`) | One MultiMesh per kind and look (bodies) and per kind (shadows). A batched enemy's body is drawn at `EnemyBatch.body_at` |
 | Horde critters | `CritterCrowd` (`critter_crowd.gd`) | No node each; reads the `WorldReader` columns once a sync |
 | A dead enemy's cubes | `ShardPool` (`shard_pool.gd`) | One MultiMesh per look, `CAPACITY` 1,024 pieces; a piece lives `LIFE` 0.5 s of real time, so the pop lasts as long at any frame rate |
@@ -410,7 +595,8 @@ the test reference and the fallback without the library.
 
 | What | Why |
 |---|---|
-| The ten solo VAT kinds: Needle, Warden, Arc Caster, Bomb Drone, Lens Drone, Scrap Hound, Rock Lurker, Stone Thrower, Kiln Beetle, Cinder Priest | Their bodies are `VatCrowd` instances, but their avatars read the tree in their frame step or their death (global transforms, timers) (`EnemyBatch.KINDS`' comment) |
+| The other solo VAT kinds: the other biomes' owner's models | Their bodies are `VatCrowd` instances, but their avatars read the tree in their frame step or their death (global transforms, timers) (`EnemyBatch.KINDS`' comment) |
+| A biome's variant of a batched kind (the Dim Needle, the Split Sniper) | Drawn by its own nodes, never by the VAT crowd (`VatCrowd.supports` takes the base kinds only), so the batch, which draws through the VAT crowd, cannot take it. The Rubble Warden is the exception: its avatar is the Warden's and the VAT crowd draws it as one, so it is batched (`ActorViews._batches` asks of the body kind) |
 | Bosses and elites | Their own rigs, models and views |
 | The hero | One, with its own rig and effects |
 | A batched enemy's status marks | An anchor node made only for an enemy that shows one (`EnemyBatch.anchor`) |

@@ -41,8 +41,14 @@ const MOVES := {
 	},
 	## A melee arc in front.
 	&"sweep": {"shape": 1, "params": ["arc_degrees", "reach_m"]},
-	## A straight charge along a locked lane; touching the body hurts.
-	&"charge": {"shape": 2, "params": ["length_m", "speed_mps"]},
+	## A straight charge along a locked lane; touching the body hurts. With burst_radius_m it bursts where its run
+	## ends, burst_seconds after it stops, for its damage (BossChargeBurst).
+	&"charge":
+	{
+		"shape": 2,
+		"params": ["length_m", "speed_mps"],
+		"optional": ["burst_radius_m", "burst_seconds"],
+	},
 	## Jumps onto the player's marked spot; `chain` leaps in a row.
 	## An optional pattern_id fires its first wave from where it lands (the Colossus's shockwave ring).
 	&"leap":
@@ -145,8 +151,9 @@ const MOVES := {
 			"snuff",  # The Snuff puts out the nearest lantern (BossShade)
 		],
 	},
-	## `count` crosses of two lanes (the player's row and column, length_m long), stagger_seconds apart,
-	## tracked then locked like `marks`; cut short by walls.
+	## `count` volleys of lanes out of the boss's edge toward the player (one through them and, with spread_degrees,
+	## one more each side), length_m long, stagger_seconds apart, tracked then locked like `marks`; cut short by walls.
+	## With speed_mps the lanes rise outward from the boss at that speed, each slice striking on its own tick.
 	## With pillar_seconds the struck lanes leave stone pillars (pillar_m a side,
 	## pillar_step_m apart) that stand as walls for pillar_seconds (the Gatekeeper's Stone Spikes that stay).
 	&"row_lanes":
@@ -154,7 +161,15 @@ const MOVES := {
 		"shape": 2,
 		"params": ["count", "length_m", "width_m", "stagger_seconds"],
 		"optional":
-		["pillar_seconds", "pillar_m", "pillar_step_m", "second_seconds", "second_offset_m"],  # BH2
+		[
+			"pillar_seconds",
+			"pillar_m",
+			"pillar_step_m",
+			"second_seconds",
+			"second_offset_m",
+			"spread_degrees",
+			"speed_mps",
+		],
 	},
 	## A checkerboard of `count` × `count` ground circles (count odd; radius_m each, cell_m apart) centred
 	## on the player's exact position until the attack's lock_seconds, then locked; `volleys` strikes stagger_seconds
@@ -290,19 +305,19 @@ const MOVES := {
 		# it moves the player (<= TIDE_MAX_MPS)
 		"optional": ["pattern_id", "max_mps"],
 	},
-	## BOSSES_4_5.md N2; BossTwin: the Twin Wardens' Crossfire, their shielded signature pattern. Each body
-	## fires its pattern (a fan) at a safe spot distance_m off the middle of their chain on the player's side, leaving
-	## out the shots within gap_m of the spot there, so the two gaps cross only at the spot, between them. twin_look:
-	## the look of the twin's shots (its own colour; the pattern's look is the boss's).
+	## BOSSES_4_5.md N2; BossTwin: the Twin Wardens' Crossfire. The caster fires its pattern (a fan) at the
+	## player; the fan's gap faces directly away from the other Warden: the safe spot stands on the far side of the
+	## caster from the other body, as far out as the player (at least distance_m), and the shots within gap_m of it
+	## there are left out. twin_look: the look of the twin's shots (its own colour; the pattern's look is the boss's).
 	&"crossfire":
-	## The Chain Sweep: the boss's line from its body through the player and reach_m past them (held to the
-	## chain's lengths, cut short by walls) tracks them until the lock, then the chain lashes a lane width_m wide along
 	{
 		"shape": 4,
 		"params": ["pattern_id", "gap_m", "distance_m"],
 		"optional": ["twin_look", "lines_follow_seconds", "lines_turn_dps"],  # The lines follow you
 	},
-	## it; the twin swings to the line's end. A lock is required; its late_cause_key names the chain's burn.
+	## The Sword Lane: the boss's line from its body through the player and reach_m past them (at most the boss's
+	## `wardens` sword_lane_max_m, cut short by walls) tracks them until the lock, then the sword cuts a lane width_m
+	## wide along it. A lock is required.
 	&"chain_sweep": {"shape": 2, "params": ["width_m", "reach_m"]},
 	## BOSSES_4_5.md N3; BossJudge: the Clockwork Judge's echo, its shielded signature on its cadence. The
 	## Judge records where the player walked, a point every step_seconds over the last record_seconds; as the echo
@@ -313,16 +328,26 @@ const MOVES := {
 	## The Verdict: a square half_m each way from its centre (not a circle) follows the player, locks, and a
 	## pendulum strike drops on it. A lock is required.
 	&"verdict": {"shape": 2, "params": ["half_m"]},
+	## The Clockwork Judge's Time Wave: its telegraph is the cast; as it ends the hero's weapon slows. Its numbers
+	## (the cut, the orbs, the cadence) are the boss's `time` (TimeRules). It deals no damage.
+	&"time_wave": {"shape": 3, "params": []},
+	## The amber Warden's sword combo: `count` arcs (arc_degrees, reach_m) gap_seconds apart after the telegraph; it
+	## steps step_m toward the hero before each. The hits before the last are lighter (the boss's `wardens`).
+	&"sword_combo":
+	## The violet Warden's Mirror Ward: its telegraph is the cast, then the ward stands (the boss's `wardens`). It
+	{"shape": 1, "params": ["arc_degrees", "reach_m", "count", "gap_seconds", "step_m"]},
+	## deals no damage itself.
+	&"mirror_ward": {"shape": 3, "params": []},
+	## The violet Warden's Shadow Swords: blades round the hero show their lanes for the telegraph, then cut one
+	## after another (their count, fan, size and spacing: the boss's `wardens`).
+	&"shadow_swords": {"shape": 2, "params": []},
 	## BOSSES_HARD.md T3; BossStream: the Tidecaller's crossing wave, in no attack list. A phase's
 	## wave_attack forms one every wave_every_seconds. lengths_m: the lengths one is drawn from; thickness_m; speed_mps
 	## across the room after the telegraph (a foam line at the wall); shove_m along its travel when it hits; clear_m: it
 	## never forms within that of the hero's projection on its wall.
 	&"wave":
-	## BOSSES_HARD.md HC5; BossInterphase: a carrier of the Fallen's interphase hits, in no attack list: its
-	## damage, telegraph and recap cause belong to the hazards (fallen_rays, fallen_rain, fallen_dark, fallen_erupt,
 	{"shape": 2, "params": ["lengths_m", "thickness_m", "speed_mps", "shove_m", "clear_m"]},
-	## fallen_return).
-	&"interphase": {"shape": 2, "params": []},
+	&"remembered": {"shape": 2, "params": []},  # The Fallen's recap carriers (FallenRules): a cause key, no damage
 	## The Prism's Facet Lances: `count`
 	## lances stagger_seconds apart, each from a rim spot distance_m from her (spread_degrees apart round her, the first
 	## on the player's side) through the player: it follows them for track_seconds, holds for the attack's lock, then
@@ -394,6 +419,8 @@ const LOCKED_MOVES: Array[StringName] = [
 	&"lances",  # The Facet Lances (each lance's lock)
 	&"great_javelin",  # The throw's line
 ]
+## Moves that are a cast and never hit (BossAttackDefinition.damage is 0 for them, and no cause_key is needed).
+const CAST_MOVES: Array[StringName] = [&"time_wave", &"mirror_ward"]
 ## The most spikes a line or a ray lays (steps).
 const MAX_STEPS := 16
 ## The most seconds the final fight's damage meter holds (FinalFight's ring).
@@ -408,12 +435,9 @@ const PUNISH_MIN_TICKS := 36
 const PUNISH_MAX_TICKS := 54
 ## BOSSES_4_5.md N1; v0.9.5 BH4: 1.5 -> 2.2 m/s: the most a tide attack may be set to move the player.
 const TIDE_MAX_MPS := 2.2
-## BOSSES_4_5.md N2: "the chain is never shorter than 3 m or longer than 9 m": the bounds a twin boss's
-## chain lengths keep, and the most its anger may speed a body (per mille).
+## The most a twin boss's anger may speed a body (per mille).
 ## The twins a boss may rise with (BossDefinition.twin_kind_id; PatternCompiler maps each to its actor kind).
 const TWIN_KINDS: Array[StringName] = [&"twin_warden_violet"]
-const TWIN_CHAIN_MIN_M := 3.0
-const TWIN_CHAIN_MAX_M := 9.0
 const TWIN_ANGER_MAX_PERMILLE := 2000
 ## BOSSES_4_5.md N3: the most points an echo records (record_seconds / step_seconds).
 const ECHO_MAX_POINTS := 24

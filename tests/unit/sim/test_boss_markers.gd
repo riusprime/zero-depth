@@ -105,18 +105,20 @@ func test_the_second_and_third_circles_track_in_turn() -> void:
 	assert_gt(strikes[2].y, strikes[1].y, "the later one locked later")
 
 
-func test_shock_lanes_take_your_row_and_column() -> void:
+func test_shock_lanes_run_from_the_boss_through_you() -> void:
 	var s := _fight(&"gatekeeper", Vector2(5, 3))
 	var w: World = s[0]
 	var aid: int = s[1]
 	BossLab.start(w, w.actors.index_of(aid), &"shock_lanes")
 	var tg := BossAi.telegraph(w, w.actors.index_of(aid))
 	var lanes: Array = tg["items"][0]["obbs"]
-	assert_eq(lanes.size(), 2, "a row and a column")
-	var row: Obb = lanes[0]
-	var col: Obb = lanes[1]
-	assert_eq(row.center.y, 3.0, "the row through you")
-	assert_eq(col.center.x, 5.0, "the column through you")
+	assert_eq(lanes.size(), 3, "one through you and one each side")
+	var mid: Obb = lanes[0]
+	var start := mid.center - mid.axis_u * mid.half.x
+	assert_lt(start.distance_to(w.actors.pos(w.actors.index_of(aid))), 3.0, "from the boss")
+	var to_you := (Vector2(5, 3) - start).normalized()
+	assert_gt(mid.axis_u.dot(to_you), 0.999, "aimed through you")
+	assert_gt(float(tg["items"][0]["wave"]), 0.0, "the wave's speed is drawn with it")
 	assert_true(tg["tracked"])
 	assert_false(tg["locked"])
 	var atk := _atk(w, aid)
@@ -131,7 +133,9 @@ func test_the_warlords_lunge_and_spears_lock_on_your_exact_position() -> void:
 		var aid: int = s[1]
 		BossLab.start(w, w.actors.index_of(aid), attack_id)
 		var atk := _atk(w, aid)
-		assert_eq(atk.lock_ticks, 48, "%s: locks 0.8 s" % attack_id)
+		# The charge is faster now (0.6 s, locked its last 0.4 s); the spears keep 0.8 s
+		var lock := 24 if attack_id == &"lunge_dash" else 48
+		assert_eq(atk.lock_ticks, lock, "%s: locks %d ticks" % [attack_id, lock])
 		var aims := []
 		for t in atk.windup_ticks - 1:
 			w.actors.set_pos(0, Vector2(8, 0) + Vector2(0, 0.08) * t)

@@ -55,8 +55,8 @@ func _watch(e: E2e, main: Main, id: int, styles: Array, frames: int, face_it := 
 			if tg.get("ground", true):
 				styled = styled or main.view.telegraphs.count() > 0
 			else:
-				var avatar: HordeAvatar = main.view.actors.actor_node(id).get_meta(&"enemy_avatar")
-				styled = styled or avatar.crouch_amount() > 0.0
+				var avatar: AvatarBase = main.view.actors.actor_node(id).get_meta(&"enemy_avatar")
+				styled = styled or float(avatar.call(&"crouch_amount")) > 0.0  # (the Sniper's own avatar too)
 		for ev in w.events_since(seq):
 			seq = ev.seq
 			if ev.kind == SimEvent.Kind.HIT and ev.target_id == w.actors.ids[0]:
@@ -84,6 +84,9 @@ func test_the_dev_panel_brings_in_each_horde_kind_and_it_acts() -> void:
 		[ActorStore.Kind.SNIPER, "ENEMY_SNIPER", [&"snipe"]],
 	]:
 		var id: int = await _spawn(e, main, spec[0], spec[1])
+		if spec[0] == ActorStore.Kind.SWARMER:  # The owner's model, animated (SwarmerModel)
+			var sw: HordeAvatar = main.view.actors.actor_node(id).get_meta(&"enemy_avatar")
+			assert_true(sw.has_model(), "the Swarmer on the owner's model")
 		var bearer: bool = spec[0] == ActorStore.Kind.SHIELD_BEARER
 		var got: Array = await _watch(e, main, id, spec[2], 900, bearer)
 		assert_true(got[0], "%s: its telegraph shows (its body tells it)" % spec[1])

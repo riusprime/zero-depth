@@ -244,3 +244,24 @@ func test_a_held_effect_outlives_its_animation() -> void:
 	assert_true(fx.is_live(n), "still live after its animation's end")
 	fx.release(n)
 	assert_false(fx.is_live(n))
+
+
+func test_the_light_pillar_and_pulse_are_drawn_quieter() -> void:
+	var fx := _fx()
+	var p := fx.spawn(&"bx_pillar_light", Vector3.ZERO, 2.0, {&"secondary": Color(0.8, 0.4, 1.0)})
+	assert_not_null(p)
+	assert_almost_eq(p.scale.y, 2.0 * PackFx.LOOK[&"bx_pillar_light"]["height"], 0.001, "shorter")
+	assert_eq(p.scale.x, 2.0, "as wide")
+	var pillar := (p.get_node("Pillar_01") as MeshInstance3D).material_override as ShaderMaterial
+	assert_lt(float(pillar.get_shader_parameter("emission_strength")), 1.0, "dimmer than its 2.0")
+	var c: Color = p.get("secondary_color")
+	assert_lt(c.v, 1.0 * 0.7, "its body darker")
+	var again := fx.spawn(&"bx_pillar_light", Vector3.ZERO)
+	if again == p:  # a pooled instance is quietened once, not again on every spawn
+		assert_almost_eq(
+			float(pillar.get_shader_parameter("emission_strength")),
+			2.0 * PackFx.LOOK[&"bx_pillar_light"]["glow"],
+			0.001
+		)
+	var w := fx.spawn(&"bx_pulse_light", Vector3.ZERO, 1.0, {&"primary": Color.WHITE})
+	assert_eq(w.get("primary_color"), Color.WHITE, "the pulse's bright edge stays")

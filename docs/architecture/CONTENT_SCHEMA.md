@@ -149,6 +149,10 @@ class_name AttackDefinition extends Resource
   flies at the player, 3.5 m/s, r 0.13, 10 m, look `lens_orb`), `bomb_drone_fire_x` (BURST 4 at 45 deg to the throw
   = an X, lob 0.6 s, landing radius 0.5 m, 4 m/s, r 0.15, 7 m, safe radius 0.6 m, look `bomb_cinder`). Windups,
   cooldowns, HP, damage and shards are unchanged.
+- **`gravity_node`** (Starfall's signature; SIM_CONTRACTS §10c): `pull_radius_m` (5) and `pull_mps2` (30), the bend
+  on every projectile; `hero_pull_radius_m` (5) and `hero_pull_mps` (2.1: at its centre, none at the reach), the
+  drift on the hero (v0.12.0 step 19, owner F24). Each > 0 (`not_positive`); `hero_pull_mps` at most
+  `EnemyDefinition.HERO_PULL_MAX_MPS` (2.9, under half the hero's 6 m/s walk: `hero_pull`). No attacks.
 - **v0.4.0 EN horde behaviours and params** (starting values, `data/enemies/<id>.tres`):
   - `swarmer` (as `charger`; one LINE `bite`, `length_m`/`speed_mps`): HP 8 (one sword slash), damage 5, 1 shard,
     4.6 m/s, a 2 m lunge at 12 m/s after a 24-30 tick lane.
@@ -616,12 +620,7 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 @export var signature_first_seconds: float         # the first one this long after the boss starts fighting
 # v0.9.0 NB2 (BOSSES_4_5.md N2): a boss in two bodies (BossTwin; "" = one body).
 @export var twin_kind_id: StringName                # BossSchemas.TWIN_KINDS ("twin_warden_violet")
-@export var twin_distance_m: float                 # the twin rises this far to the side (within the chain's lengths)
-@export var chain_min_m: float                     # the chain's length, held within these (3 <= min < max <= 9)
-@export var chain_max_m: float
-@export var chain_burn: int                        # it burns a touching player this much (> 0)...
-@export var chain_burn_seconds: float              # ...every this long (>= a tick)
-@export var chain_width_m: float                   # the strip it burns (> 0)
+@export var twin_distance_m: float                 # the twin rises this far to the side (> 0); nothing joins the two
 @export var flank_m: float                         # the twin keeps this far from the player beside it
 @export var anger_speed_permille: int              # a hit on one body speeds the other to this (1000..2000)...
 @export var anger_seconds: float                   # ...for this long
@@ -631,10 +630,11 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   `pull_seconds` and `push_seconds` (each >= the telegraph minimum), `bend_dps` (>= 0): the Tidecaller's Pull (1.2 /
   1.0 m/s for 3 s / 2 s, rings bending 25 °/s; phase 3's 1.5 / 1.2, 30 °/s). `marks` + `drag_m` (0..2) and
   `drag_reach_m` (>= `radius_m`): the Undertow (1.0 m from within 3.0 m).
-- v0.9.0 NB2: `crossfire` (PROJECTILE, shielded; needs a twin): `pattern_id` (a fan), `gap_m` (> 0: the gap's half
-  width at the safe spot), `distance_m` (> 0: the safe spot off the chain's middle), optional `twin_look` (the twin's
-  shots' look). `chain_sweep` (LINE, needs `lock_seconds` and a twin; the boss's def needs one with a
-  `late_cause_key`, the chain's burn): `width_m` (> 0), `reach_m` (>= 0: how far past the player the line runs).
+- v0.9.0 NB2: `crossfire` (PROJECTILE; needs a twin): `pattern_id` (a fan), `gap_m` (> 0: the gap's half
+  width at the safe spot), `distance_m` (> 0: the least the safe spot stands from its caster, on the far side from
+  the other Warden), optional `twin_look` (the twin's shots' look). `chain_sweep` (LINE, needs `lock_seconds` and a
+  twin; the Sword Lane since v0.12.0 step 6, the id kept): `width_m` (> 0), `reach_m` (>= 0: how far past the player
+  the line runs; its longest run is the boss's `wardens.sword_lane_max_m`).
 - v0.9.0 NB3: `echo` (PROJECTILE, shielded; a cadence move like `tide`: `signature_every_seconds` must exceed its
   telegraph + `record_seconds`): `radius_m` (> 0: each ghost strike), `record_seconds` and `step_seconds` (a step of
   at least a tick, at most `BossSchemas.ECHO_MAX_POINTS` = 24 points), `safe_m` (>= 0: the margin round where the
@@ -672,8 +672,11 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
     pattern's whole duration (`active_seconds` is a floor). `damage` is each fireball's.
   - `marks` (CIRCLE): `count` ground circles of `radius_m`, `stagger_seconds` apart, each tracked then locked
     (`lock_seconds` required). Active until the last strikes.
-  - `row_lanes` (LINE): `count` crosses of two lanes (the player's row and column), `length_m` long, `width_m` wide,
-    `stagger_seconds` apart, tracked then locked like `marks`; cut short by walls.
+  - `row_lanes` (LINE): `count` volleys of lanes out of the boss's edge (one through the player and, with
+    `spread_degrees`, one more each side), `length_m` long, `width_m` wide, `stagger_seconds` apart, tracked then locked
+    like `marks`; cut short by walls. With `speed_mps` the lanes rise outward from the boss, each slice of `speed_mps` / 60
+    metres striking on its own tick (the strike lasts `BossAttackTable.lane_wave_ticks()` ticks); without it the whole
+    lane strikes on one.
 - **v0.7.5 BF2 (the Brood Mother and the Hive Lens).** A move may take optional params (`BossSchemas.MOVES[move]
   ["optional"]`; any other unknown key is still an `ERROR`):
   - `marks` + `pattern_id` (a BURST, §4b): each circle is an egg's landing; while it is locked an egg flies onto it,
@@ -792,6 +795,183 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   - `orb_damage: int` (≥ 0; only with a `pattern_id`): each orb or shot of the attack's pattern deals it (a small hit
     beside a bigger one: a leap's quake ring, a burrow's eruption, an egg's burst, the gaze's and the Cross's orbs;
     the recalled javelins); 0 = `damage`. Scaled with `damage` by `RunState.scale_bosses`.
+
+- **v0.12.0 step 2 (owner brief CJ1-CJ5, the Rewind).** `BossDefinition.time: Dictionary` (empty: none), the
+  Clockwork Judge's time mechanics, checked by `TimeRules` (`SPEC`: key → [default, min, max]; an unknown key or a
+  value out of range is an error) and compiled by `TimeCompiler` into `BossTable.time` (`BossTimeTable`). Keys, with
+  the Judge's values: the Time Wave `wave_first_seconds` 8, `wave_every_seconds` 25, `wave_cut_permille` 750; the
+  hour orbs `orb_count` 3, `orb_permille` 250, `orb_radius_m` 1.2, `orb_gap_m` 8, `orb_late_phase` 2,
+  `orb_late_seconds` 10; the stopped gears `gear_phase` 1, `gear_count` 4, `gear_length_m` 5, `gear_width_m` 0.8,
+  `gear_seconds` 12; the slow fields `field_phase` 1, `field_every_seconds` 7, `field_radius_m` 1.75,
+  `field_seconds` 8, `field_speed_permille` 200, `field_max` 3, `dodge_mps` 2.5; the Rewind `rewind_phase` 1,
+  `trail_step_seconds` 0.25, `trail_seconds` 4, `late_phase` 2, `late_trail_seconds` 6, `late_tolls` 2,
+  `toll_gap_seconds` 3, `bell_first_seconds` 15, `bell_every_seconds` 20, `bell_cast_seconds` 2,
+  `bell_verdict_delay_seconds` 0.45 (how long after a toll its own Verdict drops, 0.1..3); the Judge's return
+  `return_phase` 2, `return_hp_permille` 150, `return_seconds` 5, `return_heal_permille` 50, `return_near_m` 4.
+  Phases are indices from 0; one past the boss's last phase means never. Also checked: a boss with `time` lists a
+  `time_wave` attack in every phase, and a `time_wave` attack needs `time`; `wave_every_seconds` exceeds the wave's
+  cast, active time and recovery; the late trail is the longer one and no trail is over 64 steps;
+  `bell_every_seconds` exceeds the cast plus the later tolls; the Bell's cast lasts the telegraph minimum;
+  `bell_verdict_delay_seconds` is under `bell_cast_seconds` and `toll_gap_seconds`; a boss with `time` holds a
+  `verdict` attack (the Bell's Verdict takes its square and damage from it).
+  New boss move `time_wave` (shape 3, no params): its telegraph is the cast. It is a cast move
+  (`BossSchemas.CAST_MOVES`): its `damage` must be 0 and it needs no `cause_key` or `hit_class`.
+- **v0.12.0 step 4 (owner brief TC1-TC6, SG-TC).** `BossDefinition.dance: Dictionary` (empty: none), the
+  Tidecaller's dance, checked by `DanceRules` (`SPEC`: key → [default, min, max]; an unknown key or a value out of
+  range is an error) and compiled by `DanceCompiler` into `BossTable.dance` (`BossDanceTable`). Keys, with the
+  Tidecaller's values: the Pull `pull_permille` 750 (of the hero's run speed; 0 = the attack's own `pull_mps`),
+  `pull_late_permille` 850 from `pull_late_phase` 2, `push_m` 6 (thrown over the attack's `push_seconds`, now 0.5;
+  0 = the attack's own `push_mps`); Riptide `riptide_phase` 1, `riptide_first_seconds` 10,
+  `riptide_every_seconds` 20, `riptide_casts` 4 (1..4), `riptide_warn_seconds` 2, `riptide_last_warn_seconds` 2.5,
+  `riptide_wave_seconds` 0.6, `riptide_permille` 350 (of the hero's max HP, at most 400); High Tide
+  `high_tide_phase` 2, `high_tide_first_seconds` 8, `high_tide_every_seconds` 25, `high_tide_cast_seconds` 2.5,
+  `high_tide_seconds` 6, `high_tide_tick_seconds` 0.5, `high_tide_permille_per_second` 60, `high_tide_radius_m` 4,
+  `high_tide_gap_m` 12; the Maelstrom `maelstrom_phase` 2, `maelstrom_spin_permille` 450, `maelstrom_in_permille`
+  250, `maelstrom_eye_m` 1.5, `maelstrom_permille` 400 (at most 400), `maelstrom_throw_m` 10,
+  `maelstrom_throw_seconds` 0.5, `maelstrom_grace_seconds` 3. Phases are indices from 0; one past the boss's last
+  phase means never. Also checked: each warning and the High Tide's cast last the telegraph minimum;
+  `riptide_every_seconds` exceeds a whole row and `high_tide_every_seconds` its cast plus its flood; a High Tide
+  step takes 1..400 per mille; a boss with a dance holds a `tide` and a `wave` attack (the death recap names them).
+  The Tidecaller also gains `hazard` (its tide pools: `kind` slow, `attack_ids` its `crossing_wave`, `radius_m` 2,
+  `life_seconds` 10, `max_count` 5, `slow_permille` 600, `warn_seconds` 0.8, `look` "venom" until a view gives it
+  its own), and its last phase has no `entry_attack` (no Pull is cast in the Maelstrom).
+- **v0.12.0 step 4c (owner, 2026-11-15, PLAN rows R1-R7: one big mechanic at a time).** `dance` loses
+  `riptide_first_seconds`, `riptide_every_seconds`, `high_tide_first_seconds` and `high_tide_every_seconds` (an
+  unknown key now) and gains the rhythm (`BossTideBeats`): `calm_seconds` 3 (0.5..30), `resume_seconds` 1.5 (0..30,
+  less than `calm_seconds`), `beat_first_seconds` 6 and `beat_gap_seconds` 12 (phase 1), `beat_first_2_seconds` 6
+  and `beat_gap_2_seconds` 8 (phase 2), `beat_first_3_seconds` 8 and `beat_gap_3_seconds` 10 (phase 3 and later;
+  first 0.5..120, gap 0..120); `push_clear_m` 3 (0..6: hostile shots within it pop where the push sets the hero
+  down); `riptide_run_margin_permille` 1300 (1000..3000: a warning lasts at least the walk to its safe strip times
+  this). Changed values: `push_m` 4 (was 6), `riptide_warn_seconds` 2.5 (was 2), `riptide_last_warn_seconds` 3 (was
+  2.5). The Tidecaller drops `signature_every_seconds` / `signature_first_seconds` (a dance's rhythm brings its
+  Pull; other bosses keep theirs); its phase 2 has no `entry_attack` (its first beat is a Riptide row); its phases'
+  streams: a ring every 2.6 / 2.4 / 2.2 s, phase 3 on the plain `ring_stream` (`ring_stream_3` stays defined but
+  unused), crossing waves one every 5 s in phases 1 and 2 and none in phase 3 (`wave_attack` empty,
+  `wave_every_seconds` 0, `wave_count` 0).
+- **v0.12.0 step 6 (owner brief TW1-TW8, SG-TW).** The chain is gone from `BossDefinition` (`chain_min_m`,
+  `chain_max_m`, `chain_burn`, `chain_burn_seconds`, `chain_width_m`) and so is phase 3's swap (`twin_expose_seconds`,
+  `twin_expose_permille`, `twin_guard_permille`); a `chain_sweep` needs no `late_cause_key`. New:
+  `BossDefinition.wardens: Dictionary` (empty: none), the Twin Wardens' own mechanics, checked by `WardensRules`
+  (`SPEC`: key → [default, min, max]; an unknown key or a value out of range is an error; only a twin boss may have
+  it) and compiled by `WardensCompiler` into `BossTable.wardens` (`BossWardensTable`). Keys, with the Wardens'
+  values: the amber Warden `dash_m` 4, `dash_seconds` 0.25, `dash_every_seconds` 3, `combo_light_permille` 750 (a
+  combo's hits before its last, of the attack's damage), `sword_lane_max_m` 9; the Mirror Ward `mirror_seconds` 4,
+  `mirror_arc_degrees` 160, `mirror_damage_permille` 500 (BQ8 a), `mirror_cap_permille` 200 (of the hero's max HP,
+  the most one returned shot takes; the lead's addition), `mirror_range_m` 16, `mirror_push_m` 2, and the text keys
+  `mirror_cause_key` (required) and `mirror_look` (a fireball look); Shadow Swords `sword_count` 5 (at most 6),
+  `sword_ring_m` 5, `sword_fan_degrees` 200, `sword_length_m` 8, `sword_width_m` 0.9, `sword_gap_seconds` 0.2; the
+  whole ward `ward_phase` 2, `ward_stun_seconds` 5, `ward_stun_permille` 1500, `ward_stagger_seconds` 2,
+  `ward_return_seconds` 12 (counted from the break; longer than the stun); Through the Rift `rift_hp_permille` 500 (of the last bar; 0 =
+  never), `rift_gap_m` 8, `rift_radius_m` 1.2, `rift_open_seconds` 1, `rift_inside_seconds` 1.5,
+  `rift_mark_seconds` 0.5 (at most the time inside) and the text key `rift_attack` (a `charge` of this boss in no
+  phase's list, at most 40 damage: 40 % of the base hero's HP). New moves: `sword_combo` (ARC: `arc_degrees`,
+  `reach_m`, `count`, `gap_seconds`, `step_m`), `mirror_ward` (a cast: `BossSchemas.CAST_MOVES`, damage 0, no class,
+  no cause key) and `shadow_swords` (LINE, no params); each needs `wardens`. A `charge` may take `burst_radius_m` and
+  `burst_seconds` (any boss: it bursts where its run ends for its own damage). The Wardens also gain `hazard` (a
+  sword's rift: `kind` damage, `attack_ids` its `shadow_swords`, `radius_m` 1.5, `life_seconds` 8, `max_count` 5,
+  `damage` 8 every 0.5 s, `warn_seconds` 0.5, `look` "venom" until a view gives it its own) and `hazard_cause_key`.
+  The brief's 0.3 s lock for the charge is under the telegraph minimum every lock keeps (24 ticks, 0.4 s): the
+  charge ships with `lock_seconds` 0.4 until the owner decides (PROGRESS, step 6).
+- **v0.12.0 step 13 (the owner's playtest, PLAN rows F1-F9): more `wardens` keys** (SIM_CONTRACTS §10q, the
+  amendment; each one left out turns its rule off). `ranged_beyond_m` 7 (0..20; 0 = off: the amber Warden's close
+  attacks, those whose `max_range_m` is within it, only while the hero is within it, the others only beyond);
+  `charge_attack` "warden_charge" with `charge_min_seconds` 10 and `charge_max_seconds` 15 (2..60, min ≤ max: the
+  phase-1 charge on its own clock, never picked); `ward_charge_attack` "warden_charge_long" with
+  `ward_charge_min_seconds` 10 and `ward_charge_max_seconds` 12 (the ward-breaking charge on its own clock while the
+  whole ward stands); both name a `charge`. `ward_attack` "whole_ward" (a `mirror_ward` cast in no phase's list; with
+  it the whole ward is cast) and `ward_first_seconds` 4 (0..30: the cast starts that long into `ward_phase`);
+  `amber_warded_permille` 250 (0..1000: what the amber Warden takes while the whole ward stands; 1000 = off);
+  `shelter_attack` "crossfire" (a `crossfire`) and `shelter_m` 3 (1..8: its safe spot that far from the hero; the walk
+  to it at the base 6 m/s plus 30 % must fit in its `telegraph_seconds`). New attack `whole_ward` (`mirror_ward`,
+  1 s, damage 0, the violet's). `warden_charge` is now 0.4 s with no `lock_seconds` (the telegraph minimum, under
+  which the owner's "~0.3 s" would fall; it leads the hero until the boss's commit), any range;
+  `warden_charge_long` 2.4 s. `twin_wardens_crossfire` is a RING of 48 (one gap of 2, every other wave turned 3.75°).
+- **v0.12.0 step 9 (brief rows SE1, SE2, SG-SE).** `BossDefinition.siege: Dictionary` (empty: none), the Siege
+  Engine's siege, checked by `SiegeRules` (`SPEC`: key → [default, min, max]; an unknown key or a value out of range
+  is an error) and compiled by `SiegeCompiler` into `BossTable.siege` (`BossSiegeTable`). Keys, with the Engine's
+  values: the Target Lock `lock_phase` 1, `lock_first_seconds` 6, `lock_every_seconds` 14, `lock_seconds` 4 (the
+  painted circle's whole life), `lock_hold_seconds` 0.6 (its still end), `lock_radius_m` 2.2,
+  `lock_follow_permille` 800 (of the hero's run speed), `lock_permille` 350 (of the hero's max HP); its boulders
+  `boulder_size_m` 3 (a square, side), `boulder_seconds` 30, `boulder_max` 4; the Shockwave's cover `cover_phase` 2,
+  `shockwave_cap_permille` 400; the Doom Shell `doom_phase` 1, `doom_first_seconds` 14, `doom_every_seconds` 35,
+  `doom_count` 1, `doom_late_phase` 2, `doom_late_count` 2, `cart_hp_permille` 60 (of the boss's max HP),
+  `cart_radius_m` 1, `cart_roll_seconds` 10, `doom_delay_seconds` 1, `doom_permille` 400, `cart_blast_m` 6,
+  `cart_blast_permille` 250, `strip_seconds` 8, `strip_taken_permille` 1500. Phases are indices from 0; one past the
+  boss's last phase means never. Every hit's share is at most 400 per mille. Also checked: the hold ends inside the
+  lock and the lock lasts the telegraph minimum; `lock_every_seconds` exceeds the lock and `doom_every_seconds` the
+  cart's roll plus the delay; a boss with a siege holds a `marks` attack (the death recap names its shells). The
+  Engine's `shockwave` telegraph is now 2.0 s. The cart's body is a `warden` (`SiegeCompiler.CART_ENEMY`); the
+  turrets a shell destroys are the boss's first `deploy` attack's enemy.
+- **v0.12.0 step 10 (owner brief FO1, FO2, SG-FO).** `BossDefinition.forge: Dictionary` (empty: none), the
+  Foundry's forge, checked by `ForgeRules` (`SPEC`: key → [default, min, max]; an unknown key or a value out of range
+  is an error) and compiled by `ForgeCompiler` into `BossTable.forge` (`BossForgeTable`). Keys, with the Foundry's
+  values: the plate `plate_phase` 1, `plate_first_seconds` 8, `plate_every_seconds` 20 (after a blow),
+  `plate_cast_seconds` 1.5, `plate_taken_permille` 400, `exposed_seconds` 5, `exposed_taken_permille` 1250,
+  `drone_blast_m` 1.5 (a drone's bomb this far from its edge blows it), `drone_distance_m` 3, `drone_gap_seconds` 2;
+  the slag `slab_phase` 2, `slab_cool_seconds` 12, `slab_seconds` 8, `slag_drop_seconds` 6 (0..120; 0 = never:
+  the least time between two pools dropped where the hero stands when no slab is coming); Overpressure `overpressure_phase` 2,
+  `overpressure_first_seconds` 10, `overpressure_every_seconds` 22, `overpressure_cast_seconds` 3,
+  `overpressure_seconds` 4, `overpressure_tick_seconds` 0.5, `overpressure_permille_per_second` 60; the scald
+  `scald_phase` 2, `scald_max` 1000, `scald_hit` 200, `scald_lava` 60, `scald_open` 40, `scald_drain_per_second` 250,
+  `scald_tick_seconds` 0.5, `scald_burn_permille_per_second` 50; and two attack ids the death recap names (required):
+  `overpressure_cause` "firestorm", `scald_cause` "molten_flood". Also checked: both casts last the telegraph
+  minimum; `overpressure_every_seconds` exceeds its cast plus its burn and `slab_seconds` lasts that long; a step of
+  each burn takes 1..400 per mille; a boss with a forge holds a `brood` attack (its drones).
+- **v0.12.0 step 7a (owner direction HC-A; SIM_CONTRACTS §10t).** `FinalBossDefinition.interphase` and its five
+  `interphase` carriers are gone. Two dictionaries take its place, both checked by `FallenRules` (key → [default,
+  min, max]; an unknown key or a value out of range is an error) and compiled by `FallenCompiler`:
+  - `reposition` (empty: none; needs `mimic`): the dash between moves, `dash_telegraph_seconds` 0.4,
+    `dash_seconds` 0.2, `dash_min_m` 6 (≤ `dash_max_m`), `dash_max_m` 9, `dash_wall_m` 3 (`BossTable.reposition`).
+  - `remembered` (empty: none; needs `mimic` and `reposition`): The Fallen's values, the rhythm `first_permille` 660,
+    `second_permille` 330 (< first), `every_seconds` 30, `first_seconds` 12, `calm_seconds` 3, `cast_seconds` 1.5;
+    the Time Wave `time_cut_permille` 750, `time_orbs` 3, `time_orb_permille` 250, `time_orb_radius_m` 1.2,
+    `time_orb_gap_m` 8, `time_seconds` 12; Riptide `riptide_casts` 3, `riptide_warn_seconds` 2.5,
+    `riptide_wave_seconds` 0.6, `riptide_run_margin_permille` 1300, `riptide_permille` 300; the quake pillars
+    `pillar_count` 3, `pillar_seconds` 15, `pillar_m` 1.2 (side), `pillar_ring_m` 7, `pillar_pulse_seconds` 3,
+    `pillar_warn_seconds` 0.8, `pillar_permille` 60, `pillar_gap_m` 7, `pillar_wall_m` 1.5, `pillar_boss_m` 2,
+    `pillar_hero_m` 3, `pillar_dash_seconds` 3, `pillar_stun_seconds` 3, `pillar_stuns` 2; both stuns'
+    `stun_taken_permille` 1500; the ward `ward_seconds` 12, `ward_windup_seconds` 1.4, `ward_lock_seconds` 0.5 (<
+    the wind-up), `ward_speed_mps` 26, `ward_overshoot_m` 3, `ward_charges` 2, `ward_gap_seconds` 3, `ward_radius_m`
+    0.9, `ward_edge_m` 1.5, `ward_permille` 250, `ward_burst_m` 3.5, `ward_burst_seconds` 0.25, `ward_burst_permille`
+    300, `ward_stun_seconds` 4. Every hit's share is at most 400 per mille (`FallenRules.MAX_HIT`). The body must hold
+    the two carriers `fallen_riptide` and `fallen_shade`: move `remembered` (new; it takes the interphase move's
+    place), in no phase, `damage` 0 (a carrier names a death recap line only, like a cast), a `cause_key`
+    (`CAUSE_TIDECALLER_WAVE`, `CAUSE_TWIN_CHARGE`). The quake pillars' recap line is `CAUSE_GATEKEEPER_PILLAR`.
+    The theft (v0.12.0 step 7b, SIM_CONTRACTS §10t "The theft"), in the same dictionary: `theft_first_permille`
+    660, `theft_second_permille` 330 (< first), `theft_cast_seconds` 1.5, `theft_held` 2 (1..2), `theft_hits` 8
+    (1..30), `theft_arc_deg` 120 (30..240, the whole rear arc); compiled to `FallenRememberedTable.theft_*`
+    (`theft_half_arc` in 1/4096 turns: 683).
+- **v0.12.0 step 8 (owner brief WL1-WL3, SG-WL; SIM_CONTRACTS §10u).** The Warlord's `lunge_dash` is now 0.6 s
+  (locked its last 0.4 s), 26 m/s over 16 m, with `burst_radius_m` 3.5 and `burst_seconds` 0.25 (the charge
+  burst any boss may take, §10q). `BossDefinition.warlord: Dictionary` (empty: none), checked by `WarlordRules`
+  (`SPEC`: key → [default, min, max]; an unknown key or a value out of range is an error) and compiled by
+  `WarlordCompiler` into `BossTable.warlord` (`BossWarlordTable`). Keys, with the Warlord's values: the banner
+  `banner_phase` 1, `banner_first_seconds` 8, `banner_gap_seconds` 12 (after the last is gone), `banner_cast_seconds`
+  1.0, `banner_radius_m` 6, `banner_seconds` 20, `banner_cooldown_permille` 700, `banner_damage_permille` 1400,
+  `banner_pole_m` 0.8; the duel `duel_phase` 2, `duel_first_seconds` 8, `duel_gap_seconds` 25 (after the last
+  ended), `duel_cast_seconds` 1.2, `duel_radius_m` 9, `duel_end_radius_m` 5, `duel_seconds` 12, `fence_touch_m` 0.3,
+  `fence_permille` 100, `fence_every_seconds` 0.6, `recall_warn_seconds` 1.0, `recall_radius_m` 2.5,
+  `recall_permille` 400; `duel_attacks` (required; ids of the boss's attacks, no `great_javelin`): `shield_bash`,
+  `lunge_dash`, `spear_lines`; and two attack ids the death recap names (required): `fence_cause` "javelin_fan"
+  (`CAUSE_WARLORD_FAN`) and `recall_cause` "javelin_fan" (its late part, `CAUSE_WARLORD_RECALL`). Phases are indices
+  from 0. Also checked: every hit at most 400 per mille; both casts and the recall's warning last the telegraph
+  minimum; the banner and the duel never share a phase; the cage only closes; the centre zone plus the touch reach
+  is smaller than the last ring.
+- **v0.12.0 step 11 (brief HL1, HL2, SG-HL; SIM_CONTRACTS §10v).** `BossDefinition.lattice: Dictionary` (empty:
+  none), the Hive Lens's drones, glass and Lattice, checked by `LatticeRules` (`SPEC`: key → [default, min, max]; an
+  unknown key or a value out of range is an error) and compiled by `LatticeCompiler` into `BossTable.lens`
+  (`BossLensTable`). Keys, with the Hive Lens's values: feeding `feed_phase` 1, `feed_cut_permille` 150 (a living
+  drone), `feed_cap_permille` 450, `resend_seconds` 12; the glass `strip_phase` 2, `strip_length_m` 8,
+  `strip_width_m` 1, `strip_seconds` 6, `strip_damage` 6 (HP, the boss's power applies), `strip_tick_seconds` 0.5,
+  `strip_max` 3; the Lattice `lattice_phase` 1, `lattice_first_seconds` 10, `lattice_every_seconds` 45,
+  `lattice_cast_seconds` 2, `lattice_seconds` 10, `lattice_min_drones` 2, `strand_width_m` 0.6,
+  `strand_hit_permille` 200, `strand_lockout_seconds` 0.5, `orbit_dps` 20, `orbit_min_m` 6, `orbit_max_m` 12,
+  `calm_seconds` 3 (round the Gaze); attack ids (required): `split_attack` "split" (a `deploy` or `brood` attack
+  with an `enemy_id`: its enemy is the drone that feeds), `strand_cause` "lens_flare", `strip_cause` "focus_beam";
+  lists of attack ids (required): `beam_attacks` ["focus_beam", "focus_beam_3"], `lattice_holds` (the Gaze, the
+  Focus Beams, the dive and the Prism Spirals, fast ones included). Also checked: the cast lasts the telegraph
+  minimum; `lattice_every_seconds` exceeds the cast, the web and the calm; `orbit_min_m` ≤ `orbit_max_m`; a strand
+  takes at most 400 per mille.
 
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 
@@ -943,8 +1123,13 @@ parts, `focal`, a `choice` and the `options` that keep it, `chance_permille`, `p
 `token`, `at` m, `yaw`, `height_scale`/`height_spread`, `side` 0/1/2, `chance_permille`), `choices:
 Array[RoomPurposeChoice]` (`id`, one weight per option), `min_cells` (3 x 3 and up), `weight`, `biomes`, `far_wall`
 (the focal wall prefers a far side from the camera), `shift_m` (< 1 m) and `turn_deg` (< 15), and one
-`RoomPurposePalette` per biome mapping each token to a `RoomPurposePiece` (`piece` from `PIECES`, `size`, `height`,
-`solid`; a drawn piece is low decoration (`DECOR`) or rests on its group's solids at `lift` m: a lintel). The pieces
+`RoomPurposePalette` per biome mapping each token to a `RoomPurposePiece` (`piece` from `PIECES`, `size`, `height`
+(0..8 m, the drawn height: a focal piece stands up to the hall's 6 m monolith),
+`solid`; a drawn piece is low decoration (`DECOR`) or rests on its group's solids at `lift` m: a lintel; a solid on
+`legs` (an arch: each leg's blocker footprint, their centres `leg_at` m each side along its x, inside `size`) is solid
+only under its legs, the opening between them walkable floor of at least `MIN_OPENING_M` (2 m), and is drawn whole
+at `size` over them: the Ruins and Night Rocks halls' grand arch, 6 x 2.56 m at its own 3.71 m, on legs of
+1.52 x 2 m at ±2.07 m). The pieces
 are kit stand-ins until the purpose-room models arrive (OWNER_TODO §3.6): a new model swaps in by its palette row.
 `RunContentCompiler.compile_room_purposes` → `RoomPurposeTable`; `RunSaver.floor_tables` passes them to
 `FloorScenario.add_purposes` (after the shop), which lays `MapDefinition.purpose_permille` (750) of the large rooms of

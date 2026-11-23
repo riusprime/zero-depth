@@ -24,14 +24,16 @@ extends AvatarBase
 ##   head scanning, the weight shifting;
 ## - the hit flinch: AvatarBase's lean on this node, and the face recoiling under the rock, the arms flaring, the cracks
 ##   flashing;
-## - death (ActorViews keeps it DEATH_SECONDS): the legs give, it collapses back down into a rock slumped a little to
-##   one side, with a small rebound, and its glow fades out to a still stone;
+## - death (ActorViews, or the enemy batch, keeps it DEATH_SECONDS): the legs give, it collapses back down into a rock
+##   slumped a little to one side, with a small rebound, and its glow fades out to a still stone;
 ## - reduced motion (ViewPrefs.reduced_motion): no shudders or trembles, no wobble, a smaller rear-up and heave and
 ##   smaller secondary motion (the same timings).
 ## The sim never puts it back into hiding, so there is no clip for that.
 ## VAT (SoloVat, owner 2026-11-06 "apply it to the rest of the enemies"): each pose is a set of plain numbers (_vd,
 ## VAT_DRIVES) the nodes are written from, each joint one of them, so the VatCrowd's shader poses the same body.
-## Without the model file it builds a code-made stand-in on the same joints.
+## On the VAT crowd it is batched (EnemyBatch): nothing here reads the tree then (its disguise's hidden disc and ring
+## are the batch's, show_rings; its death's timer the batch's, drop). Without the model file it builds a code-made
+## stand-in on the same joints.
 
 const KIND := WorldReader.KIND_ROCK_LURKER
 const MODEL := &"rock_lurker"
@@ -352,16 +354,23 @@ func sync(reader: WorldReader, i: int) -> void:
 			"pos": reader.actor_pos(i),
 			"state": st,
 			"windup": float(tg.get("progress", 0)) / 1000.0,
-			"hidden": reader.lurker_hidden(i) or st == WorldReader.STATE_SPAWN,
+			"hidden": disguised(reader, i),
 			"rumbling": reader.lurker_rumbling(i),
 		}
 	)
-	_show_rings(not _hidden)  # its disguise: no contact disc or team ring while it waits
+	if not detached:  # (a batched one's disc and ring are the batch's: EnemyBatch.update hides them the same way)
+		_show_rings(not _hidden)  # its disguise: no contact disc or team ring while it waits
+
+
+## Whether actor row `i` waits as a boulder (its arrival counts): no contact disc or team ring then.
+static func disguised(reader: WorldReader, i: int) -> bool:
+	return reader.lurker_hidden(i) or reader.actor_state(i) == WorldReader.STATE_SPAWN
 
 
 ## The same as sync(), from plain values (tests and tools drive the avatar with this): tick, pos, state (a WorldReader
 ## STATE_*), windup (0..1, the telegraph's progress), hidden (waiting as a boulder; its arrival counts), rumbling.
 func apply_state(s: Dictionary) -> void:
+	_touch()
 	var tick: int = s["tick"]
 	var state: int = s["state"]
 	var hidden := bool(s.get("hidden", false))
@@ -388,15 +397,17 @@ func apply_state(s: Dictionary) -> void:
 		_pose()
 
 
-## Starts the death (ActorViews keeps the node DEATH_SECONDS). False when it is already dying.
+## Starts the death (ActorViews, or the enemy batch, keeps it DEATH_SECONDS). False when it is already dying.
 func die() -> bool:
+	_touch()
 	if _die >= 0.0:
 		return false
 	_die = 0.0
 	return true
 
 
-## ActorViews, once die() started it: the actor's node (`root`) stays DEATH_SECONDS while it collapses, its bar gone.
+## ActorViews, once die() started it: the actor's node (`root`, in the tree) stays DEATH_SECONDS while it collapses,
+## its bar gone. (A batched one's fall is EnemyBatch.drop's, which needs no tree of it.)
 func fall(root: Node3D) -> void:
 	set_process(true)
 	if root.has_meta(&"bar"):
@@ -405,6 +416,7 @@ func fall(root: Node3D) -> void:
 
 
 func dying() -> bool:
+	_peek()
 	return _die >= 0.0
 
 
@@ -412,6 +424,7 @@ func dying() -> bool:
 
 
 func advance(delta: float) -> void:
+	_touch()
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0:
 		return
@@ -679,21 +692,25 @@ func _show_rings(on: bool) -> void:
 
 
 func crack_energy() -> float:
+	_peek()
 	return _crack
 
 
 func visor_energy() -> float:
+	_peek()
 	return _visor
 
 
 ## 0..1 each: how far it is folded into its boulder (tuck), reared for the slam (rear), smashed down (slam), walking
 ## (walk, up to 1.2).
 func amounts() -> Dictionary:
+	_peek()
 	return {"tuck": _tuck, "rear": _rear, "slam": _slam, "walk": _walk}
 
 
 ## The raw drives now (tests: which joints a clip moves).
 func drives() -> PackedFloat32Array:
+	_peek()
 	return _vd
 
 
@@ -702,15 +719,18 @@ func drives() -> PackedFloat32Array:
 
 ## The spawn's rise (m): the whole body's lift VatCrowd moves the instance by.
 func vat_lift() -> float:
+	_peek()
 	return _lift
 
 
 func vat_drives() -> PackedFloat32Array:
+	_peek()
 	return SoloVat.normalized(_vd, VAT_DRIVES)
 
 
 ## The visor's glow (the cracks glow at their own drive).
 func glow_energy() -> float:
+	_peek()
 	return _visor
 
 

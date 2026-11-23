@@ -3,8 +3,9 @@ extends Node3D
 ## What lies beyond a floor's edge, by BiomeLook.edge. One builder per style, so the next biome adds its
 ## own (NB2's cosmic biome: a star field) beside these without touching the others:
 ## - &"water" (Frozen Shore): a dark frozen sea under the void, the floor standing on a snow bank whose lip shows at
-##   every edge, and white ice floes drifting on the water (cosmetic stream). The sea shimmers slowly (frame time;
-##   still with reduced motion).
+##   every edge, and white ice floes drifting on the water (cosmetic stream; the owner's cracked ice slab, KitModels
+##   ice_floe, pressed flat; without it a code-made hexagonal slab). The sea shimmers slowly (frame time; still with
+##   reduced motion).
 ## - &"stars" (v0.7.5 NB2, Starfall): a starry void. The floor is a floating island (dark star stone under every
 ##   ground rect, faceted spikes hanging from its rim), twinkling stars and soft nebula light (violet, teal, magenta)
 ##   far below, and small rock and crystal islands drifting in the void around it (cosmetic stream; the twinkle and
@@ -33,6 +34,8 @@ const FLOE_REACH := 9.0
 const FLOE_MIN := 0.5
 const FLOE_MAX := 2.2
 const FLOE_KEEP := 0.7
+## The owner's floe pressed to this thickness (m; its top FLOE_THICK / 2 above the water, as the code floe's).
+const FLOE_THICK := 0.12
 const SNOW := Color("#DCE6F2")
 const FLOE := Color("#EEF5FC")
 
@@ -270,19 +273,30 @@ func _build_floes(ground: Array, bounds: Rect2, seed_value: int) -> void:
 	floe_count = xforms.size()
 	if xforms.is_empty():
 		return
+	# The owner's slab is a unit box (base at y = 0): pressed to FLOE_THICK and lowered so it floats as the code one.
+	var piece := KitModels.get_piece(&"ice_floe")
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.mesh = floe_mesh()
+	mm.mesh = floe_mesh() if piece.is_empty() else piece["mesh"]
 	mm.instance_count = xforms.size()
 	for k in xforms.size():
-		mm.set_instance_transform(k, xforms[k])
+		var xf := xforms[k]
+		if not piece.is_empty():
+			xf = Transform3D(
+				xf.basis * Basis.from_scale(Vector3(1.0, FLOE_THICK, 1.0)),
+				xf.origin - Vector3(0.0, FLOE_THICK * 0.5, 0.0)
+			)
+		mm.set_instance_transform(k, xf)
 	floes = MultiMeshInstance3D.new()
 	floes.name = "Floes"
 	floes.multimesh = mm
-	var m := StandardMaterial3D.new()
-	m.albedo_color = FLOE
-	m.roughness = 0.5
-	floes.material_override = m
+	if piece.is_empty():
+		var m := StandardMaterial3D.new()
+		m.albedo_color = FLOE
+		m.roughness = 0.5
+		floes.material_override = m
+	else:
+		floes.material_override = piece["material"]
 	floes.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(floes)
 

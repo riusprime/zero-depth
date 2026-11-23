@@ -73,6 +73,8 @@ const ELEMENT_CUES := {
 
 var _last_seq := 0
 var _kinds := {}
+## Stored actor kind -> _kind_info_of's answer (the kinds' bodies and bosses never change).
+var _kind_info := {}
 var _states := {}
 var _phases := {}
 ## Per Clockwork Judge, the echo tick whose ghost strikes last sounded (each strikes once).
@@ -81,6 +83,8 @@ var _echo_t := {}
 var _shade_dark := false
 var _shade_lit: Array[bool] = []
 var _projectiles := {}
+## The set before last, cleared and refilled as the next tick's (a busy fight's shots make no new set each tick).
+var _projectiles_spare := {}
 ## The rune bursts heard so far (their uids).
 var _rune_seen := {}
 ## Where each enemy's area spell (a rune, a bomb) is aimed, from its telegraph at the windup.
@@ -405,11 +409,14 @@ static func final_cue_at(reader: WorldReader) -> float:
 ## Floor 1's altar hum and pop
 ## start so the file's peak (AltarStage.Look.cue_peak_s in) lands on the altar's pop (C18: "synchronized with the main
 ## audio cue"). An arrival shorter than the hum (reduced motion's fade-in) plays none.
+## The cue's start is worked out only while an arrival plays (progress 0 or more): it is never negative when it
+## plays, so a progress below 0 never reaches it.
 func _arrival(reader: WorldReader, out: Array) -> void:
 	var p := reader.arrival_progress()
-	var at := arrival_cue_at(reader)
-	if reader.arrival_altar() and at >= 0.0 and p >= at and _arrive_progress < at:
-		out.append([AltarStage.arrival().cue, null, 1.0])
+	if p >= 0.0 and reader.arrival_altar():
+		var at := arrival_cue_at(reader)
+		if at >= 0.0 and p >= at and _arrive_progress < at:
+			out.append([AltarStage.arrival().cue, null, 1.0])
 	_arrive_progress = p
 
 
@@ -464,8 +471,6 @@ func _events(reader: WorldReader, out: Array) -> void:
 		match e.kind:
 			SimEvent.Kind.DAMAGE:
 				if e.tags & SimEvent.TAG_DOT:
-					if e.effect_id == WorldReader.EFFECT_TWIN_CHAIN:  # The chain's burn sizzles
-						out.append([&"boss_twin_chain", e.pos, 1.2])
 					continue  # ticks are silent (SFX_NEEDS)
 				if ELEMENT_CUES.has(e.effect_id):  # The element's own sound
 					out.append([ELEMENT_CUES[e.effect_id], e.pos, 1.0])
@@ -527,10 +532,15 @@ func _events(reader: WorldReader, out: Array) -> void:
 					out.append([&"arc_field", e.pos, 1.0])
 				elif e.effect_id == SimEvent.EFFECT_FROST_SHATTER:  # Shatter (the frost nova's)
 					out.append([&"frost_nova", e.pos, 1.0])
-				elif e.effect_id == WorldReader.EFFECT_TWIN_ANGER:  # A Warden's chain jerks taut
+				elif e.effect_id == WorldReader.EFFECT_TWIN_ANGER:  # A Warden turns angry
 					out.append([&"boss_twin_chain", e.pos, 0.75])
-				else:
-					_fallen_cue(e, out)
+				elif not JudgeTimeCues.add(e, out) and not TideDanceCues.add(e, out):
+					if not WardenCues.add(e, out) and not SiegeCues.add(e, out):
+						if not ForgeCues.add(e, out) and not WarlordCues.add(e, out):
+							if not LensCues.add(e, out):
+								FallenCues.add(e, out)
+			SimEvent.Kind.BOSS_PICKUP_TAKEN:  # An hour orb taken
+				out.append([JudgeTimeCues.ORB_TAKEN, e.pos, JudgeTimeCues.ORB_PITCH])
 			SimEvent.Kind.BLAST:  # A bomb bursts
 				out.append([&"bomb_blast", e.pos, 1.0])
 			SimEvent.Kind.LANCE:  # A Lance released, its whoosh
@@ -539,27 +549,6 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"combo_unlock", null, 1.0])
 			SimEvent.Kind.STRESS_BREAK:  # A Stress Mark side broken, a metallic ting
 				out.append([&"stress_break", e.pos, 1.0])
-
-
-## The Fallen's interphase: it vanishes with the phase cue, the beams open with the laser's, an eruption
-## strikes with the spikes' floor burst, the dark falls with the Shade's snuff, the rain with the mortar's, and the
-## slam back down with the heavy slam.
-func _fallen_cue(e: SimEvent, out: Array) -> void:
-	match e.effect_id:
-		WorldReader.EFFECT_FALLEN_VANISH:
-			out.append([&"boss_phase", null, 1.0])
-		WorldReader.EFFECT_FALLEN_BEAMS:
-			out.append([&"boss_laser", e.pos, 1.0])
-		WorldReader.EFFECT_FALLEN_ERUPT:
-			out.append([&"boss_floor_burst", e.pos, 0.9])
-		WorldReader.EFFECT_FALLEN_DARK:
-			out.append([&"boss_shade_snuff", null, 1.0])
-		WorldReader.EFFECT_FALLEN_RAIN:
-			out.append([&"boss_mortar", e.pos, 0.8])
-		WorldReader.EFFECT_FALLEN_LINE:
-			out.append([&"boss_floor_burst", e.pos, 0.7])
-		WorldReader.EFFECT_FALLEN_RETURN:
-			out.append([&"boss_slam", e.pos, 1.0])
 
 
 ## Mines: a beep as one arms, the blast when an armed one goes off the floor.
@@ -583,11 +572,26 @@ func _is_boss(actor_id: int) -> bool:
 	return WorldReader.is_boss_kind(_kinds.get(actor_id, -1))
 
 
+## A stored actor kind's body kind (a variant's base) times 2, plus 1 when that body is a boss's (kept in _kind_info).
+func _kind_info_of(raw: int) -> int:
+	var body := WorldReader.body_kind(raw)
+	var info := body * 2 + (1 if WorldReader.is_boss_kind(body) else 0)
+	_kind_info[raw] = info
+	return info
+
+
 ## Enemy windups, boss telegraphs, boss attacks landing, staggers and phase changes: edges in each actor's state.
+## The ids and kinds are read as whole columns, and each stored kind's body and boss test once (_kind_info): a
+## fight's every actor each tick then costs a few lookups, not a call per field.
 func _scan_actors(reader: WorldReader, out: Array) -> void:
-	for i in range(1, reader.actor_count()):
-		var id := reader.actor_id(i)
-		var kind := WorldReader.body_kind(reader.actor_kind(i))  # A variant sounds as its base
+	var ids := reader.actor_ids_column()
+	var raw_kinds := reader.actor_kinds_column()
+	for i in range(1, ids.size()):
+		var id := ids[i]
+		var info: int = _kind_info.get(raw_kinds[i], -1)
+		if info < 0:
+			info = _kind_info_of(raw_kinds[i])
+		var kind := info >> 1  # A variant sounds as its base
 		_kinds[id] = kind
 		if kind >= WorldReader.KIND_DUST_MITE and kind <= WorldReader.KIND_STAR_MOTE:
 			continue  # A critter has no windup and no attack: no state cue (a surge skips the rest)
@@ -596,10 +600,13 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 		var st := reader.actor_state(i)
 		var was: int = _states.get(id, st)
 		_states[id] = st
-		var boss := WorldReader.is_boss_kind(kind)
-		var phase := reader.boss_phase(i) if boss else 0
-		var was_phase: int = _phases.get(id, phase)
-		_phases[id] = phase
+		var boss := (info & 1) == 1
+		var phase := 0
+		var was_phase := 0
+		if boss:  # Only a boss has a phase: the others' would be 0 now and before
+			phase = reader.boss_phase(i)
+			was_phase = _phases.get(id, phase)
+			_phases[id] = phase
 		if kind == WorldReader.KIND_CLOCKWORK_JUDGE:  # Each ghost strike of its echo chimes
 			_echo_strikes(reader, i, id, out)
 		if kind == WorldReader.KIND_LANTERN_SHADE:  # The dark falling, a lantern out or relit
@@ -706,8 +713,9 @@ func _enemy_cue(reader: WorldReader, i: int, kind: int, st: int, at: Vector2, ou
 		if cue != &"":
 			out.append([cue, at, 1.0])
 		return
-	if RuinsRocksAvatar.draws(kind):  # v0.11.0 O13b
-		_ruins_rocks_cue(reader, i, kind, st, at, out)
+	# Keyed by kind, not by which avatar draws it: the Hound, Lurker, Thrower and Weaver moved to their own
+	# avatars and must keep their cues.
+	_ruins_rocks_cue(reader, i, kind, st, at, out)
 	if st == WorldReader.STATE_WINDUP:
 		out.append(
 			[&"bomb_lob" if kind == WorldReader.KIND_BOMB_DRONE else &"enemy_windup", at, 1.0]
@@ -824,7 +832,8 @@ static func swing_cue(motion: int, step: int) -> StringName:
 
 ## A new projectile is a shot: the player's bolts and the enemies' shots, once per tick each.
 func _scan_projectiles(reader: WorldReader, out: Array) -> void:
-	var seen := {}
+	var seen := _projectiles_spare
+	seen.clear()
 	var fired := false
 	var hostile := false
 	var wisp := false  # A wisp's own shot chirps, not the Gun's cue
@@ -839,6 +848,7 @@ func _scan_projectiles(reader: WorldReader, out: Array) -> void:
 			fired = fired or not reader.projectile_is_shard(i)
 		else:
 			hostile = true
+	_projectiles_spare = _projectiles
 	_projectiles = seen
 	if fired and reader.lance_active():  # The Lance's ball sounds with its LANCE event (_events)
 		fired = false

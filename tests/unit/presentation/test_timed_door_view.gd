@@ -2,9 +2,10 @@ extends GutTest
 ## v0.9.0 TD (owner W §2 presentation: "Slow beeps at first. Increasing frequency as time passes. Very fast beeping
 ## immediately before closure. A heavy impact when the door shuts. Include visual feedback, such as flashing runes, for
 ## accessibility"; Q23: the hidden room "should not appear or be visible until you open it"): the timed door's view on
-## a whole floor's view (WorldViewRoot, the biome's kit). The door and both rune switches stand (code stand-ins without
-## the owner's models); the secret room's ground, own walls and reward are out of sight and the minimap leaves it out;
-## a switch's rune lights when pressed; both open the door, the room comes into sight; the beeps run slow to fast and
+## a whole floor's view (WorldViewRoot, the biome's kit). The door (a frame of the walls' own blocks, in the walls'
+## material, a gate a little over the walls; the owner's slab filling its opening) and both rune switches stand; the
+## secret room's ground, own walls and reward are out of sight and the minimap leaves it out; a switch's rune lights
+## when pressed; both open the door, the room comes into sight; the beeps run slow to fast and
 ## each flashes the runes; the cues play the opening, the beeps (captioned) and the impact; the shut slams the slab.
 
 
@@ -40,9 +41,16 @@ func test_the_door_the_switches_and_the_hidden_room() -> void:
 	var t := v.timed_door
 	assert_not_null(t, "the view is built")
 	assert_eq(t.switch_count(), 2, "two rune switches")
-	# v0.9.0 MI2: the owner's switches are listed; his bar gate went to the Lockdowns (owner 2026-10-22), so the door
-	# is the code stone slab.
-	assert_false(t.uses_model, "the code stone slab")
+	# The frame is the walls' blocks; the slab with its carved seal is the owner's.
+	assert_true(t.uses_model, "the owner's timed_door")
+	for n in ["Frame/Blocks", "Frame/Notch", "Slab/Model", "Slab/Seal"]:
+		assert_true(t.has_node("Door/" + n), "the door's %s" % n)
+	for n in ["Frame/JambLeft", "Frame/JambRight", "Frame/Middle"]:
+		assert_false(t.has_node("Door/" + n), "his rounded %s not drawn" % n)
+	_frame_is_the_walls(v, t, reader)
+	var top := _slab_top(t)
+	assert_gte(top, TimedDoorFrame.OPEN_H, "the slab fills the opening")
+	assert_lte(top, TimedDoorFrame.TOP, "its top hidden in the lintel")
 	assert_true(t.switch_uses_model, "the owner's rune_switch")
 	assert_true(t.slab.visible, "shut: the slab stands")
 	assert_false(t.revealed, "the secret room unseen")
@@ -82,8 +90,12 @@ func test_the_door_the_switches_and_the_hidden_room() -> void:
 		st.hidden.has(w.floor_layout.timed_room), "and the minimap may show it once you go in"
 	)
 	assert_gt(t.flash, 0.5, "the beep flashes the runes")
+	for n in ["Door/Frame/Notch", "Door/Slab/Seal"]:
+		var lit := (t.get_node(n) as MeshInstance3D).material_override as StandardMaterial3D
+		assert_gt(lit.emission_energy_multiplier, 2.0, "%s flashes with the beep" % n)
 	t._process(TimedDoorView.SINK_S + 0.1)
 	assert_false(t.slab.visible, "the slab sank into the floor")
+	assert_lte(t.slab.position.y + top, 0.001, "all of it, its top to the floor")
 	var beeps := 1
 	var flashes := 0
 	var was := t.flash
@@ -125,6 +137,53 @@ func test_the_shut_plays_the_impact() -> void:
 		heard.append_array(_ids(cues.collect(reader)))
 	assert_eq(reader.timed_door_state(), WorldReader.TIMED_SHUT)
 	assert_eq(heard.count(&"boss_door_impact"), 1, "one heavy impact on the shut")
+
+
+## The frame: one mesh in the walls' material (on this floor the procedural ruin's: its shader, the biome's wall
+## textures, what the kit draws the walls with), squared off, its foot as deep as the doorway, a gate a little over the
+## walls.
+func _frame_is_the_walls(v: WorldViewRoot, t: TimedDoorView, reader: WorldReader) -> void:
+	var mat := t.frame_material as ShaderMaterial
+	assert_not_null(mat, "the frame in the walls' shader")
+	if mat == null:
+		return
+	var tex := StageView.wall_textures(v.stage.prop_style)
+	assert_eq(mat.get_shader_parameter(&"face_tex"), tex["face"], "the walls' face texture")
+	assert_eq(mat.get_shader_parameter(&"top_tex"), tex["top"], "and their top texture")
+	var wall: MeshInstance3D = null
+	if v.stage.kit != null:
+		for n in v.stage.kit.get_children():
+			if n.get_meta(&"piece", &"") == &"proc_wall":
+				wall = n
+				break
+	assert_not_null(wall, "the floor's walls are the procedural ruin")
+	if wall != null:
+		var theirs := wall.get_surface_override_material(0) as ShaderMaterial
+		assert_eq(mat.shader.code, theirs.shader.code, "the same shader as the walls")
+		assert_eq(mat.get_shader_parameter(&"face_tex"), theirs.get_shader_parameter(&"face_tex"))
+	var blocks := t.get_node("Door/Frame/Blocks") as MeshInstance3D
+	assert_eq(blocks.get_surface_override_material(0), mat)
+	var box := blocks.mesh.get_aabb()
+	assert_almost_eq(box.size.y, TimedDoorFrame.TOP, 0.01, "the lintel's top")
+	assert_lt(box.size.y, ProceduralWall.MAX_H * 2.0, "a gate in the wall, not a tower over it")
+	var depth := reader.timed_door_depth()
+	var gate := TimedDoorFrame.gate_depth(depth) + 2.0 * TimedDoorFrame.KEY_OUT
+	var deep := maxf(depth, gate) + 2.0 * TimedDoorFrame.PROUD
+	assert_almost_eq(box.size.x, deep, 0.01, "its foot as deep as the doorway")
+	assert_lte(gate, depth + 2.0 * TimedDoorFrame.KEY_OUT, "the gate over it no deeper")
+	var wide := reader.timed_door_width() + 2.0 * TimedDoorFrame.JAMB
+	assert_almost_eq(box.size.z, wide, 0.01, "the jambs over the wall's ends")
+
+
+## The owner's slab's top in the door's frame (m), from its own triangles.
+func _slab_top(t: TimedDoorView) -> float:
+	var body := t.get_node("Door/Slab/Model") as MeshInstance3D
+	var arr := body.mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+	var top := -INF
+	for k: int in arr[Mesh.ARRAY_INDEX]:  # its own triangles' corners (the parts share one vertex list)
+		top = maxf(top, verts[k].y)
+	return t.slab.position.y + body.position.y + top * body.scale.y
 
 
 func _ids(reqs: Array) -> Array:

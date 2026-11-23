@@ -17,6 +17,16 @@ const LAST_RUN := &"last_run"
 const MEETINGS := 2
 ## Reasons whose hint shows at every meeting (the Gatekeeper's pillars, an arrow and no text).
 const ALWAYS: Array[StringName] = [WorldReader.OBJECTIVE_GATEKEEPER_PILLAR]
+## The Clockwork Judge's hour orbs (its hint shows the first MEETINGS runs, like every reason not in ALWAYS).
+const JUDGE_ORB := ObjectiveMarkers.JUDGE_ORB
+## The Tidecaller's dry circle in a High Tide (likewise).
+const TIDE_DRY := ObjectiveMarkers.TIDE_DRY
+## The violet Warden under her whole ward while the amber one winds a charge up: stand so she is on its line.
+const TWINS_WARD := ObjectiveMarkers.TWINS_WARD
+## The Siege Engine's boulders while a blast that needs cover comes (a Shockwave in its last phase, a Doom Shell).
+const SIEGE_BOULDER := ObjectiveMarkers.SIEGE_BOULDER
+## The Foundry's nearest safe slab while its Overpressure comes and burns.
+const FOUNDRY_SLAB := ObjectiveMarkers.FOUNDRY_SLAB
 
 var codex: CodexStore
 

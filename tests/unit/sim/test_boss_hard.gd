@@ -129,15 +129,12 @@ func _lanes_damage(then_at: Vector2) -> int:
 	return lost
 
 
-func test_stepping_just_out_of_the_first_cross_walks_into_the_second() -> void:
+func test_staying_on_the_lock_is_hit_and_a_sidestep_clear_of_both_fans_is_not() -> void:
 	var c := Vector2(5, 3)
-	assert_gt(
-		_lanes_damage(c + Vector2(-1.0, -1.0)),
-		0,
-		"1 m toward the boss: out of the first, inside the second"
-	)
-	assert_eq(_lanes_damage(c + Vector2(1.0, 1.0)), 0, "1 m the other way clears both")
-	assert_eq(_lanes_damage(c + Vector2(-1.9, -1.9)), 0, "or 1.9 m toward the boss")
+	var side := Vector2(-c.y, c.x).normalized()  # across the lanes, which run out from the boss through c
+	assert_gt(_lanes_damage(c), 0, "staying where both volleys locked is hit")
+	assert_eq(_lanes_damage(c + side * 3.2), 0, "3.2 m across clears the lane and its flank")
+	assert_eq(_lanes_damage(c - side * 3.2), 0, "on either side")
 
 
 ## B2 ---------------------------------------------------------------------------------------------------------------

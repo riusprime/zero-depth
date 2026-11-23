@@ -13,6 +13,9 @@ extends Node3D
 ## held: the same looks, read from what the attacks are.
 
 const FX_FRAMES := 14
+## The most a status glow (burn, frozen) writes into a boss's emission: a faint rim so the owner's model keeps its own
+## colours (a burning Foundry stays readable instead of orange all over).
+const BOSS_TINT_ENERGY := 0.12
 
 ## False hides the burn/frozen tint (frame_probe --ab=no_burn_fx measures its cost).
 static var burn_tint := true
@@ -89,8 +92,11 @@ func _sync_burns(reader: WorldReader) -> void:
 	if not burn_tint:
 		return
 	var now := {}
+	var bosses := {}
 	var frozen := {}
 	for i in reader.burn_or_frozen_indices():  # Only the burning and the frozen, not every actor
+		if WorldReader.is_boss_kind(reader.actor_kind(i)):
+			bosses[reader.actor_id(i)] = true
 		if reader.actor_frozen(i):
 			frozen[reader.actor_id(i)] = true
 			now[reader.actor_id(i)] = 1
@@ -98,13 +104,22 @@ func _sync_burns(reader: WorldReader) -> void:
 			now[reader.actor_id(i)] = reader.burn_stacks(i)
 	for id in now:
 		if frozen.has(id):
-			actors.set_tint(id, ItemLooks.status_color(&"frozen"), 1.1)
+			actors.set_tint(id, ItemLooks.status_color(&"frozen"), boss_tint(1.1, bosses.has(id)))
 		else:
-			actors.set_tint(id, ItemLooks.color(WorldReader.ITEM_EMBER_EDGE), 0.4 + 0.15 * now[id])
+			actors.set_tint(
+				id,
+				ItemLooks.color(WorldReader.ITEM_EMBER_EDGE),
+				boss_tint(0.4 + 0.15 * now[id], bosses.has(id))
+			)
 	for id in _burning:
 		if not now.has(id):
 			actors.set_tint(id, Color.BLACK, 0.0)
 	_burning = now
+
+
+## A status glow's energy: a boss's is held to BOSS_TINT_ENERGY.
+static func boss_tint(energy: float, boss: bool) -> float:
+	return minf(energy, BOSS_TINT_ENERGY) if boss else energy
 
 
 func _unshaded(c: Color, a: float) -> StandardMaterial3D:

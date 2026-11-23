@@ -6,13 +6,23 @@ extends SceneTree
 ## anchors (fractions of the half-size) plus metres. Positions that the mockup scattered at random are authored here
 ## once from a fixed authoring seed (AUTHOR_SEED), so the data is the same on every run of this tool.
 ## Run: godot --headless --path . -s scripts/content/room_purposes.gd
-## Stand-in pieces: the kit's (OWNER_TODO §3.6 lists the purpose-room models to come); each palette row names its
-## piece, so a new model swaps in by changing that row's `piece` (and its `size`), nothing else.
+## Each palette row names its piece, so a new model swaps in by changing that row's `piece` (and its `size`). The
+## owner's room pieces (OWNER_TODO §3.6: the tent, log seat and cook pot; the statues, round column and column drum;
+## the crane, mine cart, stone block and tool rack) stand where the kit's stand-ins stood; a row's size is the piece's
+## own footprint (KitModels "foot"), so it is not stretched (but the stone block: square, so a stack's blocks meet).
 
 const OUT := "res://data/rooms/purposes/"
 const AUTHOR_SEED := 20261107
 ## The G2 room's half-size (42.7 x 34.2 m), for the yaws that face a ring's pieces to its centre.
 const REF_HALF := Vector2(21.35, 17.1)
+## The hall's centrepieces. The monolith stands on its 2.6 m square focal blocker at its request row's 6.0 m. The arch
+## stands at its own size (KitModels "foot" 6.0 x 2.56 m, 3.71 m tall: height 0, the kit's own) on two leg blockers
+## measured from the model (scripts/assets/focal_v0120_prep.py's output, the legs' standing part from 0.4 to 2.0 m up:
+## x 1.31..2.83 m each side, depth within ±1.0 m, so each leg 1.52 x 2.0 m at ±2.07 m), the 2.62 m opening between
+## them walkable floor. The legs are the same either side and centred on its depth, so a mirrored hall (which turns
+## the model half round) keeps them under the drawn legs.
+const FOCAL_ARCH := [&"grand_arch", 6.0, 2.56, 0.0, true, 0.0, Vector2(1.52, 2.0), 2.07]
+const FOCAL_MONOLITH_H := 6.0
 
 var _rng := RandomNumberGenerator.new()
 
@@ -79,7 +89,7 @@ static func _choice(id: StringName, weights: PackedInt32Array) -> RoomPurposeCho
 	return c
 
 
-## A palette from {token: [piece, length, depth, height, solid, lift (optional)]}.
+## A palette from {token: [piece, length, depth, height, solid, lift (optional), legs and leg_at (optional)]}.
 static func _palette(biome: StringName, rows: Dictionary) -> RoomPurposePalette:
 	var pal := RoomPurposePalette.new()
 	pal.biome = biome
@@ -94,6 +104,8 @@ static func _palette(biome: StringName, rows: Dictionary) -> RoomPurposePalette:
 		q.height = r[3]
 		q.solid = r[4]
 		q.lift = r[5] if r.size() > 5 else 0.0
+		q.legs = r[6] if r.size() > 6 else Vector2.ZERO
+		q.leg_at = r[7] if r.size() > 7 else 0.0
 		pal.pieces.append(q)
 	return pal
 
@@ -118,7 +130,9 @@ func _scatter(token: StringName, n: int, rad_lo: float, rad_hi: float) -> RoomPu
 	return _group(Vector2.ZERO, Vector2.ZERO, parts)
 
 
-## 1. Camp: a fire pit (the fire barrel, a ring of stones, two drying racks) and its seats in the middle; five shelters
+## 1. Camp: a fire pit (the fire barrel, a ring of stones, two drying racks, a cook pot) and its seats in the middle,
+## the pit's stones half again the stones' own size (a big room's focal piece; their height the decoration cap),
+## each seat across its radius as a bench round a fire sits; five shelters
 ## on a ring at 60 % of the room, each turned to face the fire with its lean-to on one side and its crates on the
 ## other, maybe a brazier, a worn path of stones toward the fire; supply piles in two opposite corners.
 func _camp() -> RoomPurposeDefinition:
@@ -140,12 +154,18 @@ func _camp() -> RoomPurposeDefinition:
 		var ar := deg_to_rad(36.0 + k * 180.0)
 		fire.append(_part(&"rack", Vector2(cos(ar), sin(ar)) * 4.8, rad_to_deg(ar) + 90.0))
 	d.groups.append(_group(Vector2.ZERO, Vector2.ZERO, fire, 0.0, true))
+	# The cook pot between the stones and the seats, clear of both seat rings; a group of its own, so where it would
+	# stand on an item spot it is left out and the fire still stands.
+	var pot := deg_to_rad(65.0)
+	d.groups.append(
+		_group(Vector2.ZERO, Vector2.ZERO, [_part(&"pot", Vector2(cos(pot), sin(pot)) * 2.1)])
+	)
 	for opt in 2:
 		var seats := 4 + opt
 		var parts: Array = []
 		for k in seats:
 			var a := deg_to_rad(20.0 + k * 360.0 / seats)
-			parts.append(_part(&"seat", Vector2(cos(a), sin(a)) * 3.0, rad_to_deg(a)))
+			parts.append(_part(&"seat", Vector2(cos(a), sin(a)) * 3.0, rad_to_deg(a) + 90.0))
 		d.groups.append(
 			_group(Vector2.ZERO, Vector2.ZERO, parts, 0.0, false, &"seats", PackedInt32Array([opt]))
 		)
@@ -195,9 +215,10 @@ func _camp() -> RoomPurposeDefinition:
 			&"ruins",
 			{
 				&"fire": [&"fire_barrel", 1.0, 1.0, 1.0, true],
-				&"stone": [&"boulder_small", 0.6, 0.5, 0.0, false],
-				&"seat": [&"tire_stack", 1.0, 1.0, 0.55, true],
-				&"shelter": [&"car_wreck", 5.0, 2.3, 1.5, true],
+				&"stone": [&"boulder_small", 0.9, 0.75, 0.4, false],
+				&"seat": [&"log_seat", 0.99, 0.33, 0.0, true],
+				&"pot": [&"cook_pot", 0.8, 0.8, 0.0, true],
+				&"shelter": [&"camp_tent", 2.35, 1.82, 0.0, true],
 				&"lean": [&"barricade", 2.6, 0.6, 0.0, true],
 				&"rack": [&"ladder_frame", 1.2, 0.5, 0.0, true],
 				&"post": [&"brazier_pole", 0.7, 0.7, 0.0, true],
@@ -211,8 +232,9 @@ func _camp() -> RoomPurposeDefinition:
 			&"frozen_shore",
 			{
 				&"fire": [&"fire_barrel", 1.0, 1.0, 1.0, true],
-				&"stone": [&"ice_shard", 0.5, 0.5, 0.0, false],
-				&"seat": [&"crate_stack", 1.0, 1.0, 0.55, true],
+				&"stone": [&"ice_shard", 0.75, 0.75, 0.4, false],
+				&"seat": [&"log_seat", 0.99, 0.33, 0.0, true],
+				&"pot": [&"cook_pot", 0.8, 0.8, 0.0, true],
 				&"shelter": [&"boat_wreck", 4.6, 2.2, 0.0, true],
 				&"lean": [&"fish_rack", 1.6, 0.7, 0.0, true],
 				&"rack": [&"fish_rack", 1.6, 0.7, 0.0, true],
@@ -223,15 +245,17 @@ func _camp() -> RoomPurposeDefinition:
 				&"rubble": [&"ice_shard", 0.5, 0.5, 0.0, false],
 			}
 		),
-		# Red Canyon (an extension of G2, so every biome has two purposes but Frozen Shore and Starfall): a wagon camp.
+		# Red Canyon (an extension of G2, so every biome has two purposes but Frozen Shore and Starfall): a wagon camp,
+		# a tent beside each wagon.
 		_palette(
 			&"red_canyon",
 			{
 				&"fire": [&"fire_barrel", 1.0, 1.0, 1.0, true],
-				&"stone": [&"rubble_small", 0.6, 0.6, 0.0, false],
-				&"seat": [&"crate_stack", 1.0, 1.0, 0.55, true],
+				&"stone": [&"rubble_small", 0.9, 0.9, 0.38, false],
+				&"seat": [&"log_seat", 0.99, 0.33, 0.0, true],
+				&"pot": [&"cook_pot", 0.8, 0.8, 0.0, true],
 				&"shelter": [&"wagon_wreck", 3.4, 2.0, 0.0, true],
-				&"lean": [&"rock_large", 2.4, 0.9, 0.8, true],
+				&"lean": [&"camp_tent", 2.35, 1.82, 0.0, true],
 				&"rack": [&"cattle_skull_post", 0.4, 0.4, 0.0, true],
 				&"post": [&"brazier_pole", 0.7, 0.7, 0.0, true],
 				&"pile": [&"crate_stack", 1.4, 1.4, 1.3, true],
@@ -246,10 +270,10 @@ func _camp() -> RoomPurposeDefinition:
 
 ## 2. Collapsed hall, a ring of standing stones (owner 2026-11-07, after G2: "The hall ruins have the pillars way too
 ## organized, can we shape them kinda in a way as Stonehenge, not exactly like that but the vibe"): the focal ruin (an
-## arch or the observatory) in the middle between two towers, lit by two braziers; round it a loose ring of standing
-## stones at irregular spacing, each with its own turn: three trilithons (two uprights and a lintel across them, or
-## the pair without its lintel, or one fallen), the rest single stones standing, broken to stumps, fallen outward or
-## gone (a wider gap: the ring's gaps are the lanes in and out); a few stray outliers beyond the ring.
+## arch, or the monolith in Starfall) in the middle between two towers, lit by two braziers; round it a loose ring of
+## standing stones at irregular spacing, each with its own turn: three trilithons (two uprights and a lintel across
+## them, or the pair without its lintel, or one fallen), the rest single stones standing, broken to stumps, fallen
+## outward or gone (a wider gap: the ring's gaps are the lanes in and out); a few stray outliers beyond the ring.
 func _hall() -> RoomPurposeDefinition:
 	var d := RoomPurposeDefinition.new()
 	d.id = &"hall"
@@ -369,14 +393,14 @@ func _hall() -> RoomPurposeDefinition:
 				_group(anchor, Vector2.ZERO, fallen, yaw, false, id, PackedInt32Array([2]))
 			)
 		a_deg += steps[i]
-	# The outliers: stray stones beyond the ring.
+	# The outliers: stray stones beyond the ring (Ruins: broken statues).
 	for a_out: float in [64.0, 151.0, 232.0, 318.0]:
 		var a := deg_to_rad(a_out)
 		d.groups.append(
 			_group(
 				Vector2(cos(a) * 0.82, sin(a) * 0.8),
 				Vector2.ZERO,
-				[_part(&"column", Vector2.ZERO, _rng.randf_range(0, 180), 0, 1000, 0.75, 0.2)],
+				[_part(&"outlier", Vector2.ZERO, _rng.randf_range(0, 180), 0, 1000, 0.75, 0.2)],
 				0.0,
 				false,
 				&"",
@@ -395,13 +419,14 @@ func _hall() -> RoomPurposeDefinition:
 		_palette(
 			&"ruins",
 			{
-				&"focal": [&"stone_arch", 3.0, 1.0, 0.0, true],
-				&"tower": [&"wall_pillar", 1.6, 1.6, 3.4, true],
-				&"column": [&"wall_pillar", 1.3, 1.3, 3.0, true],
-				&"upright": [&"wall_pillar", 1.2, 1.2, 3.0, true],
-				&"lintel": [&"slab_wide", 4.0, 1.0, 0.6, false, 2.9],
+				&"focal": FOCAL_ARCH,
+				&"tower": [&"statue_whole", 1.19, 1.28, 0.0, true],
+				&"column": [&"column_round", 1.21, 1.26, 3.6, true],
+				&"outlier": [&"statue_broken", 3.2, 1.67, 0.0, true],
+				&"upright": [&"column_round", 1.21, 1.26, 3.6, true],
+				&"lintel": [&"slab_wide", 4.0, 1.0, 0.6, false, 3.5],
 				&"stump": [&"column_broken", 1.1, 1.1, 0.0, true],
-				&"fallen": [&"slab_wide", 3.6, 1.2, 0.8, true],
+				&"fallen": [&"column_drum", 1.46, 0.97, 0.0, true],
 				&"post": [&"brazier_pole", 0.7, 0.7, 0.0, true],
 				&"grass": [&"grass_tuft", 0.6, 0.6, 0.0, false],
 				&"debris": [&"debris_low", 1.0, 0.5, 0.0, false],
@@ -411,9 +436,10 @@ func _hall() -> RoomPurposeDefinition:
 		_palette(
 			&"starfall",
 			{
-				&"focal": [&"ruined_observatory", 2.6, 2.6, 0.0, true],
+				&"focal": [&"great_monolith", 2.6, 2.6, FOCAL_MONOLITH_H, true],
 				&"tower": [&"star_monolith", 1.4, 1.4, 0.0, true],
 				&"column": [&"star_monolith", 1.2, 1.2, 0.0, true],
+				&"outlier": [&"star_monolith", 1.2, 1.2, 0.0, true],
 				&"upright": [&"rock_large", 1.2, 1.2, 2.8, true],
 				&"lintel": [&"rock_large", 4.0, 1.0, 0.6, false, 2.7],
 				&"stump": [&"rock_large", 1.2, 1.2, 0.9, true],
@@ -428,9 +454,10 @@ func _hall() -> RoomPurposeDefinition:
 		_palette(
 			&"night_rocks",
 			{
-				&"focal": [&"stone_arch", 3.0, 1.0, 0.0, true],
+				&"focal": FOCAL_ARCH,
 				&"tower": [&"rock_spire", 1.4, 1.4, 0.0, true],
 				&"column": [&"rock_spire", 1.1, 1.1, 0.0, true],
+				&"outlier": [&"rock_spire", 1.1, 1.1, 0.0, true],
 				&"upright": [&"rock_large", 1.2, 1.2, 2.6, true],
 				&"lintel": [&"rock_large", 4.0, 1.0, 0.6, false, 2.5],
 				&"stump": [&"rock_large", 1.1, 1.1, 0.8, true],
@@ -445,9 +472,11 @@ func _hall() -> RoomPurposeDefinition:
 	return d
 
 
-## 3. Quarry: the cut rock face against a long wall (seven masses, the middle three focal, the middle one the tallest),
-## scaffolds and lights at its foot; the cart where the stone is loaded, on one side; a haul road edged with rubble
-## from the cart to the far wall, two markers at its end; a yard of cut-block stacks (stepped heights) with lanes.
+## 3. Quarry: the cut rock face against a long wall (seven masses, the middle three focal, the middle one the tallest;
+## 4.8 m, half again a cover rock's 3.2, on the blockers' footprints, so the face stands over a big room),
+## scaffolds and lights at its foot, a tool rack inside each light; the cart where the stone is loaded, on one side,
+## the crane that loads it beyond it; a haul road edged with rubble from the cart to the far wall, two markers at its
+## end; a yard of cut-block stacks (stepped heights) with lanes.
 ## The face prefers a far wall from the camera (G2_ROOMS.md: "the far wall reads better").
 func _quarry() -> RoomPurposeDefinition:
 	var d := RoomPurposeDefinition.new()
@@ -531,6 +560,14 @@ func _quarry() -> RoomPurposeDefinition:
 				Vector2(side * 0.62, 1.0), Vector2(side * 2.6, -3.2), [_part(&"post", Vector2.ZERO)]
 			)
 		)
+		# Below the face's end masses (their fronts 3.5 m from the wall), on the rubble line.
+		d.groups.append(
+			_group(
+				Vector2(side * 0.62, 1.0),
+				Vector2(side * 1.2, -4.6),
+				[_part(&"tools", Vector2.ZERO)]
+			)
+		)
 	for opt in 2:  # the cart's side, and the road and its markers with it
 		var cs := 1.0 if opt == 0 else -1.0
 		var cart := Vector2(cs * 4.0, -7.6)
@@ -556,6 +593,18 @@ func _quarry() -> RoomPurposeDefinition:
 				rows.append(_part(&"rubble", Vector2(road + edge, fy * REF_HALF.y), 0.0, 0, 750))
 		d.groups.append(
 			_group(Vector2.ZERO, Vector2.ZERO, rows, 0.0, false, &"cart", PackedInt32Array([opt]))
+		)
+		# The crane beyond the cart's block, its long side toward the face, short of the face's masses.
+		d.groups.append(
+			_group(
+				Vector2(0.0, 1.0),
+				Vector2(cs * 9.6, -6.0),
+				[_part(&"crane", Vector2.ZERO, 90.0)],
+				0.0,
+				false,
+				&"cart",
+				PackedInt32Array([opt])
+			)
 		)
 		d.groups.append(
 			_group(
@@ -603,10 +652,12 @@ func _quarry() -> RoomPurposeDefinition:
 		_palette(
 			&"red_canyon",
 			{
-				&"face": [&"rock_large", 3.6, 3.0, 3.2, true],
+				&"face": [&"rock_large", 3.6, 3.0, 4.8, true],
 				&"face_small": [&"mesa_chunk", 2.2, 2.2, 0.0, true],
-				&"block": [&"slab_concrete", 1.5, 1.5, 1.0, true],
-				&"cart": [&"wagon_wreck", 2.4, 1.4, 0.0, true],
+				&"block": [&"stone_block", 1.5, 1.5, 0.8, true],
+				&"cart": [&"mine_cart", 1.65, 0.66, 0.0, true],
+				&"crane": [&"quarry_crane", 4.34, 1.66, 0.0, true],
+				&"tools": [&"tool_rack", 1.46, 0.62, 0.0, true],
 				&"scaffold": [&"ladder_frame", 1.2, 0.5, 0.0, true],
 				&"marker": [&"cattle_skull_post", 0.4, 0.4, 0.0, true],
 				&"post": [&"brazier_pole", 0.7, 0.7, 0.0, true],
@@ -618,10 +669,12 @@ func _quarry() -> RoomPurposeDefinition:
 		_palette(
 			&"night_rocks",
 			{
-				&"face": [&"rock_large", 3.6, 3.0, 3.2, true],
+				&"face": [&"rock_large", 3.6, 3.0, 4.8, true],
 				&"face_small": [&"rock_spire", 1.3, 1.3, 0.0, true],
-				&"block": [&"slab_concrete", 1.5, 1.5, 1.0, true],
-				&"cart": [&"wagon_wreck", 2.4, 1.4, 0.0, true],
+				&"block": [&"stone_block", 1.5, 1.5, 0.8, true],
+				&"cart": [&"mine_cart", 1.65, 0.66, 0.0, true],
+				&"crane": [&"quarry_crane", 4.34, 1.66, 0.0, true],
+				&"tools": [&"tool_rack", 1.46, 0.62, 0.0, true],
 				&"scaffold": [&"ladder_frame", 1.2, 0.5, 0.0, true],
 				&"marker": [&"brazier_pole", 0.7, 0.7, 0.0, true],
 				&"post": [&"brazier_pole", 0.7, 0.7, 0.0, true],

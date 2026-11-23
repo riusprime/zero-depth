@@ -1,7 +1,9 @@
 extends GutTest
 
 
-func _reach(id: StringName, kind: int, avatar_class: String) -> void:
+## Reaches boss `id` through the dev panel (God on) and sees its telegraph and its attack. Returns [main, its id,
+## the E2e].
+func _reach(id: StringName, kind: int, avatar_class: String) -> Array:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
@@ -68,10 +70,70 @@ func _reach(id: StringName, kind: int, avatar_class: String) -> void:
 			break
 	assert_true(drawn, "%s: its telegraph is drawn" % id)
 	assert_true(hit, "%s: its attack reached the player" % id)
+	return [main, bid, e]
 
 
-func test_the_warlord_is_reached_through_the_dev_panel() -> void:
-	await _reach(&"warlord", ActorStore.Kind.WARLORD, "WarlordAvatar")
+## Waits up to `limit` frames for `done`.
+func _wait(e: E2e, done: Callable, limit: int) -> bool:
+	for k in limit:
+		if done.call():
+			return true
+		await e.frames(1)
+	return done.call()
+
+
+func test_the_warlord_is_reached_through_the_dev_panel_and_shows_its_banner_and_its_cage() -> void:
+	var got: Array = await _reach(&"warlord", ActorStore.Kind.WARLORD, "WarlordAvatar")
+	var main: Main = got[0]
+	var bid: int = got[1]
+	var e: E2e = got[2]
+	var w := e.world()
+	var reader := main.driver.reader
+	var i := w.actors.index_of(bid)
+	if i < 0:
+		return
+	# Its War Banner (phase 2). TEST HELPER: its HP is set just under the phase's threshold (a real fight to it is
+	# minutes long); everything after is the game: the phase gate, the 8 s to the banner, its cast, real frames.
+	w.actors.hp[i] = w.actors.max_hp[i] * 640 / 1000
+	var banner: WarBannerViews = main.view.war_banner
+	var planted := func() -> bool:
+		return (
+			int(reader.boss_warlord().get("banner", {}).get("cast", 0)) < 0
+			and banner.banner_shown()
+		)
+	assert_true(await _wait(e, planted, 60 * 14), "the War Banner is planted and drawn")
+	if not planted.call():
+		return
+	var b: Dictionary = reader.boss_warlord()["banner"]
+	assert_almost_eq(
+		banner.pole(), b["centre"], Vector2(0.01, 0.01), "its pole where the sim planted it"
+	)
+	assert_almost_eq(
+		float(banner.ring_circle()[1]), float(b["radius"]), 0.001, "its ring of its radius"
+	)
+	# Its Duel (phase 3). TEST HELPER: its HP set just under the last phase's threshold; then the game again.
+	i = w.actors.index_of(bid)
+	if i < 0:
+		return
+	w.actors.hp[i] = w.actors.max_hp[i] * 300 / 1000
+	var cage: DuelCageViews = main.view.duel_cage
+	var closed := func() -> bool:
+		return (
+			int(reader.boss_warlord().get("duel", {}).get("stage", 0)) == 2
+			and cage.shafts_shown() > 0
+		)
+	assert_true(await _wait(e, closed, 60 * 14), "the javelin cage closes and is drawn")
+	if not closed.call():
+		return
+	assert_false(banner.banner_shown(), "the banner fell with its phase")
+	var d: Dictionary = reader.boss_warlord()["duel"]
+	assert_eq(cage.shafts_shown(), DuelCageViews.SHAFTS, "every javelin of the fence")
+	assert_almost_eq(
+		cage.shaft_head(0).distance_to(d["centre"]),
+		float(d["radius"]),
+		0.05,
+		"on the fence's circle"
+	)
 
 
 func test_the_hive_lens_is_reached_through_the_dev_panel() -> void:
@@ -79,4 +141,13 @@ func test_the_hive_lens_is_reached_through_the_dev_panel() -> void:
 
 
 func test_the_foundry_is_reached_through_the_dev_panel() -> void:
-	await _reach(&"foundry", ActorStore.Kind.FOUNDRY, "FoundryAvatar")
+	var got: Array = await _reach(&"foundry", ActorStore.Kind.FOUNDRY, "FoundryAvatar")
+	var main: Main = got[0]
+	# Lit from the camera's side so it never reads as a black silhouette, and its slabs are stood on
+	var lights := main.view.get_children().filter(func(n: Node) -> bool: return n is BossKeyLight)
+	assert_eq(lights.size(), 1, "the game view carries the bosses' key light")
+	var avatar := main.view.actors.actor_node(got[1]).get_meta(&"enemy_avatar") as BossAvatar
+	assert_true(
+		avatar.imported.layers & BossKeyLight.LAYER != 0, "the Foundry's body is in its light"
+	)
+	assert_true(main.view.actors.grounds.has(main.view.forge_slag), "a slab's top is stood on")

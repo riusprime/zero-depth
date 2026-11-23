@@ -19,7 +19,8 @@ const VORTEX_STEPS := 24
 const MOTES := 10
 const MOTE_FRAMES := 45
 const BAND_COLOR := Color("#FF5A2A")
-const DISSOLVE_COLOR := Color("#8FE6FF")
+## A pale gold, kept off the hero's cyan: the ring and motes read as the boss's summoning, not the player's.
+const DISSOLVE_COLOR := Color("#F2CF8A")
 const GATE_COLOR := Color("#B48CFF")
 
 var band_mesh := MeshInstance3D.new()
@@ -202,8 +203,11 @@ func _draw_gate() -> void:
 func _draw_band() -> void:
 	var fill: ImmediateMesh = band_mesh.mesh
 	var warn: ImmediateMesh = warn_mesh.mesh
-	fill.clear_surfaces()
-	warn.clear_surfaces()
+	# An empty mesh is left alone: clearing it still has the renderer update every instance of it
+	if fill.get_surface_count() > 0:
+		fill.clear_surfaces()
+	if warn.get_surface_count() > 0:
+		warn.clear_surfaces()
 	if _band.is_empty():
 		return
 	var arena: Rect2 = _band["arena"]
@@ -248,7 +252,8 @@ func _outline(out: Array, r: Rect2) -> void:
 
 func _draw_vortices() -> void:
 	var im: ImmediateMesh = vortex_mesh.mesh
-	im.clear_surfaces()
+	if im.get_surface_count() > 0:
+		im.clear_surfaces()
 	var pts := []
 	for v: Array in _vortices:
 		var c: Vector2 = v[0]

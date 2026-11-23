@@ -11,7 +11,7 @@ extends Node3D
 ## A Sniper's line ("snipe") carries the bolt's bright core; a Shield Bearer's bash ("bash") two chevrons
 ## pointing down its lane; a Mine Layer's armed mines ("mine") a spiked star in each filling circle.
 ## A flood's standing lanes carry a style too: the Warlord's spears a row of spear heads down each lane,
-## the Foundry's molten floor a hot core with cross bars (a fixed colour; nothing toggles emission at run time).
+## the Foundry's molten floor its crust alone under a dull ember edge (fixed colours; nothing toggles emission).
 ## A telegraph with "tracked" is drawn as a dull red outline (no
 ## fill) while it follows the player, and once "locked" as a bright filled flash that pulses until it strikes (steady
 ## with reduced motion). &"marks" draws each of its markers (circles, or a row and a column of lanes) in its own state.
@@ -21,15 +21,16 @@ extends Node3D
 ## Bearer's bash ("bash") or the Needle's lanes; their avatars tell the windup. Among normal enemies only the Arc
 ## Caster's rune and the Mine Layer's mines reach this view; the bosses' markers are unchanged.
 ## The Gatekeeper's shock lanes (a `row_lanes` marks telegraph) are drawn as cracked ground
-## instead of flat red: while they track the player, thin cracks glowing dimly along each lane (the dark outline kept);
-## once locked, the ground chars and the cracks widen and glow hot, pulsing until the strike (steady with reduced
-## motion), under the bright edge (the dodge cue). The strike itself is StoneSpikeViews' spikes.
+## instead of flat red: while they track the player, faint dark cracks along each lane (the dark outline kept);
+## once locked, the ground darkens and the cracks darken, a faint warm glow in them at the top of each pulse until
+## the strike (steady with reduced motion), under the bright edge (the dodge cue). The strike is StoneSpikeViews'.
 ## A &"marks" item may be an &"arc" too (a Nemesis card's swing beside its volley's lines and its blast).
-## v0.8.0 AV part 2: every other boss ground attack with a look (BossStrikeLooks: per boss kind and move)
-## fills with its own ground pattern instead of flat red: stone cracks, steel scratches, bubbling acid, shimmering
-## light, hazard stripes, molten seams. While it tracks it keeps the dull outline and no fill; once locked the pattern
-## burns hot and pulses (steady with reduced motion) under the same bright edge, so the lock flash stays the dodge
-## cue; an untracked windup's fill grows in the pattern, warming as it fills. The strike is BossStrikeViews'.
+## Every other boss ground attack with a look (BossStrikeLooks: per boss kind and move) fills with its own ground
+## pattern instead of flat red: dark stone cracks, steel scratches, a dark acid stain, shimmering light, scorched
+## ground with glowing cracks, molten crust, a cracked violet stain, ice cracks. While it tracks it keeps the dull
+## outline and no fill; once locked the pattern pulses (steady with reduced motion) under the same bright edge, so
+## the lock flash stays the dodge cue; an untracked windup's fill grows in the pattern, warming as it fills. The
+## strike is BossStrikeViews'. The Prism's bolt and The Fallen's volleys are thin aim lines (AIM_LINES).
 
 ## Shapes drawn as rebuilt meshes (BossAi.telegraph).
 const MESH_SHAPES: Array[StringName] = [
@@ -64,6 +65,16 @@ const ARC_STEPS := 40
 
 const Y := 0.035
 const EDGE := 0.06
+## A standing molten row's edge: a dull ember, so the lava reads by its crust and not a bright outline.
+const MOLTEN_EDGE := Color("#8A3414")
+## The thin aim lines (AIM_LINES): their half-width while they show, and once locked.
+const AIM_HALF := Vector2(0.035, 0.06)
+## Boss kind -> the moves whose lanes are drawn as thin aim lines down their middle instead of a filled strip: the
+## Prism's bolt and The Fallen's volleys, a thin line like the one the Prism's Cross draws for its bolt.
+const AIM_LINES := {
+	WorldReader.KIND_PRISM: [WorldReader.MOVE_BOLT_FAN],
+	WorldReader.KIND_NEMESIS: [WorldReader.MOVE_MIMIC_SHOTS],
+}
 ## The cracked-ground marker's heat while tracking, and its pulse range once locked.
 const CRACK_TRACK_HEAT := 0.2
 const CRACK_LOCK_HEAT := Vector2(0.7, 1.0)
@@ -72,7 +83,8 @@ shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled;
 
 uniform vec4 hot : source_color = vec4(1.0, 0.42, 0.18, 1.0);
-uniform vec4 char_color : source_color = vec4(0.08, 0.05, 0.04, 1.0);
+uniform vec4 char_color : source_color = vec4(0.12, 0.11, 0.115, 1.0);
+uniform vec4 ink : source_color = vec4(0.09, 0.085, 0.09, 1.0);
 uniform float heat = 0.2;
 uniform float char_alpha = 0.0;
 uniform float scale = 1.4;
@@ -110,12 +122,16 @@ void fragment() {
 	}
 	float w = mix(0.05, 0.14, heat);
 	float crack = 1.0 - smoothstep(w * 0.35, w, d2 - d1);
-	if (cracks_on > 0.5) {  // v0.8.0 TX2: the owner's cracks (fx_ground_cracks' shape, the hot colour kept)
-		vec4 k = texture(cracks_tex, wp.xz * 0.18);
-		crack = k.a * mix(0.55, 1.0, heat) + k.a * k.g * heat * 0.5;
+	if (cracks_on > 0.5) {  // fx_ground_cracks' shape: its cracks' thin cores (alpha where its red is high, linear)
+		vec4 k = texture(cracks_tex, wp.xz * 0.3);
+		crack = k.a * smoothstep(0.3, 0.78, k.r);
 	}
-	ALBEDO = mix(char_color.rgb, hot.rgb * (1.0 + heat * 1.6), clamp(crack, 0.0, 1.0));
-	ALPHA = clamp(max(char_alpha, crack * mix(0.5, 1.0, heat)), 0.0, 1.0);
+	// Dark cracks like the stone slam's over a slight darkening of the floor; a faint warm glow in them only at the
+	// top of the lock's pulse, just before the spikes.
+	float warm = smoothstep(0.85, 1.0, heat) * 0.12;
+	vec3 line = mix(ink.rgb, hot.rgb * 1.4, warm);
+	ALBEDO = mix(char_color.rgb, line, clamp(crack, 0.0, 1.0));
+	ALPHA = clamp(max(char_alpha, crack * mix(0.5, 0.95, heat)), 0.0, 1.0);
 }
 """
 
@@ -125,6 +141,7 @@ var threats := 0
 ## The syncs that walked the telegraphs; a sync with none showing and none possible returns before (tests read it).
 var worked := 0
 var _nodes := {}
+var _extra: Array[Node3D] = []
 var _pool := {}  # "shape|style" -> the idle telegraphs (hidden)
 var _fill_mat := StandardMaterial3D.new()
 var _edge_mat := StandardMaterial3D.new()
@@ -142,6 +159,8 @@ var _crack_lock_mat := ShaderMaterial.new()
 var _look_mats := {}
 ## The look of the telegraph being updated (&"" for none: the flat look).
 var _look := &""
+## True while the telegraph being updated is drawn as thin aim lines (AIM_LINES).
+var _aim_line := false
 ## The boss looks the last sync drew (their materials pulse in _process; prepare() makes them all).
 var _looks_live := {}
 var _t := 0.0
@@ -160,7 +179,7 @@ func _ready() -> void:
 	_core_mat.albedo_color = ThemePalette.color(&"proj_hostile")
 	_molten_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_molten_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	_molten_mat.albedo_color = Color("#FF8A2E")
+	_molten_mat.albedo_color = MOLTEN_EDGE
 	_bomb_mat.albedo_color = Color("#1B1C20")
 	_bomb_mat.emission_enabled = true
 	_bomb_mat.emission = c
@@ -181,7 +200,7 @@ func _ready() -> void:
 		m.set_shader_parameter("cracks_on", 1.0 if cracks != null else 0.0)
 	_crack_track_mat.set_shader_parameter("heat", CRACK_TRACK_HEAT)
 	_crack_lock_mat.set_shader_parameter("heat", CRACK_LOCK_HEAT.y)
-	_crack_lock_mat.set_shader_parameter("char_alpha", 0.4)
+	_crack_lock_mat.set_shader_parameter("char_alpha", 0.35)
 
 
 func _process(delta: float) -> void:
@@ -227,7 +246,13 @@ static func look_of(reader: WorldReader, i: int, tg: Dictionary) -> StringName:
 	var kind := reader.actor_kind(i)
 	if not WorldReader.is_boss_kind(kind):
 		return &""
-	return BossStrikeLooks.look_for(kind, int(tg.get("move", -1)))
+	return BossStrikeLooks.mark_look_for(kind, int(tg.get("move", -1)))
+
+
+## True when actor i's telegraph `tg` is drawn as thin aim lines (AIM_LINES).
+static func is_aim_line(reader: WorldReader, i: int, tg: Dictionary) -> bool:
+	var moves: Array = AIM_LINES.get(reader.actor_kind(i), [])
+	return tg.get("shape", &"") == &"lanes" and moves.has(int(tg.get("move", -1)))
 
 
 func sync(reader: WorldReader) -> void:
@@ -278,12 +303,38 @@ func _show(reader: WorldReader, id: int, i: int, tg: Dictionary) -> void:
 	_look = look_of(reader, i, tg)
 	if _look != &"":
 		_looks_live[_look] = true
+	_aim_line = is_aim_line(reader, i, tg)
 	_update(n, tg)
+	_aim_line = false
 	if _look != &"" and not tg.get("tracked", false):  # a windup's fill warms as it fills
 		var heat := lerpf(0.15, 0.85, float(tg["progress"]) / 1000.0)
 		(_look_pair(_look)[0] as ShaderMaterial).set_shader_parameter("heat", heat)
 	if style != &"":
 		_update_style(n, tg)
+
+
+## Draws `tgs` (telegraphs, as BossAi.telegraph builds them) in the ground look `look`, apart from the actors' own:
+## a view that owns an instance of this one calls it in place of sync. The nodes are kept in `_extra`, reused frame
+## to frame and returned to the pool when `tgs` shrinks.
+func draw_extra(tgs: Array, look: StringName) -> void:
+	_looks_live = {} if tgs.is_empty() else {look: true}
+	_look = look
+	while _extra.size() > tgs.size():
+		_put_back(_extra.pop_back())
+	for k in tgs.size():
+		var tg: Dictionary = tgs[k]
+		if k < _extra.size() and _extra[k].get_meta(&"shape") != tg["shape"]:
+			_put_back(_extra[k])
+			_extra.remove_at(k)
+		if k >= _extra.size():
+			_extra.insert(k, _take(tg["shape"], &""))
+		_update(_extra[k], tg)
+	_look = &""
+
+
+## The nodes `draw_extra` shows (tests).
+func extra_nodes() -> Array[Node3D]:
+	return _extra
 
 
 ## How many telegraphs are showing (tests and the tour).
@@ -457,9 +508,12 @@ func _update(n: Node3D, tg: Dictionary) -> void:
 		var r: float = tg["radius"]
 		n.position = SimPlane.to_3d(tg["center"], Y)
 		var edge: MeshInstance3D = n.get_node("Edge")
-		var torus: TorusMesh = edge.mesh
-		torus.inner_radius = r - EDGE
-		torus.outer_radius = r
+		# A primitive mesh is built again on every property set: the ring only when its radius is new
+		if edge.get_meta(&"r", -1.0) != r:
+			edge.set_meta(&"r", r)
+			var torus: TorusMesh = edge.mesh
+			torus.inner_radius = r - EDGE
+			torus.outer_radius = r
 		edge.scale = Vector3(1, 0.05, 1)
 		var fill: Node3D = n.get_node("Fill")
 		var fr := maxf(r * p, 0.01)
@@ -476,10 +530,13 @@ func _update(n: Node3D, tg: Dictionary) -> void:
 		[Vector3(-hx, 0, 0), Vector3(EDGE, 0.01, hy * 2.0)],
 		[Vector3(hx, 0, 0), Vector3(EDGE, 0.01, hy * 2.0)],
 	]
+	var sized: bool = n.get_meta(&"half", Vector2.INF) == box.half  # (the edges' boxes are built again on a size set)
+	n.set_meta(&"half", box.half)
 	for k in 4:
 		var e: MeshInstance3D = n.get_node("Edge%d" % k)
 		e.position = sides[k][0]
-		(e.mesh as BoxMesh).size = sides[k][1]
+		if not sized:
+			(e.mesh as BoxMesh).size = sides[k][1]
 	# The fill runs from the attacker's end (-x) toward the far end as the windup completes.
 	var fill: Node3D = n.get_node("Fill")
 	var len := maxf(hx * 2.0 * p, 0.01)
@@ -566,40 +623,24 @@ func _update_style(n: Node3D, tg: Dictionary) -> void:
 						c + d * r * 0.3 + sd,
 						c - d * r * 0.3 + sd
 					)
-		&"spears", &"molten":
+		&"spears":  # A molten row has no marks: its crust is the look, its edge the dull ember
 			for o: Obb in tg["obbs"]:
-				_flood_marks(pts, o, tg["style"] == &"spears")
+				_flood_marks(pts, o)
 	var mat := _edge_mat
 	if tg["style"] == &"bolt" or tg["style"] == &"snipe":
 		mat = _core_mat
-	elif tg["style"] == &"molten":
-		mat = _molten_mat
 	_emit(deco, pts, mat)
 
 
-## A standing flood lane's marks: spear heads every SPEAR_STEP along it, or a molten core with bars.
-func _flood_marks(pts: Array, o: Obb, spears: bool) -> void:
+## A standing spear lane's marks: spear heads every 0.7 m along it.
+func _flood_marks(pts: Array, o: Obb) -> void:
 	var u := o.axis_u
 	var v := o.axis_v
 	var a := o.center - u * o.half.x
-	var n := maxi(1, int(o.half.x * 2.0 / 0.7))
-	if spears:
-		for k in n:
-			var c := a + u * (0.35 + 0.7 * k)
-			var w := v * minf(o.half.y, 0.22)
-			_quad(pts, c - u * 0.3, c - w, c + u * 0.3, c + w)
-		return
-	var side := v * o.half.y * 0.3
-	_quad(pts, a - side, a + u * o.half.x * 2.0 - side, a + u * o.half.x * 2.0 + side, a + side)
-	for k in n:
+	for k in maxi(1, int(o.half.x * 2.0 / 0.7)):
 		var c := a + u * (0.35 + 0.7 * k)
-		_quad(
-			pts,
-			c - u * 0.06 - v * o.half.y,
-			c + u * 0.06 - v * o.half.y,
-			c + u * 0.06 + v * o.half.y,
-			c - u * 0.06 + v * o.half.y
-		)
+		var w := v * minf(o.half.y, 0.22)
+		_quad(pts, c - u * 0.3, c - w, c + u * 0.3, c + w)
 
 
 # --- boss shapes -------------------------------------------------------------------------------------
@@ -627,6 +668,9 @@ func _update_mesh(n: Node3D, tg: Dictionary, p: float) -> void:
 			_sector(et, c, r0, r0 + EDGE, 0.0, TAU)
 			_sector(et, c, r1 - EDGE, r1, 0.0, TAU)
 		&"lanes":
+			if _aim_line:
+				_aim_lines(fill, edge, tg, p)
+				return
 			for o: Obb in tg["obbs"]:
 				_lane(ft, et, o, p)
 		&"arc":
@@ -657,7 +701,32 @@ func _update_mesh(n: Node3D, tg: Dictionary, p: float) -> void:
 				_sector(et, c, rr - EDGE * 0.6, rr, 0.0, TAU)
 	if mats[0] != null:
 		_emit(fill, ft, mats[0])
-	_emit(edge, et, mats[1])
+	# A standing molten row is past its lock: a dull ember edge, not the flash's bright one
+	_emit(edge, et, _molten_mat if tg.get("style", &"") == &"molten" else mats[1])
+
+
+## Lanes drawn as thin aim lines down their middles: dull while they show (and while they track), the windup's part
+## run so far brighter, the whole line bright once locked (the lock is still the dodge cue).
+func _aim_lines(fill: ImmediateMesh, edge: ImmediateMesh, tg: Dictionary, p: float) -> void:
+	var locked: bool = tg.get("locked", false)
+	var tracked: bool = tg.get("tracked", false)
+	var full := []
+	var run := []
+	for o: Obb in tg["obbs"]:
+		var back := o.center - o.axis_u * o.half.x
+		var tip := o.center + o.axis_u * o.half.x
+		var half := AIM_HALF.y if locked else AIM_HALF.x
+		_strip(full, back, tip, half)
+		if not tracked and p > 0.0:
+			_strip(run, back, back.lerp(tip, p), AIM_HALF.x)
+	_emit(edge, full, _flash_edge_mat if locked else _dull_mat)
+	_emit(fill, run, _edge_mat)
+
+
+func _strip(out: Array, a: Vector2, b: Vector2, half: float) -> void:
+	var d := (b - a).normalized()
+	var side := Vector2(-d.y, d.x) * half
+	_quad(out, a - side, b - side, b + side, a + side)
 
 
 ## A marks telegraph: the locked markers' flash in the fill mesh (and their bright edges), the tracking

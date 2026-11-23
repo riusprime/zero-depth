@@ -88,28 +88,18 @@ var lines_clear_shots := false
 var sig_every_ticks := 0
 var sig_first_ticks := 0
 ## BOSSES_4_5.md N2; BossTwin: a boss with twin_kind >= 0 rises as two bodies, itself and a twin of that
-## actor kind twin_m away, sharing one HP and joined by a chain held between chain_min_m and chain_max_m long that
-## burns a touching player chain_burn every chain_burn_ticks (a strip chain_half_m each side of its line); the twin
+## actor kind twin_m away, sharing one HP and fighting apart; the twin
 ## keeps flank_m from the player beside it. A hit on one body angers the other for anger_ticks, its speed × anger
 ## permille / 1000 (-1 = no twin: every other boss).
 var twin_kind := -1
 var twin_m := 0.0
-var chain_min_m := 0.0
-var chain_max_m := 0.0
-var chain_burn := 0
-var chain_burn_ticks := 1
-var chain_half_m := 0.0
 var flank_m := 0.0
 var anger_permille := 1000
 var anger_ticks := 0
 ## The phases' roles. The body standing back casts attack twin_bolt (an
-## index, -1 = none) every twin_bolt_ticks; in the last phase every twin_expose_ticks the exposed body swaps, taking
-## twin_expose_permille while the other takes twin_guard_permille. The twin's attacks: BossAttackTable.twin_body.
+## index, -1 = none) every twin_bolt_ticks. The twin's attacks: BossAttackTable.twin_body.
 var twin_bolt := -1
 var twin_bolt_ticks := 240
-var twin_expose_ticks := 600
-var twin_expose_permille := 1000
-var twin_guard_permille := 1000
 ## BOSSES_4_5.md N3; BossJudge: a boss with echo_points > 0 (the Clockwork Judge) keeps the player's last
 ## echo_points positions, one every echo_gap_ticks (its echo attacks'), for its echo to replay (0 = none).
 var echo_points := 0
@@ -218,12 +208,28 @@ var phase_ring_ticks := PackedInt32Array()
 var phase_wave_atk := PackedInt32Array()
 var phase_wave_ticks := PackedInt32Array()
 var phase_wave_n := PackedInt32Array()
-## HC4-HC6: The Fallen's interphases and dashes between moves (null: none).
-var interphase: InterphaseTable = null
+## The Fallen's dash to a new spot between two moves (null: none).
+var reposition: FallenDashTable = null
+## The Fallen's remembered mechanics (null: none). A body with them also holds the quake pillars it raises (quake).
+var remembered: FallenRememberedTable = null
 ## The Gatekeeper's quake pillars (null: none).
 var quake: QuakeTable = null
 ## The boss's arena hazards, in sim units (null: none).
 var hazard: HazardTable = null
+## The Clockwork Judge's time mechanics (null: none).
+var time: BossTimeTable = null
+## The Tidecaller's dance (null: none).
+var dance: BossDanceTable = null
+## The Twin Wardens' own mechanics (null: none).
+var wardens: BossWardensTable = null
+## The Siege Engine's siege mechanics (null: none).
+var siege: BossSiegeTable = null
+## The Foundry's forge (null: none).
+var forge: BossForgeTable = null
+## The Warlord's banner and duel (null: none).
+var warlord: BossWarlordTable = null
+## The Hive Lens's drones, burnt glass and Lattice (null: none).
+var lens: BossLensTable = null
 
 
 ## The attack index with this id, or -1.

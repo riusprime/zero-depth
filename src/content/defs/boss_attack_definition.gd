@@ -95,7 +95,10 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 			issues.append(ValidationIssue.new(&"duration", path, where + "%s is invalid" % pair[0]))
 	if shield_seconds >= 0.0 and not shielded:
 		issues.append(ValidationIssue.new(&"range", path, where + "shield_seconds needs shielded"))
-	if damage <= 0:
+	if BossSchemas.CAST_MOVES.has(move) or move == &"remembered":  # A carrier names a cause only
+		if damage != 0:
+			issues.append(ValidationIssue.new(&"range", path, where + "a cast deals no damage"))
+	elif damage <= 0:
 		issues.append(ValidationIssue.new(&"not_positive", path, where + "damage must be > 0"))
 	if weight <= 0:
 		issues.append(ValidationIssue.new(&"not_positive", path, where + "weight must be > 0"))
@@ -104,7 +107,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 		issues.append(ValidationIssue.new(&"range", path, where + "needs 0 <= min_range_m <= max"))
 	if cooldown_seconds < 0.0:
 		issues.append(ValidationIssue.new(&"duration", path, where + "cooldown_seconds < 0"))
-	if String(cause_key).is_empty():
+	if String(cause_key).is_empty() and not BossSchemas.CAST_MOVES.has(move):  # A cast never kills
 		issues.append(ValidationIssue.new(&"missing", path, where + "cause_key is required"))
 	if follow_up_permille < 0 or follow_up_permille > 1000:
 		issues.append(ValidationIssue.new(&"range", path, where + "follow_up_permille: 0..1000"))

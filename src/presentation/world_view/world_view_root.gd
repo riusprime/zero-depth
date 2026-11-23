@@ -61,9 +61,26 @@ static var parts: Array[GDScript] = [
 	GreatJavelinViews,  # v0.11.0 F9
 	TideViews,  # v0.9.0 NB1
 	TideWaveViews,  # v0.9.5 BH4
-	InterphaseViews,  # v0.9.5 BH6
+	TideDanceViews,
+	MaelstromViews,
+	FallenRememberedViews,
 	TwinViews,  # v0.9.0 NB2
+	WardenWardViews,
+	WardenBladeViews,
+	ChargeBurstViews,
+	SiegeFieldViews,
+	SiegeCartViews,
+	BossVulnerableViews,
+	ForgePlateViews,
+	ForgeSlagViews,
+	ForgeHeroViews,
+	WarBannerViews,
+	DuelCageViews,
+	LensFeedViews,
+	LensLatticeViews,
 	JudgeViews,  # v0.9.0 NB3
+	JudgeTimeViews,
+	JudgeRewindViews,
 	ShadeViews,  # v0.9.0 NB4
 	BossStrikeViews,
 	FinalBossViews,
@@ -217,12 +234,38 @@ var great_javelin: GreatJavelinViews = _part(GreatJavelinViews)
 var tides: TideViews = _part(TideViews)
 ## The Tidecaller's crossing waves (a foam line at the wall, then the curling water band).
 var tide_waves: TideWaveViews = _part(TideWaveViews)
-## The Fallen's interphase (the vanish, rays, eruptions, rain and spike lines, the return ring and slam).
-var interphase: InterphaseViews = _part(InterphaseViews)
-## The Twin Wardens' burning chain, Crossfire's gap lanes and safe spot, the Chain Sweep's lash.
+## Its dance: the Riptide strips and their walls of water, the High Tide's flood and dry circle; the Maelstrom.
+var tide_dance: TideDanceViews = _part(TideDanceViews)
+var maelstrom: MaelstromViews = _part(MaelstromViews)
+## The Fallen remembering a boss the run killed: the ghost of that boss rising through the cast, the ring of its
+## colour while the mechanic runs, the dash line through a quake pillar, the amber Warden's shade.
+var fallen_remembered: FallenRememberedViews = _part(FallenRememberedViews)
+## The Twin Wardens' Crossfire gap lanes and safe spot, the Sword Lane's slash.
 var twins: TwinViews = _part(TwinViews)
+## Their shields (the resting dome, the Mirror Ward, the whole ward and its break), their shadow swords, his dash
+## and the rifts; any boss's charge burst (its end circle and the explosion).
+var warden_wards: WardenWardViews = _part(WardenWardViews)
+var warden_blades: WardenBladeViews = _part(WardenBladeViews)
+var charge_bursts: ChargeBurstViews = _part(ChargeBurstViews)
+## The Siege Engine's Target Lock, boulders and cover; its ammo cart, track and Doom Shell; any boss's vulnerable look.
+var siege_field: SiegeFieldViews = _part(SiegeFieldViews)
+var siege_cart: SiegeCartViews = _part(SiegeCartViews)
+var boss_vulnerable: BossVulnerableViews = _part(BossVulnerableViews)
+## The Foundry's Forged Plate, its cooling slag and Overpressure, and the hero's own scalding.
+var forge_plate: ForgePlateViews = _part(ForgePlateViews)
+var forge_slag: ForgeSlagViews = _part(ForgeSlagViews)
+var forge_hero: ForgeHeroViews = _part(ForgeHeroViews)
+## The Warlord's War Banner and its Duel's javelin cage.
+var war_banner: WarBannerViews = _part(WarBannerViews)
+var duel_cage: DuelCageViews = _part(DuelCageViews)
+## The Hive Lens's feeding drones (their threads, its shield rings, the cut) and its Lattice and burnt glass.
+var lens_feed: LensFeedViews = _part(LensFeedViews)
+var lens_lattice: LensLatticeViews = _part(LensLatticeViews)
 ## The Clockwork Judge's echo (its recording, path and ghost trail) and its Verdict's pendulum.
 var judges: JudgeViews = _part(JudgeViews)
+## Its Time Wave, hour orbs, stopped gears and slow fields; the Rewind's pale copy, the Bell and the throw.
+var judge_time: JudgeTimeViews = _part(JudgeTimeViews)
+var judge_rewind: JudgeRewindViews = _part(JudgeRewindViews)
 ## The Lantern Shade's dark (a layered darkness pass), the room's lanterns and their pools, your light.
 var shades: ShadeViews = _part(ShadeViews)
 
@@ -389,6 +432,15 @@ func _queue_pack_warmup(q: ViewBuildQueue) -> void:
 
 func _setup_views(palette: Dictionary) -> void:
 	actors.outline_color = palette["outline"]
+	# The stone impacts' chunks, grit and dust are the floor's stone
+	charge_bursts.slams.floor_palette(palette)
+	strikes.floor_palette(palette)
+	spikes.floor_palette(palette)
+	great_javelin.slams.floor_palette(palette)
+	siege_field.slams.floor_palette(palette)
+	twins.slams.floor_palette(palette)
+	judge_time.floor_palette(palette)
+	signatures.chips.floor_palette(palette)
 	add_child(empty_cull)  # First, so it hears every pool the views add (EmptyDrawCull)
 	add_child(particle_shadows)  # First too, so it hears every particle system the views add
 	add_child(stage)
@@ -396,6 +448,8 @@ func _setup_views(palette: Dictionary) -> void:
 	telegraphs.prepare()  # Its shapes and look materials made now, not at the first windup
 	add_child(challenge)
 	add_child(actors)
+	actors.grounds.append(forge_slag)  # The hero stands on a slab's plinth, not inside it
+	add_child(BossKeyLight.new())
 	add_child(kit)
 	add_child(utility)
 	add_child(rig)
@@ -521,9 +575,35 @@ func _setup_effects() -> void:
 	add_child(great_javelin)  # v0.11.0 F9
 	add_child(tides)  # v0.9.0 NB1
 	add_child(tide_waves)  # v0.9.5 BH4
-	add_child(interphase)  # v0.9.5 BH6
+	add_child(tide_dance)
+	add_child(maelstrom)
+	tide_dance.pack_fx = pack_fx
+	maelstrom.pack_fx = pack_fx
+	add_child(fallen_remembered)
+	fallen_remembered.pack_fx = pack_fx
 	add_child(twins)  # v0.9.0 NB2
+	for v: Node3D in [
+		warden_wards,
+		warden_blades,
+		charge_bursts,
+		siege_field,
+		siege_cart,
+		boss_vulnerable,
+		forge_plate,
+		forge_slag,
+		forge_hero,
+		war_banner,
+		duel_cage,
+		lens_feed,
+		lens_lattice,
+	]:
+		add_child(v)
+		v.set(&"pack_fx", pack_fx)
 	add_child(judges)  # v0.9.0 NB3
+	add_child(judge_time)
+	add_child(judge_rewind)
+	judge_time.pack_fx = pack_fx
+	judge_rewind.pack_fx = pack_fx
 	add_child(shades)  # v0.9.0 NB4 (it dims the stage's sun with the dark)
 	shades.stage = stage
 
@@ -786,9 +866,26 @@ func sync() -> void:
 	_sync_view(&"great_javelin", great_javelin)  # v0.11.0 F9
 	_sync_view(&"tides", tides)  # v0.9.0 NB1
 	_sync_view(&"tide_waves", tide_waves)  # v0.9.5 BH4
-	_sync_view(&"interphase", interphase)  # v0.9.5 BH6
+	_sync_view(&"tide_dance", tide_dance)
+	_sync_view(&"maelstrom", maelstrom)
+	_sync_view(&"fallen_remembered", fallen_remembered)
 	_sync_view(&"twins", twins)  # v0.9.0 NB2
+	_sync_view(&"warden_wards", warden_wards)
+	_sync_view(&"warden_blades", warden_blades)
+	_sync_view(&"charge_bursts", charge_bursts)
+	_sync_view(&"siege_field", siege_field)
+	_sync_view(&"siege_cart", siege_cart)
+	_sync_view(&"boss_vulnerable", boss_vulnerable)
+	_sync_view(&"forge_plate", forge_plate)
+	_sync_view(&"forge_slag", forge_slag)
+	_sync_view(&"forge_hero", forge_hero)
+	_sync_view(&"war_banner", war_banner)
+	_sync_view(&"duel_cage", duel_cage)
+	_sync_view(&"lens_feed", lens_feed)
+	_sync_view(&"lens_lattice", lens_lattice)
 	_sync_view(&"judges", judges)  # v0.9.0 NB3
+	_sync_view(&"judge_time", judge_time)
+	_sync_view(&"judge_rewind", judge_rewind)
 	_sync_view(&"shades", shades)  # v0.9.0 NB4
 
 	_sync_view(&"strikes", strikes)  # v0.8.0 AV part 2
@@ -888,7 +985,8 @@ func sync() -> void:
 
 
 ## Draws a real flame on each fire prop into the effects layer (inside its frame): the props' own lights stay in
-## StageKit. a prop whose light StageKit hid (out of the view's reach) draws no flame either.
+## StageKit. a prop whose light StageKit hid (out of the view's reach) draws no flame either, nor one wholly out of the
+## picture (ScreenCull; its embers rise 1.6 m): laying out every flame of the floor each frame cost the most in play.
 func _draw_prop_fires(layer: VfxCore) -> void:
 	if stage == null or stage.kit == null:
 		return
@@ -896,4 +994,6 @@ func _draw_prop_fires(layer: VfxCore) -> void:
 	for k in stage.kit.lights.size():
 		var l := stage.kit.lights[k]
 		if is_instance_valid(l) and l.visible and l.is_inside_tree():
-			fx.prop_fire(l.global_position - Vector3(0, 0.36, 0), k * 7919 + 13)
+			var at := l.global_position - Vector3(0, 0.36, 0)
+			if not cull.active or cull.shows(at, 2.0):
+				fx.prop_fire(at, k * 7919 + 13)

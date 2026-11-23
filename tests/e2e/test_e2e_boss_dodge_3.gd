@@ -125,3 +125,127 @@ func test_the_siege_engine_fight_and_walking_out_of_a_locked_barrage_circle() ->
 	assert_true(locked_seen, "a Barrage circle locked on the player")
 	assert_true(dodged, "dodged by moving after the lock")
 	assert_gt(embers, 0, "the Siege Engine's cannon embers were drawn")
+
+
+## The Siege Engine's second phase reaches the screen: summoned from the dev panel as above, brought to its second
+## phase (TEST HELPER: its HP is set just under the threshold; a real fight to it is minutes long), then real frames:
+## a Target Lock's reticle is drawn on the reader's circle, and the shell it brings down leaves a boulder drawn on the
+## wall's footprint.
+func test_the_siege_engines_target_lock_and_boulder_are_drawn() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu()
+	await e.tap(KEY_QUOTELEFT)
+	await e.click_dev("God")
+	var choice := main.get_node("UI/DevPanel").find_child("BossChoice", true, false) as Label
+	var w := e.world()
+	var name := tr(w.boss_tables[BossLab.table_index(w, &"siege_engine")].name_key)
+	for k in 8:
+		if choice.text == name:
+			break
+		await e.click_dev("NextBoss")
+		await e.frames(1)
+	await e.click_dev("SpawnBoss")
+	await e.frames(2)
+	await e.tap(KEY_QUOTELEFT)
+	assert_false(main.is_dev_panel_open())
+	var reader := main.driver.reader
+	var bid := reader.actor_id(reader.boss_index())
+	var j := w.actors.index_of(bid)
+	w.actors.hp[j] = w.actors.max_hp[j] * 650 / 1000
+	var field: SiegeFieldViews = main.view.siege_field
+	var seen_lock := false
+	var lock_ok := false
+	var shells := 0
+	var seq := w.last_event_seq()
+	for k in 60 * 40:
+		await e.frames(1)
+		# The shell leaves a boulder only inside the Engine's room on open floor: the stick keeps the hero 6-8 m
+		# from it (real input), so the lock follows it there.
+		var to := reader.actor_pos(w.actors.index_of(bid)) - reader.player_pos()
+		var want := (
+			to.normalized()
+			if to.length() > 8.0
+			else (-to.normalized() if to.length() < 6.0 else Vector2.ZERO)
+		)
+		e.stick_toward(want)
+		shells += SiegeLab.ticks_of(w, &"siege_shell", seq).size()
+		seq = w.last_event_seq()
+		var siege := reader.boss_siege()
+		if siege.is_empty():
+			continue
+		var lock: Dictionary = siege["lock"]
+		var drawn := field.lock_circle()
+		if not lock.is_empty() and not drawn.is_empty():
+			seen_lock = true
+			lock_ok = (
+				(drawn[0] as Vector2).distance_to(lock["centre"]) < 0.3
+				and is_equal_approx(drawn[1], float(lock["radius"]))
+			)
+		if not (siege["boulders"] as Array).is_empty() and field.boulders_shown() > 0:
+			break
+	assert_true(seen_lock, "a Target Lock's reticle was drawn")
+	assert_true(lock_ok, "on the reader's circle, of its radius")
+	e.stick_toward(Vector2.ZERO)
+	gut.p("shells landed: %d" % shells)
+	var rows: Array = reader.boss_siege().get("boulders", [])
+	assert_false(rows.is_empty(), "a shell left a boulder")
+	if rows.is_empty():
+		return
+	await e.frames(20)
+	rows = reader.boss_siege()["boulders"]
+	assert_eq(field.boulders_shown(), rows.size(), "a rock per boulder")
+	var f := field.boulder_footprint(0)
+	assert_almost_eq(f["centre"], rows[0]["centre"], Vector2(0.01, 0.01), "on the wall's footprint")
+	assert_almost_eq((f["half"] as Vector2).x, float(rows[0]["half"]), 0.01)
+
+
+## The Foundry's Forged Plate reaches the screen: summoned from the dev panel as above, brought to its second phase
+## (TEST HELPER: its HP is set just under the threshold; a real fight to it is minutes long), then real frames: the
+## forging read rises on it, then its model wears the steel shell and the boss bar turns iron, no word.
+func test_the_foundrys_forged_plate_is_drawn() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu()
+	await e.tap(KEY_QUOTELEFT)
+	await e.click_dev("God")
+	var choice := main.get_node("UI/DevPanel").find_child("BossChoice", true, false) as Label
+	var w := e.world()
+	var name := tr(w.boss_tables[BossLab.table_index(w, &"foundry")].name_key)
+	for k in 12:
+		if choice.text == name:
+			break
+		await e.click_dev("NextBoss")
+		await e.frames(1)
+	assert_eq(choice.text, name, "the Foundry is picked")
+	await e.click_dev("SpawnBoss")
+	await e.frames(2)
+	await e.tap(KEY_QUOTELEFT)
+	assert_false(main.is_dev_panel_open())
+	var reader := main.driver.reader
+	var bid := reader.actor_id(reader.boss_index())
+	var j := w.actors.index_of(bid)
+	w.actors.hp[j] = w.actors.max_hp[j] * 650 / 1000
+	var plate: ForgePlateViews = main.view.forge_plate
+	var hud: Hud = main.get_node("UI/Hud")
+	var forged_shown := false
+	var on := false
+	for k in 60 * 20:
+		await e.frames(1)
+		var p: Dictionary = reader.boss_forge().get("plate", {})
+		forged_shown = forged_shown or (int(p.get("forging", -1)) >= 0 and plate.forging_shown())
+		if bool(p.get("on", false)):
+			on = true
+			break
+	assert_true(forged_shown, "the forging read was drawn on the Foundry")
+	assert_true(on, "the plate went on")
+	await e.frames(30)
+	if not bool(reader.boss_forge().get("plate", {}).get("on", false)):
+		gut.p("the plate was blown off within 30 frames; the shell read is not checked")
+		return
+	var node := main.view.actors.actor_node(bid)
+	var avatar := node.get_meta(&"enemy_avatar") as FoundryAvatar
+	assert_not_null(avatar, "the Foundry's avatar")
+	if avatar != null and avatar.imported != null:
+		assert_gt(avatar.plate_amount(), 0.8, "its model wears the steel shell")
+	assert_eq(hud.boss_bar.tone(), BossBarTones.PLATED, "the bar turns iron")

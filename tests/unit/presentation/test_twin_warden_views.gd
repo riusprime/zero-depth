@@ -2,9 +2,9 @@ extends GutTest
 ## v0.9.0 NB2: The Twin Wardens' look. The owner's two models load at the art list's 2.2 m each, the same size: the
 ## two are skinned to the same skeleton and play the animations in their files (idle, walk, cast, swipe; the
 ## violet's are the amber's mirrored) for the clips they stand for, so driven alike they move as a pair. The
-## angry one shows it; without the files code stand-ins of the same parts pose from the same inputs. The chain view
-## draws the chain between the two from the reader, hot while it burns, its embers thinned on Low; Crossfire's two gap
-## lanes and its safe spot through the windup; the Chain Sweep's lash on its strike. Presentation only.
+## angry one shows it; without the files code stand-ins of the same parts pose from the same inputs. Nothing is drawn
+## between the two; Crossfire's gap lane and its safe spot show through the windup, the Sword Lane's slash on its
+## strike. Presentation only.
 
 const DT := 1.0 / 60.0
 
@@ -57,7 +57,7 @@ func test_the_two_play_their_files_animations() -> void:
 	assert_gt(arm, -1, "the sword arm's bone")
 	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1}, 30)
 	var idle_pose := a.skeleton.get_bone_pose_rotation(arm)
-	var shackle := a.anchor(&"shackle")
+	var visor := a.anchor(&"visor")
 	var cast := {
 		"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_CROSSFIRE, "windup": 0.95
 	}
@@ -74,7 +74,8 @@ func test_the_two_play_their_files_animations() -> void:
 		"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_CHAIN_SWEEP, "windup": 0.95
 	}
 	_drive(a, sweep, 30)
-	assert_gt(a.anchor(&"shackle").distance_to(shackle), 0.02, "the chain's end rides the shield")
+	assert_gt(a.anchor(&"visor").distance_to(visor), 0.02, "the visor rides the head")
+	assert_false(a.anchor_names().has(&"shackle"), "no chain's end: nothing joins the two")
 	# The violet's sword is in its other hand: the same cast raises its left arm, the amber's mirror image.
 	var v_arm := v.skeleton.find_bone("upper_arm_L")
 	assert_gt(v_arm, -1, "the violet's sword arm")
@@ -208,7 +209,7 @@ func test_the_stand_ins_pose_without_the_files() -> void:
 		assert_eq(signf(a.shield.position.z), -a.shield_side(), "its shield arm")
 
 
-func test_the_chain_view_follows_the_reader() -> void:
+func test_no_chain_is_drawn_and_the_crossfire_and_sword_lane_views_follow_the_reader() -> void:
 	var w := BossLab.world()
 	w.actors.set_pos(0, Vector2(0, -5))
 	var i := BossLab.ready_boss(w, &"twin_wardens")
@@ -230,15 +231,10 @@ func test_the_chain_view_follows_the_reader() -> void:
 			view.sync(r)
 			view.advance(DT)
 	step.call(30)
-	assert_gt(view.links_drawn(), 15, "the chain's links between them")
-	assert_gt(view.heat(), 0.9, "hot: it burns")
-	assert_eq(view.embers_drawn(), TwinViews.EMBERS, "every ember on High")
-	ViewPrefs.effects_density = "low"
-	view.advance(DT)
-	assert_eq(view.embers_drawn(), TwinViews.EMBERS / 2, "half on Low")
-	ViewPrefs.effects_density = "high"
-	assert_almost_eq(view.chain_point(0.0).x, -3.0, 0.01, "from the amber Warden")
-	assert_lt(view.chain_point(0.5).y, view.chain_point(0.0).y, "it sags")
+	var links := view.find_children("*", "MultiMeshInstance3D", true, false)
+	var grit := func(n: Node) -> bool: return not view.slams.is_ancestor_of(n)  # the cut's grit is not a link
+	assert_eq(links.filter(grit).size(), 0, "no links: nothing joins the two Wardens")
+	assert_eq(r.boss_twin(i).get("chain", []), [], "the reader has none")
 	# Crossfire (v0.11.0 O5: the violet's alone): its lane and the spot through the windup.
 	var vid := w.actors.ids[BossTwin.partner_of(w, i)]
 	BossLab.start(w, BossTwin.partner_of(w, i), &"crossfire")
@@ -252,31 +248,20 @@ func test_the_chain_view_follows_the_reader() -> void:
 		step.call(1)
 	step.call(10)
 	assert_eq(view.lanes_shown(), 0, "gone after it")
-	# The Chain Sweep: cooled while it holds the chain, the lash on its strike.
+	# The Sword Lane: the slash on its strike.
 	BossLab.start(w, w.actors.index_of(w.actors.ids[i]), &"chain_sweep")
 	step.call(40)
-	assert_lt(view.heat(), 0.6, "the sweep holds it: cooled")
 	var lashed := false
 	for k in 120:
 		step.call(1)
 		lashed = lashed or view.lashing()
-	assert_true(lashed, "the lash ran on the strike")
-	# A burn flashes where it touched the hero.
-	CombatLab.idle(w, 120)
-	w.actors.set_pos(0, Vector2(0, 0.2))
-	w.actors.invuln[0] = 0
-	var flashed := false
-	for k in 40:
-		w.actors.set_pos(0, Vector2(0, 0.2))
-		step.call(1)
-		flashed = flashed or view.burn_flashing()
-	assert_true(flashed, "the burn's flash")
+	assert_true(lashed, "the slash ran on the strike")
 
 
-## v0.11.0 O5 (owner L7, Q11 a, Q29): the roles read out. The bar names whose bar it is (amber, violet, both) and in
-## phase 3 which Warden is exposed; the Warden to hit glows brighter than the one standing back, and the exposed
-## one brightest.
-func test_the_bar_names_the_phase_s_warden_and_the_one_to_hit_glows() -> void:
+## v0.11.0 O5 (owner L7, Q11 a, Q29): the roles read out without words. The bar shows the phase only (no words for
+## whose bar it is, no "exposed" tag: the exposed-twin swap is gone); the Warden to hit glows brighter than the one
+## standing back, and the exposed (stunned) one brightest.
+func test_the_bar_shows_the_phase_only_and_the_one_to_hit_glows() -> void:
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, &"twin_wardens")
 	var bid := w.actors.ids[i]
@@ -286,7 +271,7 @@ func test_the_bar_names_the_phase_s_warden_and_the_one_to_hit_glows() -> void:
 	w.step(InputFrame.new())
 	bar.sync(r)
 	var line := bar.get_node("PhaseLine") as Label
-	assert_string_contains(line.text, tr("HUD_TWIN_LEADS_AMBER"), "phase 1: the amber's bar")
+	assert_eq(line.text, tr("HUD_BOSS_PHASE") % [1, 3], "phase 1: the phase alone")
 	for p in [1, 2]:
 		i = w.actors.index_of(bid)
 		var hp := BossAi.table_of(w, i).phase_threshold[p] * w.actors.max_hp[i] / 1000
@@ -295,10 +280,9 @@ func test_the_bar_names_the_phase_s_warden_and_the_one_to_hit_glows() -> void:
 		w.step(InputFrame.new())
 		BossLab.through_gate(w, bid)
 		bar.sync(r)
-		var key := "HUD_TWIN_LEADS_VIOLET" if p == 1 else "HUD_TWIN_LEADS_BOTH"
-		assert_string_contains(line.text, tr(key), "phase %d" % (p + 1))
+		assert_eq(line.text, tr("HUD_BOSS_PHASE") % [p + 1, 3], "phase %d" % (p + 1))
 	assert_eq(bar.hp_fraction(), 1.0, "a new full bar")
-	assert_eq(bar.status_line(), tr("HUD_TWIN_EXPOSED_AMBER"), "the amber exposed first")
+	assert_eq(bar.tone(), BossBarTones.NONE, "no tag while her ward stands")
 	var focus := _avatar(false)
 	var rest := _avatar(true)
 	var exposed := _avatar(false)
@@ -308,3 +292,36 @@ func test_the_bar_names_the_phase_s_warden_and_the_one_to_hit_glows() -> void:
 	_drive(exposed, idle.merged({"exposed": true}), 60)
 	assert_gt(focus.role_glow(), rest.role_glow(), "the one to hit outshines the one standing back")
 	assert_gt(exposed.role_glow(), focus.role_glow(), "the exposed one brightest")
+
+
+func test_the_phase_one_charge_flashes_his_body_and_her_ward_gives_him_a_violet_sheen() -> void:
+	var a := _avatar(false)
+	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1}, 20)
+	var calm := a.crack_light.light_energy
+	var glow := a.glow_amount()
+	var windup := {"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_CHARGE}
+	windup["flash"] = 0.6
+	_drive(a, windup, 8)
+	assert_gt(a.flash_amount(), 0.9, "a white-hot flash through the short wind-up")
+	assert_gt(a.crack_light.light_energy, calm * 2.0, "his light flares")
+	if a.glow_overlay != null:
+		assert_gt(a.glow_amount(), glow + 0.2, "his whole body glows")
+		assert_almost_eq(
+			(a.glow_overlay.get_shader_parameter("fill_color") as Color).b,
+			TwinWardenAvatar.FLASH_COLOR.b,
+			0.001
+		)
+	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1, "flash": 0.0}, 10)
+	assert_eq(a.flash_amount(), 0.0, "gone as it runs")
+	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1, "sheltered": true}, 30)
+	assert_gt(a.sheen_amount(), 0.9, "sheltered by her ward: a faint sheen")
+	if a.glow_overlay != null:
+		assert_almost_eq(
+			(a.glow_overlay.get_shader_parameter("fill_color") as Color).b,
+			TwinWardenAvatar.SHEEN_COLOR.b,
+			0.001,
+			"violet"
+		)
+		assert_lt(a.glow_amount(), 0.2, "faint")
+	_drive(a, {"state": WorldReader.STATE_MOVE, "move": -1, "sheltered": false}, 30)
+	assert_eq(a.sheen_amount(), 0.0, "and gone with the ward")

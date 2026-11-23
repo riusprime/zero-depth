@@ -63,11 +63,12 @@ func test_the_gaze_shows_its_aim_line_then_a_beam_along_the_sims() -> void:
 		SimPlane.to_sim(ends[1]).distance_to(g["to"]), 0.0, 0.001, "it ends where the sim's does"
 	)
 	assert_true(g["hit"], "the room's wall stopped it")
-	assert_true((view.get_node("GazeImpact") as Node3D).visible, "a flare where it strikes")
-	assert_true((view.get_node("GazeImpactLight") as Node3D).visible, "and a light")
+	assert_null(view.get_node_or_null("GazeImpact"), "no flare where it strikes")
+	assert_null(view.get_node_or_null("GazeImpactLight"), "and no light")
 	for k in 12:
 		w.step(InputFrame.new())
 		view.sync(reader)
+	assert_gt(view.chips.started(), 0, "it chips the wall it strikes (the floor's stone)")
 	var scorch := (view.get_node("Scorch") as MultiMeshInstance3D).multimesh
 	assert_gt(scorch.visible_instance_count, 2, "scorch marks left on the floor")
 	CombatLab.idle(w, atk.active_ticks + 2)

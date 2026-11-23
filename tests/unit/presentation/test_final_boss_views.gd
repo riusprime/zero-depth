@@ -118,8 +118,8 @@ func test_every_body_has_the_clips_its_moves_need() -> void:
 			assert_true(lib.has(clip), "%s has its %s clip" % [id, clip])
 		for atk: Resource in def.get("attacks"):
 			var move := StringName(atk.get("move"))
-			if move == &"interphase":
-				continue  # v0.9.5 BH6: a carrier of the Fallen's interphase hits, never picked: no clip
+			if move == &"remembered":
+				continue  # A carrier of The Fallen's remembered mechanics' recap line, never picked: no clip
 			assert_true(lib.has(move), "%s: %s (%s) has its clip" % [id, atk.get("id"), move])
 			assert_true(BossAnimator.MOVE_CLIPS.values().has(move), "%s is a sim move" % move)
 		for c: BossClip in lib.values():
@@ -427,9 +427,8 @@ func test_the_boss_bar_is_one_bar_per_body() -> void:
 	FinalLab.end_segment(w)
 	bar.sync(reader)
 	assert_almost_eq(bar.hp_fraction(), 0.0, 0.01)
-	assert_eq(bar.status_text(), tr("HUD_FINAL_SHATTER"))
+	assert_eq(bar.tone(), BossBarTones.INVULNERABLE, "steel blue, no words")
 	assert_true(bar.invulnerable(), "a shatter can't be hurt: the bar says so")
-	assert_string_contains(bar.shield_text(), tr("HUD_BOSS_INVULNERABLE"))
 	FinalLab.through_shatter(w)
 	bar.sync(reader)
 	assert_almost_eq(bar.hp_fraction(), 1.0, 0.01, "the Prism's own bar, full once it rose")

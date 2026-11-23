@@ -125,6 +125,8 @@ shape_params = {
 "pillar_m": 1.0,
 "pillar_seconds": 6.0,
 "pillar_step_m": 2.2,
+"spread_degrees": 16.0,
+"speed_mps": 28.0,
 "stagger_seconds": 0.7,
 "width_m": 1.2
 }
@@ -153,6 +155,8 @@ shape_params = {
 "pillar_step_m": 2.2,
 "second_offset_m": 0.6,
 "second_seconds": 0.4,
+"spread_degrees": 16.0,
+"speed_mps": 28.0,
 "stagger_seconds": 0.7,
 "width_m": 1.2
 }
@@ -181,6 +185,8 @@ shape_params = {
 "pillar_step_m": 2.2,
 "second_offset_m": 0.6,
 "second_seconds": 0.4,
+"spread_degrees": 16.0,
+"speed_mps": 28.0,
 "stagger_seconds": 0.7,
 "width_m": 1.2
 }

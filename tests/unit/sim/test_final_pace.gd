@@ -67,13 +67,14 @@ static func arena(b: Array, seed_value: int = 21) -> World:
 
 
 ## Fights the final boss with build `b`; returns [won, [seconds of each body], [[max HP, measured dps] of each], bot,
-## [the last body's raw seconds, the seconds it was gone]].
+## the remembered mechanics The Fallen began].
 static func fight(b: Array, seed_value: int = 21) -> Array:
 	var w := arena(b, seed_value)
 	var bot := Hero.new(-1, bigs())
 	var starts := []
 	var reads := []
 	var last := [0, 0]
+	var casts := [0]
 	bot.fight(
 		w,
 		LIMIT,
@@ -87,6 +88,7 @@ static func fight(b: Array, seed_value: int = 21) -> Array:
 			if i >= 0:
 				last[0] = w.actors.max_hp[i]  # (in place: a lambda's captures are copies)
 				last[1] = w.final_fight.pace_dps / 1000
+				casts[0] = maxi(casts[0], w.boss_fight.fl_n)
 			return w.final_fight.won
 	)
 	reads.append(last.duplicate())
@@ -94,21 +96,20 @@ static func fight(b: Array, seed_value: int = 21) -> Array:
 	var secs := []
 	for k in starts.size() - 1:
 		secs.append(snappedf((starts[k + 1] - starts[k]) / 60.0, 0.1))
-	# v0.9.5 BH6: the Fallen's two interphases (it is gone, 15 s and the 1 s ring each) are not fought: the pace's target
-	# time leaves them out. The last body's time is the fight's without them; the raw time is the fourth item.
-	var gone := w.final_fight.ip_total
-	var raw: float = secs[secs.size() - 1]
-	secs[secs.size() - 1] = snappedf(raw - gone / 60.0, 0.1)
-	return [w.final_fight.won, secs, reads, bot, [raw, snappedf(gone / 60.0, 0.1)]]
+	# The Fallen stays in the room through its remembered mechanics: its whole time is fought
+	return [w.final_fight.won, secs, reads, bot, casts[0]]
 
 
 ## Each body from its rise to the next one's (its rise, the fight, its shatter): at least the pace's minute, at most
 ## the pace's three minutes plus the rise and the shatter, in every fight; and a stronger build's body no slower than
 ## the base build's on the mean of PACE_SEEDS fights. One fight is not enough for that last rule: the Fallen's time
 ## moves with the seed by more than the builds differ in one fight (base blade 127.0 to 145.8 s over six seeds, strong
-## blade 107.3 to 130.8 s; the means 133.6 and 117.4 s).
+## blade 107.3 to 130.8 s; the means 133.6 and 117.4 s). The three-minute ceiling and the stronger build's mean are
+## targets the owner judges by playing (owner: "Make it pending"): a miss prints its numbers as a pending line, as the
+## bosses' bot targets do; the fight won, its three bodies and the minute's floor still fail the test.
 func test_each_body_lasts_a_minute_or_more_whatever_the_build() -> void:
 	var base := []
+	var unmet := PackedStringArray()
 	for b: Array in BUILDS:
 		var mean := [0.0, 0.0, 0.0]
 		for seed_value: int in PACE_SEEDS:
@@ -119,8 +120,8 @@ func test_each_body_lasts_a_minute_or_more_whatever_the_build() -> void:
 				. p(
 					(
 						(
-							"N2 pace %s, seed %d: won=%s, bodies (s, the Fallen's less its interphases) %s, "
-							+ "[max HP, measured dps] %s, hits taken %d; the Fallen's raw time and interphase time (s) %s"
+							"N2 pace %s, seed %d: won=%s, bodies (s) %s, "
+							+ "[max HP, measured dps] %s, hits taken %d; the Fallen's remembered mechanics %s"
 						)
 						% [b[0], seed_value, r[0], r[1], r[2], bot.hits, r[4]]
 					)
@@ -142,28 +143,31 @@ func test_each_body_lasts_a_minute_or_more_whatever_the_build() -> void:
 						% [b[0], seed_value, k, floor_s, s]
 					)
 				)
-				assert_lte(
-					s,
-					185.0,
-					(
-						"%s, seed %d, body %d: never past three minutes (%.1f s)"
-						% [b[0], seed_value, k, s]
+				if s > 185.0:
+					unmet.append(
+						(
+							"%s, seed %d, body %d: %.1f s, past three minutes"
+							% [b[0], seed_value, k, s]
+						)
 					)
-				)
 				mean[k] += s / PACE_SEEDS.size()
 		gut.p("N2 pace %s: mean bodies over %d fights (s) %s" % [b[0], PACE_SEEDS.size(), mean])
 		if base.is_empty():
 			base = mean
 			continue
 		for k in 3:
-			assert_gte(
-				base[k],
-				mean[k] - 1.0,
+			if base[k] < mean[k] - 1.0:
 				(
-					"%s body %d: no slower than the base build on the mean of %d fights"
-					% [b[0], k, PACE_SEEDS.size()]
+					unmet
+					. append(
+						(
+							"%s body %d: %.1f s on the mean of %d fights, slower than the base build's %.1f s"
+							% [b[0], k, mean[k], PACE_SEEDS.size(), base[k]]
+						)
+					)
 				)
-			)
+	if not unmet.is_empty():
+		pending("NOT MET, the Fallen's pace: " + "; ".join(unmet))
 
 
 # --- the pace's formula and its cap ---------------------------------------------------------------------------------
@@ -255,13 +259,15 @@ func test_the_fallen_mimics_you_in_windows_on_and_off() -> void:
 	assert_eq(t.window_warn_ticks, 90, "warned 1.5 s ahead")
 	assert_eq(FinalPace.window(w), FinalPace.Mimic.OFF, "it rises in its own kit")
 	assert_false(FinalPace.copies(w))
+	w.boss_fight.fl_open = 1 << 30  # No remembered mechanic here: the windows' own rhythm (one makes them wait)
 	var start := w.tick
 	var cues := []
+	var ids := [FinalPace.EFFECT_WARN, FinalPace.EFFECT_OPEN, FinalPace.EFFECT_CLOSE]
 	for k in 2700:
 		var seq := w.last_event_seq()
 		w.step(InputFrame.new())
 		for e in w.events_since(seq):
-			if e.kind == SimEvent.Kind.STATUS_APPLY and String(e.effect_id).begins_with("fallen_"):
+			if e.kind == SimEvent.Kind.STATUS_APPLY and ids.has(e.effect_id):
 				cues.append([e.effect_id, w.tick - start])
 	gut.p("N2 windows (cue, ticks after the test began): %s" % [cues])
 	assert_gte(cues.size(), 5)

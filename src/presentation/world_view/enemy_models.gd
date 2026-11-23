@@ -37,6 +37,51 @@ const SPECS := {
 	# The Kiln Beetle (scripts/assets/o17_prep_kiln_beetle.py: shell, body, head, eight two-part legs;
 	# KilnBeetleAvatar poses them), at the request row's 0.7 m.
 	&"kiln_beetle": {"height": 0.7},
+	# The Frost Spitter (scripts/assets/frost_spitter_prep.py: shell, body, head, sac, four two-part legs;
+	# FrostSpitterAvatar poses them), at the request row's 0.85 m.
+	&"frost_spitter": {"height": 0.85},
+	# The Wire Weaver (scripts/assets/wire_weaver_prep.py: body, head, spool, four two-part legs, two two-part
+	# arms; WireWeaverAvatar poses them), at the request row's 1.0 m.
+	&"wire_weaver": {"height": WireWeaverAvatar.HEIGHT},
+	# The Glacier Turtle (scripts/assets/glacier_turtle_prep.py: body, carapace, head, shield, four two-part legs;
+	# GlacierTurtleAvatar poses them), 0.9 m tall (1.33 m long: the shield's face at the sim's radius).
+	&"glacier_turtle": {"height": 0.9},
+	# The Gravity Node (scripts/assets/gravity_node_prep.py: face plate, core, two shell halves, two rings;
+	# GravityNodeAvatar poses them), about the request row's 0.9 m orb with its rings.
+	&"gravity_node": {"height": GravityNodeAvatar.MODEL_HEIGHT},
+	# The Arc Caster (scripts/assets/arc_caster_prep.py: torso, two robe tiers, hood, staff arm, staff, two-part free
+	# arm, three shards; ArcCasterAvatar poses them), its height with the staff.
+	&"arc_caster": {"height": ArcCasterAvatar.MODEL_HEIGHT},
+	# The Star Warper (scripts/assets/star_warper_prep.py: torso, star head, two two-part arms, a three-part tail,
+	# three shards; StarWarperAvatar poses them, floating).
+	&"star_warper": {"height": StarWarperAvatar.MODEL_HEIGHT},
+	# The Bomb Drone (scripts/assets/bomb_drone_prep.py: hull, four arms with their housings, four rotors, the claw
+	# cradle; BombDroneAvatar poses them, hovering), at its own size (1.0 m across the rotors).
+	&"bomb_drone": {"height": BombDroneAvatar.MODEL_HEIGHT},
+	# The Hatchling and the Swarmer (scripts/assets/hatchling_swarmer_prep.py: body, carapace or wing cases,
+	# mandibles, six two-part legs; HatchlingAvatar and SwarmerModel pose them), the horde's small sizes.
+	&"hatchling": {"height": HatchlingAvatar.MODEL_HEIGHT},
+	&"swarmer": {"height": 0.25},
+	# The Needle and the Sniper (scripts/assets/needle_sniper_prep.py: body, shell, barrel, two-part legs;
+	# NeedleAvatar / SniperAvatar pose them), at the request rows' 1.1 m and 1.3 m.
+	&"needle": {"height": NeedleAvatar.HEIGHT},
+	&"sniper": {"height": SniperAvatar.HEIGHT},
+	# The Warden (scripts/assets/warden_prep.py: body, head, two-part arms, three-part legs; WardenAvatar poses
+	# them), the old code golem's 1.2 m.
+	&"warden": {"height": 1.2},
+	# The Mine Layer (scripts/assets/mine_layer_prep.py: body, head, hopper, hatch, mine, six two-part legs;
+	# MineLayerModel poses them on HordeAvatar), 0.8 m long.
+	&"mine_layer": {"height": MineLayerModel.TOP},
+	# The Dust Mite, the Ember Flea and the Ice Crab (scripts/assets/critter_prep.py: body, legs, the flea's thighs
+	# and shins, the crab's claws; CritterModel poses them): no taller than CritterBodies.HEIGHTS and about as wide
+	# as the sim's body (the mite 0.37 m by 0.42 m across its legs, the crab 0.4 m by 0.46 m).
+	&"dust_mite": {"height": 0.2},
+	&"ember_flea": {"height": 0.3},
+	&"ice_crab": {"height": 0.15},
+	# The Cave Bat and the Star Mote (critter_prep.py: the bat's two-part wings, the mote's five points and three-part
+	# tail; FlyerModel poses them): no taller than CritterBodies.HEIGHTS over their flight and float.
+	&"cave_bat": {"height": FlyerModel.MODEL_H[WorldReader.KIND_CAVE_BAT]},
+	&"star_mote": {"height": FlyerModel.MODEL_H[WorldReader.KIND_STAR_MOTE]},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 
@@ -65,6 +110,7 @@ static func has_model(id: StringName) -> bool:
 
 static func clear_cache() -> void:
 	_cache.clear()
+	CritterModel.clear_cache()
 
 
 static func _read(scene: PackedScene, height: float) -> Dictionary:

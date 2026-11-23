@@ -197,10 +197,12 @@ script = ExtResource("1_atk")
 id = &"lunge_dash"
 shape = 2
 shape_params = {
+"burst_radius_m": 3.5,
+"burst_seconds": 0.25,
 "length_m": 16.0,
-"speed_mps": 20.0
+"speed_mps": 26.0
 }
-telegraph_seconds = 1.0
+telegraph_seconds = 0.6
 active_seconds = 0.0167
 recovery_seconds = 1.3
 damage = 50
@@ -212,7 +214,7 @@ weight = 2
 cooldown_seconds = 1.0
 cause_key = &"CAUSE_WARLORD_DASH"
 opens_weak_point = true
-lock_seconds = 0.8
+lock_seconds = 0.4
 
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
@@ -284,4 +286,31 @@ dash_read_seconds = 0.5
 gap_close_attack = &"lunge_dash"
 gap_close_distance_m = 5.0
 gap_close_seconds = 2.0
+warlord = {
+"banner_cast_seconds": 1.0,
+"banner_cooldown_permille": 700,
+"banner_damage_permille": 1400,
+"banner_first_seconds": 8.0,
+"banner_gap_seconds": 12.0,
+"banner_phase": 1,
+"banner_pole_m": 0.8,
+"banner_radius_m": 6.0,
+"banner_seconds": 20.0,
+"duel_attacks": ["shield_bash", "lunge_dash", "spear_lines"],
+"duel_cast_seconds": 1.2,
+"duel_end_radius_m": 5.0,
+"duel_first_seconds": 8.0,
+"duel_gap_seconds": 25.0,
+"duel_phase": 2,
+"duel_radius_m": 9.0,
+"duel_seconds": 12.0,
+"fence_cause": "javelin_fan",
+"fence_every_seconds": 0.6,
+"fence_permille": 100,
+"fence_touch_m": 0.3,
+"recall_cause": "javelin_fan",
+"recall_permille": 400,
+"recall_radius_m": 2.5,
+"recall_warn_seconds": 1.0
+}
 id = &"warlord"

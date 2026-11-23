@@ -8,7 +8,7 @@ const KIND_PLAYER := ActorStore.Kind.PLAYER
 ## The objective markers' reasons (objectives(); ObjectiveMarkers), for the view's lines.
 const OBJECTIVE_GATEKEEPER_PILLAR := ObjectiveMarkers.GATEKEEPER_PILLAR
 const OBJECTIVE_SHADE_LANTERN := ObjectiveMarkers.SHADE_LANTERN
-const OBJECTIVE_TWINS_ACTIVE := ObjectiveMarkers.TWINS_ACTIVE
+const OBJECTIVE_TWINS_WARD := ObjectiveMarkers.TWINS_WARD
 ## The final approach's states (approach_state).
 const APPROACH_WALK := FinalApproach.State.WALK
 const APPROACH_BUILDUP := FinalApproach.State.BUILDUP
@@ -92,7 +92,7 @@ const KIND_DIM_NEEDLE := ActorStore.Kind.DIM_NEEDLE
 const KIND_EMBER_CHARGER := ActorStore.Kind.EMBER_CHARGER
 const KIND_FROST_CHARGER := ActorStore.Kind.FROST_CHARGER
 const KIND_SPLIT_SNIPER := ActorStore.Kind.SPLIT_SNIPER
-## The Starfall signatures (StarfallKinds; their stand-in bodies: StarfallAvatar).
+## The Starfall signatures (StarfallKinds; their bodies: StarWarperAvatar, GravityNodeAvatar).
 const KIND_STAR_WARPER := ActorStore.Kind.STAR_WARPER
 const KIND_GRAVITY_NODE := ActorStore.Kind.GRAVITY_NODE
 const TRAIL_FIRE := Variants.TRAIL_FIRE
@@ -105,7 +105,7 @@ const KIND_WIRE_POST := ActorStore.Kind.WIRE_POST
 const KIND_SCRAP_HOUND := ActorStore.Kind.SCRAP_HOUND
 const KIND_ROCK_LURKER := ActorStore.Kind.ROCK_LURKER
 const KIND_STONE_THROWER := ActorStore.Kind.STONE_THROWER
-## The Red Canyon's and the Frozen Shore's signature enemies (CanyonShore; CanyonShoreBodies).
+## The Red Canyon's and the Frozen Shore's signature enemies (CanyonShore; drawn by their own avatars).
 const KIND_KILN_BEETLE := ActorStore.Kind.KILN_BEETLE
 const KIND_CINDER_PRIEST := ActorStore.Kind.CINDER_PRIEST
 const KIND_FROST_SPITTER := ActorStore.Kind.FROST_SPITTER
@@ -116,7 +116,6 @@ const ECHO_SHOW := BossJudge.SHOW
 const ECHO_REPLAY := BossJudge.REPLAY
 ## A Warden turning angry (STATUS_APPLY's effect) and the chain's burn (its DAMAGE's effect).
 const EFFECT_TWIN_ANGER := BossTwin.EFFECT_ANGER
-const EFFECT_TWIN_CHAIN := BossTwin.EFFECT_BURN
 ## The Fallen's mimic window states (final_pace "window", fallen_window), for the presentation.
 const FALLEN_OFF := FinalPace.Mimic.OFF
 const FALLEN_WARN := FinalPace.Mimic.WARN
@@ -229,6 +228,10 @@ const MOVE_CROSSFIRE := BossAttackTable.Move.CROSSFIRE  # v0.9.0 NB2 (the Twin W
 const MOVE_CHAIN_SWEEP := BossAttackTable.Move.CHAIN_SWEEP
 const MOVE_ECHO := BossAttackTable.Move.ECHO  # v0.9.0 NB3 (the Clockwork Judge)
 const MOVE_VERDICT := BossAttackTable.Move.VERDICT
+const MOVE_TIME_WAVE := BossAttackTable.Move.TIME_WAVE
+const MOVE_SWORD_COMBO := BossAttackTable.Move.SWORD_COMBO
+const MOVE_MIRROR_WARD := BossAttackTable.Move.MIRROR_WARD
+const MOVE_SHADOW_SWORDS := BossAttackTable.Move.SHADOW_SWORDS
 ## boss_tide's "phase".
 const TIDE_NONE := BossTide.NONE
 const TIDE_PULL := BossTide.PULL
@@ -238,14 +241,27 @@ const TIDE_MAX_MPS := BossTide.MAX_MPS
 const EFFECT_NEMESIS_DASH := BossNemesis.EFFECT_DASH
 ## A final boss's body shattering (FinalBoss.SHATTER).
 const STATE_SHATTER := FinalBoss.SHATTER
-## The Fallen's interphase (BossInterphase): its views' events.
-const EFFECT_FALLEN_VANISH := BossInterphase.EFFECT_VANISH
-const EFFECT_FALLEN_BEAMS := BossInterphase.EFFECT_BEAMS
-const EFFECT_FALLEN_ERUPT := BossInterphase.EFFECT_ERUPT
-const EFFECT_FALLEN_DARK := BossInterphase.EFFECT_DARK
-const EFFECT_FALLEN_RAIN := BossInterphase.EFFECT_RAIN
-const EFFECT_FALLEN_LINE := BossInterphase.EFFECT_LINE
-const EFFECT_FALLEN_RETURN := BossInterphase.EFFECT_RETURN
+## The Fallen's remembered mechanics (BossRemembered): the kinds (boss_fallen's "running", "pool"), the source boss of
+## each (a boss id of content) and their events.
+const FALLEN_NONE := BossRemembered.NONE
+const FALLEN_TIME := BossRemembered.TIME
+const FALLEN_RIPTIDE := BossRemembered.RIPTIDE
+const FALLEN_QUAKE := BossRemembered.QUAKE
+const FALLEN_WARD := BossRemembered.WARD
+const FALLEN_SOURCES := BossRemembered.SOURCES
+const EFFECT_FALLEN_CAST := BossRemembered.CAST
+const EFFECT_FALLEN_BEGIN := BossRemembered.BEGIN
+const EFFECT_FALLEN_END := BossRemembered.END
+## The Fallen's theft's events (FallenTheft): its cast, a card taken, a hit on its marked back, a card returned.
+const EFFECT_FALLEN_THEFT_CAST := FallenTheft.CAST
+const EFFECT_FALLEN_CARD_TAKEN := FallenTheft.TAKEN
+const EFFECT_FALLEN_MARK_HIT := FallenTheft.MARK_HIT
+const EFFECT_FALLEN_CARD_RETURNED := FallenTheft.RETURNED
+const EFFECT_FALLEN_WARD_UP := FallenWard.UP
+const EFFECT_FALLEN_WARD_DOWN := FallenWard.DOWN
+const EFFECT_FALLEN_WARD_BREAK := FallenWard.BREAK
+const EFFECT_FALLEN_SHADE_CHARGE := FallenWard.CHARGE
+const EFFECT_FALLEN_SHADE_HIT := FallenWard.HIT
 ## Rewards: reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
@@ -1476,17 +1492,25 @@ func layout_prop_count() -> int:
 
 ## Prop i: {"piece": StringName, "pos": Vector2, "angle": int (1/4096), "size": Vector2 (m), "height": float (m; 0 =
 ## the kit's own), "wall": the wall index it stands on (-1: decoration on open floor; -2: its blocker is gone, so it
-## isn't drawn), "lift": its base height (m; v0.11.0 O15, a lintel; 0 on the ground)}.
+## isn't drawn), "lift": its base height (m; v0.11.0 O15, a lintel; 0 on the ground), "legs": the wall indices of the
+## legs it is drawn whole over (an arch, RoomPurposes; empty for any other prop; "wall" is the first)}.
 func layout_prop(i: int) -> Dictionary:
 	var f := _w.floor_layout
 	var p: Array = f.layout_props[i]
 	var wall := -1
+	var legs := PackedInt32Array()
 	var key: String = p[5]
 	if not key.is_empty():
 		if _layout_wall_index.is_empty():
 			for k in range(f.slab_first, _w.walls.size()):
 				_layout_wall_index[FloorLayout.piece_key(_w.walls[k])] = k
-		wall = int(_layout_wall_index.get(key, -2))
+		var keys := key.split(RoomPurposes.LEG_SEP)
+		for k in keys:
+			var at := int(_layout_wall_index.get(k, -2))
+			if wall == -1 or at == -2:  # The first leg's, or -2 when any of them is gone
+				wall = at
+			if keys.size() > 1:
+				legs.append(at)
 	var lift: float = p[6] if p.size() > 6 else 0.0  # A lintel's base height
 	return {
 		"piece": p[0],
@@ -1495,7 +1519,8 @@ func layout_prop(i: int) -> Dictionary:
 		"size": p[3],
 		"height": p[4],
 		"wall": wall,
-		"lift": lift
+		"lift": lift,
+		"legs": legs
 	}
 
 
@@ -2187,6 +2212,21 @@ func boss_leap(i: int) -> Array:
 	return [true, clampf(float(_w.actors.state_t[i] + 1) / atk.active_ticks, 0.0, 1.0)]
 
 
+## How far (m from where lane k starts at the boss's edge) boss i's shot down its lanes has run by this tick: the far
+## end of the slice the hit is resolved from (BossAi.lane_slice), the whole lane once past its end; -1 while boss i
+## is not striking down lanes. For the Siege Engine's rail streak, laid down behind the shot.
+func boss_lane_front(i: int, k: int) -> float:
+	var atk := BossAi.attack_of(_w, i)
+	if atk == null or atk.move != MOVE_LANES or _w.actors.state[i] != EnemyAi.State.ACTIVE:
+		return -1.0
+	var whole := BossAi.lane_of(_w, i, k)
+	var s := BossAi.lane_slice(_w, i, k, _w.actors.state_t[i])
+	if s == null:
+		return whole.half.x * 2.0
+	var start := whole.center - whole.axis_u * whole.half.x
+	return (s.center + s.axis_u * s.half.x - start).length()
+
+
 ## Boss i is shielded now (its signature pattern runs): the
 ## player's hits spark off it. For the shell view and the avatars' shield pose.
 func boss_shielded(i: int) -> bool:
@@ -2205,8 +2245,8 @@ func boss_invulnerable(i: int) -> bool:
 		or BossDodge.shielded(_w, i)
 		or s == BossAi.GATE
 		or s == FinalBoss.SHATTER
-		or s == BossInterphase.STATE
-	)  # The Fallen, vanished
+		or FallenWard.blocks(_w, i)
+	)  # The Fallen under the ward it remembers
 
 
 ## The shields boss i still has to pass before it can fall, derived from sim state (no store counts
@@ -2328,10 +2368,10 @@ func boss_waves() -> Array[Dictionary]:
 
 
 ## BOSSES_4_5.md N2: Warden body i's pair: {} for any other actor; else "lead" (the boss's body),
-## "partner" (the other's index), "angry", "anger" (0..1000 left), "chain" ([] or [from, to]), "hot" (it burns),
-## "lifted" (the Chain Sweep has it), "burned" (ticks since it last burned the player, -1 none); in a Crossfire "safe",
-## "gap" ([from, to]), "progress", "firing"; the boss's Chain Sweep "sweep" {from, to, half_width, locked, progress,
-## struck} (BossTwin.state).
+## "partner" (the other's index), "angry", "anger" (0..1000 left), "phase", "resting", "focus", "exposed" (the violet
+## Warden stunned by her broken ward), "warded" (under her whole ward); in a Crossfire "safe", "gap" ([from, to]),
+## "progress", "firing"; the boss's Sword Lane "sweep" {from, to, half_width, locked, progress, struck}
+## (BossTwin.state). Nothing joins the two bodies.
 func boss_twin(i: int) -> Dictionary:
 	if i <= 0 or i >= _w.actors.size():
 		return {}
@@ -2437,6 +2477,82 @@ func boss_hazards() -> Array:
 	return BossHazard.rows(_w)
 
 
+## The attack speed a boss has taken from the hero's weapon, per mille (0 = none; BossSlow).
+func boss_attack_slow() -> int:
+	return BossSlow.cut(_w)
+
+
+## The floor pickups a boss placed, oldest first, each {"id", "kind" (BossPickupTable.Kind), "amount", "centre",
+## "radius", "age" (ticks since placed), "left" (ticks to its end; -1 = it stays)}.
+func boss_pickups() -> Array:
+	return BossPickups.rows(_w)
+
+
+## The discs that slow the hero's shots, oldest first, each {"id", "centre", "radius", "speed" (the share of its
+## speed a shot inside keeps, per mille), "age" (ticks since laid), "left" (ticks to its end; -1 = it stays)}.
+func boss_shot_fields() -> Array:
+	return BossShotFields.rows(_w)
+
+
+## The Clockwork Judge's time mechanics: {} with no Judge running them; else "boss" (its actor index), "cut" (the
+## attack speed taken, per mille), "wave" (0..1000 through the Time Wave's cast, -1 none), "wave_in" (ticks until the
+## next cast may begin, -1 before its clock starts), "gears" ([{centre, half, angle, age, left}], walls while they
+## stand), "returned" (the Judge went back to its own past), "rewind" (true while the Rewind is on) and then "copy"
+## (where the pale copy stands: where the Bell throws the hero), "trail" (ticks it follows behind), "bell" (0..1000
+## toward the toll pending, -1 none), "bell_left" (ticks to it), "tolls" (tolls after it), "bell_in" (ticks until the
+## next cast), "bell_squares" (the Bell's Verdict squares, the locked one first: [{center, half, locked, left (ticks
+## until it drops)}]). The orbs: boss_pickups ("left" counts a late orb down); the fields: boss_shot_fields.
+## (BossTime.state)
+func boss_time() -> Dictionary:
+	return BossTime.state(_w)
+
+
+## The Tidecaller's dance: {} with no boss running one; else "boss", "room", "along_x", "strips" (the four strips
+## Riptide cuts the room into, Rect2), "riptide" ({} or the cast running: "cast", "casts", "safe", "struck", "warn"
+## (0..1000, -1 once the wave runs), "warn_left", "wave" (0..1000, -1 before), "front" (metres from the room's low
+## end), "hit"), "riptide_in", "high_tide" ({} or "centre", "radius", "cast" (0..1000, -1 once the water is up),
+## "flood" (0..1000, -1 before), "left", "inside"), "high_tide_in", "maelstrom" ({} or "centre", "spin", "around",
+## "inward" (m/s), "eye" (m from the boss's centre), "grace", "thrown"), "beats" (its rhythm: "running", "next",
+## "in" (ticks until the next may begin), "held", "order"; BossTideBeats.state). Its tide pools: boss_hazards.
+## (BossDance.state)
+func boss_dance() -> Dictionary:
+	var d := BossDance.state(_w)
+	return d if not d.is_empty() else FallenRiptide.dance_state(_w)  # The Fallen's remembered Riptide
+
+
+## The Siege Engine's siege: {} with no boss running one; else "boss", "room", "lock" ({} or "centre", "radius",
+## "locked", "left" (ticks to the shell)), "lock_in", "boulders" ([{id, centre, half, size, left, crumbling}]),
+## "cover_rule" (a Shockwave needs cover now), "covered" (the boss cannot see the hero now), "cart" ({} or "id",
+## "position", "from", "to", "hp", "max", "progress" (0..1000), "left", "state"), "cart_blast" (the cart's blast
+## radius, m), "doom" (ticks to the Doom Shell, -1 none due), "doom_in", "stripped" (ticks of armour stripped left).
+## The markers: objectives() (`siege_boulder`).
+## (BossSiege.state)
+func boss_siege() -> Dictionary:
+	return BossSiege.state(_w)
+
+
+## The Foundry's forge: {} with no boss running one; else "boss", "plate" ({"forging" (0..1000 through the forging
+## cast, -1 none), "on", "exposed_left" (ticks), "taken" (per mille of the hero's damage it takes now), "next_in",
+## "blast" (m from the boss's edge a drone's bomb may land and blow the plate off)}),
+## "slabs" ([{"slab" (false: a pool still cooling), "id", "centre", "radius", "cooling" (0..1000; 1000 a slab),
+## "left" (ticks until it crumbles, -1 cooling), "shattered", "safe" (Overpressure counts it)}]), "overpressure" ({}
+## or "cast" (0..1000, -1 once the floor burns), "cast_left", "burn" (0..1000, -1 before), "burn_left", "on_slab"),
+## "overpressure_in", "scald" ({} before its phase; else "gauge", "max", "burning", "draining"). The marker on the
+## nearest safe slab: objectives() (`foundry_slab`). (BossForge.state)
+func boss_forge() -> Dictionary:
+	return BossForge.state(_w)
+
+
+## The Hive Lens's lattice: {} with no boss running one; else "boss", "drones" ([{"id", "position"}]: those that feed
+## it), "taken" (per mille of the hero's damage it takes now), "cut" (1000 - taken), "cuts" (drones its own beam has
+## cut down), "resend_in" (ticks until its split is sent again, -1 none counting), "lattice" ({} or "casting" (0..1000,
+## -1 once the web stands), "cast_left", "running", "left", "spin" (+1 or -1), "half_width", "strands" ([{"from",
+## "to", "a", "b"}]: the actor ids at its ends), "drones"), "lattice_in" (-1 not in its phase), "gazing", "calm_left",
+## "glass" ([{"from", "to", "half_width", "left", "progress"}]). (BossLens.state)
+func boss_lens() -> Dictionary:
+	return BossLens.state(_w)
+
+
 ## The meltdowns, each {"centre", "radius" (molten beyond it; INF while it only glows: the melt
 ## attack's windup), "next" (the radius it melts to next), "warn" (0..1000 while the next step glows, else -1),
 ## "bound" (the room, Rect2), "bridge" (bool), "exit" (the bridge's far end), "half" (its half width)}.
@@ -2516,11 +2632,24 @@ func final_shattering() -> bool:
 	return FinalBoss.shattering(_w)
 
 
-## BOSSES_HARD.md HC4, HC5: the Fallen's interphase while it is vanished or returning, else {}: "stage"
-## (2 vanished, 3 returning), "set" (0 rays, 1 rain, 2 lights out), "t", "ticks", "center", "radius", "beams", "erupts",
-## "lines", "points", "ret" (BossInterphase.state).
-func final_interphase() -> Dictionary:
-	return BossInterphase.state(_w)
+## The Fallen's remembered mechanics: {} with no Fallen running them; else "boss" (its actor index), "running" (the
+## mechanic cast or running: FALLEN_NONE, FALLEN_TIME, FALLEN_RIPTIDE, FALLEN_QUAKE, FALLEN_WARD), "source" (its boss
+## id, &"" none), "stage" (0 none, 1 the cast, 2 it runs), "cast" (0..1000 through the cast, -1 none), "cast_left",
+## "left" (ticks until it ends by its own time, -1 none or open-ended), "ended" (the last one's kind, FALLEN_NONE none
+## yet), "count" (mechanics begun), "next_in" (ticks until the next may be cast, 0 due, -1 while one runs), "gate"
+## (the next HP gate, per mille of max HP, -1 none), "pool" (the kinds it draws from), "room" (Rect2: the floor its
+## mechanics cut), "ward" ({} or {"up", "stun_left", "left"}), "shade" ({} or the amber Warden's shade: "position",
+## "radius", "stage" (1 winding up, 2 running, 3 waiting), "charge", "charges", "lane" (Obb, from where it stood),
+## "locked", "progress" (0..1000 through its wind-up), "end" (where its run ends), "burst_radius", "breaks" (the
+## ward is up and the lane would run through The Fallen)), "burst" ({} or
+## {"centre", "radius", "left", "progress"}), "pillar_dash" ({} or {"from", "to", "through"}: the dash shown aimed
+## at the hero, and whether it runs into a pillar). Each mechanic's own read reports it too: boss_attack_slow and
+## boss_pickups (the Time Wave), boss_dance (Riptide), boss_quake_pillars. (BossRemembered.state)
+## Its theft (FallenTheft.state): "taken" (the cards it holds, oldest first: {"slot", "card", "code", "hits_left",
+## "hits"}), "mark" ({} with none held, else {"on", "dir" (unit vector from the body to its back), "half_arc",
+## "hits_left", "hits"}), "theft_cast" (0..1000 through the cast, -1 none). wand()'s cards say "taken" too.
+func boss_fallen() -> Dictionary:
+	return BossRemembered.state(_w)
 
 
 ## The final fight's centre (where the first body rose; the Fallen slams back down here).
@@ -2892,6 +3021,14 @@ func priest_pulse(i: int) -> int:
 ## Whether actor i is a Glacier Turtle whose shell still stands.
 func shell_on(i: int) -> bool:
 	return CanyonShore.shell_on(_w, i)
+
+
+## Glacier Turtle i's shell HP left (0: broken, or not a turtle): its view braces as a hit on the shell takes some.
+func shell_hp(i: int) -> int:
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	if _w.actors.kinds[i] != KIND_GLACIER_TURTLE or t == null:
+		return 0
+	return maxi(0, _w.canyon_shore.shell_of(_w.actors.ids[i], t.shell_hp))
 
 
 ## The Kiln Beetles' bursts waiting: [centre (Vector2), radius (float), progress 0..1000 toward the blow, seed] each.
@@ -4619,9 +4756,57 @@ func warper_stunned(i: int) -> bool:
 	return StarfallKinds.stunned(_w, i)
 
 
+## 0..1: how strongly Gravity Node i draws the hero now (its pull's share of its centre's; 0 outside its reach).
+func gravity_hero_pull(i: int) -> float:
+	if not StarfallKinds.is_node(_w.actors.kinds[i]):
+		return 0.0
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	if t == null or t.hero_pull <= 0.0:
+		return 0.0
+	return StarfallKinds.hero_pull_of(_w, i) / t.hero_pull
+
+
+## Gravity Node i's reach on the hero (m); 0 for any other actor.
+func gravity_hero_reach(i: int) -> float:
+	if not StarfallKinds.is_node(_w.actors.kinds[i]):
+		return 0.0
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	return t.hero_pull_radius_m if t != null else 0.0
+
+
 ## Gravity Node i's pull reach (m); 0 for any other actor.
 func gravity_reach(i: int) -> float:
 	if not StarfallKinds.is_node(_w.actors.kinds[i]):
 		return 0.0
 	var t := _w.enemy_table(_w.actors.kinds[i])
 	return t.pull_radius_m if t != null else 0.0
+
+
+## The Twin Wardens' own mechanics: {} with no pair running them; else "lead" and "violet" (actor indices), "ward"
+## {who, kind (&"" none, &"mirror", &"full"), centre and half_arc (1/4096 turns), left (the Mirror Ward's ticks, -1
+## otherwise), broken, stun_left, return_in}, "swords" ([{from, to, half_width, cut, cut_in}] while Shadow Swords
+## runs), "rift" ({} or {stage, rifts [{centre, radius, entry, exit (true only once the exit is marked)}], inside,
+## exit_in, and once marked lane [from, to] and burst_radius}), "dash" (ticks left of the amber Warden's side dash)
+## and, while he winds a charge up, "charge" {lane (Obb), end, radius, locked, progress, breaks}. The swords' rifts on
+## the floor: boss_hazards. (BossWardens.state)
+func boss_wardens() -> Dictionary:
+	return BossWardens.state(_w)
+
+
+## The bursts armed where a boss's charge ended, oldest first, each {"boss" (its actor index), "centre", "radius",
+## "left" (ticks until it bursts), "progress" (0..1000)}. During the charge's wind-up the circle is its telegraph's
+## "burst" {center, radius}. (BossChargeBurst.rows)
+func boss_charge_bursts() -> Array:
+	return BossChargeBurst.rows(_w)
+
+
+## The Warlord's banner and duel: {} with no Warlord running them (before its second phase); else "boss", "running"
+## and "next" (BossWarlord.NONE, BANNER, DUEL), "next_in" (ticks until the next is due, 0 due and waiting for the
+## Warlord to be free, -1 while one runs), "held" (it casts and starts nothing), "banner" ({} or "cast" (0..1000, -1
+## once planted), "centre", "radius", "left", "boss_inside", "hero_inside", "cooldown", "damage" (per mille)) and
+## "duel" ({} or "stage" (BossDuel.CAST, CAGE, RECALL), "cast" (0..1000, -1 after), "centre", "radius" (the fence
+## now), "from_radius", "to_radius", "left", "progress", "zone" ({} or "centre", "radius", "warn" 0..1000),
+## "shield_down", "touch_m", "touching", "in_zone"). A charge's end circle is its telegraph's "burst".
+## (BossWarlord.state)
+func boss_warlord() -> Dictionary:
+	return BossWarlord.state(_w)

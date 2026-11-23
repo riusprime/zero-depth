@@ -3,9 +3,10 @@ extends GutTest
 ## v0.11.0 O5 (owner L7; Q11 a: "P1 should be yellow p2 purple p3 both at the same time"; Q29: "a full bar per
 ## phase … total paced to 1–2 min"; BossTwin's roles): the Twin Wardens' two movesets and three phases. Phase 1 the
 ## amber Warden leads with its physical moveset and the violet stands back (hits on it spark off, it casts a bolt every
-## 4 s); phase 2 they swap; phase 3 both fight, their attacks alternating and never overlapping, and every 10 s the
-## exposed Warden swaps (×1.5 taken, the other ×0.5). Each phase starts on a full bar. Deterministic. TEST_MATRIX (a
-## boss step): a scripted player beats it two ways, a melee Blade and a ranged Gun; the fight lengths are printed.
+## 4 s); phase 2 they swap; phase 3 both fight, their attacks alternating and never overlapping: the amber Warden
+## takes hits as ever and the violet one stands under her ward (test_twins_apart.gd). Each phase starts on a full
+## bar. Deterministic. TEST_MATRIX (a boss step): a scripted player beats it two ways, a melee Blade and a ranged
+## Gun; the fight lengths are printed.
 
 const S := EnemyAi.State
 const LONG := 1 << 20
@@ -13,9 +14,23 @@ const Pace := preload("res://tests/unit/sim/test_boss_pace.gd")
 ## The duels' limit (ticks): 4 minutes.
 const LIMIT_TICKS := 60 * 240
 const YELLOW := [
-	&"shield_bash", &"chain_sweep", &"chain_sweep_fast", &"warden_charge", &"ground_slam"
+	&"sword_combo",
+	&"chain_sweep",
+	&"chain_sweep_fast",
+	&"warden_charge",
+	&"warden_charge_long",
+	&"overhead"
 ]
-const VIOLET := [&"crossfire", &"crossfire_3", &"orb_volley", &"rune_ring", &"blink"]
+const VIOLET := [
+	&"crossfire",
+	&"crossfire_3",
+	&"orb_volley",
+	&"rune_ring",
+	&"blink",
+	&"mirror_ward",
+	&"shadow_swords",
+	&"whole_ward"
+]
 
 
 ## The Wardens at boss_at past their rise in the boss lab, the player at player_at (huge HP): [world, boss, twin].
@@ -66,6 +81,7 @@ func _to_phase(w: World, boss_id: int, phase: int) -> void:
 func _starts(w: World, ids: Array, ticks: int, at: Vector2) -> Array:
 	var out := [[], []]
 	var last := [-1, -1]
+	var last_t := [-1, -1]  # A hit's stop holds a wind-up's first tick: one start, counted once
 	var both := 0
 	for k in ticks:
 		w.actors.set_pos(0, at)
@@ -80,9 +96,10 @@ func _starts(w: World, ids: Array, ticks: int, at: Vector2) -> Array:
 			var s := w.actors.state[j]
 			if now >= 0 and (s == S.WINDUP or s == S.ACTIVE):
 				busy += 1
-				if s == S.WINDUP and w.actors.state_t[j] == 1:
+				if s == S.WINDUP and w.actors.state_t[j] == 1 and last_t[n] != 1:
 					out[n].append(BossAi.table_of(w, j).attacks[now].id)
 			last[n] = now
+			last_t[n] = w.actors.state_t[j] if s == S.WINDUP else -1
 		if busy == 2:
 			both += 1
 	return [out[0], out[1], both]
@@ -102,7 +119,11 @@ func test_the_two_movesets_are_the_owner_rows() -> void:
 	for id: StringName in YELLOW + VIOLET:
 		moves[id] = t.attacks[t.attack_index(id)].move
 	assert_eq(moves[&"warden_charge"], BossAttackTable.Move.CHARGE, "the charge: the Warlord's run")
-	assert_eq(moves[&"ground_slam"], BossAttackTable.Move.MARKS, "the slam: the Gatekeeper's mark")
+	assert_eq(moves[&"warden_charge_long"], BossAttackTable.Move.CHARGE, "phase 3's long charge")
+	assert_eq(moves[&"overhead"], BossAttackTable.Move.SWEEP, "the overhead: a wide arc")
+	assert_eq(moves[&"sword_combo"], BossAttackTable.Move.SWORD_COMBO)
+	assert_eq(moves[&"mirror_ward"], BossAttackTable.Move.MIRROR_WARD)
+	assert_eq(moves[&"shadow_swords"], BossAttackTable.Move.SHADOW_SWORDS)
 	assert_eq(moves[&"orb_volley"], BossAttackTable.Move.PATTERN, "the volley: a fan pattern")
 	assert_eq(
 		moves[&"rune_ring"], BossAttackTable.Move.SLAM_RING, "the rune ring: a ring, safe inside"
@@ -112,9 +133,6 @@ func test_the_two_movesets_are_the_owner_rows() -> void:
 	assert_false(t.attacks[t.attack_index(&"crossfire")].shielded, "owner L3: no shield")
 	assert_eq(t.twin_bolt, t.attack_index(&"warden_bolt"), "the bolt from the one standing back")
 	assert_eq(t.twin_bolt_ticks, 240, "every 4 s")
-	assert_eq(
-		[t.twin_expose_ticks, t.twin_expose_permille, t.twin_guard_permille], [600, 1500, 500]
-	)
 	for k in t.phase_attacks.size():
 		var ids := Array(t.phase_attacks[k]).map(func(x: int) -> StringName: return t.attacks[x].id)
 		assert_false(ids.has(&"warden_bolt"), "the bolt is never picked")
@@ -122,6 +140,9 @@ func test_the_two_movesets_are_the_owner_rows() -> void:
 	var es := TranslationServer.get_translation_object("es")
 	for id: StringName in YELLOW + VIOLET + [&"warden_bolt"]:
 		var key := t.attacks[t.attack_index(id)].cause_key
+		if key == &"":  # A cast that never hits has no line
+			assert_eq(t.attacks[t.attack_index(id)].damage, 0, "%s: only a cast has none" % id)
+			continue
 		assert_ne(String(en.get_message(key)), "", "%s: en line" % id)
 		assert_ne(String(es.get_message(key)), "", "%s: es line" % id)
 		assert_ne(String(es.get_message(key)), String(key), "%s: es line" % id)
@@ -136,9 +157,6 @@ func test_bad_role_numbers_are_errors() -> void:
 	var def: BossDefinition = fresh.call()
 	def.twin_bolt_attack = &""
 	assert_has(codes.call(def), &"missing", "the bolt")
-	def = fresh.call()
-	def.twin_guard_permille = 1000
-	assert_has(codes.call(def), &"range", "guarded takes less")
 	def = fresh.call()
 	def.twin_attack_ids = PackedStringArray(["nope"])
 	assert_has(codes.call(def), &"unknown_attack")
@@ -183,40 +201,38 @@ func test_phase_three_both_alternate_and_never_overlap() -> void:
 	assert_lte(absi(r[0].size() - r[1].size()), 1, "they take turns")
 
 
-func test_the_exposed_warden_swaps_every_10_s() -> void:
+func test_phase_three_the_amber_takes_hits_and_the_violet_is_warded() -> void:
 	var s := _fight(Vector2(-6, 2))
 	var w: World = s[0]
 	_to_phase(w, s[1], 1)
 	_to_phase(w, s[1], 2)
-	var i := _i(w, s[1])
-	var swaps := []
-	var focus := w.bosses.twin_focus[0]
 	var seq := w.last_event_seq()
-	for k in 60 * 31:
+	for k in 60 * 21:
 		w.step(InputFrame.new())
-		if w.bosses.twin_focus[0] != focus:
-			focus = w.bosses.twin_focus[0]
-			swaps.append([w.bosses.twin_clock[0], focus])
-	assert_eq(swaps, [[600, s[2]], [1200, s[1]], [1800, s[2]]], "every 10 s, the amber first")
+		assert_eq(w.bosses.twin_focus[0], s[1], "no swap: the amber Warden is the one to hit")
 	var flagged := 0
 	for e in w.events_since(seq):
 		if e.kind == SimEvent.Kind.STATUS_APPLY and e.effect_id == BossTwin.EFFECT_FOCUS:
 			flagged += 1
-	assert_eq(flagged, 3, "each swap is flagged for the views")
-	# ×1.5 on the exposed one, ×0.5 on the other (one shared HP).
-	i = _i(w, s[1])
-	var exposed := w.bosses.twin_focus[0]
-	var other: int = s[1] if exposed == s[2] else s[2]
+	assert_eq(flagged, 0, "the body to hit never changed")
+	var i := _i(w, s[1])
 	for e in w.bosses.exposed_t.size():
-		w.bosses.exposed_t[e] = 0  # no weak point open (its own ×2): the swap's multipliers alone
+		w.bosses.exposed_t[e] = 0  # no weak point open (its own ×2)
+	var j := _i(w, s[2])
+	if not BossWard.full(w, j):  # A charge may have broken it: the ward as it stands again
+		w.boss_fight.wd_break_at = -1
+		BossWard.raise(w, j)
 	var hp := w.actors.hp[i]
-	_hit(w, exposed, 100)
-	assert_eq(hp - w.actors.hp[i], 150, "the exposed Warden takes ×1.5")
+	_hit(w, s[1], 100)
+	assert_eq(hp - w.actors.hp[i], 25, "her whole ward shelters him: a quarter")
 	hp = w.actors.hp[i]
-	_hit(w, other, 100)
-	assert_eq(hp - w.actors.hp[i], 50, "the other ×0.5")
-	assert_eq(w.objectives.size(), 1, "the hint follows the exposed one")
-	assert_eq(w.objectives.entity[0], exposed)
+	_hit(w, s[2], 100)
+	assert_eq(hp - w.actors.hp[i], 0, "the violet one takes nothing under her ward")
+	w.boss_fight.wd_full = 0  # The ward down: both open
+	hp = w.actors.hp[i]
+	_hit(w, s[1], 100)
+	assert_eq(hp - w.actors.hp[i], 100, "with the ward down he takes hits as ever")
+	assert_eq(w.bosses.twin_focus[0], s[1], "the amber one is the body to hit")
 
 
 func test_each_phase_starts_on_a_full_bar_and_the_bar_names_its_warden() -> void:
@@ -277,6 +293,9 @@ func test_the_one_standing_back_sparks_off_and_casts_a_bolt_every_4_s() -> void:
 	for k in w.projectiles.size():
 		if w.projectiles.owner[k] == s[2]:
 			shots += 1
+			assert_eq(
+				w.projectiles.look[k], "warden_violet_ember", "the violet's bolt in its colour"
+			)
 	assert_gt(shots, 0, "its bolt flies")
 	w.killer_kind = ActorStore.Kind.TWIN_WARDEN_VIOLET
 	w.killer_attack = t.twin_bolt
@@ -288,24 +307,22 @@ func test_the_one_standing_back_sparks_off_and_casts_a_bolt_every_4_s() -> void:
 	assert_gt(_hit(w, s[2], 100), 0, "the violet takes it")
 
 
-func test_the_hint_follows_the_leader_and_clears_when_they_fall() -> void:
+func test_the_body_to_hit_follows_the_leader_and_no_marker_points_at_it() -> void:
 	var s := _fight(Vector2(-6, 2))
 	var w: World = s[0]
 	w.step(InputFrame.new())
-	assert_true(w.objectives.has(ObjectiveMarkers.TWINS_ACTIVE))
-	assert_eq(w.objectives.entity[0], s[1], "phase 1: the amber")
+	assert_eq(w.bosses.twin_focus[0], s[1], "phase 1: the amber")
 	_to_phase(w, s[1], 1)
-	assert_eq(w.objectives.size(), 1)
-	assert_eq(w.objectives.entity[0], s[2], "phase 2: the violet")
+	assert_eq(w.bosses.twin_focus[0], s[2], "phase 2: the violet")
 	_to_phase(w, s[1], 2)
-	assert_eq(w.objectives.entity[0], s[1], "phase 3: the exposed one, the amber first")
+	assert_eq(w.bosses.twin_focus[0], s[1], "phase 3: the amber first")
 	var i := _i(w, s[1])
 	w.actors.hp[i] = 5
 	w.actors.hp[BossTwin.partner_of(w, i)] = 5
 	_hit(w, s[1], 50)
 	w.step(InputFrame.new())
 	assert_false(w.boss_alive())
-	assert_false(w.objectives.has(ObjectiveMarkers.TWINS_ACTIVE), "cleared with the fight")
+	assert_true(w.bosses.twin_lead.is_empty(), "the pair goes with the fight")
 
 
 func test_deterministic_through_the_phases() -> void:

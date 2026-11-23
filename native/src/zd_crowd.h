@@ -51,14 +51,15 @@ public:
 	// The avatars of the batched enemies (zd_avatar.h): `state` is every slot's row (av::STRIDE doubles), `cls` its
 	// class; `frame` the slots' places and facings (BatchAvatars.frame_columns: the root's x, y, z, the facing's yaw,
 	// its mode (1: its whole transform is in fx), fx: 12 floats a slot); `consts`: [calm, the five STATE_* values].
-	// apply_sync: the sync of each slot with `pending` (its state, healing, windup and sim place), then four 0.05 s
-	// steps of each slot with `warm` (ActorViews' catch-up as it comes on screen). Returns the new rows.
+	// apply_sync: the sync of each slot with `pending` (its state, healing, windup, sim place and, for a Stone Thrower,
+	// the av::MORE values a slot in `in_more`), then four 0.05 s steps of each slot with `warm` (ActorViews' catch-up
+	// as it comes on screen). Returns the new rows.
 	godot::PackedFloat64Array apply_sync(const godot::PackedFloat64Array &state, const godot::PackedInt32Array &cls,
 			const godot::Array &frame, const godot::PackedByteArray &pending, int64_t tick,
 			const godot::PackedInt32Array &in_state, const godot::PackedByteArray &in_heal,
 			const godot::PackedFloat64Array &in_windup, const godot::PackedFloat32Array &in_x,
-			const godot::PackedFloat32Array &in_y, const godot::PackedByteArray &warm,
-			const godot::PackedFloat64Array &consts) const;
+			const godot::PackedFloat32Array &in_y, const godot::PackedFloat64Array &in_more,
+			const godot::PackedByteArray &warm, const godot::PackedFloat64Array &consts) const;
 	// The frame step (AvatarBase._process) of each slot processing (proc) and not born this frame (born != frame_no:
 	// the tree first ran a node's _process the frame after it came). Returns the new rows.
 	godot::PackedFloat64Array step_avatars(const godot::PackedFloat64Array &state, const godot::PackedInt32Array &cls,

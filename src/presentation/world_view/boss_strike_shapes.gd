@@ -13,17 +13,32 @@ const DUST := Color(0.64, 0.58, 0.52)
 const STEAM := Color(0.86, 0.87, 0.9)
 ## Where the owner's rings sit in their quads (the ring's radius over the quad's side).
 const DUST_RING_R := 0.4
-const LIGHT_RING_R := 0.42
 ## The widest dust front (m) drawn with the owner's ring (_dust_front); wider ones keep the code band.
 const DUST_RING_MAX_M := 6.0
+## The strike kinds whose whole look is the stone slam when their look has one (BossStrikeImpacts.STYLES): the craters,
+## landings, eruptions and shells, and the Verdict's drop.
+const SLAMMED: Array[StringName] = [&"crater", &"crack_impact", &"eruption", &"shell", &"beam"]
+## The Brood Mother's acid: a dark olive pool, flat, the egg's shell broken on it.
+const ACID_POOL := Color(0.3, 0.36, 0.1)
+## The Siege Engine's rail shot: a dull orange core in a dull ember haze (a cannon's streak, not a white-hot laser).
+const RAIL_CORE := Color(0.95, 0.5, 0.22)
+const RAIL_HAZE := Color(0.72, 0.3, 0.14)
+## The Focus Beam: a rose-gold core and a thin rose glow at a low brightness, no smoky strip (its glassy shards are
+## BossStrikeImpacts'). The Shadow Swords' cut draws no beam at all: the blade flies its line (WardenBladeViews).
+const FOCUS_CORE := Color(1.0, 0.82, 0.62)
+const FOCUS_GLOW := Color(0.95, 0.5, 0.52)
+const NO_BEAM: Array[StringName] = [&"tw_swords"]
 
 ## The views' pools (id -> {mm, used, cap, drawn}) and the swooshes' triangles ([position, colour]) this draw.
 var pools := {}
 var arc_add := []
 var arc_mix := []
+## The strikes' dust: the floor's colour, lightened (BossStrikeViews.floor_palette).
+var dust := DUST
+## The rail's shot is the owner's streak (RailStreakViews), so its code core and haze tubes are not drawn.
+var rail_streak := false
 ## Which owner textures are installed (the rings and steam draw their code bands without them).
 var _dust_tex := BossStrikeMeshes.textured("fx_dust_ring")
-var _light_tex := BossStrikeMeshes.textured("fx_light_ring")
 var _steam_tex := VfxCore.has_tex("fx_steam_puffs")
 var _skid_tex := BossStrikeMeshes.textured("fx_skid_marks")
 
@@ -44,21 +59,13 @@ func strike(s: Dictionary, age: float, after: float, dens: float, still: bool) -
 	var life: float = BossStrikeViews.LIFE[s["kind"]]
 	var sd: int = s["seed"]
 	var glow: Color = s["glow"]
+	if SLAMMED.has(s["kind"]) and BossStrikeImpacts.STYLES.has(s.get("look", &"")):
+		return  # Its whole look is BossStrikeImpacts' stone slam
 	match s["kind"]:
-		&"crater", &"crack_impact":
-			for d: Array in s["discs"]:
-				_crater(d[0], d[1], age, life, sd, glow, float(s["glow_i"]), dens, still)
-		&"eruption":
-			for d: Array in s["discs"]:
-				_eruption(d[0], d[1], age, life, sd, glow, float(s["glow_i"]), dens, still)
-		&"shell":
-			for k in (s["discs"] as Array).size():
-				var d: Array = s["discs"][k]
-				_shell(d[0], d[1], age, life, sd + k * 17, dens, still)
 		&"acid_splat":
 			for k in (s["discs"] as Array).size():
 				var d: Array = s["discs"][k]
-				_splat(d[0], d[1], age, life, sd + k * 17, glow, dens, still)
+				_splat(d[0], d[1], age, life, sd + k * 17, dens, still)
 		&"javelins":
 			for k in (s["discs"] as Array).size():
 				var d: Array = s["discs"][k]
@@ -74,6 +81,8 @@ func strike(s: Dictionary, age: float, after: float, dens: float, still: bool) -
 			for k in (s["lanes"] as Array).size():
 				_spears(s["lanes"][k], age, after, life, sd + k * 97, still)
 		&"beam", &"rail":
+			if NO_BEAM.has(s.get("look", &"")):
+				return
 			for k in (s["lanes"] as Array).size():
 				_beam(s, s["lanes"][k], age, after, life, sd + k * 97)
 		&"molten", &"fire_lanes":
@@ -143,7 +152,8 @@ func _band(
 
 
 ## A beam from `a` to `b`, `rad` thick; `owner_art`: drawn with the owner's beam strip when it is
-## installed (the Focus Beam; the rail keeps its code look, its texture not delivered).
+## installed (the Focus Beam; the rail's shot is the owner's streak in RailStreakViews when installed, else this
+## code look).
 func _tube(
 	a: Vector3, b: Vector3, rad: float, col: Color, bright: float, sd: int, owner_art := false
 ) -> void:
@@ -168,158 +178,26 @@ static func _fade(age: float, life: float, tail: float) -> float:
 	return clampf((life - age) / tail, 0.0, 1.0)
 
 
-func _crater(
-	c2: Vector2,
-	r: float,
-	age: float,
-	life: float,
-	sd: int,
-	glow: Color,
-	gi: float,
-	dens: float,
-	still: bool
-) -> void:
-	var c := SimPlane.to_3d(c2)
-	var heat := clampf(1.0 - age / life, 0.0, 1.0)
-	var fade := _fade(age, life, 14.0)
-	_ground(
-		c,
-		Vector3(cos(sd), 0, sin(sd)),
-		r * 2.3,
-		r * 2.3,
-		BossStrikeMeshes.G_CRATER,
-		heat,
-		fade,
-		glow,
-		sd
-	)
-	var n := int(round(12.0 * dens))
-	for k in n:
-		var a := TAU * (k + _h(sd + 4, k)) / maxf(n, 1)
-		var t := clampf(age / 22.0, 0.0, 1.0)
-		var out := r * (0.25 + 0.95 * _h(sd + 5, k)) * t
-		var y := 0.15 + (3.0 * t - 3.0 * t * t) * (0.6 + _h(sd + 6, k))
-		var p := c + Vector3(cos(a) * out, maxf(y, 0.08), sin(a) * out)
-		var s := (0.28 + 0.3 * _h(sd + 7, k)) * fade
-		_rock(p, s, STONE, heat, sd, k, 0.0 if still else age * 0.35 * (_h(sd + 8, k) - 0.5), gi)
-	var u := clampf(age / 16.0, 0.0, 1.0)
-	var front := r * (0.6 + 1.1 * (1.0 - (1.0 - u) * (1.0 - u)))
-	_dust_front(c, front, 0.4 * (1.0 - 0.5 * u), (0.5 if _dust_tex else 0.7) * (1.0 - u), sd)
-
-
 ## A shockwave's dust front `r` round at `c`: the owner's dust ring flat on the floor (its ragged ring
 ## sits at about DUST_RING_R of the quad), or the code's band of dust `hgt` tall while the texture is missing.
-func _dust_front(c: Vector3, r: float, hgt: float, alpha: float, sd: int) -> void:
+func _dust_front(
+	c: Vector3, r: float, hgt: float, alpha: float, sd: int, col: Color = DUST
+) -> void:
 	# A room-wide shockwave keeps the code's rolling band: the ring texture blown up to the room covers it (the shots).
 	if _dust_tex and r <= DUST_RING_MAX_M:
 		var s := r / DUST_RING_R
 		_ground(
-			c,
-			Vector3(cos(sd), 0, sin(sd)),
-			s,
-			s,
-			BossStrikeMeshes.G_DUST_RING,
-			0.0,
-			alpha,
-			DUST,
-			sd
+			c, Vector3(cos(sd), 0, sin(sd)), s, s, BossStrikeMeshes.G_DUST_RING, 0.0, alpha, col, sd
 		)
 	else:
-		_band(&"band_mix", c, r, hgt, Color(DUST, alpha), 1.0, sd)
+		_band(&"band_mix", c, r, hgt, Color(col, alpha), 1.0, sd)
 
 
-func _eruption(
-	c2: Vector2,
-	r: float,
-	age: float,
-	life: float,
-	sd: int,
-	glow: Color,
-	gi: float,
-	dens: float,
-	still: bool
-) -> void:
-	var c := SimPlane.to_3d(c2)
-	var heat := clampf(1.0 - age / life, 0.0, 1.0)
-	var fade := _fade(age, life, 14.0)
-	_ground(
-		c, Vector3.RIGHT, r * 2.2, r * 2.2, BossStrikeMeshes.G_CRATER, heat * 0.6, fade, glow, sd
-	)
-	var n := int(round(14.0 * dens))
-	for k in n:
-		var a := TAU * (k + _h(sd + 4, k)) / maxf(n, 1)
-		var t := clampf(age / 30.0, 0.0, 1.0)
-		var out := r * (0.5 + 0.7 * t) * (0.7 + 0.5 * _h(sd + 5, k))
-		var y := 0.1 + (4.6 * t - 4.6 * t * t) * (0.7 + 0.7 * _h(sd + 6, k))
-		var p := c + Vector3(cos(a) * out, maxf(y, 0.1), sin(a) * out)
-		_rock(
-			p,
-			(0.25 + 0.3 * _h(sd + 7, k)) * fade,
-			Color(0.4, 0.33, 0.26),
-			heat,
-			sd,
-			k,
-			0.0 if still else age * 0.3,
-			gi
-		)
-	var u := clampf(age / 20.0, 0.0, 1.0)
-	if _dust_tex:  # The dirt wall is the owner's rock burst (BossStrikeFx) over a dust ring
-		_dust_front(c, r * (0.5 + 0.8 * u), 1.3 * (1.0 - 0.6 * u), 0.9 * (1.0 - u), sd + 1)
-		return
-	_band(
-		&"band_mix",
-		c,
-		r * (0.5 + 0.8 * u),
-		1.3 * (1.0 - 0.6 * u),
-		Color(0.5, 0.42, 0.33, 0.9 * (1.0 - u)),
-		1.0,
-		sd
-	)
-
-
-func _shell(
+## An egg's acid: a flat dark olive pool spreading where it burst, the egg's shell broken on it (no glow).
+func _splat(
 	c2: Vector2, r: float, age: float, life: float, sd: int, dens: float, still: bool
 ) -> void:
 	var c := SimPlane.to_3d(c2)
-	var heat := clampf(1.0 - age / 24.0, 0.0, 1.0)
-	var fade := _fade(age, life, 14.0)
-	_ground(
-		c,
-		Vector3(cos(sd), 0, sin(sd)),
-		r * 2.0,
-		r * 2.0,
-		BossStrikeMeshes.G_CRATER,
-		heat,
-		fade,
-		Color(1.0, 0.5, 0.15),
-		sd
-	)
-	var n := int(round(8.0 * dens))
-	for k in n:
-		var a := TAU * _h(sd + 4, k)
-		var t := clampf(age / 18.0, 0.0, 1.0)
-		var out := r * (0.4 + 1.2 * _h(sd + 5, k)) * t
-		var y := 0.12 + (2.6 * t - 2.6 * t * t) * (0.5 + _h(sd + 6, k))
-		var p := c + Vector3(cos(a) * out, maxf(y, 0.08), sin(a) * out)
-		_rock(
-			p,
-			(0.14 + 0.16 * _h(sd + 7, k)) * fade,
-			METAL,
-			heat,
-			sd,
-			k,
-			0.0 if still else age * 0.5,
-			0.0
-		)
-	var u := clampf(age / 8.0, 0.0, 1.0)
-	_band(&"band_add", c, r * (0.3 + 1.2 * u), 0.6, Color(1.0, 0.6, 0.25, 0.9 * (1.0 - u)), 2.2, sd)
-
-
-func _splat(
-	c2: Vector2, r: float, age: float, life: float, sd: int, glow: Color, dens: float, still: bool
-) -> void:
-	var c := SimPlane.to_3d(c2)
-	var heat := clampf(1.0 - age / 30.0, 0.0, 1.0)
 	var grow := clampf(0.35 + age / 5.0, 0.0, 1.0)
 	var fade := _fade(age, life, 24.0)
 	_ground(
@@ -328,9 +206,9 @@ func _splat(
 		r * 2.5 * grow,
 		r * 2.5 * grow,
 		BossStrikeMeshes.G_SPLAT,
-		heat,
+		0.0,
 		fade,
-		glow,
+		ACID_POOL,
 		sd
 	)
 	var n := int(round(7.0 * dens))
@@ -340,9 +218,7 @@ func _splat(
 		var out := r * (0.2 + 0.7 * _h(sd + 5, k)) * t
 		var y := 0.08 + (1.6 * t - 1.6 * t * t) * (0.4 + _h(sd + 6, k))
 		var p := c + Vector3(cos(a) * out, maxf(y, 0.06), sin(a) * out)
-		_rock(p, 0.16 * fade, SHELL, heat * 0.6, sd, k, 0.0 if still else age * 0.4, 1.0)
-	var u := clampf(age / 10.0, 0.0, 1.0)
-	_band(&"band_add", c, r * (0.4 + 0.8 * u), 0.5, Color(glow, 0.6 * (1.0 - u)), 1.4, sd)
+		_rock(p, 0.16 * fade, SHELL, 0.0, sd, k, 0.0 if still else age * 0.4, 0.0)
 
 
 func _javelins(c2: Vector2, r: float, age: float, life: float, sd: int) -> void:
@@ -378,10 +254,15 @@ func _light_burst(c2: Vector2, r: float, age: float, life: float, sd: int, glow:
 	var c := SimPlane.to_3d(c2)
 	var u := clampf(age / 12.0, 0.0, 1.0)
 	var fade := _fade(age, life, 18.0)
-	_band(&"band_add", c, r * (0.4 + 1.1 * u), 0.8, Color(glow, fade), 2.0, sd)
-	_band(&"band_add", c, r * (0.2 + 0.7 * u), 1.4, Color(0.85, 0.6, 1.0, fade * 0.8), 1.6, sd + 1)
+	# A low edge running out on the floor and a short, dim column: the pack's pillar carries the light.
+	_band(&"band_add", c, r * (0.4 + 1.1 * u), 0.2, Color(glow, fade * 0.5), 1.0, sd)
 	_tube(
-		c, c + Vector3.UP * 4.5 * (1.0 - u * 0.5), r * 0.3 * (1.0 - u), Color(glow, fade), 2.0, sd
+		c,
+		c + Vector3.UP * 2.0 * (1.0 - u * 0.5),
+		r * 0.22 * (1.0 - u),
+		Color(glow, fade * 0.55),
+		0.9,
+		sd
 	)
 	_ground(
 		c, Vector3.RIGHT, r * 2.0, r * 2.0, BossStrikeMeshes.G_CRATER, 1.0 - u, fade * 0.6, glow, sd
@@ -400,18 +281,18 @@ func _ring(s: Dictionary, age: float, life: float) -> void:
 		&"light_ring":
 			var u := clampf(age / 8.0, 0.0, 1.0)
 			var r := lerpf(r0, r1, 1.0 - (1.0 - u) * (1.0 - u))
-			if _light_tex:  # The owner's light ring flat on the floor, a low glow standing on it
-				var side := r / LIGHT_RING_R
-				_ground(
-					c, Vector3.RIGHT, side, side, BossStrikeMeshes.G_LIGHT_RING, 1.0, fade, glow, sd
-				)
-				_band(&"band_add", c, r, 0.35, Color(glow, fade * 0.6), 1.6, sd)
-			else:
-				_band(&"band_add", c, r, 0.9, Color(glow, fade), 2.2, sd)
-			_band(&"band_add", c, r * 0.85, 0.5, Color(0.85, 0.6, 1.0, fade * 0.7), 1.6, sd + 1)
+			# A darker wave on the floor with a thin bright edge: no standing walls of light, and no sparkling
+			# light-ring texture (it read as neon over the flat floor); the pack's pulse rolls under it.
+			_band(
+				&"band_mix", c, r * 0.9, 0.12, Color(glow.darkened(0.65), fade * 0.5), 1.0, sd + 1
+			)
+			_band(&"band_add", c, r, 0.1, Color(glow, fade * 0.55), 1.2, sd)
 		&"shock_ring":
 			var u := clampf(age / 24.0, 0.0, 1.0)
 			var r := lerpf(r0, r1, u)
+			if s.get("look", &"") == &"se_shock":  # One ring of the floor's own dust, no glowing edge
+				_dust_front(c, r, 0.5 * (1.0 - 0.4 * u), 0.7 * fade, sd, dust)
+				return
 			_dust_front(c, r, 0.7 * (1.0 - 0.4 * u), 0.85 * fade, sd)
 			_band(&"band_add", c, r + 0.15, 0.25, Color(glow, 0.8 * (1.0 - u)), 1.8, sd + 1)
 		_:  # steam_ring: a blast of steam and heat
@@ -420,6 +301,8 @@ func _ring(s: Dictionary, age: float, life: float) -> void:
 			var rise := clampf(age / life, 0.0, 1.0)
 			if not _steam_tex:  # With the owner's steam puffs the steam is BossStrikeFx's sprites
 				_band(&"band_mix", c, r, 1.6 + 1.2 * rise, Color(STEAM, 0.8 * fade), 1.0, sd)
+			if s.get("look", &"") == &"fd_vent":  # Its blast is stone thrown out (BossStrikeImpacts), no glowing ring
+				return
 			_band(&"band_add", c, r * 0.9, 0.4, Color(glow, 0.9 * (1.0 - u)), 2.0, sd + 1)
 			_ground(
 				c,
@@ -442,7 +325,7 @@ func _arc(s: Dictionary, age: float, life: float, dens: float, still: bool) -> v
 	var a0: float = g[3]
 	var a1: float = g[4]
 	var sd: int = s["seed"]
-	var steel: bool = s["kind"] == &"steel_arc"
+	var steel: bool = s["kind"] == &"steel_arc" and s.get("look", &"") != &"wl_bash"  # the Shield Bash scrapes dust
 	var sweep := clampf(age / 7.0, 0.0, 1.0)
 	var fade := _fade(age, life, 12.0)
 	var head := lerpf(a0, a1, sweep)
@@ -459,14 +342,14 @@ func _arc(s: Dictionary, age: float, life: float, dens: float, still: bool) -> v
 		var trail0 := clampf(1.0 - (head - b0) / maxf(absf(a1 - a0), 0.01) * 0.8, 0.15, 1.0)
 		var trail1 := clampf(1.0 - (head - b1) / maxf(absf(a1 - a0), 0.01) * 0.8, 0.15, 1.0)
 		var rr := lerpf(r0, r1, 0.92)
-		var hgt := 0.9 if steel else 0.7
-		var col := Color(1.0, 0.85, 0.6) if steel else Color(0.55, 0.5, 0.45)
+		var hgt := 0.9 if steel else 0.45
+		var col := Color(1.0, 0.85, 0.6) if steel else dust
 		var p0 := SimPlane.to_3d(c + Vector2(cos(b0), sin(b0)) * rr)
 		var p1 := SimPlane.to_3d(c + Vector2(cos(b1), sin(b1)) * rr)
 		var q0 := SimPlane.to_3d(c + Vector2(cos(b0), sin(b0)) * lerpf(r0, r1, 0.55))
 		var q1 := SimPlane.to_3d(c + Vector2(cos(b1), sin(b1)) * lerpf(r0, r1, 0.55))
-		var a_0 := (0.85 if steel else 0.5) * fade * trail0
-		var a_1 := (0.85 if steel else 0.5) * fade * trail1
+		var a_0 := (0.85 if steel else 0.35) * fade * trail0
+		var a_1 := (0.85 if steel else 0.35) * fade * trail1
 		# A curved wall at the reach and a skirt toward the boss: the swing's sweep of dust (or steel).
 		(
 			out
@@ -542,13 +425,21 @@ func _beam(s: Dictionary, o: Obb, age: float, after: float, life: float, sd: int
 	var reach := clampf(age / 3.0, 0.0, 1.0)  # the beam ignites down the line
 	var tip := a.lerp(b, reach)
 	var flick := 0.85 + 0.15 * _h(sd, int(age))
-	if fade > 0.0:
-		var core := 0.12 if rail else o.half.y * 0.45
-		_tube(a, tip, core, Color(1.0, 0.97, 0.9, fade), 2.6 * flick, sd, not rail)
-		_tube(a, tip, core * 2.6, Color(glow, 0.55 * fade), 1.8 * flick, sd + 1, not rail)
-	if rail:  # its haze lingers longer than the streak
+	var focus: bool = s.get("look", &"") == &"hl_beam"
+	if fade > 0.0 and rail and not rail_streak:
+		_tube(a, tip, 0.12, Color(RAIL_CORE, fade), 1.3 * flick, sd)
+		_tube(a, tip, 0.26, Color(RAIL_HAZE, 0.4 * fade), 0.9 * flick, sd + 1)
+	elif fade > 0.0 and focus:
+		var fc := o.half.y * 0.36
+		_tube(a, tip, fc, Color(FOCUS_CORE, fade), 1.6 * flick, sd)
+		_tube(a, tip, fc * 1.9, Color(FOCUS_GLOW, 0.3 * fade), 0.9 * flick, sd + 1)
+	elif fade > 0.0:
+		var core := o.half.y * 0.45
+		_tube(a, tip, core, Color(1.0, 0.97, 0.9, fade), 2.6 * flick, sd, true)
+		_tube(a, tip, core * 2.6, Color(glow, 0.55 * fade), 1.8 * flick, sd + 1, true)
+	if rail and not rail_streak:  # its haze lingers longer than the streak
 		var haze := clampf(1.0 - age / life, 0.0, 1.0)
-		_tube(a, b, 0.45, Color(glow, 0.3 * haze), 1.2, sd + 2)
+		_tube(a, b, 0.4, Color(RAIL_HAZE, 0.16 * haze), 0.7, sd + 2)
 	var heat := clampf(1.0 - age / (life + 20.0), 0.0, 1.0) if rail else fade
 	var mid := SimPlane.to_3d(o.center)
 	_ground(
@@ -557,9 +448,9 @@ func _beam(s: Dictionary, o: Obb, age: float, after: float, life: float, sd: int
 		o.half.x * 2.0 * reach,
 		o.half.y * 1.6,
 		BossStrikeMeshes.G_SCORCH,
-		heat,
+		heat * (0.2 if rail else 1.0),  # the rail scorches the floor dark, its cracks barely warm
 		clampf(heat * 1.5, 0.0, 1.0),
-		glow,
+		RAIL_HAZE if rail else glow,
 		sd
 	)
 

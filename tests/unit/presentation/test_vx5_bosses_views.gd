@@ -144,17 +144,6 @@ func test_the_conduits_beam_is_one_pack_beam_for_its_short_life() -> void:
 	assert_eq(e.fx_count(), 1, "the old bar where the family is full")
 
 
-func test_the_fallens_eruption_is_a_violet_pillar() -> void:
-	var v: InterphaseViews = _under(InterphaseViews.new())
-	v._data = {
-		"erupts": [{"pos": Vector2(4, 4), "radius": 1.5, "striking": true, "progress": 1000}],
-	}
-	v._note_strikes()
-	assert_eq(_fx.live_count(&"area"), 1, "a pillar where it strikes")
-	v._note_strikes()
-	assert_eq(_fx.spawned, 1, "once a strike")
-
-
 func test_the_final_boss_shatter_is_the_packs_explosion() -> void:
 	var f: FinalBossViews = _under(FinalBossViews.new())
 	f._burst(Vector3(2, 0, 2), 1.5, 10)
@@ -200,7 +189,9 @@ func test_the_nemesis_cast_sigil_is_a_blood_circle_while_it_casts() -> void:
 			if c is MagicArea:
 				area = c
 	assert_not_null(area, "a MagicArea at its feet")
-	assert_eq(area.element, "blood")
+	assert_eq(area.element, "arcane", "in The Fallen's violet, not the red-orange blood")
+	assert_eq(area.color, NemesisViews.SIGIL_COLOR)
+	assert_lt(area.intensity, NemesisViews.SIGIL_DIM + NemesisViews.SIGIL_RISE + 0.001, "dim")
 	assert_eq(area.kind, "circle")
 	assert_almost_eq(area.radius, NemesisViews.SIGIL_R, 0.001, "the radius as before")
 	assert_true(v.sigil_shown(), "the sigil flag the tests read")

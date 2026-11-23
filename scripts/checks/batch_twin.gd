@@ -8,7 +8,11 @@ extends RefCounted
 ##   custom data and drives: the pose);
 ## - the contact disc, the team ring, the dazed ring and the health bar: the batch's instance against the node's
 ##   interpolated global transform, and whether each shows;
-## - the bar chunks drawn (BarChunks.drawn) and the bodies drawn (VatCrowd.drawn), each side.
+## - the bar chunks drawn (BarChunks.drawn) and the bodies drawn (VatCrowd.drawn), each side;
+## - a Warden's slam dust ring (a node on both sides: the batch keeps it in the tree, BatchWarden): whether it shows,
+##   its interpolated global transform and its colour; a Rubble Warden's crust the same way (whether it shows, where);
+##   a Bomb Drone's ground disc and a Lens Drone's ground shadow (nodes on both sides too, BatchBombDrone,
+##   BatchLensDrone): whether each shows, where and how large.
 ## The report line gives what was compared and the largest differences. Probe-only; the twin doubles the drawing.
 
 ## Differences under these count as equal (float rounding between the two ways of reckoning a transform).
@@ -85,6 +89,9 @@ func _compare() -> void:
 			_note("twin_missing", 1.0, "id %d" % id)
 			continue
 		_body(id, a, b)
+		_dust(id, a, b)
+		_ground_disc(id, a, b)
+		_lens_shadow(id, a, b)
 		if _live.batched_count() > 0:
 			_furniture(id, b)
 	_diff("bodies_drawn", absf(_live.vat_crowd.drawn - twin.vat_crowd.drawn), "")
@@ -138,6 +145,76 @@ func _body(id: int, a: Node3D, b: Node3D) -> void:
 			]
 		)
 	)
+
+
+func _dust(id: int, a: Node3D, b: Node3D) -> void:
+	var wa := a.get_meta(&"enemy_avatar") as WardenAvatar
+	var wb := b.get_meta(&"enemy_avatar") as WardenAvatar
+	if wa == null or wb == null:
+		return
+	if a.has_meta(&"crust") and b.has_meta(&"crust"):
+		var ka: Node3D = a.get_meta(&"crust")
+		var kb: Node3D = b.get_meta(&"crust")
+		var ks := ka.is_inside_tree() and ka.is_visible_in_tree()
+		if ks != kb.is_visible_in_tree():
+			_note("crust_shown", 1.0, "id %d batch %s" % [id, ks])
+		elif ks:
+			_parts += 1
+			_xf(
+				"crust",
+				id,
+				ka.get_global_transform_interpolated(),
+				kb.get_global_transform_interpolated()
+			)
+	var sa := wa.dust.is_inside_tree() and wa.dust.is_visible_in_tree()
+	var sb := wb.dust.is_visible_in_tree()
+	if sa != sb:
+		_note("dust_shown", 1.0, "id %d batch %s twin %s" % [id, sa, sb])
+		return
+	if not sa:
+		return
+	_parts += 1
+	_xf(
+		"dust",
+		id,
+		wa.dust.get_global_transform_interpolated(),
+		wb.dust.get_global_transform_interpolated()
+	)
+	var ca: Color = (wa.dust.material_override as StandardMaterial3D).albedo_color
+	var cb: Color = (wb.dust.material_override as StandardMaterial3D).albedo_color
+	_diff(
+		"dust_color",
+		Vector4(ca.r - cb.r, ca.g - cb.g, ca.b - cb.b, ca.a - cb.a).length(),
+		"id %d" % id
+	)
+
+
+func _ground_disc(id: int, a: Node3D, b: Node3D) -> void:
+	var da := a.get_meta(&"enemy_avatar") as BombDroneAvatar
+	var db := b.get_meta(&"enemy_avatar") as BombDroneAvatar
+	if da != null and db != null:
+		_held_part("ground_disc", id, da.shadow, db.shadow)
+
+
+func _lens_shadow(id: int, a: Node3D, b: Node3D) -> void:
+	var da := a.get_meta(&"enemy_avatar") as LensDroneAvatar
+	var db := b.get_meta(&"enemy_avatar") as LensDroneAvatar
+	if da != null and db != null:
+		_held_part("lens_shadow", id, da.shadow, db.shadow)
+
+
+## A node part the batch keeps in the tree (`pa`, the live side's) against the twin's (`pb`): whether it shows, its
+## interpolated global transform (its place, and its basis: its size and lean).
+func _held_part(what: String, id: int, pa: Node3D, pb: Node3D) -> void:
+	var sa := pa.is_inside_tree() and pa.is_visible_in_tree()
+	var sb := pb.is_visible_in_tree()
+	if sa != sb:
+		_note(what + "_shown", 1.0, "id %d batch %s twin %s" % [id, sa, sb])
+		return
+	if not sa:
+		return
+	_parts += 1
+	_xf(what, id, pa.get_global_transform_interpolated(), pb.get_global_transform_interpolated())
 
 
 func _furniture(id: int, b: Node3D) -> void:

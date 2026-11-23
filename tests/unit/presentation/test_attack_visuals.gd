@@ -60,7 +60,7 @@ func test_every_fireball_source_has_its_own_3d_look() -> void:
 
 func test_each_look_keeps_its_identity() -> void:
 	var expect := {
-		&"ember_stone": [&"rock", &"glow"],
+		&"ember_stone": [&"rock", &"streak"],  # A thrown rock: a short dark streak, no flame
 		&"spear_ember": [&"spear", &"glow"],
 		&"prism_orb": [&"gem", &"glow"],
 		&"acid_glob": [&"glob", &"drips"],
@@ -223,7 +223,13 @@ func test_the_shock_lanes_strike_as_spikes_that_sink_back_into_the_pool() -> voi
 	for k in 6:
 		w.step(InputFrame.new())
 		spikes.sync(reader)
-	assert_gt(spikes.spike_count(), 20, "standing")
+	var early := spikes.spike_count()
+	assert_gt(early, 5, "the first spikes stand")
+	assert_lt(early, spikes.pooled(), "the rest of the lane is still to rise")
+	for k in 20:
+		w.step(InputFrame.new())
+		spikes.sync(reader)
+	assert_gt(spikes.spike_count(), early, "more of them as the wave runs out")
 	var mm: MultiMesh = (spikes.get_node("Spikes") as MultiMeshInstance3D).multimesh
 	assert_eq(mm.visible_instance_count, spikes.spike_count(), "one instance a spike")
 	var bases := spikes.spike_positions()
@@ -234,7 +240,7 @@ func test_the_shock_lanes_strike_as_spikes_that_sink_back_into_the_pool() -> voi
 		for lane: Obb in lanes:
 			inside = inside or Collide.circle_vs_obb(p, 0.05, lane) != Vector2.ZERO
 		assert_true(inside, "spike %d stands in a lane it hit" % k)
-	for k in int(StoneSpikeViews.LIFE_TICKS + StoneSpikeViews.SPREAD_TICKS) + 2:
+	for k in int(StoneSpikeViews.LIFE_TICKS) + atk.lane_wave_ticks() + 4:
 		w.step(InputFrame.new())
 		spikes.sync(reader)
 	assert_eq(spikes.strike_count(), 0, "the strike ends")
@@ -275,6 +281,30 @@ func test_only_the_shock_lanes_raise_spikes() -> void:
 			assert_eq(spikes.strike_count(), 0, "%s raises no spikes" % attack_id)
 
 
+func test_the_lane_spikes_rise_one_after_another_outward_from_the_boss() -> void:
+	var spikes := StoneSpikeViews.new()
+	add_child_autofree(spikes)
+	var mpt := 28.0 / 60.0
+	var lane := AttackShapes.lane(Vector2(1.2, 0), 0, 24.0, 0.6)  # starts at the boss's edge
+	spikes._spawn([lane], 100, mpt)
+	var list: Array = spikes._strikes[0]["spikes"]
+	assert_gt(list.size(), 20)
+	assert_lt(SimPlane.to_sim(list[0][0]).x, 1.2 + 1.5, "the first spike stands next to the boss")
+	assert_lt(float(list[0][3]), 1.0, "and rises at once")
+	for k in range(1, list.size()):
+		var x := SimPlane.to_sim(list[k][0]).x
+		var x_before := SimPlane.to_sim(list[k - 1][0]).x
+		assert_gte(
+			float(list[k][3]), float(list[k - 1][3]), "spike %d rises after the one before" % k
+		)
+		assert_gte(x, x_before - 0.3, "spike %d stands no nearer the boss than the one before" % k)
+	var last := float(list.back()[3])
+	assert_between(last, 40.0, 53.0, "the wave reaches the lane's end in about 0.85 s")
+	assert_almost_eq(
+		float(spikes._strikes[0]["span"]), last, 0.001, "the strike lives until it ran out"
+	)
+
+
 func test_the_spike_pool_is_bounded() -> void:
 	var spikes := StoneSpikeViews.new()
 	add_child_autofree(spikes)
@@ -301,7 +331,9 @@ func test_the_thrust_overshoots_unless_reduced_motion_and_ends_sunk() -> void:
 	assert_eq(StoneSpikeViews.extent(StoneSpikeViews.LIFE_TICKS, false), 0.0, "sunk at the end")
 
 
-func test_the_strike_throws_debris_and_dust_flashes_and_cracks_the_floor() -> void:
+## The spikes kick the floor's own grit and a low dust up (GroundSlamViews), with no sprite debris, smoke or light, and
+## crack the floor.
+func test_the_strike_kicks_grit_and_cracks_the_floor_with_no_light() -> void:
 	var s := _lanes_fight()
 	var w: World = s[0]
 	var reader := WorldReader.new(w)
@@ -315,18 +347,15 @@ func test_the_strike_throws_debris_and_dust_flashes_and_cracks_the_floor() -> vo
 		w.step(InputFrame.new())
 		spikes.sync(reader)
 	assert_eq(spikes.strike_count(), 1)
+	assert_eq(spikes.slams.started(), 1, "one kick of grit along the lanes")
 	layer.begin(float(reader.tick()))
 	layer.finish()
-	assert_gt(layer.used(&"debris"), 0, "rock debris")
-	assert_gt(layer.used(&"smoke"), 0, "dust")
-	assert_gt(layer.lights_on(), 0, "a hot flash")
+	assert_eq(layer.used(&"debris"), 0, "no sprite debris")
+	assert_eq(layer.used(&"smoke"), 0, "no smoke puffs")
+	assert_eq(layer.lights_on(), 0, "no red light")
 	assert_gt(layer.marks_of(BossStrikeFx.crack_mark()), 0, "cracks left on the floor")
-	ViewPrefs.effects_density = "low"
-	var high := layer.used(&"debris")
-	layer.density = 0.3
-	layer.begin(float(reader.tick()))
-	layer.finish()
-	assert_lt(layer.used(&"debris"), high, "thinned with the density")
+	spikes.slams.advance(0.3)
+	assert_gt(spikes.slams.pieces_shown(), 0, "the grit flies")
 
 
 ## v0.9.0 MI2: the owner's stone_spike is listed: one unit tall, in its own proportions (a spike, narrower than the

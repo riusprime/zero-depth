@@ -1,7 +1,7 @@
 extends GutTest
 ## v0.8.0 BS1 (owner O5; BOSS_SIGNATURES.md S1-S3): the signature mechanics read in 3D, from the sim (EI-07): the
 ## Gatekeeper's pillars stand as clusters of its stone spikes for their life and sink when the walls go; the Warlord's
-## javelins stand in the floor where they stuck (a code-made 3D javelin until the owner's model is listed) and its
+## javelins stand in the floor where they stuck (the owner's model; a code-made 3D javelin without it) and its
 ## recall clip plays while they stand; the Brood Mother's eggs are 3D eggs with an HP pip and a hatch wobble, the
 ## Hatchling inside hidden; her Egg Storm clip lays before it flings.
 
@@ -32,7 +32,7 @@ func test_the_pillars_stand_as_spikes_where_the_sim_has_them_then_sink() -> void
 	add_child_autofree(spikes)
 	BossLab.start(w, w.actors.index_of(aid), &"shock_lanes")
 	var atk := BossAi.attack_of(w, w.actors.index_of(aid))
-	for t in atk.windup_ticks + 60:
+	for t in atk.windup_ticks + atk.lane_wave_ticks() + 60:
 		w.step(InputFrame.new())
 		spikes.sync(reader)
 	var n := w.bosses.pillar_x.size()
@@ -89,6 +89,37 @@ func test_the_javelin_is_code_made_until_the_owners_model_is_listed() -> void:
 	var box := m.get_aabb()
 	assert_almost_eq(box.size.x, BossSignatureViews.JAVELIN_LENGTH, 0.1, "its length along +X")
 	assert_lt(box.size.y, 0.25, "and thin")
+
+
+func test_the_owners_javelin_lies_along_its_flight_with_his_map_and_a_hot_head() -> void:
+	BossSignatureViews.clear_cache()
+	assert_true(BossSignatureViews.from_model(), "his javelin is listed and loads")
+	var m := BossSignatureViews.javelin_mesh()
+	var box := m.get_aabb()
+	assert_almost_eq(box.position.x, 0.0, 0.01, "its butt at x = 0")
+	assert_almost_eq(
+		box.size.x, BossSignatureViews.JAVELIN_LENGTH, 0.01, "its length along +X, the way it flies"
+	)
+	assert_lt(maxf(box.size.y, box.size.z), 0.3, "and thin across")
+	var arrays := m.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var cols: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
+	var head_hot := 0
+	var shaft_hot := 0
+	for k in verts.size():
+		if verts[k].x > BossSignatureViews.JAVELIN_LENGTH * 0.9 and cols[k].a > 0.99:
+			head_hot += 1
+		if verts[k].x < BossSignatureViews.JAVELIN_LENGTH * 0.5 and cols[k].a > 0.01:
+			shaft_hot += 1
+	assert_gt(head_hot, 0, "its crystal head glows")
+	assert_eq(shaft_hot, 0, "its shaft does not")
+	var view := BossSignatureViews.new()
+	add_child_autofree(view)
+	var node := view.get_node("Javelins") as MultiMeshInstance3D
+	var mat := node.material_override as ShaderMaterial
+	assert_eq(float(mat.get_shader_parameter("textured")), 1.0, "drawn from his colour map")
+	assert_not_null(mat.get_shader_parameter("albedo_tex"))
+	assert_eq(WarlordLooks.javelin(), m, "the cage's javelins are his too")
 
 
 func test_the_warlord_pulls_while_its_javelins_stand() -> void:
@@ -235,10 +266,9 @@ func test_the_quake_pillars_stand_ring_before_each_pulse_and_burst_when_gone() -
 	assert_eq(spikes.strike_count(), strikes + 1, "the gone pillar bursts")
 
 
-## v0.11.0 VX (owner PD-13: new effects use the premade packs): with the pack, the quake rings are pack rims in the
-## telegraph's orange (the growing ring and the radius it hits, held while the warning runs) and the flat bands are not
-## built; the pulse plays a shock pulse and a gone pillar a rock impact, once each.
-func test_vx_the_quake_rings_and_shatter_are_pack_effects() -> void:
+## The quake rings are the flat bands even with the pack (a dark ripple growing to the radius it hits, its faint
+## outline, a thin bright edge only on the pulse; no pack rims), and a gone pillar breaks as the stone slam, once.
+func test_the_quake_rings_are_a_floor_ripple_and_a_shatter_is_a_slam() -> void:
 	var s := _fight(&"gatekeeper", Vector2(7, 2))
 	var w: World = s[0]
 	var aid: int = s[1]
@@ -260,10 +290,10 @@ func test_vx_the_quake_rings_and_shatter_are_pack_effects() -> void:
 	layer.begin(float(w.tick))
 	spikes.draw_fx(layer)
 	layer.finish()
-	assert_true(spikes.quake_pack_on, "the pack draws the rings")
-	assert_eq(spikes.quake_holds.held, 6, "a rim growing and the rim it hits, three pillars")
-	assert_eq(spikes.ring_bands(), 6, "the telegraph's pieces (counted)")
+	assert_eq(spikes.ring_bands(), 6, "a ripple growing and the radius it hits, three pillars")
+	assert_eq(layer.pack_fx.live_count(&"area"), 0, "no pack rims")
 	var impacts := layer.pack_fx.live_count(&"impact")
+	var slams := spikes.slams.started()
 	var o := BossSignatures.pillar_obb(w.bosses, k)
 	var gone: Array[Obb] = [o]
 	w.bosses.remove_pillar(k)
@@ -273,6 +303,5 @@ func test_vx_the_quake_rings_and_shatter_are_pack_effects() -> void:
 	spikes.draw_fx(layer)
 	spikes.draw_fx(layer)  # (once: a second frame starts nothing more)
 	layer.finish()
-	assert_eq(
-		layer.pack_fx.live_count(&"impact"), impacts + 1, "the gone pillar's rock impact, once"
-	)
+	assert_eq(spikes.slams.started(), slams + 1, "the gone pillar breaks as a slam, once")
+	assert_eq(layer.pack_fx.live_count(&"impact"), impacts, "no pack impact")

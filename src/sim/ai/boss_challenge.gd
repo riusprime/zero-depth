@@ -38,6 +38,10 @@ static func hit_mult(w: World, i: int) -> Array[int]:
 	var m := _base_mult(w, i)
 	if BossQuake.stunned(w, i):
 		m = [m[0] * BossQuake.taken_permille(w, i) / 1000, m[1] | SimEvent.TAG_EXPOSED]
+	var sg := BossSiege.taken_permille(w, i)  # The Siege Engine's armour blown off by its own cart
+	if sg != 1000:
+		m = [m[0] * sg / 1000, m[1] | SimEvent.TAG_EXPOSED]
+	m[0] = m[0] * BossWarlord.taken_permille(w, i) / 1000  # The hero fights from inside the Warlord's banner
 	return m
 
 
@@ -124,18 +128,22 @@ static func dash_landing(w: World) -> Vector2:
 static func gap_close_due(w: World, b: int, t: BossTable) -> int:
 	if t.gap_attack < 0 or t.gap_ticks <= 0 or w.player_dead():
 		return -1
-	return BossTwin.own(w, b, t.gap_attack) if w.bosses.gap_t[b] >= t.gap_ticks else -1
+	var k := BossTwin.own(w, b, t.gap_attack) if w.bosses.gap_t[b] >= t.gap_ticks else -1
+	return BossLens.unless_held(w, b, k)  # The Hive Lens dives in no Lattice
 
 
 ## The punish attack's index when it is due now (the player stayed far long enough), else -1.
 static func punish_due(w: World, b: int, t: BossTable) -> int:
 	if t.punish_attack < 0 or t.punish_ticks <= 0 or w.player_dead():
 		return -1
-	return BossTwin.own(w, b, t.punish_attack) if w.bosses.far_t[b] >= t.punish_ticks else -1
+	var k := BossTwin.own(w, b, t.punish_attack) if w.bosses.far_t[b] >= t.punish_ticks else -1
+	k = BossLens.unless_held(w, b, k)  # The Hive Lens's Focus Beam waits out a Lattice
+	return BossSiege.unless_held(w, b, k)  # The Siege Engine's Shockwave waits for cover
 
 
 ## Where an attack aims: the player, led by the boss's lead time at the player's velocity for aimed moves; for
-## dash_read_ticks after a dash, aimed moves go at that dash's landing point instead.
+## dash_read_ticks after a dash, aimed moves go at that dash's landing point instead. The amber Warden's phase-1
+## clock charge leads by its own wind-up left and run (BossWardenAmber.lead_point).
 static func aim_point(w: World, b: int, move: int) -> Vector2:
 	var p := w.player_pos()
 	var t: BossTable = w.boss_tables[w.bosses.table[b]]
@@ -143,6 +151,8 @@ static func aim_point(w: World, b: int, move: int) -> Vector2:
 		return p
 	if w.bosses.dash_t[b] > 0:
 		return Vector2(w.bosses.dash_x[b], w.bosses.dash_y[b])
+	if t.wardens != null and BossWardenAmber.leads_charge(w, b):
+		return BossWardenAmber.lead_point(w, b)
 	if t.lead_ticks <= 0:
 		return p
 	return p + w.vel * t.lead_ticks

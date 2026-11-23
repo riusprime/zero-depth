@@ -16,9 +16,15 @@ extends Node
 const PROCESS_LAST := 1 << 30
 ## Marks a watched pool (the draw census reads it).
 const META := &"empty_draw_cull"
+const TOLD_NONE := 0
+const TOLD_SHOWN := 1
+const TOLD_HIDDEN := 2
 
 var _root: Node
 var _pools: Array[MultiMeshInstance3D] = []
+## What the renderer was last told of each pool (by its place in _pools): TOLD_NONE, TOLD_SHOWN or TOLD_HIDDEN. A pool
+## whose answer is unchanged is not told again: one RenderingServer call a pool a frame was most of this node's time.
+var _told := PackedByteArray()
 var _scanned := false
 
 
@@ -70,6 +76,7 @@ func _on_node_added(n: Node) -> void:
 func _add(n: MultiMeshInstance3D) -> void:
 	n.set_meta(META, true)
 	_pools.append(n)
+	_told.append(TOLD_NONE)
 
 
 func _scan() -> void:
@@ -89,7 +96,21 @@ func _process(_delta: float) -> void:
 		var n := _pools[k]
 		if not is_instance_valid(n):
 			_pools.remove_at(k)
+			_told.remove_at(k)
 			continue
-		k += 1
 		if n.is_inside_tree() and n.is_visible_in_tree():
-			RenderingServer.instance_set_visible(n.get_instance(), not is_empty(n))
+			# is_empty's test, inline and with the count read first (a pool showing none needs no mesh read):
+			# this loop runs over every pool every frame, and the call and the reads were most of its time
+			var mm := n.multimesh
+			var empty := true
+			if mm != null:
+				var shown := mm.visible_instance_count
+				if shown != 0:
+					empty = mm.mesh == null or (shown < 0 and mm.instance_count == 0)
+			var want := TOLD_HIDDEN if empty else TOLD_SHOWN
+			if _told[k] != want:
+				RenderingServer.instance_set_visible(n.get_instance(), want == TOLD_SHOWN)
+				_told[k] = want
+		else:  # Godot tells the renderer itself when the node shows again: ask anew then
+			_told[k] = TOLD_NONE
+		k += 1

@@ -282,16 +282,13 @@ static func apply(a: Node3D, s: Dictionary) -> void:
 	SoloVat.apply(a, s, _pose_of(a))
 
 
-## The avatar's own pose code (the Needle's and the Warden's take a frame time: 0).
+## The avatar's own pose code.
 static func _pose_of(a: Node3D) -> Callable:
-	if a is NeedleAvatar or a is WardenAvatar:
-		return Callable(a, &"_pose").bind(0.0)
 	return Callable(a, &"_pose")
 
 
 ## The inputs each stand-alone kind's pose reads ({private var: [lo, hi]}, or [values...] to pick from; SoloVat.sample).
-## The Needle's velocity is drawn from `rng` first.
-static func ranges(a: Node3D, rng: RandomNumberGenerator) -> Dictionary:
+static func ranges(a: Node3D, _rng: RandomNumberGenerator) -> Dictionary:
 	var states4 := [
 		WorldReader.STATE_MOVE,
 		WorldReader.STATE_WINDUP,
@@ -299,7 +296,22 @@ static func ranges(a: Node3D, rng: RandomNumberGenerator) -> Dictionary:
 		WorldReader.STATE_RECOVER
 	]
 	if a is BombDroneAvatar:
-		return {"_t": [0.0, 40.0], "_rise": [0.0, 1.0], "_armed": [0.0, 1.0], "_fuse": [0.0, 1.0]}
+		return {
+			"_t": [0.0, 40.0],
+			"_rise": [1.0, 1.0, 0.4, 0.0],
+			"_armed": [1.0, 0.5, 0.04, 0.0],
+			"_fuse": [0.0, 1.0],
+			"_lob_s": [-1.0, -1.0, 0.1, 0.3],
+			"_aim": [0.0, 1.0],
+			"_rot": [0.0, TAU],
+			"_glide": [0.0, 1.0],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2(-1.0, 0.0)],
+			"_omega": [-4.0, 4.0],
+			"_hurt_t": [-0.3, BombDroneAvatar.HURT_SECONDS],
+			"_hurt_side": [-1.0, 1.0],
+			"_die_t":
+			[-1.0, -1.0, BombDroneAvatar.DEATH_SECONDS * 0.5, BombDroneAvatar.DEATH_SECONDS],
+		}
 	if a is LensDroneAvatar:
 		return {"_t": [0.0, 40.0], "_rise": [0.0, 1.0], "_charge": [0.0, 1.0]}
 	if a is CinderPriestAvatar:
@@ -332,21 +344,115 @@ static func ranges(a: Node3D, rng: RandomNumberGenerator) -> Dictionary:
 			"_die_t": [-0.6, KilnBeetleAvatar.DEATH_SECONDS],
 			"_state": states4,
 		}
-	if a is NeedleAvatar:
-		var dir := rng.randf() * TAU
+	if a is ArcCasterAvatar:
 		return {
-			"_vel_s": Vector3(cos(dir), 0, sin(dir)) * rng.randf() * 4.0,
 			"_t": [0.0, 40.0],
-			"_walk": [0.0, 1.0],
-			"_phase": [0.0, 1.0],
+			"_wind": [0.0, 0.0, 0.3, 0.8, 1.0],
+			"_cast_s": [-1.0, -1.0, 0.03, 0.15, 0.5],
+			"_rise": [1.0, 1.0, 0.3, 0.0],
+			"_glide": [0.0, 1.0],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2(-1.0, 0.0)],
+			"_step": [0.0, TAU],
+			"_orbit": [0.0, TAU],
+			"_omega": [-4.0, 4.0],
+			"_die_t":
+			[-1.0, -1.0, ArcCasterAvatar.DEATH_SECONDS * 0.4, ArcCasterAvatar.DEATH_SECONDS],
+		}
+	if a is StarWarperAvatar:
+		return {
+			"_t": [0.0, 40.0],
+			"_wind": [0.0, 0.0, 0.5, 0.9, 1.0],
+			"_gone": [0.0, 0.0, 0.5, 1.0],
+			"_slash_s": [-1.0, -1.0, 0.05, 0.2, 0.5],
+			"_rise": [1.0, 1.0, 0.4, 0.0],
+			"_reel": [0.0, 0.0, 1.0],
+			"_glide": [0.0, 1.0],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2(-1.0, 0.0)],
+			"_wave": [0.0, TAU],
+			"_orbit": [0.0, TAU],
+			"_omega": [-4.0, 4.0],
+			"_hurt_t": [-0.3, StarWarperAvatar.HURT_SECONDS],
+			"_hurt_side": [-1.0, 1.0],
+			"_die_t":
+			[-1.0, -1.0, StarWarperAvatar.DEATH_SECONDS * 0.5, StarWarperAvatar.DEATH_SECONDS],
+		}
+	if a is GravityNodeAvatar:
+		return {
+			"_t": [0.0, 40.0],
+			"_draw": [0.0, 1.0],
+			"_beat": [0.0, 1.0],
 			"_rise": [0.0, 1.0],
-			"_brace": [0.0, 1.0],
-			"_charge": [0.0, 1.0],
-			"_kick": [0.0, 1.0],
-			"_heat": [0.0, 1.0],
-			"_tell_p": [0.0, 1.0],
+			"_spin_a": [0.0, TAU],
+			"_spin_b": [0.0, TAU],
+			"_omega": [-4.0, 4.0],
+			"_hurt_t": [-0.3, GravityNodeAvatar.HURT_SECONDS],
+			"_hurt_side": [-1.0, 1.0],
+			"_die_t": [-0.8, GravityNodeAvatar.DEATH_SECONDS],
 			"_state": states4,
 		}
+	if a is FrostSpitterAvatar:
+		return {
+			"_t": [0.0, 40.0],
+			"_phase": [0.0, 1.0],
+			"_speed": [0.0, 3.4],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2.LEFT],
+			"_omega": [-4.0, 4.0],
+			"_stride": [0.0, 1.0],
+			"_coil": [0.0, 1.0],
+			"_tell": [0.0, 1.0],
+			"_rise": [0.0, 1.0],
+			"_spit_t": [-0.3, FrostSpitterAvatar.SPIT_SECONDS],
+			"_hurt_t": [-0.2, FrostSpitterAvatar.HURT_SECONDS],
+			"_hurt_leg": [0, 1, 2, 3],
+			"_die_t": [-0.6, FrostSpitterAvatar.DEATH_SECONDS],
+			"_state": states4,
+		}
+	if a is GlacierTurtleAvatar:
+		return {
+			"_t": [0.0, 40.0],
+			"_phase": [0.0, 1.0],
+			"_speed": [0.0, 1.5],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2.LEFT],
+			"_omega": [-1.2, 1.2],
+			"_stride": [0.0, 1.0],
+			"_coil": [0.0, 1.0],
+			"_tell": [0.0, 1.0],
+			"_rise": [0.0, 1.0],
+			"_bare": [0.0, 1.0],
+			"_shell": [-1, 0, 30, 60],
+			"_slam_t": [-0.3, GlacierTurtleAvatar.SLAM_SECONDS],
+			"_brace_t": [-0.2, GlacierTurtleAvatar.BRACE_SECONDS],
+			"_break_t": [-0.2, GlacierTurtleAvatar.BREAK_SECONDS],
+			"_hurt_t": [-0.2, GlacierTurtleAvatar.HURT_SECONDS],
+			"_hurt_leg": [0, 1, 2, 3],
+			"_die_t": [-0.6, GlacierTurtleAvatar.DEATH_SECONDS],
+			"_state": states4,
+		}
+	if a is NeedleAvatar or a is SniperAvatar:
+		var legged := {
+			"_t": [0.0, 40.0],
+			"_phase": [0.0, 1.0],
+			"_speed": [0.0, 3.6],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2.LEFT],
+			"_omega": [-4.0, 4.0],
+			"_stride": [0.0, 1.0],
+			"_brace": [0.0, 1.0],
+			"_charge": [0.0, 1.0],
+			"_tell": [0.0, 1.0],
+			"_rise": [0.0, 1.0],
+			"_heat": [0.0, 1.0],
+			"_shot_t": [-0.3, 0.5],
+			"_burst_t": [-0.3, 0.55],
+			"_vent_t": [-0.3, 0.6],
+			"_hurt_t": [-0.2, 0.35],
+			"_hurt_leg": [0, 1, 2],
+			"_die_t": [-0.6, 1.0],
+			"_state": states4,
+		}
+		if a is SniperAvatar:
+			legged["_settle_t"] = [-0.2, SniperAvatar.SETTLE_SECONDS]
+			legged["_double"] = [false, true, false]
+		return legged
 	if a is RockLurkerAvatar:
 		return {
 			"_t": [0.0, 40.0],
@@ -365,6 +471,22 @@ static func ranges(a: Node3D, rng: RandomNumberGenerator) -> Dictionary:
 			"_rise": [0.0, 1.0],
 			"_flinch_t": [0.0, 0.25],
 			"_flinch_s": [0.0, 1.5],
+		}
+	if a is WireWeaverAvatar:
+		return {
+			"_t": [0.0, 40.0],
+			"_phase": [0.0, 1.0],
+			"_speed": [-3.0, 3.0],
+			"_omega": [-2.0, 2.0],
+			"_stride": [0.0, 1.0],
+			"_coil": [0.0, 1.0],
+			"_tell": [0.0, 1.0],
+			"_rise": [0.0, 1.0],
+			"_plant_t": [-0.4, WireWeaverAvatar.RELOAD_FROM + WireWeaverAvatar.RELOAD_SECONDS],
+			"_hurt_t": [-0.2, WireWeaverAvatar.HURT_SECONDS],
+			"_hurt_leg": [0, 1, 2, 3],
+			"_die_t": [-0.6, WireWeaverAvatar.DEATH_SECONDS],
+			"_state": states4,
 		}
 	if a is ScrapHoundAvatar:
 		return {
@@ -403,14 +525,19 @@ static func ranges(a: Node3D, rng: RandomNumberGenerator) -> Dictionary:
 	if a is WardenAvatar:
 		return {
 			"_t": [0.0, 40.0],
-			"_phase": [0.0, 40.0],
-			"_walk": [0.0, 1.0],
+			"_phase": [0.0, 1.0],
+			"_speed": [0.0, 2.2],
+			"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2.LEFT],
+			"_omega": [-3.0, 3.0],
+			"_stride": [0.0, 1.0],
 			"_raise": [0.0, 1.0],
 			"_slam": [0.0, 1.0],
 			"_rise": [0.0, 1.0],
 			"_shake": [0.0, 1.0],
 			"_windup": [0.0, 1.0],
-			"_state": [WorldReader.STATE_MOVE, WorldReader.STATE_WINDUP],
+			"_hurt_t": [-0.3, WardenAvatar.HURT_SECONDS],
+			"_die_t": [-0.8, WardenAvatar.DEATH_SECONDS],
+			"_state": states4,
 		}
 	push_error("VatVerify.ranges: no ranges for %s" % a)
 	return {}

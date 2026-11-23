@@ -14,7 +14,7 @@ shape_params = {
 "pull_mps": 1.7,
 "pull_seconds": 3.0,
 "push_mps": 1.4,
-"push_seconds": 2.0
+"push_seconds": 0.5
 }
 telegraph_seconds = 1.0
 active_seconds = 0.0167
@@ -40,7 +40,7 @@ shape_params = {
 "pull_mps": 2.0,
 "pull_seconds": 3.0,
 "push_mps": 1.7,
-"push_seconds": 2.0
+"push_seconds": 0.5
 }
 telegraph_seconds = 1.0
 active_seconds = 0.0167
@@ -193,36 +193,36 @@ entry_attack = &""
 speed_permille = 1000
 cooldown_permille = 1000
 stream_attack = &"ring_stream"
-stream_every_seconds = 2.2
+stream_every_seconds = 2.6
 wave_attack = &"crossing_wave"
-wave_every_seconds = 3.5
+wave_every_seconds = 5.0
 wave_count = 1
 
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 660
 attack_ids = PackedStringArray("the_pull", "undertow_2", "shell_slam")
-entry_attack = &"the_pull"
+entry_attack = &""
 speed_permille = 900
 cooldown_permille = 650
 stream_attack = &"ring_stream"
-stream_every_seconds = 1.9
+stream_every_seconds = 2.4
 wave_attack = &"crossing_wave"
-wave_every_seconds = 3.5
-wave_count = 2
+wave_every_seconds = 5.0
+wave_count = 1
 
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 330
 attack_ids = PackedStringArray("the_pull_3", "undertow_2", "shell_slam")
-entry_attack = &"the_pull_3"
+entry_attack = &""
 speed_permille = 990
 cooldown_permille = 487
-stream_attack = &"ring_stream_3"
-stream_every_seconds = 1.6
-wave_attack = &"crossing_wave"
-wave_every_seconds = 3.5
-wave_count = 2
+stream_attack = &"ring_stream"
+stream_every_seconds = 2.2
+wave_attack = &""
+wave_every_seconds = 0.0
+wave_count = 0
 
 [resource]
 script = ExtResource("3_boss")
@@ -263,7 +263,53 @@ dash_read_seconds = 0.5
 gap_close_attack = &"undertow"
 gap_close_distance_m = 10.0
 gap_close_seconds = 2.0
-signature_every_seconds = 8.0
-signature_first_seconds = 3.0
+hazard = {
+"attack_ids": ["crossing_wave"],
+"kind": "slow",
+"life_seconds": 10.0,
+"look": "venom",
+"max_count": 5,
+"max_cover_permille": 250,
+"radius_m": 2.0,
+"slow_permille": 600,
+"warn_seconds": 0.8
+}
+dance = {
+"beat_first_2_seconds": 6.0,
+"beat_first_3_seconds": 8.0,
+"beat_first_seconds": 6.0,
+"beat_gap_2_seconds": 8.0,
+"beat_gap_3_seconds": 10.0,
+"beat_gap_seconds": 12.0,
+"calm_seconds": 3.0,
+"high_tide_cast_seconds": 2.5,
+"high_tide_gap_m": 12.0,
+"high_tide_permille_per_second": 60,
+"high_tide_phase": 2,
+"high_tide_radius_m": 4.0,
+"high_tide_seconds": 6.0,
+"high_tide_tick_seconds": 0.5,
+"maelstrom_eye_m": 1.5,
+"maelstrom_grace_seconds": 3.0,
+"maelstrom_in_permille": 250,
+"maelstrom_permille": 400,
+"maelstrom_phase": 2,
+"maelstrom_spin_permille": 450,
+"maelstrom_throw_m": 10.0,
+"maelstrom_throw_seconds": 0.5,
+"pull_late_permille": 850,
+"pull_late_phase": 2,
+"pull_permille": 750,
+"push_clear_m": 3.0,
+"push_m": 4.0,
+"resume_seconds": 1.5,
+"riptide_casts": 4,
+"riptide_last_warn_seconds": 3.0,
+"riptide_permille": 350,
+"riptide_phase": 1,
+"riptide_run_margin_permille": 1300,
+"riptide_warn_seconds": 2.5,
+"riptide_wave_seconds": 0.6
+}
 save_order = 1
 id = &"tidecaller"

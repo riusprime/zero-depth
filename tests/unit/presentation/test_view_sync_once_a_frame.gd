@@ -235,3 +235,40 @@ func test_an_actor_is_drawn_between_the_last_two_ticks_when_a_frame_ran_several(
 					"a two-tick frame: the interpolation starts from the tick before the latest"
 				)
 				assert_eq(probe_still.seen, [], "a still actor is left as it is")
+
+
+## Which form draws each shot is kept per tick by the views' reader: every answer equals the sim's own, on every tick
+## of a fight with darts and plain orbs in the air, asked twice in a sync and again after a settle.
+func test_the_kept_shot_kinds_are_the_sims_on_every_tick() -> void:
+	var mx4 := load("res://tests/support/mx4_world.gd")
+	var w: World = mx4.world(&"gun", [&"gun_seekers", &"venom_core"])
+	var plain := WorldReader.new(w)
+	var latched := LatchedReader.new(plain)
+	var asked := 0
+	for t in 90:
+		mx4.run(w, 1, 0, mx4.S if t % 20 == 0 else 0)
+		latched.note()
+		latched.settle()
+		for twice in 2:
+			for i in plain.projectile_count():
+				var want := [
+					plain.projectile_is_bomb(i),
+					plain.projectile_is_pellet(i),
+					plain.projectile_is_disc(i),
+					plain.projectile_is_dart(i),
+					plain.projectile_is_void(i),
+					plain.projectile_is_wave(i),
+					plain.projectile_is_wisp(i),
+				]
+				var got := [
+					latched.projectile_is_bomb(i),
+					latched.projectile_is_pellet(i),
+					latched.projectile_is_disc(i),
+					latched.projectile_is_dart(i),
+					latched.projectile_is_void(i),
+					latched.projectile_is_wave(i),
+					latched.projectile_is_wisp(i),
+				]
+				assert_eq(got, want, "tick %d shot %d" % [w.tick, i])
+				asked += int(want[3])
+	assert_gt(asked, 0, "darts flew")

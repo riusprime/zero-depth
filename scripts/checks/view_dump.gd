@@ -1,9 +1,11 @@
 extends SceneTree
 ## A frame-by-frame dump of the views that read the sim in bulk and rest while nothing of their kind happens (the
 ## telegraphs, the statuses on the actors, the shard gems and drops, the burn tints, the ruins, variant and canyon
-## kinds' views), over one seeded fight, so the dump of one tree can be compared with another's line by line. Every
-## frame: one tick, the views' sync on a LatchedReader (noted each tick and settled, as the game does), then the
-## views' own _process at 1/60 s. Statuses, shard payouts and drops are written into the fight on fixed ticks.
+## kinds' views; the blade, the Laser, the Lance, the remnants, the hero's skill, the boss strikes, spikes and
+## challenge, which rest through it), over one seeded fight, so the dump of one tree can be compared with another's
+## line by line. Every frame: one tick, the views' sync on a LatchedReader (noted each tick and settled, as the game
+## does), then the views' own _process at 1/60 s. Statuses, shard payouts and drops are written into the fight on
+## fixed ticks.
 ## Each line: the frame, the view, and per node in tree order (child index path) whether it shows in the tree, its
 ## global transform, a mesh's surface sizes and a multimesh's drawn instances. The flying shard gems are dumped as
 ## the gems themselves (place and turn, sorted), from their nodes or their instances, whichever the tree draws them
@@ -84,6 +86,18 @@ func _initialize() -> void:
 	stage.add_child(variants)
 	var canyon := CanyonShoreViews.new()
 	stage.add_child(canyon)
+	var more := []  # Views that rest while nothing of theirs is in the fight: their resting state, frame by frame
+	for v: Array in [
+		["laser", LaserView.new()],
+		["lances", LanceView.new()],
+		["remnants", RemnantViews.new()],
+		["skill_fx", SkillVisuals.new()],
+		["spikes", StoneSpikeViews.new()],
+		["strikes", BossStrikeViews.new()],
+		["challenge", BossChallengeView.new()],
+	]:
+		stage.add_child(v[1])
+		more.append(v)
 	_views = [
 		["actors", actors],
 		["telegraphs", tg],
@@ -93,7 +107,9 @@ func _initialize() -> void:
 		["ruins_rocks_fx", ruins],
 		["variant_fx", variants],
 		["canyon_shore_fx", canyon],
+		["kit", kit],
 	]
+	_views.append_array(more)
 
 
 func _process(_delta: float) -> bool:
@@ -233,7 +249,10 @@ static func _surfaces(m: Mesh) -> String:
 		return "[%s]" % m.get_class()  # A primitive: its shape is its class and its node's transform
 	var s := "["
 	for k in m.get_surface_count():
-		s += "%d;" % m.surface_get_array_len(k)
+		if m is ArrayMesh:
+			s += "%d;" % (m as ArrayMesh).surface_get_array_len(k)
+		else:  # (an ImmediateMesh's surfaces: their vertices)
+			s += "%d;" % (m.surface_get_arrays(k)[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
 	return s + "]"
 
 

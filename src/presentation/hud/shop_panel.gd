@@ -33,6 +33,10 @@ const CARD_GAP := 24
 const PLATE_GAP := 64
 const PLATE_W := 512.0
 const PRICE_SIZE := 24
+## The stock's card boxes kept built ahead (one per stock slot, never shown): opening the shop, or a buy or a reroll
+## re-rendering it, takes them instead of building every card in that frame; the next ones are built, and the
+## replaced ones freed, one a frame after it (building and freeing the cards was a third of the panel's open frame).
+const SPARE_SLOTS := 4
 
 var heal_tile := ShopTile.new("ShopHeal", PLATE_W)
 var reroll_tile := ShopTile.new("ShopReroll", PLATE_W)
@@ -54,6 +58,9 @@ var _limit := false
 ## cleared once the sim has stepped past the tick it was sent on (the pick read, answered or refused) or on a close.
 var _sent_tick := 0
 var _tick := 0
+## Built card boxes not shown yet, by stock slot (SPARE_SLOTS), and the replaced boxes still to free.
+var _spares := {}
+var _spent: Array[Node] = []
 
 
 func _init() -> void:
@@ -106,6 +113,50 @@ func _init() -> void:
 	col.add_child(hint_gap)
 	col.add_child(_hint)
 	visible = false
+	for k in SPARE_SLOTS:
+		_spares[k] = _build_box(k)
+	set_process(false)
+
+
+## One frame's upkeep after a render: free one replaced box, else build one missing spare.
+func _process(_delta: float) -> void:
+	if not _spent.is_empty():
+		_spent.pop_back().free()
+		return
+	for k in SPARE_SLOTS:
+		if not _spares.has(k):
+			_spares[k] = _build_box(k)
+			return
+	set_process(false)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:  # The boxes outside the tree go with the panel
+		for b: Node in _spares.values():
+			b.free()
+		_spares.clear()
+		for b in _spent:
+			b.free()
+		_spent.clear()
+
+
+## The nodes the panel keeps outside the tree on purpose (its spare boxes and the replaced ones still to free), each
+## with everything under it. They go with the panel (the HUD is built anew each floor); an orphan check counts the
+## others (tests/e2e/test_e2e_damage_soak.gd).
+func idle_nodes() -> int:
+	var n := 0
+	for b: Node in _spares.values():
+		n += _subtree(b)
+	for b in _spent:
+		n += _subtree(b)
+	return n
+
+
+static func _subtree(n: Node) -> int:
+	var count := 1
+	for c in n.get_children(true):
+		count += _subtree(c)
+	return count
 
 
 ## The header: the sigil and the title at the left; the buys left, their pips, a hairline and the wallet at the right.
@@ -226,8 +277,10 @@ func buys_at_limit() -> bool:
 func _render(reader: WorldReader, s: Dictionary) -> void:
 	_entries.clear()
 	for c in _cards.get_children():
+		# Out of the panel now (the panel re-renders from the tick, never from a child's signal); freed in a later frame
 		c.get_parent().remove_child(c)
-		c.free()  # now, not at the frame's end: the panel re-renders from the tick, never from a child's signal
+		_spent.append(c)
+	set_process(true)
 	_heading.set_text(tr("SHOP_TITLE"))
 	_shards_cache = reader.shards()
 	_shards.text = str(_shards_cache)
@@ -254,30 +307,15 @@ func _render(reader: WorldReader, s: Dictionary) -> void:
 
 
 func _add_card(reader: WorldReader, k: int, c: Dictionary) -> void:
-	var box := VBoxContainer.new()
-	box.name = "ShopCard%d" % (k + 1)
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.add_theme_constant_override("separation", 4)
-	var slot := PickSlot.new(k, CARD_SCALE)
-	box.add_child(slot)
-	# The price tag hung under the card: Astral's shard and the price, short hairlines either side.
-	var row := HBoxContainer.new()
-	row.name = "PriceTag"
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	row.add_theme_constant_override("separation", 8)
-	var icon := ShardIcon.new(22.0, true)
-	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var price := Label.new()
-	price.add_theme_font_override("font", AstralCardArt.serif(600, 1))
-	price.add_theme_font_size_override("font_size", PRICE_SIZE)
-	price.add_theme_color_override("font_outline_color", Color(AstralChrome.INK, 0.6))
-	price.add_theme_constant_override("outline_size", 3)
-	price.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	row.add_child(icon)
-	row.add_child(price)
-	row.draw.connect(_draw_tag.bind(row))
-	box.add_child(row)
+	var box: VBoxContainer = _spares.get(k)
+	if box != null:
+		_spares.erase(k)
+	else:
+		box = _build_box(k)
+	var slot := box.get_child(0) as PickSlot
+	var row := box.get_child(1)
+	var icon := row.get_child(0) as ShardIcon
+	var price := row.get_child(1) as Label
 	_cards.add_child(box)
 	var sold: bool = c["sold"]
 	var ok: bool = not sold and c["can_apply"] and c["affordable"] and not _limit
@@ -303,12 +341,41 @@ func _add_card(reader: WorldReader, k: int, c: Dictionary) -> void:
 	icon.tint = POOR if poor else AstralCardArt.ACCENT
 	slot.modulate = Color(1, 1, 1, 1.0 if ok else 0.45)
 	slot.set_meta(GameCursor.META_INVALID, not ok)  # INVALID over a card you can't buy
-	var at := _entries.size()
-	slot.hovered.connect(func(_i: int) -> void: _set_focus(at))
-	slot.clicked.connect(func(_i: int) -> void: _act(at))
 	_entries.append(
 		{"value": k + 1, "enabled": ok, "row": 0, "focus": slot.set_focused, "node": box}
 	)
+
+
+## Stock slot k's box, not shown yet: the card (PickSlot) and its price tag. Its card is entry k (the cards are the
+## first entries, in stock order).
+func _build_box(k: int) -> VBoxContainer:
+	var box := VBoxContainer.new()
+	box.name = "ShopCard%d" % (k + 1)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_constant_override("separation", 4)
+	var slot := PickSlot.new(k, CARD_SCALE)
+	box.add_child(slot)
+	# The price tag hung under the card: Astral's shard and the price, short hairlines either side.
+	var row := HBoxContainer.new()
+	row.name = "PriceTag"
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	row.add_theme_constant_override("separation", 8)
+	var icon := ShardIcon.new(22.0, true)
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var price := Label.new()
+	price.add_theme_font_override("font", AstralCardArt.serif(600, 1))
+	price.add_theme_font_size_override("font_size", PRICE_SIZE)
+	price.add_theme_color_override("font_outline_color", Color(AstralChrome.INK, 0.6))
+	price.add_theme_constant_override("outline_size", 3)
+	price.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	row.add_child(icon)
+	row.add_child(price)
+	row.draw.connect(_draw_tag.bind(row))
+	box.add_child(row)
+	slot.hovered.connect(func(_i: int) -> void: _set_focus(k))
+	slot.clicked.connect(func(_i: int) -> void: _act(k))
+	return box
 
 
 func _render_services(s: Dictionary) -> void:

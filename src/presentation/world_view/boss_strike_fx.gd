@@ -1,9 +1,9 @@
 class_name BossStrikeFx
 extends RefCounted
 ## v0.8.0 AV part 2: BossStrikeViews' share of the effects layer (VfxCore): each strike's sprites (debris, dust, smoke,
-## sparks, flames from the owner's atlases), its light (merged, into the 10-light pool), its floor marks (the decal
-## cap) and its explosions and acid splats (VfxLayer.burst: the frame's burst budget). Thinned with the layer's
-## density. Presentation only.
+## sparks, flames from the owner's atlases), its light (merged, into the 10-light pool) and its floor marks (the decal
+## cap). Thinned with the layer's density. Presentation only. The stone impacts (craters, landings, shells, the
+## swings' dust) are BossStrikeImpacts' slams, with no fire, smoke or light here.
 ## VFX_PACK R27, R36-R39: the strikes' decoration is the pack's (BossPackHold: each effect starts once per
 ## strike, the held ones follow the strike while it lasts); a full family keeps that instance's old sprites. The
 ## strikes' shapes, rocks, floor marks, lights and hit areas are untouched. A const to switch the old look back on.
@@ -15,6 +15,17 @@ const DUST_LIFE_S := 1.1
 const FLAME_GAP_M := 1.0
 const FLAMES_PER_LANE := 8
 const FLAME_SCALE := 0.4
+## Looks whose strikes raise no dust at the body's feet (the Wardens' stone knights strike clean); an arc of these
+## throws sparks instead.
+const NO_DUST: Array[StringName] = [&"tw_sweep", &"tw_charge", &"tw_overhead"]
+## The rail's blast (bx_rail) in dull embers, as its streak (BossStrikeShapes.RAIL_CORE).
+## The rail's blast at the muzzle (m) when the owner's streak draws the shot.
+const RAIL_MUZZLE_M := 2.0
+const RAIL_COLORS := {
+	&"primary": Color(0.95, 0.52, 0.24),
+	&"secondary": Color(0.7, 0.28, 0.12),
+	&"tertiary": Color(0.32, 0.12, 0.06)
+}
 
 
 static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void:
@@ -31,45 +42,16 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 		var u := clampf(age / life, 0.0, 1.0)
 		match s["kind"]:
 			&"crater", &"crack_impact", &"eruption":
+				# The impact itself is the stone slam (BossStrikeImpacts); the floor keeps its crack mark
 				for k in (s["discs"] as Array).size():
 					var d: Array = s["discs"][k]
-					var c := SimPlane.to_3d(d[0])
-					var r := float(d[1])
-					var smoke := true
-					if hold != null:  # The pack's burst and dust (the rocks and the debris stay)
-						var hit := (
-							&"bx_impact_b" if s["kind"] == &"crack_impact" else &"bx_impact_a"
-						)
-						hold.once(_key(s, k, 0), hit, c, clampf(r / 3.0, 0.5, 2.5), _warm(glow))
-						smoke = not hold.once(
-							_key(s, k, 1),
-							&"bx_smoke_big",
-							c + Vector3.UP * 0.2,
-							clampf(r / 2.0, 0.6, 2.0),
-							{&"primary": BossStrikeShapes.DUST},
-							DUST_LIFE_S
-						)
-					_dust_ring(layer, c, r, age, sd + k, 8, smoke)
-					_rock_burst(layer, c, float(d[1]), age, sd + k)
-					layer.light_merged(
-						c + Vector3.UP * 0.8, glow, 3.0 * (1.0 - u) * (1.0 - u), 6.0, 2.0
-					)
 					layer.mark(
 						BossStrikeViews.MARK_BASE + sd * 8 + k,
 						crack_mark(),
-						c,
+						SimPlane.to_3d(d[0]),
 						float(d[1]) * 1.1,
 						BossStrikeViews.CRACK_MARK
 					)
-			&"shell", &"acid_splat":
-				for k in (s["discs"] as Array).size():
-					var d: Array = s["discs"][k]
-					if fx != null and d.size() > 2 and bool(d[2]):
-						var kind := &"fire" if s["kind"] == &"shell" else &"venom"
-						# The Mortar Grid's shells explode without the pack's Smoke
-						fx.burst_hide = ["Smoke"] if s["look"] == &"se_mortar" else []
-						fx.burst(kind, SimPlane.to_3d(d[0]), float(d[1]), u, sd + k)
-						fx.burst_hide = []
 			&"javelins":
 				for k in (s["discs"] as Array).size():
 					var d: Array = s["discs"][k]
@@ -107,8 +89,14 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					minf(float(g[2]), float(g[1]) + 16.0),
 					clampf(age / (10.0 if steam else 24.0), 0.0, 1.0)
 				)
-				var puffs := true
-				if hold != null:  # A pulse of rings (and thin smoke for steam) in place of the puff ring
+				if s.get("look", &"") == &"se_shock":  # One ring of the floor's dust (BossStrikeShapes), no pulse or light
+					continue
+				var vent: bool = s.get("look", &"") == &"fd_vent"  # Stone thrown out (BossStrikeImpacts), a wisp of steam
+				var puffs := not vent
+				if vent and hold != null:
+					var wisp := clampf(minf(float(g[2]), float(g[1]) + 16.0) * 0.12, 0.4, 1.2)
+					hold.once(_key(s, 0, 4), &"bx_smoke_thin", c, wisp, {}, DUST_LIFE_S)
+				elif hold != null:  # A pulse of rings (and thin smoke for steam) in place of the puff ring
 					var reach := clampf(minf(float(g[2]), float(g[1]) + 16.0) * 2.0 / 4.5, 0.5, 6.0)
 					puffs = not hold.once(
 						_key(s, 0, 3),
@@ -133,12 +121,15 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 						1.0 if steam else 0.5,
 						&"steam" if steam and VfxCore.has_tex("fx_steam_puffs") else &"smoke"
 					)
-				layer.light_merged(c + Vector3.UP, glow, 3.0 * (1.0 - u), 8.0, 2.0)
+				if not vent:
+					layer.light_merged(c + Vector3.UP, glow, 3.0 * (1.0 - u), 8.0, 2.0)
 			&"dust_arc", &"steel_arc":
 				var g: Array = s["arc"]
 				var mid := (float(g[3]) + float(g[4])) * 0.5
 				var tip := SimPlane.to_3d(g[0] + Vector2(cos(mid), sin(mid)) * float(g[2]))
-				if s["kind"] == &"steel_arc":
+				if BossStrikeImpacts.ARC_KICKS.has(s.get("look", &"")):
+					continue  # Its dust is the grit and the low kick along the arc (BossStrikeImpacts)
+				if s["kind"] == &"steel_arc" or NO_DUST.has(s.get("look", &"")):
 					_sparks(layer, tip, age, sd, 10, Color(1.0, 0.8, 0.5))
 					layer.light_merged(tip + Vector3.UP * 0.6, glow, 2.0 * (1.0 - u), 5.0, 2.0)
 				elif (
@@ -163,6 +154,11 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 						SimPlane.to_3d(o.center, 0.8), glow, 2.5 * (1.0 - age / 10.0), 7.0, 3.0
 					)
 			&"beam", &"rail":
+				if s.get("look", &"") == &"cj_verdict":
+					continue  # The pendulum's drop is a stone slam with a gold flash (BossStrikeImpacts)
+				if BossStrikeShapes.NO_BEAM.has(s.get("look", &"")):
+					continue  # The swords' cut is the blade itself (WardenBladeViews): no sparks, no light
+				var focus: bool = s.get("look", &"") == &"hl_beam"  # its shards are BossStrikeImpacts'
 				var li := 0
 				for lane: Obb in s["lanes"]:
 					var on: bool = (after < 0.0 and s["kind"] == &"beam") or age < 10.0
@@ -170,14 +166,26 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					var near := SimPlane.to_3d(lane.center - lane.axis_u * lane.half.x, 0.7)
 					li += 1
 					if on and hold != null and s["kind"] == &"rail":  # The rail's blast along its lane
-						var bn := hold.hold(_key(s, li, 6), &"bx_rail", near, 1.0, {}, false)
+						var bn := hold.hold(
+							_key(s, li, 6), &"bx_rail", near, 1.0, RAIL_COLORS, false
+						)
 						if bn != null:
+							# With the owner's streak the blast is only the muzzle's, a fixed length: the
+							# streak is the shot down the lane, so nothing is stretched along it.
+							var end := far
+							if s.has("streak"):
+								end = near.lerp(far, minf(RAIL_MUZZLE_M / lane.half.x * 0.5, 1.0))
 							BossPackHold.beam_place(
-								bn, near, far, lane.half.y, BossPackHold.RAIL_NATIVE_R
+								bn, near, end, lane.half.y, BossPackHold.RAIL_NATIVE_R
 							)
-					if on:
-						_sparks(layer, far, age, sd, 8, glow)
-						layer.light_merged(near.lerp(far, 0.3), glow, 4.0, 8.0, 3.0)
+					var rail: bool = s["kind"] == &"rail"
+					if on and focus:
+						layer.light_merged(near.lerp(far, 0.3), glow, 1.1, 6.0, 2.0)
+					elif on:
+						_sparks(layer, far, age, sd, 4 if rail else 8, glow)
+						layer.light_merged(
+							near.lerp(far, 0.3), glow, 2.0 if rail else 4.0, 8.0, 3.0
+						)
 					if s["kind"] == &"rail":
 						var n := int(lane.half.x * 2.0 / 3.0)
 						for k in n:
@@ -208,7 +216,7 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					var p := SimPlane.to_3d(s["to"])
 					_sparks(layer, p, age, sd, 8, Color(1.0, 0.75, 0.4))
 					layer.light_merged(p + Vector3.UP * 0.4, glow, 1.6, 4.0, 2.0)
-					if hold != null:  # A small puff of dust every so often along the skid
+					if hold != null and not NO_DUST.has(s.get("look", &"")):  # A puff of dust now and then
 						hold.once(
 							_key(s, int(age / 14.0), 7),
 							&"bx_smoke_dust",
@@ -256,11 +264,6 @@ static func _key(s: Dictionary, k: int, role: int) -> Vector3i:
 	return Vector3i(int(s["tick"]) * 16 + role, int(s["seed"]), k)
 
 
-## The strike glow as a burst's colours: the glow warm and its pale form.
-static func _warm(c: Color) -> Dictionary:
-	return {&"primary": c.lightened(0.55), &"secondary": c}
-
-
 static func _tint(c: Color) -> Dictionary:
 	return {&"primary": c.lightened(0.4), &"secondary": c, &"tertiary": c.darkened(0.2)}
 
@@ -298,27 +301,10 @@ static func _dust_ring(
 			)
 
 
-## The cracks a crater or a javelin leaves (the owner's fx_ground_cracks; the code's scorch without it).
+## The cracks a crater or a javelin leaves: fx_ground_cracks thinned to dark lines like the stone slam's (the code's
+## scorch without it).
 static func crack_mark() -> StringName:
-	return &"cracks" if VfxCore.has_tex("fx_ground_cracks") else &"scorch"
-
-
-## The owner's rock burst (fx_rock_burst, seen from the side) blasting up out of a crater `r` round: it
-## grows over its first ticks and fades by 26. Thinned with the layer's density like the rest.
-static func _rock_burst(layer: VfxCore, c: Vector3, r: float, age: float, sd: int) -> void:
-	var t := clampf(age / 26.0, 0.0, 1.0)
-	if t >= 1.0 or not VfxCore.has_tex("fx_rock_burst") or VfxCore.h(sd + 30, 0) > layer.density:
-		return
-	var grow := 1.0 - (1.0 - minf(age / 6.0, 1.0)) * (1.0 - minf(age / 6.0, 1.0))
-	var s := clampf(r * 1.5, 1.2, 5.0) * (0.55 + 0.45 * grow)
-	layer.sprite(
-		&"rockburst",
-		c + Vector3.UP * s * 0.42,
-		s,
-		Color(1.0, 1.0, 1.0, (1.0 - t * t) * minf(age / 2.0 + 0.3, 1.0)),
-		posmod(sd, 4),
-		0.0
-	)
+	return &"crack_lines" if VfxCore.has_tex("fx_ground_cracks") else &"scorch"
 
 
 static func _puff_ring(

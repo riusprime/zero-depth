@@ -87,28 +87,18 @@ var arena_template := 0
 ## on for the bosses added since, after them, so a saved boss index never moves.
 @export var save_order := 0
 ## BOSSES_4_5.md N2; BossTwin: a boss with a twin_kind_id (BossSchemas.TWIN_KINDS) rises as two bodies,
-## twin_distance_m apart, sharing one HP; their chain is held between chain_min_m and chain_max_m (within the
-## approved 3..9 m) and burns a player touching it (chain_width_m wide) chain_burn every chain_burn_seconds; the twin
+## twin_distance_m apart, sharing one HP and fighting apart (nothing joins them); the twin
 ## keeps flank_m from the player; a hit on one body speeds the other to anger_speed_permille for anger_seconds.
 @export var twin_kind_id: StringName
 @export var twin_distance_m := 5.0
-@export var chain_min_m := 3.0
-@export var chain_max_m := 9.0
-@export var chain_burn := 12
-@export var chain_burn_seconds := 0.5
-@export var chain_width_m := 0.5
 @export var flank_m := 4.5
 @export var anger_speed_permille := 1400
 @export var anger_seconds := 3.0
 ## The twin's own moveset (the boss's is every other attack), the bolt the body
-## standing back casts every twin_bolt_seconds (an attack in no phase), and phase 3's swap: every twin_expose_seconds
-## one body is exposed (takes twin_expose_permille) and the other guarded (twin_guard_permille).
+## standing back casts every twin_bolt_seconds (an attack in no phase).
 @export var twin_attack_ids := PackedStringArray()
 @export var twin_bolt_attack: StringName
 @export var twin_bolt_seconds := 4.0
-@export var twin_expose_seconds := 10.0
-@export var twin_expose_permille := 1500
-@export var twin_guard_permille := 500
 ## The quake pillars this boss raises from a phase on (empty
 ## = none), and the recap line of a pulse that kills.
 @export var quake := {}
@@ -116,6 +106,26 @@ var arena_template := 0
 ## The hazards this boss leaves on its floor (empty: none).
 @export var hazard := {}
 @export var hazard_cause_key: StringName
+## The time mechanics this boss fights with (TimeRules.SPEC; empty: none): the Clockwork Judge's Time Wave, hour
+## orbs, stopped gears, slow fields, Rewind and its own return.
+@export var time := {}
+## The dance this boss fights with (DanceRules.SPEC; empty: none): the Tidecaller's stronger Pull, Riptide, High
+## Tide and the Maelstrom.
+@export var dance := {}
+## The Twin Wardens' own mechanics (WardensRules.SPEC; empty: none): the amber Warden's side dash and sword combo, the
+## violet Warden's Mirror Ward and Shadow Swords, the last phase's ward and Through the Rift.
+@export var wardens := {}
+## The siege this boss fights with (SiegeRules.SPEC; empty: none): the Siege Engine's Target Lock and its boulders,
+## the Shockwave that needs cover, and the Doom Shell's ammo cart.
+@export var siege := {}
+## The forge this boss fights with (ForgeRules.SPEC; empty: none): the Foundry's Forged Plate, its cooling slag,
+## Overpressure and the scald gauge.
+@export var forge := {}
+## The Warlord's own mechanics (WarlordRules.SPEC; empty: none): the War Banner and the Duel's javelin cage.
+@export var warlord := {}
+## The lattice this boss fights with (LatticeRules.SPEC; empty: none): the Hive Lens fed by its drones, its Focus Beam
+## cutting them, the burnt glass and the Lattice of light.
+@export var lattice := {}
 
 
 func category() -> StringName:
@@ -150,6 +160,13 @@ func validate() -> Array[ValidationIssue]:
 	HardRules.validate_streams(self, issues)  # The ring stream and the waves
 	QuakeRules.validate(self, issues)  # The quake pillars
 	HazardRules.validate(self, issues)  # The arena hazards
+	TimeRules.validate(self, issues)  # The Clockwork Judge's time mechanics
+	DanceRules.validate(self, issues)  # The Tidecaller's dance
+	WardensRules.validate(self, issues)  # The Twin Wardens' own mechanics
+	SiegeRules.validate(self, issues)  # The Siege Engine's cover and Doom Shell
+	ForgeRules.validate(self, issues)  # The Foundry's forge
+	WarlordRules.validate(self, issues)  # The Warlord's banner and duel
+	LatticeRules.validate(self, issues)  # The Hive Lens's drones, burnt glass and Lattice
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1
@@ -208,9 +225,8 @@ func _check_cadence(issues: Array[ValidationIssue]) -> void:
 			)
 
 
-## BOSSES_4_5.md N2: a twin's kind is known; its chain stays within 3..9 m (min below max, the twin rising
-## within them), burns a real amount on a real clock along a strip; its anger speeds a body (1000..2000 per mille) for
-## a real time; and it has a Chain Sweep whose late cause names the burn. Crossfire and Chain Sweep need a twin.
+## BOSSES_4_5.md N2: a twin's kind is known; it rises a real distance away; its anger speeds a body (1000..2000 per
+## mille) for a real time. Crossfire and the Sword Lane (`chain_sweep`) need a twin.
 func _check_twin(issues: Array[ValidationIssue]) -> void:
 	var p := resource_path
 	var twin_moves := attacks.filter(
@@ -220,21 +236,13 @@ func _check_twin(issues: Array[ValidationIssue]) -> void:
 	if String(twin_kind_id).is_empty():
 		if not twin_moves.is_empty():
 			issues.append(
-				ValidationIssue.new(&"attacks", p, "Crossfire and Chain Sweep need a twin")
+				ValidationIssue.new(&"attacks", p, "Crossfire and the Sword Lane need a twin")
 			)
 		return
 	if not BossSchemas.TWIN_KINDS.has(twin_kind_id):
 		issues.append(ValidationIssue.new(&"unknown_boss", p, "no twin kind %s" % twin_kind_id))
-	if (
-		chain_min_m < BossSchemas.TWIN_CHAIN_MIN_M
-		or chain_max_m > BossSchemas.TWIN_CHAIN_MAX_M
-		or chain_min_m >= chain_max_m
-		or twin_distance_m < chain_min_m
-		or twin_distance_m > chain_max_m
-	):
-		issues.append(ValidationIssue.new(&"range", p, "the chain stays within 3..9 m"))
-	if chain_burn <= 0 or int(round(chain_burn_seconds * 60.0)) < 1 or chain_width_m <= 0.0:
-		issues.append(ValidationIssue.new(&"not_positive", p, "the chain burns > 0, each > 0 s"))
+	if twin_distance_m <= 0.0:
+		issues.append(ValidationIssue.new(&"not_positive", p, "twin_distance_m must be > 0"))
 	if (
 		anger_speed_permille < 1000
 		or anger_speed_permille > BossSchemas.TWIN_ANGER_MAX_PERMILLE
@@ -242,19 +250,10 @@ func _check_twin(issues: Array[ValidationIssue]) -> void:
 		or flank_m <= 0.0
 	):
 		issues.append(ValidationIssue.new(&"range", p, "anger 1000..2000 per mille, > 0 s"))
-	var sweep: Array = twin_moves.filter(
-		func(a: BossAttackDefinition) -> bool:
-			return a.move == &"chain_sweep" and not String(a.late_cause_key).is_empty()
-	)
-	if sweep.is_empty():
-		issues.append(
-			ValidationIssue.new(&"missing", p, "a twin needs a Chain Sweep with a late_cause_key")
-		)
 	_check_twin_roles(issues)
 
 
-## The twin's moveset and its bolt name real attacks, and the clocks and
-## multipliers are real (exposed takes more, guarded less).
+## The twin's moveset and its bolt name real attacks, and the bolt's clock is real.
 func _check_twin_roles(issues: Array[ValidationIssue]) -> void:
 	var p := resource_path
 	for id in twin_attack_ids:
@@ -262,10 +261,8 @@ func _check_twin_roles(issues: Array[ValidationIssue]) -> void:
 			issues.append(ValidationIssue.new(&"unknown_attack", p, "no twin attack %s" % id))
 	if twin_bolt_attack == &"" or attack(twin_bolt_attack) == null:
 		issues.append(ValidationIssue.new(&"missing", p, "a twin needs its standing-back bolt"))
-	if twin_bolt_seconds <= 0.0 or twin_expose_seconds <= 0.0:
+	if twin_bolt_seconds <= 0.0:
 		issues.append(ValidationIssue.new(&"not_positive", p, "the twins' clocks are > 0 s"))
-	if twin_expose_permille <= 1000 or twin_guard_permille >= 1000 or twin_guard_permille <= 0:
-		issues.append(ValidationIssue.new(&"range", p, "exposed > 1000 > guarded > 0 per mille"))
 
 
 ## The attack with this id, or null.

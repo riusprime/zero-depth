@@ -26,6 +26,8 @@ const BLAST_ID := &"explosion_fire_a"
 ## 1.5 for the 2.5 m burst). The true danger area is still the ground ring across the fuse, not this visual.
 const BLAST_SCALE := 0.6
 const ERUPT_FOOT_ID := &"explosion_fire_b"
+## The explosions leave out their smoke cloud (it hung for seconds over the floor).
+const NO_SMOKE: Array = ["Smoke"]
 const PILLAR_ID := &"bx_pillar_light"
 const PILLAR_COLORS := {
 	&"primary": Color(1.0, 0.62, 0.22),
@@ -161,7 +163,11 @@ func _sync_bursts(now: Array) -> void:
 		if not live.has(sd):
 			var was: Array = _seen_bursts[sd]
 			if pack_fx != null:
-				blast_once(pack_fx.spawn(BLAST_ID, SimPlane.to_3d(was[0], 0.0), BLAST_SCALE))
+				blast_once(
+					pack_fx.spawn(
+						BLAST_ID, SimPlane.to_3d(was[0], 0.0), BLAST_SCALE, {}, -1.0, 1.0, NO_SMOKE
+					)
+				)
 			_seen_bursts.erase(sd)
 	for sd: int in live:
 		_seen_bursts[sd] = live[sd]
@@ -204,7 +210,7 @@ func _sync_eruptions() -> void:
 		if pack_fx != null:
 			var c := SimPlane.to_3d(v[0], 0.0)
 			pack_fx.spawn(PILLAR_ID, c, float(v[1]), PILLAR_COLORS)
-			pack_fx.spawn(ERUPT_FOOT_ID, c, float(v[1]) * 0.5)
+			pack_fx.spawn(ERUPT_FOOT_ID, c, float(v[1]) * 0.5, {}, -1.0, 1.0, NO_SMOKE)
 	for id in _erupted.keys():
 		if not seen.has(id):
 			_erupted.erase(id)

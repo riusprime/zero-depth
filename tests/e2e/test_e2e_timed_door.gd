@@ -31,6 +31,8 @@ func test_press_both_switches_and_walk_in_before_the_timer() -> void:
 	var view := main.view.timed_door
 	assert_not_null(view, "the door and its switches are drawn")
 	assert_false(view.revealed, "the secret room unseen")
+	assert_true(view.uses_model, "the owner's door: its frame and its slab")
+	assert_true(view.slab.visible, "shut: the slab stands")
 	await e.tap(KEY_QUOTELEFT)
 	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
@@ -44,6 +46,9 @@ func test_press_both_switches_and_walk_in_before_the_timer() -> void:
 		assert_eq(w.interactables.state[w.timed.switches[k]], 1, "E switched it on")
 	assert_eq(w.timed.state, TimedDoor.State.OPEN, "both: the door opens")
 	assert_true(view.revealed, "and the secret room comes into sight")
+	await e.frames(int(TimedDoorView.SINK_S * 60.0) + 10)
+	assert_false(view.slab.visible, "the owner's slab sank into the floor")
+	assert_true(view.has_node("Door/Frame/Blocks"), "its frame of the walls' blocks stands")
 	var t0 := w.timed.open_tick
 	var inside := f.rooms[f.timed_room].get_center()
 	assert_true(await e.walk_to(inside, 1.0), "walked through the doorway into the secret room")

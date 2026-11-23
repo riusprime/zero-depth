@@ -31,6 +31,10 @@ var pad_active := false
 var _slots: Array[Dictionary] = []
 var _flash := {}
 var _was_cooling := {}
+## Action -> [the inputs glyph_text read it from (the pad flag, the language, the pad's name, the action's bound
+## events), its text]. A rebind replaces an action's events with new ones (InputRemap, InputDefaults, InputRebind),
+## so the same events, language and pad give the same text: glyph_text runs again only when one of them changed.
+var _glyphs := {}
 
 
 func _init() -> void:
@@ -73,8 +77,8 @@ func _process(delta: float) -> void:
 
 ## Redraws only when a square's look changed (a ready row with no flash draws nothing a tick).
 func sync(reader: WorldReader) -> void:
-	var was := _slots.duplicate(true)
-	_slots.clear()
+	var was := _slots  # The last sync's row, kept whole: this one is built in a new array (no copy)
+	_slots = []
 	var blade := reader.weapon_id() == &"combo_sword"
 	_slots.append(
 		_slot(
@@ -136,8 +140,23 @@ func _slot(
 		"seconds": float(left) / SimTick.TICKS_PER_SECOND,
 		"cooling": left > 0,
 		"charges": charges,
-		"glyph": glyph_text(action, pad_active),
+		"glyph": _glyph(action, pad_active),
 	}
+
+
+func _glyph(action: StringName, pad: bool) -> String:
+	var from := [
+		pad,
+		TranslationServer.get_locale(),
+		Input.get_joy_name(0) if pad else "",
+		InputMap.action_get_events(action) if InputMap.has_action(action) else [],
+	]
+	var kept: Array = _glyphs.get(action, [])
+	if not kept.is_empty() and kept[0] == from:
+		return kept[1]
+	var text := glyph_text(action, pad)
+	_glyphs[action] = [from, text]
+	return text
 
 
 ## The binding name for `action` on the keyboard or the pad. A PlayStation pad's names are R2 / L2 / R1 / L1.

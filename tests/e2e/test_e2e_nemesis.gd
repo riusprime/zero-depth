@@ -6,8 +6,12 @@ extends GutTest
 ##   run's combo or crescents, a Gun run's own shots in its look), answers the hero's dash (Space) with its own, and
 ##   casts the card, its name over its head.
 ## - v0.8.0 N2 (owner O42, O52: "The Fallen", "on and off"): it rises in its own kit; its mimic window is warned on the
-##   boss bar's line (HUD_FALLEN_WARN) and by the violet rings at the hero's and its feet, then opens
-##   (HUD_FALLEN_WINDOW, the rings and the thread between them): in the window it copies the weapon, dash and card.
+##   boss bar (its fill breathing violet) and by the violet rings at the hero's and its feet, then opens
+##   (the fill shimmering violet, the rings and the thread between them): in the window it copies the weapon, dash
+##   and card.
+## - It stays in the room and casts a mechanic of a boss the run killed (Time Wave or Riptide in the Playground): the
+##   ghost of that boss rises over it through the cast, then the mechanic's own views draw it (the orbs and the HUD's
+##   clock, or the four strips) and a ring of that boss's colour stands at its feet.
 ## - A run on its second loop (a labelled TEST HELPER sets the loop and the floor; F10's Restart floor rebuilds it):
 ##   God mode and Kill boss (the dev panel) through the Colossus and the Prism, the Ascension portal on the way; at the
 ##   Nemesis, its HP is the pace's (N2) and in its window it answers a dash; Kill boss beats it: the victory recap with
@@ -134,16 +138,11 @@ func _window_shows(main: Main) -> void:
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_true(await _until_window(main, WorldReader.FALLEN_WARN), "a window is warned")
 	await _e.frames(2)
-	assert_eq(hud.boss_bar.fallen_text(), tr("HUD_FALLEN_WARN"), "the warning's line")
+	assert_eq(hud.boss_bar.tone(), BossBarTones.FALLEN_WARN, "the bar breathes violet")
 	assert_eq(main.view.nemesis_views.cue_shown(), 1, "the warning's rings")
 	assert_true(await _until_window(main, WorldReader.FALLEN_ON), "the window opens")
 	await _e.frames(2)
-	# v0.8.0 N18 (owner O76): the line is shortened to "Mirrored · %d s" (its timer kept)
-	assert_true(
-		hud.boss_bar.fallen_text().begins_with(tr("HUD_FALLEN_WINDOW").get_slice("%", 0)),
-		"the window's line"
-	)
-	assert_true(hud.boss_bar.fallen_text().ends_with(" s"), "with its seconds")
+	assert_eq(hud.boss_bar.tone(), BossBarTones.FALLEN_OPEN, "the bar shimmers violet, no words")
 	assert_eq(main.view.nemesis_views.cue_shown(), 2, "the rings and the thread")
 
 
@@ -171,7 +170,7 @@ func _mimics(main: Main, build: StringName) -> void:
 		else [&"nemesis_volley", &"nemesis_point_blank"]
 	)
 	var used_weapon := false
-	var named := ""
+	var cast := -1
 	var bolts := 0
 	for k in LIMIT:
 		await _e.frames(1)
@@ -195,13 +194,13 @@ func _mimics(main: Main, build: StringName) -> void:
 			atk != null and not copying and atk.move == BossAttackTable.Move.CARD_CAST,
 			"no card outside a window"
 		)
-		if main.view.nemesis_views.card_shown() != "":
-			named = main.view.nemesis_views.card_shown()
+		if main.view.nemesis_views.casting_card() >= 0:
+			cast = main.view.nemesis_views.casting_card()
 		bolts = maxi(bolts, main.view.fireballs.ball_count(NemesisCast.LOOK_BOLT))
-		if used_weapon and named != "" and (build == &"blade" or bolts > 0):
+		if used_weapon and cast >= 0 and (build == &"blade" or bolts > 0):
 			break
 	assert_true(used_weapon, "it fights with the run's weapon")
-	assert_eq(named, tr(StringName(reader.card_info(code)["name_key"])), "it casts your card")
+	assert_eq(cast, code, "it casts your card (its sigil, no word)")
 	if build == &"gun":
 		assert_gt(bolts, 0, "your shots, in its look")
 	assert_false(w.player_dead(), "the hero stands (God mode)")
@@ -341,11 +340,11 @@ func test_beating_the_nemesis_on_a_later_loop_is_the_true_ending() -> void:
 	assert_eq(get_errors().size(), 0, "no engine or script error")
 
 
-## v0.9.5 BH6 (HC4, HC5): the Fallen vanishes at 66 % of its HP for an interphase and comes back. TEST HELPER: the
-## body's HP is set to 65 % (a real fight to that point is minutes long); everything else is the game: God mode, the
-## Playground's Phase 3, real frames. Vanished it is hidden and untouchable, a set is drawn, and after the return ring
-## it slams back down in the centre with its HP as it left.
-func test_the_fallen_vanishes_for_an_interphase_and_slams_back() -> void:
+## The Fallen stays in the room and casts a remembered mechanic at 66 % of its HP. TEST HELPER: the body's HP is
+## set to 65 % (a real fight to that point is minutes long); everything else is the game: God mode, the Playground's
+## Phase 3, real frames. The Playground killed no boss, so the pool is Time Wave and Riptide; it never vanishes, is
+## never untouchable for it, and its HP is never frozen for it.
+func test_the_fallen_casts_a_remembered_mechanic_and_never_vanishes() -> void:
 	_e = E2e.new(self)
 	var main := await _e.boot()
 	_scale = await _e._mouse_scale()
@@ -353,43 +352,100 @@ func test_the_fallen_vanishes_for_an_interphase_and_slams_back() -> void:
 	var reader := main.driver.reader
 	var w := _e.world()
 	var i := await _risen(main)
-	assert_true(reader.final_interphase().is_empty(), "no interphase at full HP")
 	w.actors.hp[i] = w.actors.max_hp[i] * 650 / 1000  # TEST HELPER (see above)
-	var hp := w.actors.hp[i]
-	var gone := false
-	for k in 200:
+	var cast := false
+	var ran := -1
+	var ghost := &""
+	var remembered: FallenRememberedViews = main.view.fallen_remembered
+	for k in 1800:
 		await _e.frames(1)
-		if not reader.final_interphase().is_empty():
-			gone = true
+		var st := reader.boss_fallen()
+		assert_false(st.is_empty(), "The Fallen runs its remembered mechanics")
+		if st.is_empty():
+			return
+		i = reader.boss_index()
+		assert_false(reader.boss_hidden(i), "it stays in the room")
+		cast = cast or int(st["cast"]) >= 0
+		if int(st["cast"]) >= 0 and remembered.emblem_shown() != &"":
+			ghost = remembered.emblem_shown()
+			assert_eq(ghost, st["source"], "the ghost of the boss it remembers rises over it")
+		if int(st["stage"]) == 2:
+			ran = int(st["running"])
 			break
-	assert_true(gone, "it vanishes")
-	i = reader.boss_index()
-	assert_true(reader.boss_hidden(i), "not drawn")
-	assert_true(reader.boss_invulnerable(i), "and untouchable")
-	var drawn := false
-	for k in 150:
-		await _e.frames(1)
-		var v := main.view.interphase
-		drawn = (
-			drawn
-			or v.bursts_alive() > 0
-			or v.beams_drawn() > 0
-			or v.discs_drawn() > 0
-			or v.lines_drawn() > 0
-		)
-		drawn = drawn or v.points_drawn() > 0
-	assert_true(drawn, "the interphase is drawn")
-	assert_eq(w.actors.hp[i], hp, "its HP is frozen")
-	var back := false
-	for k in 1100:
-		await _e.frames(1)
-		if reader.final_interphase().is_empty():
-			back = true
-			break
-	assert_true(back, "after 15 s and the return ring it is back")
-	await _e.frames(2)
-	i = reader.boss_index()
-	assert_false(reader.boss_hidden(i), "drawn again")
-	assert_eq(w.actors.hp[i], hp, "with the HP it left with")
-	assert_lt(w.actors.pos(i).distance_to(reader.final_home()), 1.0, "in the centre")
+	assert_true(cast, "a cast first")
+	assert_ne(ghost, &"", "the remembered boss's ghost showed through the cast")
+	await _e.frames(3)
+	var hud: Hud = main.get_node("UI/Hud")
+	if ran == reader.FALLEN_TIME:
+		assert_gt(main.view.judge_time.orbs_shown(), 0, "the hour orbs and their clocks are drawn")
+		assert_true(hud.attack_slow.visible, "the HUD's clock and pips")
+	elif ran == reader.FALLEN_RIPTIDE:
+		assert_eq(main.view.tide_dance.strips_shown(), 4, "the four strips are drawn")
+	assert_eq(remembered.aura_shown(), reader.boss_fallen()["source"], "its colour at its feet")
+	assert_true(
+		[reader.FALLEN_TIME, reader.FALLEN_RIPTIDE].has(ran),
+		"a Time Wave or a Riptide (no boss killed in the Playground): %d" % ran
+	)
+	if ran == reader.FALLEN_TIME:
+		assert_gt(reader.boss_attack_slow(), 0, "the weapon is slowed")
+		assert_gt(reader.boss_pickups().size(), 0, "the hour orbs lie")
+	else:
+		assert_false((reader.boss_dance()["riptide"] as Dictionary).is_empty(), "the strips warn")
+	assert_false(reader.boss_invulnerable(i), "it can be hit meanwhile")
 	assert_false(w.player_dead(), "the hero stands (God mode)")
+	assert_eq(get_errors().size(), 0, "no engine or script error")
+
+
+## The Fallen takes your best card at 66 % of its HP and the card is back once it dies. TEST HELPER: the body's HP is
+## set to 65 % and its remembered mechanics' HP gates are marked as cast (so the theft is the next beat, not one after
+## a 15 s mechanic); everything else is the game: the Playground's wand card, God mode and Phase 3, real frames, the
+## dev panel's Kill boss. The card's pip goes dark on the HUD, the mark glows on its back with a pip per hit needed, no
+## word anywhere.
+func test_the_fallen_takes_your_card_and_gives_it_back_when_it_dies() -> void:
+	_e = E2e.new(self)
+	var main := await _e.boot()
+	_scale = await _e._mouse_scale()
+	var code := await _playground_phase_3(main, &"gun")
+	var reader := main.driver.reader
+	var w := _e.world()
+	var i := await _risen(main)
+	w.actors.hp[i] = w.actors.max_hp[i] * 650 / 1000  # TEST HELPER (see above)
+	w.boss_fight.fl_gates = 3  # TEST HELPER (see above)
+	var cast := false
+	var taken: Array = []
+	for k in LIMIT:
+		await _e.frames(1)
+		var st := reader.boss_fallen()
+		if st.is_empty():
+			continue
+		cast = cast or int(st["theft_cast"]) >= 0
+		taken = st["taken"]
+		if not taken.is_empty():
+			break
+	assert_true(cast, "a cast first")
+	assert_eq(taken.size(), 1, "it took a card")
+	if taken.is_empty():
+		return
+	assert_eq(int(taken[0]["code"]), code, "your card")
+	await _e.frames(3)
+	var hud: Hud = main.get_node("UI/Hud")
+	var slot := int(taken[0]["slot"])
+	assert_eq(hud.theft_hud.dark_slots(), PackedInt32Array([slot]), "its pip is dark")
+	var mark := main.view.fallen_remembered.mark
+	assert_true(mark.shown(), "the mark glows on its back")
+	assert_eq(mark.pips(), 8, "a pip per hit needed")
+	assert_true(w.items_owned.has(code), "the card is still yours, in its slot")
+	await _e.tap(KEY_QUOTELEFT)
+	await _e.frames(2)
+	await _click(main, "KillBoss")
+	for k in 120:
+		await _e.frames(1)
+		if w.final_fight.won:
+			break
+	await _e.frames(3)
+	assert_true(w.final_fight.won, "The Fallen is beaten")
+	for c: Dictionary in reader.wand()["cards"]:
+		assert_false(bool(c["taken"]), "every slot is lit again")
+	assert_true(hud.theft_hud.dark_slots().is_empty(), "no dark pip")
+	assert_false(mark.shown(), "no mark")
+	assert_eq(get_errors().size(), 0, "no engine or script error")

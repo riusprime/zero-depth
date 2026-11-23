@@ -11,8 +11,11 @@ const ROWS := 10
 const WIDTH := 340
 
 var tally := DpsTally.new()
-## A source's name key by its effect id (the cards', abilities' and engines' names; the app layer fills it).
-var names := {}
+## A source's name key by its effect id (the cards', abilities' and engines' names; the app layer sets it whole).
+var names := {}:
+	set(v):
+		names = v
+		_sources_rev = -1
 ## How many times the lines were written (tests: at most once a frame).
 var writes := 0
 var _recent: Label
@@ -23,6 +26,10 @@ var _sources: Label
 ## shapes the text again and re-lays the panel).
 var _written_tick := -1
 var _now := 0
+## The tally revision the source lines were last built for (-1: build them again). The lines are the ranked sources
+## and their shares of the total, so they change only when a hit is added, the tally resets, the names or the language
+## change.
+var _sources_rev := -1
 
 
 func _init() -> void:
@@ -79,6 +86,7 @@ func _process(_delta: float) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED:
 		_written_tick = -1
+		_sources_rev = -1
 
 
 ## Writes the lines from the tally at the last synced tick.
@@ -101,6 +109,9 @@ func write_lines() -> void:
 			]
 		)
 	)
+	if _sources_rev == tally.revision:
+		return
+	_sources_rev = tally.revision
 	var lines: PackedStringArray = []
 	var ranked := tally.ranked()
 	for k in mini(ROWS, ranked.size()):

@@ -10,7 +10,10 @@ extends Node3D
 ## - Hazard Lockdowns: each strike marked on the ground shows a warning disc that fills and brightens until it lands;
 ##   then the biome's hazard (Ruins sparking cables `hazard_cable`, Night Rocks a falling rock `hazard_rock`, Red
 ##   Canyon a heat vent `hazard_vent`, Frozen Shore cracking ice `hazard_ice`, Starfall a falling star `hazard_star`;
-##   through ShopModels by those ids, code stand-ins until the owner's files arrive) bursts or falls there for IMPACT_S.
+##   the owner's models through ShopModels by those ids, code stand-ins when one isn't listed) bursts or falls there
+##   for IMPACT_S. On the owner's models the code adds what moves or glows: the cable's spark at its frayed ends, the
+##   vent's lit crack under the grate and its hot plume, the ice plate's shards tipping apart as it cracks; the rock
+##   and the star fall from the sky onto the floor.
 ## - v0.9.0 BV: per biome (InteractionLooks): the owner's bars tinted (the stand-in rods in the biome's metal) and
 ##   each warning disc ringed by a dark band (`warn_rim`; ART_DIRECTION's hazard "orange with a dark band") so the
 ##   hostile orange reads on Red Canyon's red ground too. The hazard stand-ins read against their own ground and stay
@@ -46,6 +49,15 @@ const STAND_IN_BODY := {
 	&"hazard_star": Color("#FFF2A8"),
 }
 const SPARK := Color("#FFE066")
+## On the owner's models (m, the model's frame): the cable's frayed ends, where its spark jumps; the vent's crack under
+## the grate (a lit disc of this radius just over the floor) and its plume's height; how far the ice's shards tip
+## (rad) and sink (m) as the plate cracks.
+const CABLE_SPARK_AT := Vector3(0.86, 0.25, -0.33)
+const VENT_CRACK_R := 0.32
+const VENT_CRACK_Y := 0.04
+const VENT_PLUME_Y := 0.75
+const ICE_TIP := 0.32
+const ICE_SINK := 0.06
 const PLUME := Color("#FF4E1A")
 const THUD := 0.35
 
@@ -67,6 +79,9 @@ var _iron := StandardMaterial3D.new()
 var _impact: Node3D
 var _impact_left := 0.0
 var _landed := -1
+## The ice plate's shards (the owner's model) and each one's outward direction on the floor.
+var _shards: Array[MeshInstance3D] = []
+var _shard_out: Array[Vector3] = []
 ## The warnings' dark band.
 var _rim_mat := StandardMaterial3D.new()
 
@@ -162,7 +177,24 @@ func _process(delta: float) -> void:
 		var drop := (1.0 - minf(1.0, t * 3.0)) * 6.0 if FALLING.has(hazard_id) else 0.0
 		var base := 0.0 if hazard_uses_model else _base_y(hazard_id)  # a model stands on the floor
 		(_impact.get_child(0) as Node3D).position.y = base + drop
+		_crack(t)
 		_impact.visible = _impact_left > 0.0
+
+
+## The ice plate's shards at `t` of the impact (0 whole .. 1 tipped apart): each tips up along its outward edge and
+## sinks a little.
+func _crack(t: float) -> void:
+	var u := minf(1.0, t * 2.5)
+	for k in _shards.size():
+		var out := _shard_out[k]
+		var axis := Vector3(out.z, 0.0, -out.x)
+		var b := Basis.IDENTITY if axis.is_zero_approx() else Basis(axis.normalized(), -ICE_TIP * u)
+		_shards[k].transform = Transform3D(b, out * 0.08 * u + Vector3(0, -ICE_SINK * u, 0))
+
+
+## Tests: the ice plate's shards (empty unless the owner's ice is drawn).
+func shard_count() -> int:
+	return _shards.size()
 
 
 ## Whether the bars slammed down since the last call (the camera's thud), once.
@@ -311,17 +343,92 @@ func _build_hazard(p_biome: StringName) -> void:
 	_impact.visible = false
 	add_child(_impact)
 	var model := ShopModels.get_model(hazard_id)
-	var mi := MeshInstance3D.new()
-	mi.name = "Model" if not model.is_empty() else "StandIn"
 	if not model.is_empty():
 		hazard_uses_model = true
-		mi.mesh = model["mesh"]
-		mi.set_surface_override_material(0, model["material"])
-	else:
-		mi.mesh = _stand_in(hazard_id)
-		mi.material_override = _stand_in_mat(hazard_id)
-		_stand_in_detail(mi, hazard_id)
+		_impact.add_child(_model_hazard(hazard_id, model))
+		return
+	var mi := MeshInstance3D.new()
+	mi.name = "StandIn"
+	mi.mesh = _stand_in(hazard_id)
+	mi.material_override = _stand_in_mat(hazard_id)
+	_stand_in_detail(mi, hazard_id)
 	_impact.add_child(mi)
+
+
+## The owner's hazard: its mesh (the ice as its shards) and the code's hot parts on it.
+func _model_hazard(id: StringName, model: Dictionary) -> Node3D:
+	var root := Node3D.new()
+	root.name = "Model"
+	var meshes: Array = ShopModels.parts(id) if id == &"hazard_ice" else [model["mesh"]]
+	for k in meshes.size():
+		var mi := MeshInstance3D.new()
+		mi.name = "Shard%d" % k if meshes.size() > 1 else "Mesh"
+		mi.mesh = meshes[k]
+		mi.set_surface_override_material(0, model["material"])
+		root.add_child(mi)
+		if meshes.size() > 1:
+			_shards.append(mi)
+			var c := _centre_of(meshes[k])
+			_shard_out.append(Vector3(c.x, 0.0, c.z).normalized())
+	var glow := StandardMaterial3D.new()
+	glow.emission_enabled = true
+	glow.emission_energy_multiplier = 2.2
+	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	match id:
+		&"hazard_cable":
+			glow.albedo_color = SPARK
+			glow.emission = SPARK
+			var spark := MeshInstance3D.new()
+			spark.name = "Spark"
+			spark.mesh = RewardViews.bipyramid(4, 0.2, 0.25, 0.25)
+			spark.material_override = glow
+			spark.position = CABLE_SPARK_AT
+			spark.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			root.add_child(spark)
+		&"hazard_vent":
+			glow.albedo_color = PLUME
+			glow.emission = PLUME
+			var crack := MeshInstance3D.new()
+			crack.name = "Crack"
+			var disc := CylinderMesh.new()
+			disc.top_radius = VENT_CRACK_R
+			disc.bottom_radius = VENT_CRACK_R
+			disc.height = 0.02
+			disc.radial_segments = 16
+			crack.mesh = disc
+			crack.material_override = glow
+			crack.position.y = VENT_CRACK_Y
+			crack.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			root.add_child(crack)
+			var hot := StandardMaterial3D.new()
+			hot.emission_enabled = true
+			hot.emission_energy_multiplier = 2.2
+			hot.albedo_color = Color(PLUME, 0.7)
+			hot.emission = PLUME
+			hot.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			var plume := MeshInstance3D.new()
+			plume.name = "Plume"
+			var c := CylinderMesh.new()
+			c.top_radius = 0.45
+			c.bottom_radius = 0.18
+			c.height = 1.2
+			plume.mesh = c
+			plume.material_override = hot
+			plume.position.y = VENT_PLUME_Y
+			plume.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			root.add_child(plume)
+	return root
+
+
+## The middle of the triangles a part mesh draws (its arrays keep the whole model's vertices).
+static func _centre_of(mesh: Mesh) -> Vector3:
+	var arrays := mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var idx: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	var sum := Vector3.ZERO
+	for v in idx:
+		sum += verts[v]
+	return sum / maxf(1.0, idx.size())
 
 
 func _sync_marks(reader: WorldReader, d: Dictionary) -> void:

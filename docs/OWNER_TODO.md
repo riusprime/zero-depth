@@ -36,7 +36,11 @@ rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-ferm
 - [ ] **v0.11.1 "Clean and fast" (2026-11-10), one answer:** aim assist on mouse and gamepad, or gamepad only
   (default being planned: both, on, with an Options switch; [`roadmap/v0.11.1/PLAN.md`](roadmap/v0.11.1/PLAN.md)
   "Open items"). The golden reset is answered (yes, once). Later, yours to feel: aim assist once built, and each batch of enemies moved to the crowd.
-- [ ] **v0.11.0, still yours (2026-11-08):** the **boss brief** (the bosses besides the Gatekeeper, Lantern Shade and
+- [ ] **The boss brief, your answers (2026-11-14):** your spoken brief is written up in
+  [`roadmap/v0.12.0/BOSS_BRIEF.md`](roadmap/v0.12.0/BOSS_BRIEF.md) (v0.12.0; four questions answered 2026-11-14). Yours: approve or change the rows (`CJ`, `TW`,
+  `TC` are your design; `WL`, `SE`, `FO`, `HL`, `HC` are the lead's proposals) and the signature rows `SG`, and answer BQ1–BQ12. Nothing is
+  built before that.
+- [ ] **v0.11.0, still yours (2026-11-08):** the **boss brief** (received 2026-11-14, see above) (the bosses besides the Gatekeeper, Lantern Shade and
   Twins, and the "remembered" Hollow Crown behind the hidden room), the **Laser sketch**, and the overnight questions
   **N1–N9** in [`roadmap/v0.11.0/OWNER_QUESTIONS.md`](roadmap/v0.11.0/OWNER_QUESTIONS.md) §J (each has a default
   being built). Q1–Q30 and every G1/G2 are answered.
@@ -91,6 +95,8 @@ with your biggest builds; bugs (what you did, saw, expected; a screenshot); anyt
 
 ## 3. 3D art: specs and prompts
 
+**What is still pending, in one list (2026-11-20):** [`art/requests/PENDING_ASSETS.md`](art/requests/PENDING_ASSETS.md). **The ready-to-paste prompts for what you are making now** (14 enemies, 11 props, the rail texture, two focal pieces): [`art/requests/v0.12.0_models.md`](art/requests/v0.12.0_models.md). The tables below keep the older prompts.
+
 **Shared rules (every model):** the look of your kit and `docs/art/look_reference.webp`: chunky, chipped, weathered
 low-poly; worn metal, concrete and stone; no baked lighting or shadows; no text, letters or logos; one object, no
 ground plane; readable from an isometric camera about 35° down. Rigged is always a bonus, never needed: without a rig
@@ -128,6 +134,8 @@ their prompts there after their G1 lists.
 
 ### 3.0 Still owed from the earlier lists
 
+**Installed 2026-11-20:** `approach_pylon`, the containers, `explosive_barrel`, `timed_door` and the five hazards (steps 43, 43b), so they are no longer owed below.
+
 **Still not sent from the v0.9.0 list** ([`art/requests/v0.9.0_ART_LIST.md`](art/requests/v0.9.0_ART_LIST.md)):
 `approach_pylon`; the containers `container_crate`, `container_urn`, `container_barrel`; `explosive_barrel`;
 `timed_door` (a stone door; your bar gate became `lockdown_seal`); the hazards `hazard_cable`, `hazard_rock`, `hazard_vent`, `hazard_ice`, `hazard_star`; the four
@@ -141,8 +149,8 @@ the eight enemy models in §3.2.
 
 | ✓ | id | What it is, how it should look | Size (W×D×H m) | Prompt (after the prefix) |
 |---|---|---|---|---|
-| ☐ | `hero_gun` | The hero's Gun, professional-looking (your note: they "need to look professional"). It fires the blue pulse, so blue accents; seen in the hero's hand, small | 0.7 long | [character prefix, steel blue] a chunky sci-fi energy pistol held in one hand, a short thick barrel with a glowing blue core visible through vents, a faceted charcoal steel body, a blue crystal power cell at the back, a worn grip; shown on its own, side view |
-| ☐ | `hero_blade` | The hero's Blade, professional-looking. Its slash leaves a blue-white edge, so the edge glows | 1.1 long | [character prefix, steel blue] a single-edged laser sword, a long straight faceted blade of pale blue-white light with a hard bright edge, a chunky charcoal steel hilt with a blue crystal in the guard, a wrapped grip; shown on its own, side view |
+| ✗ dropped (owner 2026-11-20: the hero shoots rune power, no gun) | `hero_gun` | The hero's Gun, professional-looking (your note: they "need to look professional"). It fires the blue pulse, so blue accents; seen in the hero's hand, small | 0.7 long | [character prefix, steel blue] a chunky sci-fi energy pistol held in one hand, a short thick barrel with a glowing blue core visible through vents, a faceted charcoal steel body, a blue crystal power cell at the back, a worn grip; shown on its own, side view |
+| ✓ installed 2026-11-20 (rune-summoned, PENDING_ASSETS §9) | `hero_blade` | The hero's Blade, professional-looking. Its slash leaves a blue-white edge, so the edge glows | 1.1 long | [character prefix, steel blue] a single-edged laser sword, a long straight faceted blade of pale blue-white light with a hard bright edge, a chunky charcoal steel hilt with a blue crystal in the guard, a wrapped grip; shown on its own, side view |
 | ☐ | `menu_chest` | For the future main-menu scene (the hero opening a chest). A treasure chest that opens: a separate lid (or a rig with an `open` clip) | 1.0 × 0.6 × 0.7 | [kit prefix] a heavy iron-banded treasure chest of dark weathered wood, faceted metal corners, a red crystal lock, glowing red light leaking through the gap under the lid, the lid as a separate object |
 | ☐ | (rig) the hero | For the same scene: if your hero model can be rigged with an `open_chest` clip (kneel, lift the lid, look in), the lead builds the menu around it. Otherwise the lead animates the existing hero in code | — | — |
 
@@ -158,14 +166,14 @@ with bone-coloured tips. Only the body plan changes, to fit what the enemy does.
 
 | ✓ | id | Role colour | In-game size | Prompt (after the character prefix, then the 3D step) |
 |---|---|---|---|---|
-| ☐ | `hatchling` | melee red-orange `#C93A1E` | radius 0.28 m | a small young crawler, the Charger's family at two thirds of its size: a short faceted ridged hood in [COLOUR] over a dark shield-shaped face with one glowing [COLOUR] gem visor, a small back flap, a charcoal body, four stubby grey segmented legs with small bone talons, the front pair a little bigger; about 3k triangles |
-| ☐ | `needle` | ranged blue `#3A6BD4` | radius 0.35 m | a walking turret: a faceted ridged cube-shaped shell in [COLOUR], a dark shield-shaped face on its front with one glowing [COLOUR] gem visor, a charcoal body, two grey octagonal pods on its flanks, a square grey cannon barrel pointing forward, four grey segmented legs with bone-coloured feet splayed to the corners; about 5k triangles |
-| ☐ | `warden` | tank bronze `#9A6232` | radius 0.55 m | a hulking armoured tank: a long faceted ridged shell in [COLOUR] over its head and back (cracks across the back of the shell), a dark shield-shaped face with one glowing [COLOUR] gem visor, a heavy charcoal chest, big grey boulder shoulders with heavy segmented forearms and fists hanging to the ground, two short stumpy grey legs with bone-coloured toes; about 5k triangles |
-| ☐ | `arc_caster` | ranged violet `#8A50D8` | radius 0.38 m | a tall caster: a faceted ridged hood and long robe-like shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body under it, grey segmented arms holding a grey staff with a bright arc crystal at its tip, three small floating [COLOUR] rune shards around the hood, no legs showing, a hem of grey segmented spikes with bone tips; about 5k triangles |
-| ☐ | `bomb_drone` | bomber yellow `#E8C22E` | radius 0.40 m; hovers about 1.8 m up | a hovering quad-copter: a faceted ridged shell in [COLOUR], a dark shield-shaped face at the front with one glowing [COLOUR] gem visor, a charcoal body, four grey segmented arms with bone-coloured tips that carry flat rotor blades (blades as separate parts), a dark round bomb slung under its belly with a glowing fuse (the bomb as a separate object is a bonus); about 5k triangles |
-| ☐ | `swarmer` | melee crimson `#B82A48` | radius 0.24 m (about 0.5 m long) | a small fast armoured beetle: a low wedge-shaped faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, two pale bone mandibles that open wide, six thin grey segmented legs with bone tips splayed low; about 3k triangles |
-| ☐ | `mine_layer` | bomber dark yellow `#C29A14` | radius 0.42 m (about 0.9 m long) | a low armoured crawler: a faceted ridged hull in [COLOUR] with chevron plates, a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, carried on grey segmented legs with bone tips (two short tank treads in grey are also fine), an open hopper at the back holding a dark round spiked mine with a small blinking light (the mine as a separate object is a bonus); about 5k triangles |
-| ☐ | `sniper` | ranged blue `#3A55C0` | radius 0.35 m (about 1.1 m tall) | a lean walking gun platform: a narrow faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor shaped like a big round scope lens, a charcoal body, a very long grey rifle barrel pointing forward with cooling fins, three long thin grey segmented legs in a tripod with bone-coloured feet; about 5k triangles |
+| ✓ installed 2026-11-20 | `hatchling` | melee red-orange `#C93A1E` | radius 0.28 m | a small young crawler, the Charger's family at two thirds of its size: a short faceted ridged hood in [COLOUR] over a dark shield-shaped face with one glowing [COLOUR] gem visor, a small back flap, a charcoal body, four stubby grey segmented legs with small bone talons, the front pair a little bigger; about 3k triangles |
+| ✓ installed 2026-11-20 | `needle` | ranged blue `#3A6BD4` | radius 0.35 m | a walking turret: a faceted ridged cube-shaped shell in [COLOUR], a dark shield-shaped face on its front with one glowing [COLOUR] gem visor, a charcoal body, two grey octagonal pods on its flanks, a square grey cannon barrel pointing forward, four grey segmented legs with bone-coloured feet splayed to the corners; about 5k triangles |
+| ✓ installed 2026-11-20 | `warden` | tank bronze `#9A6232` | radius 0.55 m | a hulking armoured tank: a long faceted ridged shell in [COLOUR] over its head and back (cracks across the back of the shell), a dark shield-shaped face with one glowing [COLOUR] gem visor, a heavy charcoal chest, big grey boulder shoulders with heavy segmented forearms and fists hanging to the ground, two short stumpy grey legs with bone-coloured toes; about 5k triangles |
+| ✓ installed 2026-11-20 | `arc_caster` | ranged violet `#8A50D8` | radius 0.38 m | a tall caster: a faceted ridged hood and long robe-like shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body under it, grey segmented arms holding a grey staff with a bright arc crystal at its tip, three small floating [COLOUR] rune shards around the hood, no legs showing, a hem of grey segmented spikes with bone tips; about 5k triangles |
+| ✓ installed 2026-11-20 | `bomb_drone` | bomber yellow `#E8C22E` | radius 0.40 m; hovers about 1.8 m up | a hovering quad-copter: a faceted ridged shell in [COLOUR], a dark shield-shaped face at the front with one glowing [COLOUR] gem visor, a charcoal body, four grey segmented arms with bone-coloured tips that carry flat rotor blades (blades as separate parts), a dark round bomb slung under its belly with a glowing fuse (the bomb as a separate object is a bonus); about 5k triangles |
+| ✓ installed 2026-11-20 | `swarmer` | melee crimson `#B82A48` | radius 0.24 m (about 0.5 m long) | a small fast armoured beetle: a low wedge-shaped faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, two pale bone mandibles that open wide, six thin grey segmented legs with bone tips splayed low; about 3k triangles |
+| ✓ installed 2026-11-20 | `mine_layer` | bomber dark yellow `#C29A14` | radius 0.42 m (about 0.9 m long) | a low armoured crawler: a faceted ridged hull in [COLOUR] with chevron plates, a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, carried on grey segmented legs with bone tips (two short tank treads in grey are also fine), an open hopper at the back holding a dark round spiked mine with a small blinking light (the mine as a separate object is a bonus); about 5k triangles |
+| ✓ installed 2026-11-20 | `sniper` | ranged blue `#3A55C0` | radius 0.35 m (about 1.1 m tall) | a lean walking gun platform: a narrow faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor shaped like a big round scope lens, a charcoal body, a very long grey rifle barrel pointing forward with cooling fins, three long thin grey segmented legs in a tripod with bone-coloured feet; about 5k triangles |
 
 **Horde critters (one per biome, Q14).** Many are on screen at once, so each is small, one simple silhouette, about
 1.5k triangles. They keep the family features (faceted shell, one glowing gem eye) scaled down. All are melee, so they
@@ -173,11 +181,11 @@ take the Swarmer's crimson.
 
 | ✓ | id | Role colour | In-game size | Prompt (after the character prefix, then the 3D step) |
 |---|---|---|---|---|
-| ☐ | `dust_mite` | melee crimson `#B82A48` | about 0.3 m | a fist-sized stone tick: a low round faceted ridged shell in [COLOUR], a tiny dark shield-shaped face with one glowing [COLOUR] gem eye, a charcoal underside, six thin grey segmented legs with bone tips splayed low; about 1.5k triangles |
-| ☐ | `cave_bat` | melee crimson `#B82A48` | about 0.4 m across the wings | a small flying bat: a compact faceted ridged shell in [COLOUR] on the back, a tiny dark shield-shaped face with one glowing [COLOUR] gem eye, a charcoal body, two broad grey stone wings spread wide with bone-coloured tips (wings as separate parts), two tiny grey feet tucked under; about 1.5k triangles |
-| ☐ | `ember_flea` | melee crimson `#B82A48` | about 0.3 m | a small hopping flea: a tall curved faceted ridged shell in [COLOUR], a tiny dark shield-shaped face with one glowing [COLOUR] gem eye, a charcoal body, two big grey segmented back legs folded like springs with bone tips, four short front legs, a few small glowing [COLOUR] cracks on the shell; about 1.5k triangles |
-| ☐ | `ice_crab` | melee crimson `#B82A48` | about 0.4 m wide | a flat sliding crab: a wide flat faceted ridged shell in [COLOUR] with pale ice-blue facets at the edges, a tiny dark shield-shaped face on the front with one glowing [COLOUR] gem eye, a charcoal underside, two small grey segmented claws with bone tips, six short flat grey legs held out sideways; about 1.5k triangles |
-| ☐ | `star_mote` | melee crimson `#B82A48` | about 0.3 m | a tiny floating star with a tail: a five-pointed faceted ridged body in [COLOUR], a small dark shield-shaped face in the middle with one glowing [COLOUR] gem eye, a charcoal core, a short tapering grey tail of three segments with a bone tip, no legs; about 1.5k triangles |
+| ✓ installed 2026-11-20 | `dust_mite` | melee crimson `#B82A48` | about 0.3 m | a fist-sized stone tick: a low round faceted ridged shell in [COLOUR], a tiny dark shield-shaped face with one glowing [COLOUR] gem eye, a charcoal underside, six thin grey segmented legs with bone tips splayed low; about 1.5k triangles |
+| ✓ installed 2026-11-20 | `cave_bat` | melee crimson `#B82A48` | about 0.4 m across the wings | a small flying bat: a compact faceted ridged shell in [COLOUR] on the back, a tiny dark shield-shaped face with one glowing [COLOUR] gem eye, a charcoal body, two broad grey stone wings spread wide with bone-coloured tips (wings as separate parts), two tiny grey feet tucked under; about 1.5k triangles |
+| ✓ installed 2026-11-20 | `ember_flea` | melee crimson `#B82A48` | about 0.3 m | a small hopping flea: a tall curved faceted ridged shell in [COLOUR], a tiny dark shield-shaped face with one glowing [COLOUR] gem eye, a charcoal body, two big grey segmented back legs folded like springs with bone tips, four short front legs, a few small glowing [COLOUR] cracks on the shell; about 1.5k triangles |
+| ✓ installed 2026-11-20 | `ice_crab` | melee crimson `#B82A48` | about 0.4 m wide | a flat sliding crab: a wide flat faceted ridged shell in [COLOUR] with pale ice-blue facets at the edges, a tiny dark shield-shaped face on the front with one glowing [COLOUR] gem eye, a charcoal underside, two small grey segmented claws with bone tips, six short flat grey legs held out sideways; about 1.5k triangles |
+| ✓ installed 2026-11-20 | `star_mote` | melee crimson `#B82A48` | about 0.3 m | a tiny floating star with a tail: a five-pointed faceted ridged body in [COLOUR], a small dark shield-shaped face in the middle with one glowing [COLOUR] gem eye, a charcoal core, a short tapering grey tail of three segments with a bone tip, no legs; about 1.5k triangles |
 
 **New enemies (Q22).** Same family, about 5k triangles each, plus the one thing that makes each readable in play.
 **Use the detailed, ready-to-paste prompts in [`art/requests/v0.11.0_enemy_models.md`](art/requests/v0.11.0_enemy_models.md)**
@@ -186,16 +194,16 @@ the short summary.
 
 | ✓ | id | Role colour | In-game size | Prompt (after the character prefix, then the 3D step) |
 |---|---|---|---|---|
-| ☐ | `wire_weaver` | bomber yellow `#E8C22E` | — | a spindly cable-laying walker: a faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, four long grey segmented arms with bone tips holding two short grey cable posts with sparking tops (the two posts as separate objects), a coil of cable on its back, four thin grey segmented legs; about 5k triangles |
+| ✓ | `wire_weaver` | bomber yellow `#E8C22E` | — | a spindly cable-laying walker: a faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, four long grey segmented arms with bone tips holding two short grey cable posts with sparking tops (the two posts as separate objects), a coil of cable on its back, four thin grey segmented legs; about 5k triangles **Arrived 2026-11-19, animated and on VAT (v0.12.0 step 37).** |
 | ✓ | `scrap_hound` | melee red-orange `#C93A1E` | — | a lean fast four-legged hound: a low faceted ridged shell in [COLOUR] along the back, a dark shield-shaped face on a long snout with one glowing [COLOUR] gem visor, a charcoal body, four long thin grey segmented legs with bone-coloured claws, a short grey segmented tail, a few scrap plates bolted on its flanks; about 5k triangles |
 | ✓ | `rock_lurker` | melee red-orange `#C93A1E` | — | a crouched creature disguised as a boulder: a round rough faceted ridged grey rock shell covering its whole back, thin glowing [COLOUR] cracks across the rock, a dark shield-shaped face half hidden under the rock edge with one glowing [COLOUR] gem visor, a charcoal body, four thick short grey segmented legs with bone-coloured claws tucked in; about 5k triangles |
 | ✓ | `stone_thrower` | tank bronze `#9A6232` | — | a hunched brute with huge arms: a faceted ridged shell in [COLOUR] on its back, a small dark shield-shaped face with one glowing [COLOUR] gem visor, a heavy charcoal chest, two huge grey segmented arms with big bone-tipped hands raised overhead holding a rough grey rock (the rock as a separate object), two short stumpy grey legs; about 5k triangles |
 | ✓ | `kiln_beetle` | bomber yellow `#E8C22E` | — | a slow, heavy armoured beetle: a round faceted ridged shell in [COLOUR] with vent slits, a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, a big glowing [COLOUR] kiln belly showing through a gap under the shell, six thick grey segmented legs with bone tips; about 5k triangles |
 | ✓ | `cinder_priest` | ranged violet `#8A50D8` | — | a robed priest: a faceted ridged hood and long robe-like shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body under it, grey segmented arms holding a tall grey staff topped with a glowing [COLOUR] ember crystal, a hem of grey segmented spikes with bone tips, no legs showing; about 5k triangles |
-| ☐ | `frost_spitter` | ranged blue `#3A6BD4` | — | a lean four-legged spitter: a faceted ridged shell in [COLOUR], a dark shield-shaped face on a short wide mouth with one glowing [COLOUR] gem visor, a charcoal body, a big pale ice-blue sac swelling on its throat, four grey segmented legs with bone tips; about 5k triangles |
-| ☐ | `glacier_turtle` | tank bronze `#9A6232` | — | a squat turtle: a charcoal body, a dark shield-shaped face with one glowing [COLOUR] gem visor on a short grey neck, four thick grey segmented legs with bone tips, a big domed ice shell of pale blue faceted slabs held in front (the shell as a separate object), a small faceted ridged cap in [COLOUR] on its back; about 5k triangles |
-| ☐ | `star_warper` | ranged violet `#8A50D8` | — | a slim floating caster: a five-pointed star-shaped faceted ridged head in [COLOUR], a dark shield-shaped face in the middle of the star with one glowing [COLOUR] gem visor, a narrow charcoal body, two thin grey segmented arms with bone tips, a tapering grey tail instead of legs, a few small [COLOUR] star shards around it; about 5k triangles |
-| ☐ | `gravity_node` | bomber yellow `#E8C22E` | — | a floating orb, no legs: a round faceted ridged shell in [COLOUR] split in two halves around a charcoal core, a dark shield-shaped face plate on the front with one glowing [COLOUR] gem visor, two or three thin grey rings circling it at different tilts (the rings as separate parts), small bone-coloured studs on the rings; about 5k triangles |
+| ✓ | `frost_spitter` | ranged blue `#3A6BD4` | — | a lean four-legged spitter: a faceted ridged shell in [COLOUR], a dark shield-shaped face on a short wide mouth with one glowing [COLOUR] gem visor, a charcoal body, a big pale ice-blue sac swelling on its throat, four grey segmented legs with bone tips; about 5k triangles **Arrived 2026-11-19, animated and on VAT (v0.12.0 step 37).** |
+| ✓ | `glacier_turtle` | tank bronze `#9A6232` | — | a squat turtle: a charcoal body, a dark shield-shaped face with one glowing [COLOUR] gem visor on a short grey neck, four thick grey segmented legs with bone tips, a big domed ice shell of pale blue faceted slabs held in front (the shell as a separate object), a small faceted ridged cap in [COLOUR] on its back; about 5k triangles **Arrived 2026-11-19, animated and on VAT (v0.12.0 step 37).** |
+| ✓ installed 2026-11-20 | `star_warper` | ranged violet `#8A50D8` | — | a slim floating caster: a five-pointed star-shaped faceted ridged head in [COLOUR], a dark shield-shaped face in the middle of the star with one glowing [COLOUR] gem visor, a narrow charcoal body, two thin grey segmented arms with bone tips, a tapering grey tail instead of legs, a few small [COLOUR] star shards around it; about 5k triangles |
+| ✓ | `gravity_node` | bomber yellow `#E8C22E` | — | a floating orb, no legs: a round faceted ridged shell in [COLOUR] split in two halves around a charcoal core, a dark shield-shaped face plate on the front with one glowing [COLOUR] gem visor, two or three thin grey rings circling it at different tilts (the rings as separate parts), small bone-coloured studs on the rings; about 5k triangles **Arrived 2026-11-19, animated and on VAT (v0.12.0 step 37).** |
 
 Role colours for kinds that don't match the eight above one to one: the Weaver, Kiln Beetle and Gravity Node
 (area control, bomber) take the bomber yellow; the Scrap Hound and Rock Lurker (flanker, ambush) take the melee
@@ -210,8 +218,10 @@ The biome variants (Rubble Warden, Dim Needle, Ember Charger, Frost Charger, Spl
 |---|---|---|---|
 | ☐ | **Re-export your final-boss file with one shared, smaller texture** (P1) | 2048² or 4096², one texture used by all three bodies | Each of the three models now carries its own copy of the same 8192² texture: +56 MB in the repo |
 | ☐ | Animated Colossus, Prism and The Fallen (P2) | clips named `idle`, `walk` and the attack names in FINAL_BOSS_1..3.md, in an AnimationPlayer inside the `.glb` | Yours replace the code clips by name |
+| ☐ | The Fallen's emblems of the bosses it remembers (P3) | four small emblems, one per boss: the Clockwork Judge (gold), the Tidecaller (sea blue), the Gatekeeper (stone amber), the Twin Wardens (amber and violet) | Over The Fallen while it casts a mechanic it remembers. Today each is a ghost of that boss's own model drawn as glowing light in its colour (the Twins as a pair), rising over it; say if you want a sigil or icon instead |
+| ☐ | The amber Warden's shade (P3) | a translucent amber Warden, 2.6 m, standing and charging | The Fallen's remembered ward: today the amber Warden's model drawn as amber light, held still in its rest pose (no run or wind-up clip) |
 
-### 3.4 The shop (P2: you're not sure yet)
+### 3.4 The shop (paused, owner 2026-11-20: "the same one is enough")
 
 | ✓ | id | Spec | Prompt (after the character prefix, "standing idle, arms at its sides, facing forward") |
 |---|---|---|---|
@@ -223,46 +233,77 @@ The biome variants (Rubble Warden, Dim Needle, Ember Charger, Frost Charger, Spl
 | ☐ | `shop_wares` | 1.0 × 0.6 × 0.6, +Z toward the player | (kit prefix) a pile of goods for a counter: bottles, a scroll case, glowing crystal shards in a crate, a small chest |
 | ☐ | stalls for the other 4 biomes (P3) | must fit 4.0 × 3.4 m, 2.55 m tall; say which way its front faces | (kit prefix) your desert stall's shape, re-dressed: Night Rocks (moss-grey cloth, a hanging lantern on a staff), Red Canyon (sun-bleached cloth, cattle skull), Frozen Shore (furs, nets, frost), Starfall (star-map cloth, floating crystals) |
 
-### 3.5 Boss attack pieces (P2)
+### 3.5 Boss attack pieces (paused, owner 2026-11-20: "they look good enough actually"; kept on the list)
 
 | ✓ | id | Size | Prompt (after the kit prefix) |
 |---|---|---|---|
-| ☐ | `javelin` | 2.0 long | the Warlord's leaf-headed crystal javelin, a red faceted crystal tip, a grey worn steel shaft |
+| ✓ | `javelin` | 2.0 long | the Warlord's leaf-headed crystal javelin, a red faceted crystal tip, a grey worn steel shaft **Arrived 2026-11-19, installed (v0.12.0 step 39).** |
 | ☐ | `brood_egg` | 0.6 tall | the Brood Mother's leathery green-grey egg with glowing veins, slightly cracked at the top |
+| ✓ | `hour_clock` | 0.7 across | the small clock that floats over each of the Clockwork Judge's hour orbs: a round brass pocket-clock face, cream dial, two dark hands (the minute hand a separate piece, so the game can turn it). **Arrived 2026-11-19, installed (v0.12.0 step 39).** |
+| ☐ | `stopped_gear` | 5.4 across, 0.8 thick | one large brass cog with square teeth for the Judge's gear walls, standing on its edge (the game sinks it so 1.6 m shows). Today a cog built in code stands in |
+| ✓ | `siege_cart` | 2.0 long, 1.3 wide, 1.1 tall | the Siege Engine's ammo cart: a squat red-painted iron wagon on four heavy grey wheels, a tow bar at the front, three big glowing red shells lying in its bed (the front on +X). **Arrived 2026-11-19, installed (v0.12.0 step 39).** |
+| ☐ | `siege_boulder` | 3 × 3, 1.1 tall | the crater wall a Siege Engine shell leaves: a squat heap of broken grey-brown rock filling a 3 m square, flat-topped, low enough to see a person behind it, with a crack pattern that can glow orange. Today the kit's `rock_large` stretched to the square stands in |
+| ☐ | `foundry_slab` | 4.0 across (radius 2), 0.15 tall | a cooled lava slab the Foundry's pools leave: a flat round plate of dark cracked basalt, its top lightly faceted, a thin cool blue-grey rim round its edge, hairline cracks that can glow dull orange (the game scales it to the pool). Today a shader disc on the floor stands in |
+| ☐ | `foundry_plate` | fits the Foundry's model | the Forged Plate: riveted steel armour plates over the Foundry's furnace body and hood (a separate mesh worn over the model, so it can come off). Today a lit metallic shell grown off the model's own skin stands in |
+| ✓ | `war_banner` | 3.2 tall, its cloth 1.1 × 1.5 | the Warlord's War Banner, planted in the floor: a tall grey steel pole with a red leaf spearhead, a crossbar near the top, and a red cloth with a gold hem and the Warlord's glowing red emblem hanging from it (its cloth a separate mesh, so it can wave, burn and fly off when the pole snaps). **Arrived 2026-11-19, installed (v0.12.0 step 39).** |
+| ☐ | `lens_glass` | a strip 8 long, 1 wide, flat | the Hive Lens's burnt glass: a flat strip of scorched, cracked dark glass fused into the floor, its cracks and edge glowing hot rose-pink (the game stretches it to the strip and cools its glow). Today a shader strip on the floor stands in |
 
 ### 3.6 Room pieces (P2–P3)
 Still to come (the rest of the list arrived 2026-10-18, §3.0). All after the kit prefix.
 
 | Biome | id | Size (W×D×H m) | Prompt |
 |---|---|---|---|
-| Ruins | `metal_post` | 0.2 × 0.2 × 1.8 | a bent rusty metal post with a snapped bracket at the top |
-| Ruins | `dumpster` | 1.8 × 1.0 × 1.2 | a dented rusty dumpster with its lid half open, junk spilling over |
-| Ruins | `cable_spool` | 0.9 × 0.9 × 0.7 | a big wooden cable spool lying on its side |
-| Ruins | `sign_frame` | 1.2 × 0.2 × 1.6 | a blank fallen billboard frame on two posts, no text |
-| Frozen Shore | `ice_floe` | 2 × 1.6 × 0.12 | a flat cracked slab of floating sea ice, seen from above (the file you sent under this name is a frozen boat; it went in as `boat_wreck`) |
+| Ruins | `metal_post` | 0.2 × 0.2 × 1.8 | a bent rusty metal post with a snapped bracket at the top **Arrived 2026-11-19, installed (v0.12.0 step 36).** |
+| Ruins | `dumpster` | 1.8 × 1.0 × 1.2 | a dented rusty dumpster with its lid half open, junk spilling over **Arrived 2026-11-19, installed (v0.12.0 step 36).** |
+| Ruins | `cable_spool` | 0.9 × 0.9 × 0.7 | a big wooden cable spool lying on its side **Arrived 2026-11-19, installed (v0.12.0 step 36).** |
+| Ruins | `sign_frame` | 1.2 × 0.2 × 1.6 | a blank fallen billboard frame on two posts, no text **Arrived 2026-11-19, installed (v0.12.0 step 36).** |
+| Frozen Shore | `ice_floe` | 2 × 1.6 × 0.12 | a flat cracked slab of floating sea ice, seen from above (the file you sent under this name is a frozen boat; it went in as `boat_wreck`) **Arrived 2026-11-19, installed (v0.12.0 step 36).** |
 
 **v0.11.0 purpose rooms (owner, 2026-11-07: "Add to my list"; G2_ROOMS.md).** The camp, collapsed hall and quarry
 rooms use stand-ins until these arrive. All after the kit prefix; sizes are targets, not measurements.
 
 | ✓ | Room | id | Size (W×D×H m) | Prompt |
 |---|---|---|---|---|
-| ☐ | Camp | `camp_tent` | 2.4 × 2.0 × 1.8 | a patched canvas lean-to tent on bent metal poles, one side open, a rolled blanket inside |
-| ☐ | Camp | `log_seat` | 1.4 × 0.4 × 0.4 | a short log split lengthwise as a bench, worn smooth on top |
-| ☐ | Camp | `cook_pot` | 0.7 × 0.7 × 0.9 | a dented iron cooking pot hanging from a tripod of three metal rods over cold ashes |
-| ☐ | Hall | `statue_whole` | 1.2 × 1.2 × 3.2 | a weathered stone statue of a hooded figure holding a staff, on a square plinth |
-| ☐ | Hall | `statue_broken` | 1.4 × 1.2 × 1.8 | the same hooded statue broken at the waist, its upper half lying beside the plinth |
-| ☐ | Hall | `column_round` | 0.8 × 0.8 × 3.6 | a tall round fluted stone column with a simple capital, chipped |
-| ☐ | Hall | `column_drum` | 0.8 × 1.6 × 0.8 | a fallen round column drum lying on its side, cracked |
-| ☐ | Quarry | `quarry_crane` | 2.0 × 1.6 × 4.0 | a wooden quarry hoist: a timber frame with a jib arm, a pulley, a rope and a hanging stone block |
-| ☐ | Quarry | `mine_cart` | 1.4 × 0.9 × 1.0 | a small rusty mine cart full of rubble on a short length of rail |
-| ☐ | Quarry | `stone_block` | 1.2 × 1.2 × 0.8 | a roughly cut rectangular stone block with chisel marks (tinted per biome by the game) |
-| ☐ | Quarry | `tool_rack` | 1.4 × 0.4 × 1.6 | a wooden rack with pickaxes, a sledgehammer and shovels leaning in it |
+| ✓ | Camp | `camp_tent` | 2.4 × 2.0 × 1.8 | a patched canvas lean-to tent on bent metal poles, one side open, a rolled blanket inside |
+| ✓ | Camp | `log_seat` | 1.4 × 0.4 × 0.4 | a short log split lengthwise as a bench, worn smooth on top |
+| ✓ | Camp | `cook_pot` | 0.7 × 0.7 × 0.9 | a dented iron cooking pot hanging from a tripod of three metal rods over cold ashes |
+| ✓ | Hall | `statue_whole` | 1.2 × 1.2 × 3.2 | a weathered stone statue of a hooded figure holding a staff, on a square plinth |
+| ✓ | Hall | `statue_broken` | 1.4 × 1.2 × 1.8 | the same hooded statue broken at the waist, its upper half lying beside the plinth |
+| ✓ | Hall | `column_round` | 0.8 × 0.8 × 3.6 | a tall round fluted stone column with a simple capital, chipped |
+| ✓ | Hall | `column_drum` | 0.8 × 1.6 × 0.8 | a fallen round column drum lying on its side, cracked |
+| ✓ | Quarry | `quarry_crane` | 2.0 × 1.6 × 4.0 | a wooden quarry hoist: a timber frame with a jib arm, a pulley, a rope and a hanging stone block |
+| ✓ | Quarry | `mine_cart` | 1.4 × 0.9 × 1.0 | a small rusty mine cart full of rubble on a short length of rail |
+| ✓ | Quarry | `stone_block` | 1.2 × 1.2 × 0.8 | a roughly cut rectangular stone block with chisel marks (tinted per biome by the game) |
+| ✓ | Quarry | `tool_rack` | 1.4 × 0.4 × 1.6 | a wooden rack with pickaxes, a sledgehammer and shovels leaning in it |
 | ☐ | All | bigger focal pieces | — | larger versions of the biome focal pieces (the Ruins arch, the Starfall observatory and monoliths) so they read across a 3x3 room; or say if the game may scale the existing ones |
 
-### 3.7 Boss animation clips (P3: you're not sure yet)
+### 3.7 Boss animation clips (the lead makes these in Blender with the v0.11.1 rigs; no art needed)
 Any boss: clips named like the code ones (`idle`, `walk`, `marks`, `pattern`, `lanes`, `leap`, `death`…, listed per
 boss in [`roadmap/v0.8.0/evidence/BOSS_ANIMATIONS.md`](roadmap/v0.8.0/evidence/BOSS_ANIMATIONS.md)) in an
 AnimationPlayer inside the `.glb`; yours replace the code ones.
+
+**The Twin Wardens' new moves** (their files carry `idle`, `walk`, `cast` and `swipe`; until a clip of its own exists
+each new move borrows one). Clips the fight needs, in the rig's scripts (`scripts/assets/boss_anim/warden_anim.py`):
+
+| ✓ | Clip | Move | Plays today |
+|---|---|---|---|
+| ☐ | `sword_combo` | Amber's three-hit combo, a step in before each cut | the file's `swipe`, once per cut (stand-in) |
+| ☐ | `sweep` (an overhead) | Amber's overhead: a long wind-up, the sword high, a 170° cut down | the file's `swipe` (stand-in) |
+| ☐ | `dash` | Amber's side dash, 4 m sideways in 0.25 s | nothing: he slides in his walk or idle |
+| ☐ | `rift_dive` | Amber diving into a rift (Through the Rift) | nothing: he sinks into the floor as a burrowing boss does |
+| ☐ | `mirror_ward` | Violet raising the Mirror Ward | the file's `cast` (fits) |
+| ☐ | `shadow_swords` | Violet summoning the five blades | the file's `cast` (fits) |
+| ☐ | `stunned` | Violet stunned 5 s after her ward breaks | the code `stagger` clip (a dazed sway) |
+
+**The Warlord's new moves** (its file carries `idle`, `walk`, `thrust`, `throw`, `bash`, `kneel` and `lunge`; the
+rig's scripts are `scripts/assets/boss_anim/warlord/warlord_anim.py`):
+
+| ✓ | Clip | Move | Plays today |
+|---|---|---|---|
+| ☐ | `banner_plant` | The War Banner's 1.0 s cast: it raises the banner and drives the pole into the floor | the file's `idle` (it stands; the banner rises by itself) |
+| ☐ | `duel_call` | The Duel's 1.2 s cast: it lifts its spear to call the javelins down round you both | the file's `idle` |
+| ☐ | `duel_stance` | Through the 12 s cage: on guard with the shield lowered at its side, its front open | the file's `idle` and `walk` with the shield arm turned down in code |
+| ☐ | `enraged` (or a faster `idle`) | While it stands in its own banner (its attacks come 30 % faster) | the file's `idle`, the body glowing hot |
 
 ---
 
@@ -270,5 +311,13 @@ AnimationPlayer inside the `.glb`; yours replace the code ones.
 
 | ✓ | id | What | Prompt |
 |---|---|---|---|
-| ☐ | `fx_rail_streak` (P2) | The Siege Engine's rail shot (the only texture missing from the zips) | in [`art/requests/v0.8.0_textures.md`](art/requests/v0.8.0_textures.md) |
+| ✓ installed 2026-11-20 | `fx_rail_streak` (P2) | The Siege Engine's rail shot (the only texture missing from the zips) | in [`art/requests/v0.8.0_textures.md`](art/requests/v0.8.0_textures.md) |
 | ☐ | final-boss music (P3) | A track for the final arena; today it uses the boss sounds | — |
+| ☐ | the Clockwork Judge's time sounds (P3) | The Time Wave landing, the Bell's toll, the throw back to your copy, the Judge's return, an hour orb taken: each borrows an existing sound re-pitched (`JudgeTimeCues`). A stopped gear rising and a slow field have none | — |
+| ☐ | the Twin Wardens' sounds | A charge's burst arming and going off, Amber's dash, a ward going up and the whole ward breaking, a shot turned back, a swing blocked, a shadow sword's cut, the rifts opening, him going in, the exit marked, him coming out: each borrows an existing sound re-pitched (`WardenCues`). The ward fading and the rifts closing have none | — |
+| ☐ | the Tidecaller's dance sounds | A Riptide warning and its wave, a High Tide's cast and its water rising, the Maelstrom beginning, the eye's throw: each borrows the Tidecaller's bell, its Pull's surge or the boss slam, re-pitched (`TideDanceCues`). The water draining has none | — |
+| ☐ | the Siege Engine's sounds | The Target Lock taking you, its shell landing, a boulder rising and one breaking, a turret crushed, the cart setting off, arriving and blown up, the Doom Shell, the armour stripped: each borrows an existing sound re-pitched (`SiegeCues`). The Shockwave keeps its attack's own; the cart's body arriving has none | — |
+| ☐ | The Fallen's remembered mechanics' sounds | Its cast plays the remembered boss's own telegraph sound; the ward going up and breaking and the shade's wind-up borrow the Twin Wardens' (`FallenCues`); the mechanics' own pieces sound as on their bosses | — |
+| ☐ | the Foundry's forge sounds | The plate's forging, it going on and being blown off, a pool cooling into a slab, a slab crumbling and one shattered, a slag drop coming, the Overpressure's cast, the floor catching and its end, your scald burning and its end: each borrows an existing sound re-pitched (`ForgeCues`), never the Overclock heat's. The drone the plate calls has none of its own | — |
+| ☐ | the Warlord's banner and duel sounds | The banner's cast, it being planted, snapped by its charge or burnt down by its time, the duel's cast, the cage closing, a touch of the fence, the recall's warning and the recall: each borrows an existing sound re-pitched (`WarlordCues`). A banner falling as the fight ends, and the cage's end, have none | — |
+| ☐ | the Hive Lens's drone and Lattice sounds | A drone cut down by its own beam, the Lattice's cast, the web rising and ending, a strand touching you, burnt glass laid and gone: each borrows an existing sound re-pitched (`LensCues`). The feeding and a shield ring dropping have none | — |

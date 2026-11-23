@@ -20,6 +20,11 @@ extends RefCounted
 ##   A projectile still orbiting the hero (Orbit, a Glaive's Orbit lap, a Seekers dart's lap) or waiting as a Mine (no
 ##   speed) is not bent until it leaves. The Laser's lance and the Sniper's line are instant paths (no flight, no tick
 ##   in between): they are not bent (Laser.trace, EnemyAi.snipe_lanes stay straight).
+##   The hero within hero_pull_radius_m of a node drifts toward it (hero_drift: hero_pull at its centre, none at the
+##   reach), the drift added to the walk's step, so walking out is always possible: the nodes' drifts sum, and the sum
+##   is held to the strongest node's hero_pull and to HERO_WALK_SHARE of the hero's run speed now. No drift while the
+##   hero dashes or moves by a skill, is dead, or the node spawns in or is dead; it stops BossTide.BODY_GAP_M short of
+##   the node's body.
 ## Pure (EI-02): + - * / and sqrt only (Kin), no randomness (EI-05), the one clock (EI-03). No state of its own: the
 ## stars and stuns live in the actor columns (lock_x/y, pick), hashed with the AI.
 
@@ -29,6 +34,8 @@ const PICK_STUNNED := 2
 const CORE_M := 0.05
 ## A bent telegraph path is drawn as one lane per this many ticks of flight (bent_lanes).
 const SEGMENT_TICKS := 4
+## The nodes' drift on the hero is never more than this share (per mille) of the hero's run speed now.
+const HERO_WALK_SHARE := 450
 
 
 static func is_warper(kind: int) -> bool:
@@ -174,6 +181,50 @@ static func bent_lanes(w: World, from: Vector2, v: Vector2, life: int, r: float)
 		if run < seg_len - 0.001:
 			break
 	return out
+
+
+## How strongly node i pulls the hero now, its drift's size alone (metres a tick): hero_pull × (1 − distance / reach)
+## within its reach, short of its body; 0 outside it, while it spawns in or is dead, or for a dead hero.
+static func hero_pull_of(w: World, i: int) -> float:
+	var a := w.actors
+	if not is_node(a.kinds[i]) or a.dead[i] == 1 or a.state[i] == EnemyAi.State.SPAWN:
+		return 0.0
+	if w.player_dead():
+		return 0.0
+	var t := w.enemy_table(a.kinds[i])
+	if t == null or t.hero_pull <= 0.0 or t.hero_pull_radius_m <= 0.0:
+		return 0.0
+	var d := Kin.length(a.pos(i) - w.player_pos())
+	if d >= t.hero_pull_radius_m or d <= CORE_M:
+		return 0.0
+	var gap := d - a.radius[i] - w.player.radius_m - BossTide.BODY_GAP_M
+	if gap <= 0.0:
+		return 0.0
+	return minf(t.hero_pull * (1.0 - d / t.hero_pull_radius_m), gap)
+
+
+## The drift every node gives the walking hero this tick (metres; World adds it to the walk's step): each node's
+## hero_pull_of toward it, summed, the sum held to the strongest node's hero_pull and to HERO_WALK_SHARE of the run
+## speed. Zero when no node reaches the hero.
+static func hero_drift(w: World) -> Vector2:
+	var a := w.actors
+	var p := w.player_pos()
+	var sum := Vector2.ZERO
+	var cap := 0.0
+	for i in range(1, a.size()):
+		if a.kinds[i] != ActorStore.Kind.GRAVITY_NODE:
+			continue
+		var s := hero_pull_of(w, i)
+		if s <= 0.0:
+			continue
+		var to := a.pos(i) - p
+		sum += to * (s / Kin.length(to))
+		cap = maxf(cap, w.enemy_table(a.kinds[i]).hero_pull)
+	if sum == Vector2.ZERO:
+		return sum
+	cap = minf(cap, BossTide.run_speed(w) * HERO_WALK_SHARE / 1000.0)
+	var n := Kin.length(sum)
+	return sum if n <= cap else sum * (cap / n)
 
 
 ## Node i holds its spot (EnemyAi.move): its first move takes the spot it stands on as its anchor (lock_x/y, lock_len 1

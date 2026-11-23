@@ -5,7 +5,7 @@ extends GutTest
 ## view of nodes built beside it on the same world draws the same instances).
 
 const SW := ActorStore.Kind.SWARMER
-const SN := ActorStore.Kind.SNIPER
+const ML := ActorStore.Kind.MINE_LAYER
 const SB := ActorStore.Kind.SHIELD_BEARER
 const CH := ActorStore.Kind.CHARGER
 const DT := 1.0 / 60.0
@@ -110,7 +110,7 @@ func test_its_bar_shows_its_health() -> void:
 	var fti := get_tree().physics_interpolation
 	get_tree().physics_interpolation = false  # The bar at its latest fill (no frames run in a test)
 	var w := CombatLab.world()
-	var id := w.add_enemy(SN, Vector2(2.0, 2.0))
+	var id := w.add_enemy(ML, Vector2(2.0, 2.0))
 	var views := _views(w)
 	_ripen(w)
 	views.sync(WorldReader.new(w))
@@ -135,7 +135,7 @@ func test_its_bar_shows_its_health() -> void:
 
 func test_a_kill_removes_its_instances_the_same_frame() -> void:
 	var w := CombatLab.world()
-	var gone := w.add_enemy(SN, Vector2(2.0, 2.0))  # A code body: it goes at once
+	var gone := w.add_enemy(CH, Vector2(2.0, 2.0))  # A code body (the Charger): it goes at once
 	var falls := w.add_enemy(SB, Vector2(-2.0, 2.0))  # The owner's model: it falls a moment
 	var views := _views(w)
 	_ripen(w)
@@ -202,7 +202,7 @@ func test_the_batch_draws_what_a_view_of_nodes_draws() -> void:
 	var w := CombatLab.world()
 	var ids: Array[int] = []
 	for k in 6:
-		ids.append(w.add_enemy([SW, SN, SB, CH][k % 4], Vector2(-6.0 + k * 2.5, 1.5)))
+		ids.append(w.add_enemy([SW, ML, SB, CH][k % 4], Vector2(-6.0 + k * 2.5, 1.5)))
 	var batched := _views(w)
 	var nodes := _views(w, false)
 	assert_eq(nodes.batched_count(), 0, "the twin keeps its nodes")

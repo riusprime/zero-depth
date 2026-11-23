@@ -9,7 +9,8 @@ extends Node3D
 ## - Caps per family (CAPS, I5), scaled by Effects density (ViewPrefs.effects_density, I9). Past a cap the family's
 ##   oldest live instance is reused.
 ## - Lights are off on every instance: a family that should glow asks VfxCore for its merged light.
-## - Colours: the table's, or the caller's (`primary`, `secondary`, `tertiary`); an alpha of 0 keeps the scene's.
+## - Colours: the table's, or the caller's (`primary`, `secondary`, `tertiary`); an alpha of 0 keeps the scene's. A
+##   beam scene's glow strength is its own unless the caller asks for an `emission` (a float) in the same dictionary.
 ## - Pause: while the sim holds (follow() sees no tick for HOLD_S), every live instance's speed_scale is 0.
 ## - warm(id): the id once, in front of the camera, for WARM_FRAMES frames, so its shaders compile before the first
 ##   fight. v0.10.0 VX-W: once a session, at the main menu (PackFxSessionWarm), never one spawn an id on every floor
@@ -77,15 +78,37 @@ const SHORT := {
 	&"p10l_meteor_land": [0.4, 27.0],
 	&"p10l_star_hit": [0.2, 15.0],
 }
+## Families whose animated scenes play their particles once (left looping, an explosion's 0.5 s sparks fire again and
+## again through its 1.2 s and it reads as two or three blasts).
+const ONCE: Array[StringName] = [&"explosion", &"impact"]
 
-## The pack scene's child nodes an id never
-## shows (the meteor's landing drops vfx_impact_01's white-hot Core sphere, its smoke and its tall streaks; the
-## pack's files stay as they are).
-const HIDE := {&"p10l_meteor_land": ["Core", "Smoke", "Impact_Streaks2"]}
+## The pack scene's child nodes an id never shows (the meteor's landing drops vfx_impact_01's white-hot Core sphere,
+## its smoke and its tall streaks; the pack's files stay as they are).
+const HIDE := {
+	&"p10l_meteor_land": ["Core", "Smoke", "Impact_Streaks2"],
+	# The Siege Engine's rail keeps the blast's core; its outer sheath's crackling noise does not fit the flat floor.
+	&"bx_rail": ["BeamPivot/BeamScalor/BeamOuter"],
+}
+
+## The light pillars and pulses drawn quieter than their scenes were made, to sit with the flat-shaded floor (the
+## pack's files stay as they are): "glow" scales each material's emission_strength (less bloom, less additive),
+## "height" squashes the scene on Y (a shorter column), "dark" darkens the body colours (secondary, tertiary) while
+## the primary, the bright edge, stays: a pulse reads as a darker floor wave with a thin bright edge.
+const LOOK := {
+	&"bx_pillar_light": {"glow": 0.3, "height": 0.45, "dark": 0.35},
+	&"tw_portal_exit": {"glow": 0.3, "height": 0.45, "dark": 0.35},
+	&"bx_pulse_light": {"glow": 0.3, "dark": 0.6},
+}
 
 ## The children spawn()'s `hide` may switch off (and back on for the next user of a pooled instance).
-## Also an impact's white Core puff and its Ground_Impact disc (Blood Thorns' eruptions keep the sparks).
-const HIDE_PER_SPAWN: Array[String] = ["Smoke", "Core", "Ground_Impact"]  # Blood Thorns keeps the sparks
+## Also an impact's white Core puff and its Ground_Impact disc (Blood Thorns' eruptions keep the sparks), and a beam's
+## ball where it strikes (BeamEndPivot: a held beam's caller hides it, BossPackHold.no_end_ball).
+const HIDE_PER_SPAWN: Array[String] = ["Smoke", "Core", "Ground_Impact", "BeamEndPivot"]
+## How long a released instance rests in the tree before it is parked outside it, and how many of one id may rest.
+const REST_MS := 1000
+const REST_PER_ID := 4
+## The resting instances are looked over this often (msec), not every frame.
+const REST_CHECK_MS := 100
 
 static var _shared: PackFxDefinition
 ## How floor loads warm the pack (VX-W): &"menu" (PackFxSessionWarm warms at the main menu; a load warms what is
@@ -102,12 +125,19 @@ static var _peak := {}
 var camera: Camera3D = null
 var spawned := 0
 var reused := 0
+## Family -> how many effects of it spawn() has played so far (tests count what one event plays).
+var spawned_in := {}
 
 var _def: PackFxDefinition
 ## id -> Array[Node3D]. v0.10.5 PC (owner PERF_PLAYLOG_2: the filled pools put ~2,300 idle nodes in the tree, paid
 ## for every frame): an idle instance waits outside the scene tree (kept here, freed with the pack) and joins it again
 ## when spawned.
 var _idle := {}
+## Released instances still in the tree, hidden: node -> the msec of its release. Hits and statuses spawn many times a
+## second; an instance taken out of the tree at its release and put back at its next spawn paid both moves (its every
+## child leaves and joins the renderer), so the last few of an id rest in the tree for REST_MS first.
+var _resting := {}
+var _rest_check_ms := 0
 var _live: Array[Dictionary] = []  # oldest first: {node, id, family, left}
 var _info := {}  # Node3D -> {anim, colors, speed, life, lights}
 var _live_n := {}  # id -> its live instances
@@ -210,16 +240,23 @@ func spawn(
 		if part_node != null:
 			part_node.visible = not hide.has(part)
 	node.scale = Vector3.ONE * scale * _def.scales[k]
+	var look: Dictionary = LOOK.get(effect_id, {})
+	node.scale.y *= float(look.get("height", 1.0))
+	if look.has("glow") and not info.has("quiet"):  # once per instance: its materials are its own
+		_quiet(node, float(look["glow"]))
+		info["quiet"] = true
 	if node.is_inside_tree():
 		node.global_position = pos
 	else:
 		node.position = pos
-	_colour(node, info, colors, k)
+	_colour(node, info, colors, k, float(look.get("dark", 0.0)))
 	# v0.10.0 lead (VX2-VX5's findings): a held effect keeps emitting and looping until release(); a timed one runs
 	# its scene's one pass (an animation-less scene's particles fire once).
 	var short: Array = SHORT.get(effect_id, []) if life != 0.0 else []
 	for p in _particles(node):
-		p.one_shot = life != 0.0 and (info["anim"] == null or not short.is_empty())
+		p.one_shot = (
+			life != 0.0 and (info["anim"] == null or not short.is_empty() or ONCE.has(family))
+		)
 		p.local_coords = not WORLD_SPACE.has(family)
 	var left := float(info["life"]) / speed if life < 0.0 else (INF if life == 0.0 else life)
 	var entry := {"node": node, "id": effect_id, "family": family, "left": left}
@@ -239,6 +276,7 @@ func spawn(
 	if n_live > int(_peak.get(effect_id, 0)):
 		_peak[effect_id] = n_live
 	spawned += 1
+	spawned_in[family] = int(spawned_in.get(family, 0)) + 1
 	return node
 
 
@@ -327,6 +365,7 @@ func advance(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	advance(delta)
+	_park_rested()
 	var keep: Array[Dictionary] = []
 	for w in _warm_nodes:
 		w["left"] = int(w["left"]) - 1
@@ -401,6 +440,7 @@ func _take(effect_id: StringName, scene_path: String) -> Node3D:
 	var idle: Array = _idle.get(effect_id, [])
 	if not idle.is_empty():
 		var node: Node3D = idle.pop_back()
+		_resting.erase(node)
 		if node.get_parent() == null:
 			add_child(node)  # Back in the tree
 		return node
@@ -422,6 +462,8 @@ func _make(scene_path: String) -> Node3D:
 	for key in [&"primary_color", &"secondary_color", &"tertiary_color"]:
 		if key in node:
 			(info["colors"] as Dictionary)[key] = node.get(key)
+	if "emission" in node:  # a beam's own glow strength, which a caller may lower per spawn
+		info["emission"] = float(node.get("emission"))
 	if "speed_scale" in node:
 		info["speed"] = float(node.get("speed_scale"))
 	node.visible = false
@@ -437,6 +479,7 @@ func _make(scene_path: String) -> Node3D:
 		info["anim"] = anim
 		if anim.has_animation(ANIM):
 			longest = anim.get_animation(ANIM).length
+			info["later"] = _started_later(anim.get_animation(ANIM))
 	for p in _particles(node):
 		if anim == null:
 			p.one_shot = true
@@ -459,7 +502,19 @@ func _unlight(node: Node3D, info: Dictionary) -> void:
 	info["lights"] = found
 
 
-func _colour(node: Node3D, info: Dictionary, colors: Dictionary, row: int) -> void:
+## Scales the emission_strength of every material of `node`'s own (LOOK's "glow").
+static func _quiet(node: Node, k: float) -> void:
+	if node is GeometryInstance3D:
+		var m := (node as GeometryInstance3D).material_override as ShaderMaterial
+		if m != null and m.get_shader_parameter("emission_strength") != null:
+			var e := float(m.get_shader_parameter("emission_strength"))
+			m.set_shader_parameter("emission_strength", e * k)
+	for c in node.get_children():
+		_quiet(c, k)
+
+
+## `dark` darkens the body colours (secondary, tertiary) by that much; the primary stays (LOOK's "dark").
+func _colour(node: Node3D, info: Dictionary, colors: Dictionary, row: int, dark := 0.0) -> void:
 	var from_table := {
 		&"primary_color": _def.primary[row],
 		&"secondary_color": _def.secondary[row],
@@ -479,14 +534,46 @@ func _colour(node: Node3D, info: Dictionary, colors: Dictionary, row: int) -> vo
 			c = t
 		if colors.has(asked[key]):
 			c = colors[asked[key]]
-		node.set(key, c)
+		if dark > 0.0 and key != &"primary_color":
+			c = Color(c.darkened(dark), c.a)
+		# The controller's setter writes every material of the instance (its own copies): a pooled instance
+		# spawned again in the colour it holds needs none of it
+		if node.get(key) != c:
+			node.set(key, c)
+	if info.has("emission"):
+		var em := float(colors.get(&"emission", info["emission"]))
+		if float(node.get("emission")) != em:
+			node.set("emission", em)
+
+
+## The emitters (child name -> true) whose `emitting` the scene's animation first turns on after its start (an
+## explosion's smoke a beat after its core): the animation fires them, so a spawn leaves them off until then.
+static func _started_later(a: Animation) -> Dictionary:
+	var out := {}
+	for t in a.get_track_count():
+		var path := a.track_get_path(t)
+		if (
+			a.track_get_type(t) != Animation.TYPE_VALUE
+			or path.get_concatenated_subnames() != "emitting"
+		):
+			continue
+		for k in a.track_get_key_count(t):
+			if bool(a.track_get_key_value(t, k)):
+				if a.track_get_key_time(t, k) > 0.0:
+					out[String(path.get_concatenated_names())] = true
+				break
+	return out
 
 
 func _restart(node: Node3D, info: Dictionary) -> void:
 	node.visible = true
 	_set_speed(node, 0.0 if _held else _speed_of(info))
+	var later: Dictionary = info.get("later", {})
 	for p in _particles(node):
-		p.restart()
+		if later.has(String(p.name)):  # its scene starts it later; restarting it now too fired it twice
+			p.emitting = false
+		else:
+			p.restart()
 	var anim := info["anim"] as AnimationPlayer
 	if anim != null and anim.has_animation(ANIM):
 		anim.play(ANIM)
@@ -578,11 +665,36 @@ func _release(node: Node3D, later := false) -> void:
 			if not _idle.has(id):
 				_idle[id] = []
 			(_idle[id] as Array).append(node)
-			if later:
+			if node.get_parent() == self and _resting_of(id) < REST_PER_ID:
+				_resting[node] = Time.get_ticks_msec()  # parked by _process once rested, unless spawned again
+			elif later:
 				_park_if_idle.call_deferred(node)
 			else:
 				_park(node)
 			return
+
+
+## How many released instances of `id` rest in the tree.
+func _resting_of(id: StringName) -> int:
+	var n := 0
+	for node: Variant in _idle.get(id, []):  # (a Variant: an idle instance may be freed)
+		if _resting.has(node):
+			n += 1
+	return n
+
+
+## Parks the instances that rested REST_MS (or every resting one: `all`).
+func _park_rested(all := false) -> void:
+	if _resting.is_empty():
+		return
+	var ms := Time.get_ticks_msec()
+	if not all and ms < _rest_check_ms:
+		return
+	_rest_check_ms = ms + REST_CHECK_MS
+	for node: Variant in _resting.keys():
+		if all or ms - int(_resting[node]) >= REST_MS:
+			_resting.erase(node)
+			_park_if_idle(node)
 
 
 ## A deferred park, unless a spawn took the instance again meanwhile.

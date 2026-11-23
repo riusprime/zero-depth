@@ -54,7 +54,10 @@ func test_each_bosss_ground_attacks_are_styled_and_strike_in_3d() -> void:
 			for st: Array in main.view.strikes.strikes():
 				struck = struck or looks.has(st[0])
 			if struck:
-				drawn = maxi(drawn, main.view.strikes.drawn_total())
+				# the pooled shapes, or the stone slam a crater, landing or shell plays
+				drawn = maxi(
+					drawn, main.view.strikes.drawn_total() + main.view.strikes.slams.pieces_shown()
+				)
 				after += 1
 			if styled and struck and after > 12:
 				break

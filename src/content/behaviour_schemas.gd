@@ -394,8 +394,13 @@ const SCHEMAS := {
 		"shape_params": ["radius_m"],
 	},
 	## ENEMIES.md R10: the Gravity Node, stationary and floating, no attack: every projectile within
-	## pull_radius_m turns toward it (pull_mps2 at its centre, none at the reach), its speed kept.
-	&"gravity_node": {"params": ["pull_radius_m", "pull_mps2"], "attacks": []},
+	## pull_radius_m turns toward it (pull_mps2 at its centre, none at the reach), its speed kept; the hero within
+	## hero_pull_radius_m drifts toward it (hero_pull_mps at its centre, none at the reach), always slower than a walk.
+	&"gravity_node":
+	{
+		"params": ["pull_radius_m", "pull_mps2", "hero_pull_radius_m", "hero_pull_mps"],
+		"attacks": [],
+	},
 }
 ## A variant's base behaviour (it walks, aims and hits as its base: EnemyAi.behaviour_of).
 const VARIANT_OF := {

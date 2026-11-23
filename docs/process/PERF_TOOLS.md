@@ -2,8 +2,10 @@
 
 Every tool that measures the sim or the frame, what its numbers mean, the protocol that makes a number evidence, and
 the misreadings that cost this project time. Logging a game the owner plays is a separate tool:
-[`PERF_LOG.md`](PERF_LOG.md). Evidence pages follow [`TEMPLATES.md`](TEMPLATES.md) §3; tools write only under
-`build/`, and a number goes into evidence by hand (CLAUDE.md "Evidence honesty").
+[`PERF_LOG.md`](PERF_LOG.md) (the frame, the main thread in order, the GPU per render pass with `--gpu-profile`, a
+census of the scene and the Graphics options; `scripts/perf/summarize_perf.py` says what is biggest). Evidence pages
+follow [`TEMPLATES.md`](TEMPLATES.md) §3; tools write only under `build/`, and a number goes into evidence by hand
+(CLAUDE.md "Evidence honesty").
 
 ## 1. The target
 
@@ -66,6 +68,7 @@ what is drawn), `primitives`, `video_mem_MB`, `nodes`, `resources`, `orphans`, `
 |---|---|
 | `--biome=<id[,id]>`, `--secs=N`, `--warm=N` | the biomes (default `frozen_shore,red_canyon`), seconds measured (30), warm-up (3) |
 | `--enemies=N`, `--heavy`, `--only=<kind>`, `--boss=<index>` | the scene: N enemies, the heavy build, one kind only, one boss instead |
+| `--kinds=<kind,...>`, `--hp=<permille>` | the live enemies cycle through those kinds only (a biome's roster); every placed enemy's HP scaled (3000: a later floor's toughness, so statuses stack) |
 | `--spans` | cuts every frame into consecutive spans that add up to it: `probe_script`, `nodes_process` (scripts and views, the views' sync), `after_process` (redraws, layout, transforms, the delete queue), `draw` (the engine's draw and present), `after_draw`, and per physics step `physics_pre`, `nodes_physics` (the sim's ticks and their listeners), `physics_post`. The stamps cost a few µs a frame; runs are a little slower than plain ones, so compare inside one page |
 | `--breakdown` | per-bucket script time: every view's sync, every tick listener, the sim's phases, `PerfMarks` |
 | `--process` | `--breakdown` plus every script node's `_process` timed from the probe. It adds 5–7 ms a frame of its own: proportions only (§4.3) |
@@ -93,6 +96,7 @@ The `--ab` flags. In `frame_probe.gd`: `wildfire`, `no_pack_fx`, `no_interp`, `s
 | `detach_furniture` | each enemy's disc, rings and bar nodes out of the tree |
 | `no_batch` | the enemy batch: every enemy a node again (`ActorViews.batch_enemies` off) |
 | `no_native_crowd` | the batch's native writer: the GDScript pass (`EnemyBatch.native` off) |
+| `no_kind_memo` | the views' reader keeping which form draws each shot for the tick (`LatchedReader.keep_kinds` off) |
 | `no_particles`, `no_sun_shadow`, `no_omni` | particle nodes; the directional light; omni and spot lights |
 | `no_hud`, `no_still` | the HUD layer; the HUD's still-part textures (`HudStill` off) |
 | `no_3d`, `no_viewport` | the root viewport's 3D; the root viewport's drawing |
@@ -128,9 +132,12 @@ The outcome hashes are the "same result" proof of a speed-up that must not chang
 | Tool | Command | What it gives |
 |---|---|---|
 | `scripts/checks/draw_census.gd` | `godot --path . --position -10000,-10000 --resolution 1920x1080 --windowed -s scripts/checks/draw_census.gd -- --biome=red_canyon [--spots=5] [--tag=before] [--shot] [--enemy-shadows=proxy\|blob] [--fight=N]` | counts, not timings: draw calls and objects drawn, everything shown and then each source hidden in turn, per pass (camera, shadows, 2D); `--fight=N` on the probe's fight |
+| `scripts/checks/floor_fight_probe.gd` | `godot --path . --gpu-profile --resolution 2560x1440 --windowed --position -10000,-10000 -s scripts/checks/floor_fight_probe.gd -- --biome=night_rocks [--floor=3] [--seed=N] [--secs=100] [--cards=...\|--heavy] [--pipelines] --perf-log` | a real floor's fights (the Overrun room, the arenas and Lockdowns, then the rooms by hops), the hero invulnerable and firing, for the perf log; `--pipelines` (`pipeline_watch.gd`, never timed) prints every frame that compiled a pipeline with what was drawn or made for the first time around it. Clear `user://shader_cache` and `user://vulkan` first for a player's stale caches (`evidence/NIGHT_ROCKS_FREEZE.md`) |
 | `scripts/checks/view_dump.gd` | `godot --path . --fixed-fps 60 --resolution 640x360 --windowed --position -10000,-10000 -s scripts/checks/view_dump.gd -- --out=build/view_dump.txt [--frames=900]` | a frame-by-frame dump of the bulk-reading views' nodes and state over one seeded fight: diff two trees' dumps line by line |
 | `scripts/checks/hud_still_diff.gd` | `godot --path . --position -10000,-10000 -s scripts/checks/hud_still_diff.gd -- --scene=fight\|run [--size=1600x900] [--ui=110]` | pixels that differ, HUD drawn from textures against drawn directly, with the noise floor (two captures of the same mode) |
 | `scripts/bench/view_bench.gd` | see its header | the view's CPU side over the horde scene (lavapipe in a container: scaling only) |
+| `scripts/checks/ui_spike_probe.gd` | `godot --path . --position -10000,-10000 --resolution 2560x1440 --windowed -s scripts/checks/ui_spike_probe.gd -- [--rounds=4] [--only=shop,pick,boss,walk]` | the real game's one-frame spikes: the shop and an altar's pick opening, a boss appearing (the slowest frame and the buckets after each); `walk`: the mean frame and buckets of floor 1 |
+| `scripts/checks/texture_census.gd` | `godot --path . --position -10000,-10000 --resolution 2560x1440 --windowed -s scripts/checks/texture_census.gd -- [--top=40]` | counts: every texture the scene's nodes use on floor 1, its size estimated from its import, by folder and import, the biggest first; beside the renderer's texture_mem_used |
 
 ## 4. Reading the numbers: mistakes already made
 
@@ -182,6 +189,9 @@ output, build and machine.
 | [`PERF_NATIVE.md`](../roadmap/v0.11.1/evidence/PERF_NATIVE.md) | the native kernels off against on; the frame attribution | tick at 120 enemies 3.3 → 0.56 ms; horde frames 2–3 ms shorter; the enemies' nodes 6.0–8.9 ms, the HUD 2.0–2.4 ms |
 | [`PERF_W8.md`](../roadmap/v0.11.1/evidence/PERF_W8.md) | the frame after the first display steps | 20 enemies 8.2 ms (122 fps), 60 heavy 24.9 ms, 120 swarmers 18.5 ms; the HUD about 1 ms; the batch alone 0.15 ms |
 | [`PERF_FINAL.md`](../roadmap/v0.11.1/evidence/PERF_FINAL.md) | the final code of v0.11.1 (the native core the only sim), with PERF_W8's build measured again back to back | 20 enemies 8.7–9.2 ms, 60 heavy 24.3 ms, 120 swarmers 15.5 ms; the tick at 120 enemies 0.54 ms; the Ring 0.9 ms over the Gun alone; a daytime run reads about 0.7 ms higher than a night one |
+| [`PERF_LOG_GPU.md`](../roadmap/v0.12.0/evidence/PERF_LOG_GPU.md) | the perf log's GPU-per-pass, census and frame-order columns, proved on the frame probe's Starfall heavy fight at 2560 × 1440 (60 enemies) | 35 fps, CPU-bound 98 %: the GPU 14.6 ms of a 28.8 ms frame, half of it the transparent pass (7.6 ms); the process step 13.9 ms, the draw 6.6 ms, the physics steps 4.4 ms; the recorder 0.8 ms a frame |
+| [`COMBAT_FRAME_TIME.md`](../roadmap/v0.12.0/evidence/COMBAT_FRAME_TIME.md) | the owner's three slow fights (F18): Seekers + Venom, Starfall with 35 enemies, Frozen Shore at 1600 × 900, on a busy machine | Seekers + Venom +3.3 ms over the Gun alone; the shot views' sync 300–400 µs a tick shorter with the kind memo; every scene about twice the owner's frame rate |
+| [`CPU_FRAME_TIME.md`](../roadmap/v0.12.0/evidence/CPU_FRAME_TIME.md) | the owner's 40 fps report: the main thread's parts, the Seekers' homing, the shop and pick spikes, the video memory | the physics steps are the sim (no Godot physics); the Seekers' steering 2.92 → 1.86 ms a tick, same hash; the shop's re-open 16–25 → 12–16 ms; one 8192² shop texture is about 341 MB of video memory |
 
 The quiet run after the batched avatars, the bulk reads and the shard drops is **NOT YET RUN** (PROGRESS "Where we
 are").

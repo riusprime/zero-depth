@@ -296,6 +296,8 @@ var phase_guard_next := 0
 var boss_tables: Array[BossTable] = []
 ## The live bosses' own state (stagger, phase, the attack in progress).
 var bosses := BossStore.new()
+## The state of the bosses' fight mechanics (the time, the dance, the wardens, the siege, the forge).
+var boss_fight := BossFightStore.new()
 ## The boss attack (index in its table) that killed the player, or -1 (the recap's cause line).
 var killer_attack := -1
 ## The actor id of the last boss spawned while it lives, or -1 (the dev panel's Kill boss, the run flow).
@@ -577,6 +579,11 @@ var surge_spawned := 0
 ## The perf probe's phase timer (scripts/checks/perf_probe.gd --phases); null in play. Told where each tick
 ## phase begins and ends (begin/end with the phase's name), it never reads or writes state: not hashed, not copied.
 var phase_probe: Object = null
+## The Seekers darts' hero-centred targets by rank (Seekers.target), kept only while the projectile phase steers
+## (NativeShots.sweep turns it on and off): nothing moves, dies or turns invulnerable while the shots steer, so every
+## dart of one rank gets the same answer. A cache of a pure read: not hashed, not copied, empty outside the steering.
+var seek_memo := {}
+var seek_memo_on := false
 ## The native side (NativeWorld.make: the C++ library's ZdWorld), where the hot loops of phases 3, 5 and 6 run; null
 ## only without the library, and then step() does nothing but count its tick (NativeWorld.MISSING is printed). Not
 ## hashed, not copied: it holds caches only, and a restored world makes its own.
@@ -1108,7 +1115,7 @@ func set_items_owned(owned: PackedInt32Array) -> void:
 
 ## The item modifiers plus the engine numbers the owned abilities borrow (ElementAbilities).
 func _build_mods() -> void:
-	item_mods = ItemMods.build(item_tables, items_owned)
+	item_mods = ItemMods.build(item_tables, WandLock.lit(self, items_owned))  # Not a card The Fallen holds
 	ElementAbilities.fold_engines(self, item_mods)
 	Modifiers.invalidate(self)  # The specs compile again on their next read
 
@@ -1548,6 +1555,7 @@ func state_hash() -> String:
 	# Bosses: only in a world with boss tables, so worlds without bosses hash as before.
 	if not boss_tables.is_empty():
 		bosses.hash_into(h)
+		boss_fight.hash_into(h)
 		h.add_int(killer_attack)
 		h.add_int(boss_id)
 	if not enemy_tables.is_empty():  # Enemy AI: only worlds with enemies, so the kernel golden holds.
@@ -1907,7 +1915,7 @@ func _move_and_collide() -> void:
 		if Kin.length(vel - target) < 0.0001:
 			vel = target
 		p += vel + PlayerKit.lunge_offset(self)  # a combo step's forward step
-		p += kick
+		p += kick + StarfallKinds.hero_drift(self)  # A Gravity Node near draws the walking hero in
 	actors.set_pos(0, p)
 	var pp := phase_probe  # v0.8.0 HS
 	if pp != null:

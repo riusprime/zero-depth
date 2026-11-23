@@ -5,6 +5,8 @@ extends GutTest
 
 const OVERRIDE_DIR := "user://audio_override"
 
+var _nodes_added := 0
+
 
 func _director() -> AudioDirector:
 	var d := AudioDirector.new()
@@ -231,7 +233,7 @@ func test_an_override_file_replaces_the_shipped_sound() -> void:
 	assert_true(s is AudioStreamWAV)
 	assert_almost_eq(s.get_length(), 0.1, 0.01, "the override's length, not the shipped file's")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
-	assert_null(AudioDirector.override_stream(&"ui_back"), "gone again")
+	assert_null(AudioStreamBank.override_stream(&"ui_back"), "gone again")
 
 
 func _ids(reqs: Array) -> Array:
@@ -289,3 +291,57 @@ func test_the_gamble_shrine_fail_and_win_have_their_own_cues() -> void:
 	heard = _ids(ev.collect(r))
 	assert_has(heard, &"gamble_win")
 	assert_does_not_have(_ids(ev.collect(r)), &"gamble_win", "once")
+
+
+func _count_node(_n: Node) -> void:
+	_nodes_added += 1
+
+
+func test_every_cue_is_loaded_before_a_floor_starts() -> void:
+	var d := _director()
+	d.finish_warm()
+	for id: StringName in d.cues:
+		assert_true(d._bank._streams.has(id), "%s is in the bank before any play" % id)
+	assert_true(d._bank.all_loaded())
+
+
+func test_200_sounds_play_on_the_pool_and_make_no_nodes() -> void:
+	var d := _director()
+	d.finish_warm()
+	var ids: Array[StringName] = []
+	for id: StringName in d.cues:
+		if d.cues[id].kind == &"sfx":
+			ids.append(id)
+	ids.sort()
+	var size := d.voice_pool_size()
+	assert_gt(size, 0, "the pool is built when the director enters the tree")
+	get_tree().node_added.connect(_count_node)
+	_nodes_added = 0
+	var played := 0
+	for k in 200:
+		var at: Variant = Vector2(k % 9, -(k % 4)) if k % 3 != 0 else null
+		if d.play(ids[k % ids.size()], at):
+			played += 1
+		d.hold(&"laser_loop", k % 50 < 25)
+		if k % 10 == 9:
+			d.advance(0.04)
+	get_tree().node_added.disconnect(_count_node)
+	assert_gt(played, 100, "most of the plays were allowed")
+	assert_eq(_nodes_added, 0, "no node is made per sound once the director is up")
+	assert_eq(d.voice_pool_size(), size, "the pool keeps its players")
+	assert_lte(d.voices_busy(), size)
+
+
+func test_a_full_pool_takes_the_voice_that_ends_soonest() -> void:
+	var pool := AudioVoicePool.new()
+	var parent := Node.new()
+	add_child_autofree(parent)
+	var cues := {&"a": _cue(&"a", 2, 0.0)}
+	pool.build(parent, cues)
+	assert_eq(pool.size(), 4, "two screen-wide and two panned players for one two-voice cue")
+	var s := AudioStreamWAV.new()
+	assert_true(pool.start(s, 0.0, 1.0, &"Master", false, Vector3.ZERO, 0.0, 1.0))
+	assert_true(pool.start(s, 0.0, 1.0, &"Master", false, Vector3.ZERO, 0.0, 3.0))
+	assert_true(pool.start(s, 0.0, 1.0, &"Master", false, Vector3.ZERO, 0.5, 2.0), "a third steals")
+	assert_eq(pool.busy(0.5), 2, "still two players: the one ending at 1 s was taken")
+	assert_eq(pool.busy(2.6), 1, "the 3 s sound plays on; the stolen slot ends at 2.55 s")

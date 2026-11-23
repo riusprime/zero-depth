@@ -356,8 +356,7 @@ func set_lighting(quality: String) -> void:
 	if environment == null:
 		return
 	var high := mood != null and lighting == "high"
-	environment.ssao_enabled = high
-	environment.ssil_enabled = high and mood.ssil_enabled
+	GraphicsSettings.apply_to_stage(environment, sun, high, mood)
 	if mood != null:
 		# The new atmosphere is "high" only: volumetric fog, the height haze, embers and dust.
 		var height_haze := mood.fog_height_density if high else 0.0
@@ -367,7 +366,7 @@ func set_lighting(quality: String) -> void:
 	if atmosphere != null:
 		atmosphere.set_enabled(high)
 	if kit != null:
-		kit.set_shadows(high)
+		kit.set_shadows(GraphicsSettings.torch_shadows(lighting))
 
 
 ## Darkens the screen's edges (a radial gradient on a full-screen rect, under the HUD and the portal transit).
@@ -399,10 +398,9 @@ func _build_vignette(strength: float) -> void:
 func _build_light() -> void:
 	var light := DirectionalLight3D.new()
 	# Crisp, long shadows that fall toward the lower left of the screen, as in the reference. Edges are straight
-	# and clean, not stair-stepped (v0.2.0 L2, evidence/SHADOWS.md): one orthogonal split over the whole view
-	# (a 2-split PSSM test was no smoother and striped the wall tops), an 8192 atlas and high soft-shadow
-	# filtering (project.godot), and a small blur that smooths the texel steps without softening the shape.
-	# For an orthographic camera the shadow fits the camera's near..far range, so IsoRig keeps `far` short.
+	# and clean, not stair-stepped (evidence/SHADOWS.md): one orthogonal split over the whole view (a 2-split PSSM
+	# striped the wall tops), a large atlas, high soft-shadow filtering (project.godot) and a small blur.
+	# An orthographic camera's shadow fits its near..far range, so IsoRig keeps `far` short.
 	light.rotation_degrees = Vector3(-38, 168, 0)
 	light.light_energy = 1.05
 	light.light_color = Color(1, 0.98, 0.95)
@@ -414,7 +412,7 @@ func _build_light() -> void:
 	if deep:  # The sun pulled toward violet, a little dimmer
 		light.light_color = light.light_color.lerp(DEEP_VIOLET, 0.45)
 		light.light_energy *= 0.85
-	light.shadow_enabled = true
+	light.shadow_enabled = GraphicsSettings.shadows != "off"
 	light.shadow_blur = SHADOW_BLUR
 	light.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	RenderSwitches.apply_sun(light)  # 80 m, or the cheaper sun (switch 8)
@@ -588,11 +586,15 @@ func _build_walls(reader: WorldReader, draw := true) -> void:
 		if kind == 2:
 			continue
 		var w := reader.wall(i)
-		var height := EDGE_WALL_HEIGHT if kind == 0 else SLAB_HEIGHT
+		var piece := reader.wall_piece(i)
+		var lh := reader.wall_layout_height(i)
+		var height := (
+			EDGE_WALL_HEIGHT if kind == 0 else StageDresser.cover_top(piece, lh, SLAB_HEIGHT)
+		)
 		wall_specs.append([w.center, w.half, SimPlane.yaw_of(w.angle), height])
 		_wall_classes.append(kind)
-		_wall_pieces.append(reader.wall_piece(i))
-		_wall_layout_heights.append(reader.wall_layout_height(i))
+		_wall_pieces.append(piece)
+		_wall_layout_heights.append(lh)
 		if not draw:
 			continue
 		var box := BoxMesh.new()
@@ -666,17 +668,9 @@ func _build_contact_shadows() -> void:
 ## v0.5.9 Step 4: the floor dressed with the kit (StageDresser's rules), its pieces under a StageKit node.
 func _build_kit(reader: WorldReader) -> void:
 	var walls: Array = []
-	for i in wall_specs.size():
-		walls.append(
-			[
-				wall_specs[i][0],
-				wall_specs[i][1],
-				wall_specs[i][2],
-				_wall_classes[i],
-				_wall_pieces[i] if i < _wall_pieces.size() else &"",
-				_wall_layout_heights[i] if i < _wall_layout_heights.size() else -1.0
-			]
-		)
+	for i in wall_specs.size():  # _build_walls fills the four lists together, one entry per wall
+		var s: Array = wall_specs[i]
+		walls.append([s[0], s[1], s[2], _wall_classes[i], _wall_pieces[i], _wall_layout_heights[i]])
 	var rooms: Array = []
 	for i in reader.floor_room_count():
 		rooms.append(reader.floor_room(i))
@@ -753,7 +747,9 @@ func _build_kit_nodes(
 	add_child(kit)
 	# In parts (StageKit.queue_build), then the shadows and the shards after them.
 	kit.queue_build(_queue, _placements, wall_specs.size(), palette["cover"], mood, _proc, tex)
-	_queue.add_next("kit_shadows", func() -> void: kit.set_shadows(lighting == "high"))
+	_queue.add_next(
+		"kit_shadows", func() -> void: kit.set_shadows(GraphicsSettings.torch_shadows(lighting))
+	)
 	_queue.add_next("kit_hidden", _hide_kit_walls)  # v0.9.0 TD
 	_queue.add_next("atmosphere", _build_atmosphere)
 	_build_shards(reader, walls, rooms, doors, keep, _placements)

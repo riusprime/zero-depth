@@ -53,6 +53,9 @@ var body_materials: Array[StandardMaterial3D] = []
 ## flash goes to them, show_hit) and the HIT last set on them.
 var enemy_tint := Color(0, 0, 0, 0)
 var role_glow := 0.0
+## The kind whose colours the body wears, set before setup(): a biome's own version wears its biome's
+## (EnemyPalettes.VERSIONS) on its base's model; -1: the body's own kind.
+var look_kind := -1
 ## True while its actor is drawn by EnemyBatch: the avatar and its parents stay outside the tree, so its place is
 ## its parents' transforms composed (_view_position).
 var detached := false
@@ -417,8 +420,14 @@ func shared_body(p_kind: int, c: Color, tex: Texture2D, two_sided := false) -> S
 	if role_glow > 0.0 and EnemyPalettes.KIND_IDS.has(p_kind) and ActorViews.role_glows(albedo):
 		rest = [Color(albedo, 1.0), role_glow]
 	elif CritterBodies.is_critter(p_kind) and float(CritterBodies.GLOW[p_kind]) > 0.0:  # v0.11.0 F2
-		rest = [Color(albedo, 1.0), float(CritterBodies.GLOW[p_kind])]
+		if tex == null or c != Color.WHITE:  # (an owner's model: its plates, not its charcoal frame)
+			rest = [Color(albedo, 1.0), float(CritterBodies.GLOW[p_kind])]
 	return EnemyLooks.body(albedo, tex, rest[0], rest[1], two_sided)
+
+
+## The body's colour in `slot` (EnemyPalettes): look_kind's when set, else `body_kind`'s.
+func _look_color(body_kind: int, slot: StringName) -> Color:
+	return EnemyPalettes.color(look_kind if look_kind >= 0 else body_kind, slot)
 
 
 ## An opaque body material.

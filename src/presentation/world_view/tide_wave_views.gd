@@ -3,11 +3,11 @@ extends Node3D
 ## v0.9.5 BH4 (BOSSES_HARD.md T3; owner: "spawning waves crossing the room, small like 2-4 meters that the player has to
 ## dodge during all fight"): the Tidecaller's crossing waves, drawn from WorldReader.boss_waves (EI-07: it reads; the
 ## wave, its hit and its shove are the sim's, BossStream).
-## - The foam line: for the 0.7 s telegraph a flat white-cyan strip lies on the floor at the wall the wave forms at, as
+## - The foam line: for the 0.7 s telegraph a flat foam-white strip lies on the floor at the wall the wave forms at, as
 ##   long as the wave will be, pulsing faster and brighter as the wave nears (a shader on a plane).
 ## - The wave: a low curling band of water (a code-made extruded profile, 0.5 m tall at the crest, curling forward)
-##   translucent cyan with a white foam top edge and streaks drifting along it, ends faded by an edge mask; it rises out
-##   of the floor as it leaves the wall and sinks at the far wall (the sim removes it there).
+##   in the floor's cold blue-grey with a white foam top edge and streaks drifting along it, ends faded by an edge
+##   mask; it rises out of the floor as it leaves the wall and sinks at the far wall (the sim removes it there).
 ## - Spray: a few motes thrown up off the crest and falling back (a MultiMesh shared by every wave, thinned on Low
 ##   density, still on reduced motion).
 ## Both shaders are unshaded with fog_disabled and an edge mask, so the band never shows a hard cut. Reduced
@@ -16,9 +16,12 @@ extends Node3D
 const SLOTS := 6
 const MOTES_HIGH := 8
 const MOTES_LOW := 3
-const SEA := Color(0.45, 1.0, 0.86)
-const DEEP := Color(0.06, 0.45, 0.62)
-const FOAM := Color(0.92, 1.0, 1.0)
+## The crossing wave in the floor's own cold blue-grey (its cyan glow was close to the hero's colour), a darker body
+## under a foam-white crest, drawn more solid than the riptide's walls so it reads on light and dark floors alike.
+const SEA := Color(0.5, 0.6, 0.68)
+const DEEP := Color(0.24, 0.32, 0.4)
+const FOAM := Color(0.94, 0.96, 0.97)
+const BODY_ALPHA := 0.68
 ## The crest's height (m) and the foam line's width along the wave's travel (m).
 const CREST_M := 0.5
 const LINE_M := 0.9
@@ -34,6 +37,7 @@ uniform vec4 sea : source_color = vec4(0.45, 1.0, 0.86, 1.0);
 uniform vec4 foam : source_color = vec4(0.92, 1.0, 1.0, 1.0);
 uniform float clock = 0.0;
 uniform float alpha = 1.0;
+uniform float body_alpha = 0.42;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
 
 void fragment() {
@@ -45,7 +49,7 @@ void fragment() {
 	float top = smoothstep(0.78, 0.98, v + (n - 0.5) * 0.18);
 	vec3 body = mix(deep.rgb, sea.rgb, smoothstep(0.0, 0.8, v) * 0.8 + streak * 0.5);
 	ALBEDO = mix(body, foam.rgb, clamp(top, 0.0, 1.0));
-	ALPHA = clamp(edge * alpha * (0.42 + 0.35 * v + 0.5 * top), 0.0, 0.9);
+	ALPHA = clamp(edge * alpha * (body_alpha + 0.35 * v + 0.5 * top), 0.0, 0.9);
 }
 """
 const LINE_SHADER := """
@@ -103,6 +107,7 @@ func _init() -> void:
 		bm.set_shader_parameter("deep", DEEP)
 		bm.set_shader_parameter("sea", SEA)
 		bm.set_shader_parameter("foam", FOAM)
+		bm.set_shader_parameter("body_alpha", BODY_ALPHA)
 		var band := MeshInstance3D.new()
 		band.mesh = band_mesh
 		band.material_override = bm

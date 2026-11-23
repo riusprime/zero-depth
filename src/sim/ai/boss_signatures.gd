@@ -37,20 +37,20 @@ const EGG_GONE := 9
 # --- S1: the Gatekeeper's pillars ---------------------------------------------------------------------------------
 
 
-## Tick phase 6, the tick after marker k of boss i's `row_lanes` attack struck: pillars rise along its two lanes, every
-## pillar_step_m out from the crossing each way (the crossing itself stays open), as far as the lane ran, each only
-## where it fits (fits()). Returns how many rose.
+## Tick phase 6, the tick after the lanes of marker k of boss i's `row_lanes` attack ran out: pillars rise along
+## them, every pillar_step_m out from the boss's edge, as far as the lane ran, each only where it fits (fits()).
+## Returns how many rose.
 static func raise_pillars(w: World, i: int, atk: BossAttackTable, k: int) -> int:
 	if atk.pillar_ticks <= 0 or atk.pillar_m <= 0.0 or atk.pillar_step_m <= 0.0:
 		return 0
-	var c := BossDodge.mark_of(w, i, k)
 	var h := atk.pillar_m * 0.5
 	var n := 0
-	for way in [0, 2048, 1024, 3072]:
-		var run := EnemyAi.clear_run(w, c, way, atk.length_m * 0.5, atk.half_width_m)
+	for lane in BossDodge.row_lanes_of(w, i, k, atk):
+		var run := lane.half.x * 2.0
+		var from := lane.center - lane.axis_u * lane.half.x
 		var step := 1
 		while step * atk.pillar_step_m + h <= run:
-			var p := c + Kin.dir(way) * (step * atk.pillar_step_m)
+			var p := from + lane.axis_u * (step * atk.pillar_step_m)
 			step += 1
 			if fits(w, p, h):
 				_add_pillar(w, w.actors.ids[i], p, h, atk.pillar_ticks)
@@ -145,16 +145,20 @@ static func _drop_pillars(w: World, boss_id: int = -1) -> void:
 ## tick (the lava and melt too); `flood` false leaves the flood to the caller (a snapshot's restore).
 static func set_nav_extra(w: World, flood: bool = true) -> void:
 	var boxes := pillar_obbs(w)
+	boxes.append_array(BossGears.obbs(w))  # The Clockwork Judge's stopped gears
+	boxes.append_array(BossSiege.boulder_obbs(w))  # The Siege Engine's boulders
 	boxes.append_array(BossLava.lava_obbs(w))
 	w.nav.set_extra(boxes, BossLava.melt_shapes(w))
 	if flood and not w.enemy_tables.is_empty():
 		w.flood_nav()  # The world's flood (bounded, stopped past the enemies)
 
 
-## True while any piece the flow field goes round is down (pillars, lava, a meltdown).
+## True while any piece the flow field goes round is down (pillars, gears, lava, a meltdown, boulders).
 static func has_extra(w: World) -> bool:
 	var bs := w.bosses
-	return bs.pillar_x.size() + bs.lava_x.size() + bs.melt_boss.size() > 0
+	var fs := w.boss_fight
+	var n := bs.pillar_x.size() + fs.gear_x.size() + bs.lava_x.size() + bs.melt_boss.size()
+	return n + fs.sg_b_x.size() > 0  # The Siege Engine's boulders too
 
 
 # --- S2: the Warlord's javelins -----------------------------------------------------------------------------------
@@ -267,6 +271,8 @@ static func lay_egg(w: World, b: int, atk: BossAttackTable, c: Vector2, k: int =
 ## with egg_hp at the kind's base HP scaled as the hatchling's own HP was (EnemyAi fields: windup = its ticks, pick =
 ## the HP it hatches with, lock_a = the attack that laid it).
 static func make_egg(w: World, i: int, egg: Array) -> void:
+	if BossDoom.make_cart(w, i, egg):  # The Siege Engine's ammo cart
+		return
 	var a := w.actors
 	var base := maxi(1, w.enemy_table(a.kinds[i]).hp)
 	var hatch := a.max_hp[i]
@@ -295,6 +301,10 @@ static func egg_think(w: World, i: int) -> void:
 	var boss := w.actors.index_of(w.boss_id)
 	if boss < 0 or a.dead[boss] == 1:
 		_gone(w, i)
+		return
+	if a.state[i] == BossDoom.CART:  # The Siege Engine's ammo cart: BossDoom rolls it (tick phase 6)
+		return
+	if a.state[i] == BossLattice.ORBIT:  # A Hive Lens drone in its Lattice: BossLattice turns it (tick phase 6)
 		return
 	if a.state[i] == EGG_BURST:
 		var pat := _egg_attack(w, i, boss).pattern
@@ -386,10 +396,21 @@ static func advance(w: World) -> void:
 	BossLava.advance(w)
 	BossShade.advance(w)  # The Lantern Shade's dark and its lanterns
 	BossStream.advance(w)  # The Tidecaller's ring stream and crossing waves
-	BossInterphase.advance(w)  # The Fallen's interphase hazards and its return
 	BossQuake.advance(w)  # The Gatekeeper's quake pillars pulse
 	BossHazard.advance(w)  # The arena hazards arm, burn and go
+	BossSlow.advance(w)  # The attack speed a boss took comes back when its fight ends
+	BossPickups.advance(w)  # The hero takes the floor pickups it touches
+	BossShotFields.advance(w)  # The fields that slow the hero's shots run out
+	BossTime.advance(w)  # The Clockwork Judge's gears, Bell and fields
 	BossGreatJavelin.advance(w)  # The Warlord's great javelin flies, quakes and flies back
+	BossDance.advance(w)  # The Tidecaller's Riptide, High Tide and Maelstrom
+	BossWarlord.advance(w)  # The Warlord's banner and duel (its cage cuts a charge short before it bursts)
+	BossChargeBurst.advance(w)  # A charge's burst where it ended
+	BossWardens.advance(w)  # The Twin Wardens' wards and Through the Rift
+	BossSiege.advance(w)  # The Siege Engine's Target Lock, boulders and ammo cart
+	BossForge.advance(w)  # The Foundry's plate, its cooling slag, Overpressure and the scald gauge
+	BossLens.advance(w)  # The Hive Lens's drones, burnt glass and Lattice
+	BossRemembered.advance(w)  # The Fallen's remembered mechanics (after the orbs are taken and the pillars pulse)
 
 
 ## World._remove_dead: boss `boss_id` is gone: its pillars sink and its javelins go (its eggs crumble on their own).
@@ -409,7 +430,17 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	BossStream.on_boss_gone(w, boss_id)  # Its streams and waves
 	BossQuake.on_boss_gone(w, boss_id)  # Its break count and the hint
 	BossHazard.on_boss_gone(w, boss_id)  # Its hazards go
+	BossSlow.on_boss_gone(w, boss_id)  # The attack speed it took comes back
+	BossPickups.on_boss_gone(w, boss_id)  # Its floor pickups go
+	BossShotFields.on_boss_gone(w, boss_id)  # Its shot fields go
 	BossGreatJavelin.on_boss_gone(w, boss_id)  # Its great javelin goes with it
+	BossDance.on_boss_gone(w, boss_id)  # The Tidecaller's dance
+	BossChargeBurst.on_boss_gone(w, boss_id)  # Its pending bursts go
+	BossSiege.on_boss_gone(w, boss_id)  # The Siege Engine's boulders and cart
+	BossForge.on_boss_gone(w, boss_id)  # The Foundry's forge and its slabs
+	BossWarlord.on_boss_gone(w, boss_id)  # The Warlord's banner and duel
+	BossLens.on_boss_gone(w, boss_id)  # The Hive Lens's Lattice and its burnt glass
+	BossRemembered.on_boss_gone(w, boss_id)  # The Fallen's remembered mechanics
 
 
 ## The recap's death line for a cause past LATE_CAUSE (a late part): its attack's late_cause_key (its own cause_key

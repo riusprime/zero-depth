@@ -14,6 +14,7 @@ those copies are built by `godot --headless --path . -s scripts/content/build_pa
 
 | Version | Name | Date |
 |---|---|---|
+| [v0.12.0](v0.12.0.md) ([es](v0.12.0.es.md)) | Bosses You Learn | 2026-11-23 |
 | [v0.11.0](v0.11.0.md) ([es](v0.11.0.es.md)) | Fights Worth Learning | 2026-11-08 |
 | [v0.10.5](v0.10.5.md) ([es](v0.10.5.es.md)) | Astral Loops | 2026-11-06 |
 | [v0.10.0](v0.10.0.md) ([es](v0.10.0.es.md)) | A New Look for Attacks | 2026-10-31 |

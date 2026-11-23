@@ -44,7 +44,13 @@ func _atk(w: World, aid: int) -> BossAttackTable:
 func _until_struck(w: World, aid: int, limit: int = 400) -> void:
 	for k in limit:
 		var i := w.actors.index_of(aid)
-		if i < 0 or (w.actors.state[i] == S.ACTIVE and w.actors.state_t[i] >= 1):
+		if (
+			i < 0
+			or (
+				w.actors.state[i] == S.ACTIVE
+				and w.actors.state_t[i] >= BossAi.attack_of(w, i).lane_wave_ticks()
+			)
+		):
 			return
 		w.step(InputFrame.new())
 
@@ -73,7 +79,7 @@ func _floor_fight(id: StringName, floor_index: int = 1) -> Array:
 # --- S1: the Gatekeeper's pillars --------------------------------------------------------------------------------
 
 
-func test_the_shock_lanes_leave_pillars_along_your_row_and_column() -> void:
+func test_the_shock_lanes_leave_pillars_along_their_lanes() -> void:
 	var s := _fight(&"gatekeeper", Vector2(5, 3))
 	var w: World = s[0]
 	var aid: int = s[1]
@@ -81,17 +87,22 @@ func test_the_shock_lanes_leave_pillars_along_your_row_and_column() -> void:
 	BossLab.start(w, w.actors.index_of(aid), &"shock_lanes")
 	var atk := _atk(w, aid)
 	assert_eq(atk.pillar_ticks, 360, "6 s (a starting value)")
+	var boss_at := w.actors.pos(w.actors.index_of(aid))
 	_until_struck(w, aid)
 	var c := BossDodge.mark_of(w, w.actors.index_of(aid), 0)
 	var n := w.bosses.pillar_x.size()
 	assert_gt(n, 4, "pillars stand along the lanes")
 	assert_eq(w.walls.size(), walls + n, "each pillar is a wall")
+	var aim := Kin.angle_of(c - boss_at)
 	for k in n:
 		var p := Vector2(w.bosses.pillar_x[k], w.bosses.pillar_y[k])
-		var on_row := absf(p.y - c.y) < 0.001
-		var on_col := absf(p.x - c.x) < 0.001
-		assert_true(on_row or on_col, "pillar %s on the struck row or column through %s" % [p, c])
-		assert_gt(Kin.length(p - c), 1.0, "the crossing stays open")
+		var on_lane := false
+		for turn in [0, atk.spread, -atk.spread]:
+			var dir := Kin.dir((aim + turn) & 4095)
+			on_lane = (
+				on_lane or (absf((p - boss_at).cross(dir)) < 0.15 and (p - boss_at).dot(dir) > 0.0)
+			)
+		assert_true(on_lane, "pillar %s on a lane from the boss through %s" % [p, c])
 
 
 func test_pillars_never_rise_on_a_body() -> void:
@@ -103,7 +114,14 @@ func test_pillars_never_rise_on_a_body() -> void:
 	var atk := _atk(w, aid)
 	CombatLab.idle(w, atk.windup_ticks - atk.lock_ticks + 2)  # locked on (4, 3)
 	var c := BossDodge.mark_of(w, w.actors.index_of(aid), 0)
-	var spot := c + Vector2(atk.pillar_step_m * 2.0, 0)
+	var boss_at := w.actors.pos(w.actors.index_of(aid))
+	var spot := (
+		boss_at
+		+ (
+			Kin.dir(Kin.angle_of(c - boss_at))
+			* (w.actors.radius[w.actors.index_of(aid)] + atk.pillar_step_m * 2.0)
+		)
+	)
 	w.actors.set_pos(0, spot)
 	_until_struck(w, aid)
 	assert_gt(w.bosses.pillar_x.size(), 0)
@@ -112,6 +130,26 @@ func test_pillars_never_rise_on_a_body() -> void:
 		for j in w.actors.size():
 			var touch := Collide.circle_vs_obb(w.actors.pos(j), w.actors.radius[j], o)
 			assert_eq(touch, Vector2.ZERO, "pillar %d clear of body %d" % [k, j])
+
+
+## A spot 4 m from pillar k with a free run to it: clear of walls, and no other pillar on the way.
+func _clear_approach(w: World, k: int) -> Vector2:
+	var o := BossSignatures.pillar_obb(w.bosses, k)
+	for turn in 16:
+		var from := o.center + Vector2.from_angle(TAU * turn / 16.0) * 4.0
+		if not EnemyAi.clear_of_walls(w, from, 0.3):
+			continue
+		var dir := (o.center - from).normalized()
+		var free := true
+		for j in w.bosses.pillar_x.size():
+			if j != k:
+				var f := Collide.sweep_vs_obb(
+					from, o.center - dir * 0.8, 0.3, BossSignatures.pillar_obb(w.bosses, j)
+				)
+				free = free and f < 0.0
+		if free:
+			return from
+	return o.center + Vector2(-4.0, 0.0)
 
 
 func test_pillars_block_bodies_and_fireballs_then_sink_on_time() -> void:
@@ -125,10 +163,11 @@ func test_pillars_block_bodies_and_fireballs_then_sink_on_time() -> void:
 	var o := BossSignatures.pillar_obb(w.bosses, 0)
 	assert_false(EnemyAi.clear_of_walls(w, o.center, 0.1), "a wall for bodies and sight")
 	# A fireball flying at the pillar stops on it.
-	var from := o.center + Vector2(-4.0, 0.0)
-	if not EnemyAi.clear_of_walls(w, from, 0.3):
-		from = o.center + Vector2(0.0, -4.0)
+	var from := _clear_approach(w, 0)
 	var dir := (o.center - from) / Kin.length(o.center - from)
+	var bi := w.actors.index_of(aid)  # the boss holds still: only the fireball flies
+	w.actors.state[bi] = BossAi.STAGGERED
+	w.bosses.stagger_t[BossAi.entry_of(w, bi)] = 1 << 20
 	w.queue_projectile(
 		w.actors.ids[w.actors.index_of(aid)],
 		ActorStore.TEAM_ENEMY,
@@ -263,7 +302,7 @@ func test_pillars_are_deterministic_and_survive_a_save() -> void:
 	var b: World = f2[0]
 	for w: World in [a, b]:
 		BossLab.start(w, w.actors.index_of(w.boss_id), &"shock_lanes_2")
-	for k in 150:
+	for k in 220:
 		a.step(InputFrame.new())
 		b.step(InputFrame.new())
 	assert_gt(a.bosses.pillar_x.size(), 0, "pillars standing")

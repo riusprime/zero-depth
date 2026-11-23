@@ -15,8 +15,13 @@ extends ContentDef
 ## The variation's bounds (G2_ROOMS.md: "small shifts and turns (under 1 m, under 15 degrees)").
 const SHIFT_MAX_M := 1.0
 const TURN_MAX_DEG := 15.0
-## The kit pieces a palette may name: the designed rooms' (RoomLayoutDefinition.KIT) and the biomes' own pieces
-## (KitModels.SPECS; tests/content/test_room_purpose_validation.gd checks every one is installed).
+## A palette piece's drawn height bound: a big room's focal piece stands up to the hall's 6 m monolith.
+const MAX_HEIGHT_M := 8.0
+## The least opening between a piece's two legs: wide enough that the enemies' path flood passes it (FloorParams
+## nav_clearance 0.6 m each side of a FloorReach cell of 0.5 m, rounded up), so a way through looks like one and is.
+const MIN_OPENING_M := 2.0
+## The kit pieces a palette may name: the designed rooms' (RoomLayoutDefinition.KIT), the biomes' own pieces and the
+## purpose rooms' own (KitModels.SPECS; tests/content/test_room_purpose_validation.gd checks every one is installed).
 const PIECES: Array[StringName] = [
 	&"wall_broken",
 	&"wall_pillar",
@@ -54,9 +59,24 @@ const PIECES: Array[StringName] = [
 	&"meteorite",
 	&"star_monolith",
 	&"ruined_observatory",
+	&"camp_tent",
+	&"log_seat",
+	&"cook_pot",
+	&"statue_whole",
+	&"statue_broken",
+	&"column_round",
+	&"column_drum",
+	&"quarry_crane",
+	&"mine_cart",
+	&"stone_block",
+	&"tool_rack",
+	&"grand_arch",
+	&"great_monolith",
 ]
 ## The low pieces a palette may draw on open floor (never solid; "looks solid = is solid"). A taller drawn piece must
-## rest on its group's solids (RoomPurposePiece.lift: a lintel), so nothing tall stands on open floor.
+## rest on its group's solids (RoomPurposePiece.lift: a lintel), so nothing tall stands on open floor. A solid on legs
+## (RoomPurposePiece.legs: an arch) is solid only under its legs: the opening between them is floor, so it is at
+## least MIN_OPENING_M wide.
 const DECOR: Array[StringName] = [
 	&"rubble_small",
 	&"grass_tuft",
@@ -232,8 +252,8 @@ func _check_palette(issues: Array[ValidationIssue], pal: RoomPurposePalette) -> 
 			)
 		if p.size.x <= 0.0 or p.size.y <= 0.0 or maxf(p.size.x, p.size.y) > 12.0:
 			issues.append(ValidationIssue.new(&"range", resource_path, "%s: size 0..12 m" % where))
-		if p.height < 0.0 or p.height > 4.0:
-			issues.append(ValidationIssue.new(&"range", resource_path, "%s: height 0..4 m" % where))
+		if p.height < 0.0 or p.height > MAX_HEIGHT_M:
+			issues.append(ValidationIssue.new(&"range", resource_path, "%s: height 0..8 m" % where))
 		if p.solid and DECOR.has(p.piece):
 			issues.append(
 				ValidationIssue.new(
@@ -248,6 +268,8 @@ func _check_palette(issues: Array[ValidationIssue], pal: RoomPurposePalette) -> 
 			issues.append(
 				ValidationIssue.new(&"range", resource_path, "%s: lift 0..4 m, drawn only" % where)
 			)
+		if p.legs != Vector2.ZERO:
+			_check_legs(issues, where, p)
 		if not p.solid and not DECOR.has(p.piece) and p.lift <= 0.0:
 			issues.append(
 				ValidationIssue.new(
@@ -256,3 +278,29 @@ func _check_palette(issues: Array[ValidationIssue], pal: RoomPurposePalette) -> 
 					"%s: '%s' is taller than decoration and not solid" % [where, p.piece]
 				)
 			)
+
+
+## A piece on legs: a solid on the floor, each leg a blocker inside the drawn footprint, the opening between them
+## MIN_OPENING_M or wider.
+func _check_legs(issues: Array[ValidationIssue], where: String, p: RoomPurposePiece) -> void:
+	if not p.solid or p.lift > 0.0:
+		issues.append(
+			ValidationIssue.new(&"legs", resource_path, "%s: a piece on legs is a solid" % where)
+		)
+	if minf(p.legs.x, p.legs.y) < 0.3:
+		issues.append(ValidationIssue.new(&"legs", resource_path, "%s: a leg is 0.3 m+" % where))
+	var eps := 0.001
+	if p.leg_at + p.legs.x * 0.5 > p.size.x * 0.5 + eps or p.legs.y > p.size.y + eps:
+		issues.append(
+			ValidationIssue.new(
+				&"legs", resource_path, "%s: the legs stand inside its footprint" % where
+			)
+		)
+	if p.leg_at * 2.0 - p.legs.x < MIN_OPENING_M - eps:
+		issues.append(
+			ValidationIssue.new(
+				&"legs",
+				resource_path,
+				"%s: the opening between the legs is %.1f m+" % [where, MIN_OPENING_M]
+			)
+		)

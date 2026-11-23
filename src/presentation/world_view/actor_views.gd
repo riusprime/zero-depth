@@ -9,6 +9,9 @@ extends Node3D
 ## legged turret; v0.3.5 AI adds the Arc Caster (a robed caster with a staff) and the Bomb Drone (a hovering
 ## quad-rotor); v0.4.0 EN the six horde kinds (HordeAvatar).
 
+## The contact disc under every actor: always a dark shadow, whatever the biome's outline colour (a pale outline
+## on a dark floor would draw it as a white circle).
+const CONTACT_COLOR := Color("#1A1A22")
 const CUBE := 0.7
 const BAR_W := 0.55
 ## Projectile nodes kept for reuse per look, at most this many idle (hordes fire hundreds a second).
@@ -38,6 +41,8 @@ const MODEL_LIFT := {
 	WorldReader.KIND_STONE_THROWER: 1.2,
 	WorldReader.KIND_KILN_BEETLE: 1.15,
 	WorldReader.KIND_CINDER_PRIEST: 1.6,
+	WorldReader.KIND_WIRE_WEAVER: 1.2,
+	WorldReader.KIND_GRAVITY_NODE: 1.2,
 }
 
 ## The role glow's energy the views build with (ROLE_GLOW; the line-up shot script sweeps it, 0 = none).
@@ -56,9 +61,9 @@ var bolt_look := {}
 ## The heat tier (HeatLooks.TIER_*) read each sync; a new player bolt takes its colour
 ## (HeatLooks.attack_color: the bolt's own below Hot, orange at Hot, red at Overclock) and keeps it while it flies.
 var heat_tier := HeatLooks.TIER_COOL
-## The floor's altars (floor 1's arrival
-## altar, the final approach's); an actor on one is drawn on its stone (AltarStage.height_at), not sunk into it.
-var grounds: Array[AltarStage] = []
+## The floor's raised tops (floor 1's arrival altar, the final approach's, the Foundry's slabs); an actor over one
+## is drawn on its top (RaisedGround.height_at), not sunk into it.
+var grounds: Array[RaisedGround] = []
 ## The biome's cast on enemies (BiomeLook.enemy_tint): their grey and bone parts pulled toward its colour
 ## by its alpha (0: none). Red parts (the role-coloured parts, EnemyPalettes, all at or over
 ## GREY_SATURATION), rings and bars keep their colours, so identity never changes (PRESENTATION §3).
@@ -104,6 +109,8 @@ var _parts := {}
 ## The switches' values the actors were built with (a flip rebuilds them).
 var _vat_on := ViewPrefs.enemy_vat
 var _batch_on := batch_enemies
+## The Siege Engine's ammo cart's actor id (-1 none): a warden body in the sim, drawn as a cart by SiegeCartViews.
+var _cart_id := -1
 
 
 func sync(reader: WorldReader) -> void:
@@ -122,6 +129,7 @@ func sync(reader: WorldReader) -> void:
 	var crowd := _critters()
 	var cols: Array = []  # The batched enemies' columns, read once (the first batched enemy's)
 	var batch_was := batch
+	_cart_id = int(reader.boss_siege().get("cart", {}).get("id", -1)) if reader.any_boss() else -1
 	for i in reader.actor_count():
 		var id := reader.actor_id(i)
 		alive[id] = true
@@ -182,7 +190,7 @@ func sync(reader: WorldReader) -> void:
 				batch.facing_leaned(id)
 		if parts[5] != null:  # Off-screen crowds don't animate
 			var t_an := PerfMarks.start()
-			_animate_if_seen(node, id, at, hero, parts[9])
+			_animate_if_seen(node, id, at, hero, parts[9], parts[5])
 			PerfMarks.add(&"actors.animate", t_an)
 		if fresh and not parts[9]:
 			node.reset_physics_interpolation()
@@ -248,9 +256,10 @@ func _grounded(at: Vector2) -> Vector3:
 ## reset_physics_interpolation, so it never glides from where it was) when it comes near. The hero and the camera are
 ## never touched. A batched enemy's interpolation is the batch's (EnemyBatch.set_interpolated), by the same test.
 func _animate_if_seen(
-	node: Node3D, id: int, pos: Vector2, hero: Vector2, batched: bool = false
+	node: Node3D, id: int, pos: Vector2, hero: Vector2, batched: bool = false, avatar: Node = null
 ) -> void:
-	var avatar := node.get_meta(&"enemy_avatar") as Node
+	if avatar == null:  # (the caller passes the one its parts hold)
+		avatar = node.get_meta(&"enemy_avatar") as Node
 	var was: bool = _anim_on.get(id, false)
 	var on := false
 	if cull != null and cull.active:
@@ -317,6 +326,11 @@ func anchor_node(id: int) -> Node3D:
 	if batch != null and batch.has(id):
 		return batch.anchor(id)
 	return _actors.get(id)
+
+
+## The actors drawn as their own node (the hero, the bosses, the enemies the batch does not draw; the perf log's count).
+func node_count() -> int:
+	return _actors.size()
 
 
 ## The enemies drawn with no node in the tree (EnemyBatch; the probe's count).
@@ -426,7 +440,8 @@ func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
 					on or not tint.is_empty(),
 					Color.WHITE if on else (tint[0] if not tint.is_empty() else Color.WHITE),
 					1.6 if on else (float(tint[1]) if not tint.is_empty() else 0.0)
-				)
+				),
+				on  # A hit also flinches it (a critter on the owner's model)
 			)
 		return
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
@@ -496,7 +511,7 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int, parts: Array = [])
 		var recovering := reader.actor_recovering(i)
 		if dz.visible != recovering:
 			dz.visible = recovering
-	if reader.actor_egg_permille(i) >= 0:  # Still an egg (BossSignatureViews draws it)
+	if reader.actor_egg_permille(i) >= 0 or reader.actor_id(i) == _cart_id:  # An egg, the cart: drawn elsewhere
 		facing.visible = false
 		bar.visible = false
 	if parts[4] != null:
@@ -552,8 +567,8 @@ func _batch() -> EnemyBatch:
 	return batch
 
 
-## Whether a new actor of kind `p_kind` is batched: an enemy of EnemyBatch.KINDS the VAT crowd draws, while batching
-## is on.
+## Whether a new actor of kind `p_kind` is batched: an enemy of EnemyBatch.KINDS whose body the VAT crowd draws (a
+## biome variant's is its base's: the Rubble Warden's avatar is the Warden's), while batching is on.
 func _batches(p_kind: int, is_player: bool) -> bool:
 	var on := batch_enemies if batching == null else bool(batching)
 	return (
@@ -561,7 +576,7 @@ func _batches(p_kind: int, is_player: bool) -> bool:
 		and not is_player
 		and ViewPrefs.enemy_vat
 		and EnemyBatch.takes(p_kind)
-		and VatCrowd.supports(p_kind)
+		and VatCrowd.supports(WorldReader.body_kind(p_kind))
 	)
 
 
@@ -704,7 +719,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 	# A horde critter has neither the contact disc nor the team
 	# ring (its body and its shadow only: two draws fewer each, in a crowd of up to the surge's cap).
 	if not CritterBodies.is_critter(kind) and not batched:
-		shared_parts.add_rings(root, radius, team_color, outline_color)
+		shared_parts.add_rings(root, radius, team_color, CONTACT_COLOR)
 	# The body turns with the actor's facing (+X is the front).
 	var facing := Node3D.new()
 	root.add_child(facing)
@@ -714,7 +729,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 		WorldReader.KIND_CHARGER:
 			# The clawed hooded crawler: its own node under the facing, animated in frame time.
 			var avatar := ChargerAvatar.new()
-			avatar.enemy_tint = VariantLooks.cast(p_kind, enemy_tint)  # v0.8.0 HR; O13a: a variant's cast
+			avatar.enemy_tint = VariantLooks.cast(p_kind, enemy_tint)  # A variant: its own colours and cast
+			avatar.look_kind = p_kind  # A biome variant wears its biome's colours (EnemyPalettes.VERSIONS)
 			avatar.role_glow = role_glow_energy
 			if VatCrowd.supports(p_kind):  # Drawn by the VAT crowd while the switch is on
 				avatar.vat = ViewPrefs.enemy_vat
@@ -729,36 +745,16 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 				root.set_meta(&"dazed_y", height + 0.35)
 			else:
 				root.set_meta(&"dazed", shared_parts.add_dazed(root, height + 0.35))
-		WorldReader.KIND_WARDEN:
-			# The rock golem: its own node, animated in frame time.
-			height = 1.25
-			var warden := WardenAvatar.new()
-			_solo_vat(root, warden, p_kind)  # v0.10.5 W3-V4c
-			warden.setup()
-			facing.add_child(warden)
-			root.set_meta(&"enemy_avatar", warden)
-			root.set_meta(&"mats", warden.body_materials.duplicate())
-		WorldReader.KIND_NEEDLE:
-			# The walking turret: its own node under the facing, animated in frame time.
-			var needle := NeedleAvatar.new()
-			_solo_vat(root, needle, p_kind)  # v0.10.5 W3-V4c
-			needle.setup()
-			facing.add_child(needle)
-			height = NeedleAvatar.HEIGHT
-			root.set_meta(&"enemy_avatar", needle)
-			root.set_meta(&"mats", needle.body_materials.duplicate())
-		WorldReader.KIND_ARC_CASTER:
-			# The Arc Caster wears the Cinder Priest's model in its own colours (CinderPriestAvatar.LOOKS).
-			height = CinderPriestAvatar.attach(self, root, facing, p_kind)
-		WorldReader.KIND_BOMB_DRONE:
-			# The Bomb Drone: drawn hovering, its shadow on the ground where the sim has it.
-			var drone := BombDroneAvatar.new()
-			_solo_vat(root, drone, p_kind)  # v0.10.5 W3-V4c
-			drone.setup()
-			facing.add_child(drone)
-			height = BombDroneAvatar.HEIGHT
-			root.set_meta(&"enemy_avatar", drone)
-			root.set_meta(&"mats", drone.body_materials.duplicate())
+		WorldReader.KIND_WARDEN:  # The owner's model, animated in code, on VAT
+			height = WardenAvatar.attach(self, root, facing, p_kind)
+		WorldReader.KIND_NEEDLE:  # The owner's model, animated in code, on VAT
+			height = NeedleAvatar.attach(self, root, facing, p_kind)
+		WorldReader.KIND_SNIPER:  # The owner's model, animated in code, on VAT
+			height = SniperAvatar.attach(self, root, facing, p_kind)
+		WorldReader.KIND_ARC_CASTER:  # The owner's model, animated in code, on VAT
+			height = ArcCasterAvatar.attach(self, root, facing)
+		WorldReader.KIND_BOMB_DRONE:  # The owner's model, hovering, animated in code, on VAT
+			height = BombDroneAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_LENS_DRONE:
 			# The Hive Lens's drones: drawn hovering, their shadow where the sim has them.
 			var lens := LensDroneAvatar.new()
@@ -778,21 +774,16 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 			height = CinderPriestAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_KILN_BEETLE:  # The owner's model, animated in code, on VAT
 			height = KilnBeetleAvatar.attach(self, root, facing)
-		WorldReader.KIND_HATCHLING:
-			# The Brood Mother's hatchling: a Charger crawler at two thirds of the size.
-			var hatch := ChargerAvatar.new()
-			hatch.enemy_tint = enemy_tint  # They pick its shared materials
-			hatch.role_glow = role_glow_energy
-			if VatCrowd.supports(p_kind):  # Drawn by the VAT crowd while the switch is on
-				hatch.vat = ViewPrefs.enemy_vat
-				root.set_meta(&"vat_kind", true)
-			hatch.setup(WorldReader.KIND_HATCHLING)  # Its colours
-			root.set_meta(&"hit_look", hatch)
-			hatch.scale = Vector3.ONE * 0.66
-			facing.add_child(hatch)
-			height = ChargerAvatar.HEIGHT * 0.66
-			root.set_meta(&"enemy_avatar", hatch)
-			root.set_meta(&"mats", hatch.body_materials.duplicate())
+		WorldReader.KIND_FROST_SPITTER:  # The owner's model, animated in code, on VAT
+			height = FrostSpitterAvatar.attach(self, root, facing)
+		WorldReader.KIND_WIRE_WEAVER:  # The owner's model, animated in code, on VAT
+			height = WireWeaverAvatar.attach(self, root, facing)
+		WorldReader.KIND_GLACIER_TURTLE:  # The owner's model, animated in code, on VAT
+			height = GlacierTurtleAvatar.attach(self, root, facing)
+		WorldReader.KIND_GRAVITY_NODE:  # The owner's model, animated in code, on VAT
+			height = GravityNodeAvatar.attach(self, root, facing)
+		WorldReader.KIND_HATCHLING:  # The Brood Mother's hatchling: the owner's model, on the Charger's state
+			height = HatchlingAvatar.attach(self, root, facing)
 		_ when WorldReader.is_boss_kind(kind):
 			# The bosses: their own models; their HP shows in the HUD's boss bar, not over them.
 			var boss: BossAvatar = (
@@ -832,12 +823,13 @@ func _make_actor(p_kind: int, is_player: bool, radius: float, id := -1) -> Node3
 			root.set_meta(&"mats", elite.body_materials.duplicate())
 			root.set_meta(&"hit_look", elite)
 			root.set_meta(&"elite", true)
-		_ when StarfallAvatar.takes(kind):  # The Starfall signatures' stand-ins
-			height = StarfallAvatar.make(root, facing, kind)
+		WorldReader.KIND_STAR_WARPER:  # The owner's model, floating, animated in code, on VAT
+			height = StarWarperAvatar.attach(self, root, facing)
 		_ when HordeAvatar.is_horde_kind(kind):
 			# The horde kinds: one code-built model per kind.
 			var horde := HordeAvatar.new()
-			horde.enemy_tint = VariantLooks.cast(p_kind, enemy_tint)  # v0.8.0 HR (tint_greys, role_glow); O13a
+			horde.enemy_tint = VariantLooks.cast(p_kind, enemy_tint)  # (tint_greys, role_glow); a variant: its own
+			horde.look_kind = p_kind  # A biome variant wears its biome's colours (EnemyPalettes.VERSIONS)
 			horde.role_glow = role_glow_energy
 			if VatCrowd.supports(p_kind):  # Drawn by the VAT crowd while the switch is on
 				horde.vat = ViewPrefs.enemy_vat

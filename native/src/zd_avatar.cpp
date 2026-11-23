@@ -1,3 +1,7 @@
+// AvatarBase's shared code on a batch row (its clocks, hold, flinch, strike and tell, the engine's sine and cosine,
+// the Basis builders, the row's transforms) and the avatars of the horde kinds (HordeAvatar) and the Chargers
+// (ChargerAvatar). Which class's code runs a slot is zd_avatar_dispatch.cpp's.
+
 #include "zd_avatar.h"
 
 #include <cmath>
@@ -64,6 +68,15 @@ constexpr double BOB_RATE = 7.0;
 constexpr double BOB_M = 0.015;
 constexpr double SNIPER_AIM_MIN = -0.16;
 constexpr double SNIPER_AIM_SPAN = 0.28;
+// MineLayerModel
+constexpr double ML_FULL_MPS = 2.4;
+constexpr double ML_WALK_MAX = 1.0;
+constexpr double ML_STEP_HZ = 10.0;
+constexpr double ML_FLAIL_HZ = 5.0;
+constexpr double ML_IDLE_HZ = 0.3;
+constexpr double ML_DEATH_ROLL = 2.6;
+constexpr double ML_HALF_WIDTH = 0.31;
+constexpr double ML_TOP = 0.39;
 // ChargerAvatar, ChargerVat
 constexpr double STRIDE_M = 0.55;
 constexpr double MAX_CYCLES = 7.0;
@@ -73,6 +86,22 @@ constexpr double RISE_TIME = 0.35;
 constexpr double VISOR_ENERGY = 1.4;
 constexpr double BODY_Y_LO = -0.32;
 constexpr double BODY_Y_HI = 0.12;
+// HatchlingAvatar
+constexpr double HATCH_DEATH_SECONDS = 0.6;
+// SwarmerModel (the Swarmer on the owner's model)
+constexpr double SW_STEP_HZ = 8.0;
+constexpr double SW_IDLE_HZ = 1.1;
+constexpr double SW_LEAN_REAR = 0.3;
+constexpr double SW_LEAN_LUNGE = 0.2;
+constexpr double SW_LEAN_CROUCH = 0.08;
+constexpr double SW_REAR_X = -0.18;
+constexpr double SW_FRONT_X = 0.11;
+constexpr double SW_LUNGE_M = 0.09;
+constexpr double SW_DRAW_M = 0.03;
+constexpr double SW_BOB_M = 0.006;
+constexpr double SW_DEATH_ROLL = 2.4;
+constexpr double SW_BODY_Y = 0.1;
+constexpr double SW_HOP_M = 0.05;
 
 // GDScript's utility functions on doubles (clampf, maxf, minf, lerpf, smoothstep, move_toward).
 inline double clampd(double v, double lo, double hi) {
@@ -122,7 +151,7 @@ double consume_hold(double *s, double delta) {
 	return delta - used;
 }
 
-void advance_flinch(double *s, double delta, const Frame &f) {
+void advance_flinch(double *s, int cls, double delta, const Frame &f) {
 	if (!flinching(s)) {
 		return;
 	}
@@ -140,7 +169,7 @@ void advance_flinch(double *s, double delta, const Frame &f) {
 	const Vector3 squash(f32(1.0 + 0.5 * FLINCH_SQUASH * k), f32(1.0 - FLINCH_SQUASH * k),
 			f32(1.0 + 0.5 * FLINCH_SQUASH * k));
 	const Basis b = axis_angle(axis, f32(FLINCH_LEAN * k)) * Basis::from_scale(squash);
-	const Vector3 p(0, 0, 0); // _flinch_pivot(): 0 for the batched kinds
+	const Vector3 p(0, flinch_pivot(cls), 0);
 	const double knock = maxd(flinch_envelope(s[FLINCH_T] / FLINCH_SECONDS), 0.0) * s[FLINCH_KNOCK];
 	put_xf(s, XF, rest * Transform3D(b, p - b.xform(p) + d * f32(knock)));
 }
@@ -245,6 +274,9 @@ double h_crouch(const double *s, int c, const States &st) {
 void pose_parts(double *s, int c, const Vector4 &d) {
 	Vector4 g;
 	switch (c) {
+		case SWARMER: // the owner's model's (SwarmerModel): the legs -1..1 to 0..1
+			g = Vector4(d.x, d.y, f32((double(d.z) + 1.0) / 2.0), f32(Math::fposmod(double(d.w), 1.0)));
+			break;
 		case MENDER:
 			g = Vector4(d.x, 0.0f, 0.0f, f32(Math::fposmod(double(d.w) / TAU_D, 1.0)));
 			break;
@@ -277,9 +309,59 @@ void place_body(double *s, int c, const Vector3 &bp, double brz, double mrx, dou
 	put_xf(s, H_BODY, xf);
 }
 
-void pose_model(double *s, int c, double energy, bool calm, Vector3 bp, double brz) {
+inline double loop01(double u) {
+	return u - std::floor(u);
+}
+
+// The owner's Mine Layer: MineLayerModel.body_at, death_roll and drives (its own clips; the idle loop, its fifth
+// drive, is reckoned when it is drawn).
+void ml_pose(double *s, int c, double energy, double d) {
+	double y = -(1.0 - s[H_RISE]) * s[H_HEIGHT];
+	const double r = ML_DEATH_ROLL * d * d * (3.0 - 2.0 * d);
+	if (d > 0.0) {
+		y += (ML_HALF_WIDTH * dsin(r) + ML_TOP * maxd(0.0, -dcos(r))) * (1.0 - 0.35 * d);
+	}
+	place_body(s, c, Vector3(0.0f, f32(y), 0.0f), 0.0, -r, 1.0 - 0.35 * d);
+	const double vx = lerpd(s[H_WALK], 1.0, d);
+	const double vz = s[H_WALK_Z] * (1.0 - d);
+	const double clip = s[H_STRIKE] > 0.0 ? 1.0 - 0.5 * s[H_STRIKE] : 0.5 * s[H_WIND];
+	s[H_D] = f32(loop01(s[H_WALK_T]));
+	s[H_D + 1] = f32((clampd(vx, -ML_WALK_MAX, ML_WALK_MAX) / ML_WALK_MAX + 1.0) * 0.5);
+	s[H_D + 2] = f32((clampd(vz, -ML_WALK_MAX, ML_WALK_MAX) / ML_WALK_MAX + 1.0) * 0.5);
+	s[H_D + 3] = f32(clip);
+	s[H_GLOW] = energy * lerpd(0.2, 1.0, s[H_RISE]) * (1.0 - d);
+}
+
+// SwarmerModel.place: the Swarmer on the owner's model.
+void sw_pose(double *s, int c, double energy, const States &st) {
+	const double wind = s[H_WIND], strike = s[H_STRIKE], rise = s[H_RISE];
+	const double d = s[H_DIE] >= 0.0 ? clampd(s[H_DIE] / DEATH_SECONDS, 0.0, 1.0) : 0.0;
+	const double crouch = h_crouch(s, c, st);
+	const double lean = wind * SW_LEAN_REAR * (1.0 - strike) - strike * SW_LEAN_LUNGE - crouch * SW_LEAN_CROUCH;
+	const double px = lean > 0.0 ? SW_REAR_X : SW_FRONT_X;
+	const double roll = -d * SW_DEATH_ROLL;
+	const double x = px * (1.0 - dcos(lean)) - crouch * SW_DRAW_M + strike * SW_LUNGE_M;
+	const double y = -(1.0 - rise) * s[H_HEIGHT] - px * dsin(lean) + std::fabs(dsin(s[H_WALK_T])) * SW_BOB_M * s[H_WALK] +
+			SW_BODY_Y * (1.0 - dcos(roll)) + dsin(d * PI_D) * SW_HOP_M;
+	const double z = -SW_BODY_Y * dsin(roll);
+	place_body(s, c, Vector3(f32(x), f32(y), f32(z)), lean, roll, 1.0 - 0.35 * d);
+	const double legs = s[H_DIE] >= 0.0 ? -d : s[H_WALK];
+	const double phase = s[H_WALK_T] / TAU_D;
+	pose_parts(s, c, Vector4(f32(wind), f32(strike), f32(legs), f32(phase - std::floor(phase))));
+	s[H_GLOW] = energy * lerpd(0.2, 1.0, rise) * (1.0 - d);
+}
+
+void pose_model(double *s, int c, double energy, bool calm, Vector3 bp, double brz, const States &st) {
+	if (c == SWARMER) {
+		sw_pose(s, c, energy, st);
+		return;
+	}
 	const double t = s[T];
 	const double d = s[H_DIE] >= 0.0 ? clampd(s[H_DIE] / DEATH_SECONDS, 0.0, 1.0) : 0.0;
+	if (c == MINE_LAYER) {
+		ml_pose(s, c, energy, d);
+		return;
+	}
 	double mrx = 0.0;
 	Vector4 drives(f32(s[H_WIND]), f32(s[H_STRIKE]), 0.0f, f32(dsin(s[H_WALK_T]) * s[H_WALK]));
 	if (leg_kind(c)) {
@@ -323,7 +405,7 @@ void h_pose(double *s, int c, const Ctx &cx) {
 	const bool telling = tell_kind(c) && int(s[H_STATE]) == cx.st.windup;
 	const double tell = telling ? tell_glow(s[H_TELL], t, calm) : 1.0;
 	double energy = (1.5 + wind * 3.0) * tell + strike * 2.0;
-	if (c == SWARMER) {
+	if (c == SWARMER && s[H_IS_MODEL] == 0.0) { // the code body (the pilot's)
 		s[H_LIFT] = bob - (1.0 - rise) * height;
 		s[H_GLOW] = energy * lerpd(0.2, 1.0, rise);
 		return;
@@ -332,7 +414,7 @@ void h_pose(double *s, int c, const Ctx &cx) {
 			f32(bob - (1.0 - rise) * height - crouch * 0.1 * height), 0.0f);
 	const double brz = crouch * 0.12;
 	if (s[H_IS_MODEL] != 0.0) {
-		pose_model(s, c, energy, calm, bp, brz);
+		pose_model(s, c, energy, calm, bp, brz, cx.st);
 		return;
 	}
 	if (c == MINE_LAYER) {
@@ -357,6 +439,8 @@ Vector3 view_position(const double *s, const Frame &f) {
 	return xf.origin;
 }
 
+} // namespace
+
 void h_advance(double *s, int c, double delta, const Frame &f, const Ctx &cx) {
 	const double dt = clampd(delta, 0.0, 0.05);
 	if (dt <= 0.0) {
@@ -373,11 +457,41 @@ void h_advance(double *s, int c, double delta, const Frame &f, const Ctx &cx) {
 		const double speed = last == Vector3(inf, inf, inf)
 				? 0.0
 				: double(Vector2(f32(double(at.x) - double(last.x)), f32(double(at.z) - double(last.z))).length()) / dt;
+		if (c == MINE_LAYER) { // MineLayerModel.step: the stride's way in the facing's frame, and its phase
+			double vx = 0.0;
+			double vz = 0.0;
+			if (!(last == Vector3(inf, inf, inf))) {
+				const double dx = double(at.x) - double(last.x);
+				const double dz = double(at.z) - double(last.z);
+				const double cy = dcos(double(f.facing_yaw));
+				const double sy = dsin(double(f.facing_yaw));
+				vx = (dx * cy - dz * sy) / dt / ML_FULL_MPS;
+				vz = (dx * sy + dz * cy) / dt / ML_FULL_MPS;
+			}
+			s[H_WALK] = toward(s[H_WALK], clampd(vx, -ML_WALK_MAX, ML_WALK_MAX), dt * 6.0);
+			s[H_WALK_Z] = toward(s[H_WALK_Z], clampd(vz, -ML_WALK_MAX, ML_WALK_MAX), dt * 6.0);
+			double sp = std::sqrt(s[H_WALK] * s[H_WALK] + s[H_WALK_Z] * s[H_WALK_Z]);
+			if (sp > ML_WALK_MAX) { // kept in the disc (the stride's reach)
+				s[H_WALK] = s[H_WALK] / sp * ML_WALK_MAX;
+				s[H_WALK_Z] = s[H_WALK_Z] / sp * ML_WALK_MAX;
+				sp = ML_WALK_MAX;
+			}
+			double hz = ML_STEP_HZ * mind(1.0, sp * 20.0);
+			if (s[H_DIE] >= 0.0) {
+				hz = cx.calm ? 0.0 : ML_FLAIL_HZ;
+			}
+			s[H_WALK_T] += dt * hz;
+		} else {
+			s[H_WALK] = toward(s[H_WALK], clampd(speed / WALK_FULL_MPS, 0.0, 1.0), dt * 4.0);
+			if (c == SWARMER) { // its gait clock runs idle too (SwarmerModel.gait_rate)
+				s[H_WALK_T] += dt * (TAU_D * (SW_IDLE_HZ * (1.0 - s[H_WALK]) * (cx.calm ? 0.0 : 1.0) + SW_STEP_HZ * s[H_WALK]));
+			} else {
+				s[H_WALK_T] += dt * lerpd(0.0, WALK_HZ * TAU_D, s[H_WALK]);
+			}
+		}
 		s[H_LAST_AT] = at.x;
 		s[H_LAST_AT + 1] = at.y;
 		s[H_LAST_AT + 2] = at.z;
-		s[H_WALK] = toward(s[H_WALK], clampd(speed / WALK_FULL_MPS, 0.0, 1.0), dt * 4.0);
-		s[H_WALK_T] += dt * lerpd(0.0, WALK_HZ * TAU_D, s[H_WALK]);
 	}
 	const int state = int(s[H_STATE]);
 	const bool spawning = state == cx.st.spawn;
@@ -397,6 +511,8 @@ void h_advance(double *s, int c, double delta, const Frame &f, const Ctx &cx) {
 	}
 	h_pose(s, c, cx);
 }
+
+namespace {
 
 // --- ChargerAvatar ---
 
@@ -421,11 +537,15 @@ void c_pose(double *s, const Ctx &cx) {
 	s[C_LIFT] = sink_y;
 	const double shimmer = calm ? 0.0 : 0.5 * dsin(t * 30.0);
 	const double tell = winding ? tell_glow(s[C_TELL], t, calm) : 1.0;
-	const double glow = VISOR_ENERGY * (1.0 + wind * (1.6 + shimmer) + lunge * 1.2) * tell * (1.0 - daze * 0.7);
+	const double dead = s[C_DIE] >= 0.0 ? clampd(s[C_DIE] / HATCH_DEATH_SECONDS, 0.0, 1.0) : 0.0;
+	const double glow =
+			VISOR_ENERGY * (1.0 + wind * (1.6 + shimmer) + lunge * 1.2) * tell * (1.0 - daze * 0.7) * (1.0 - dead);
 	if (!(std::fabs(glow - s[C_VISOR]) <= 1e-4)) { // set_visor_energy: written on a change only
 		s[C_VISOR] = glow;
 	}
 }
+
+} // namespace
 
 void c_advance(double *s, double delta, const Ctx &cx) {
 	const double dt = clampd(delta, 0.0, 0.05);
@@ -433,6 +553,9 @@ void c_advance(double *s, double delta, const Ctx &cx) {
 		return;
 	}
 	s[T] += dt;
+	if (s[C_DIE] >= 0.0) {
+		s[C_DIE] += dt;
+	}
 	const double vlen = double(Vector2(f32(s[VEL_X]), f32(s[VEL_Y])).length());
 	s[C_SPEED] = lerpd(s[C_SPEED], vlen, rate(12.0, dt));
 	const int st = int(s[C_STATE]);
@@ -449,6 +572,8 @@ void c_advance(double *s, double delta, const Ctx &cx) {
 	s[C_PHASE] += mind(s[C_SPEED] / STRIDE_M, MAX_CYCLES) * TAU_D * dt;
 	c_pose(s, cx);
 }
+
+namespace {
 
 inline double loop(double u) {
 	return u - std::floor(u);
@@ -540,56 +665,7 @@ Basis euler_yxz(const Vector3 &e) {
 	return ymat * xmat * zmat;
 }
 
-void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
-	if (is_charger(cls)) {
-		c_advance(s, delta, c);
-	} else if (cls != NONE) {
-		h_advance(s, cls, delta, f, c);
-	}
-}
-
-void process(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
-	const double dt = consume_hold(s, delta);
-	if (dt > 0.0) {
-		advance(s, cls, dt, f, c);
-		advance_flinch(s, dt, f);
-	}
-}
-
-void apply(double *s, int cls, int64_t tick, int state, bool healing, double windup, float pos_x, float pos_y,
-		const Ctx &c) {
-	if (is_charger(cls)) {
-		s[C_TELL] = clampd(windup, 0.0, 1.0);
-		// _track_motion(tick, pos, TELEPORT_SPEED)
-		const bool fresh = s[FRESH] != 0.0;
-		const int64_t last = int64_t(s[LAST_TICK]);
-		if (!fresh && tick > last) {
-			const Vector2 v = (Vector2(pos_x, pos_y) - Vector2(f32(s[LAST_PX]), f32(s[LAST_PY]))) *
-					f32(60.0 / double(tick - last));
-			const bool keep = double(v.length()) <= TELEPORT_SPEED && tick - last <= MOTION_GAP_TICKS;
-			s[VEL_X] = keep ? v.x : 0.0f;
-			s[VEL_Y] = keep ? v.y : 0.0f;
-		} else if (tick < last) {
-			s[VEL_X] = 0.0;
-			s[VEL_Y] = 0.0;
-		}
-		s[LAST_TICK] = double(tick);
-		s[LAST_PX] = pos_x;
-		s[LAST_PY] = pos_y;
-		const int prev = int(s[C_STATE]);
-		s[C_STATE] = state;
-		strike_note(s, state, c.st);
-		if (state == c.st.spawn) {
-			s[C_RISE] = 0.0;
-		} else if (fresh && prev != c.st.spawn) {
-			s[C_RISE] = 1.0;
-		}
-		s[FRESH] = 0.0;
-		return;
-	}
-	if (cls == NONE) {
-		return;
-	}
+void h_apply(double *s, int cls, int64_t tick, int state, bool healing, double windup, const Ctx &c) {
 	s[H_HEALING] = healing ? 1.0 : 0.0;
 	s[H_TELL] = clampd(windup, 0.0, 1.0);
 	const bool fresh = s[FRESH] != 0.0;
@@ -606,39 +682,37 @@ void apply(double *s, int cls, int64_t tick, int state, bool healing, double win
 	}
 }
 
-double glow_energy(const double *s, int cls) {
-	return is_charger(cls) ? s[C_VISOR] : s[H_GLOW];
+void c_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const Ctx &c) {
+	s[C_TELL] = clampd(windup, 0.0, 1.0);
+	// _track_motion(tick, pos, TELEPORT_SPEED)
+	const bool fresh = s[FRESH] != 0.0;
+	const int64_t last = int64_t(s[LAST_TICK]);
+	if (!fresh && tick > last) {
+		const Vector2 v = (Vector2(pos_x, pos_y) - Vector2(f32(s[LAST_PX]), f32(s[LAST_PY]))) *
+				f32(60.0 / double(tick - last));
+		const bool keep = double(v.length()) <= TELEPORT_SPEED && tick - last <= MOTION_GAP_TICKS;
+		s[VEL_X] = keep ? v.x : 0.0f;
+		s[VEL_Y] = keep ? v.y : 0.0f;
+	} else if (tick < last) {
+		s[VEL_X] = 0.0;
+		s[VEL_Y] = 0.0;
+	}
+	s[LAST_TICK] = double(tick);
+	s[LAST_PX] = pos_x;
+	s[LAST_PY] = pos_y;
+	const int prev = int(s[C_STATE]);
+	s[C_STATE] = state;
+	strike_note(s, state, c.st);
+	if (state == c.st.spawn) {
+		s[C_RISE] = 0.0;
+	} else if (fresh && prev != c.st.spawn) {
+		s[C_RISE] = 1.0;
+	}
+	s[FRESH] = 0.0;
 }
 
-Transform3D body_offset(const double *s, int cls, const Transform3D &xf) {
-	if (is_charger(cls)) {
-		return xf.translated_local(Vector3(0.0f, f32(s[C_LIFT]), 0.0f));
-	}
-	if (cls == SWARMER) {
-		return xf * Transform3D(Basis(), Vector3(0.0f, f32(s[H_LIFT]), 0.0f));
-	}
-	return xf * get_xf(s, H_BODY);
-}
-
-int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
-	if (is_charger(cls)) {
-		const double t = s[T];
-		out[0] = f32(s[C_WIND]);
-		out[1] = f32(s[C_LUNGE_NOW]);
-		out[2] = f32(s[C_DAZE]);
-		out[3] = f32(loop(s[C_PHASE] / TAU_D));
-		out[4] = f32(s[C_WALK]);
-		out[5] = f32(s[C_CROUCH_NOW]);
-		out[6] = f32(s[C_RISE_NOW]);
-		const double lo = BODY_Y_LO;
-		out[7] = f32((s[C_Y_NOW] - lo) / (BODY_Y_HI - lo));
-		out[8] = f32(loop(t * 0.9 / TAU_D));
-		out[9] = f32((1.0 - s[C_WALK]) * (1.0 - s[C_WIND]));
-		out[10] = f32(loop(t * 9.0 / TAU_D));
-		out[11] = 0.0f;
-		return 12;
-	}
-	if (cls == SWARMER) {
+int h_drives(const double *s, int cls, double period, const Ctx &c, float *out) {
+	if (cls == SWARMER && s[H_IS_MODEL] == 0.0) {
 		out[0] = f32(clampd(s[H_WIND], 0.0, 1.0));
 		out[1] = f32(clampd(s[H_STRIKE], 0.0, 1.0));
 		out[2] = f32(clampd(h_crouch(s, cls, c.st), 0.0, 1.0));
@@ -653,7 +727,93 @@ int drives(const double *s, int cls, double period, const Ctx &c, float *out) {
 	for (int k = 0; k < 4; k++) {
 		out[k] = f32(s[H_D + k]);
 	}
+	if (cls == MINE_LAYER) { // MineLayerModel.idle_phase: its fifth drive
+		out[4] = f32(loop01(s[T] * ML_IDLE_HZ * (c.calm ? 0.5 : 1.0)));
+		return 5;
+	}
 	return 4;
+}
+
+int c_drives(const double *s, float *out) {
+	const double t = s[T];
+	out[0] = f32(s[C_WIND]);
+	out[1] = f32(s[C_LUNGE_NOW]);
+	out[2] = f32(s[C_DAZE]);
+	out[3] = f32(loop(s[C_PHASE] / TAU_D));
+	out[4] = f32(s[C_WALK]);
+	out[5] = f32(s[C_CROUCH_NOW]);
+	out[6] = f32(s[C_RISE_NOW]);
+	const double lo = BODY_Y_LO;
+	out[7] = f32((s[C_Y_NOW] - lo) / (BODY_Y_HI - lo));
+	out[8] = f32(loop(t * 0.9 / TAU_D));
+	out[9] = f32((1.0 - s[C_WALK]) * (1.0 - s[C_WIND]));
+	out[10] = f32(loop(t * 9.0 / TAU_D));
+	out[11] = f32(s[C_DIE] >= 0.0 ? clampd(s[C_DIE] / HATCH_DEATH_SECONDS, 0.0, 1.0) : 0.0);
+	return 12;
+}
+
+void process(double *s, int cls, double delta, const Frame &f, const Ctx &c) {
+	const double dt = consume_hold(s, delta);
+	if (dt > 0.0) {
+		advance(s, cls, dt, f, c);
+		advance_flinch(s, cls, dt, f);
+	}
+}
+
+double sin_d(double x) {
+	return dsin(x);
+}
+
+double cos_d(double x) {
+	return dcos(x);
+}
+
+double envelope(double u) {
+	return flinch_envelope(u);
+}
+
+double glow_of_tell(double p, double t, bool calm) {
+	return tell_glow(p, t, calm);
+}
+
+double ease_rate(double per_second, double dt) {
+	return rate(per_second, dt);
+}
+
+void strike_note_of(double *s, int state, const States &st) {
+	strike_note(s, state, st);
+}
+
+void strike_step(double *s, double dt) {
+	strike_advance(s, dt);
+}
+
+double strike_swing_of(const double *s) {
+	return strike_swing(s);
+}
+
+bool strike_snapping_of(const double *s) {
+	return strike_snapping(s);
+}
+
+double strike_raised_of(const double *s, bool winding, double p, double rest) {
+	return strike_raised(s, winding, p, rest);
+}
+
+double crouch_of_tell(double p) {
+	return tell_crouch(p);
+}
+
+double exp_d(double x) {
+	return dexp(x);
+}
+
+double acos_d(double x) {
+	return UtilityFunctions::acos(x);
+}
+
+double atan2_d(double y, double x) {
+	return UtilityFunctions::atan2(y, x);
 }
 
 } // namespace av

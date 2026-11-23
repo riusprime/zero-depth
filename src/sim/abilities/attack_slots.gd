@@ -122,6 +122,8 @@ static func form_row(w: World) -> int:
 	if t == null or not gun(w):
 		return -1
 	for s in held_of(w, FORM):
+		if WandLock.off(w, w.mod_slots[s]):  # A Form card The Fallen holds shapes nothing
+			continue
 		var r := t.row_of_card(w.mod_slots[s])
 		if r >= 0:
 			return r

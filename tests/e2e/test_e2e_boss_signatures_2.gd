@@ -5,7 +5,9 @@ extends GutTest
 ## on its own: the Gaze's beam is drawn (BossSignatureViews), a Turret Cross ember's bounce off a wall throws sparks,
 ## a Molten Flood leaves lava drawn on the floor. For the meltdown, F10 first sets the Foundry's phase-2 and phase-3
 ## thresholds to 1000 (typed into its rows, then Restart floor), so the summoned Foundry goes through both gates
-## at once and opens phase 3 with the meltdown: the outer ring glows, then melts.
+## at once and opens phase 3 with the meltdown: the outer ring glows, then melts. The Hive Lens's second phase (its
+## HP set by a labelled test helper): its drones' feeding threads, its shield rings and the bar's fed tone, then the
+## Lattice's strands on the sim's own.
 
 const FOUNDRY := "res://data/bosses/foundry.tres"
 const SAVE := "user://e2e_boss_signatures_2.json"
@@ -178,3 +180,40 @@ func _find(it: TreeItem, text: String) -> TreeItem:
 			return f
 		c = c.get_next()
 	return null
+
+
+func test_the_hive_lens_is_fed_by_its_drones_and_weaves_its_lattice() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu()
+	var bid := await _summon(e, main, &"hive_lens")
+	var w := e.world()
+	var reader := main.driver.reader
+	var j := w.actors.index_of(bid)
+	# TEST HELPER: its HP is set just under the second phase's threshold (a real fight to it is minutes long);
+	# everything after is the game: the phase gate, the split it opens with, the drones feeding it, the Lattice.
+	w.actors.hp[j] = w.actors.max_hp[j] * 640 / 1000
+	var feed: LensFeedViews = main.view.lens_feed
+	var lat: LensLatticeViews = main.view.lens_lattice
+	var hud: Hud = main.get_node("UI/Hud")
+	var fed := false
+	for k in 60 * 20:
+		await e.frames(1)
+		var n: int = reader.boss_lens().get("drones", []).size()
+		if n >= 2 and feed.threads().size() == n and feed.layers() == n:
+			fed = true
+			break
+	assert_true(fed, "a thread and a ring of its shield for each feeding drone")
+	if not fed:
+		return
+	assert_eq(hud.boss_bar.tone(), BossBarTones.FED, "the bar's fed tone")
+	assert_eq(hud.boss_bar.shield_pips(), reader.boss_lens()["drones"].size(), "a pip per drone")
+	var web := false
+	for k in 60 * 30:
+		await e.frames(1)
+		var l: Dictionary = reader.boss_lens().get("lattice", {})
+		if bool(l.get("running", false)) and lat.strands().size() == (l["strands"] as Array).size():
+			web = lat.strands().size() > 0
+			if web:
+				break
+	assert_true(web, "the Lattice's strands are drawn, one for each of the sim's")

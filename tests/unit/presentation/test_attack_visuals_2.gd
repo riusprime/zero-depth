@@ -19,8 +19,10 @@ const NOT_GROUND := [
 	WorldReader.MOVE_CROSSFIRE,  # v0.9.0 NB2: the Wardens' fans (their gaps: TwinViews), not a marker
 	WorldReader.MOVE_ECHO,  # v0.9.0 NB3: the Judge's echo, its path and ghost strikes drawn by JudgeViews
 	BossAttackTable.Move.WAVE,  # v0.9.5 BH4: the crossing waves, drawn by TideWaveViews (never a boss's own strike)
-	BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6: the Fallen's interphase carriers, drawn by InterphaseViews
+	BossAttackTable.Move.REMEMBERED,  # The Fallen's remembered carriers: a death recap line, never cast
 	BossAttackTable.Move.GREAT_JAVELIN,  # v0.11.0 F9: the throw, ring and recall, drawn by GreatJavelinViews
+	WorldReader.MOVE_TIME_WAVE,  # the Judge's Time Wave strikes nothing: its cast and ring are drawn by JudgeTimeViews
+	WorldReader.MOVE_MIRROR_WARD,  # the violet Warden's Mirror Ward is a cast: nothing strikes the ground
 ]
 
 
@@ -49,8 +51,6 @@ func _fight(boss: StringName, attack_id: StringName) -> Array:
 	var i := BossLab.ready_boss(w, boss, Vector2.ZERO)
 	var aid := w.actors.ids[i]
 	BossAi.table_of(w, i).twin_bolt = -1  # v0.11.0 O5: the Wardens' standing-back bolt is a projectile, not a strike
-	if not w.bosses.twin_lead.is_empty():
-		w.bosses.twin_burn_cd[0] = 1 << 20  # nor their chain's burn (TwinViews draws the chain)
 	w.actors.set_pos(0, Vector2(5, 2))
 	w.actors.hp[0] = 1 << 20
 	w.actors.max_hp[0] = 1 << 20
@@ -105,6 +105,8 @@ func test_every_boss_ground_attack_in_the_content_has_a_look() -> void:
 		WorldReader.MOVE_ROW_FLOOD: BossStrikeLooks.LANE_STRIKES,
 		WorldReader.MOVE_CHARGE: BossStrikeLooks.CHARGE_STRIKES,
 		WorldReader.MOVE_CHAIN_SWEEP: BossStrikeLooks.CHARGE_STRIKES,  # v0.9.0 NB2: a lane, scorched like a charge
+		WorldReader.MOVE_SWORD_COMBO: BossStrikeLooks.ARC_STRIKES,  # the amber Warden's cuts: arcs
+		WorldReader.MOVE_SHADOW_SWORDS: BossStrikeLooks.LANE_STRIKES,  # the violet Warden's blades: lanes
 		WorldReader.MOVE_VERDICT: BossStrikeLooks.LANE_STRIKES,  # v0.9.0 NB3: a square, a lane's shape
 	}
 	for a: Array in attacks:
@@ -186,6 +188,7 @@ func test_markers_are_styled_dull_while_tracking_and_hot_once_locked() -> void:
 		var look := BossStrikeLooks.look_for(a[2], a[3])
 		var tracked_seen := false
 		var styled_seen := false
+		var body_tell := 0
 		for t in 400:  # the windup, and the active time (a burrow's circle shows while it is underground)
 			w.step(InputFrame.new())
 			w.actors.hp[0] = w.actors.max_hp[0]
@@ -193,7 +196,10 @@ func test_markers_are_styled_dull_while_tracking_and_hot_once_locked() -> void:
 			if i < 0 or w.actors.state[i] == EnemyAi.State.RECOVER:
 				break
 			var tg := reader.telegraph(i)
-			if tg.is_empty() or not tg.get("ground", true):
+			if not tg.is_empty() and not tg.get("ground", true):
+				body_tell += int(reader.boss_twin(i).get("flash", 0) > 0)
+				continue
+			if tg.is_empty():
 				continue
 			assert_eq(TelegraphViews.look_of(reader, i, tg), look)
 			tv.sync(reader)
@@ -214,6 +220,8 @@ func test_markers_are_styled_dull_while_tracking_and_hot_once_locked() -> void:
 					var pat := int((m as ShaderMaterial).get_shader_parameter("pattern"))
 					assert_eq(pat, BossStrikeLooks.pattern_of(look))
 					styled_seen = true
+		if body_tell > 0:  # its tell is the body's flash: no ground line or circle is drawn through its windup
+			continue
 		assert_true(styled_seen, "%s %s: its marker is styled" % [a[0], a[1]])
 		if tracked_seen:
 			styled += 1
@@ -327,14 +335,14 @@ func test_an_eggs_shadow_grows_on_its_circle_before_the_acid_splat() -> void:
 func test_low_density_thins_the_rocks_and_reduced_motion_stills_the_flow() -> void:
 	var view := BossStrikeViews.new()
 	add_child_autofree(view)
-	view._spawn(&"bm_burrow", 3, {"discs": [[Vector2.ZERO, 2.0]]})
+	view._spawn(&"bm_eggs", 3, {"discs": [[Vector2.ZERO, 2.0]]})
 	view._draw(6.0)
 	var rocks := view.drawn(&"rock")
 	assert_gt(rocks, 0)
 	ViewPrefs.effects_density = "low"
 	view._draw(6.0)
 	assert_lt(view.drawn(&"rock"), rocks, "fewer rocks")
-	assert_gt(view.drawn(&"ground"), 0, "the crater stays")
+	assert_gt(view.drawn(&"ground"), 0, "the pool stays")
 	ViewPrefs.reduced_motion = true
 	view._draw(6.0)
 	var m := view.get_node("Strike_ground") as MultiMeshInstance3D
@@ -362,7 +370,8 @@ func test_the_effects_go_through_the_layers_budgets() -> void:
 	view._tick = 32
 	layer.begin(33.0)
 	layer.finish()
-	assert_gt(layer.bursts_asked, 0, "the shells explode through VfxLayer.burst")
+	assert_eq(layer.bursts_asked, 0, "the shells slam into the stone: no VfxLayer.burst")
+	assert_gt(view.slams.live(), 0, "their slams")
 	assert_lte(layer.bursts_drawn, VfxLayer.BURST_MAX, "within the frame's burst budget")
 	assert_lte(view.live_bursts(), BurstBudget.MAX_LIVE)
 	assert_gt(layer.lights_asked(), 0, "flashes ask for light")

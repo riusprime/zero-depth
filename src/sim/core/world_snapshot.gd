@@ -64,6 +64,9 @@ const WORLD_KEPT := {
 	&"curse_totals": "rebuilt: Curses.total's cache, summed from curses_owned (v0.7.0 audit C-12)",
 	&"phase_probe": "debug (v0.8.0 HS): the perf probe's phase timer, null in play, not state",
 	&"native": "setup: the native side (NativeWorld.make), caches only, not state",
+	&"seek_memo":
+	"transient within the projectile phase's steering (Seekers.target): empty between ticks",
+	&"seek_memo_on": "transient within the projectile phase's steering: false between ticks",
 	&"_wall_rev":
 	"derived: counts the wall grid's changes (the native side's cue to take the walls again)",
 	&"debug_aoe_misses": "debug (v0.8.0 HS): a test's superset check, off in play",
@@ -108,6 +111,17 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"BossAttackTable",
 	&"QuakeTable",  # The Gatekeeper's quake pillars (BossTable.quake, content)
 	&"HazardTable",  # A boss's arena hazards (BossTable.hazard, content)
+	&"BossTimeTable",  # The Clockwork Judge's time mechanics (BossTable.time, content)
+	&"BossPickupTable",  # Its hour orbs (BossTimeTable.orb, content)
+	&"ShotFieldTable",  # Its slow fields (BossTimeTable.field, content)
+	&"BossDanceTable",  # The Tidecaller's dance (BossTable.dance, content)
+	&"BossWardensTable",  # The Twin Wardens' own mechanics (BossTable.wardens, content)
+	&"BossSiegeTable",  # The Siege Engine's siege mechanics (BossTable.siege, content)
+	&"BossForgeTable",  # The Foundry's forge (BossTable.forge, content)
+	&"BossWarlordTable",  # The Warlord's banner and duel (BossTable.warlord, content)
+	&"BossLensTable",  # The Hive Lens's lattice (BossTable.lens, content)
+	&"FallenDashTable",  # The Fallen's dash between moves (BossTable.reposition, content)
+	&"FallenRememberedTable",  # The Fallen's remembered mechanics (BossTable.remembered, content)
 	&"SwingStep",
 	&"SkillTable",
 	&"OverrunTable",  # v0.4.0 AB
@@ -153,6 +167,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"ShardDropStore",  # v0.10.5 O7b
 	&"ObjectiveMarkers",  # The hint arrow's markers
 	&"BossStore",
+	&"BossFightStore",  # The bosses' fight mechanics
 	&"RewardStore",
 	&"AbilityState",
 	&"KitState",
@@ -255,6 +270,8 @@ static func apply(base: World, snap: Dictionary) -> String:
 	# A sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
 	# so only the wall grid is rebuilt for them.
 	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # Pillars too
+	barriers += base.boss_fight.gear_x.size()  # The Clockwork Judge's stopped gears
+	barriers += base.boss_fight.sg_b_x.size()  # The Siege Engine's boulders
 	barriers += Secrets.slabs_up(base)  # v0.9.0 TD, RA: the secret rooms' slabs while they stand
 	barriers += base.ruins_rocks.rock_count() + base.ruins_rocks.hide_count()  # Rocks, boulders
 	if base.lockdown != null:  # A sealed Lockdown's bars, as an arena's
@@ -510,6 +527,8 @@ static func _make(cls: StringName) -> Object:
 			return ShardDropStore.new()
 		&"BossStore":
 			return BossStore.new()
+		&"BossFightStore":
+			return BossFightStore.new()
 		&"RewardStore":
 			return RewardStore.new()
 		&"AbilityState":

@@ -5,7 +5,9 @@ extends GutTest
 ## (Enter); God from the dev panel (clicked); the stick walks to the boss door, E opens it, the stick walks in and the
 ## door seals; the Judge rises (its model, its name on the boss bar) and fights: the stick circles while it records,
 ## then its echo comes: the whole path shows (JudgeViews' markers and ribbon), the ghosts strike along it, the Judge
-## shielded; then, the shield down, the hero closes in and the mouse's attack lands hits on it.
+## shielded; then, the shield down, the hero closes in and the mouse's attack lands hits on it. Its Time Wave comes
+## on its own cadence: the cast and the ring show (JudgeTimeViews), the weapon is slowed and the HUD says so, the hour
+## orbs lie with their views and hint arrows, and walking through one returns attack speed and fills a pip.
 
 const FLOOR := 5
 const LEG_FRAMES := 900
@@ -80,6 +82,12 @@ func test_continue_floor_5_and_fight_the_judge_through_its_echo() -> void:
 	assert_true(avatar is ClockworkJudgeAvatar, "its avatar")
 	assert_not_null((avatar as ClockworkJudgeAvatar).imported, "the owner's model")
 	assert_eq(tr(reader.boss_name_key(bi)), "The Clockwork Judge", "its name")
+	# The Time Wave is watched for from here on, whatever else the test is doing.
+	var jt: JudgeTimeViews = main.view.judge_time
+	var seen := {"cast": false, "wave": false}
+	var watch := func() -> void:
+		seen["cast"] = seen["cast"] or jt.cast_shown()
+		seen["wave"] = seen["wave"] or jt.wave_live()
 	# The stick circles while it records; its echo comes within its cadence and shows the whole path.
 	var shown := 0
 	var ghosts := 0
@@ -89,6 +97,7 @@ func test_continue_floor_5_and_fight_the_judge_through_its_echo() -> void:
 		var a := TAU * float(k) / 150.0
 		e.stick_toward(Vector2(cos(a), sin(a)))
 		await e.frames(1)
+		watch.call()
 		var i := w.actors.index_of(bid)
 		if i < 0:
 			break
@@ -113,11 +122,13 @@ func test_continue_floor_5_and_fight_the_judge_through_its_echo() -> void:
 		if not reader.boss_shielded(w.actors.index_of(bid)):
 			break
 		await e.frames(1)
+		watch.call()
 	var hp0 := w.actors.hp[w.actors.index_of(bid)]
 	await _walk(
 		e,
 		w.actors.pos(w.actors.index_of(bid)),
 		func() -> bool:
+			watch.call()
 			var j := w.actors.index_of(bid)
 			return j < 0 or w.player_pos().distance_to(w.actors.pos(j)) < w.actors.radius[j] + 1.2
 	)
@@ -126,5 +137,38 @@ func test_continue_floor_5_and_fight_the_judge_through_its_echo() -> void:
 		await e.frames(10)
 		await e.mouse_button(MOUSE_BUTTON_LEFT, false)
 		await e.frames(10)
+		watch.call()
 	var j := w.actors.index_of(bid)
 	assert_true(j < 0 or w.actors.hp[j] < hp0, "the hero's hits landed on it")
+	if j < 0:
+		return
+	# The Time Wave: seen already, or the next one on its cadence.
+	for k in 1900:
+		if seen["wave"] and reader.boss_attack_slow() > 0:
+			break
+		await e.frames(1)
+		watch.call()
+	assert_true(seen["wave"], "a Time Wave's ring ran out from the Judge")
+	assert_true(seen["cast"], "after its cast showed")
+	var cut := reader.boss_attack_slow()
+	assert_gt(cut, 0, "the weapon is slowed")
+	var orbs := reader.boss_pickups()
+	assert_gt(orbs.size(), 0, "the hour orbs lie")
+	if cut <= 0 or orbs.is_empty():
+		return
+	await e.frames(2)
+	assert_eq(jt.orbs_shown(), reader.boss_pickups().size(), "an orb view per orb")
+	assert_true(hud.attack_slow.visible, "the HUD shows the slowed state")
+	assert_eq(hud.attack_slow.percent(), reader.boss_attack_slow() / 10, "and how much is lost")
+	assert_gt(hud.attack_slow.pips(), 0, "a pip per orb, no words")
+	assert_true(hud.objective_hints.showing(MechanicHints.JUDGE_ORB), "hint arrows on the orbs")
+	var won := hud.attack_slow.pips_won()
+	var near: Vector2 = orbs[0]["centre"]
+	for o: Dictionary in orbs:
+		if w.player_pos().distance_to(o["centre"]) < w.player_pos().distance_to(near):
+			near = o["centre"]
+	var took: bool = await _walk(e, near, func() -> bool: return reader.boss_attack_slow() < cut)
+	assert_true(took, "walking through an orb returns attack speed")
+	await e.frames(2)
+	assert_gt(hud.attack_slow.pips_won(), won, "and the HUD fills a pip")
+	assert_eq(hud.attack_slow.percent(), reader.boss_attack_slow() / 10)

@@ -3,9 +3,12 @@ extends GutTest
 ## floor-4 save whose floor draws the Wardens from floor 4's pool (built with SaveLab as Main builds floors; the seed
 ## is the first that draws them) continued from the menu (Enter); God from the dev panel (clicked); the stick walks to
 ## the boss door, E opens it, the stick walks in and the door seals; the two Wardens rise (both owner models, one bar
-## with their name) with their chain drawn between them; v0.11.0 O5: phase 1 is the amber Warden's (the hint points
-## at it, the bar's line names it); the stick walks up to it and the mouse's attack lands: the one shared HP drops (the
-## bar's, both bodies') and the other Warden turns angry.
+## with their name) with nothing drawn between them; v0.11.0 O5: phase 1 is the amber Warden's (the hint points
+## at it; the bar shows the phase only); the stick walks up to it and the mouse's attack lands: the one shared HP
+## drops (the bar's, both bodies') and the other Warden turns angry. Back off: his charge comes on its clock at range,
+## with no lane or end circle drawn: his body flashes. Brought to phase 2 (a test helper sets the shared HP; real
+## frames after), the violet Warden casts her Mirror Ward and its wall stands on the reader's arc; brought to phase 3,
+## her whole ward is cast a few seconds in (seen) and stands, and he wears its violet sheen.
 
 const FLOOR := 4
 const LEG_FRAMES := 900
@@ -111,13 +114,21 @@ func test_continue_floor_4_and_fight_the_twin_wardens() -> void:
 	assert_not_null(amber.imported, "the owner's amber model")
 	assert_not_null(violet.imported, "the owner's violet model")
 	await e.frames(90)  # past the rise
-	assert_gt(main.view.twins.links_drawn(), 8, "their chain drawn between them")
+	var links := main.view.twins.find_children("*", "MultiMeshInstance3D", true, false)
+	var not_grit := func(n: Node) -> bool: return not main.view.twins.slams.is_ancestor_of(n)
+	assert_eq(
+		links.filter(not_grit).size(),
+		0,
+		"no chain between them: they fight apart (the cut's grit is not a link)"
+	)
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_true(hud.boss_bar.visible, "one bar")
-	# v0.11.0 O5: phase 1, the amber leads: the hint points at it and the bar names it.
-	var pointed := reader.objectives().map(func(o: Dictionary) -> int: return int(o["entity"]))
-	assert_eq(pointed, [bid], "the hint points at the amber Warden")
-	assert_string_contains(hud.boss_bar.get_node("PhaseLine").text, tr("HUD_TWIN_LEADS_AMBER"))
+	# Phase 1, the amber leads (no marker follows the body to hit); the bar shows the phase, no words.
+	assert_eq(w.bosses.twin_focus[0], bid, "the amber Warden is the one to hit")
+	assert_eq(reader.objectives().size(), 0, "no hint arrow for it")
+	assert_eq(
+		hud.boss_bar.phase_text(), tr("HUD_BOSS_PHASE") % [1, 3], "the bar shows the phase only"
+	)
 	# Up to the amber Warden, then the mouse's attack.
 	var near := func() -> bool:
 		var j := w.actors.index_of(bid)
@@ -155,3 +166,76 @@ func test_continue_floor_4_and_fight_the_twin_wardens() -> void:
 			break
 	assert_true(landed, "the hero's hits landed")
 	assert_true(angered, "a hit on one Warden angered the other")
+	await _charge_and_mirror(e, main, bid, amber)
+
+
+## His phase-1 charge (no lane, no end circle: his body flashes), then (phase 2) her Mirror Ward, then (phase 3) her
+## whole ward cast a few seconds in and his violet sheen under it, in the real boss room.
+func _charge_and_mirror(e: E2e, main: Main, bid: int, amber: TwinWardenAvatar) -> void:
+	var w := e.world()
+	var reader := main.driver.reader
+	var bursts: ChargeBurstViews = main.view.charge_bursts
+	var flashing := false
+	var drawn := 0
+	for k in 60 * 40:
+		var i := w.actors.index_of(bid)
+		if i < 0:
+			break
+		var away := w.player_pos() - w.actors.pos(i)
+		e.stick_toward(away.normalized() if away.length() < 9.0 else Vector2.ZERO)
+		await e.frames(1)
+		i = w.actors.index_of(bid)
+		if i >= 0 and reader.boss_twin(i).has("flash"):
+			drawn = maxi(drawn, bursts.shown())
+			flashing = flashing or amber.flash_amount() > 0.5
+		elif flashing:
+			break
+	e.stick_toward(Vector2.ZERO)
+	assert_true(flashing, "the amber Warden's charge came, at range, his body flashing")
+	assert_eq(drawn, 0, "no end circle drawn through its wind-up")
+	# Phase 2. TEST HELPER: the shared HP is set just under the phase's threshold (a real fight to it is minutes
+	# long); everything after is the game: the phase gate, the violet Warden's picks, real frames.
+	var i := w.actors.index_of(bid)
+	var j := int(reader.boss_twin(i)["partner"])
+	var hp := w.actors.max_hp[i] * 640 / 1000
+	w.actors.hp[i] = hp
+	w.actors.hp[j] = hp
+	var wards: WardenWardViews = main.view.warden_wards
+	var ward := {}
+	for k in 60 * 60:
+		await e.frames(1)
+		ward = reader.boss_wardens().get("ward", {})
+		if ward.get("kind", &"") == &"mirror" and wards.wall_shown():
+			break
+	assert_eq(ward.get("kind", &""), &"mirror", "the violet Warden's Mirror Ward stands")
+	if ward.get("kind", &"") != &"mirror":
+		return
+	assert_true(wards.wall_shown(), "its wall is drawn")
+	assert_eq(wards.wall_centre(), int(ward["centre"]), "on the side it faces")
+	assert_eq(wards.wall_half(), int(ward["half_arc"]), "as wide")
+	# Phase 3. TEST HELPER: the shared HP set just under its threshold; then real frames: no whole ward at first, her
+	# cast a few seconds in (the re-forming light), then the ward, and his violet sheen while it stands.
+	i = w.actors.index_of(bid)
+	j = int(reader.boss_twin(i)["partner"])
+	hp = w.actors.max_hp[i] * 320 / 1000
+	w.actors.hp[i] = hp
+	w.actors.hp[j] = hp
+	for k in 60 * 5:
+		await e.frames(1)
+		if w.bosses.twin_phase[0] == 2:
+			break
+	assert_eq(w.bosses.twin_phase[0], 2, "phase 3 began")
+	await e.frames(30)
+	assert_ne(reader.boss_wardens()["ward"]["kind"], &"full", "no whole ward at its start")
+	var raised := false
+	for k in 60 * 15:
+		await e.frames(1)
+		raised = raised or wards.raising_shown()
+		if reader.boss_wardens()["ward"]["kind"] == &"full" and wards.full_shown():
+			break
+	assert_true(raised, "she cast it, seen")
+	assert_true(wards.full_shown(), "then her whole ward stands")
+	await e.frames(30)
+	i = w.actors.index_of(bid)
+	if i >= 0 and bool(reader.boss_twin(i)["sheltered"]):
+		assert_gt(amber.sheen_amount(), 0.5, "the amber Warden wears her violet sheen")

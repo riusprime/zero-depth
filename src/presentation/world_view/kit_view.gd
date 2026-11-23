@@ -20,6 +20,10 @@ extends Node3D
 ## always means "this is hitting now"; a blade held at the side would read as a standing hitbox and clutter the
 ## cube's silhouette while shooting and dashing.
 ##
+## The owner's Blade model (SummonedBlade) lies on the blade's pivot each swing, summoned in runes; while it is
+## there the laser light's core and glow capsules are not drawn (the slash trail and edge still are). Without the
+## model, the laser blade draws as before.
+##
 ## Restyling (for items): set_look(color, length_scale, width_scale, trail_count).
 ##   color        the light's hue; the core is this lightened toward white, the glow and trail are this.
 ##   length_scale multiplies the blade's length; keep it 1.0 unless the item also changes the hit reach, or the
@@ -75,6 +79,8 @@ var trail_count := 6
 ## trail take the heat meter's tier colour (HeatLooks.attack_color): their own below Hot, orange at Hot, red at
 ## Overclock.
 var heat_tier := HeatLooks.TIER_COOL
+## The owner's Blade, summoned for each swing and the Lunge Cleave (synced at the end of every sync).
+var summoned: SummonedBlade
 
 var _pivot := Node3D.new()
 var _core := MeshInstance3D.new()
@@ -166,6 +172,10 @@ func _init() -> void:
 	_edge.extra_cull_margin = 16.0
 	add_child(_edge)
 	_apply_look()
+	summoned = SummonedBlade.new(self)
+	add_child(summoned)
+	_core.visible = not summoned.has_model()
+	_glow.visible = _core.visible
 
 
 ## Overclock heat: the blade and its trail take the tier's colour (HeatLooks.attack_color). Only
@@ -287,6 +297,11 @@ func sync(reader: WorldReader) -> void:
 	if _hold > 0.0:  # Held by the hit-stop: caught up when it ends
 		_held_reader = reader
 		return
+	_sync_blade(reader)
+	summoned.sync(reader)
+
+
+func _sync_blade(reader: WorldReader) -> void:
 	set_heat_tier(reader.heat_tier())
 	var shape := reader.swing_shape()
 	if shape != _shape:
@@ -298,8 +313,11 @@ func sync(reader: WorldReader) -> void:
 	if not on:
 		_last_t = 0
 		_history.clear()
-		_trail_mesh.clear_surfaces()
-		_edge_mesh.clear_surfaces()
+		# An empty mesh is left alone: clearing it still has the renderer update every instance of it
+		if _trail_mesh.get_surface_count() > 0:
+			_trail_mesh.clear_surfaces()
+		if _edge_mesh.get_surface_count() > 0:
+			_edge_mesh.clear_surfaces()
 		_edge_drawn = 0
 		_release_ribbon()
 		return
@@ -456,8 +474,10 @@ func _size_blade() -> void:
 func _build_trail(head: Array) -> void:
 	if _ribbon_on:
 		_tint_ribbon()
-	_trail_mesh.clear_surfaces()
-	_edge_mesh.clear_surfaces()
+	if _trail_mesh.get_surface_count() > 0:
+		_trail_mesh.clear_surfaces()
+	if _edge_mesh.get_surface_count() > 0:
+		_edge_mesh.clear_surfaces()
 	_edge_drawn = 0
 	if trail_count == 0:
 		return

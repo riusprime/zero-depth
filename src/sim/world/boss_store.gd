@@ -3,7 +3,10 @@ class_name BossStore
 extends RefCounted
 ## The live bosses' own state, beside their actor entry (which holds the position, HP, the AI state and
 ## its locks). Parallel arrays in ascending actor-id order; an entry leaves when its boss dies (World._remove_dead).
-## Hashed only in a world that has boss tables, so the kernel golden is unchanged.
+## Hashed only in a world that has boss tables, so the kernel golden is unchanged. Also the older signature pieces,
+## the twin pairs, the arena hazards, the floor pickups, the shot fields and the attack-speed cut, which several bosses
+## share. The fight mechanics that one boss's code owns whole (its time, dance, wardens, siege, forge) keep their
+## state in BossFightStore (World.boss_fight), so each new mechanic's block grows that store, not this one.
 
 ## Points a move may lock per boss (lanes' lengths, egg and shell spots).
 const MAX_PTS := 8
@@ -12,6 +15,16 @@ const HZ_INT_FIELDS: Array[StringName] = [
 	&"hz_id", &"hz_boss", &"hz_kind", &"hz_from", &"hz_arm", &"hz_until", &"hz_slow"
 ]
 const HZ_FLOAT_FIELDS: Array[StringName] = [&"hz_x", &"hz_y", &"hz_r"]
+## The floor pickups' parallel arrays (BossPickups), by type.
+const PK_INT_FIELDS: Array[StringName] = [
+	&"pk_id", &"pk_boss", &"pk_kind", &"pk_amount", &"pk_from", &"pk_until"
+]
+const PK_FLOAT_FIELDS: Array[StringName] = [&"pk_x", &"pk_y", &"pk_r"]
+## The shot fields' parallel arrays (BossShotFields), by type.
+const SF_INT_FIELDS: Array[StringName] = [
+	&"sf_id", &"sf_boss", &"sf_speed", &"sf_from", &"sf_until"
+]
+const SF_FLOAT_FIELDS: Array[StringName] = [&"sf_x", &"sf_y", &"sf_r"]
 const INT_FIELDS: Array[StringName] = [
 	&"ids",
 	&"table",
@@ -40,7 +53,6 @@ const TWIN_FIELDS: Array[StringName] = [
 	&"twin_body",
 	&"twin_angry",
 	&"twin_anger_t",
-	&"twin_burn_cd",
 	&"twin_phase",  # The roles' phase, its clock, whose turn, the body that can be hit (the hint)
 	&"twin_clock",
 	&"twin_turn",
@@ -151,17 +163,17 @@ var burn_cd := 0
 var sig_boss := PackedInt32Array()
 var sig_due := PackedInt32Array()
 ## BossTwin: the twin bosses, one entry per pair alive (the Twin Wardens): the boss's actor id (its
-## bar, its defeat) and its twin's, the body angry now (its actor id, 0 = neither) and the ticks its anger has left,
-## and the ticks until the chain may burn the player again. Empty for every other boss, and hashed only while a pair
+## bar, its defeat) and its twin's, the body angry now (its actor id, 0 = neither) and the ticks its anger has left.
+## Empty for every other boss, and hashed only while a pair
 ## lives.
 var twin_lead := PackedInt32Array()
 var twin_body := PackedInt32Array()
 var twin_angry := PackedInt32Array()
 var twin_anger_t := PackedInt32Array()
-var twin_burn_cd := PackedInt32Array()
 ## The phase the pair's roles are in (its boss's), the ticks since it began
-## (the standing-back bolt's and the last phase's swap clock), the body whose turn it is to attack next in the last
-## phase (an actor id) and the body to hit now (the leader; in the last phase the exposed one; the hint follows it).
+## (the standing-back bolt's clock), the body whose turn it is to attack next in the last phase (an actor
+## id) and the body to hit now (the leader; in the last phase the amber Warden, or the violet one while its broken
+## ward leaves it stunned; the hint follows it).
 var twin_phase := PackedInt32Array()
 var twin_clock := PackedInt32Array()
 var twin_turn := PackedInt32Array()
@@ -235,6 +247,35 @@ var hz_next := 0
 var hz_burn_cd := 0
 var hz_storm := 0
 var hz_egg := PackedInt32Array()
+## The attack speed a boss took from the hero (BossSlow): aslow_cut per mille of the weapon's rate (0 = none) and
+## aslow_boss the boss that took it (-1 = none).
+var aslow_cut := 0
+var aslow_boss := -1
+## The floor pickups a boss placed, oldest first (BossPickups): [pk_id, its boss, its kind (BossPickupTable.Kind), its
+## amount, the tick it was placed, the tick it goes (0 = stays until taken), its centre and radius]. pk_next is the
+## next pk_id.
+var pk_id := PackedInt32Array()
+var pk_boss := PackedInt32Array()
+var pk_kind := PackedInt32Array()
+var pk_amount := PackedInt32Array()
+var pk_from := PackedInt32Array()
+var pk_until := PackedInt32Array()
+var pk_x := PackedFloat32Array()
+var pk_y := PackedFloat32Array()
+var pk_r := PackedFloat32Array()
+var pk_next := 0
+## The discs that slow the hero's shots, oldest first (BossShotFields): [sf_id, its boss, the share of its speed a shot
+## inside keeps (per mille), the tick it was laid, the tick it goes (0 = stays), its centre and radius]. sf_next is the
+## next sf_id.
+var sf_id := PackedInt32Array()
+var sf_boss := PackedInt32Array()
+var sf_speed := PackedInt32Array()
+var sf_from := PackedInt32Array()
+var sf_until := PackedInt32Array()
+var sf_x := PackedFloat32Array()
+var sf_y := PackedFloat32Array()
+var sf_r := PackedFloat32Array()
+var sf_next := 0
 
 
 func size() -> int:
@@ -349,18 +390,43 @@ func hash_into(h: StateHasher) -> void:
 			h.add_f32s(get(f))
 		h.add_ints(PackedInt32Array([hz_next, hz_burn_cd, hz_storm]))
 		h.add_ints(hz_egg)
+	# Only once a boss has slowed the hero's attacks, placed a pickup or laid a shot field
+	if aslow_boss >= 0 or pk_next > 0 or sf_next > 0:
+		h.add_int(-10)
+		h.add_ints(PackedInt32Array([aslow_cut, aslow_boss, pk_next, sf_next]))
+		for f: StringName in PK_INT_FIELDS + SF_INT_FIELDS:
+			h.add_ints(get(f))
+		for f: StringName in PK_FLOAT_FIELDS + SF_FLOAT_FIELDS:
+			h.add_f32s(get(f))
 
 
 ## Removes arena hazard k (the arrays stay oldest first).
 func remove_hazard(k: int) -> void:
-	for f: StringName in HZ_INT_FIELDS:
-		var ai: PackedInt32Array = get(f)
+	remove_row(self, HZ_INT_FIELDS, HZ_FLOAT_FIELDS, k)
+
+
+## Removes floor pickup k (the arrays stay oldest first).
+func remove_pickup(k: int) -> void:
+	remove_row(self, PK_INT_FIELDS, PK_FLOAT_FIELDS, k)
+
+
+## Removes shot field k (the arrays stay oldest first).
+func remove_shot_field(k: int) -> void:
+	remove_row(self, SF_INT_FIELDS, SF_FLOAT_FIELDS, k)
+
+
+## Row k out of the parallel arrays of `store` named by `ints` and `floats` (BossFightStore's rows too).
+static func remove_row(
+	store: Object, ints: Array[StringName], floats: Array[StringName], k: int
+) -> void:
+	for f: StringName in ints:
+		var ai: PackedInt32Array = store.get(f)
 		ai.remove_at(k)
-		set(f, ai)
-	for f: StringName in HZ_FLOAT_FIELDS:
-		var af: PackedFloat32Array = get(f)
+		store.set(f, ai)
+	for f: StringName in floats:
+		var af: PackedFloat32Array = store.get(f)
 		af.remove_at(k)
-		set(f, af)
+		store.set(f, af)
 
 
 ## The stream entry of boss `boss_id`, or -1.
@@ -498,7 +564,7 @@ func twin_of(id: int) -> int:
 	return k if k >= 0 else twin_body.find(id)
 
 
-## A new twin pair (boss `lead`, twin `body`), calm, its chain ready.
+## A new twin pair (boss `lead`, twin `body`), calm.
 func add_twin(lead: int, body: int) -> void:
 	for f: StringName in TWIN_FIELDS:
 		var ai: PackedInt32Array = get(f)

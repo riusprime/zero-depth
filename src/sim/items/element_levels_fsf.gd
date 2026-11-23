@@ -48,7 +48,7 @@ static func _scan(w: World, which: int) -> int:
 				mine = t.el_strike_every > 0
 			_:
 				mine = t.el_frostbite_permille > 0
-		if mine and CardLevels.is_card(w, idx):
+		if mine and CardLevels.is_card(w, idx) and not WandLock.off(w, idx):
 			return idx
 	return -1
 

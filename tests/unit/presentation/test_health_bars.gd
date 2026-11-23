@@ -164,7 +164,7 @@ func test_the_boss_bar_refills_on_a_phase_change_and_says_invulnerable() -> void
 	assert_almost_eq(bar.hp_fraction(), 1.0, 0.001, "a full bar")
 	assert_eq(bar.phase_text(), tr("HUD_BOSS_PHASE") % [1, 3])
 	assert_false(bar.invulnerable(), "it can be hurt")
-	assert_eq(bar.shield_text(), "")
+	assert_eq(bar.shield_pips(), 0)
 	assert_eq(bar.hp_bar().color, ThemePalette.color(&"enemy_bar"))
 	Damage.hit(w, i, 99999, 1, 1, 1, 0, Vector2(6, 5), w.actors.pos(i))  # stops at the 66 % gate
 	bar.sync(reader)
@@ -178,12 +178,8 @@ func test_the_boss_bar_refills_on_a_phase_change_and_says_invulnerable() -> void
 	assert_almost_eq(bar.hp_fraction(), 1.0, 0.001, "the second phase starts full")
 	assert_lt(bar.shown_fraction(), 0.05, "but the bar grows to it, not at once")
 	assert_true(bar.invulnerable(), "the gate can't be hurt")
-	assert_eq(bar.hp_bar().color, BossBar.INVULNERABLE, "the bar changes colour")
-	assert_eq(
-		bar.shield_text(),
-		tr("HUD_BOSS_INVULNERABLE") + "  ·  " + tr("HUD_BOSS_SHIELD_ONE"),
-		"Invulnerable, and the one gate still to come"
-	)
+	assert_eq(bar.tone(), BossBarTones.PHASE_SHIFT, "the gate breathes on the bar")
+	assert_eq(bar.shield_pips(), 1, "a pip for the one gate still to come, no words")
 	for k in 24:
 		bar.hp_bar()._process(DT)
 	var mid := bar.shown_fraction()
@@ -199,7 +195,8 @@ func test_the_boss_bar_refills_on_a_phase_change_and_says_invulnerable() -> void
 	)
 	bar.sync(reader)
 	assert_false(bar.invulnerable(), "past the gate it can be hurt again")
-	assert_eq(bar.shield_text(), "")
+	assert_eq(bar.shield_pips(), 0)
+	assert_eq(bar.hp_bar().color, ThemePalette.color(&"enemy_bar"))
 
 
 func test_a_shielded_pattern_shows_invulnerable() -> void:
@@ -220,17 +217,18 @@ func test_a_shielded_pattern_shows_invulnerable() -> void:
 	assert_true(reader.boss_invulnerable(i))
 	bar.sync(reader)
 	assert_true(bar.invulnerable())
-	assert_string_starts_with(bar.shield_text(), tr("HUD_BOSS_INVULNERABLE"))
-	assert_string_contains(bar.shield_text(), tr("HUD_BOSS_SHIELDS") % 2, "two gates still ahead")
+	assert_eq(bar.tone(), BossBarTones.INVULNERABLE)
+	assert_eq(bar.hp_bar().color, BossBarTones.STEEL, "steel blue")
+	assert_eq(bar.shield_pips(), 2, "two gates still ahead: two pips")
 	BossLab.until_open(w, aid)
 	w.step(InputFrame.new())
 	bar.sync(reader)
 	assert_false(bar.invulnerable(), "open between patterns")
 
 
-## v0.11.0 O4 (owner Q10 a): the Lantern Shade is never Invulnerable; its bar dims and says "In the dark · 40 %"
-## while it stands in the dark, turns lantern gold and says "In the light · 150 %" in a lit pool, plain at 100 %.
-func test_the_shade_bar_says_the_light_s_multiplier() -> void:
+## v0.11.0 O4 (owner Q10 a): the Lantern Shade is never Invulnerable; its bar dims while it stands in the dark and
+## turns lantern gold in a lit pool, plain at 100 %; no words.
+func test_the_shade_bar_shows_the_light_s_multiplier() -> void:
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, &"lantern_shade", Vector2.ZERO)
 	var aid := w.actors.ids[i]
@@ -256,25 +254,22 @@ func test_the_shade_bar_says_the_light_s_multiplier() -> void:
 	bar.sync(reader)
 	assert_false(bar.invulnerable(), "never Invulnerable")
 	assert_eq(bar.light_permille(), 400)
-	assert_eq(bar.shield_text(), tr("HUD_SHADE_DARK") % 40, "In the dark · 40 %")
-	var dim := ThemePalette.color(&"enemy_bar").darkened(BossBar.DIM)
+	assert_eq(bar.tone(), BossBarTones.DARK)
+	var dim := ThemePalette.color(&"enemy_bar").darkened(BossBarTones.DIM)
 	assert_eq(bar.hp_bar().color, dim, "dim")
 	var lt := w.bosses.lamp_t
 	lt.fill(300)
 	w.bosses.lamp_t = lt
 	w.actors.set_pos(w.actors.index_of(aid), Vector2(3.5, 0))  # in the east lantern's pool
 	bar.sync(reader)
-	assert_eq(bar.shield_text(), tr("HUD_SHADE_LIT") % 150, "In the light · 150 %")
-	assert_eq(bar.hp_bar().color, BossBar.LIT, "bright")
+	assert_eq(bar.tone(), BossBarTones.LIT)
+	assert_eq(bar.hp_bar().color, BossBarTones.GOLD, "bright")
 	lt.fill(0)
 	w.bosses.lamp_t = lt
 	w.actors.set_pos(0, Vector2(1.0, 0))
 	bar.sync(reader)
-	assert_eq(bar.shield_text(), "", "in your own light: 100 %, no tag")
+	assert_eq(bar.tone(), BossBarTones.NONE, "in your own light: 100 %, plain")
 	assert_eq(bar.hp_bar().color, ThemePalette.color(&"enemy_bar"))
-	var es := TranslationServer.get_translation_object("es")
-	assert_ne(String(es.get_message(&"HUD_SHADE_DARK")), "", "in Spanish too")
-	assert_ne(String(es.get_message(&"HUD_SHADE_LIT")), "")
 
 
 ## Owner O59: nothing on the final boss's bar hints how many bodies remain: its shields left are its own gates only.
@@ -290,11 +285,7 @@ func test_the_final_bodies_shields_left_never_count_the_bodies_to_come() -> void
 	add_child_autofree(bar)
 	bar.sync(reader)
 	assert_true(bar.invulnerable(), "the shatter")
-	assert_string_starts_with(bar.shield_text(), tr("HUD_BOSS_INVULNERABLE"))
-	assert_false(
-		bar.shield_text().contains(tr("HUD_BOSS_SHIELDS") % 2),
-		"the two bodies to come aren't counted"
-	)
+	assert_lt(bar.shield_pips(), 2, "the two bodies to come aren't counted")
 	assert_eq(bar.phase_text(), tr(reader.final_segment_name_key(0)), "its name only")
 	FinalBoss.jump(w, 1)
 	FinalLab.past_rise(w)

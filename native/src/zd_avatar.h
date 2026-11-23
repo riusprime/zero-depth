@@ -58,6 +58,7 @@ enum Field {
 	H_IS_MODEL = 76,
 	H_MODEL_SCALE = 77,
 	H_HEIGHT = 78,
+	H_WALK_Z = 79, // the Mine Layer's stride along +Z (MineLayerModel; its H_WALK is along +X)
 	// ChargerAvatar (its own fields from 43)
 	C_VISOR = 43,
 	C_TELL = 44,
@@ -74,7 +75,352 @@ enum Field {
 	C_CROUCH_NOW = 55,
 	C_Y_NOW = 56,
 	C_LIFT = 57,
-	STRIDE = 80,
+	C_DIE = 58, // the Hatchling's death (s in; -1 alive)
+	// StoneThrowerAvatar (its own fields from 43; zd_avatar_thrower.cpp)
+	S_VISOR = 43, // f32: the visor material's emission energy
+	S_STATE = 44,
+	S_STATE_TICKS = 45,
+	S_TICKS = 46, // int x3: the lift, the flight, the recovery
+	S_ATK = 49,
+	S_ATK_SIM = 50,
+	S_WALK = 51,
+	S_PHASE = 52,
+	S_SPEED = 53,
+	S_FWD = 54, // f32 x2
+	S_RISE = 56,
+	S_PUFF = 57,
+	S_DIE = 58,
+	S_DROP = 59,
+	S_DROP_FROM = 60, // f32 x3
+	S_ROCK_SHOWN = 63,
+	S_LIFT = 64,
+	S_SCALE = 65, // the model's scale (set once)
+	S_OFF = 66, // f32 x3 x6: the joints' offsets (pelvis, neck, shoulder, elbow, wrist, hip; set once)
+	S_VD = 84, // f32 x29: the raw drives
+	// NeedleAvatar (its own fields from 43; zd_avatar_needle.cpp)
+	N_GEM = 43, // f32: the gem material's emission energy
+	N_STATE = 44,
+	N_STATE_TICK = 45,
+	N_SHOTS = 46,
+	N_TELL = 47,
+	N_HP = 48,
+	N_SPEED = 49,
+	N_DIR = 50, // f32 x2: the way it goes in the facing's frame
+	N_OMEGA = 52,
+	N_PHASE = 53,
+	N_STRIDE = 54,
+	N_BRACE = 55,
+	N_CHARGE = 56,
+	N_RISE = 57,
+	N_SHOT_T = 58,
+	N_BURST_T = 59,
+	N_HEAT = 60,
+	N_VENT_T = 61,
+	N_HURT_T = 62,
+	N_HURT_LEG = 63,
+	N_DIE = 64,
+	N_LAST_FY = 65,
+	N_HAVE_FY = 66,
+	N_LIFT = 67,
+	N_VD = 68, // f32 x20: the raw drives
+	N_HIPS = 88, // f32 x3 x4 each: the legs' rest hips, knees and feet (set once)
+	N_KNEES = 100,
+	N_FEET = 112,
+	// RockLurkerAvatar (its own fields from 43; zd_avatar_lurker.cpp)
+	L_VISOR = 43,
+	L_CRACK = 44, // f32: the cracks' glow (its last drive)
+	L_LIFT = 45,
+	L_STATE = 46,
+	L_STATE_TICKS = 47,
+	L_WINDUP = 48,
+	L_HIDDEN = 49,
+	L_RUMBLING = 50,
+	L_TUCK = 51,
+	L_RUMBLE = 52,
+	L_BURST = 53,
+	L_BURST_SLAM = 54,
+	L_SPEED = 55,
+	L_WALK = 56,
+	L_PHASE = 57,
+	L_REAR = 58,
+	L_SLAM = 59,
+	L_IMPACT = 60,
+	L_DIE = 61,
+	L_RISE = 62,
+	L_REST = 63, // f32 x2: the body joint's rest place (x, y; set once)
+	L_VD = 65, // f32 x18: the raw drives
+	// WardenAvatar (its own fields from 43; zd_avatar_warden.cpp)
+	W_CRACK = 43, // the cracks' glow (_crack)
+	W_STATE = 44,
+	W_STATE_TICKS = 45,
+	W_WINDUP = 46,
+	W_HP = 47,
+	W_SPEED = 48,
+	W_DIR = 49, // f32 x2
+	W_OMEGA = 51,
+	W_PHASE = 52,
+	W_STRIDE = 53,
+	W_RAISE = 54,
+	W_SLAM = 55,
+	W_RISE = 56,
+	W_SHAKE = 57,
+	W_HURT = 58,
+	W_DIE = 59,
+	W_LAST_FY = 60,
+	W_HAVE_FY = 61,
+	W_SLAM_R = 62,
+	W_DUST_T = 63,
+	W_LIFT = 64,
+	W_SCALE = 65, // the model's scale (set once)
+	W_PIV = 66, // f32 x3 x11: the joints' pivots (BatchWarden.PIVOT_KEYS order; set once)
+	W_VD = 99, // f32 x23: the raw drives
+	// SniperAvatar (its own fields from 43 to 111; zd_avatar_sniper.cpp)
+	SN_LENS = 43, // f32: the lens material's emission energy
+	SN_STATE = 44,
+	SN_TELL = 45,
+	SN_HP = 46,
+	SN_SPEED = 47,
+	SN_DIR = 48, // f32 x2: the way it goes in the facing's frame
+	SN_OMEGA = 50,
+	SN_PHASE = 51,
+	SN_STRIDE = 52,
+	SN_BRACE = 53,
+	SN_CHARGE = 54,
+	SN_RISE = 55,
+	SN_SETTLE_T = 56,
+	SN_SHOT_T = 57,
+	SN_DOUBLE = 58, // the Split Sniper's second kick (set once)
+	SN_HEAT = 59,
+	SN_VENT_T = 60,
+	SN_HURT_T = 61,
+	SN_HURT_LEG = 62,
+	SN_DIE = 63,
+	SN_LAST_FY = 64,
+	SN_HAVE_FY = 65,
+	SN_LIFT = 66,
+	SN_VD = 67, // f32 x17: the raw drives
+	SN_HIPS = 84, // f32 x3 x3 each: the legs' rest hips, knees and feet (set once)
+	SN_KNEES = 93,
+	SN_FEET = 102,
+	// ArcCasterAvatar (its own fields from 43; zd_avatar_arc_caster.cpp)
+	AC_CRYSTAL = 43, // the crystal's glow (the instance's accent glow)
+	AC_LIFT = 44,
+	AC_STATE = 45,
+	AC_WIND = 46,
+	AC_CAST = 47,
+	AC_RISE = 48,
+	AC_GLIDE = 49,
+	AC_DIR = 50, // f32 x2: the glide's direction in the facing's frame
+	AC_STEP = 52,
+	AC_ORBIT = 53,
+	AC_OMEGA = 54,
+	AC_DIE = 55,
+	AC_LAST_FY = 56,
+	AC_HAVE_FY = 57,
+	AC_HEM_Y = 58, // f32: the robe's waist pivot height (set once)
+	AC_VD = 59, // f32 x23: the raw drives
+	// LensDroneAvatar (its own fields from 43 to 53; zd_avatar_lens.cpp)
+	LD_EYE = 43, // f32: the eye material's emission energy
+	LD_STATE = 44,
+	LD_RISE = 45,
+	LD_CHARGE = 46,
+	LD_LIFT = 47,
+	LD_SHADOW = 48, // the ground shadow's scale across (its node's x and z)
+	LD_HAS_MODEL = 49, // the owner's model (set once)
+	LD_VD = 50, // f32 x3: the raw drives
+	// BombDroneAvatar (its own fields from 43 to 75; zd_avatar_bomb_drone.cpp)
+	BD_VISOR = 43, // f32: the visor material's emission energy
+	BD_SHADOW = 44, // f32: the ground disc's scale across (its x and z)
+	BD_LIFT = 45,
+	BD_STATE = 46,
+	BD_HP = 47,
+	BD_RISE = 48,
+	BD_ARMED = 49,
+	BD_FUSE = 50,
+	BD_LOB = 51,
+	BD_AIM = 52,
+	BD_ROT = 53,
+	BD_SPIN = 54,
+	BD_GLIDE = 55,
+	BD_DIR = 56, // f32 x2: the glide's direction in the facing's frame
+	BD_OMEGA = 58,
+	BD_HURT_T = 59,
+	BD_HURT_SIDE = 60,
+	BD_DIE = 61,
+	BD_LAST_FY = 62,
+	BD_HAVE_FY = 63,
+	BD_VD = 64, // f32 x12: the raw drives
+	// ScrapHoundAvatar (its own fields from 43 to 80; zd_avatar_scrap_hound.cpp)
+	SH_GLOW = 43, // the visor's glow (the instance's accent glow)
+	SH_LIFT = 44,
+	SH_STATE = 45,
+	SH_TELL = 46,
+	SH_HP = 47,
+	SH_SPEED = 48,
+	SH_GALLOP = 49,
+	SH_PHASE = 50,
+	SH_YAW = 51,
+	SH_TURN = 52,
+	SH_BANK = 53,
+	SH_LAST_H = 54,
+	SH_HAVE_H = 55,
+	SH_COIL = 56,
+	SH_DART = 57,
+	SH_RISE = 58,
+	SH_BITE = 59,
+	SH_YELP = 60,
+	SH_HURT = 61,
+	SH_DIE = 62,
+	SH_VD = 63, // f32 x18: the raw drives
+	// KilnBeetleAvatar (its own fields from 43 to 100; zd_avatar_kiln_beetle.cpp)
+	KB_HEAT_GLOW = 43, // the heat's glow (the instance's accent glow)
+	KB_LIFT = 44,
+	KB_STATE = 45,
+	KB_TELL = 46,
+	KB_HP = 47,
+	KB_HEAT = 48,
+	KB_SPEED = 49,
+	KB_OMEGA = 50,
+	KB_PHASE = 51,
+	KB_STRIDE = 52,
+	KB_COIL = 53,
+	KB_RISE = 54,
+	KB_SLAM = 55,
+	KB_HURT = 56,
+	KB_HURT_LEG = 57,
+	KB_DIE = 58,
+	KB_LAST_FY = 59,
+	KB_HAVE_FY = 60,
+	KB_FOOT_Z = 61, // f32 x8: each leg's foot across the body (set once)
+	KB_VD = 69, // f32 x32: the raw drives
+	// CinderPriestAvatar (its own fields from 43 to 74; zd_avatar_cinder_priest.cpp)
+	CP_CRYSTAL = 43, // the crystal's glow (the instance's accent glow)
+	CP_LIFT = 44,
+	CP_STATE = 45,
+	CP_PULSE = 46,
+	CP_ERUPT = 47,
+	CP_VENT_YAW = 48, // NAN: no vent
+	CP_FACING = 49,
+	CP_RISE = 50,
+	CP_GLIDE = 51,
+	CP_DIR = 52, // f32 x2: the glide's direction in the facing's frame
+	CP_TURN = 54,
+	CP_YAW = 55,
+	CP_DIE = 56,
+	CP_VD = 57, // f32 x18: the raw drives
+	// FrostSpitterAvatar (its own fields from 43 to 119; zd_avatar_frost_spitter.cpp)
+	FS_SAC_GLOW = 43, // the sac's glow (the instance's accent glow)
+	FS_LIFT = 44,
+	FS_STATE = 45,
+	FS_TELL = 46,
+	FS_HP = 47,
+	FS_SPEED = 48,
+	FS_DIR = 49, // f32 x2: the way it goes in the facing's frame
+	FS_OMEGA = 51,
+	FS_PHASE = 52,
+	FS_STRIDE = 53,
+	FS_COIL = 54,
+	FS_RISE = 55,
+	FS_SPIT = 56,
+	FS_HURT = 57,
+	FS_HURT_LEG = 58,
+	FS_DIE = 59,
+	FS_LAST_FY = 60,
+	FS_HAVE_FY = 61,
+	FS_HIPS = 62, // f32 x3 x4 each: the legs' hips, knees and feet (set once)
+	FS_KNEES = 74,
+	FS_FEET = 86,
+	FS_VD = 98, // f32 x22: the raw drives
+	// GlacierTurtleAvatar (its own fields from 43 to 114; zd_avatar_glacier_turtle.cpp)
+	GT_VISOR = 43, // f32: the visor material's emission energy (the instance's accent glow)
+	GT_LIFT = 44,
+	GT_STATE = 45,
+	GT_TELL = 46,
+	GT_HP = 47,
+	GT_SHELL = 48, // the shield's HP left (-1: not read yet)
+	GT_BARE = 49,
+	GT_SPEED = 50,
+	GT_DIR = 51, // f32 x2: the way it goes in the facing's frame
+	GT_OMEGA = 53,
+	GT_PHASE = 54,
+	GT_STRIDE = 55,
+	GT_COIL = 56,
+	GT_RISE = 57,
+	GT_SLAM = 58,
+	GT_BRACE = 59,
+	GT_BREAK = 60,
+	GT_HURT = 61,
+	GT_HURT_LEG = 62,
+	GT_DIE = 63,
+	GT_LAST_FY = 64,
+	GT_HAVE_FY = 65,
+	GT_VD = 66, // f32 x24: the raw drives
+	GT_HIPS = 90, // f32 x3 x4 each: the legs' hips and knees (set once)
+	GT_KNEES = 102,
+	GT_SCALE = 114, // the model's scale (its feet are FEET at it; set once)
+	// WireWeaverAvatar (its own fields from 43 to 94; zd_avatar_wire_weaver.cpp)
+	WW_SPARK = 43, // the post tops' glow (the instance's accent glow)
+	WW_LIFT = 44,
+	WW_STATE = 45,
+	WW_TELL = 46,
+	WW_HP = 47,
+	WW_SPEED = 48,
+	WW_OMEGA = 49,
+	WW_PHASE = 50,
+	WW_STRIDE = 51,
+	WW_COIL = 52,
+	WW_RISE = 53,
+	WW_PLANT = 54,
+	WW_HURT = 55,
+	WW_HURT_LEG = 56,
+	WW_DIE = 57,
+	WW_LAST_FY = 58,
+	WW_HAVE_FY = 59,
+	WW_FOOT_Z = 60, // f32 x4: each leg's foot across the body (set once)
+	WW_VD = 64, // f32 x31: the raw drives
+	// GravityNodeAvatar (its own fields from 43 to 76; zd_avatar_gravity_node.cpp)
+	GN_CORE_GLOW = 43, // the core's glow (the instance's accent glow)
+	GN_LIFT = 44,
+	GN_SHADOW = 45, // f32: the ground disc's scale across (its x and z)
+	GN_STATE = 46,
+	GN_HP = 47,
+	GN_DRAW = 48,
+	GN_DRAW_TO = 49,
+	GN_RISE = 50,
+	GN_SPIN_A = 51,
+	GN_SPIN_B = 52,
+	GN_BEAT = 53,
+	GN_OMEGA = 54,
+	GN_HURT = 55,
+	GN_HURT_SIDE = 56,
+	GN_DIE = 57,
+	GN_LAST_FY = 58,
+	GN_HAVE_FY = 59,
+	GN_VD = 60, // f32 x17: the raw drives
+	// StarWarperAvatar (its own fields from 43 to 85; zd_avatar_star_warper.cpp)
+	SW_SHARD_GLOW = 43, // the shards' glow (the instance's accent glow)
+	SW_SHADOW = 44, // f32: the ground disc's scale
+	SW_LIFT = 45,
+	SW_STATE = 46,
+	SW_WIND = 47,
+	SW_STUN = 48,
+	SW_HP = 49,
+	SW_GONE = 50,
+	SW_SLASH = 51,
+	SW_RISE = 52,
+	SW_REEL = 53,
+	SW_GLIDE = 54,
+	SW_DIR = 55, // f32 x2: the glide's direction in the facing's frame
+	SW_WAVE = 57,
+	SW_ORBIT = 58,
+	SW_OMEGA = 59,
+	SW_HURT_T = 60,
+	SW_HURT_SIDE = 61,
+	SW_DIE = 62,
+	SW_LAST_FY = 63,
+	SW_HAVE_FY = 64,
+	SW_VD = 65, // f32 x21: the raw drives (the visor's glow the last)
+	STRIDE = 124,
 };
 
 // A slot's class (BatchAvatars.CLASS_OF): which avatar code runs it (0: none native, its avatar steps in GDScript).
@@ -89,11 +435,37 @@ enum Class {
 	SNIPER = 7,
 	CHARGER = 8,
 	HATCHLING = 9,
+	STONE_THROWER = 10,
+	NEEDLE = 11,
+	WARDEN = 12,
+	ROCK_LURKER = 13,
+	SNIPER_MODEL = 14, // the owner's model (SniperAvatar); SNIPER is its old horde body
+	ARC_CASTER = 15,
+	LENS_DRONE = 17,
+	BOMB_DRONE = 16,
+	SCRAP_HOUND = 18,
+	KILN_BEETLE = 19,
+	CINDER_PRIEST = 20,
+	FROST_SPITTER = 21,
+	GLACIER_TURTLE = 22,
+	WIRE_WEAVER = 24,
+	GRAVITY_NODE = 23,
+	STAR_WARPER = 25,
 };
 
 inline bool is_charger(int c) {
 	return c == CHARGER || c == HATCHLING;
 }
+
+// The most drives a class gives VatCrowd (the Kiln Beetle's 32).
+constexpr int MAX_DRIVES = 32;
+
+// A Stone Thrower's sync inputs past the common ones (BatchAvatars.MORE a slot): its ticks into the state, its facing
+// (Kin.dir: x, y) and the sim's lift, flight and recovery ticks. A Needle's and a Sniper's: its HP (the first). A
+// Rock Lurker's: whether it waits disguised, whether it rumbles. A Warden's: its HP, the telegraph's slam radius and whether the
+// telegraph gave one (1) or not (0). A Bomb Drone's: its HP (the first).
+// A Glacier Turtle's: its HP, its shield's HP. A Star Warper's: its HP, whether it is stunned (1) or not (0).
+constexpr int MORE = 6;
 
 // The sim states (WorldReader.STATE_*), handed in by the batch.
 struct States {
@@ -125,15 +497,136 @@ void put_xf(double *s, int at, const godot::Transform3D &xf);
 
 // AvatarBase._process (consume_hold, advance, advance_flinch) for a native class.
 void process(double *s, int cls, double delta, const Frame &f, const Ctx &c);
-// HordeAvatar.advance / ChargerAvatar.advance.
+// The class's frame step and sync, dispatched per class (zd_avatar_dispatch.cpp, with glow_energy, body_offset,
+// drives and flinch_pivot): HordeAvatar.advance / ChargerAvatar.advance / a model kind's own.
 void advance(double *s, int cls, double delta, const Frame &f, const Ctx &c);
-// HordeAvatar._apply / ChargerAvatar.apply_state (`pos`: the sim place, the Charger's motion).
+// HordeAvatar._apply / ChargerAvatar.apply_state / StoneThrowerAvatar.apply_state (`pos`: the sim place, the
+// Charger's and the Stone Thrower's motion; `more`: the Stone Thrower's MORE inputs).
 void apply(double *s, int cls, int64_t tick, int state, bool healing, double windup, float pos_x, float pos_y,
+		const double *more, const Ctx &c);
+// AvatarBase._flinch_pivot: the height the class's flinch leans about.
+float flinch_pivot(int cls);
+
+// The horde kinds (HordeAvatar, zd_avatar.cpp): their frame step (the pose included), sync and drives.
+void h_advance(double *s, int c, double delta, const Frame &f, const Ctx &cx);
+void h_apply(double *s, int cls, int64_t tick, int state, bool healing, double windup, const Ctx &c);
+int h_drives(const double *s, int cls, double period, const Ctx &c, float *out);
+// The Charger and the Hatchling (ChargerAvatar, zd_avatar.cpp): their frame step (the pose included), sync (`pos`:
+// the sim place, for the motion) and drives (ChargerVat.DRIVES).
+void c_advance(double *s, double delta, const Ctx &cx);
+void c_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const Ctx &c);
+int c_drives(const double *s, float *out);
+
+// AvatarBase's helpers the classes share (zd_avatar.cpp): the engine's double sine and cosine, the flinch's envelope,
+// the tell's glow, an exponential ease's share.
+double sin_d(double x);
+double cos_d(double x);
+double envelope(double u);
+double glow_of_tell(double p, double t, bool calm);
+double ease_rate(double per_second, double dt);
+// AvatarBase's strike clock and tell (the same functions the Charger's code calls).
+void strike_note_of(double *s, int state, const States &st);
+void strike_step(double *s, double dt);
+double strike_swing_of(const double *s);
+bool strike_snapping_of(const double *s);
+double strike_raised_of(const double *s, bool winding, double p, double rest);
+double crouch_of_tell(double p);
+// The engine's double exp, acos and atan2 (GDScript's).
+double exp_d(double x);
+double acos_d(double x);
+double atan2_d(double y, double x);
+
+// The Stone Thrower (zd_avatar_thrower.cpp): its sync, frame step (advance: the pose included) and drives.
+void s_apply(double *s, int64_t tick, int state, float pos_x, float pos_y, const double *more, const Ctx &c);
+void s_advance(double *s, double delta, const Ctx &c);
+int s_drives(const double *s, float *out);
+
+// The Needle (zd_avatar_needle.cpp): its sync (`more`: its HP first), frame step (the pose included) and drives.
+void n_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
 		const Ctx &c);
+void n_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int n_drives(const double *s, float *out);
+
+// The Sniper (zd_avatar_sniper.cpp): its sync (`more`: its HP first), frame step (the pose included) and drives.
+void sn_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void sn_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int sn_drives(const double *s, float *out);
+// The Rock Lurker (zd_avatar_lurker.cpp): its sync (`more`: hidden, rumbling), frame step (the pose included) and
+// drives.
+void l_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void l_advance(double *s, double delta, const Ctx &c);
+int l_drives(const double *s, float *out);
+// The Warden (zd_avatar_warden.cpp): its sync, frame step (advance: the pose included; the facing's turn from `f`)
+// and drives.
+void w_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void w_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int w_drives(const double *s, float *out);
+// The Arc Caster (zd_avatar_arc_caster.cpp): its sync, frame step (the pose included) and drives.
+void ac_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const Ctx &c);
+void ac_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int ac_drives(const double *s, float *out);
+// The Lens Drone (zd_avatar_lens.cpp): its sync (the state alone), frame step (the pose included) and drives.
+void ld_apply(double *s, int state, const Ctx &c);
+void ld_advance(double *s, double delta, const Ctx &c);
+int ld_drives(const double *s, float *out);
+// The Bomb Drone (zd_avatar_bomb_drone.cpp): its sync (`more`: its HP first), frame step (the pose included; the
+// facing's turn from `f`) and drives.
+void bd_apply(double *s, int64_t tick, int state, float pos_x, float pos_y, const double *more, const Ctx &c);
+void bd_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int bd_drives(const double *s, float *out);
+// The Scrap Hound (zd_avatar_scrap_hound.cpp): its sync (`more`: its HP, whether a hit stopped it), frame step (the
+// pose included; the facing's turn from `f`) and drives.
+void sh_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void sh_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int sh_drives(const double *s, float *out);
+// The Kiln Beetle (zd_avatar_kiln_beetle.cpp): its sync (`more`: its HP, its full HP), frame step (the pose included;
+// the facing's turn from `f`) and drives.
+void kb_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void kb_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int kb_drives(const double *s, float *out);
+// The Cinder Priest (zd_avatar_cinder_priest.cpp): its sync (`more`: the vent's pulse, the eruption's age, the vent's
+// direction, the facing's yaw), frame step (the pose included) and drives.
+void cp_apply(double *s, int64_t tick, int state, float pos_x, float pos_y, const double *more, const Ctx &c);
+void cp_advance(double *s, double delta, const Ctx &c);
+int cp_drives(const double *s, float *out);
+// The Frost Spitter (zd_avatar_frost_spitter.cpp): its sync (`more`: its HP first), frame step (the pose included;
+// the facing's turn from `f`) and drives.
+void fs_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void fs_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int fs_drives(const double *s, float *out);
+// The Glacier Turtle (zd_avatar_glacier_turtle.cpp): its sync (`more`: its HP, its shield's HP), frame step (the pose
+// included; the facing's turn from `f`) and drives.
+void gt_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void gt_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int gt_drives(const double *s, float *out);
+// The Wire Weaver (zd_avatar_wire_weaver.cpp): its sync (`more`: its HP first), frame step (the pose included; the
+// facing's turn from `f`) and drives.
+void ww_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void ww_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int ww_drives(const double *s, float *out);
+// The Gravity Node (zd_avatar_gravity_node.cpp): its sync (`more`: its HP, then its draw on the hero), frame step
+// (the pose included; the facing's turn from `f`) and drives.
+void gn_apply(double *s, int state, const double *more, const Ctx &c);
+void gn_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int gn_drives(const double *s, float *out);
+// The Star Warper (zd_avatar_star_warper.cpp): its sync (`more`: its HP, whether it is stunned), frame step (the pose
+// included; the facing's turn from `f`) and drives.
+void sw_apply(double *s, int64_t tick, int state, double windup, float pos_x, float pos_y, const double *more,
+		const Ctx &c);
+void sw_advance(double *s, double delta, const Frame &f, const Ctx &c);
+int sw_drives(const double *s, float *out);
 
 // What VatCrowd draws: the accent's glow (glow_energy), the body's offset past the avatar's transform (a horde kind's
-// vat_offset, a Charger's lift), and the drives (`out` holds 12: four for a horde kind, ChargerVat.DRIVES for a
-// Charger; returns how many). `period`: the set's gait period (VatBake.gait_phase).
+// vat_offset, a Charger's or a Stone Thrower's lift), and the drives (`out` holds MAX_DRIVES: four for a horde kind,
+// ChargerVat.DRIVES for a Charger, VAT_DRIVES for a Stone Thrower; returns how many). `period`: the set's gait period (VatBake.gait_phase).
 double glow_energy(const double *s, int cls);
 godot::Transform3D body_offset(const double *s, int cls, const godot::Transform3D &xf);
 int drives(const double *s, int cls, double period, const Ctx &c, float *out);

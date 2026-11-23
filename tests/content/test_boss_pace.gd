@@ -7,17 +7,18 @@ extends GutTest
 ## The attacks with no hit class of their own: the meltdown's burning ground (a hazard). v0.8.0 N2 (owner O27, D36
 ## superseded): The Fallen's attacks are classed too (its own hits outside its mimic windows).
 ## v0.9.5 BH4: the Tidecaller's crossing wave is one too (a hazard the owner set at 15 damage, seven hits: chip damage).
-## v0.9.5 BH6: so are the Fallen's five interphase carriers (owner-set 15 damage hits: chip damage, no class).
+## The Fallen's two remembered carriers name a death recap line only (no damage of their own, no class).
 ## v0.10.5 O3: and the Prism's Shattered Kneel (she is down: it never hits).
+## And the Clockwork Judge's Time Wave (a cast: it slows the weapon and deals no damage).
 const UNCLASSED := [
 	&"meltdown",
 	&"crossing_wave",
-	&"fallen_rays",
-	&"fallen_rain",
-	&"fallen_dark",
-	&"fallen_erupt",
-	&"fallen_return",
+	&"fallen_riptide",
+	&"fallen_shade",
 	&"prism_kneel",
+	&"time_wave",
+	&"mirror_ward",
+	&"whole_ward",
 ]
 ## Per boss, the slow readable attacks BP left as they were: [id, telegraph seconds].
 const KEPT_SLOW := {
@@ -25,7 +26,8 @@ const KEPT_SLOW := {
 	&"warlord": [[&"shield_wall", 0.8], [&"spear_lines", 1.6]],
 	&"brood_mother": [[&"egg_storm", 1.6], [&"burrow", 1.0]],
 	&"hive_lens": [[&"prism_spiral", 0.9], [&"gaze", 0.8]],
-	&"siege_engine": [[&"turret_cross", 0.9], [&"mortar_grid", 1.6]],
+	# The Shockwave is 2.0 s since it needs cover: the hero runs to a boulder through its telegraph
+	&"siege_engine": [[&"turret_cross", 0.9], [&"mortar_grid", 1.6], [&"shockwave", 2.0]],
 	&"foundry": [[&"slag_fountain", 1.0], [&"molten_flood", 1.6]],
 	&"colossus": [[&"spike_chase", 0.9], [&"fist_combo", 0.8]],
 	&"prism": [[&"cross_ring", 1.0]],
@@ -39,10 +41,11 @@ const KEPT_SLOW := {
 const SPED_UP := {
 	&"gatekeeper":
 	[[&"fist_slam", 1.6, 1.1], [&"fist_slam_2", 1.6, 1.1], [&"fist_slam_3", 1.6, 1.1]],
-	&"warlord": [[&"lunge_dash", 1.4, 1.0]],  # v0.9.5 BH2 (B2): the javelins wind up 0.6 s again (the hard spells' rule)
+	# The owner found the charge "too predictable and too slow": 0.6 s, locked its last 0.4 s, and it bursts
+	&"warlord": [[&"lunge_dash", 1.4, 0.6, 0.4]],
 	&"brood_mother": [[&"leap", 1.6, 1.0], [&"leap_chain", 1.4, 1.0], [&"pounce_chain", 1.2, 0.95]],
 	&"hive_lens": [[&"dive", 1.4, 1.0], [&"focus_beam", 1.6, 1.5], [&"focus_beam_3", 1.6, 1.5]],
-	&"siege_engine": [[&"rail", 1.5, 1.1], [&"rail_3", 1.5, 1.1], [&"shockwave", 1.2, 0.9]],
+	&"siege_engine": [[&"rail", 1.5, 1.1], [&"rail_3", 1.5, 1.1]],
 	&"foundry":
 	[[&"vent_blast", 0.8, 0.6], [&"bomb_launch", 1.0, 0.7], [&"bomb_launch_3", 1.0, 0.7]],
 	&"colossus":
@@ -87,7 +90,7 @@ func test_every_boss_hit_kills_the_base_hero_in_its_class_hits() -> void:
 	assert_eq(
 		seen,
 		# NB1: Tidecaller 7; NB2: Twin Wardens 5; NB3: Judge 6; NB4: Shade 8; BH2: +1; O3: facet_lances; v0.11.0 O5: +6
-		118,  # v0.11.0 F9: +1 (the Warlord's great_javelin)
+		121,  # v0.11.0 F9: +1 (the Warlord's great_javelin); the Twin Wardens fighting apart: +3
 		(
 			"every classed attack of the six bosses and the final boss's three bodies (N2: 4 new, The Fallen's 9;"
 			+ " PR: the Prism's 3 orb spells in, cross_weave and prism_bolt_fan out)"
@@ -181,9 +184,10 @@ func test_each_boss_is_faster_in_places_and_keeps_slow_readable_attacks() -> voi
 			assert_lt(float(row[2]), float(row[1]), String(row[0]))
 			assert_almost_eq(atk.telegraph_seconds, float(row[2]), 0.001, "%s sped up" % row[0])
 			if atk.lock_seconds > 0.0:  # owner N15 "Track, then lock 0.8 s" (the Colossus's 0.5): the lock stays
+				var lock := 0.5 if def.id == &"colossus" else 0.8
 				assert_almost_eq(
 					atk.lock_seconds,
-					0.5 if def.id == &"colossus" else 0.8,
+					float(row[3]) if row.size() > 3 else lock,  # A row's own lock when it has one
 					0.001,
 					"%s keeps its dodge window" % row[0]
 				)

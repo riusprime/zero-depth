@@ -35,6 +35,8 @@ extends SceneTree
 ## v0.10.5 W3-V1 (the enemy VAT pilot): --only=<kind> (an ActorStore.Kind name, e.g. swarmer) makes every live enemy
 ## that kind; --enemy-vat=on|off sets ViewPrefs.enemy_vat (VatCrowd draws the VatCrowd.KINDS enemies):
 ##   ... -s scripts/checks/frame_probe.gd -- --biome=red_canyon --enemies=60 --only=swarmer --enemy-vat=on
+## --kinds=<kind,...> cycles the live enemies through those kinds only (a biome's roster: core, signatures, variant);
+## --hp=<permille> scales every placed enemy's hit points (a later floor's toughness).
 ## --fx counts, per measured frame, the hero's effect instances (the forms' meshes and particles, the effects layer's
 ## sprites, the hero's share of them when the layer keeps a hero budget, the pack's live instances by family) and the
 ## hostile threats on screen (telegraphs, enemy shots) and the hero effects' opacity, and reports avg / p95 / max.
@@ -49,6 +51,7 @@ const ENEMIES := 20
 ## The build (the default cards, --heavy, --cards=<id[:level],...>): scripts/checks/probe_build.gd.
 const ProbeBuild := preload("res://scripts/checks/probe_build.gd")
 const LightCensus := preload("res://scripts/checks/light_census.gd")
+const ProcessCensus := preload("res://scripts/checks/process_census.gd")
 ## v0.10.5 O12: the pack families the hero's own effects use (enemy_shot is the hostile one).
 const HERO_PACK_FAMILIES: Array[StringName] = [
 	&"hit",
@@ -87,6 +90,10 @@ var _ab: PackedStringArray = []
 var _shadows := ""  # --enemy-shadows=proxy|blob (v0.10.5 PA)
 var _vat := ""  # --enemy-vat=on|off (v0.10.5 W3-V1)
 var _only := -1  # --only=<kind name> (v0.10.5 W3-V1): ActorStore.Kind, -1 the Playground's whole list
+## --kinds=<kind name,...>: the live enemies cycle through these kinds only (a biome's own roster, say).
+var _kinds: Array[int] = []
+## --hp=<permille>: every enemy placed gets this share of its hit points (3000: three times as tough).
+var _hp_permille := 1000
 var _main: Main
 var _bi := -1
 var _phase := &"boot"
@@ -128,6 +135,12 @@ var _lights := LightCensus.new()  # --fx: the rings and lights a frame
 var _fx := false  # --fx (O12)
 var _fx_rows := {}  # counter name -> PackedFloat64Array, one value per measured frame
 var _spans := FrameSpans.new()
+## --weapon=<build id>: the Playground build the hero holds (gun, blade); the Blade takes --cards (the default
+## build is the Gun's).
+var _weapon := &"gun"
+## --proc-census: what the engine processes each frame, counted once halfway through the measure (process_census.gd).
+var _pcensus := false
+var _pcensus_lines: PackedStringArray = []
 
 
 func _initialize() -> void:
@@ -154,6 +167,10 @@ func _initialize() -> void:
 			pass
 		elif s == "fx":
 			_fx = true
+		elif s.begins_with("weapon="):
+			_weapon = StringName(s.trim_prefix("weapon="))
+		elif s == "proc-census":
+			_pcensus = true
 		elif s == "process":
 			_bd = true
 			_proc = true
@@ -163,6 +180,11 @@ func _initialize() -> void:
 			_vat = s.trim_prefix("enemy-vat=")
 		elif s.begins_with("only="):  # v0.10.5 W3-V1
 			_only = ActorStore.Kind.keys().find(s.trim_prefix("only=").to_upper())
+		elif s.begins_with("hp="):
+			_hp_permille = int(s.trim_prefix("hp="))
+		elif s.begins_with("kinds="):
+			for k in s.trim_prefix("kinds=").split(",", false):
+				_kinds.append(ActorStore.Kind.keys().find(k.to_upper()))
 		elif s.begins_with("ab="):
 			_ab = s.trim_prefix("ab=").split(",", false)
 		else:
@@ -214,6 +236,8 @@ func _process(delta: float) -> bool:
 			_frames.append(dt_ms)
 			if _fx:
 				_count_fx()
+			if _pcensus and _pcensus_lines.is_empty() and (now - _t0) >= int(_secs * 0.5e6):
+				_pcensus_lines = ProcessCensus.lines(root)
 			var vp := root.get_viewport_rid()
 			_cpu += RenderingServer.viewport_get_measured_render_time_cpu(vp)
 			_gpu += RenderingServer.viewport_get_measured_render_time_gpu(vp)
@@ -250,7 +274,7 @@ func _next_biome() -> void:
 		_restore()
 		quit(0)
 		return
-	_main._start_playground(&"gun", StringName(_biomes[_bi]))
+	_main._start_playground(_weapon, StringName(_biomes[_bi]))
 	_phase = &"settle"
 	_frame = 0
 
@@ -393,8 +417,14 @@ func _top_up() -> void:
 		var ang := float(tries * 137) * 0.0174533 + float(w.tick) * 0.01
 		var dist := 7.0 + float((tries * 53) % 6)
 		var kind: int = kinds[(tries + alive) % kinds.size()]["kind"] if _only < 0 else _only
+		if not _kinds.is_empty():
+			kind = _kinds[(tries + alive) % _kinds.size()]
 		if _api.place_enemy_now(kind, p + Vector2(cos(ang), sin(ang)) * dist):
 			alive += 1
+			if _hp_permille != 1000:  # a later floor's toughness: statuses stack as they do there
+				var last := a.ids.size() - 1
+				a.max_hp[last] = a.max_hp[last] * _hp_permille / 1000
+				a.hp[last] = a.max_hp[last]
 
 
 func _sample() -> Array:
@@ -521,8 +551,8 @@ func _finish_biome() -> void:
 		lines
 		. append(
 			(
-				"scenario: Playground room seed 4404, Gun, %d live enemies, warm-up %.1f s, measured %.1f s"
-				% [_enemies, _warm, _secs]
+				"scenario: Playground room seed 4404, %s, %d live enemies, warm-up %.1f s, measured %.1f s"
+				% [_weapon, _enemies, _warm, _secs]
 			)
 		)
 	)
@@ -595,12 +625,16 @@ func _finish_biome() -> void:
 		lines.append_array(_census_lines())
 	if _bd:
 		lines.append_array(_class_histogram())
+	lines.append_array(_pcensus_lines)
+	_pcensus_lines = []
 	if _bd or _spans.on or _spans.redraws:
 		lines.append_array(_breakdown_lines())
 	lines.append_array(_spans.report_lines(_bk))
 	var text := "\n".join(lines) + "\n"
 	print(text)
 	var tag := "" if _ab.is_empty() else "_ab-" + "-".join(_ab)
+	if _weapon != &"gun":
+		tag += "_" + String(_weapon)
 	if _build.heavy or _enemies != ENEMIES:
 		tag += "_heavy%d" % _enemies
 	if _build.exact:
@@ -610,6 +644,10 @@ func _finish_biome() -> void:
 		)
 	if _only >= 0:  # v0.10.5 W3-V1
 		tag += "_only-" + String(ActorStore.Kind.keys()[_only]).to_lower()
+	if not _kinds.is_empty():
+		tag += "_kinds%d" % _kinds.size()
+	if _hp_permille != 1000:
+		tag += "_hp%d" % _hp_permille
 	if not _vat.is_empty():
 		tag += "_vat-" + _vat
 	var f := FileAccess.open(

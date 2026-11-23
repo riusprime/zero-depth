@@ -105,11 +105,12 @@ func sync(reader: WorldReader) -> void:
 				if gems < MARKS:
 					_gem(_gems[gems], r)
 					gems += 1
-	for k in SEGMENTS:
+	# Only the slots shown now or at the last sync: the ones past both were hidden already
+	for k in maxi(bars, drawn_segments):
 		_bars[k].visible = k < bars
-	for k in ANCHORS:
+	for k in maxi(rings, drawn_anchors):
 		_rings[k].visible = k < rings
-	for k in MARKS:
+	for k in maxi(gems, drawn_marks):
 		_gems[k].visible = k < gems
 	drawn_segments = bars
 	drawn_anchors = rings
@@ -190,9 +191,12 @@ func _age_flashes() -> void:
 	flashes_live = 0
 	for k in FLASHES:
 		var age := _flash_age[k]
+		if age > FLASH_FRAMES:  # Hidden on an earlier sync, and not started again since
+			continue
 		var on := age < FLASH_FRAMES
 		_flashes[k].visible = on
 		if not on:
+			_flash_age[k] = FLASH_FRAMES + 1
 			continue
 		flashes_live += 1
 		var t := float(age) / FLASH_FRAMES

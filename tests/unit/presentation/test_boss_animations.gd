@@ -99,8 +99,8 @@ func test_every_boss_has_every_clip_its_moves_need() -> void:
 		var moves := 0
 		for atk: Resource in def.get("attacks"):
 			var move := StringName(atk.get("move"))
-			if move == &"interphase":
-				continue  # v0.9.5 BH6: a carrier of the Fallen's interphase hits, never picked: no clip
+			if move == &"remembered":
+				continue  # A carrier of The Fallen's remembered mechanics' recap line, never picked: no clip
 			moves += 1
 			assert_true(lib.has(move), "%s: %s (%s) has its clip" % [id, atk.get("id"), move])
 			if atk.get("shielded"):
@@ -238,7 +238,7 @@ func test_the_strike_pose_lands_on_the_first_active_tick_read_from_the_sim() -> 
 func test_the_sped_up_attacks_animate_on_the_sims_faster_ticks() -> void:
 	for pick: Array in [
 		[&"warlord", &"javelin_fan", 36],  # v0.9.5 BH2: 0.6 s
-		[&"warlord", &"lunge_dash", 60],
+		[&"warlord", &"lunge_dash", 36],  # its faster charge: 0.6 s
 		[&"brood_mother", &"leap", 60],
 		[&"hive_lens", &"dive", 60],
 		[&"siege_engine", &"rail", 66],

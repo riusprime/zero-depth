@@ -1,0 +1,365 @@
+class_name WarlordLooks
+extends RefCounted
+## What the Warlord's War Banner and Duel views share: their colours, the floor ring's shader (the banner's dull-gold
+## circle, the cage's dull rim), the War Banner (the owner's model, BossPieceModels `war_banner`: its pole, its top and
+## its cloth, which waves and can burn from its hem up; a code-made pole, crossbar and cloth when the model is
+## missing), the cage's javelin (the owner's javelin, BossSignatureViews.javelin_mesh, or the spear lines' faceted
+## spear without it; matte) and the pose of a javelin planted in the fence. Looks only (EI-07).
+
+## The Warlord's red and steel (WarlordAvatar), its emblem's glow.
+const RED := Color("#D23E35")
+const RED_DARK := Color("#A9322B")
+const STEEL := Color("#6A6462")
+const EMBLEM := Color("#FF3A26")
+## The banner's warmth: the glow it lends whoever fights in it; its circle on the floor, a dull gold.
+const WARM := Color("#FFB04A")
+const TRIM := Color("#E8B45A")
+const BANNER_RING := Color("#C49A4E")
+## The cage's danger read (its javelins' heat) and its rim on the floor, a dull rust red.
+const DANGER := Color("#FF4A24")
+const CAGE_RIM := Color("#A8442F")
+## The cage javelins' steel (lit and matte like the spear lines' spears) and its head's heat as the recall nears.
+const JAVELIN_STEEL := Color(0.74, 0.72, 0.69)
+const JAVELIN_HOT := Color(1.0, 0.42, 0.16)
+const EMBER := Color(1.0, 0.55, 0.15)
+const DUST := {
+	&"primary": Color(0.72, 0.64, 0.52),
+	&"secondary": Color(0.72, 0.64, 0.52),
+	&"tertiary": Color(0.72, 0.64, 0.52)
+}
+## The banner stand-in's measures (m): the pole's height, where the crossbar hangs, the cloth's size.
+const POLE_H := 3.2
+const BAR_Y := 2.95
+const CLOTH := Vector2(1.1, 1.5)
+## The banner's cloth and crossbar face the iso camera's corner (radians about Y).
+const BANNER_YAW := PI * 0.25
+
+## A floor circle of radius 1 (the node's scale is its radius in metres): a flat band of `edge` (a share of the
+## radius) at its rim, at `edge_alpha`, and a faint tint inside at `fill_alpha`, a little stronger toward the rim;
+## `pulse` 1 breathes it slowly. No glow: the band is the tint itself. Depth-tested, so the bodies on it stand over it.
+const RING_SHADER := """
+shader_type spatial;
+render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
+
+uniform vec4 tint : source_color = vec4(1.0, 0.69, 0.29, 1.0);
+uniform float alpha = 1.0;
+uniform float edge = 0.04;
+uniform float edge_alpha = 0.6;
+uniform float fill_alpha = 0.08;
+uniform float pulse = 0.0;
+uniform float clock = 0.0;
+
+void fragment() {
+	vec2 q = UV * 2.0 - 1.0;
+	float r = length(q);
+	float band = smoothstep(edge, 0.0, abs(r - (1.0 - edge)));
+	float inside = step(r, 1.0 - edge) * (0.55 + 0.45 * r * r);
+	float beat = mix(1.0, 0.8 + 0.2 * sin(clock * 2.5), pulse);
+	ALBEDO = tint.rgb * (0.9 + 0.15 * band);
+	ALPHA = clamp(alpha * beat * (band * edge_alpha + inside * fill_alpha), 0.0, 0.9) * step(r, 1.0);
+}
+"""
+## The banner's cloth (a quad hanging from its top edge, UV.y 0 at the crossbar): it waves more toward its free end
+## (`wave` 0 still), its hem and head in the trim's gold, and `burn` 0..1 eats it from the hem up behind a glowing
+## ember edge.
+const CLOTH_SHADER := """
+shader_type spatial;
+render_mode cull_disabled, diffuse_lambert;
+
+uniform vec4 cloth : source_color = vec4(0.82, 0.24, 0.21, 1.0);
+uniform vec4 trim : source_color = vec4(0.91, 0.71, 0.35, 1.0);
+uniform vec4 ember : source_color = vec4(1.0, 0.55, 0.15, 1.0);
+uniform float wave = 1.0;
+uniform float burn = 0.0;
+uniform float clock = 0.0;
+
+void vertex() {
+	VERTEX.z += sin(UV.x * 4.5 + UV.y * 2.0 - clock * 3.2) * 0.07 * wave * (0.25 + UV.y);
+}
+
+void fragment() {
+	float line = 1.02 - burn * 1.05 + 0.04 * sin(UV.x * 23.0) * step(0.001, burn);
+	if (UV.y > line) {
+		discard;
+	}
+	float glow = smoothstep(0.08, 0.0, line - UV.y) * step(0.001, burn);
+	float band = max(step(0.88, UV.y), step(UV.y, 0.07));
+	ALBEDO = mix(cloth.rgb, trim.rgb, band * 0.85) * (1.0 - 0.55 * burn);
+	EMISSION = ember.rgb * glow * 3.0;
+	ROUGHNESS = 0.9;
+}
+"""
+## The owner's cloth (BossPieceModels `war_banner` "cloth"): its own colour map, matte and lit like the walls; its
+## second UV set runs across it (UV2.x) and down from where it hangs (UV2.y 0 at the crossbar, 1 at the hem), so it
+## waves more toward its hem (its top held still), and `burn` eats it from the hem up behind the same ember edge. Its
+## emblem (the map's bright red, in the cloth's middle) keeps a faint glow of `emblem` until it burns.
+const CLOTH_MODEL_SHADER := """
+shader_type spatial;
+render_mode cull_disabled;
+
+uniform sampler2D albedo_tex : source_color, filter_linear_mipmap;
+uniform vec4 ember : source_color = vec4(1.0, 0.55, 0.15, 1.0);
+uniform vec4 emblem : source_color = vec4(1.0, 0.23, 0.15, 1.0);
+uniform float wave = 1.0;
+uniform float burn = 0.0;
+uniform float clock = 0.0;
+
+void vertex() {
+	VERTEX.z += sin(UV2.x * 4.5 + UV2.y * 2.0 - clock * 3.2) * 0.07 * wave * UV2.y * (0.6 + UV2.y);
+}
+
+void fragment() {
+	float line = 1.02 - burn * 1.05 + 0.04 * sin(UV2.x * 23.0) * step(0.001, burn);
+	if (UV2.y > line) {
+		discard;
+	}
+	float glow = smoothstep(0.08, 0.0, line - UV2.y) * step(0.001, burn);
+	vec3 tex = texture(albedo_tex, UV).rgb;
+	float red = smoothstep(0.25, 0.45, tex.r - max(tex.g, tex.b));
+	float mid = smoothstep(0.32, 0.18, abs(UV2.x - 0.5)) * smoothstep(0.8, 0.55, UV2.y);
+	ALBEDO = tex * (1.0 - 0.55 * burn);
+	EMISSION = ember.rgb * glow * 3.0 + emblem.rgb * red * mid * 0.6 * (1.0 - burn);
+	ROUGHNESS = 1.0;
+	METALLIC = 0.0;
+	SPECULAR = 0.5;
+}
+"""
+
+## The cage javelins' shader (one MultiMesh): steel lit like the walls (matte, the default specular), the head warming
+## toward JAVELIN_HOT with the instance's INSTANCE_CUSTOM.r (the recall's warning), a small accent only. On the owner's
+## javelin (`textured` 1, BossSignatureViews.dress_javelin) its colour map stands for the steel and its vertex alpha
+## marks the head; on the faceted spear UV.y runs from the butt (0) to the point (1).
+const JAVELIN_SHADER := """
+shader_type spatial;
+render_mode cull_back, diffuse_burley, specular_schlick_ggx;
+uniform vec4 steel : source_color = vec4(0.62, 0.6, 0.58, 1.0);
+uniform vec4 hot : source_color = vec4(1.0, 0.42, 0.16, 1.0);
+uniform sampler2D albedo_tex : source_color, filter_linear_mipmap;
+uniform float textured = 0.0;
+varying float glow;
+void vertex() {
+	glow = INSTANCE_CUSTOM.r;
+}
+void fragment() {
+	float head = mix(smoothstep(0.72, 0.86, UV.y), COLOR.a, textured);
+	float heat = smoothstep(0.2, 1.0, glow);
+	vec3 base = mix(steel.rgb, texture(albedo_tex, UV).rgb, textured);
+	ALBEDO = mix(base, hot.rgb * 0.6, head * heat * 0.6);
+	EMISSION = hot.rgb * head * heat * 1.4;
+	ROUGHNESS = 1.0;
+	METALLIC = 0.0;
+	SPECULAR = 0.5;
+}
+"""
+
+static var _ring: Shader
+static var _cloth: Shader
+static var _cloth_model: Shader
+static var _javelin: ArrayMesh
+
+
+static func _shader(code: String) -> Shader:
+	var s := Shader.new()
+	s.code = code
+	return s
+
+
+## A hidden floor ring (2 m across: its scale is a radius) under `parent`, in `tint`.
+static func ring(parent: Node3D, tint: Color) -> MeshInstance3D:
+	if _ring == null:
+		_ring = _shader(RING_SHADER)
+	var m := ShaderMaterial.new()
+	m.shader = _ring
+	m.set_shader_parameter("tint", tint)
+	m.render_priority = -1
+	var plane := PlaneMesh.new()
+	plane.size = Vector2.ONE * 2.0
+	var mi := MeshInstance3D.new()
+	mi.mesh = plane
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.visible = false
+	parent.add_child(mi)
+	return mi
+
+
+static func param(mi: MeshInstance3D, key: StringName, value: Variant) -> void:
+	(mi.material_override as ShaderMaterial).set_shader_parameter(key, value)
+
+
+static func _solid(c: Color, glow := 0.0) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	m.roughness = 0.75
+	if glow > 0.0:
+		m.emission_enabled = true
+		m.emission = c
+		m.emission_energy_multiplier = glow
+	return m
+
+
+static func _mesh(parent: Node3D, mesh: Mesh, at: Vector3, mat: Material) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = mat
+	mi.position = at
+	parent.add_child(mi)
+	return mi
+
+
+## The War Banner, built hidden under `parent`, its foot at the origin, its cloth turned toward the game's camera
+## (BANNER_YAW): the owner's model when it loads (model_banner), else the code-made one (a steel pole POLE_H tall with
+## a red spearhead, a crossbar, and a red cloth with a gold hem and a glowing emblem hanging from it). Returns {"root",
+## "top" (the part a charge snaps off: the crossbar, the cloth and the head; it stands at "snap_y" in the root),
+## "snap_y" (m), "cloth" (its ShaderMaterial), "from_model"}.
+static func banner(parent: Node3D) -> Dictionary:
+	var root := Node3D.new()
+	root.name = "WarBanner"
+	root.visible = false
+	parent.add_child(root)
+	var piece := BossPieceModels.get_piece(&"war_banner", ["pole", "top", "cloth"])
+	if not piece.is_empty():
+		return model_banner(root, piece)
+	var steel := _solid(STEEL)
+	var pole := CylinderMesh.new()
+	pole.top_radius = 0.055
+	pole.bottom_radius = 0.07
+	pole.height = BAR_Y - 0.6
+	pole.radial_segments = 6
+	pole.rings = 1
+	_mesh(root, pole, Vector3(0, pole.height * 0.5, 0), steel)
+	var top := Node3D.new()
+	top.position.y = BAR_Y - 0.6
+	root.add_child(top)
+	var upper := CylinderMesh.new()
+	upper.top_radius = 0.05
+	upper.bottom_radius = 0.055
+	upper.height = POLE_H - top.position.y
+	upper.radial_segments = 6
+	upper.rings = 1
+	_mesh(top, upper, Vector3(0, upper.height * 0.5, 0), steel)
+	var head := CylinderMesh.new()
+	head.top_radius = 0.0
+	head.bottom_radius = 0.11
+	head.height = 0.42
+	head.radial_segments = 4
+	head.rings = 1
+	_mesh(top, head, Vector3(0, upper.height + 0.2, 0), _solid(RED, 0.6))
+	var yaw := Node3D.new()  # the cloth and its bar face the iso camera's corner
+	yaw.rotation.y = BANNER_YAW
+	top.add_child(yaw)
+	var bar := BoxMesh.new()
+	bar.size = Vector3(CLOTH.x + 0.2, 0.07, 0.07)
+	_mesh(yaw, bar, Vector3(CLOTH.x * 0.5, 0.6, 0), steel)
+	var quad := QuadMesh.new()
+	quad.size = CLOTH
+	quad.subdivide_width = 6
+	quad.subdivide_depth = 4
+	if _cloth == null:
+		_cloth = _shader(CLOTH_SHADER)
+	var cloth := ShaderMaterial.new()
+	cloth.shader = _cloth
+	cloth.set_shader_parameter("cloth", RED)
+	cloth.set_shader_parameter("trim", TRIM)
+	cloth.set_shader_parameter("ember", EMBER)
+	var mi := _mesh(yaw, quad, Vector3(CLOTH.x * 0.5 + 0.06, 0.6 - CLOTH.y * 0.5, 0), cloth)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	var emblem := BoxMesh.new()
+	emblem.size = Vector3(0.28, 0.42, 0.03)
+	var em := _mesh(yaw, emblem, mi.position + Vector3(0, 0.05, 0.03), _solid(EMBLEM, 1.8))
+	em.rotation.z = PI * 0.25
+	return {"root": root, "top": top, "snap_y": top.position.y, "cloth": cloth, "from_model": false}
+
+
+## The owner's War Banner under `root`: his stump (`pole`), and over it the part a charge snaps off (`top`: the upper
+## pole, the crossbar and the spearhead, with the `cloth` hanging from it) pivoting where the pole is cut, all turned
+## so the cloth faces the camera's corner. The stump and the top are matte and lit like the walls (his colour map);
+## the cloth is on CLOTH_MODEL_SHADER.
+static func model_banner(root: Node3D, piece: Dictionary) -> Dictionary:
+	var turn := Node3D.new()
+	turn.rotation.y = BANNER_YAW
+	root.add_child(turn)
+	BossPieceModels.put(piece, "pole", turn).cast_shadow = (
+		GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	)
+	var top_mesh: Mesh = piece["parts"]["top"]["mesh"]
+	var snap := top_mesh.get_aabb().position.y
+	var top := Node3D.new()
+	top.position.y = snap
+	turn.add_child(top)
+	BossPieceModels.put(piece, "top", top).position.y -= snap
+	if _cloth_model == null:
+		_cloth_model = _shader(CLOTH_MODEL_SHADER)
+	var cloth := ShaderMaterial.new()
+	cloth.shader = _cloth_model
+	cloth.set_shader_parameter("albedo_tex", piece["texture"])
+	cloth.set_shader_parameter("ember", EMBER)
+	cloth.set_shader_parameter("emblem", EMBLEM)
+	var mi := BossPieceModels.put(piece, "cloth", top, cloth)
+	mi.position.y -= snap
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	return {"root": root, "top": top, "snap_y": snap, "cloth": cloth, "from_model": true}
+
+
+## The cage's javelin: the owner's (BossSignatureViews.javelin_mesh, its vertex alpha the head) when his model loads;
+## else the spear lines' faceted spear (BossStrikeMeshes.blade) laid along +X from its butt (x = 0) to its point,
+## BossSignatureViews.JAVELIN_LENGTH long, so it poses as the fan's javelin does; flat-shaded, its UV.y how far along it
+## lies (0 butt, 1 point) for the head's heat.
+static func javelin() -> Mesh:
+	if BossSignatureViews.from_model():
+		return BossSignatureViews.javelin_mesh()
+	if _javelin != null:
+		return _javelin
+	var src := BossStrikeMeshes.blade()
+	var arrays := src.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+	var length := BossSignatureViews.JAVELIN_LENGTH
+	# The spear's +Y (y -0.1 at the butt to 1 at the point) turned to +X (a rotation, so the faces keep their winding),
+	# stretched to the javelin's length, a little thicker across; each face's normal recomputed after the stretch.
+	var across := 1.15
+	var out_v := PackedVector3Array()
+	var out_n := PackedVector3Array()
+	var uv := PackedVector2Array()
+	for k in verts.size():
+		var v := verts[k]
+		var along := (v.y + 0.1) / 1.1
+		out_v.append(Vector3(along * length, -v.x * across, v.z * across))
+		uv.append(Vector2(0.0, along))
+	for k in range(0, out_v.size() - 2, 3):
+		var was := normals[k]
+		var n := (out_v[k + 1] - out_v[k]).cross(out_v[k + 2] - out_v[k]).normalized()
+		if n.dot(Vector3(was.y, -was.x, was.z)) < 0.0:
+			n = -n
+		out_n.append_array([n, n, n])
+	var a := []
+	a.resize(Mesh.ARRAY_MAX)
+	a[Mesh.ARRAY_VERTEX] = out_v
+	a[Mesh.ARRAY_NORMAL] = out_n
+	a[Mesh.ARRAY_TEX_UV] = uv
+	_javelin = ArrayMesh.new()
+	_javelin.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, a)
+	return _javelin
+
+
+## A fence javelin's transform: its head `sink` m into the floor at `at` (3D, on the floor), its shaft rising outward
+## from `centre` (3D) at `pitch` (radians below level from the tail to the head), `size` times the javelin's size.
+static func planted(
+	at: Vector3, centre: Vector3, pitch: float, size: float, sink: float
+) -> Transform3D:
+	var inward := centre - at
+	inward.y = 0.0
+	if inward.length_squared() < 0.0001:
+		inward = Vector3(1, 0, 0)
+	inward = inward.normalized()
+	var yaw := atan2(-inward.z, inward.x)
+	var b := Basis(Vector3.UP, yaw) * Basis(Vector3(0, 0, 1), -pitch)
+	var dir := b * Vector3(1, 0, 0)
+	var head := at - Vector3(0, sink, 0)
+	var length := BossSignatureViews.JAVELIN_LENGTH * size
+	return Transform3D(b * Basis.from_scale(Vector3.ONE * size), head - dir * length)
+
+
+## Transform: `scale` uniform at `pos`.
+static func at(pos: Vector3, scale: float) -> Transform3D:
+	return Transform3D(Basis.from_scale(Vector3.ONE * scale), pos)

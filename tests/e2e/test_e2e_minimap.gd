@@ -90,3 +90,33 @@ func test_the_arrow_points_where_you_walk_not_where_you_aim() -> void:
 	await e.frames(6)
 	assert_eq(w.move_intent, Vector2i.ZERO, "stopped")
 	assert_gt(map.corner.arrow_dir().dot(walk), 0.99, "standing still keeps the walk direction")
+
+
+## The corner map keeps drawing the rooms once the hero has walked on: its layer's picture has a size and covers the
+## window, on a run entered through the hub and portal, with the next room found.
+func test_the_corner_map_draws_the_rooms_after_walking_into_the_next_one() -> void:
+	var e := E2e.new(self)
+	e.real_start = true
+	var main: Main = await e.boot()
+	await e.start_from_menu()
+	await e.frames(4)
+	var map := (main.get_node("UI/Hud") as Hud).minimap
+	var r := main.driver.reader
+	var start := r.floor_start_room()
+	assert_true(map.corner.layer_cached(), "the corner map uses its layer")
+	var window := Rect2(Vector2.ZERO, map.corner.size)
+	assert_true(map.corner.layer_image_rect().size.x > 0.0, "its picture has a size")
+	var exits := map.state.unknown_doors(r)
+	var d := r.floor_door_rooms(exits[0])
+	var room := d.y if d.x == start else d.x
+	var side: Vector2 = MinimapView.SIDES[(r.floor_door_angle(exits[0]) / 1024) % 4]
+	var into := side if room == d.y else -side
+	var dr := r.floor_door_rect(exits[0])
+	var spot := dr.get_center() + into * (absf(dr.size.dot(side)) * 0.5 + 2.0)
+	assert_true(await e.walk_to(spot, 0.8), "walked into the next room")
+	await e.frames(6)
+	assert_eq(map.state.discovered_count(), 2, "two rooms are on the map")
+	var pic := map.corner.layer_image_rect()
+	assert_gt(pic.size.x, 0.0, "the picture keeps a size, or the clip drops it")
+	assert_gt(pic.size.y, 0.0)
+	assert_true(pic.intersects(window), "and it lies over the window the hero is in")

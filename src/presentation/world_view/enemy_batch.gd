@@ -25,9 +25,15 @@ extends Node3D
 ## The set kinds.
 enum Part { DISC, RING, DAZED, BAR, BLOB }
 
-## The kinds batched: the VAT crowd's horde kinds and the Charger and Hatchling, whose avatars need nothing of the tree.
-## The other VAT kinds (the solo models: Needle, Warden, the drones, the owner's models) still read the tree in their
-## frame step or death (global transforms, timers), so they keep their node.
+## The kinds batched: the VAT crowd's horde kinds, the Charger, the Hatchling, the Stone Thrower, the Needle, the Rock
+## Lurker, the Warden (and the Rubble Warden, on its avatar), the Sniper, the Arc Caster, the Lens Drone, the Bomb
+## Drone, the Scrap Hound, the Kiln Beetle and the Cinder Priest, whose avatars need nothing of the tree (their pose,
+## rock, glows and death are reckoned from their own clocks, the sim's state and their facing node's turn; the Hound's
+## body turns on its avatar's own transform; the thrown rock flies from the sim's place, RuinsRocksViews; the Lurker's
+## disguise hides its disc and ring here, show_rings; the Warden's dust ring and the Rubble Warden's crust, the Lens
+## Drone's ground shadow and the Bomb Drone's ground disc hang in the tree from nodes the batch places, BatchHeld). The
+## other VAT kinds (the solo models: the other owner's models) still read the tree in their frame step or death (global
+## transforms, timers), so they keep their node.
 const KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_SPLITTER,
@@ -35,9 +41,25 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_SHIELD_BEARER,
 	WorldReader.KIND_MENDER,
 	WorldReader.KIND_MINE_LAYER,
-	WorldReader.KIND_SNIPER,
 	WorldReader.KIND_CHARGER,
 	WorldReader.KIND_HATCHLING,
+	WorldReader.KIND_STONE_THROWER,
+	WorldReader.KIND_NEEDLE,
+	WorldReader.KIND_ROCK_LURKER,
+	WorldReader.KIND_WARDEN,
+	WorldReader.KIND_RUBBLE_WARDEN,
+	WorldReader.KIND_SNIPER,
+	WorldReader.KIND_ARC_CASTER,
+	WorldReader.KIND_LENS_DRONE,
+	WorldReader.KIND_BOMB_DRONE,
+	WorldReader.KIND_SCRAP_HOUND,
+	WorldReader.KIND_KILN_BEETLE,
+	WorldReader.KIND_CINDER_PRIEST,
+	WorldReader.KIND_FROST_SPITTER,
+	WorldReader.KIND_GLACIER_TURTLE,
+	WorldReader.KIND_WIRE_WEAVER,
+	WorldReader.KIND_GRAVITY_NODE,
+	WorldReader.KIND_STAR_WARPER,
 ]
 ## After the views' sync and the other nodes' _process, before VatCrowd (which draws the bodies at these places).
 const PROCESS_PRIORITY := VatCrowd.PROCESS_PRIORITY - 1
@@ -121,9 +143,15 @@ var _phys_seen := -1
 ## trail's fill (BarChunks.fill_to; 1 without a trail) and whether its root, facing and avatar all show (each sync).
 var _fill := PackedFloat64Array()
 var _shown := PackedByteArray()
+## The batched Wardens' dust rings (and Rubble Wardens' crusts) and the drones' and Warpers' ground shadows in the
+## tree, by id (BatchHeld.hold, through BatchWarden.hold, BatchLensDrone.hold, BatchBombDrone.hold,
+## BatchStarWarper.hold).
+var _held := {}
 ## Slots whose body falls (their root is freed when the fall ends: the frame's drop looks only while there are any).
 var _falls := 0
 var _crowd: RefCounted
+## The slots whose disc and ring are hidden (show_rings): id -> their sets (disc, ring), put back when they show.
+var _rings_off := {}
 
 
 func _init() -> void:
@@ -213,6 +241,16 @@ func add(
 		_set_index(Part.BLOB, 0.0)
 	avatar.detached = true
 	avatars.add(id, avatar, _facings[k], root.get_meta(&"vat_sets", Vector2i(-1, -1)))
+	if avatar is WardenAvatar:
+		_held[id] = BatchWarden.hold(self, id, avatar as WardenAvatar, root, _facings[k])
+	elif avatar is LensDroneAvatar:
+		_held[id] = BatchLensDrone.hold(self, id, avatar as LensDroneAvatar, root, _facings[k])
+	elif avatar is BombDroneAvatar:
+		_held[id] = BatchBombDrone.hold(self, id, avatar as BombDroneAvatar, root, _facings[k])
+	elif avatar is GravityNodeAvatar:
+		_held[id] = BatchGravityNode.hold(self, id, avatar as GravityNodeAvatar, root, _facings[k])
+	elif avatar is StarWarperAvatar:
+		_held[id] = BatchStarWarper.hold(self, id, avatar as StarWarperAvatar, root, _facings[k])
 	_bo_fresh = false
 	synced_frame = Engine.get_process_frames()
 
@@ -283,12 +321,47 @@ func update(id: int, reader: WorldReader, i: int, parts: Array, cols: Array) -> 
 	PerfMarks.add(&"actors.enemy_sync", t_en)
 	show_parts(id, bar and shown, state == WorldReader.STATE_RECOVER, shown and avatar.visible)
 	_shown[k] = 1 if shown and avatar.visible and (_roots[k] as Node3D).visible else 0
+	if _held.has(id):
+		BatchHeld.follow(_held[id])
+		VariantLooks.show_crust(_roots[k], reader, i)  # The Rubble Warden's (a node with none is left alone)
+	if avatar is RockLurkerAvatar:  # Its disguise: no contact disc or team ring while it waits as a boulder
+		show_rings(id, not RockLurkerAvatar.disguised(reader, i))
+
+
+## Whether enemy `id`'s contact disc and team ring show after this sync (as a node enemy's whose disc and ring nodes
+## are hidden): hidden, they draw nothing (their sets out of its slot); shown again, in their sets as before.
+func show_rings(id: int, on: bool) -> void:
+	var k: int = _slot_of[id]
+	if on != _rings_off.has(id):
+		return
+	if on:
+		var sets: Vector2i = _rings_off[id]
+		_disc[k] = sets.x
+		_ring[k] = sets.y
+		_rings_off.erase(id)
+	else:
+		_rings_off[id] = Vector2i(_disc[k], _ring[k])
+		_disc[k] = -1
+		_ring[k] = -1
 
 
 ## The end of the views' sync: the batched avatars' syncs noted this sync, applied natively in one call.
 func flush_avatars() -> void:
 	if _avatars_native():
 		avatars.flush(_crowd, avatars.frame_columns(_x1, _y1, _z1))
+		for id: int in _held:  # The parts as the sync left them (a batch made this sync steps next frame)
+			var h: Array = _held[id]
+			var a: Variant = h[BatchHeld.AVATAR]
+			if is_instance_valid(a) and a is BombDroneAvatar:
+				BatchBombDrone.show(h, self, id, _slot_of[id])
+			elif is_instance_valid(a) and a is LensDroneAvatar:
+				BatchLensDrone.show(h, self, id, _slot_of[id])
+			elif is_instance_valid(a) and a is GravityNodeAvatar:
+				BatchGravityNode.show(h, self, id, _slot_of[id])
+			elif is_instance_valid(a) and a is StarWarperAvatar:
+				BatchStarWarper.show(h, self, id, _slot_of[id])
+			else:
+				BatchHeld.place(h, self, id)
 
 
 ## Whether enemy `id`'s avatar runs its frame step (its set_process, as ActorViews' culling turns it).
@@ -317,6 +390,8 @@ func facing_leaned(id: int) -> void:
 	var k: int = _slot_of.get(id, -1)
 	if k >= 0:
 		avatars.facing_moved(k, _facings[k], true)
+		if _held.has(id):
+			BatchHeld.follow(_held[id])
 
 
 ## VatCrowd: its sets `sets` ([index, body, period, drive floats, capacity] each) written natively from the avatars'
@@ -464,6 +539,10 @@ func _remove(k: int) -> void:
 	if _live[k] == 0:
 		_falls -= 1
 	_slot_of.erase(id)
+	_rings_off.erase(id)
+	if _held.has(id):  # Its held parts' place (BatchHeld.hold)
+		(_held[id][BatchHeld.PLACE] as Node).queue_free()
+	_held.erase(id)
 	if _anchors.has(id):
 		(_anchors[id] as Node).queue_free()
 		_anchors.erase(id)
@@ -547,6 +626,18 @@ func advance(delta: float) -> void:
 			var a: AvatarBase = _avatars[j]
 			if a.is_processing() and _born[j] != frame:
 				a._process(delta)  # (as the tree ran it, from the frame after it came)
+	for id: int in _held:  # The Wardens' dust rings and the drones' shadows, as their step left them
+		var h: Array = _held[id]
+		if is_instance_valid(h[2]) and h[2] is LensDroneAvatar:
+			BatchLensDrone.show(h, self, id, _slot_of[id])
+		elif is_instance_valid(h[2]) and h[2] is BombDroneAvatar:
+			BatchBombDrone.show(h, self, id, _slot_of[id])
+		elif is_instance_valid(h[2]) and h[2] is GravityNodeAvatar:
+			BatchGravityNode.show(h, self, id, _slot_of[id])
+		elif is_instance_valid(h[2]) and h[2] is StarWarperAvatar:
+			BatchStarWarper.show(h, self, id, _slot_of[id])
+		else:
+			BatchWarden.show(h, self, id, _slot_of[id])
 	PerfMarks.add(&"batch.avatars", t_av)  # The avatars' frame step (the tree ran it before)
 	var t_wr := PerfMarks.start()
 	write_furniture()
@@ -751,7 +842,7 @@ func _set_index(part: int, radius: float) -> int:
 	match part:
 		Part.DISC:
 			mesh = parts.disc_mesh(radius)
-			mat = parts.disc_material(views.outline_color)
+			mat = parts.disc_material(ActorViews.CONTACT_COLOR)
 		Part.RING:
 			mesh = flattened(parts.ring_mesh(radius), RING_FLAT)
 			mat = parts.ring_material(ThemePalette.color(&"enemy_body"))

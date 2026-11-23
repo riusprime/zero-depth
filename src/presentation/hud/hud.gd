@@ -85,10 +85,19 @@ var boss_door := BossDoorHud.new()
 var interact := InteractPromptHud.new()
 ## The boss hint arrow and ping (MetaHooks sets its gate: MechanicHints).
 var objective_hints := ObjectiveHints.new()
+## The attack speed a boss has taken and what is won back, over the HP plate.
+var attack_slow := AttackSlowHud.new()
+## The low-HP edge glow's look while the High Tide's water hurts the hero outside the dry circle.
+var tide_flood := LowHpVignette.new()
+## The Foundry's scald gauge over the HP plate, and the burning edge while its Overpressure burns the hero off a slab.
+var scald := ScaldHud.new()
+var forge_burn := ForgeBurnEdge.new()
 ## The weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
 var build_hud := BuildHud.new()
 ## The picked cards' icons fly over everything to their HUD slots.
 var flights := CardFlights.new()
+## The Fallen's theft on the wand row: a held card's pip dark under a violet glow, its flight to The Fallen and back.
+var theft_hud := FallenTheftHud.new()
 ## Draws the parts below from a texture while they do not change (HudStill).
 var still := HudStill.new()
 var swap := SwapPanel.new()
@@ -160,6 +169,9 @@ func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_wash)
 	add_child(_vignette)
+	tide_flood.name = "TideFlood"
+	add_child(tide_flood)
+	add_child(forge_burn)
 	add_child(objective_hints)  # Under every panel and plate
 	_build_corner()
 	_build_top()
@@ -200,6 +212,10 @@ func _init() -> void:
 	_gate.position = Vector2(-450, -150)
 	_build_floor_card()
 	add_child(boss_bar)
+	attack_slow.above = _corner
+	add_child(attack_slow)
+	scald.above = _corner
+	add_child(scald)
 	add_child(heat_meter)
 	add_child(minimap)
 	_build_rewards()
@@ -230,6 +246,8 @@ func _init() -> void:
 	flights.plate = _hp_frame
 	add_child(flights)
 	add_child(still)
+	theft_hud.build = build_hud
+	add_child(theft_hud)  # Over the build row's still
 	# deferred: the HUD's slots sync after the pick panel
 	_pick.card_taken.connect(
 		func(code: int, from: Rect2) -> void: flights.launch.call_deferred(_reader, code, from)
@@ -237,6 +255,7 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	AstralCardArt.warm_icons()  # The cards' icons load on a worker, before a pick or the shop shows one
 	# The run's lasting parts; panels that come and go (the pick, the shop, the swap) draw directly.
 	for part: CanvasItem in [
 		_corner,
@@ -315,6 +334,10 @@ func sync(reader: WorldReader) -> void:
 	t = PerfMarks.start()
 	_sync_floor_lines(reader)
 	boss_bar.sync(reader)
+	attack_slow.sync(reader)
+	tide_flood.active = TideDanceViews.flooding(reader)
+	scald.sync(reader)
+	forge_burn.active = ForgeBurnEdge.burning(reader)
 	heat_meter.sync(reader)
 	PerfMarks.add(&"hud.top", t)
 	t = PerfMarks.start()
@@ -349,6 +372,7 @@ func sync(reader: WorldReader) -> void:
 	PerfMarks.add(&"hud.prompts", t)
 	t = PerfMarks.start()
 	build_hud.sync(reader)  # v0.6.0 MX2
+	theft_hud.sync(reader)
 	PerfMarks.add(&"hud.build", t)
 	t = PerfMarks.start()
 	swap.sync(reader)

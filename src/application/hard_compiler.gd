@@ -21,7 +21,9 @@ static func compile_attack(def: BossAttackDefinition, t: BossAttackTable) -> voi
 	t.safe_cells = int(sp.get("safe_cells", 0))
 	if t.second_ticks > 0:
 		var last := (t.count - 1) * t.mark_gap_ticks + t.second_ticks
-		t.active_ticks = maxi(t.active_ticks, last + (2 if t.pillar_ticks > 0 else 1))
+		t.active_ticks = maxi(
+			t.active_ticks, last + t.lane_wave_ticks() + (1 if t.pillar_ticks > 0 else 0)
+		)
 	# The Crossfire's tracking (degrees a second -> 1/4096 turns a tick x 1000)
 	t.lines_ticks = SimTick.seconds_to_ticks(float(sp.get("lines_follow_seconds", 0.0)))
 	t.lines_turn_milli = int(

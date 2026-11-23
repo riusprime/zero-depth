@@ -23,7 +23,6 @@ const FAMILY := {
 	&"bx_smoke_thin": &"cloud",
 	&"bx_smoke_dust": &"cloud",
 	&"bx_pillar_light": &"area",
-	&"bx_pillar_fallen": &"area",
 	&"bx_pulse_light": &"area",
 	&"bx_pulse_shock": &"area",
 	&"bx_pulse_steam": &"area",
@@ -219,3 +218,11 @@ static func tint_field(node: Node3D, main: Color, edge: Color, glow: Color) -> v
 			(m as ShaderMaterial).set_shader_parameter(&"main_color", main)
 			(m as ShaderMaterial).set_shader_parameter(&"edge_color", edge)
 			(m as ShaderMaterial).set_shader_parameter(&"glow_color", glow)
+
+
+## Hides a held pack beam's ball and sparks where it strikes (a white blob on the wall); the pool shows them again for
+## its next user (PackFx.HIDE_PER_SPAWN).
+static func no_end_ball(beam: Node3D) -> void:
+	var end := beam.get_node_or_null(^"BeamEndPivot") as Node3D
+	if end != null and end.visible:
+		end.visible = false

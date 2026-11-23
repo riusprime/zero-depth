@@ -140,3 +140,7 @@ func test_the_brood_mothers_eggs_sit_on_the_floor() -> void:
 			assert_false(
 				(node.get_meta(&"facing") as Node3D).visible, "the Hatchling inside hidden"
 			)
+			# The Hatchling waiting in it is the owner's model, animated (HatchlingAvatar)
+			var hatch := node.get_meta(&"enemy_avatar") as HatchlingAvatar
+			assert_not_null(hatch, "a Hatchling's avatar")
+			assert_true(hatch.has_model, "on the owner's model")

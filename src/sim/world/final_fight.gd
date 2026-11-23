@@ -26,14 +26,7 @@ extends RefCounted
 ## it was set from), `pace_budget` the damage it may still take now (× 1000: its rate cap's bucket), and `copying`
 ## while The Fallen's attack in progress began in a mimic window (it swings and casts the player's build).
 
-## The Fallen's interphases and dashes.
-## `ip_done` has bit k once interphase k began; `ip_stage` is 0 (none), 1 (a threshold reached: it finishes its move),
-## 2 (vanished: the set `ip_set` runs, `ip_t` ticks in) or 3 (the return telegraph); `ip_prev` the set of the last
-## interphase (a set is never drawn twice in a row), `ip_total` every tick spent in stages 2 and 3 (the pace's clock
-## leaves them out). `ip_a`, `ip_b` the next tick (of the stage) of the set's two repeating hazards, `ip_n` the draws
-## made, `ip_dir` and `ip_angle0` the beams' turn and first angle, `ip_r` the arena's radius, `ip_grace` the tick before
-## which no interphase hit lands. Eruptions (`er_*`: place, strike tick), spike lines (`sl_*`: first place, way, tick it
-## starts to move, length, its middle's offset across, hit) and lanterns (`lamp_t`: burn ticks left) are the set's.
+## The Fallen's dash between two moves (FallenDashTable).
 ## `rd_*` the dash between moves: `rd_pending` (one is due when the next move would begin), `rd_t` ticks of its
 ## telegraph left, `rd_to` where it goes.
 
@@ -83,31 +76,7 @@ var paced := false
 var pace_dps := 0
 var pace_budget := 0
 var copying := false
-## The interphases and the dash between moves (class doc).
-var ip_done := 0
-var ip_stage := 0
-var ip_t := 0
-var ip_set := -1
-var ip_prev := -1
-var ip_total := 0
-var ip_a := 0
-var ip_b := 0
-var ip_n := 0
-var ip_dir := 1
-var ip_angle0 := 0
-var ip_grace := 0
-var ip_r := 0.0
-var er_x := PackedFloat32Array()
-var er_y := PackedFloat32Array()
-var er_t := PackedInt32Array()
-var sl_x := PackedFloat32Array()
-var sl_y := PackedFloat32Array()
-var sl_a := PackedInt32Array()
-var sl_t := PackedInt32Array()
-var sl_len := PackedFloat32Array()
-var sl_off := PackedFloat32Array()
-var sl_hit := PackedInt32Array()
-var lamp_t := PackedInt32Array()
+## The dash between moves (class doc).
 var rd_pending := 0
 var rd_t := 0
 var rd_to := Vector2.ZERO
@@ -183,8 +152,8 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(v)
 	for v in [1 if paced else 0, pace_dps, pace_budget, 1 if copying else 0]:  # v0.8.0 N2
 		h.add_int(v)
-	if ip_done != 0 or ip_stage != 0 or ip_prev >= 0 or rd_pending != 0 or rd_t != 0:
-		_hash_interphase(h)  # Only once an interphase or a dash has begun (an earlier fight hashes as before)
+	if rd_pending != 0 or rd_t != 0:
+		_hash_dash(h)  # Only while a dash between moves is due or shown
 	if not ready and echo_n == 0:
 		return  # No mimic body has fought yet (an earlier fight hashes as before)
 	for v in [weapon, hit, hit_cap, echo_head, echo_n, dash_due, dash_t, stance, stance_t]:
@@ -204,34 +173,7 @@ func hash_into(h: StateHasher) -> void:
 		c.hash_into(h)
 
 
-func _hash_interphase(h: StateHasher) -> void:
-	for v in [
-		ip_done,
-		ip_stage,
-		ip_t,
-		ip_set,
-		ip_prev,
-		ip_total,
-		ip_a,
-		ip_b,
-		ip_n,
-		ip_dir,
-		ip_angle0,
-		ip_grace
-	]:
-		h.add_int(v)
-	h.add_f32s(er_x)
-	h.add_f32s(er_y)
-	h.add_ints(er_t)
-	h.add_f32s(sl_x)
-	h.add_f32s(sl_y)
-	h.add_ints(sl_a)
-	h.add_ints(sl_t)
-	h.add_f32s(sl_len)
-	h.add_f32s(sl_off)
-	h.add_ints(sl_hit)
-	h.add_ints(lamp_t)
-	h.add_f32(ip_r)
+func _hash_dash(h: StateHasher) -> void:
 	for v in [rd_pending, rd_t]:
 		h.add_int(v)
 	h.add_f32(rd_to.x)

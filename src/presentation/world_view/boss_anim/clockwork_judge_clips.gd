@@ -39,6 +39,7 @@ static func library() -> Dictionary:
 			_idle(),
 			_walk(),
 			_echo(),
+			_time_wave(),
 			_pattern(),
 			_verdict(),
 			_slam_ring(),
@@ -83,6 +84,17 @@ static func _echo() -> BossClip:
 	c.turn(B, Z, [[0, 0], [0.42, -0.12], [0.5, -0.15, IN3], [0.85, -0.12], [1, 0]])
 	c.param(&"tick", [[0, 0], [0.42, 2.5, IN3], [0.5, 3.0], [0.85, 2.5], [1, 0]])
 	c.param(&"glow", [[0, 0], [0.42, 1.2], [0.5, 1.6, IN3], [0.85, 1.2], [1, 0]])
+	return c
+
+
+## The Time Wave's cast: both arms carried out and up as the clock races and blazes, thrown wide as the wave leaves.
+static func _time_wave() -> BossClip:
+	var c := BossClip.new(&"time_wave")
+	c.turn(ARM_R, X, [[0, 0], [0.42, -1.2, IO], [0.5, -0.8, IN3], [0.8, -0.7], [1, 0]])
+	c.turn(ARM_L, X, [[0, 0], [0.42, 1.2, IO], [0.5, 0.8, IN3], [0.8, 0.7], [1, 0]])
+	c.turn(&"chest", Z, [[0, 0], [0.42, 0.1], [0.5, -0.08, IN3], [0.8, 0], [1, 0]])
+	c.param(&"tick", [[0, 0], [0.42, 4.0, IN3], [0.5, 1.0], [1, 0]])
+	c.param(&"glow", [[0, 0], [0.42, 1.8, IN3], [0.5, 2.2], [0.8, 0.6], [1, 0]])
 	return c
 
 

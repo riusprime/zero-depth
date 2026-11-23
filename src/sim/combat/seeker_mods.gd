@@ -291,13 +291,6 @@ static func _remove(s: ModifierState, k: int) -> void:
 			q += 1
 
 
-static func _hit_before(s: ModifierState, rid: int, aid: int) -> bool:
-	for q in s.sk_hit_row.size():
-		if s.sk_hit_row[q] == rid and s.sk_hit_actor[q] == aid:
-			return true
-	return false
-
-
 ## The thousandths dart row `k` was dealt from: its row's, or (a row from an older save) its whole damage x 1000.
 static func _milli_of_dart(s: ModifierState, k: int, dmg: int) -> int:
 	return s.sk_dmg[k] if s.sk_dmg[k] > 0 else dmg * 1000
@@ -371,31 +364,68 @@ static func pick(w: World, pi: int) -> int:
 		return NO_PICK
 	var child: bool = s.sk_kind[k] & F_CHILD != 0
 	var rid: int = s.sk_id[k]
-	var any_hit := false
+	# The enemies this dart already hit, read from the hit list once (one pass, not one per enemy near it: with
+	# many darts and hits the per-enemy scans were most of the projectile phase)
+	var hit := {}
 	for q in s.sk_hit_row.size():
 		if s.sk_hit_row[q] == rid:
-			any_hit = true
-			break
-	if not child and not any_hit:
+			hit[s.sk_hit_actor[q]] = true
+	if not child and hit.is_empty():
 		return NO_PICK
 	var at := Vector2(p.pos_x[pi], p.pos_y[pi])
 	var skip: int = s.sk_aux[k] - 1 if child else -1
 	var rank: int = s.sk_aux2[k] if child else 0
-	var ds := PackedFloat32Array()
+	var keys := PackedFloat32Array()
+	var ds := PackedFloat64Array()
 	var ids := PackedInt32Array()
-	for i in w.enemies_near(at, Seekers.SEEK_M):
-		var aid: int = w.actors.ids[i]
-		if w.actors.invuln[i] > 0 or aid == skip or _hit_before(s, rid, aid):
+	# World.enemies_near(at, SEEK_M) and the dart's own filter in one pass (the same grid query, order and distances)
+	var a := w.actors
+	var n := a.size()
+	var g := Seekers.SEEK_M + 1.0
+	for i in w.actors_near(Rect2(at.x - g, at.y - g, g * 2.0, g * 2.0)):
+		if i >= n or a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
 			continue
-		var d := Kin.length(w.actors.pos(i) - at)
-		var j := ds.size()
-		while j > 0 and (ds[j - 1] > d or (ds[j - 1] == d and ids[j - 1] > i)):
-			j -= 1
-		ds.insert(j, d)
-		ids.insert(j, i)
+		var v := Vector2(a.pos_x[i], a.pos_y[i]) - at
+		var d := sqrt(float(v.x) * v.x + float(v.y) * v.y)
+		if d > Seekers.SEEK_M + a.radius[i]:
+			continue
+		var aid: int = a.ids[i]
+		if a.invuln[i] > 0 or aid == skip or hit.has(aid):
+			continue
+		keys.append(d)
+		ds.append(d)
+		ids.append(i)
 	if ids.is_empty():
 		return Seekers.STRAIGHT
-	return ids[rank % ids.size()]
+	return _nth_nearest(keys, ds, ids, rank % ids.size())
+
+
+## The `r`-th of the candidates (in the order they were met: their distances stored as float32 in `keys`, as float64 in
+## `ds`, their actor indices in `ids`) in the order an insertion sort by distance (stored as float32, compared against
+## the float64 distance of the one inserted) then by index leaves them, without the sort: the float32 distances order
+## every candidate whose stored distance differs, so only the candidates sharing the r-th stored distance are placed
+## the insertion's way (one candidate nearly always). The sort was the Seekers' homing's main cost, and every place
+## must stay the sort's: the homing is a sim outcome.
+static func _nth_nearest(
+	keys: PackedFloat32Array, ds: PackedFloat64Array, ids: PackedInt32Array, r: int
+) -> int:
+	var sorted := keys.duplicate()
+	sorted.sort()
+	var key := sorted[r]
+	var before := sorted.bsearch(key, true)
+	var g_d := PackedFloat32Array()
+	var g_i := PackedInt32Array()
+	for q in keys.size():
+		if keys[q] != key:
+			continue
+		var d := ds[q]
+		var i := ids[q]
+		var j := g_d.size()
+		while j > 0 and (g_d[j - 1] > d or (g_d[j - 1] == d and g_i[j - 1] > i)):
+			j -= 1
+		g_d.insert(j, d)
+		g_i.insert(j, i)
+	return g_i[r - before]
 
 
 ## Dart projectile `pi` (of the player) just hit enemy `target` (World._projectile_hits): Pierce notes the hit, Ring

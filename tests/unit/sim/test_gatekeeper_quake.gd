@@ -51,11 +51,11 @@ func _centers(w: World, aid: int) -> Array[Vector2]:
 	return out
 
 
-## A spot LURE_M from pillar c along its row or column, clear of walls and of the other pillars' rings.
-func _lure_spot(w: World, c: Vector2, q: QuakeTable) -> Vector2:
-	for d: Vector2 in [
-		Vector2(LURE_M, 0), Vector2(-LURE_M, 0), Vector2(0, LURE_M), Vector2(0, -LURE_M)
-	]:
+## A spot LURE_M from pillar c on the line from the boss through it (the lane aimed at that spot runs into the
+## pillar), clear of walls and of the other pillars' rings.
+func _lure_spot(w: World, c: Vector2, q: QuakeTable, boss_at: Vector2) -> Vector2:
+	var along := (c - boss_at).normalized()
+	for d: Vector2 in [along * -LURE_M, along * LURE_M]:
 		var at := c + d
 		if EnemyAi.clear_of_walls(w, at, w.player.radius_m + 0.1):
 			var ok := true
@@ -72,7 +72,7 @@ func _lure_spot(w: World, c: Vector2, q: QuakeTable) -> Vector2:
 ## strike has come and gone. Returns how many quake pillars it shattered.
 func _lure_once(w: World, aid: int, c: Vector2) -> int:
 	var i := w.actors.index_of(aid)
-	var spot := _lure_spot(w, c, BossAi.table_of(w, i).quake)
+	var spot := _lure_spot(w, c, BossAi.table_of(w, i).quake, w.actors.pos(i))
 	assert_ne(spot, Vector2.INF, "a spot on the pillar's row")
 	var before := BossQuake.pillars_of(w, aid).size()
 	w.actors.state[i] = S.MOVE

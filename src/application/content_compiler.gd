@@ -76,8 +76,12 @@ const BOSS_MOVES := {
 	&"chain_sweep": BossAttackTable.Move.CHAIN_SWEEP,
 	&"echo": BossAttackTable.Move.ECHO,  # v0.9.0 NB3 (the Clockwork Judge)
 	&"verdict": BossAttackTable.Move.VERDICT,
+	&"time_wave": BossAttackTable.Move.TIME_WAVE,
+	&"sword_combo": BossAttackTable.Move.SWORD_COMBO,  # The Twin Wardens' new moves
+	&"mirror_ward": BossAttackTable.Move.MIRROR_WARD,
+	&"shadow_swords": BossAttackTable.Move.SHADOW_SWORDS,
 	&"wave": BossAttackTable.Move.WAVE,  # v0.9.5 BH4
-	&"interphase": BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6
+	&"remembered": BossAttackTable.Move.REMEMBERED,
 	&"lances": BossAttackTable.Move.LANCES,  # v0.10.5 O3 (the Prism's last phase)
 	&"kneel": BossAttackTable.Move.KNEEL,
 }
@@ -271,6 +275,8 @@ static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) 
 			t.pull_accel = (
 				float(bp["pull_mps2"]) / float(SimTick.TICKS_PER_SECOND * SimTick.TICKS_PER_SECOND)
 			)
+			t.hero_pull_radius_m = float(bp["hero_pull_radius_m"])
+			t.hero_pull = float(bp["hero_pull_mps"]) / SimTick.TICKS_PER_SECOND
 
 
 ## The Arc Caster: its spells in schema order (bolt, spread, rune); bolt and spread are fans.

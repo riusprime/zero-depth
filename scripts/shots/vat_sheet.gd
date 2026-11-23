@@ -10,8 +10,8 @@ extends SceneTree
 ## v0.10.5 W3-V4a: `-- --kind=charger` draws the Charger's states instead (CHARGER_PLAN: its run, wind-up, lunge,
 ## recovery and daze, and one Hatchling), into vat_sheet_charger.png and vat_diff_charger.txt; `--out=<res:// dir>`
 ## writes elsewhere than build/shots/<version>/vat/.
-## v0.10.5 W3-V4b: `-- --kind=<name>` (splitter, splitling, shield_bearer, mender, mine_layer, sniper) draws that kind
-## in its own states (KIND_PLANS: the walk, the death, the heal, the mine dropped, the muzzle) into
+## v0.10.5 W3-V4b: `-- --kind=<name>` (splitter, splitling, shield_bearer, mender, mine_layer) draws that kind
+## in its own states (KIND_PLANS: the walk, the death, the heal, the mine dropped) into
 ## vat_sheet_<name>.png and vat_diff_<name>.txt; `--version-dir=<v>` writes under build/shots/<v>/vat/. Every horde
 ## sheet also gives each state's largest vertex error (the shader's arithmetic on the CPU).
 ## v0.10.5 W3-V4c: `-- --kind=<name>` (needle, warden, arc_caster, bomb_drone; v0.11.0 O17c: stone_thrower) draws
@@ -41,6 +41,8 @@ const PLAN := [
 	["rise-in, half way", {}, "spawn"],
 	["biome cast + role glow", {"tint": Color(0.45, 0.65, 1.0, 0.5), "role": 0.45}, "idle"],
 	["reduced motion + flinch", {}, "calm"],
+	["walking", {}, "walk"],
+	["death, 75 %", {}, "death_late"],
 ]
 ## v0.10.5 W3-V4a: the Charger's states (build "hatchling": the Brood Mother's, at two thirds of the size).
 const CHARGER_PLAN := [
@@ -62,6 +64,7 @@ const CHARGER_PLAN := [
 	["reduced motion + windup", {}, "calm"],
 	["Hatchling, run", {"hatchling": true}, "run"],
 	["Hatchling, charge", {"hatchling": true}, "charge"],
+	["Hatchling, death 50 %", {"hatchling": true}, "death"],
 ]
 
 ## v0.10.5 W3-V4b: the other horde kinds by name (--kind=<name>).
@@ -71,7 +74,11 @@ const KINDS := {
 	"shield_bearer": WorldReader.KIND_SHIELD_BEARER,
 	"mender": WorldReader.KIND_MENDER,
 	"mine_layer": WorldReader.KIND_MINE_LAYER,
-	"sniper": WorldReader.KIND_SNIPER,
+	"dust_mite": WorldReader.KIND_DUST_MITE,
+	"ember_flea": WorldReader.KIND_EMBER_FLEA,
+	"ice_crab": WorldReader.KIND_ICE_CRAB,
+	"cave_bat": WorldReader.KIND_CAVE_BAT,
+	"star_mote": WorldReader.KIND_STAR_MOTE,
 }
 const CAST := {"tint": Color(0.45, 0.65, 1.0, 0.5), "role": 0.45}
 ## v0.10.5 W3-V4b: the other kinds' states (the Swarmer's: PLAN).
@@ -112,30 +119,31 @@ const KIND_PLANS := {
 		["biome cast + role glow", CAST, "idle"],
 		["reduced motion + flinch", {}, "calm"],
 	],
-	"mine_layer":
+	"critter_model":
 	[
 		["idle", {}, "idle"],
-		["windup 31 % (hopper lowers)", {}, "windup_early"],
-		["windup 90 %", {}, "windup_late"],
-		["mine dropped (active)", {}, "strike_snap"],
-		["active, 0.15 s", {}, "strike_out"],
-		["recovering (mine back)", {}, "strike_back"],
+		["idle, 1.3 s later", {}, "idle_late"],
+		["walking", {}, "walk"],
+		["death, 0.1 s in", {}, "death_early"],
+		["death, 0.3 s in", {}, "death_late"],
 		["flinch at its peak", {}, "flinch"],
-		["Blade knock", {}, "knock"],
 		["hit flash", {}, "flash"],
 		["status tint (burn)", {}, "tint"],
 		["rise-in, half way", {}, "spawn"],
 		["biome cast + role glow", CAST, "idle"],
 		["reduced motion + flinch", {}, "calm"],
 	],
-	"sniper":
+	"mine_layer":
 	[
 		["idle", {}, "idle"],
-		["windup 31 % (muzzle)", {}, "windup_early"],
-		["windup 90 % (flash)", {}, "windup_late"],
-		["shot (0.05 s)", {}, "strike_snap"],
-		["shot (0.15 s)", {}, "strike_out"],
-		["easing back", {}, "strike_back"],
+		["scuttling", {}, "walk"],
+		["windup 31 % (hopper tips, hatch opens)", {}, "windup_early"],
+		["windup 90 %", {}, "windup_late"],
+		["mine at the hatch (active)", {}, "strike_snap"],
+		["active, 0.15 s", {}, "strike_out"],
+		["recovering (mine back)", {}, "strike_back"],
+		["death, 0.1 s in", {}, "death_early"],
+		["death, 0.3 s in", {}, "death_late"],
 		["flinch at its peak", {}, "flinch"],
 		["Blade knock", {}, "knock"],
 		["hit flash", {}, "flash"],
@@ -158,17 +166,29 @@ const SOLO := {
 	"stone_thrower": WorldReader.KIND_STONE_THROWER,  # v0.11.0 O17c
 	"cinder_priest": WorldReader.KIND_CINDER_PRIEST,  # v0.11.0 O17d
 	"kiln_beetle": WorldReader.KIND_KILN_BEETLE,  # v0.11.0 O17e
+	"frost_spitter": WorldReader.KIND_FROST_SPITTER,
+	"wire_weaver": WorldReader.KIND_WIRE_WEAVER,
+	"glacier_turtle": WorldReader.KIND_GLACIER_TURTLE,
+	"gravity_node": WorldReader.KIND_GRAVITY_NODE,
+	"sniper": WorldReader.KIND_SNIPER,
+	"star_warper": WorldReader.KIND_STAR_WARPER,
 }
 const SOLO_FRAME := {
-	WorldReader.KIND_NEEDLE: [1.5, 0.4],
+	WorldReader.KIND_NEEDLE: [2.2, 0.5],
 	WorldReader.KIND_WARDEN: [2.6, 0.75],
-	WorldReader.KIND_ARC_CASTER: [1.9, 0.65],
+	WorldReader.KIND_ARC_CASTER: [2.6, 0.9],
 	WorldReader.KIND_BOMB_DRONE: [2.8, 1.1],
 	WorldReader.KIND_SCRAP_HOUND: [1.6, 0.3],
 	WorldReader.KIND_ROCK_LURKER: [2.0, 0.45],
 	WorldReader.KIND_STONE_THROWER: [3.0, 1.0],
 	WorldReader.KIND_CINDER_PRIEST: [2.6, 0.85],
 	WorldReader.KIND_KILN_BEETLE: [1.9, 0.3],
+	WorldReader.KIND_FROST_SPITTER: [2.0, 0.4],
+	WorldReader.KIND_WIRE_WEAVER: [2.0, 0.5],
+	WorldReader.KIND_GLACIER_TURTLE: [2.4, 0.45],
+	WorldReader.KIND_GRAVITY_NODE: [2.4, 1.2],
+	WorldReader.KIND_SNIPER: [2.8, 0.6],
+	WorldReader.KIND_STAR_WARPER: [2.2, 0.85],
 }
 const SOLO_PLAN := [
 	["idle (t 1.5 s)", {}, "idle"],
@@ -210,15 +230,18 @@ var _pairs: Array = []  # [label, live SubViewport, vat SubViewport]
 var _frame := 0
 var _kind := KIND
 var _suffix := ""
+## `--kind=hatchling`: the Charger's states, every one on the Hatchling.
+var _hatch := false
 
 
 func _initialize() -> void:
 	_dir = "res://build/shots/%s/vat/" % GameVersion.label()
 	var plan: Array = PLAN
 	for arg in OS.get_cmdline_user_args():
-		if arg == "--kind=charger":
+		if arg == "--kind=charger" or arg == "--kind=hatchling":
 			_kind = WorldReader.KIND_CHARGER
-			_suffix = "_charger"
+			_hatch = arg == "--kind=hatchling"
+			_suffix = "_hatchling" if _hatch else "_charger"
 			plan = CHARGER_PLAN
 		elif arg.begins_with("--kind=") and KINDS.has(arg.trim_prefix("--kind=")):
 			var kname := arg.trim_prefix("--kind=")
@@ -227,6 +250,8 @@ func _initialize() -> void:
 			match kname:
 				"splitter", "splitling", "shield_bearer":
 					plan = KIND_PLANS["melee_model"]
+				"dust_mite", "ember_flea", "ice_crab", "cave_bat", "star_mote":  # The critters' models
+					plan = KIND_PLANS["critter_model"]
 				_:
 					plan = KIND_PLANS[kname]
 		elif arg.begins_with("--kind=") and SOLO.has(arg.trim_prefix("--kind=")):  # v0.10.5 W3-V4c
@@ -378,14 +403,16 @@ func _avatar(vat: bool, build: Dictionary) -> AvatarBase:
 		s.role_glow = role
 		return s
 	if _kind == WorldReader.KIND_CHARGER:
-		var c := ChargerAvatar.new()
+		var hatch := _hatch or bool(build.get("hatchling", false))
+		var c := HatchlingAvatar.avatar_of(
+			WorldReader.KIND_HATCHLING if hatch else WorldReader.KIND_CHARGER
+		)
 		c.enemy_tint = tint
 		c.role_glow = role
 		c.vat = vat
-		var hatch := bool(build.get("hatchling", false))
 		c.setup(WorldReader.KIND_HATCHLING if hatch else WorldReader.KIND_CHARGER)
-		if hatch:
-			c.scale = Vector3.ONE * 0.66
+		if hatch and not (c as HatchlingAvatar).has_model:
+			c.scale = Vector3.ONE * HatchlingAvatar.FALLBACK_SCALE
 		return c
 	var a := HordeAvatar.new()
 	a.enemy_tint = tint
@@ -522,6 +549,10 @@ func _drive_charger(a: ChargerAvatar, steps: String) -> void:
 			a.show_hit(true, Color.WHITE, 1.6)
 		"tint":
 			a.show_hit(true, Color(1.0, 0.45, 0.1), 1.2)
+		"death":  # The Hatchling on its model falls
+			if a.has_method(&"die"):
+				a.call(&"die")
+			_run(a, 18)
 	ViewPrefs.reduced_motion = false
 
 
@@ -538,12 +569,18 @@ func _drive_solo(a: AvatarBase, steps: String) -> void:
 		{
 			WorldReader.KIND_NEEDLE: 3.2,
 			WorldReader.KIND_WARDEN: 1.6,
-			WorldReader.KIND_ARC_CASTER: 2.0,
+			WorldReader.KIND_ARC_CASTER: 3.0,
 			WorldReader.KIND_BOMB_DRONE: 2.5,
 			WorldReader.KIND_SCRAP_HOUND: 6.5,
 			WorldReader.KIND_ROCK_LURKER: 2.2,
 			WorldReader.KIND_STONE_THROWER: 1.8,
 			WorldReader.KIND_KILN_BEETLE: 1.2,
+			WorldReader.KIND_FROST_SPITTER: 2.6,
+			WorldReader.KIND_WIRE_WEAVER: 2.6,
+			WorldReader.KIND_GLACIER_TURTLE: 1.1,
+			WorldReader.KIND_GRAVITY_NODE: 0.1,
+			WorldReader.KIND_SNIPER: 2.6,
+			WorldReader.KIND_STAR_WARPER: 3.0,
 		}[_kind]
 		/ 60.0
 	)

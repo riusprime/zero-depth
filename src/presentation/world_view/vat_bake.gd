@@ -85,7 +85,7 @@ static func reference_of(kind: int, tint: Color, role_glow: float) -> AvatarBase
 	if SoloVat.is_solo(kind):  # The Needle, Warden, Arc Caster, Bomb Drone
 		return SoloVat.reference_of(kind, tint, role_glow)
 	if is_charger(kind):
-		var c := ChargerAvatar.new()
+		var c := HatchlingAvatar.avatar_of(kind)
 		c.enemy_tint = tint
 		c.role_glow = role_glow
 		c.setup(kind)
@@ -100,7 +100,7 @@ static func vat_avatar_of(kind: int) -> AvatarBase:
 	if SoloVat.is_solo(kind):  # v0.10.5 W3-V4c
 		return SoloVat.vat_avatar_of(kind)
 	if is_charger(kind):
-		var c := ChargerAvatar.new()
+		var c := HatchlingAvatar.avatar_of(kind)
 		c.vat = true
 		c.setup(kind)
 		return c
@@ -142,7 +142,7 @@ static func rig_of(avatar: Node3D) -> Dictionary:
 ## stance grid (drives 0, 1, 2: the windup raise, the strike, the crouch; at the clock 0, fully risen) and the gait
 ## grid (drive 3: the legs' phase over gait_period), each read from its nodes after HordeAvatar.pose_at.
 static func horde_rig(avatar: HordeAvatar) -> Dictionary:
-	if avatar.kind != WorldReader.KIND_SWARMER:  # The other horde kinds' (HordeVat)
+	if avatar.kind != WorldReader.KIND_SWARMER or avatar.has_model():  # HordeVat's general rig
 		return HordeVat.rig(avatar)
 	var js: Array = []
 	var index := {}
@@ -409,8 +409,6 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 	var uvs := PackedVector2Array()
 	for p: Dictionary in ps:
 		var look := surface_look(p["node"], p["surface"])
-		if HordeVat.alt_glow(avatar, p["node"]):  # The Sniper's muzzle (VatLooks' mode 3)
-			(look[0] as Array)[3] = 3.0
 		looks.append(look)
 		any_two = any_two or bool(look[2])
 	for i in ps.size():
@@ -562,7 +560,7 @@ static func drives_of(avatar: Node3D, pose: Dictionary) -> PackedFloat32Array:
 	if avatar.has_method(&"vat_drives"):
 		return avatar.call(&"vat_drives")
 	var h := avatar as HordeAvatar
-	if h.kind != WorldReader.KIND_SWARMER:  # The other horde kinds' (HordeVat)
+	if h.kind != WorldReader.KIND_SWARMER or h.has_model():  # HordeVat's general rig
 		return h.vat_grid_drives()
 	return PackedFloat32Array(
 		[

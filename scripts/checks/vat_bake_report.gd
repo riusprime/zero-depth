@@ -5,7 +5,7 @@ extends SceneTree
 ## freely, ChargerVat.sample) the real avatar is posed by its own code and every vertex compared,
 ## in metres, with the same vertex posed through the baked texture the way the shader samples it (VatVerify.eval_*,
 ## the shader's arithmetic on the CPU). Run twice: normal and reduced motion. Headless is fine (no renderer needed):
-##   APPDATA=<temp> godot --headless --path . -s scripts/checks/vat_bake_report.gd [-- --samples=4000]
+##   APPDATA=<temp> godot --headless --path . -s scripts/checks/vat_bake_report.gd [-- --samples=4000 --kinds=7,12]
 ## v0.10.5 W3-V4b: the horde kinds past the Swarmer are posed from every input their pose reads at once
 ## (HordeAvatar.pose_with over HordeVat.sample: the death, the walk, the heal, the tell too; VatVerify.pose_error_full).
 ## Writes build/vat/<sha>_bake.txt (never into docs) and prints it. The GPU's own sampling is checked by the
@@ -15,12 +15,17 @@ const OUT_DIR := "res://build/vat/"
 const SEED := 4404
 
 var _samples := 4000
+## The kinds reported (--kinds=<id>,<id>: only those; empty: every VAT kind).
+var _only: Array[int] = []
 
 
 func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--samples="):
 			_samples = int(a.trim_prefix("--samples="))
+		if a.begins_with("--kinds="):
+			for k in a.trim_prefix("--kinds=").split(","):
+				_only.append(int(k))
 	var sha := "nosha"
 	var git: Array = []
 	if OS.execute("git", ["rev-parse", "--short", "HEAD"], git) == 0 and git.size() > 0:
@@ -36,6 +41,8 @@ func _initialize() -> void:
 	lines.append("charger grids [[drive, samples, loops], ...]: %s" % [ChargerVat.GRIDS])
 	lines.append("other horde grids [stance, gait] by kind: %s" % [HordeVat.GRIDS])
 	for kind: int in VatCrowd.KINDS:
+		if not _only.is_empty() and not _only.has(kind):
+			continue
 		if VatCrowd.supports(kind):
 			lines.append_array(_report(kind))
 		else:
@@ -87,7 +94,9 @@ func _report(kind: int) -> PackedStringArray:
 	out.append("  bake ms (this machine, once a session): poses %.1f, mesh %.1f" % [t_pose, t_mesh])
 	for calm: bool in [false, true]:
 		ViewPrefs.reduced_motion = calm
-		var full := live is HordeAvatar and kind != WorldReader.KIND_SWARMER  # v0.10.5 W3-V4b
+		var full: bool = (
+			live is HordeAvatar and (kind != WorldReader.KIND_SWARMER or live.has_model())
+		)  # The horde kinds past the pilot (its code body)
 		var e := (
 			VatVerify.pose_error_full(
 				live as HordeAvatar, vat as HordeAvatar, pose, mesh, _samples, SEED

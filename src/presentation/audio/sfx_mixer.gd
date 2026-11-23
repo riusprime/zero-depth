@@ -29,9 +29,10 @@ func note_play(cue: AudioCueDefinition, now: float, seconds: float) -> void:
 ## Copies of cue `id` (or of a voice group's cues) still sounding at `now` (finished ones are forgotten).
 func active(id: StringName, now: float) -> int:
 	var ends: Array = _voices.get(id, [])
-	var live := ends.filter(func(t: float) -> bool: return t > now)
-	_voices[id] = live
-	return live.size()
+	for k in range(ends.size() - 1, -1, -1):
+		if float(ends[k]) <= now:
+			ends.remove_at(k)
+	return ends.size()
 
 
 func reset() -> void:

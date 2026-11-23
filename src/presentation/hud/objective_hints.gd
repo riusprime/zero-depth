@@ -2,31 +2,29 @@ class_name ObjectiveHints
 extends Control
 ## The boss hint. For each objective marker (WorldReader.objectives, set by boss code:
 ## World.objectives) whose reason the gate lets show (Main: MechanicHints, the first 2 runs that meet it, and Options
-## "Boss hints"), it draws, in the HUD's accent:
+## "Boss hints"), it draws, in the HUD's accent, an arrow and never a word (the owner: the player discovers a fight's
+## mechanics while playing, from arrows and glows; text would give the discovery away):
 ## - off screen: an arrow at the screen's edge, on the line from the screen's centre to the target, pointing at it;
-## - on screen: a soft ping ring on the target, widening and fading every PING_S;
-## and the reason's short line (LABELS, tr()) beside it. Reduced motion: the ring holds still and the arrow doesn't
-## bob. Never takes the mouse or an input; reads only (EI-07); its clock is the screen's, a look only (EI-03).
-## Hud owns it (synced each frame with the HUD).
+## - on screen: a small arrow bobbing above the target, pointing down at it.
+## Reduced motion: the arrows don't bob. Never takes the mouse or an input; reads only (EI-07); its clock is the
+## screen's, a look only (EI-03). Hud owns it (synced each frame with the HUD).
 
-## Each reason's line (a locale key). A reason without one shows its arrow or ping alone.
-const LABELS := {
-	WorldReader.OBJECTIVE_SHADE_LANTERN: "HINT_SHADE_LANTERN",
-	WorldReader.OBJECTIVE_TWINS_ACTIVE: "HINT_TWINS_ACTIVE",
-}
 ## A target this close to the screen's edge (px at 1080p) counts as off screen: the arrow sits this far in.
 const EDGE_PX := 64.0
 const REF_H := 1080.0
 const ARROW_PX := 22.0
-const RING_PX := 34.0
-const PING_S := 1.2
 const BOB_PX := 6.0
-const FONT_PX := 18
 const ARROW := &"arrow"
+## On screen (the arrow above the target).
 const PING := &"ping"
-## Reasons marked on screen by a small bobbing arrow above the target, pointing down (no ring, no text).
-const DOWN_ARROW: Array[StringName] = [WorldReader.OBJECTIVE_GATEKEEPER_PILLAR]
 const DOWN_GAP_PX := 54.0
+## A reason whose target carries something above it has its arrow that much higher
+## (an hour orb's clock; the violet Warden's 2.2 m and her ward's dome; a boulder's 1.1 m).
+const DOWN_GAPS := {
+	MechanicHints.JUDGE_ORB: 132.0,
+	MechanicHints.TWINS_WARD: 150.0,
+	MechanicHints.SIEGE_BOULDER: 84.0,
+}
 
 ## reason -> bool: whether that reason's hint shows (unset: none shows).
 var gate: Callable
@@ -76,11 +74,6 @@ func showing(reason: StringName, mode: StringName = &"") -> bool:
 	return false
 
 
-## The reason's line as shown (tr()), "" when it has none.
-func line(reason: StringName) -> String:
-	return tr(LABELS[reason]) if LABELS.has(reason) else ""
-
-
 ## Where the ray from `inner`'s centre to `target` leaves `inner` (the arrow's place).
 static func edge_point(inner: Rect2, target: Vector2) -> Vector2:
 	var c := inner.get_center()
@@ -124,56 +117,18 @@ func _to_screen(sim: Vector2, screen: Rect2) -> Vector2:
 func _draw() -> void:
 	var k := _k(_screen())
 	var c := HudStyle.accent()
-	var f := HudStyle.font(true)
-	var fs := roundi(FONT_PX * k)
+	var bob := 0.0 if HudStyle.reduced_motion else BOB_PX * k * (0.5 + 0.5 * sin(_t * TAU))
 	for m in _marks:
 		var at: Vector2 = m["at"]
-		var label_at := at
-		if m["mode"] == PING and m["reason"] in DOWN_ARROW:
-			var bob_y := (
-				0.0 if HudStyle.reduced_motion else BOB_PX * k * (0.5 + 0.5 * sin(_t * TAU))
-			)
-			var tip_d := at + Vector2(0, -DOWN_GAP_PX * k + bob_y)
-			var back_d := tip_d + Vector2.UP * ARROW_PX * k
-			var side_d := Vector2.RIGHT * ARROW_PX * k * 0.6
-			draw_colored_polygon(
-				PackedVector2Array(
-					[
-						tip_d,
-						back_d + side_d,
-						back_d + Vector2.UP * ARROW_PX * k * 0.3,
-						back_d - side_d
-					]
-				),
-				Color(c, 0.92)
-			)
-			continue
+		var dir: Vector2 = m["dir"]
+		var tip := at + dir * bob
 		if m["mode"] == PING:
-			var phase := 0.0 if HudStyle.reduced_motion else fmod(_t, PING_S) / PING_S
-			var r := RING_PX * k * (0.6 + 0.6 * phase)
-			var a := 0.85 if HudStyle.reduced_motion else 0.9 * (1.0 - phase)
-			draw_arc(at, r, 0.0, TAU, 48, Color(c, a), 3.0 * k, true)
-			draw_arc(at, RING_PX * k * 0.45, 0.0, TAU, 32, Color(c, 0.55), 2.0 * k, true)
-			label_at = at + Vector2(0, -RING_PX * k * 1.3)
-		else:
-			var dir: Vector2 = m["dir"]
-			var bob := 0.0 if HudStyle.reduced_motion else BOB_PX * k * (0.5 + 0.5 * sin(_t * TAU))
-			var tip := at + dir * bob
-			var side := dir.orthogonal() * ARROW_PX * k * 0.6
-			var back := tip - dir * ARROW_PX * k
-			draw_colored_polygon(
-				PackedVector2Array(
-					[tip, back + side, back - dir * ARROW_PX * k * -0.3, back - side]
-				),
-				Color(c, 0.92)
-			)
-			label_at = at - dir * ARROW_PX * k * 2.2
-		var text := line(m["reason"])
-		if text == "":
-			continue
-		var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		var scr := _screen().size
-		var p := Vector2(clampf(label_at.x - w * 0.5, 8.0, scr.x - w - 8.0), label_at.y)
-		p.y = clampf(p.y, fs + 8.0, scr.y - 8.0)
-		draw_string_outline(f, p, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.7))
-		draw_string(f, p, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HudStyle.text_color())
+			var gap: float = DOWN_GAPS.get(m["reason"], DOWN_GAP_PX)
+			dir = Vector2.DOWN
+			tip = at + Vector2(0, -gap * k + bob)
+		var side := dir.orthogonal() * ARROW_PX * k * 0.6
+		var back := tip - dir * ARROW_PX * k
+		draw_colored_polygon(
+			PackedVector2Array([tip, back + side, back + dir * ARROW_PX * k * 0.3, back - side]),
+			Color(c, 0.92)
+		)

@@ -1,5 +1,5 @@
 class_name AltarStage
-extends Node3D
+extends RaisedGround
 ## v0.9.0 SA (owner C §2: "Replace the current starting portal/platform with a substantially larger, fully modeled 3D
 ## altar … Circular stone platform, approximately 3 times larger … Three or four stone steps … Floating or carved
 ## arcane runes arranged around the altar. Glowing blue symbols, with optional small crystals or jewels around the
@@ -170,9 +170,8 @@ func setup(sim_pos: Vector2) -> void:
 	pose(progress, share)
 
 
-## The height (m) of the altar's surface
-## under the floor point `at` (the altar's parent's frame), 0 off it. The sim has no height (ROADMAP §6), so
-## ActorViews draws whoever stands here on the stone instead of sunk into it (presentation only).
+## The height (m) of the altar's surface under the floor point `at` (the altar's parent's frame), 0 off it
+## (RaisedGround).
 func height_at(at: Vector3) -> float:
 	var d := Vector2(at.x - position.x, at.z - position.z).length()
 	if uses_model:

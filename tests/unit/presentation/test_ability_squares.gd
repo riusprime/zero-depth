@@ -154,6 +154,32 @@ func test_the_glyph_follows_the_last_device_used() -> void:
 	assert_eq(AbilitySquares.PS_NAMES["LT"], "L2")
 
 
+func test_the_glyph_follows_a_rebind_and_the_language() -> void:
+	var s := _squares()
+	var r := WorldReader.new(_world(&"gun", true))
+	s.pad_active = false
+	s.sync(r)
+	assert_eq(s.slot_of(&"skill")["glyph"], "Q")
+	var profile := ProfileStore.new()
+	InputRebind.rebind(profile, &"skill", [&"key", KEY_E])
+	s.sync(r)
+	assert_eq(s.slot_of(&"skill")["glyph"], "E", "a remap shows on the next sync")
+	assert_eq(s.slot_of(&"skill")["glyph"], AbilitySquares.glyph_text(&"skill", false))
+	InputDefaults.apply()
+	s.sync(r)
+	assert_eq(s.slot_of(&"skill")["glyph"], "Q", "and the default back")
+	var was := TranslationServer.get_locale()
+	for locale: String in ["es", "en"]:
+		TranslationServer.set_locale(locale)
+		s.sync(r)
+		assert_eq(
+			s.slot_of(&"attack")["glyph"],
+			AbilitySquares.glyph_text(&"shoot", false),
+			"the mouse button's name in %s" % locale
+		)
+	TranslationServer.set_locale(was)
+
+
 func _pad_button() -> InputEventJoypadButton:
 	var b := InputEventJoypadButton.new()
 	b.button_index = JOY_BUTTON_A

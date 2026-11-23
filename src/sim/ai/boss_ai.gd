@@ -79,12 +79,11 @@ static func think(w: World, i: int) -> void:
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
 	if a.state[i] != GATE and a.state[i] != FinalBoss.SHATTER and a.dead[i] == 0:
-		if t.interphase != null and BossInterphase.think(w, i, b, t):
-			return  # The Fallen is vanished, or vanishes now
 		_update_phase(w, i, b, t)  # A boss killed between ticks opens no gate (FB1: nor a shattering one)
 	BossChallenge.think(w, i, b, t)
 	if t.mimic and w.final_fight != null:  # The build read, a dash due, the stance's clock
 		BossNemesis.think(w, i, t)
+		BossRemembered.think(w, i)  # A remembered mechanic due or running holds its own attacks
 	BossJudge.record(w, i, t)  # The Clockwork Judge keeps your last 3 s for its echo
 	var to_player := w.player_pos() - a.pos(i)
 	var aim := Kin.angle_of(to_player)
@@ -98,8 +97,6 @@ static func think(w: World, i: int) -> void:
 			BossGates.advance(w, i, b)
 		FinalBoss.SHATTER:
 			pass  # FinalBoss runs the shatter (tick phase 9)
-		BossInterphase.STATE:
-			pass  # BossInterphase runs the interphase (tick phase 6)
 		STAGGERED:  # The sim never enters it now; a save made before it (and the tests' hold) runs out
 			bs.stagger_t[b] -= 1
 			if bs.stagger_t[b] <= 0:
@@ -144,7 +141,7 @@ static func think(w: World, i: int) -> void:
 				BossColossus.chase_think(w, i, b, atk, a.state_t[i])
 			elif BossNemesis.is_move(atk.move):  # Its swing, lines and card follow, then lock
 				BossNemesis.think_attack(w, i, b, atk, a.state_t[i])
-			elif atk.move == M.CHAIN_SWEEP:  # The chain's line follows, then locks
+			elif atk.move == M.CHAIN_SWEEP:  # The Sword Lane's line follows, then locks
 				BossTwin.track_sweep(w, i, atk)
 			elif atk.move == M.CROSSFIRE:  # The lines follow you, then hold
 				BossTwin.track_crossfire(w, i, atk)
@@ -296,7 +293,7 @@ static func _choose(w: World, i: int, b: int, t: BossTable, dist: float) -> int:
 			continue
 		if atk.move == M.BROOD and _alive_of(w, atk.enemy_kind) >= atk.max_alive:
 			continue
-		if BossTide.on_cadence(t, atk) or not BossGreatJavelin.may_use(w, i, atk):  # NB1; O5: moveset, F9: one out
+		if BossTide.on_cadence(t, atk) or not BossLens.may_use(w, i, atk):  # Cadence; javelin; cover; Lattice
 			continue
 		if t.mimic and not BossNemesis.allowed(w, atk):  # The run's weapon, the cards held
 			continue
@@ -476,9 +473,9 @@ static func move(w: World, i: int) -> void:
 	if BossPrism.floats(w, i):  # The Prism floats home, whatever she does
 		BossPrism.drift(w, i, slow)
 		return
-	if BossNemesis.moves(w, i, slow):  # Its dash, its stance, its combo's steps in
+	if BossNemesis.moves(w, i, slow) or BossMaelstrom.holds(w, i, slow):  # Their own steps, or none
 		return
-	if BossTwin.moves(w, i, slow):  # The pair's own steps (anger, the flank, the chain's length)
+	if BossTwin.moves(w, i, slow):  # The pair's own steps (anger, the flank, the dash, the rifts)
 		return
 	match a.state[i]:
 		S.MOVE:
@@ -532,8 +529,8 @@ static func move(w: World, i: int) -> void:
 
 ## True while the boss is in the air (a leap) or underground (a burrow): walls and bodies don't stop it.
 static func passes_through(w: World, i: int) -> bool:
-	if is_boss_kind(w.actors.kinds[i]) and w.actors.state[i] == BossInterphase.STATE:
-		return true  # Vanished, it is nowhere the hero can be shoved by
+	if is_boss_kind(w.actors.kinds[i]) and hidden(w, i):
+		return true  # Vanished or underground, it is nowhere the hero can be shoved by
 	if not is_boss_kind(w.actors.kinds[i]) or w.actors.state[i] != S.ACTIVE:
 		return false
 	var atk := attack_of(w, i)
@@ -546,8 +543,8 @@ static func passes_through(w: World, i: int) -> bool:
 
 ## Underground (a burrow before it erupts): the view hides the body.
 static func hidden(w: World, i: int) -> bool:
-	if w.actors.state[i] == BossInterphase.STATE:
-		return true  # The Fallen is vanished
+	if BossRift.inside(w, i):
+		return true  # The amber Warden is in the rifts
 	var atk := attack_of(w, i)
 	return (
 		atk != null
@@ -563,7 +560,7 @@ static func hidden(w: World, i: int) -> bool:
 static func resolve(w: World, i: int) -> void:
 	var a := w.actors
 	BossChallenge.resolve_arena(w, i)  # BX: the closing band.
-	if BossTwin.resolve(w, i):  # The chain's burn; Crossfire's fans, the Chain Sweep's lash
+	if BossTwin.resolve(w, i):  # The ward's break; Crossfire's fans, the Sword Lane's cut
 		return
 	if a.state[i] != S.ACTIVE or w.player_dead():
 		return
@@ -575,7 +572,7 @@ static func resolve(w: World, i: int) -> void:
 	match atk.move:
 		M.SLAM_RING, M.PULL:
 			var r := ring_of(w, i)
-			if st == 0 and AttackShapes.ring_touches(r[0], r[1], r[2], p, pr):
+			if st == 0 and BossSiege.ring_hits(w, i, atk, r, p, pr):  # The cover rule decides from its phase
 				hit_player(w, i, atk, SimEvent.TAG_AREA, r[0])
 		M.LANES:
 			if st < atk.active_ticks:
@@ -643,7 +640,7 @@ static func resolve(w: World, i: int) -> void:
 			BossDodge.resolve_pattern(w, i, b, atk, st)
 		M.TIDE:  # The Tide Rings, only in the pull
 			BossTide.resolve(w, i, b, atk, st)
-		M.ECHO, M.VERDICT:  # The echo's ghost strikes, the Verdict's pendulum
+		M.ECHO, M.VERDICT, M.TIME_WAVE:  # The Judge's ghost strikes, pendulum and Time Wave
 			BossJudge.resolve(w, i, b, atk, st)
 		M.MARKS, M.ROW_LANES:  # Each marker strikes once, where it locked
 			BossDodge.resolve_marks(w, i, b, atk, st)
@@ -727,8 +724,7 @@ static func hit_player(w: World, i: int, atk: BossAttackTable, tags: int, from: 
 
 ## [center, inner, outer] of a spike ring.
 static func ring_of(w: World, i: int) -> Array:
-	var atk := attack_of(w, i)
-	return [Vector2(w.actors.lock_x[i], w.actors.lock_y[i]), atk.inner_radius_m, atk.radius_m]
+	return BossSiege.ring(w, i, attack_of(w, i))  # Its inner radius 0 under the cover rule
 
 
 ## Lane k's angle in a fan of `count` centred on `aim`.
@@ -872,7 +868,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return BossColossus.spikes_telegraph(w, i, b, atk)
 	if BossNemesis.is_move(atk.move):  # A swing, a volley's lines, a card's parts
 		return BossNemesis.telegraph(w, i, b, atk)
-	if BossTwin.is_move(atk.move):  # The lash's lane (tracked, locked); Crossfire's off the ground
+	if BossTwin.is_move(atk.move):  # The Sword Lane, the combo, the swords; their casts off the ground
 		return BossTwin.telegraph(w, i, atk, progress)
 	if BossJudge.is_move(atk.move):  # The Verdict's square (tracked, locked); the echo's off the ground
 		return BossJudge.telegraph(w, i, atk, progress)
@@ -904,7 +900,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 				"reach": c[4]
 			}
 		M.CHARGE:
-			out = {"shape": &"lane", "obb": EnemyAi.charge_lane(w, i)}
+			out = BossChargeBurst.telegraph(w, i, atk)  # Its lane, and its burst's circle
 		M.LEAP:
 			var d := leap_disc(w, i)
 			out = {"shape": &"disc", "center": d[0], "radius": d[1]}

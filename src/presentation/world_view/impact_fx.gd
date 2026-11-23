@@ -72,7 +72,7 @@ var merged := 0
 var dropped := 0
 var last_pieces := 0
 ## Live impacts: [hit point (Vector3), direction (Vector3, unit, flat), far side (Vector3), colour, start tick,
-## strength, kind, seed].
+## strength, kind, seed, element kind], and once drawn its flight (_flight).
 var _live: Array = []
 var _seed := 0
 ## The player's bolts at the last sync: id -> [velocity, spec key]; the frame before's while this one is built.
@@ -254,12 +254,17 @@ func _draw_one(layer: VfxCore, imp: Array, u: float, dn: float) -> int:
 	var s: float = imp[5]
 	var kind: int = imp[6]
 	var sd: int = imp[7]
-	var side := Vector3.UP.cross(d).normalized()
-	var hot := Color(c.lerp(Color.WHITE, 0.45) * 2.4, 1.0)
 	var t := 1.0 - (1.0 - u) * (1.0 - u)  # out fast, slowing
 	var n := 0
 	if kind == SLASH:
 		return _draw_slash(layer, imp, u, dn)
+	var n_sparks := maxi(1, int(round(SPARKS * s * dn)))
+	var n_spray := maxi(1, int(round(SPRAY * s * dn))) if kind != OTHER else 0
+	var fl := _flight(imp, n_sparks, n_spray)
+	var side: Vector3 = fl[1]
+	var hot: Color = fl[2]
+	var sparks: PackedVector3Array = fl[3]
+	var spray: PackedVector3Array = fl[4]
 	var fx: StringName = imp[8] if imp.size() > 8 else &""
 	# A bolt's flash, element extra and puff are the pack's hit (heavy: impact) scene.
 	var packed := PACK_HITS and kind == BOLT and HitPack.hit(layer, fx, at, u, sd, s)
@@ -269,25 +274,27 @@ func _draw_one(layer: VfxCore, imp: Array, u: float, dn: float) -> int:
 		if layer.sprite(&"spark", at, 0.8 * s * (0.8 + 0.6 * u), Color(hot, f), sd % 4, 0.0):
 			n += 1
 	# Sparks back out of the hit point (toward the shooter and to the sides).
-	for j in maxi(1, int(round(SPARKS * s * dn))):
-		var a := (VfxCore.h(sd, j) - 0.5) * 2.4
-		var v := (
-			(-d * 0.55 + side * sin(a) + Vector3(0, 0.25 + 0.6 * VfxCore.h(sd + 1, j), 0))
-			. normalized()
-		)
-		var reach := s * (0.45 + 0.5 * VfxCore.h(sd + 2, j))
-		var p := at + v * reach * t + Vector3(0, -0.5 * u * u, 0)
-		var tail := at + v * reach * maxf(0.0, t - 0.18)
-		if layer.streak(&"spark", tail, p, 0.08 * s, Color(hot, 1.0 - u), j % 4):
+	var drop := Vector3(0, -0.5 * u * u, 0)
+	var back := maxf(0.0, t - 0.18)
+	var spark_c := Color(hot, 1.0 - u)
+	for j in n_sparks:
+		var vr := sparks[j]
+		if layer.streak(&"spark", at + vr * back, at + vr * t + drop, 0.08 * s, spark_c, j % 4):
 			n += 1
 	if kind == OTHER:
 		return n
-	# The spray out of the far side, along the hit.
-	for j in maxi(1, int(round(SPRAY * s * dn))):
-		var p := spray_at(imp, j, u)
-		var tail := spray_at(imp, j, maxf(0.0, u - 0.2))
-		var w := 0.11 * s * (1.0 - 0.5 * u)
-		if layer.streak(&"spark", tail, p, w, Color(hot, (1.0 - u) * (1.0 - u * 0.3)), (j + 1) % 4):
+	# The spray out of the far side, along the hit (spray_at's sums, its flight read from the cache).
+	var u0 := maxf(0.0, u - 0.2)
+	var t0 := 1.0 - (1.0 - u0) * (1.0 - u0)
+	var drop0 := Vector3(0, -0.7 * u0 * u0, 0)
+	drop = Vector3(0, -0.7 * u * u, 0)
+	var w := 0.11 * s * (1.0 - 0.5 * u)
+	var spray_c := Color(hot, (1.0 - u) * (1.0 - u * 0.3))
+	for j in n_spray:
+		var vr := spray[j]
+		if layer.streak(
+			&"spark", far + vr * t0 + drop0, far + vr * t + drop, w, spray_c, (j + 1) % 4
+		):
 			n += 1
 	if kind != BOLT:
 		return n
@@ -320,20 +327,63 @@ func _draw_one(layer: VfxCore, imp: Array, u: float, dn: float) -> int:
 	return n
 
 
+## Impact `imp`'s flight, worked out once (again when a merge makes it stronger) instead of every frame:
+## [strength, side, hot colour, each spark's way out times its reach, each spray piece's]; at least `n_sparks` and
+## `n_spray` of them. The same sums as the per-frame ones (spray_at), so the pieces land on the same spots.
+func _flight(imp: Array, n_sparks: int, n_spray: int) -> Array:
+	var s: float = imp[5]
+	var fl: Array = imp[9] if imp.size() > 9 else []
+	if fl.is_empty() or float(fl[0]) != s:
+		var c: Color = imp[3]
+		var side0 := Vector3.UP.cross(imp[1] as Vector3).normalized()
+		fl = [
+			s,
+			side0,
+			Color(c.lerp(Color.WHITE, 0.45) * 2.4, 1.0),
+			PackedVector3Array(),
+			PackedVector3Array()
+		]
+		if imp.size() > 9:
+			imp[9] = fl
+		else:
+			imp.append(fl)
+	var d: Vector3 = imp[1]
+	var side: Vector3 = fl[1]
+	var sd: int = imp[7]
+	var sparks: PackedVector3Array = fl[3]
+	if sparks.size() < n_sparks:
+		for j in range(sparks.size(), n_sparks):
+			var a := (VfxCore.h(sd, j) - 0.5) * 2.4
+			var v := (
+				(-d * 0.55 + side * sin(a) + Vector3(0, 0.25 + 0.6 * VfxCore.h(sd + 1, j), 0))
+				. normalized()
+			)
+			sparks.append(v * (s * (0.45 + 0.5 * VfxCore.h(sd + 2, j))))
+		fl[3] = sparks
+	var spray: PackedVector3Array = fl[4]
+	if spray.size() < n_spray:
+		for j in range(spray.size(), n_spray):
+			spray.append(_spray_way(d, side, s, sd, j))
+		fl[4] = spray
+	return fl
+
+
+## Spray piece j's way out of the far side times its reach (spray_at's flight).
+static func _spray_way(d: Vector3, side: Vector3, s: float, sd: int, j: int) -> Vector3:
+	var spread := (VfxCore.h(sd + 3, j) - 0.5) * 0.9
+	var lift := 0.45 * VfxCore.h(sd + 4, j)
+	var v := (d + side * spread + Vector3(0, lift, 0)).normalized()
+	return v * (s * (1.0 + 1.2 * VfxCore.h(sd + 5, j)))
+
+
 ## Where spray piece j of impact `imp` is at u (0..1) through its life: out of the far side along the hit, spread a
 ## little to the sides and up, dropping as it slows.
 static func spray_at(imp: Array, j: int, u: float) -> Vector3:
 	var d: Vector3 = imp[1]
-	var far: Vector3 = imp[2]
-	var s: float = imp[5]
-	var sd: int = imp[7]
 	var side := Vector3.UP.cross(d).normalized()
 	var t := 1.0 - (1.0 - u) * (1.0 - u)
-	var spread := (VfxCore.h(sd + 3, j) - 0.5) * 0.9
-	var lift := 0.45 * VfxCore.h(sd + 4, j)
-	var v := (d + side * spread + Vector3(0, lift, 0)).normalized()
-	var reach := s * (1.0 + 1.2 * VfxCore.h(sd + 5, j))
-	return far + v * reach * t + Vector3(0, -0.7 * u * u, 0)
+	var way := _spray_way(d, side, float(imp[5]), int(imp[7]), j)
+	return (imp[2] as Vector3) + way * t + Vector3(0, -0.7 * u * u, 0)
 
 
 ## One slash impact at u (0..1), `dn` its density: a cut flash along the slash (a bright streak drawn out

@@ -130,6 +130,9 @@ var charge_area: MagicArea = null
 var _circles_alive := 0
 var _circle: MeshInstance3D
 var _circle_mat: ShaderMaterial
+## The circle's motes and motion as last written (-1: not yet).
+var _motes_set := -1
+var _motion_set := -1.0
 var _burst_nodes: Array[MeshInstance3D] = []
 var _burst_mat: Array[ShaderMaterial] = []
 ## Each live burst: [pos (Vector2), tick (float), look, radius (m)].
@@ -205,8 +208,12 @@ func sync(reader: WorldReader) -> void:
 	_form.refresh(reader)  # v0.9.0 VX V48: once per build
 	look = _form.look
 	var motes := 4 if ViewPrefs.effects_density == "low" else 8  # V47
-	_circle_mat.set_shader_parameter(&"motes_n", motes)
-	_circle_mat.set_shader_parameter(&"motion", 0.0 if ViewPrefs.reduced_motion else 1.0)
+	var motion := 0.0 if ViewPrefs.reduced_motion else 1.0
+	if motes != _motes_set or motion != _motion_set:  # (a written parameter re-uploads the material)
+		_motes_set = motes
+		_motion_set = motion
+		_circle_mat.set_shader_parameter(&"motes_n", motes)
+		_circle_mat.set_shader_parameter(&"motion", motion)
 	var orb := reader.lance_orb() if not reader.player_dead() else {}
 	charge = reader.lance_charge() if not orb.is_empty() else 0.0
 	circle = not orb.is_empty()

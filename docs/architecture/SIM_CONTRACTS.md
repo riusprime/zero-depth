@@ -303,7 +303,7 @@ Every gameplay consequence is a `SimEvent`:
 |---|---|---|
 | `seq` | int | Global sequence number in this `World`, monotonic |
 | `tick` | int | Tick it happened on |
-| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0; v0.3.0 E: also a card taken from an altar or chest), `COMBO_UNLOCKED` (v0.3.0 G), `BOSS_DEFEATED` (v0.3.0 C: once per boss, after its `KILL`; `amount` = its boss table index) and `SHARDS` (v0.3.0 E: a kill paid `amount` shards at `pos`), …, then (v0.3.5 K) `SKILL_USED` (the build skill started; `amount` = `SkillTable.Kind`, `root_id` = the skill's root, which all its hits share), `VENT` (the Vent button vented `amount` heat) and `VENT_COLD` (the Vent button under Hot: nothing vented). Then (v0.5.0 SH) `SHOP_BUY` (shards spent at the shop: `amount` = the price, `effect_id` = the card's id or `shop_heal` / `shop_reroll`; a bought card also emits `PICKUP` from the terminal, the heal a `HEAL` with `effect_id` `shop_heal`) and `SHOP_SALVAGE` (shards back: `amount` = the refund, `effect_id` = what was sold, `target_id` = its card code). The first nine were declared in v0.0.1, even though early versions emit only some kinds. v0.8.0 RM appends `REMNANT_SPAWN`, `REMNANT_ACTIVATE` and `REMNANT_END` (§8l). New kinds are appended, never inserted, because kinds are hashed |
+| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0; v0.3.0 E: also a card taken from an altar or chest), `COMBO_UNLOCKED` (v0.3.0 G), `BOSS_DEFEATED` (v0.3.0 C: once per boss, after its `KILL`; `amount` = its boss table index) and `SHARDS` (v0.3.0 E: a kill paid `amount` shards at `pos`), …, then (v0.3.5 K) `SKILL_USED` (the build skill started; `amount` = `SkillTable.Kind`, `root_id` = the skill's root, which all its hits share), `VENT` (the Vent button vented `amount` heat) and `VENT_COLD` (the Vent button under Hot: nothing vented). Then (v0.5.0 SH) `SHOP_BUY` (shards spent at the shop: `amount` = the price, `effect_id` = the card's id or `shop_heal` / `shop_reroll`; a bought card also emits `PICKUP` from the terminal, the heal a `HEAL` with `effect_id` `shop_heal`) and `SHOP_SALVAGE` (shards back: `amount` = the refund, `effect_id` = what was sold, `target_id` = its card code). The first nine were declared in v0.0.1, even though early versions emit only some kinds. v0.8.0 RM appends `REMNANT_SPAWN`, `REMNANT_ACTIVATE` and `REMNANT_END` (§8l). v0.12.0 appends `BOSS_PICKUP_SPAWN`, `BOSS_PICKUP_TAKEN` and `BOSS_PICKUP_END` (§10n). New kinds are appended, never inserted, because kinds are hashed |
 | `root_id` | int | The chain this event belongs to. A player action, an enemy attack or a status tick opens a new root |
 | `parent_seq` | int | The event that caused this one (−1 for a root) |
 | `depth` | int | 0 for a root; parent depth + 1 otherwise |
@@ -1586,6 +1586,17 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   projectile). After recovering it walks at 1.5x speed to a spot 45-90 deg around the player (the side and angle
   from `rng_enemy`) in the middle of its band (`pick` = 1), and shoots again only once there (within 0.5 m) or after
   150 ticks.
+- **Gravity Node** (Starfall's signature, `StarfallKinds`; v0.12.0 step 19, owner F24 "Slight pull on you"). It holds
+  its spot, never attacks and floats. Every projectile within `pull_radius_m` turns toward it (`bend`, speed kept;
+  the Needle's telegraph walks the same rule). And the hero within `hero_pull_radius_m` (5 m) drifts toward it
+  (`hero_drift`, tick phase 5, added to the walk's step before the walls resolve): `hero_pull` × (1 − d / reach) at
+  distance d, so 2.1 m/s (35 % of the base walk) at its centre and nothing at the reach; it stops
+  `BossTide.BODY_GAP_M` short of the node's body. Several nodes' drifts sum, and the sum is held to the strongest
+  node's `hero_pull` and to `HERO_WALK_SHARE` (450 ‰) of the hero's run speed now (`BossTide.run_speed`), so
+  walking out always gains ground, slowed or not. No drift while the hero dashes or moves by a skill (the dash flies
+  its own line), is dead, or while the world holds (the arrival, the portal); none from a node still spawning in or
+  dead. `WorldReader.gravity_hero_pull` (0..1, the same `hero_pull_of`) is the view's read: the faint ring of its
+  reach and the core's draw show only while the hero is inside. Float math with + − × ÷ and `Kin.length` only.
 
 ## 10d. Dodge-first boss fights (v0.7.5 BF1; owner N15, [`BOSS_FIGHTS.md`](../design/BOSS_FIGHTS.md))
 
@@ -1700,10 +1711,10 @@ Starting values in `data/bullet_patterns` (CONTENT_SCHEMA §3); `EnemyAi` holds 
 
 Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; all in the F10 Bosses page);
 `BossSignatures` holds the rules. Pure: no stream is drawn.
-- **S1, the Gatekeeper's pillars.** The tick after marker k of a `row_lanes` attack with `pillar_ticks` struck (tick
-  phase 6; so the strike's own lanes, drawn and hit on its tick, are never cut by its pillars; the attack stays
-  active a tick longer for its last cross), pillars (squares `pillar_m` a side, axis-aligned) rise along its two lanes every `pillar_step_m` out
-  from the crossing each way (the crossing stays open), as far as each lane ran. A pillar rises only where it touches
+- **S1, the Gatekeeper's pillars.** The tick after the lanes of marker k of a `row_lanes` attack with `pillar_ticks` ran out (tick
+  phase 6; so the strike's own lanes, drawn and hit while they rise, are never cut by its pillars; the attack stays
+  active a tick longer for its last volley), pillars (squares `pillar_m` a side, axis-aligned) rise along its lanes every
+  `pillar_step_m` out from the boss's edge, as far as each lane ran. A pillar rises only where it touches
   no living body (plus `BODY_MARGIN_M` 0.3) and keeps 2 × the player's radius + `PASS_SLACK_M` (0.15) from every
   wall, the door and every other pillar (`BossSignatures.fits`: the corners of both boxes and the inscribed circle).
   So each pillar is an island in the hero's free space: it never splits it, never closes a way, never seals anyone
@@ -1915,7 +1926,7 @@ below) and FB3's cap of a fifth of max HP (D36).
   `FinalPace.cap_hit`: owner 0 (the world's own hit) passes; else, in a mimic window, `× nerf_permille`; then
   `min(amount, pace_budget / 1000)`, paid from the bucket. The meter (§10g `note_damage`) still records the hit's
   damage before the clamp.
-- **The Fallen's windows (`BossTable.window_ticks` > 0).** `u = tick − phase_tick − boss_intro_ticks −
+- **The Fallen's windows (`BossTable.window_ticks` > 0).** `u = tick − phase_tick − fl_delay (§10t) − boss_intro_ticks −
   window_first_ticks + window_warn_ticks`; OFF for u < 0; else `c = u mod window_every_ticks`: WARN for c <
   `window_warn_ticks`, ON for c < warn + `window_ticks`, else OFF; OFF while shattering, rising, dead or won. No state
   of its own (a function of the tick and the rise). One `STATUS_APPLY` on the tick each state begins (`fallen_warn`,
@@ -1967,9 +1978,9 @@ below) and FB3's cap of a fifth of max HP (D36).
   both boss kinds (`BossTwin.is_twin_kind`). Floor 4's pool holds the Tidecaller and the Wardens (`twin_wardens`,
   `save_order` 2: compiled after the Tidecaller, every saved boss index unchanged).
 - **Two linked actors (`BossTwin`).** `World.spawn_boss` makes the boss; `BossTwin.on_spawn` adds its twin
-  (`BossTable.twin_kind`) `twin_m` to the side (the first clear side, at least `chain_min_m` away) with the boss's HP,
+  (`BossTable.twin_kind`) `twin_m` to the side (the first clear side, at least 0.6 of it away) with the boss's HP,
   max HP, `power`, intro invulnerability and freeze immunity, a `BossStore` entry of the same table, and the pair in
-  `BossStore.twin_*` (`twin_lead`, `twin_body`, `twin_angry`, `twin_anger_t`, `twin_burn_cd`; hashed after a `-3`
+  `BossStore.twin_*` (`twin_lead`, `twin_body`, `twin_angry`, `twin_anger_t`; hashed after a `-3`
   sentinel only while non-empty; `WorldSnapshot.ADDED_SINCE_V05`). Each body runs the boss framework (windup, markers,
   shield, its own stagger meter); the boss is the bar (`WorldReader.boss_index`, the first live boss), `World.boss_id`,
   the codex's fight, the only `BOSS_DEFEATED`, reward, kill count and legendary core (`BossTwin.leaves` in
@@ -1981,33 +1992,27 @@ below) and FB3's cap of a fifth of max HP (D36).
 - **One mind.** The twin never picks (`BossTwin.think` returns early for it in MOVE, turning it to the player); when
   the boss starts attack k (`BossAi.start_attack` → `on_start`) the twin starts k the same tick if it is in MOVE.
 - **Steps (`BossTwin.moves`, phase 5).** The boss pursues as any boss; the twin walks to its flank, `flank_m` from the
-  player at a right angle from its boss on its own side; each × `anger_permille` / 1000 while angry; in a Chain Sweep
-  the twin swings to the line's end at `SWING_MULT` (4) × its speed. **Chain length (`_tether`)**, after the steps
-  and again in phase 6 (after walls and bodies push): the twin is put at `clamp(d, chain_min_m, chain_max_m)` along the
-  line from its boss; if a wall stands there the boss gives way along the line instead, else both share the move.
-- **The chain's burn (phase 6, the boss's resolve).** A player whose centre is within `player.radius_m +
-  chain_half_m` of the segment between the two centres takes `chain_burn` (× catch-up power) as damage over time
-  (`Damage.tick_dot`, effect `twin_chain`; hurt iframes apply) when `twin_burn_cd` is 0, which then becomes
-  `chain_burn_ticks` (counted down in the boss's think, so the hit-stop pauses it). Never while dashing, never while
-  `BossTide.press(p) > 0` (against a wall: it can't pin the player), never while either body rises or is in a gate,
-  never while the boss's Chain Sweep runs (`lifted`). The chain is not solid. A kill by it names the first
-  `chain_sweep` attack's late cause (`LATE_CAUSE + k`, its `late_cause_key`).
+  player at a right angle from its boss on its own side; each × `anger_permille` / 1000 while angry. **Nothing joins
+  the two bodies** (v0.12.0 step 6, owner: "I want them to be 2 separate entities"): no chain, no length to hold, no
+  burn, no pull. The rules that used the chain have their own (below; the rest of the pair's fight: §10q).
 - **Anger.** `Damage._apply` → `on_hit` (non-DoT, applied > 0, from the player): the other body is angry for
   `anger_ticks` (`twin_angry` its id, `twin_anger_t`); one at a time; `STATUS_APPLY` (effect `twin_anger`) when it
   turns.
-- **Crossfire (`crossfire`, shielded).** On start the safe spot `S` = the chain's midpoint + `distance_m` along the
-  chain's normal toward the player (0.75, then 0.5 of it if a wall stands there), stored as each body's `pt(b, 0)`;
-  each body's `lock_a` aims at `S`. Each wave of its pattern (a fan centred on `S`) leaves out every shot whose heading
-  is within `angle_of(Vector2(|S − body|, gap_m))` of `lock_a` (`BulletPatterns.fire`'s `gap`), so the two gaps cross
-  only at `S`; the twin's shots take `twin_look`.
-- **Chain Sweep (`chain_sweep`, locked).** Through the windup until its last `lock_ticks` the boss's line tracks:
-  `lock_a` = the angle to the player, `lock_len` = `clamp(dist + reach_m, chain_min_m, chain_max_m)` cut by
-  `EnemyAi.clear_run`; on its first active tick a player touching the lane (`AttackShapes.lane` from the boss's lock
-  point, `half_width_m`) is hit once (`hit_player`). The twin's copy draws and strikes nothing.
-- **Reads.** `WorldReader.boss_twin(i)` (`BossTwin.state`: lead, partner, angry, anger ‰, chain ends, hot, lifted,
-  burned; Crossfire's safe spot, gap lane, progress, firing; the Chain Sweep's from, to, half width, locked, progress,
-  struck), `KIND_TWIN_WARDEN`, `KIND_TWIN_WARDEN_VIOLET`, `MOVE_CROSSFIRE`, `MOVE_CHAIN_SWEEP`, `EFFECT_TWIN_ANGER`,
-  `EFFECT_TWIN_CHAIN`.
+- **Crossfire (`crossfire`; the violet Warden's).** On start the safe spot `S` = the caster's centre + the unit vector
+  from the other Warden to the caster × `max(distance to the player, distance_m)` (the player's own spot for a body
+  alone), stored as its `pt(b, 0)`; its `lock_a` aims at the player. Each wave of its pattern (a fan along `lock_a`)
+  leaves out every shot whose heading is within `angle_of(Vector2(|S − body|, gap_m))` of the angle to `S`
+  (`BulletPatterns.fire`'s `gap`): the gap faces directly away from the other Warden, so the safe place is with the
+  caster between you and him. The twin's shots take `twin_look`.
+- **The Sword Lane (`chain_sweep`, locked; the amber Warden's).** Through the windup until its last `lock_ticks` the
+  boss's line tracks: `lock_a` = the angle to the player, `lock_len` = `min(dist + reach_m, lane_max_m)` (9 m; the
+  boss's `wardens`) cut by `EnemyAi.clear_run`; on its first active tick a player touching the lane
+  (`AttackShapes.lane` from the boss's lock point, `half_width_m`) is hit once (`hit_player`). The move keeps its
+  old id.
+- **Reads.** `WorldReader.boss_twin(i)` (`BossTwin.state`: lead, partner, angry, anger ‰, phase, resting, focus,
+  exposed (the violet Warden stunned by her broken ward), warded; Crossfire's safe spot, gap lane, progress, firing;
+  the Sword Lane's from, to, half width, locked, progress, struck), `KIND_TWIN_WARDEN`, `KIND_TWIN_WARDEN_VIOLET`,
+  `MOVE_CROSSFIRE`, `MOVE_CHAIN_SWEEP`, `EFFECT_TWIN_ANGER`. No chain key is read any more.
 
 ## 10l. The Clockwork Judge: your echo (v0.9.0 NB3; owner Q24, [`BOSSES_4_5.md`](../roadmap/v0.9.0/BOSSES_4_5.md) N3)
 
@@ -2086,7 +2091,7 @@ PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and t
   and the light `light_hold_ticks` (240, from `light_lasts_seconds`; 0 keeps the NB4b rule), so a later Lights Out
   only plays its wisps. While dark the hint marker `ObjectiveMarkers.SHADE_LANTERN` points at every unlit lantern,
   cleared in the light and when the Shade goes. Reads: `boss_light()` adds `light_left` and `boss_mult`;
-  `WorldReader.boss_light_permille(i)` for the boss bar's dim/bright tag (`HUD_SHADE_DARK` / `HUD_SHADE_LIT`).
+  `WorldReader.boss_light_permille(i)` for the boss bar's dim / lantern-gold fill (`BossBarTones`; no words).
 - **The Snuff (`marks` with `snuff`).** A tracked circle (it follows the player's exact position, locks 0.8 s); on
   its strike (`BossDodge.resolve_marks` → `BossShade.snuff`) the lit lantern nearest its centre goes out (`lamp_t` 0),
   in the dark only. Phase 3's Snuff lays two.
@@ -2101,6 +2106,766 @@ PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and t
   pass draws before every see-through thing), and a Shade wisp within 4 m of the player always shows its outline.
 
 **Starfall and Meteor (v0.10.5 W3-P10e; owner W7: "Starfall ... evolves into a every 5 attack a meteor falls from the sky into the enemies", Q5 "fire lv3 ok"; `Starfall`, `src/sim/items/starfall.gd`).** With the Starfall Constellation held, every 5th crit of the hero (`World.starfall_crits`, counted in `Damage.hit` after the hit landed) drops a star on the nearest other living enemy (squared distance, ties the lowest index) for 100 % of the amount that crit dealt (W3-P10k: before the crit target's own multipliers, as Arc Jump's first jump, so the star's target applies only its own). The star is a hit with `EFFECT_STAR`, already scaled like a splash: it skips `Stats.outgoing`, so it never rolls a crit and never counts toward the five. Holding Fire (`ember_core`) at Lv 3 or more (`ElementLevelsFsf.level`) replaces the star with Meteor: every 5th root attack (`World.meteor_attacks`; a Blade swing's start or a Gun shot's release in `PlayerKit`, never a repeat, child or hook) picks the enemy within 8 m with the most other enemies within 2.5 m (ties the lowest index), and 24 ticks later (`World.meteors`, 4 ints each: land tick, base hit, x mm, y mm; saved) every enemy within 2.5 m of where it stood takes 300 % of the attack's base hit as a normal player hit (its own crit roll, the damage stat; `EFFECT_METEOR`, ascending index) and gains one burn stack. Events for the view: `STAR`, `METEOR_LAUNCH`, `METEOR_LAND` (appended `SimEvent.Kind`s). The counters and the pending list are hashed only once any is non-zero, so a run without Starfall hashes as before.
+
+## 10n. A boss's tools against the hero's weapon (v0.12.0 step 1; owner brief rows CJ1, CJ2, CJ4, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+Three pieces a boss's script calls; no shipped boss calls them yet. All three live in `BossStore`, run in tick
+phase 6 from `BossSignatures.advance` (after the arena hazards, before the projectile sweep) and draw no stream.
+
+- **The attack-speed cut (`BossSlow`).** `aslow_cut` (per mille of the weapon's rate, at most 900) and `aslow_boss`
+  (the boss that took it, -1 none). `apply(w, boss_id, permille)` keeps the larger of the old and the new cut;
+  `give_back(w, permille)` returns part and ends it at 0. The cut multiplies the rate last and whole:
+  `AttackRate.rate_at` = `BossSlow.weapon_rate(own_rate_at)` (the stat, the wand bonus, the curve, Heavy Hands, then
+  the cut: the Blade's swing, the cards' forecast), and `AttackRate.shot_rate` cuts a Gun form's rate after its
+  share of attack speed (`form_rate`), so the Laser and the Lance lose the whole cut too. The Blade's rate still
+  never falls under `BladeTable.rate_min` (250). The auto abilities' periods read `AttackRate.auto_rate`, spared
+  while `BossSlow.WEAPON_ONLY` is true; the spells' cooldowns never read attack speed.
+- **Floor pickups (`BossPickups`, `BossPickupTable`).** `pk_*` rows {id, boss, kind, amount, placed, ends (0 = it
+  stays), centre, radius}, oldest first; `pk_next` the next id. The hero takes one when its circle touches the disc
+  (oldest first); `Kind.RESTORE_ATTACK_SPEED` returns `amount` per mille through `BossSlow.give_back`. At
+  `max_count` a boss's oldest goes first. Events (appended kinds, source = the boss, target = the pickup's id):
+  `BOSS_PICKUP_SPAWN` (amount = kind), `BOSS_PICKUP_TAKEN` (owner = the hero, amount, amount_applied = what it
+  returned), `BOSS_PICKUP_END` (amount = `END_EXPIRED`, `END_CAP` or `END_CLEARED`).
+- **Shot fields (`BossShotFields`, `ShotFieldTable`).** `sf_*` rows {id, boss, speed kept (per mille), laid, ends,
+  centre, radius}; `sf_next`. In `NativeShots.sweep`, after the steering and before the native sweep, a hero's
+  projectile whose centre is inside a field has its velocity multiplied by the slowest field's share for that sweep
+  only; after the contacts its own velocity is restored (one a bounce turned keeps its new heading at its own
+  speed). `SLOWS_LIFE` (true): its life is lent one tick on every tick that spends none (a tick spends life when
+  `tick × share / 1000` crosses a whole number), so it flies its range out afterwards, within one tick. Hostile
+  shots, a holding Mine disc and attacks that are not projectiles (the Laser's beam, the Blade) are untouched. No
+  native change: the sweep reads the velocity and the life it is given.
+- **When they end.** With their boss (`BossSignatures.on_boss_gone`), when the hero is dead, and when the hero
+  stands more than 1 m outside the sealed arena (`BossSlow.fight_over`); a pickup or field also at its own time.
+- **Hash and save.** Hashed after a `-10` sentinel only while a cut is held or once a pickup or a field has been
+  placed (`aslow_boss >= 0 or pk_next > 0 or sf_next > 0`), so every other world hashes as before. `BossStore` is a
+  snapshot state class, so the fields are saved with it.
+- **Reads.** `WorldReader.boss_attack_slow()`, `boss_pickups()`, `boss_shot_fields()`.
+
+## 10o. The Clockwork Judge fights with time (v0.12.0 step 2; owner brief rows CJ1-CJ5 and SG-CJ, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+The Judge keeps its echo, Verdict, Gear Spiral and Gavel Slam (§10l) and gains the pieces below. Its numbers are
+`BossTable.time` (a `BossTimeTable`, compiled from `BossDefinition.time`; null for every other boss); its state is
+`BossFightStore.time_*` (`World.boss_fight`, hashed right after `BossStore`: the sentinels below keep their place) and `gear_*`. Code: `BossTime`, `BossGears`, `BossRewind`. Only the orbs' spots draw a stream
+(`ai`); everything else follows from the clock and the positions. No native change.
+
+- **The Time Wave** (move `time_wave`, appended to `BossAttackTable.Move`). An attack on its own cadence
+  (`BossTime.wave_due`, asked by `BossTide.due` when no signature is due): the first one `wave_first_ticks` after
+  the Judge may first attack, then every `wave_every_ticks` from one cast's start to the next; never by the weighted
+  pick, and only between two attacks, so it never overlaps the echo. Its windup is the cast (90 ticks); on the tick
+  the cast ends the hero's weapon loses `wave_cut` per mille (`BossSlow.apply`, §10n). No dash, i-frame or distance
+  avoids it and it deals no damage. A cast a phase gate cut short is cast again after the gate (the next due tick is
+  set when the wave lands).
+- **The hour orbs.** With the wave the last wave's orbs go and `orb_count` are placed (`BossPickups`, §10n; each
+  returns `orb.amount`). Each spot is drawn from the `ai` stream inside the boss room (`BossStore.arena`, less the
+  orb's radius and 1 m): the first of 32 draws that is `orb_gap_m` from the hero and from this wave's other orbs,
+  clear of walls and of the Judge's body; with none, the gap is halved, twice at most. Before `orb_late_phase` an orb
+  stays until taken or the next wave; from it on it lasts `orb_late.life_ticks`. `ObjectiveMarkers.JUDGE_ORB` points
+  at each orb lying, kept current in tick phase 6.
+- **The stopped gears** (from `gear_phase`). The wave also raises up to `gear_count` walls (`gear_half`: half
+  length, half width; `gear_ticks`): gear g lies across the line from the hero to orb g (a fourth across the first
+  line again), at the first spot of 50, 40, 60, 30, 70 % of the line (25, 75, 35, 65 % for a line's second gear)
+  where it fits. `BossGears.fits`: both ends inside the room; 0.5 m clear of every living body's edge; never on an
+  orb; and the hero's width plus 0.15 m from every wall and every other gear, so each gear is an island in the free
+  floor: no way is closed and no orb is sealed in (a 400-seed flood test checks it). A gear that fits nowhere is left
+  out. A gear is a barrier (`World.add_barrier`: bodies, both sides' shots, sight), the flow field goes round it
+  (`BossSignatures.set_nav_extra`), and a snapshot counts it among the walls added in play. It goes after its time,
+  with the next wave, with the Judge, and when the hero is dead or outside the room.
+- **The slow fields** (from `field_phase`). Every `field_every_ticks` one `BossShotFields` disc (§10n; `field`) is
+  laid half-way between the hero and the Judge (not during a phase gate). While a hero's projectile is inside a
+  field, moving toward the Judge on a line that would touch it (within its radius + the shot's + 0.3 m), and the
+  Judge is between two attacks (`MOVE`), the Judge steps sideways off that line at `dodge` metres a tick (times its
+  slow), only onto floor clear of walls inside its room. The first such shot in store order decides.
+- **The Rewind** (from `rewind_phase`). `time_px/time_py` keep where the hero stood, a point every `step_ticks`
+  (`time_bx/time_by`: the Judge). The pale copy (`BossRewind.copy_of`) is the point `trail_ticks / step_ticks`
+  before the newest (`late_trail_ticks` from `late_phase`). The Bell is cast beside the Judge's attacks (it is not an
+  attack): the first `bell_first_ticks` into `rewind_phase`, then every `bell_every_ticks` start to start;
+  `bell_cast_ticks` later it tolls and the hero is moved to the copy (tick phase 6). From `late_phase` it tolls
+  `late_tolls` times, `toll_gap_ticks` apart. A dash does not prevent the throw; it deals no damage; it never lands
+  in a wall, a gear, the Judge's body or outside the room: `BossRewind.free_spot` takes the copy's spot, else the
+  first free spot on 12 rings 0.5 m apart (16 spots each), else leaves the hero where it is.
+- **The Bell's Verdict.** Each toll brings a Verdict of its own, owned by `BossRewind` and independent of the
+  Judge's attack (it drops whatever the Judge is doing). Its size and damage are read from the table's first
+  `verdict` attack (`BossRewind.verdict_attack`; none without one). While a toll is awaited its square is on the
+  copy and follows it (derived, not stored); at the toll it locks where the copy stands then (`time_bv_x/time_bv_y`;
+  the copy's spot, also when the hero landed beside it) and `time_bv_at = tick + bell_verdict_ticks`; on that tick
+  (phase 6, before a toll due the same tick) it drops: a hero touching the square takes the Verdict's damage once
+  (`Damage.hit`, `TAG_AREA`, under the boss's catch-up, as `BossAi.hit_player` deals it; `World.killer_attack` is the
+  `verdict` attack, so the death recap names the Verdict). One locked square at a time: content keeps the delay
+  under the cast and the toll gap. From `late_phase` each of the `late_tolls` brings one. The Judge's ordinary
+  Verdict (picked, punish or gap-closer) follows **the hero** in every phase.
+- **The Judge's own return.** Once, in `return_phase`, between two attacks, with `return_hp_permille` of that
+  phase's bar left: it goes back to where it stood `return_ticks` ago (when that spot is free) and recovers
+  `return_heal_permille` of the bar unless the hero is within `return_near_m` of its edge.
+- **Events** (`STATUS_APPLY`, source the Judge; never read back): `time_wave_cast` (amount = the cast's ticks),
+  `time_wave` (target the hero, amount = the cut), `time_field` (pos = its centre, amount = its id), `judge_bell`
+  (a cast or a later toll's wait begins; amount = ticks to the toll, amount_applied = tolls after it),
+  `judge_rewind` (target the hero, pos = where it landed, amount = mm moved), `judge_bell_verdict` (a Bell's
+  Verdict dropped; target the hero, pos = its square's centre, amount = the HP it cost, 0 when it missed),
+  `judge_return` (amount = HP recovered). The orbs' own events are §10n's.
+- **Hash and save.** Hashed after a `-11` sentinel only while a Judge runs them or a gear stands
+  (`time_boss >= 0 or gear_x not empty`); every world without a Judge hashes as before. `BossFightStore` is a snapshot
+  state class, so the clocks, trails, gears and the locked Bell's Verdict are saved; the restored gears are walls
+  again. With the hero dead or outside the room a pending toll and a locked Bell's Verdict go (`BossRewind.cancel`).
+- **Reads.** `WorldReader.boss_time()`: `boss`, `cut`, `wave` (the cast, 0..1000 or -1), `wave_in`, `gears`
+  ([{centre, half, angle, age, left}]), `returned`, `rewind`, and with it `copy`, `trail`, `bell` (0..1000 or -1),
+  `bell_left`, `tolls`, `bell_in`, `bell_squares` (the Bell's Verdict squares, the locked one first:
+  [{center, half, locked, left (ticks until it drops)}]; at most one locked and one following the copy). The orbs: `boss_pickups()` (`left` counts a late orb down); the fields:
+  `boss_shot_fields()`; `MOVE_TIME_WAVE`.
+
+## 10p. The Tidecaller's dance (v0.12.0 step 4; owner brief rows TC1-TC6 and SG-TC, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+The Tidecaller keeps its Pull, Undertow, ring stream and crossing waves (§10j) and gains the pieces below. Its
+numbers are `BossTable.dance` (a `BossDanceTable`, compiled from `BossDefinition.dance`; null for every other boss);
+its state is `BossFightStore.dance_*`. Code: `BossDance` (Riptide, High Tide), `BossMaelstrom`, `SafeArea`,
+`BossTideBeats` (the rhythm), and `BossTide.rate_of` / `run_speed` / `pop_near`. The `ai` stream is drawn for a row's mirror, the dry circle's spot and the way the
+Maelstrom turns; everything else follows from the clock and the positions. No native change.
+
+- **A pull you feel.** For a boss with a dance the Pull moves the hero `pull` per mille (`pull_late` from
+  `pull_late_phase`) of **the hero's own run speed now** a tick (`BossTide.run_speed`: `ItemProcs.move_speed` times
+  the heat, curse, beam and hazard factors and the guard's, as `World`'s walk computes a full push of the stick), not
+  held to `TIDE_MAX_MPS`; the body gap and the wall rule (`shift`) stay, and a dashing hero is still not moved. The
+  push is a throw: `push_m` (4 m) over the attack's `tide_push_ticks`. **Where it sets the hero down** (the throw's
+  last tick, `tide_pull_ticks + tide_push_ticks - 1` of the attack's active time, tick phase 5) every hostile shot
+  whose centre is within `push_clear_m` (3 m) plus its radius of the hero is removed without damage
+  (`BossTide.pop_near`; event `tide_push_pop`, amount = how many, sent only when one popped), so a push never lands
+  the hero in a ring. A boss without a dance keeps `tide_pull` / `tide_push` under its cap and pops nothing, and the
+  Undertow and the waves' shove are unchanged.
+- **One big mechanic at a time (`BossTideBeats`; owner, 2026-11-15: "space mechanics a bit a give it a good fight
+  rythm not everything happening at the same time").** The big mechanics are the Pull (its bell, pull and push), a
+  row of Riptide (all its casts) and a High Tide (its cast and its flood). They no longer run on clocks of their own
+  (`signature_every_seconds`, `riptide_first/every_seconds`, `high_tide_first/every_seconds` are gone from the
+  Tidecaller and from `DanceRules`): each phase plays the ones it has, the latest first, round and round
+  (`order`: High Tide from `ht_phase`, Riptide from `rip_phase`, the Pull before `mael_phase` when the phase has a
+  `tide` attack). So phase 1 is Pull, Pull, ...; phase 2 is Riptide, Pull, Riptide, ...; phase 3 (the Maelstrom) is
+  High Tide, Riptide, ... The first beat of a phase comes `beat_first_ticks[phase]` after it begins (the first tick
+  the boss stands after its gate; the first phase: the first tick the dance runs); each next one `calm_ticks` and
+  then `beat_gap_ticks[phase]` after the last one **ended** (a Pull ends the tick after its push's last tick, a row
+  on its last wave's last step, a High Tide when its flood ends). Never two at once, never one sooner than
+  `calm_ticks` after the last. A beat begins only with the boss between attacks (`MOVE`): one under way finishes
+  first. **The hold:** from the tick the next beat is due, through it, until `resume_ticks` after it ends
+  (`BossTideBeats.holds`), the ring stream emits no ring and no crossing wave forms (`BossStream`; waves already
+  formed run on, and the first ring comes as the hold lifts) and the boss starts no other attack (`BossTide.due`
+  answers `HOLD` and keeps its cooldown at least 1, so the pick, the punish and the gap-closer all wait). The Pull
+  starts through `BossTide.due` when its beat may begin and the cooldown is over; a Pull started any other way (a
+  test, the dev panel) is still taken as the beat running. A High Tide with no dry floor is passed (the next beat
+  after the calm). `BossDance.cancel` ends the beat running. Starting values: calm 3 s, resume 1.5 s; first beat
+  6 / 6 / 8 s; gaps 12 / 8 / 10 s. The Pull is never picked by weight (`BossTide.on_cadence` counts a dance as a
+  cadence).
+- **`SafeArea`: inside this area or hurt.** Boss-agnostic. `strips(room, n)` cuts a room into n strips along its
+  longer side (x for a square); `inside(p, rects, discs)` tests the hero's **centre**; `check` / `hurt` take a share
+  of the hero's max HP (never scaled by the boss's power): `ONCE` through `Damage.hit` (`TAG_AREA`; armour and the
+  dash's invulnerability apply, as for any boss strike on the ground), `STEP` through `Damage.tick_dot`, which
+  neither waits for the hurt invulnerability nor gives any.
+- **Riptide** (from `rip_phase`; not an attack: the boss goes on fighting between beats). When a row begins is
+  the rhythm's. A row is `rip_casts` casts. Each warns three of the four strips for its warning, then a wave runs
+  down them from the
+  room's low end to its high end in `rip_wave_ticks`: on wave step s (1..`rip_wave_ticks`) a hero whose centre is in
+  a warned strip and within its radius of the stretch the front crossed this tick takes `rip_hit` per mille, once a
+  cast (a hero entering a strip behind the front is not hit). The next warning begins on the wave's last step. The
+  safe strips are `BossDanceTable.SAFE_ORDER` (1, 2, 0, 3) or its mirror (2, 1, 3, 0), one `ai` draw a row.
+  **A cast's warning** (`BossDance.warn_of`, fixed as the cast begins, `BossFightStore.dance_rip_warn`) is the written
+  `rip_warn_ticks` (the last cast `rip_last_warn_ticks`), or the hero's walk to this cast's safe strip when that is
+  longer: `ceil((gap + 1 m) / run_speed × rip_run_margin / 1000)` ticks, where gap is the distance between the
+  previous cast's safe strip and this one's nearest edges (the first cast: from the hero's centre to the strip), at
+  most 600 ticks (`WALK_MAX_TICKS`; also a hero that cannot move). The `riptide_cast` event's amount and the
+  reader's `warn` / `warn_left` are this length.
+- **The room** (owner, 2026-11-15: "the wave dance is smaller than the room so you can always walk out of it").
+  `BossDance.room_of` is the sealed boss room's interior (`BossStore.arena`, wall face to wall face; in a real run
+  the four strips cover every cell of the boss room a hero can stand on, `tests/unit/sim/test_tide_beats.gd`);
+  **without a sealed room** (the Playground, the dev panel's boss) it is the floor room the boss stands in
+  (`FloorLayout.room_of`, its interior), and only with no layout at all the 24 m square round the boss it was
+  before. `BossStream.room_of` (the crossing waves) follows the same rule (its last resort the 14 m square). The
+  arena itself keeps its meaning (the closing band and the other bosses read it).
+- **High Tide** (from `ht_phase`; when it begins is the rhythm's). The cast (`ht_cast_ticks`) shows one dry
+  circle of `ht_radius_m` and points `ObjectiveMarkers.TIDE_DRY` at it; then for `ht_flood_ticks` a hero whose
+  centre is outside it takes `ht_hit` per mille every `ht_step_ticks`. `dry_spot`: the first of 32 `ai` draws inside
+  the room (less the radius and 1 m) that is `ht_gap_m` from the hero, clear of walls, and whose centre keeps
+  `BossDance.eye_keep_m` (the boss's radius + `mael_eye_m` + `ht_radius_m` + the hero's width + `EYE_MARGIN_M`
+  1 m) from the segment between the boss and its anchor (just the boss in a fight with no Maelstrom phase), so the
+  whole circle stays the hero's width and a metre clear of the eye wherever the boss is on its walk; with none, the
+  farthest such spot on a 1 m grid; with none, the gap is halved, twice at most; with none, no High Tide this time.
+  The circle does not move afterwards.
+- **The Maelstrom** (from `mael_phase` to the end of the fight). No Pull is cast (its phase's order has none), and
+  the phase forms no crossing waves (data: its `wave_attack` is empty). The way it turns is one `ai` draw
+  as it begins. Each tick (phase 6; not while the boss kneels at a phase gate) a hero neither dashing nor dead is
+  moved by `BossTide.shift` (the wall rule) `mael_spin` per mille of its run speed along the perpendicular
+  `(-y, x)` of its unit line to the boss times the turn, plus `mael_in` per mille toward it (stopping `BODY_GAP_M`
+  short of the body). **The eye:** a hero whose centre is within `mael_eye_m` of the boss's edge takes `mael_hit`
+  per mille once (`ONCE`) and, if that hit landed, is thrown `mael_throw_m` straight out over `mael_throw_ticks`
+  (the wall rule; not carried meanwhile); the eye hits again no sooner than `mael_grace_ticks` after.
+  **The anchor** (owner, 2026-11-14: "Yes, stand still"; a boss walking at the hero carried the eye onto the dry
+  circle): from `mael_phase` on, `BossMaelstrom.holds` takes the boss's whole movement (tick phase 5, in `BossAi.move`
+  before its walk). Each tick but while it kneels at a phase gate, whatever it does (it attacks too often to walk
+  only between attacks), it steps its phase's speed (times the slow factor) straight toward the anchor, the room's
+  centre (`BossDance.room_of`; without a room, where it stands), lands on it exactly and never passes it; once
+  there it does not move. Its attacks stay (none needs a step of its own; a Shell Slam cast on the walk strikes the
+  ring it locked, a step or so behind the body); it is heavy, so the collision pass never pushes it. No new state: the anchor follows from the room.
+- **Tide pools.** A crossing wave whose boss's hazard table lists its wave attack (`BossHazard.lays_on`) leaves one
+  hazard where it ends: one radius back from the far wall and held inside the room (`BossStream._leave_pool`,
+  `BossHazard.place`: its cap, never in the doorway). The Tidecaller's is a `slow` disc.
+- **Never a kill from full.** `DanceRules.MAX_HIT` (400 per mille) bounds every single hit in content.
+- **The death recap.** Riptide names the boss's first `wave` attack (`rip_cause`); High Tide and the eye its first
+  `tide` attack (`tide_cause`). Damage effect ids: `boss_riptide`, `boss_high_tide`, `boss_maelstrom`.
+- **Fight end.** With the hero dead or outside the room the casts running end and a throw stops
+  (`BossDance.cancel`); with the boss gone the clocks and the marker go (`on_boss_gone`).
+- **Events** (`STATUS_APPLY`, source the boss; never read back): `riptide_cast` (a cast's warning begins; amount =
+  its ticks, amount_applied = the safe strip, pos = that strip's centre), `riptide_wave` (amount = the wave's ticks,
+  amount_applied = the safe strip), `riptide_hit` (target the hero, amount = the HP it cost), `high_tide_cast` (pos
+  = the dry circle's centre, amount = the cast's ticks), `high_tide` (the water is up; amount = its ticks),
+  `high_tide_end`, `maelstrom` (it begins; amount = the turn, 1 or -1), `maelstrom_throw` (target the hero, pos =
+  where it stood, amount = the HP it cost).
+- **Hash and save.** Hashed after a `-14` sentinel only while a boss runs a dance (`dance_boss >= 0`); every
+  world without one hashes as before. `BossFightStore` is a snapshot state class, so the clocks and the dry circle are
+  saved. The tide pools are the arena hazards (hashed once a fight has used one).
+- **Reads.** `WorldReader.boss_dance()`: `boss`, `room`, `along_x`, `strips` (4 × Rect2), `riptide` ({} or `cast`,
+  `casts`, `safe`, `struck`, `warn` 0..1000 or -1, `warn_left`, `wave` 0..1000 or -1, `front` m, `hit`),
+  `riptide_in`, `high_tide` ({} or `centre`, `radius`, `cast` 0..1000 or -1, `flood` 0..1000 or -1, `left`,
+  `inside`), `high_tide_in` (`riptide_in` / `high_tide_in`: ticks until it may begin when it is the next beat, else
+  -1), `maelstrom` ({} or `centre`, `spin`, `around`, `inward` m/s, `eye` m from the boss's centre, `grace`,
+  `thrown`, `anchor` (the room's centre), `anchored` (the boss stands on it)), `beats` (`running`, `next`: 0 none,
+  1 Pull, 2 Riptide, 3 High Tide; `in`: ticks until the next may begin, 0 due, -1 while one runs; `held`; `order`). A read after a step describes the tick about to run. The pools: `boss_hazards()`;
+  the circle's marker: `objectives()` (`tide_dry`).
+
+## 10q. The Twin Wardens fight apart (v0.12.0 step 6; owner brief rows TW1-TW8 and SG-TW, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+Nothing joins the two bodies any more (§10k as amended: no chain, no burn, no pull); one HP pool and three bars stay.
+Their own numbers are `BossTable.wardens` (a `BossWardensTable`, compiled from `BossDefinition.wardens`; null for
+every other boss); their state is `BossFightStore.wd_*` (the pair that runs it: `wd_boss`, the amber Warden's id) and
+`cb_*`. Code: `BossWardens` (the tick, the end, the read), `BossWardenAmber`, `BossWard`, `BossShadowSwords`,
+`BossRift`, and `BossChargeBurst` (any boss's). Every hook into the boss framework goes through `BossTwin`'s
+(`think`, `on_start`, `moves`, `resolve`, `telegraph`, `may_use`), so `BossAi` gained no line. Only the rift's exit
+draws a stream (`ai`). No native change.
+
+- **A charge that bursts (`BossChargeBurst`; an option of the `charge` move for any boss).** `burst_radius_m > 0`
+  on a `charge` attack. The run is `BossAi`'s as ever (the lane locks `lock_ticks` before the wind-up ends and follows
+  the hero's exact spot before that; walls cut it short; the body's touch hits once). In tick phase 6 of the tick the
+  run stops (`ACTIVE`, `lock_len <= 0`), a burst is armed on the body's spot (`cb_boss`, `cb_attack`, `cb_at`,
+  `cb_x/cb_y`; one a boss at a time); `burst_ticks` later a hero within `burst_radius_m` of it takes the attack's
+  damage once (`Damage.hit`, `TAG_AREA`, under the boss's catch-up; `World.killer_attack` is the charge), whatever the
+  boss does by then. A dash's i-frames avoid it. Pending bursts go with their boss and when the hero is dead. The
+  telegraph of every charge is `BossChargeBurst.telegraph`: the `&"lane"` as before, plus `"burst"` {center, radius}
+  for one that bursts (`end_of`: the lock point + the lane's length; it follows the aim until the lock).
+- **The amber Warden's kit.** `warden_charge` (wind-up 36 ticks, the aim locked the last 24, 26 m/s over 12 m, burst
+  3.5 m after 15 ticks), `warden_charge_long` in phase 3 (wind-up 84, locked the last 30), `overhead` (a `sweep`: 78
+  ticks, 170°, 3.4 m), the Sword Lane (§10k) and:
+  - **the sword combo** (move `sword_combo`, appended to `BossAttackTable.Move`; `BossWardenAmber`): `count` arcs,
+    hit k on active tick k × `gap_ticks`. Before each hit the aim follows the hero, then for the last `STEP_TICKS`
+    (6) it holds and the body steps `step_m / 6` a tick along it (never nearer than touching the hero, never through
+    a wall; phase 5). The arc is cut round where the body stands. Each hit may land (the hurt i-frames apply); a hit
+    before the last deals `combo_light_permille` of the attack's damage (15, 15, 20 as shipped).
+  - **the side dash**: free between two attacks (`MOVE`, its cooldown still running), within 10 m of the hero and
+    with `wd_dash_cd` at 0, it dashes `dash_m` at a right angle to the line to the hero in `dash_ticks` (the side it
+    did not take last time first; only a side with half the dash clear), then waits `dash_every_ticks`. No damage;
+    it picks nothing while it dashes. Only while it leads (phases 1 and 3).
+- **The Mirror Ward** (move `mirror_ward`, a cast: `BossSchemas.CAST_MOVES`; `BossWard`). On the tick the cast ends
+  the ward stands `mirror_ticks` on the arc `mirror_half_arc` each side of the way to the hero then (`wd_mirror_a`;
+  it does not turn afterwards and stays on the Warden wherever she goes). `Damage.hit`: a hero's hit whose `from` is
+  inside the arc does nothing (`TAG_BLOCKED`): a swing, the Laser, an area hit, a Void or Wave shot. A melee hit
+  (`TAG_MELEE`) also moves the hero `mirror_push_m` straight back (`BossTide.shift`: never deeper into a wall), once
+  a tick. `ProjectileContacts.apply`: a hero's projectile whose contact is with the warded Warden and which came from
+  inside the arc is not a hit: it ends there with its end hooks, and a hostile projectile is queued at the contact
+  point with the reversed velocity (the same speed), the same radius, the look `mirror_look`, a life of
+  `mirror_range_m` and `mirror_permille` of the damage the shot carried (its own number, before the hero's damage
+  stats and crit), at least 1 and at most `mirror_cap_permille` of the hero's max HP. It hits as any hostile shot;
+  its cause is `BossWard.MIRROR_CAUSE` (2 × `BossSignatures.LATE_CAUSE`), which `BossCauses.key` answers with
+  `mirror_cause_key`. Hits from outside the arc land as ever; damage over time is not turned. Not cast while a ward
+  of either kind stands.
+- **Shadow Swords** (move `shadow_swords`; `BossShadowSwords`). As it starts, `sword_count` spots are locked on a fan
+  `sword_fan` wide and `sword_ring_m` from where the hero stands, the fan's middle toward the caster (the boss's
+  points 0..n-1, the centre in the last one). Blade k's lane runs from its spot through that centre, `sword_len_m`
+  long, `sword_half_m` each side; all show for the wind-up; blade k cuts on active tick k × `sword_gap_ticks` (a hero
+  touching its lane takes the attack's damage; each cut may land). Each cut lane leaves a rift at its far end (0.75,
+  then 0.5 of the way if a wall or the room's edge is nearer): one of the boss's arena hazards (`BossHazard.place`:
+  its warning, its burn, its cap of 5, the doorway rule).
+- **Phase 3: the ward only his charge breaks.** From `ward_phase` the violet Warden is under a whole ward
+  (`BossWard.full`): every hit and every tick from the hero does nothing (`Damage._blocked`). The amber Warden takes
+  hits as ever (the "exposed twin swaps" rule and its ×1.5 / ×0.5 are gone). While he runs any `charge`, the lane his
+  body has swept (from the lock point to where he is, his radius plus the contact slop each side) is tested against
+  her circle (phase 6): on a touch the ward breaks: `wd_break_at` = the tick, she stands `STAGGERED` for `stun_ticks`
+  and takes `stun_permille` meanwhile, he stands `STAGGERED` for `stagger_ticks`, his charge ends without its burst,
+  and the ward is back `return_ticks` after the break (plain hits between the stun's end and then).
+  `ObjectiveMarkers.TWINS_WARD` follows her while he winds a charge up with the ward standing (no marker follows the
+  body to hit: `twin_focus` and its `EFFECT_FOCUS` event remain).
+- **Through the Rift** (`BossRift`; once a fight). In the last phase, with `rift_hp_permille` of its bar left and the
+  amber Warden free (between two attacks): (1) three rifts open on a ring round the middle of the boss room, `rift_gap_m` apart, each
+  `rift_radius_m` + his radius clear of walls and inside the room (the ring starts toward the hero and is turned
+  through 8 fixed angles until all three fit; with no fit the set piece is skipped for good); neither starts
+  anything for `rift_open_ticks`. (2) He runs to the nearest at his exit charge's speed. (3) He is inside `rift_inside_ticks`:
+  hidden (`BossAi.hidden`), untouchable, in nobody's way; the exit is one draw from `ai` among the other two as he
+  goes in; `rift_mark_ticks` before the end the exit is marked (the read's `"exit"` is false until then) and the
+  hero's spot is taken as the aim. (4) He stands at the exit and the table's `rift_attack` (a `charge` in no phase;
+  40 damage) runs at once along the line from the exit to that aim, with its burst and its ward break as any charge;
+  when it is over the rifts close. She starts nothing through 1-3 (an attack she is in ends first). It ends early when the hero is dead or the pair is gone.
+- **Events** (`STATUS_APPLY`; never read back): `charge_burst_armed` (pos = its centre, amount = ticks),
+  `charge_burst` (target the hero, amount = the HP it cost, 0 a miss), `warden_dash` (amount = ticks),
+  `warden_ward_up` (amount = ticks, 0 for the whole ward; amount_applied = 1 for the whole ward),
+  `warden_ward_down`, `warden_ward_break` (source he, target she, amount = her stun), `warden_reflect` (pos = where,
+  amount = the damage it carries back), `warden_block` (target the hero, amount = mm pushed), `warden_sword_cut`
+  (pos = its spot, amount = its index, amount_applied = the HP it cost), `warden_rift_open` (amount = ticks until he
+  runs), `warden_rift_enter`, `warden_rift_mark` (pos = the exit, amount = ticks), `warden_rift_exit`,
+  `warden_rift_close`.
+- **Hash and save.** Hashed after a `-15` sentinel only while a pair runs them or a burst is pending
+  (`wd_boss >= 0 or cb_boss not empty`); every other world hashes as before. `twin_burn_cd` left the `-3` block, so
+  a Twin Wardens fight hashes differently from before this step. `BossFightStore` is a snapshot state class, so all of it
+  is saved; `BossWardensTable` is a content class of the snapshot.
+- **Reads.** `WorldReader.boss_wardens()` (`BossWardens.state`): `lead`, `violet`, `ward` {who, kind (&"", &"mirror",
+  &"full"), centre, half_arc, left, broken, stun_left, return_in}, `swords` [{from, to, half_width, cut, cut_in}],
+  `rift` {stage, rifts [{centre, radius, entry, exit}], inside, exit_in, and once marked lane and burst_radius},
+  `dash`, and while he winds a charge up `charge` {lane, end, radius, locked, progress, breaks}.
+  `boss_charge_bursts()` (the armed bursts: boss, centre, radius, left, progress). The combo's arc, the overhead's
+  arc and the swords' lanes are ordinary telegraphs; the swords' rifts are `boss_hazards()`.
+  `MOVE_SWORD_COMBO`, `MOVE_MIRROR_WARD`, `MOVE_SHADOW_SWORDS`, `OBJECTIVE_TWINS_WARD`.
+- **Amended by v0.12.0 step 13 (the owner's playtest, PLAN rows F1-F9).** Every key below is a `wardens` key
+  (CONTENT_SCHEMA §4); with a key left out the rule it adds is off and the fight runs as above.
+  - **Close up, ranged at range (F1, F6).** `BossTwin.may_use`: an attack of the amber Warden's whose range band
+    ends within `ranged_beyond_m` (7 m; the combo and the overhead, 5 m) is close and is picked only while the hero
+    stands within `ranged_beyond_m`; every other one of his (the Sword Lane) only while the hero stands beyond it.
+    The punish and the gap-closer go through `may_use` (`BossTwin.own`), so the gap-closing Sword Lane fires only past
+    7 m too. He pursues as before (`keep_distance_m`). Phases 1 and 3 alike.
+  - **The charges on their own clocks (F2, F7; `BossWardenAmber.charge_think`, tick phase 3, him free).**
+    `charge_attack` (`warden_charge`) in a phase that lists it and `ward_charge_attack` (`warden_charge_long`) in a
+    phase that lists it while the whole ward stands are never picked (`may_use` leaves them out); each starts when
+    `wd_charge_due` comes, at any distance, never while he attacks or dashes, and in phase 3 only on his turn with
+    the violet Warden not attacking (`BossTwin.may_start`; it waits). The wait is one `ai` draw in `charge_min..charge_max` (10-15 s) or `ward_charge_min..max` (10-12 s)
+    as the clock starts to run and again at each start; the clock stops (`-1`) while neither runs (phase 2, the ward
+    down), so it starts afresh when the ward rises.
+  - **The phase-1 charge is near-immediate and leads (F3).** Its wind-up is 24 ticks (the telegraph minimum: the
+    owner's "~0.3 s" is under it, as the earlier 0.3 s lock was), no `lock_seconds`: the aim tracks until the table's
+    `commit_ticks` (12) and `BossChallenge.aim_point` answers `BossWardenAmber.lead_point`: the hero's spot plus
+    `World.vel` (their last step) × (the wind-up left + the run to the led spot at the charge's speed, the run at most
+    its `length_m`), refined once. The dash-read rule comes first as for every aimed move. Its telegraph is
+    `{"shape": &"signature", "ground": false}` (no lane, no end circle); `boss_twin` carries `"flash"` (0..1000)
+    through its wind-up, the only tell (the amber avatar's body flash). Its run, speed and 3.5 m burst are as above.
+    The ward-breaking charge's wind-up is 144 ticks (2.4 s), locked the last 30; its lane is drawn as before.
+  - **The whole ward is cast (F8; `BossWard.cast_think`, `raise`, `_schedule`).** With `ward_attack` (`whole_ward`, a
+    `mirror_ward` cast of 1 s in no phase's list) `BossWard.full` is `wd_full == 1`. Once the ward is down in
+    `ward_phase`, `wd_ward_due` is set: `ward_first_ticks` (4 s) after the phase is first seen, or so that the cast
+    ends `return_ticks` after a break. On it, the violet Warden free (not while the rift holds; in phase 3 on her turn, `may_start`)
+    starts the cast; as it
+    ends the ward stands (`warden_ward_up`, amount 0, amount_applied 1) and a Mirror Ward still up gives way.
+    `ward.raising` is true through the cast.
+  - **Amber sheltered (F9).** While the whole ward stands, `BossTwin.taken_permille` gives the amber Warden
+    `amber_warded_permille` (250) of every hero hit and tick (`TAG_ARMOURED`: the dull spark); the break opens both
+    (she `stun_permille`, he 1000). `boss_twin` carries `"sheltered"`. No line joins them.
+  - **Crossfire as the shelter (F5).** For `shelter_attack` (phase 2's `crossfire`) the safe spot is
+    `BossTwin.shelter_spot`: `shelter_m` (3 m) from the hero at a right angle to the line from the caster, on the side
+    away from the other Warden (the other side when a wall leaves less than half of it). The volley is a ring
+    (`twin_wardens_crossfire`: 48 shots, 3 waves 0.7 s apart, every other wave turned 3.75°) aimed through the spot,
+    its own one gap there and the shots within `gap_m` of the spot left out, so the whole room but the marked spot is
+    swept. `WardensRules` checks the walk to it (at the base 6 m/s, + 30 %) fits inside its wind-up.
+  - **Hash.** `wd_charge_due` and `wd_ward_due` (`BossFightStore.WD_CLOCK_FIELDS`) are hashed in the `-15` block only
+    while a pair runs (`wd_boss >= 0`), so a Warlord's pending burst hashes as before.
+## 10r. The Siege Engine's cover and Doom Shell (v0.12.0 step 9; brief rows SE1, SE2 and SG-SE, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+The Engine keeps its turrets, mortar grid, barrages, rails, deploys and falling rocks (§10d, §10f) and gains the pieces
+below. Its numbers are `BossTable.siege` (a `BossSiegeTable`, compiled from `BossDefinition.siege`; null for every
+other boss); its state is `BossFightStore.sg_*`. Code: `BossSiege` (Target Lock, boulders, the Shockwave's cover),
+`BossDoom` (the ammo cart, the Doom Shell). No stream is drawn; everything follows from the clock and the positions.
+No native change.
+
+- **The Target Lock** (from `lock_phase`; not an attack: the Engine goes on fighting). The first lock
+  `lock_first_ticks` into that phase, then one every `lock_every_ticks`, start to start; none begins while the
+  Engine kneels at a phase gate. Its circle (`lock_radius_m`) starts on the hero and each tick moves toward it by at
+  most `lock_follow` per mille of the hero's run speed now (`BossTide.run_speed`), so it lags; for its last
+  `lock_hold_ticks` it holds still; `lock_ticks` after it began the shell lands (tick phase 6): `lock_hit` per mille
+  of max HP to a hero touching the circle (`SafeArea` ONCE: armour and the dash's invulnerability apply). Every live
+  actor of `turret_kind` (the Engine's first `deploy` attack's enemy) touching it is destroyed without a kill.
+- **Boulders.** The shell leaves a square wall of half side `boulder_half` on the circle's centre
+  (`World.add_barrier`: bodies, both sides' shots, sight; the flow field goes round it through
+  `BossSignatures.set_nav_extra`) for `boulder_ticks`, at most `boulder_max` (the oldest crumbles when one more
+  lands). `BossSiege.fits`: inside the room by its half side plus the gap; the hero's width plus 0.15 m (the gap)
+  from every wall, every other boulder and the Engine's own body; 0.3 m from the ammo cart (an actor in
+  `BossDoom.CART`), every other boss and every body that is not an enemy. Other enemies do not deny it (one hugging the
+  hero would deny every boulder): each live non-boss enemy the boulder's square touches (its centre within its
+  radius) takes the shell's hit first, `lock_hit` per mille of the hero's max HP through `Damage.hit` (source and
+  owner the Engine, `TAG_AREA`, effect `boss_siege_shell`; an ordinary add dies), then the wall stands, and the hero
+  and each such enemy still alive are moved to `BossRewind.free_spot` from their shortest way out (an enemy with no
+  free spot found stays at that way out, for the collision pass). Where it does not fit the shell lands but leaves
+  none. A 400-seed flood test checks that no boulder ever seals floor off.
+- **The Shockwave needs cover** (from `cover_phase`). A `slam_ring` attack of a boss with a siege hits the hero
+  wherever it stands unless `EnemyAi.sees_player` from the Engine's centre fails (a boulder, or any wall, on the
+  line): the attack's powered damage, at most `shock_cap` per mille of max HP, once, with the attack's own death
+  recap. Each blast shatters the boulders on the line that saved the hero. Its ring reads an inner radius of 0
+  (`BossSiege.ring`, which `BossAi.ring_of` returns). Before `cover_phase` the attack keeps its own ring (the punish
+  of the first phases). It is held (`BossSiege.may_use` in `BossAi._choose`, `unless_held` in
+  `BossChallenge.punish_due`) while a cart rolls or a Doom Shell is due, and while no boulder stands unless a shell
+  has landed since it was first held (`sg_held`, `sg_landed`). Its telegraph is 2.0 s (data).
+- **The Doom Shell** (from `doom_phase`; `carts_in(phase)`: `doom_count` a phase, `doom_late_count` from
+  `doom_late_phase`). The first cart `doom_first_ticks` into the phase, then one every `doom_every_ticks`; never
+  while one is out or a Doom Shell is due, at a phase gate, or while a Shockwave under the cover rule winds up. The
+  cart sets off from the middle of the room's wall farthest from the Engine (`BossDoom.way_of`; the next farthest
+  when a wall that is not a boulder stands on the way; none: tried again 1 s later) and rolls straight to the
+  Engine's edge in `cart_ticks`. It is an actor of `cart_kind` (a `warden` body) queued as an egg
+  (`World.queue_egg` with `[BossDoom.CART]`, made by `BossDoom.make_cart` from `BossSignatures.make_egg`) in the
+  script state `BossDoom.CART` (10, past `BossSignatures.EGG`, so the native kernels skip it), with HP `cart_hp` per
+  mille of the Engine's max HP and radius `cart_radius_m`, hittable at once; tick phase 6 sets it on its line
+  (nothing else moves it) and shatters every boulder it touches. **Arrived:** it goes without a kill and
+  `doom_ticks` later the shell fires: `doom_hit` per mille to a hero the Engine can see; a hero in cover takes
+  nothing and the boulders on the line shatter. **Destroyed first** (a kill like any; seen on the next tick's phase
+  6, where it stood): it blasts `cart_blast_m` round that point: `cart_blast_hit` per mille to a hero touching it;
+  an Engine touching it takes `strip_taken` per mille of every hit and damage tick (`BossChallenge.hit_mult`,
+  `Damage.tick_dot`) for `strip_ticks`.
+- **Markers.** `ObjectiveMarkers.SIEGE_BOULDER` points at every boulder standing while a Shockwave under the cover
+  rule winds up and while a Doom Shell comes (its cart's last 2 s and the wait after).
+- **Never a kill from full.** `SiegeRules.MAX_HIT` (400 per mille) bounds the shell, the Shockwave's cap, the Doom
+  Shell and the blast in content.
+- **The death recap.** The shell, the Doom Shell and the blast name the Engine's first `marks` attack (`shell_cause`:
+  the barrage, `CAUSE_SIEGE_BARRAGE`); the Shockwave keeps `CAUSE_SIEGE_SHOCKWAVE`. Damage effect ids:
+  `boss_siege_shell`, `boss_doom_shell`, `boss_cart_blast` (the Shockwave's hit has none, as before).
+- **Fight end.** With the hero dead or outside the room the lock running ends, every boulder crumbles, the cart
+  crumbles without a blast and a Doom Shell due goes (`BossSiege.cancel`); with the Engine gone, the same and the
+  clocks (`on_boss_gone`).
+- **Events** (`STATUS_APPLY`, source the Engine; never read back): `siege_lock` (target the hero, pos = the circle,
+  amount = ticks to the shell), `siege_shell` (pos, amount = the HP it cost, amount_applied = turrets destroyed),
+  `siege_boulder` (amount = its id, amount_applied = 1 when it moved the hero), `siege_boulder_down` (amount = its
+  id, amount_applied = `END_EXPIRED` 0, `END_CAP` 1, `END_SHATTERED` 2, `END_CLEARED` 3), `siege_turret_destroyed`
+  (target the turret), `siege_shockwave` (a Shockwave under the cover rule; amount = the HP it cost, amount_applied =
+  boulders shattered), `siege_cart` (sets off; pos, amount = its roll's ticks), `siege_cart_up` (its body arrived;
+  target the cart), `siege_cart_arrived` (amount = ticks to the Doom Shell), `siege_doom_shell` (target the hero,
+  amount = the HP it cost, amount_applied = boulders shattered, -1 in the open), `siege_cart_destroyed` (pos, amount
+  = the HP the blast cost, amount_applied = 1 when it stripped the armour), `siege_armour_stripped` (amount = its
+  ticks).
+- **Hash and save.** Hashed after a `-21` sentinel only while a boss runs a siege or a boulder stands
+  (`sg_boss >= 0 or sg_b_x not empty`); every world without one hashes as before. `BossFightStore` is a snapshot state
+  class, so the clocks, the lock and the boulders are saved; the restored boulders are walls again (a snapshot counts
+  them among the walls added in play) and the cart is an actor like any.
+- **Reads.** `WorldReader.boss_siege()`: `boss`, `room`, `lock` ({} or `centre`, `radius`, `locked`, `left`),
+  `lock_in`, `boulders` ([{id, centre, half, size, left, crumbling (its last 60 ticks)}]), `cover_rule`, `covered`,
+  `cart` ({} or `id`, `position`, `from`, `to`, `hp`, `max`, `progress` 0..1000, `left`, `state`), `doom` (ticks to
+  the Doom Shell, -1 none), `doom_in`, `cart_blast` (the cart's blast radius, m: `cart_blast_m`), `stripped` (ticks
+  left). A read after a step describes the tick about to run.
+  The markers: `objectives()` (`siege_boulder`).
+## 10s. The Foundry's forge (v0.12.0 step 10; owner brief rows FO1, FO2 and SG-FO, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+The Foundry keeps its lava, pools and meltdown (§10f, the arena hazards) and gains the pieces below. Its numbers are
+`BossTable.forge` (a `BossForgeTable`, compiled from `BossDefinition.forge`; null for every other boss); its state is
+`BossFightStore.fg_*` and `slab_*`. Code: `BossForge` (the plate, the scald gauge), `BossSlag` (slabs, Overpressure),
+`SafeArea` (§10p) for the burns. No stream is drawn; no native change. The forge's casts are beside the boss's
+attacks (no new move: it goes on fighting through them). The forge takes its clocks (and is hashed) only once its
+boss reaches the forge's first phase, so the first phase hashes as before.
+
+- **The Forged Plate** (from `plate_phase`). The first forging begins `plate_first_ticks` into that phase (not while
+  the boss kneels at a gate); its cast lasts `plate_cast_ticks`; then the boss wears the plate and takes `plate_taken`
+  per mille (400) of every hit and damage tick from the hero (`Damage.hit` beside the Wardens' share, tagged
+  ARMOURED; `Damage.tick_dot`). **The only way off is a drone's bomb**: on the tick a bomb drone's lobbed bomb lands
+  (its BURST pattern's `lob_ticks` into its ACTIVE state; the native strike lands it earlier in tick phase 6) at its
+  locked aim point within `drone_blast_m` of the boss's edge, the plate is blown: `exposed_ticks` at `exposed_taken`
+  (1250, tagged WEAK_SPOT), and the next forging is due `plate_every_ticks` after the blow. The drone aims its bomb at
+  the hero, so a hero beside the boss when a drone throws brings the bomb down on it. A drone the hero kills does not
+  explode (no drone ever did), so it counts for nothing. While plated, with no drone of `drone_kind` (the boss's first
+  `brood` attack's kind) alive or queued and `drone_gap_ticks` since its last, the boss queues one
+  `drone_distance_m` past its edge toward the hero (else the next of 8 angles clear of walls in the room).
+- **Cooling slag** (from `slab_phase`). One of the boss's DAMAGE pools `slab_cool_ticks` old (from its placing) is
+  removed and becomes a slab there (`slab_*` row: id, boss, cooled, crumbles at `+ slab_ticks`, broke, centre,
+  radius). A slab never hurts. The hero is on a slab when its centre is inside one. On the first active tick of the
+  boss's `slam_ring` attack (the vent blast), the slab under the hero breaks when its centre is inside the ring
+  (`slab_broke` = the tick; the row stays 30 ticks for the view and counts for nothing). **So the slabs never run
+  out:** from `slab_phase` a lane's pool goes on the spot of its piece nearest the room's centre where it still fits
+  along it (`BossSlag.pool_spot`, from `BossHazard.on_lanes`; the middle before), and with no pool of the boss's and no
+  slab that would serve an Overpressure on the floor the meltdown leaves, a pool drops where the hero stands (pulled
+  onto the floor the melt will leave once it has cooled), at most one every `drop_ticks` (`slag_drop`; warned as every
+  pool is, under the hazards' cap). A point outside the boss room is never safe (an outer lane's pool can lie
+  there).
+- **Overpressure** (from `over_phase`). Due `over_first_ticks` into that phase, then `over_every_ticks` start to
+  start; not while the boss kneels. It begins only when a slab is safe for its whole length (`BossSlag.safe_slabs`:
+  whole, crumbling no sooner than the cast and the burn's end, its centre the hero's width inside the cool floor the
+  meltdown will have left then); else it waits (the due tick stays). The cast (`over_cast_ticks`) points
+  `ObjectiveMarkers.FOUNDRY_SLAB` at the nearest safe slab, kept on the nearest one through the burn; then for
+  `over_ticks`, every `over_step_ticks`, a hero off every slab loses `over_hit` per mille (SafeArea STEP: neither
+  swallowed by nor giving the hurt invulnerability) and, in the scald phase, its gauge gains `scald_open`. The steps
+  keep their own beat (`fg_over_step`; the scald's `fg_scald_at`): a step that falls in a hit's freeze (the world
+  skips frozen ticks) is taken on the first tick after it, so none is lost.
+- **The scald gauge** (from `scald_phase`; boss-fight only, unrelated to the Overclock heat `World.heat`). 0..
+  `scald_max` on the hero: + `scald_hit` when one of the boss's own projectiles takes HP (`Damage._apply`,
+  `BossForge.on_hero_hurt`; DoT and area hits and what an invulnerability absorbs add nothing); every
+  `scald_step_ticks` + `scald_lava` standing in its molten lanes, an armed DAMAGE pool or its melt, and
+  - `scald_drain` on a whole slab. It never falls by itself. At `scald_max` (`fg_burning` 1) the hero loses
+  `scald_burn` per mille each step (STEP) until it is below.
+- **Never a kill from full.** `ForgeRules.MAX_HIT` (400 per mille) bounds each step; content also keeps
+  `slab_seconds` at least an Overpressure long and the cadence longer than one.
+- **The death recap.** Overpressure names `overpressure_cause` (the Foundry: `firestorm`, CAUSE_FOUNDRY_FIRESTORM),
+  the scald's burn `scald_cause` (`molten_flood`, CAUSE_FOUNDRY_FLOOD). Damage effect ids: `boss_overpressure`,
+  `boss_scald`.
+- **Fight end.** With the hero dead or outside the room the gauge empties, a burn ends and an Overpressure running
+  ends with its marker (`BossForge.cancel`; the plate and the slabs stay); with the boss gone everything goes
+  (`on_boss_gone`, `BossFightStore.clear_forge`).
+- **Events** (`STATUS_APPLY`, source the boss; never read back): `forge_cast` (amount = its ticks), `plate_forged`,
+  `plate_blown` (pos = where the bomb landed, target = the drone, amount = the exposed ticks), `plate_drone` (pos =
+  where), `slab_cooled` (pos, amount = slab id, amount_applied = the pool's id), `slab_crumbled`, `slab_shattered`
+  (amount = slab id), `slag_drop` (pos, amount = the pool's hazard id), `overpressure_cast` (pos = the nearest safe slab, amount = the cast's ticks), `overpressure`
+  (amount = the burn's ticks), `overpressure_end`, `scald_burn` / `scald_burn_end` (target the hero).
+- **Hash and save.** Hashed after a `-22` sentinel while a boss runs a forge or a slab lies (`fg_boss >= 0 or
+  slab_id not empty`). `BossFightStore` is a snapshot state class, so the clocks, the gauge and the slabs are saved.
+- **Reads.** `WorldReader.boss_forge()`: `boss`, `plate` ({`forging` 0..1000 or -1, `on`, `exposed_left`, `taken`,
+  `next_in`, `blast` (`drone_blast_m`: how far from the boss's edge a bomb still blows the plate off)}), `slabs` ([{`slab` (false: a pool cooling), `id`, `centre`, `radius`, `cooling` 0..1000, `left` (-1
+  cooling), `shattered`, `safe`}]), `overpressure` ({} or `cast`, `cast_left`, `burn`, `burn_left`, `on_slab`),
+  `overpressure_in`, `scald` ({} before its phase, else `gauge`, `max`, `burning`, `draining`). The marker:
+  `objectives()` (`foundry_slab`).
+
+## 10t. The Fallen remembers the run (v0.12.0 step 7a; owner direction HC-A, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md) §5)
+
+Supersedes the v0.9.5 interphase (The Fallen vanishing for 15 s at 66 % and 33 % with RAYS / RAIN / LIGHTS OUT):
+`BossInterphase`, `InterphaseTable`, `FinalFight.ip_*`, the five `interphase` carriers and their data are gone. The
+Fallen never becomes untargetable or freezes its HP for a mechanic, and the pace no longer leaves time out. Its dash
+between moves stays (`FinalBossDefinition.reposition`, `FallenDashTable`, `BossTable.reposition`; the same numbers).
+Its numbers are `BossTable.remembered` (a `FallenRememberedTable`, compiled by `FallenCompiler` from
+`FinalBossDefinition.remembered`, `FallenRules`); its state is `BossFightStore.fl_*`. Code: `BossRemembered` (the
+director, the pool, the window hold, the read), `FallenTime`, `FallenRiptide`, `FallenQuake`, `FallenWard`. Only the
+pick and the pieces' own spots draw a stream (`ai`). No native change.
+
+- **The record of the run.** `RunState.bosses_beaten` (content ids, each once, in order): `finish_floor` adds the
+  floor's boss (`BossFlow.boss_index`) once its portal opened. Saved (`RunSaver` key `beaten`; a save without it is
+  not usable). `RunState.prepare` hands it to the world (`BossFightStore.fl_beaten`, setup).
+- **The pool** (`BossRemembered.pool`): of `SOURCES` (TIME `clockwork_judge`, RIPTIDE `tidecaller`, QUAKE
+  `gatekeeper`, WARD `twin_wardens`) the kinds whose boss is in `fl_beaten`, in that order; none: `FALLBACK` (TIME,
+  RIPTIDE: a start straight at the final boss, the Playground). The pick is one `ai` draw among them, the last kind
+  left out when more than one remains.
+- **The clocks.** The current final body with `remembered` takes them (`fl_boss`) the first tick it is not rising:
+  `fl_open` = `fl_next` = that tick + `first_ticks`; `fl_r` = the shortest clear run of 16 ways from `FinalFight.home`
+  (12 m with no wall within 50 m, at most 20 m). Its room (`room_of`) is the square of half side `fl_r` round `home`
+  (Riptide's strips); `inner_of` the square inside the circle (half side `fl_r` x 0.7071: the orbs and the pillars).
+- **The rhythm** (`may_cast`; tick phase 6, `BossSignatures.advance`, after every other mechanic). A cast begins when
+  (a) none is cast or runs, the tick is at least `fl_open`, the hero lives, and `calm_ticks` have passed since the
+  last ended (`fl_end`); (b) the clock is due (`tick >= fl_next`) or an HP gate (`gates`, per mille of max HP,
+  highest first) is reached and not yet cast; (c) the mimic windows leave room: none is on or warning, the next
+  warning is at least `calm_ticks` away and the last closed at least `calm_ticks` ago (`window_clear`, from
+  `FinalPace.window_clock`); (d) the body stands between attacks (`MOVE`) and is not dashing. A cast marks the first
+  gate pending (one cast, one gate). It lasts `cast_ticks` (the body stands still, `holds_still`), then the mechanic
+  runs (`fl_stage` 2); when it ends `fl_end` = the tick and `fl_next` = the tick + `every_ticks`. One that cannot
+  begin (nothing fits the room) ends on the tick it began.
+- **The hold.** From the tick one may be cast until it ends, `BossRemembered.think` (BossAi.think, after
+  `BossNemesis.think`) keeps the body's cooldown at least 1, so it starts no attack of its own; its dash between
+  moves stays (the quake asks for it). `FinalPace.advance`: while a mechanic is cast or runs, or the next tick is less
+  than `calm_ticks` after one ended (`holds_window`), a window that would begin its warning on the next tick waits:
+  `fl_delay` += 1 (the window's clock subtracts `fl_delay` where it subtracted `ip_total`), so every later window moves
+  by as much. Never a mechanic during a window or its warning (a 4-minute scripted fight checks it every tick).
+- **Time Wave** (`FallenTime`). As it begins the hero's weapon loses `time_cut` per mille (`BossSlow.apply`, owned by
+  The Fallen; event `time_wave`) and `BossTime.place_orbs` places `time.orb_count` hour orbs (`BossPickups`, each
+  `time.orb.amount`, radius `time.orb.radius_m`, life `time_ticks`) inside `inner_of`, `time.orb_gap_m` from the hero
+  and from each other (halved at most twice when none fits), with The Fallen's numbers and no Judge (`place_orbs`
+  gained a `room` parameter). `JUDGE_ORB` points at them. It ends when none lies (taken or run out); the cut still
+  held then comes back (`BossSlow.clear`). No gears, no Rewind.
+- **Riptide** (`FallenRiptide`). One row of `dance` (a `BossDanceTable`: `rip_casts` 3, `rip_warn_ticks` =
+  `rip_last_warn_ticks` 150, `rip_wave_ticks` 36, `rip_run_margin` 1300, `rip_hit` 300; High Tide and the Maelstrom
+  at a phase no body reaches) on `room_of`'s four strips, run by the Tidecaller's own code (`BossDance.start_row` and
+  `run_row`, which now take the room; the Tidecaller passes `room_of(w, i)` as before): the written safe order (1, 2,
+  0) or its mirror, the walk rule's warnings, a hit through `SafeArea` once a cast. It ends on the row's last wave
+  step. The row's fields are the dance's (`dance_rip_*`); The Fallen's block hashes them.
+- **Quake pillars** (`FallenQuake`). The body's `BossTable.quake` is a `QuakeTable` from these numbers (`from_phase`
+  never reached), so `BossQuake` pulses and shatters them as the Gatekeeper's. As it begins `BossQuake.raise`
+  (on_phase's rise, with an area and a hero gap: `pillar_hero_m` from the hero's edge; its stun count starts again)
+  raises `count` inside `inner_of`. Every `pillar_dash_ticks` it sets `FinalFight.rd_pending` (the body free), and
+  while the pillars stand `BossNemesis._reposition` aims the dash at the hero (`FallenQuake.dash_spot`: straight at
+  it, at most `dash_max_m`, 1 m short of its edge; a wall that is no pillar on the way: the usual spot). As the dash
+  leaves (`on_dash`) the first pillar its sweep runs into is marked (`fl_hit_x/y`, `fl_hit_at` = now + the share x
+  its ticks); on that tick it shatters (`BossQuake.shatter`, lifted out of `lanes_strike`), the dash stops, and for
+  the first `stuns_per_phase` (2) of the mechanic the body is stunned `stun_ticks` (`STAGGERED`), taking
+  `stun_permille` (1500) through the Gatekeeper's path (`BossQuake.stunned`: `BossChallenge.hit_mult`,
+  `Damage.tick_dot`). It ends after `pillar_ticks` or when no pillar stands; the pillars sink (`BossQuake.drop`).
+- **The ward** (`FallenWard`). The body stands still (`holds_still`) and takes nothing (`Damage._blocked`:
+  `FallenWard.blocks` while `fl_ward`) for at most `ward_ticks`. The amber Warden's shade (no actor: `fl_sh_*`) stands
+  `ward_edge_m` in from the circle's edge farthest from the hero (across `home`) and winds a charge up for
+  `ward_windup_ticks`, its aim and length (`ward_overshoot_m` past the hero, cut by walls) following the hero until
+  `ward_lock_ticks` before the end; then it runs at `ward_speed`. Its swept segment touching the hero costs
+  `ward_hit` once a charge; the lane it has swept touching the body (its radius + the body's + 0.02 m) breaks the
+  ward: no burst, the body is `STAGGERED` `ward_stun_ticks` (`fl_stun_until`) taking the quake table's
+  `stun_permille`, and the mechanic ends with the stun. A run that ends arms a burst there (`fl_bu_*`):
+  `ward_burst_ticks` later `ward_burst_hit` to a hero touching `ward_burst_m`. A missed charge is followed
+  `ward_gap_ticks` after its end by the next (the shade at the farthest edge again) until `ward_charges`; after the
+  last one's burst the ward ends. Hits through `SafeArea.hurt` (`ONCE`). While the ward stands and the shade winds up,
+  `ObjectiveMarkers.TWINS_WARD` follows the body (the Twin Wardens' hint arrow for the same moment; cleared with the
+  ward, the shade's run and `FallenWard.clear`).
+- **Never a kill from full.** `FallenRules.MAX_HIT` (400 per mille) bounds `riptide_permille`, `pillar_permille`,
+  `ward_permille` and `ward_burst_permille`. **The pace** is unchanged (§10i): the ward's blocked hits and the stuns'
+  x1.5 go through `Damage` before `FinalPace.cap_hit`, so the bucket caps them; The Fallen hit for 999,999 every tick
+  through a fight with all four kinds dies no sooner than `pace_min_ticks` after its rise (a test).
+- **The death recap.** Riptide names the carrier `fallen_riptide` (`dance.rip_cause`: `CAUSE_TIDECALLER_WAVE`), the
+  shade and its burst `fallen_shade` (`ward_cause`: `CAUSE_TWIN_CHARGE`), a pulse the quake table's cause
+  (`CAUSE_GATEKEEPER_PILLAR`). The carriers are move `remembered` (`BossAttackTable.Move.REMEMBERED`, the enum slot
+  the interphase's move held), in no phase, damage 0. Damage effect ids: `boss_riptide`, `quake_pulse`,
+  `fallen_shade`, `fallen_shade_burst`.
+- **The end.** With the hero dead the mechanic running ends at once (`stop`: its orbs and cut, strips, pillars, ward
+  and shade); with the body gone (`on_boss_gone`) everything and the clocks go (`fl_beaten` stays).
+- **Events** (`STATUS_APPLY`, source The Fallen; never read back): `fallen_remembered_cast` (amount = the cast's
+  ticks, amount_applied = the kind; its source boss is `SOURCES[kind]`), `fallen_remembered` (it runs;
+  amount_applied = the kind), `fallen_remembered_end` (amount_applied = the kind), `fallen_ward_up` (amount =
+  `ward_ticks`), `fallen_ward_down`, `fallen_ward_break` (amount = the stun's ticks), `fallen_shade_charge` (pos = the
+  shade, amount = its wind-up, amount_applied = which charge), `fallen_shade_hit` (target the hero, amount = the HP it
+  cost); and the pieces' own: `time_wave`, the pickups' events, `riptide_cast` / `riptide_wave` / `riptide_hit`,
+  `quake_shatter`, `quake_stun`, `charge_burst_armed`, `charge_burst`.
+- **Hash and save.** Hashed after a `-23` sentinel only while a Fallen runs them (`fl_boss >= 0`): `FALLEN_FIELDS`,
+  the `dance_rip_*` row, `FALLEN_FLOAT_FIELDS`, `fl_beaten`. `FinalFight` hashes its dash fields only while one is
+  due or shown (`rd_pending`, `rd_t`; the interphase's block is gone), so a Fallen fight hashes differently from
+  before this step. `BossFightStore` is a snapshot state class; the pillars are S1 pillars (walls again on restore).
+- **Reads.** `WorldReader.boss_fallen()` (`BossRemembered.state`): `boss`, `running` (`FALLEN_NONE`, `FALLEN_TIME`,
+  `FALLEN_RIPTIDE`, `FALLEN_QUAKE`, `FALLEN_WARD`), `source` (its boss id), `stage`, `cast` (0..1000, -1),
+  `cast_left`, `left`, `ended`, `count`, `next_in`, `gate`, `pool`, `room`, `ward` ({} or `up`, `stun_left`, `left`),
+  `shade` ({} or `position`, `radius`, `stage`, `charge`, `charges`, `lane` (Obb), `locked`, `progress`, `end`,
+  `burst_radius`, `breaks` (the ward is up and the lane touches the body, its radius plus the contact slop)), `burst` ({} or `centre`, `radius`, `left`, `progress`), `pillar_dash` ({} or `from`, `to`,
+  `through`). Each piece's own read reports it too: `boss_attack_slow()`, `boss_pickups()`, `boss_dance()` (The
+  Fallen's row in BossDance's shape when no Tidecaller dances: `FallenRiptide.dance_state`), `boss_quake_pillars()`;
+  `boss_invulnerable(i)` is true under the ward. The markers: `objectives()` (`twins_ward` on the body).
+- **The theft** (v0.12.0 step 7b; brief row SG-HC; `FallenTheft`, `WandLock`; numbers `theft_*` in the same
+  `remembered` dictionary; state `BossFightStore.fl_tk_*`). No stream is drawn; no native change.
+  - *When.* Each of `theft_gates` (660, 330 per mille of max HP) once. It is a big beat of the rhythm: a cast may begin
+    when a gate is reached and not met, a card can be taken and fewer than `theft_held` (2) are held, no remembered
+    mechanic is cast or runs, the tick is at least `fl_open`, `calm_ticks` have passed since `fl_end`, no remembered
+    HP gate is waiting (that mechanic goes first), `window_clear` holds, and the body is in `MOVE` and not dashing.
+    A gate reached with nothing to take or two held is met at once with no cast and no event. While the theft may be
+    cast or is cast, `BossRemembered._due` is false (no mechanic by its clock), `think` holds the body's own attacks,
+    `holds_window` is true (no window begins), and during the cast `holds_still` stands the body still and no dash
+    leaves. The cast lasts `theft_cast_ticks` (90); its end sets `fl_end` (the calm follows it as after a mechanic).
+  - *What.* The first card of `NemesisBuild.pick_cards` (the mimic's ranking: level, rarity, slot) not already held
+    is appended to `fl_tk_code` with `theft_hits` (8) in `fl_tk_hits`. The wand is not written: `mod_slots`,
+    `items_owned`, the levels and the order stay; `WandLock.off` makes the card do nothing where held cards are read
+    (`Modifiers.build_modifiers` compiles `WandLock.lit(mod_slots)`, `World._build_mods` folds
+    `WandLock.lit(items_owned)`, and `ElementLevels`, `ElementLevelsFsf._scan`, `ElementStack._card_of`,
+    `StressMarks.card`, `Modifiers._engine_outside_wand`, `AttackSlots.form_row` skip it); taking and returning call
+    `World.refresh_build(false)`. Forecasts of a wand not held (`build_modifiers_of`) and the Nemesis's own copies are
+    not filtered. The card is among the first `card_casts` of `FinalFight.casts` (if the ranking moved since the rise,
+    its copy replaces the last one that is not another held card): its mimic windows cast it; nothing is cast outside
+    them.
+  - *Back.* `Damage.hit`: a hero hit on the holder whose final amount is above 0 (before `_apply`, so the pace's cap
+    and the window's pull do not change the count) arriving from `from` with `angle_diff(angle_of(from - pos),
+    facing) >= 2048 - theft_half_arc` (the rear 120 degrees) takes one from the oldest card's count; at 0 that card
+    returns. Front and side hits, DoT ticks and hits from its own position do not count.
+  - *Always back.* `BossRemembered.on_boss_gone` (its death, `FinalBoss.jump`, any removal) gives every card back
+    and clears the block; on the next `advance` a holder no longer alive (any other path) or a dead hero does the same.
+    The run's carry, the room-entry and body-start saves never hold the theft (they save `mod_slots` and
+    `items_owned`, which it never writes); a new floor or loop is a new World with none.
+  - *Events* (`STATUS_APPLY`, source The Fallen): `fallen_theft_cast` (amount = its ticks), `fallen_card_taken`
+    (amount = the slot, amount_applied = the card's code), `fallen_mark_hit` (amount = the hits still needed,
+    amount_applied = the code), `fallen_card_returned` (amount = the slot, amount_applied = the code; at the hero
+    when the body is gone).
+  - *Hash and save.* After a `-26` sentinel while `fl_tk_boss >= 0` or a card is held: `fl_tk_boss`, `fl_tk_gates`,
+    `fl_tk_from`, `fl_tk_code`, `fl_tk_hits`. `BossFightStore` is a snapshot class and `ItemMods` is snapshotted, so a
+    snapshot mid-theft restores it exactly (the book compiles again on its next read, through the lock).
+  - *Reads.* `boss_fallen()` gains `taken` ([{`slot`, `card` (id), `code`, `hits_left`, `hits`}], oldest first),
+    `mark` ({} with none held, else `on`, `dir` (unit vector from the body to its back), `half_arc`, `hits_left`,
+    `hits`) and `theft_cast` (0..1000, -1); `wand()`'s cards gain `taken`.
+
+## 10u. The Warlord's charge, War Banner and Duel (v0.12.0 step 8; owner brief rows WL1-WL3 and SG-WL, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+The Warlord keeps its front shield, javelins, great javelin, walls and spears (§10d, §10f). Its numbers are
+`BossTable.warlord` (a `BossWarlordTable`, compiled from `BossDefinition.warlord`; null for every other boss); its
+state is `BossFightStore.wl_*`. Code: `BossWarlord` (the rhythm, the banner, the hooks, the read), `BossDuel` (the
+cage). Hooks: `BossSignatures.advance` (before `BossChargeBurst`), `BossTide.due` (HOLD), `BossGreatJavelin.may_use`,
+`BossMaelstrom.holds` (it stands), `BossChallenge.hit_mult` and `Damage.tick_dot` (the banner's share),
+`Damage.target_mult` (the shield). `BossAi` gained no line. No stream is drawn; no native change.
+
+- **The faster charge (every phase).** `lunge_dash`: 36 ticks of wind-up, the aim locked the last 24, 26 m/s over 16
+  m (walls cut it short), the weak point after it, and a burst (§10q) of 3.5 m, 15 ticks after its run stops, for
+  the charge's damage; its telegraph carries the end circle (`"burst"`).
+- **The rhythm: one big mechanic at a time.** The banner's phase and the duel's are different (content). In each,
+  the first is due `*_first_ticks` after the phase's gate (the first tick the boss stands in it), each next one
+  `banner_gap_ticks` after the last banner is gone / `duel_gap_ticks` after the last duel ended. A due one begins in
+  tick phase 6 when the boss is in `MOVE` (an attack, its follow-up and its recovery finish first) and no great
+  javelin of its is out (`BossGreatJavelin.is_out`); it waits otherwise. From the tick it may begin through its cast
+  the boss takes no step and `BossTide.due` answers HOLD (its cooldown kept at 1 at least): no pick, no punish, no
+  gap-closer. While a banner or a duel runs no `great_javelin` is picked. A banner standing as its phase ends falls.
+- **War Banner** (`banner_phase`). A `banner_cast_ticks` cast, then a circle of `banner_radius_m` on the boss's spot
+  (its pole) for `banner_ticks`, or until a `charge` of the boss's sweeps a lane (from where its run began to its body,
+  its radius plus the contact slop each side) within `banner_pole_m` of the pole (the charge goes on). While the
+  boss's centre is inside, each tick its running cooldown gains `1000000 / banner_cooldown - 1000` per mille of a tick
+  (`wl_cd_acc`; a whole tick off per 1000): cooldowns at 70 %. While the hero's centre is inside, its hits and damage
+  ticks on the boss are ×`banner_damage` per mille (untagged).
+- **The Duel** (`duel_phase`). A `duel_cast_ticks` cast; then the cage: centre the midpoint of the boss and the hero
+  as the cast ends, moved inward so the whole circle is `BossDuel.ROOM_GAP_M` inside `w.bosses.arena` (a room
+  narrower than the cage gets a smaller one); its fence closes linearly from `duel_radius_m` to `duel_end_radius_m`
+  over `duel_ticks` (`radius = r0 + (r1 - r0) × t / duel_ticks`, `t` = ticks since it closed), then stays through the
+  recall's warning. Each tick phase 6 the boss's body is set back inside it on its line to the centre, the hero's by
+  `BossTide.shift` (the Pull's rule), and a charge's remaining lane is cut at the fence (a locked one still runs
+  `BossDuel.MIN_RUN_M`, so its burst arms). A hero whose body is within `fence_touch_m` of the fence loses
+  `fence_hit` per mille (`SafeArea` ONCE), at most once every `fence_every_ticks`, the first such span after the
+  cage closes free. The front shield is down (`BossDuel.shield_down`; the front arc takes the normal share) from the
+  cage's close to its end. Inside it the pick is only `duel_attacks`. `duel_ticks` after the close: `recall_warn_ticks`
+  of warning on the centre's `recall_radius_m`, then a hero touching it loses `recall_hit` per mille (ONCE); the
+  cage is gone.
+- **Never a kill from full.** `WarlordRules.MAX_HIT` (400 per mille) bounds the fence and the recall. The charge's
+  burst is the charge's own damage (50, a `big` hit).
+- **The death recap.** The fence names `fence_cause` (`javelin_fan`, `CAUSE_WARLORD_FAN`); the recall `recall_cause`'s
+  late part (`LATE_CAUSE` + its index: `CAUSE_WARLORD_RECALL`). Damage effect ids `boss_warlord_fence`,
+  `boss_warlord_recall`.
+- **Fight end.** With the hero dead or outside the room the banner falls (`FELL_CLEARED`) and the duel ends without
+  its recall (`BossWarlord.cancel`; the clocks stay); with the boss gone everything goes (`clear_warlord`).
+- **Events** (`STATUS_APPLY`, source the boss; never read back): `warlord_banner_cast` (amount = ticks),
+  `warlord_banner_planted` (pos = the pole, amount = ticks), `warlord_banner_fallen` (amount = `FELL_TIME` 0,
+  `FELL_CHARGE` 1, `FELL_CLEARED` 2), `warlord_duel_cast` (amount = ticks), `warlord_duel_start` (pos = the centre,
+  amount = ticks), `warlord_recall_warn` (pos, amount = ticks), `warlord_recall` (target the hero, amount = the HP it
+  cost, 0 a miss), `warlord_duel_end` (amount_applied 1 after the recall, 0 cut short), `warlord_fence_touch` (target
+  the hero, amount = the HP it cost).
+- **Hash and save.** Hashed after a `-24` sentinel only while a Warlord runs them (`wl_boss >= 0`, from its second
+  phase), so its first phase hashes as before (the charge's new numbers change it anyway). `BossFightStore` is a
+  snapshot state class; `BossWarlordTable` is a content class of the snapshot.
+- **Reads.** `WorldReader.boss_warlord()` (`BossWarlord.state`): `boss`, `running`, `next`, `next_in`, `held`,
+  `banner` ({} or `cast`, `centre`, `radius`, `left`, `boss_inside`, `hero_inside`, `cooldown`, `damage`), `duel` ({}
+  or `stage`, `cast`, `centre`, `radius`, `from_radius`, `to_radius`, `left`, `progress`, `zone` ({} or `centre`,
+  `radius`, `warn`), `shield_down`, `touch_m`, `touching`, `in_zone`). The end circle: the charge's telegraph and
+  `boss_charge_bursts()`. A read after a step describes the tick about to run.
+## 10v. The Hive Lens's drones and its Lattice (v0.12.0 step 11; brief rows HL1, HL2 and SG-HL, [`BOSS_BRIEF.md`](../roadmap/v0.12.0/BOSS_BRIEF.md))
+
+The Hive Lens keeps its attacks (spirals, blooms, the Gaze, the Focus Beams, the flare, the dive, the split) and
+gains the pieces below. Its numbers are `BossTable.lens` (a `BossLensTable`, compiled from `BossDefinition.lattice`;
+null for every other boss); its state is `BossFightStore.hl_*`. Code: `BossLens` (feeding, the cut, the drones sent
+again, the rhythm, the read), `BossGlass` (the burnt glass), `BossLattice` (the web). No native change. The lattice
+takes its clocks (and is hashed) only once its boss reaches its first phase (the second), so the first phase hashes
+as before.
+
+- **Feeding** (from `feed_phase`). Each living actor of `drone_kind` (the split's enemy) takes `feed_cut` per mille
+  (150) off every hit and damage tick from the hero on the boss, at most `feed_cap` (450): `Damage.hit` beside the
+  Foundry's share (tagged ARMOURED), `Damage.tick_dot`. With none alive nothing changes.
+- **The cut.** While one of the boss's `beams` (its Focus Beams) is ACTIVE, every drone whose body its lane touches
+  (`BossAi.lane_slice`, the very test the hero is hit by; a burning beam is its whole lane) is killed by the boss
+  (`Damage.hit`, owner the boss, effect `lens_beam_cut`; a kill like any, its shards included) and `hl_cuts` counts
+  it.
+- **Sent again.** `hl_empty_at` is the tick since which no drone is alive, queued or being split off (the split in
+  its windup or active time); `resend_ticks` (12 s) after it the boss casts `split_attack` again, through
+  `BossTide.due` (after the signature and the Judge's Time Wave; HOLD while its cooldown runs, so the punish and the
+  gap-closer wait too). A Lattice due with fewer than `lat_min` drones asks for the split the same way. The split
+  always sends its three: with one drone alive when a Lattice asks for it, four live.
+- **The burnt glass** (from `strip_phase`). On a Focus Beam's last ACTIVE tick (`state_t = active_ticks - 1`; a hit's
+  freeze holds that clock) each lane leaves a strip: its far `strip_len_m` (8 m; all of a shorter lane),
+  `strip_half_m` each side of its line, for `strip_ticks`. At most `strip_max` (3): a new one past it removes the
+  oldest first. A hero whose body touches one loses `strip_damage` HP (`BossAi.powered`) every `strip_step_ticks`, as
+  a DoT step whose hurt invulnerability is neither needed nor given (SafeArea's STEP, a flat amount). The death recap
+  names `strip_cause` (`focus_beam`, CAUSE_HIVE_FOCUS); effect `lens_glass`.
+- **The Lattice** (from `lat_phase`). Due `lat_first_ticks` (10 s) after the first tick the boss stands in a phase,
+  then `lat_every_ticks` (45 s) after each cast began. It is cast only while the boss is between attacks (MOVE: an
+  attack under way finishes first), not kneeling, not winding up or burning a Gaze, more than `calm_ticks` after the
+  Gaze's last such tick, and with `lat_min` drones alive. The cast (`lat_cast_ticks`, 2 s) draws its turn (+1 or -1)
+  from the ai stream. At its end, with fewer than `lat_min` drones alive, no web rises (END amount 0); else the web
+  stands `lat_ticks` (10 s): the drones alive, in the order of their angle round the boss (ties by id), go into
+  `BossLattice.ORBIT` (11, a script row: the native kernels skip a row in that state or past it, and
+  `BossSignatures.egg_think` leaves it), and every tick (phase 6) each steps `orbit_step` thousandths of 1/4096 turn
+  round the boss's centre (20 degrees a second; integer angles, `Kin.dir`), its distance eased at its own walk speed
+  toward the distance it had, held to `orbit_min_m..orbit_max_m`, its spot clamped inside the room. A strand joins
+  the boss's centre to the first drone, each drone to the next, the last to the boss (`BossLattice.strands`, read and
+  hit alike). A dead drone takes the two strands at it for the rest of this web; no strand joins its neighbours until
+  the next cast. With no drone of the web left, it ends. A hero within `strand_half_m` plus its radius of a strand's
+  segment pays `strand_hit` per mille of max HP (SafeArea ONCE: armour and the dash's invulnerability apply) and no
+  strand hurts it again for `strand_lock_ticks`. The death recap names `strand_cause` (`lens_flare`,
+  CAUSE_HIVE_GLARE); effect `lens_strand`. A gate or the end of the fight ends the web; the drones go back to MOVE.
+- **One big mechanic at a time.** While a Lattice is cast or stands the boss starts none of `holds`
+  (`BossLens.may_use` in `BossAi._choose`, chained before the Siege Engine's; `BossLens.unless_held` on the punish and
+  the gap-closer): the Gaze, the Focus Beams, the dive and the Prism Spirals; the Petal Bloom, the Lens Flare and the
+  split stay. A Gaze starts only with no Lattice cast or standing, at least `calm_ticks` after the last one ended, and
+  when the next is not due before the Gaze's windup, its active time and `calm_ticks` have passed. So the two never
+  overlap and at least 3 s of calm separates them.
+- **Fight end.** With the hero dead or outside the room (checked before and after the tick's lattice work) the web
+  ends and the glass goes (`BossLens.cancel`; the feeding stays with the drones); with the boss gone everything goes
+  (`on_boss_gone`, `BossFightStore.clear_lens`).
+- **Events** (`STATUS_APPLY`, source the boss; never read back): `lens_drone_cut` (target the drone, pos where it
+  was, amount its HP), `lattice_cast` (amount = its ticks, amount_applied = its turn), `lattice_start` (amount = the
+  web's ticks, amount_applied = its drones), `lattice_end` (amount = its drones left), `lattice_strand_hit` (pos = the
+  strand's nearest point, amount = the HP), `lens_glass_laid` (pos = its centre, amount = its ticks),
+  `lens_glass_gone`.
+- **Hash and save.** Hashed after a `-25` sentinel while a boss runs a lattice or glass lies (`hl_boss >= 0 or
+  hl_s_x not empty`). `BossFightStore` is a snapshot state class and `BossLensTable` a loadout class.
+- **Reads.** `WorldReader.boss_lens()`: `boss`, `drones` ([{`id`, `position`}], those that feed it), `taken`, `cut`,
+  `cuts`, `resend_in` (-1 none counting), `lattice` ({} or `casting` 0..1000 or -1, `cast_left`, `running`, `left`,
+  `spin`, `half_width`, `strands` ([{`from`, `to`, `a`, `b`}]: the actor ids at its ends, the boss's own at the boss),
+  `drones` (the web's, in order)), `lattice_in` (-1 not in its phase), `gazing`, `calm_left`, `glass` ([{`from`,
+  `to`, `half_width`, `left`, `progress`}]).
 
 ## 11. Scaling and threat
 

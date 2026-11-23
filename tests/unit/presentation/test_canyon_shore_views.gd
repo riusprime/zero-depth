@@ -1,13 +1,9 @@
 extends GutTest
-## v0.11.0 O13c (ENEMIES.md R5-R8): the signature enemies' stand-in bodies (CanyonShoreBodies on HordeAvatar) and what
-## they leave on the floor (CanyonShoreViews), read from a real World: the Glacier Turtle's shell goes when it breaks;
-## the bursts, vents, arcs and chunks are drawn while the sim has them. (v0.11.0 O17d: the Cinder Priest has its own
-## avatar: test_cinder_priest_avatar.gd; O17e: the Kiln Beetle too, test_kiln_beetle_avatar.gd.)
-
-const KINDS: Array[int] = [
-	WorldReader.KIND_FROST_SPITTER,
-	WorldReader.KIND_GLACIER_TURTLE,
-]
+## ENEMIES.md R5-R8: what the Red Canyon's and the Frozen Shore's signature enemies leave on the floor
+## (CanyonShoreViews), read from a real World: the bursts, vents, arcs and chunks are drawn while the sim has them.
+## Each signature is the owner's model on its own avatar now (test_kiln_beetle_avatar.gd, test_cinder_priest_avatar.gd,
+## test_frost_spitter_avatar.gd, test_glacier_turtle_avatar.gd); here the Glacier Turtle's shield, read from a real
+## World through WorldReader, stands, braces under a hit on it and is gone when it breaks.
 
 var _tables: Array[EnemyTable] = []
 
@@ -29,47 +25,56 @@ func _risen(w: World) -> void:
 		w.step(InputFrame.new())
 
 
-## Syncs and advances `a` for a second of frame time.
-func _show(a: HordeAvatar, reader: WorldReader) -> void:
-	for _k in 20:
+## Syncs and advances `a` for `frames` frames of frame time (a sim tick each).
+func _show(a: AvatarBase, reader: WorldReader, w: World, frames := 20) -> void:
+	for _k in frames:
 		a.sync(reader, 1)
-		a.advance(0.05)
+		a.advance(1.0 / 60.0)
+		w.step(InputFrame.new())
 
 
-func _avatar(kind: int) -> HordeAvatar:
-	var a := HordeAvatar.new()
-	a.setup(kind)
-	add_child_autofree(a)
-	return a
+func test_no_signature_is_a_stand_in_body_any_more() -> void:
+	for kind: int in [
+		WorldReader.KIND_KILN_BEETLE,
+		WorldReader.KIND_CINDER_PRIEST,
+		WorldReader.KIND_FROST_SPITTER,
+		WorldReader.KIND_GLACIER_TURTLE,
+	]:
+		assert_false(HordeAvatar.is_horde_kind(kind), "kind %d is no horde body" % kind)
+		assert_true(VatCrowd.supports(kind), "kind %d is drawn by the VAT crowd" % kind)
 
 
-func test_each_signature_has_a_body_of_its_own() -> void:
-	var sizes := {}
-	for kind in KINDS:
-		assert_true(HordeAvatar.is_horde_kind(kind), "kind %d is drawn as a horde body" % kind)
-		assert_false(VatCrowd.supports(kind), "kind %d is no VAT crowd body (yet)" % kind)
-		var a := _avatar(kind)
-		assert_gt(a.body.get_child_count(), 6, "kind %d has its pieces" % kind)
-		var key := "%d" % a.body.get_child_count()
-		sizes[key] = int(sizes.get(key, 0)) + 1
-		assert_eq(HordeAvatar.height_of(kind), float(CanyonShoreBodies.HEIGHTS[kind]))
-	assert_eq(sizes.size(), KINDS.size(), "the bodies differ")
-
-
-func test_the_turtles_shell_goes_when_it_breaks() -> void:
+func test_the_turtles_shield_braces_under_a_hit_and_goes_when_it_breaks() -> void:
 	var w := _world()
 	w.add_enemy(ActorStore.Kind.GLACIER_TURTLE, Vector2(3, 0))
 	_risen(w)
 	w.actors.facing[1] = Kin.angle_of(Vector2(-1, 0))
 	var reader := WorldReader.new(w)
-	var a := _avatar(WorldReader.KIND_GLACIER_TURTLE)
-	_show(a, reader)
-	assert_true((a.parts["shell"] as Node3D).visible, "its shell stands")
+	var facing := Node3D.new()
+	add_child_autofree(facing)
+	var a := GlacierTurtleAvatar.new()
+	a.setup()
+	facing.add_child(a)
+	a.set_process(false)
+	_show(a, reader, w)
 	var t := w.enemy_table(ActorStore.Kind.GLACIER_TURTLE)
+	assert_eq(reader.shell_hp(1), t.shell_hp, "a whole shield")
+	assert_true(a.shield.visible, "its shield stands")
+	assert_eq(a.shield_shown(), 1.0)
 	var at := w.actors.pos(1)
+	var tip := a.drives()[GlacierTurtleAvatar.SHIELD_P]
+	Damage.hit(w, 1, 10, 1, 1, 1, 0, at + Vector2(-1, 0), at)
+	assert_eq(reader.shell_hp(1), t.shell_hp - 10, "the shield took the hit")
+	_show(a, reader, w, 6)
+	assert_gt(
+		a.drives()[GlacierTurtleAvatar.SHIELD_P], tip + 0.03, "it braces: the shield tips back"
+	)
 	Damage.hit(w, 1, t.shell_hp, 1, 1, 1, 0, at + Vector2(-1, 0), at)
-	_show(a, reader)
-	assert_false((a.parts["shell"] as Node3D).visible, "broken, it is gone")
+	assert_eq(reader.shell_hp(1), 0, "broken")
+	_show(a, reader, w)
+	assert_false(a.shield.visible, "broken, it is gone")
+	assert_eq(a.shield_shown(), 0.0)
+	assert_gt(a.bareness(), 0.2, "it stands bare")
 
 
 func test_the_views_draw_what_the_sim_has() -> void:

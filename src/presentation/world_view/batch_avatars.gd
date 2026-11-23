@@ -1,9 +1,13 @@
 class_name BatchAvatars
 extends RefCounted
 ## The batched enemies' avatars (EnemyBatch) run by the native library: each avatar's state (AvatarBase's,
-## HordeAvatar's or ChargerAvatar's fields that change after setup) is a row of packed doubles here, and ZdCrowd
-## (native/src/zd_avatar.*, the same arithmetic in the same order) applies each sync, steps each frame and writes
-## VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
+## HordeAvatar's, ChargerAvatar's, StoneThrowerAvatar's, NeedleAvatar's (BatchNeedleRow), RockLurkerAvatar's
+## (BatchLurker), WardenAvatar's (BatchWarden), SniperAvatar's (BatchSniperRow), ArcCasterAvatar's (BatchArcCaster),
+## LensDroneAvatar's (BatchLensDrone), BombDroneAvatar's (BatchBombDrone), ScrapHoundAvatar's (BatchScrapHound),
+## KilnBeetleAvatar's (BatchKilnBeetle), CinderPriestAvatar's (BatchCinderPriest), GlacierTurtleAvatar's
+## (BatchGlacierTurtle) or StarWarperAvatar's (BatchStarWarper) fields that change after setup) is a
+## row of packed doubles here, and ZdCrowd (native/src/zd_avatar*, the same arithmetic in the same order) applies each
+## sync, steps each frame and writes VatCrowd's body and shadow instances from the rows: one call each, none per enemy.
 ## The rows hold the state while `on`; the avatar objects then hold old numbers, except around an event:
 ## - an event on an avatar (a flinch, a hold, a death, a sync or a step called on it: AvatarBase._touch) first copies
 ##   its row into it (pull) and marks it the holder (dirty); its own GDScript runs the event as before, and the batch
@@ -13,62 +17,34 @@ extends RefCounted
 ## The sync's inputs come from EnemyBatch.update (note_sync) and are applied in one call at the end of the views'
 ## sync (flush), with the catch-up steps of the enemies that came on screen (warm). Without the library, with
 ## EnemyBatch.native off, or with any avatar no native class covers, `on` is false and every avatar runs its own code.
+## A row's layout and its copies to and from its avatar are BatchRows'; the fallback's sync is BatchScriptSync's.
 ## Presentation only (EI-07).
 
-## A row's fields (native/src/zd_avatar.h, the same numbers).
-const STRIDE := 80
-const T := 0
-const FLINCH_T := 1
-const FLINCH_S := 2
-const FLINCH_D := 3
-const FLINCH_KNOCK := 5
-const HOLD := 6
-const STRIKE_S := 7
-const STRIKE_END := 8
-const FRESH := 9
-const LAST_TICK := 10
-const LAST_POS := 11
-const VEL := 13
-const HIT := 15
-const REST_XF := 19
-const XF := 31
-const H_GLOW := 43
-const H_MUZZLE := 44
-const H_TELL := 45
-const H_STATE := 46
-const H_STATE_TICK := 47
-const H_TICKS_IN := 48
-const H_HEALING := 49
-const H_RISE := 50
-const H_WIND := 51
-const H_STRIKE := 52
-const H_WALK := 53
-const H_WALK_T := 54
-const H_LAST_AT := 55
-const H_DIE := 58
-const H_LIFT := 59
-const H_BODY := 60
-const H_D := 72
-const H_IS_MODEL := 76
-const H_MODEL_SCALE := 77
-const H_HEIGHT := 78
-const C_VISOR := 43
-const C_TELL := 44
-const C_STATE := 45
-const C_SPEED := 46
-const C_WALK := 47
-const C_PHASE := 48
-const C_WIND := 49
-const C_LUNGE := 50
-const C_DAZE := 51
-const C_RISE := 52
-const C_RISE_NOW := 53
-const C_LUNGE_NOW := 54
-const C_CROUCH_NOW := 55
-const C_Y_NOW := 56
-const C_LIFT := 57
+## A Stone Thrower's sync inputs past the common ones, a slot (zd_avatar.h MORE): its ticks into the state, its
+## facing (x, y), the sim's lift, flight and recovery ticks; a Needle's and a Sniper's: its HP (the first); a Rock
+## Lurker's: disguised, rumbling. A Warden's: its HP, the telegraph's slam radius, whether it gave one
+## (BatchWarden.note). A Scrap Hound's: its HP, whether a hit stopped it (BatchScrapHound.note). A Cinder Priest's:
+## its vent's numbers (BatchCinderPriest.note). A Glacier Turtle's: its HP, its shield's HP. A Star Warper's: its
+## HP, whether it is stunned (BatchStarWarper.note).
+const MORE := 6
 ## The native classes (zd_avatar.h Class) by kind; 0: none.
 const CHARGER_CLASS := 8
+const STONE_THROWER_CLASS := 10
+const NEEDLE_CLASS := 11
+const WARDEN_CLASS := 12
+const ROCK_LURKER_CLASS := 13
+const SNIPER_CLASS := 14
+const ARC_CASTER_CLASS := 15
+const LENS_DRONE_CLASS := 17
+const BOMB_DRONE_CLASS := 16
+const SCRAP_HOUND_CLASS := 18
+const KILN_BEETLE_CLASS := 19
+const CINDER_PRIEST_CLASS := 20
+const FROST_SPITTER_CLASS := 21
+const GLACIER_TURTLE_CLASS := 22
+const WIRE_WEAVER_CLASS := 24
+const GRAVITY_NODE_CLASS := 23
+const STAR_WARPER_CLASS := 25
 const CLASS_OF := {
 	WorldReader.KIND_SWARMER: 1,
 	WorldReader.KIND_SPLITTER: 2,
@@ -76,19 +52,35 @@ const CLASS_OF := {
 	WorldReader.KIND_SHIELD_BEARER: 4,
 	WorldReader.KIND_MENDER: 5,
 	WorldReader.KIND_MINE_LAYER: 6,
-	WorldReader.KIND_SNIPER: 7,
 	WorldReader.KIND_CHARGER: 8,
 	WorldReader.KIND_HATCHLING: 9,
+	WorldReader.KIND_STONE_THROWER: STONE_THROWER_CLASS,
+	WorldReader.KIND_NEEDLE: NEEDLE_CLASS,
+	WorldReader.KIND_ROCK_LURKER: ROCK_LURKER_CLASS,
+	WorldReader.KIND_WARDEN: WARDEN_CLASS,
+	WorldReader.KIND_RUBBLE_WARDEN: WARDEN_CLASS,
+	WorldReader.KIND_SNIPER: SNIPER_CLASS,
+	WorldReader.KIND_ARC_CASTER: ARC_CASTER_CLASS,
+	WorldReader.KIND_LENS_DRONE: LENS_DRONE_CLASS,
+	WorldReader.KIND_BOMB_DRONE: BOMB_DRONE_CLASS,
+	WorldReader.KIND_SCRAP_HOUND: SCRAP_HOUND_CLASS,
+	WorldReader.KIND_KILN_BEETLE: KILN_BEETLE_CLASS,
+	WorldReader.KIND_CINDER_PRIEST: CINDER_PRIEST_CLASS,
+	WorldReader.KIND_FROST_SPITTER: FROST_SPITTER_CLASS,
+	WorldReader.KIND_GLACIER_TURTLE: GLACIER_TURTLE_CLASS,
+	WorldReader.KIND_WIRE_WEAVER: WIRE_WEAVER_CLASS,
+	WorldReader.KIND_GRAVITY_NODE: GRAVITY_NODE_CLASS,
+	WorldReader.KIND_STAR_WARPER: STAR_WARPER_CLASS,
 }
 ## The owner's model kinds: native only with the model (their code bodies are never VAT-drawn).
-const MODEL_CLASSES := [2, 3, 4, 5]
+const MODEL_CLASSES := [2, 3, 4, 5, 6]
 
 ## Whether the rows hold the state now.
 var on := false
 ## The rows' serial: each native call that changes them moves it on (a row pulled at an older serial is old).
 var serial := 0
 
-var _st := PackedFloat64Array()
+var _rows := BatchRows.new()
 var _cls := PackedInt32Array()
 var _avatars: Array[AvatarBase] = []
 var _ids := PackedInt32Array()
@@ -108,6 +100,7 @@ var _in_heal := PackedByteArray()
 var _in_windup := PackedFloat64Array()
 var _in_x := PackedFloat32Array()
 var _in_y := PackedFloat32Array()
+var _in_more := PackedFloat64Array()
 var _warm := PackedByteArray()
 var _tick := 0
 var _any_pending := false
@@ -134,6 +127,47 @@ static func class_of(avatar: AvatarBase) -> int:
 	var ch := avatar as ChargerAvatar
 	if ch != null and ch.vat:
 		return CLASS_OF.get(ch.kind, 0)
+	var st := avatar as StoneThrowerAvatar
+	if st != null and st.vat:
+		return STONE_THROWER_CLASS
+	var nd := avatar as NeedleAvatar
+	if nd != null and nd.vat:
+		return NEEDLE_CLASS
+	var lk := avatar as RockLurkerAvatar
+	if lk != null and lk.vat:
+		return ROCK_LURKER_CLASS
+	var wd := avatar as WardenAvatar
+	if wd != null and wd.vat:
+		return WARDEN_CLASS
+	var sn := avatar as SniperAvatar
+	if sn != null and sn.vat:
+		return SNIPER_CLASS
+	var ac := avatar as ArcCasterAvatar
+	if ac != null and ac.vat:
+		return ARC_CASTER_CLASS
+	var ld := avatar as LensDroneAvatar
+	if ld != null and ld.vat:
+		return LENS_DRONE_CLASS
+	var bd := avatar as BombDroneAvatar
+	if bd != null and bd.vat:
+		return BOMB_DRONE_CLASS
+	if avatar is ScrapHoundAvatar and (avatar as ScrapHoundAvatar).vat:
+		return SCRAP_HOUND_CLASS
+	var kb := avatar as KilnBeetleAvatar
+	if kb != null and kb.vat:
+		return KILN_BEETLE_CLASS
+	if avatar is CinderPriestAvatar and (avatar as CinderPriestAvatar).vat:
+		return CINDER_PRIEST_CLASS
+	if avatar is FrostSpitterAvatar and (avatar as FrostSpitterAvatar).vat:
+		return FROST_SPITTER_CLASS
+	if avatar is GlacierTurtleAvatar and (avatar as GlacierTurtleAvatar).vat:
+		return GLACIER_TURTLE_CLASS
+	if avatar is WireWeaverAvatar and (avatar as WireWeaverAvatar).vat:
+		return WIRE_WEAVER_CLASS
+	if avatar is GravityNodeAvatar and (avatar as GravityNodeAvatar).vat:
+		return GRAVITY_NODE_CLASS
+	if avatar is StarWarperAvatar and (avatar as StarWarperAvatar).vat:
+		return STAR_WARPER_CLASS
 	return 0
 
 
@@ -170,11 +204,13 @@ func add(id: int, avatar: AvatarBase, facing: Node3D, sets: Vector2i) -> void:
 	_in_windup.append(0.0)
 	_in_x.append(0.0)
 	_in_y.append(0.0)
+	for q in MORE:
+		_in_more.append(0.0)
 	_warm.append(0)
 	_proc.append(1 if avatar.is_processing() else 0)
 	_dirty.append(0)
 	_pulled.append(-1)
-	_st.resize(_st.size() + STRIDE)
+	_rows.grow()
 	if on:
 		_export(k)
 		avatar.native_owner = self
@@ -195,14 +231,15 @@ func remove(k: int) -> void:
 		_ids[k] = _ids[last]
 		_slot_of[_ids[k]] = k
 		_avatars[k] = _avatars[last]
-		for q in STRIDE:
-			_st[k * STRIDE + q] = _st[last * STRIDE + q]
 		for q in 12:
 			_fx[k * 12 + q] = _fx[last * 12 + q]
+		for q in MORE:
+			_in_more[k * MORE + q] = _in_more[last * MORE + q]
 	_ids.resize(last)
 	_avatars.resize(last)
-	_st.resize(last * STRIDE)
+	_rows.move_last(k)
 	_fx.resize(last * 12)
+	_in_more.resize(last * MORE)
 	for col: StringName in [
 		&"_cls",
 		&"_seq",
@@ -279,11 +316,7 @@ func show_hit(avatar: AvatarBase, v: Vector4) -> void:
 	var k: int = _slot_of.get(avatar.get_meta(&"batch_id", -1), -1)
 	if k < 0:
 		return
-	var o := k * STRIDE + HIT
-	_st[o] = v.x
-	_st[o + 1] = v.y
-	_st[o + 2] = v.z
-	_st[o + 3] = v.w
+	_rows.set_hit(k, v)
 
 
 ## EnemyBatch.update: slot `k`'s sync from actor row `i` (the avatar's sync(), its inputs kept for flush).
@@ -291,12 +324,55 @@ func note_sync(k: int, reader: WorldReader, i: int) -> void:
 	var state := reader.actor_state(i)
 	_tick = reader.tick()
 	_in_state[k] = state
-	_in_windup[k] = (
-		float(reader.telegraph(i).get("progress", 0)) / 1000.0
-		if state == WorldReader.STATE_WINDUP
-		else 0.0
-	)
 	var c := _cls[k]
+	if c == STONE_THROWER_CLASS:  # (its sync reads no windup: its own ticks into the state, its facing, the ticks)
+		var o := k * MORE
+		var fwd := Kin.dir(reader.actor_facing(i))
+		var ticks := reader.thrower_ticks(i)
+		_in_more[o] = reader.actor_state_ticks(i)
+		_in_more[o + 1] = fwd.x
+		_in_more[o + 2] = fwd.y
+		_in_more[o + 3] = ticks.x
+		_in_more[o + 4] = ticks.y
+		_in_more[o + 5] = ticks.z
+	elif c == ROCK_LURKER_CLASS:  # (its sync reads the windup in any state, and its disguise)
+		var o := k * MORE
+		_in_windup[k] = float(reader.telegraph(i).get("progress", 0)) / 1000.0
+		_in_more[o] = 1.0 if RockLurkerAvatar.disguised(reader, i) else 0.0
+		_in_more[o + 1] = 1.0 if reader.lurker_rumbling(i) else 0.0
+	elif c == WARDEN_CLASS:
+		var v := BatchWarden.note(reader, i)
+		var o := k * MORE
+		_in_windup[k] = v[0]
+		_in_more[o] = v[1]
+		_in_more[o + 1] = v[2]
+		_in_more[o + 2] = v[3]
+	else:
+		_in_windup[k] = (
+			float(reader.telegraph(i).get("progress", 0)) / 1000.0
+			if state == WorldReader.STATE_WINDUP
+			else 0.0
+		)
+		if c == NEEDLE_CLASS or c == SNIPER_CLASS or c == BOMB_DRONE_CLASS:  # (its HP: a hit's flinch)
+			_in_more[k * MORE] = reader.actor_hp(i)
+		elif c == SCRAP_HOUND_CLASS:  # (and whether a hit stopped it: the yelp)
+			BatchScrapHound.note(reader, i, _in_more, k * MORE)
+		elif c == KILN_BEETLE_CLASS:  # (its HP and full HP: a hit's scrabble, the heat)
+			_in_more[k * MORE] = reader.actor_hp(i)
+			_in_more[k * MORE + 1] = reader.actor_max_hp(i)
+		elif c == CINDER_PRIEST_CLASS:  # (its vent's pulse, eruption and place, and its facing)
+			BatchCinderPriest.note(reader, i, _in_more, k * MORE)
+		elif c == FROST_SPITTER_CLASS:  # (its HP: a hit's flinch)
+			_in_more[k * MORE] = reader.actor_hp(i)
+		elif c == GLACIER_TURTLE_CLASS:  # (its HP and its shield's: a hit's flinch, the brace, the break)
+			_in_more[k * MORE] = reader.actor_hp(i)
+			_in_more[k * MORE + 1] = reader.shell_hp(i)
+		elif c == WIRE_WEAVER_CLASS:  # (its HP: a hit's flinch)
+			_in_more[k * MORE] = reader.actor_hp(i)
+		elif c == GRAVITY_NODE_CLASS:  # (its HP: a hit's wobble; its draw on the hero)
+			BatchGravityNode.note(reader, i, _in_more, k * MORE)
+		elif c == STAR_WARPER_CLASS:  # (its HP and its stun: a hit's sag, the reel)
+			BatchStarWarper.note(reader, i, _in_more, k * MORE)
 	if c >= CHARGER_CLASS:
 		var p := reader.actor_pos(i)
 		_in_x[k] = p.x
@@ -331,9 +407,9 @@ func flush(crowd: Object, frame: Array) -> void:
 	if not _any_pending:
 		return
 	_push()
-	_st = crowd.call(
+	_rows.st = crowd.call(
 		&"apply_sync",
-		_st,
+		_rows.st,
 		_cls,
 		frame,
 		_pending,
@@ -343,6 +419,7 @@ func flush(crowd: Object, frame: Array) -> void:
 		_in_windup,
 		_in_x,
 		_in_y,
+		_in_more,
 		_warm,
 		_consts()
 	)
@@ -355,9 +432,9 @@ func flush(crowd: Object, frame: Array) -> void:
 ## The frame step of every processing avatar not added this frame, in one native call.
 func step(crowd: Object, frame: Array, born: PackedInt32Array, delta: float) -> void:
 	_push()
-	_st = crowd.call(
+	_rows.st = crowd.call(
 		&"step_avatars",
-		_st,
+		_rows.st,
 		_cls,
 		frame,
 		_proc,
@@ -386,7 +463,7 @@ func write_bodies(crowd: Object, frame: Array, bo: PackedVector3Array, sets: Arr
 		caps.append(s[4])
 	return crowd.call(
 		&"write_bodies",
-		_st,
+		_rows.st,
 		_cls,
 		frame,
 		_body_of,
@@ -400,6 +477,18 @@ func write_bodies(crowd: Object, frame: Array, bo: PackedVector3Array, sets: Arr
 		caps,
 		_consts()
 	)
+
+
+## Slot `k`'s row's value at `field` (BatchWarden).
+func row_value(k: int, field: int) -> float:
+	return _rows.value(k, field)
+
+
+## Slot `k`'s avatar's own transform now (its row's while the rows hold the state).
+func avatar_xf(k: int) -> Transform3D:
+	if on and _dirty[k] == 0:
+		return _rows.transform_of(k)
+	return _avatars[k].transform
 
 
 ## The frame columns the native calls read beside the rows (the root at the batch's latest place).
@@ -419,30 +508,17 @@ func _flush_inputs_in_script() -> void:
 		var a := _avatars[k]
 		a.native_owner = null
 		if _pending[k] == 1:
-			if _cls[k] >= CHARGER_CLASS:
-				(
-					(a as ChargerAvatar)
-					. apply_state(
-						{
-							"tick": _tick,
-							"pos": Vector2(_in_x[k], _in_y[k]),
-							"state": _in_state[k],
-							"windup": _in_windup[k],
-						}
-					)
-				)
-			else:
-				(
-					(a as HordeAvatar)
-					. apply_state(
-						{
-							"tick": _tick,
-							"state": _in_state[k],
-							"healing": _in_heal[k] == 1,
-							"windup": _in_windup[k],
-						}
-					)
-				)
+			BatchScriptSync.apply(
+				a,
+				_cls[k],
+				_tick,
+				Vector2(_in_x[k], _in_y[k]),
+				_in_state[k],
+				_in_windup[k],
+				_in_heal[k] == 1,
+				_in_more,
+				k * MORE
+			)
 		if _warm[k] == 1:
 			for q in 4:
 				a.advance(0.05)
@@ -477,156 +553,6 @@ func _push() -> void:
 	_any_dirty = false
 
 
-## Slot `k`'s avatar's fields into its row.
-func _export(k: int) -> void:
-	var a := _avatars[k]
-	var o := k * STRIDE
-	_st[o + T] = a._t
-	_st[o + FLINCH_T] = a._flinch_t
-	_st[o + FLINCH_S] = a._flinch_s
-	_st[o + FLINCH_D] = a._flinch_dir.x
-	_st[o + FLINCH_D + 1] = a._flinch_dir.y
-	_st[o + FLINCH_KNOCK] = a._flinch_knock
-	_st[o + HOLD] = a._hold
-	_st[o + STRIKE_S] = a._strike_s
-	_st[o + STRIKE_END] = a._strike_end_s
-	_st[o + FRESH] = 1.0 if a._fresh else 0.0
-	_st[o + LAST_TICK] = a._last_tick
-	_st[o + LAST_POS] = a._last_pos.x
-	_st[o + LAST_POS + 1] = a._last_pos.y
-	_st[o + VEL] = a._vel.x
-	_st[o + VEL + 1] = a._vel.y
-	for q in 4:
-		_st[o + HIT + q] = a._hit[q]
-	_put_xf(o + REST_XF, a._rest_xf)
-	_put_xf(o + XF, a.transform)
-	var h := a as HordeAvatar
-	if h != null:
-		_st[o + H_GLOW] = h._glow_e
-		_st[o + H_MUZZLE] = h._muzzle_e
-		_st[o + H_TELL] = h._tell_p
-		_st[o + H_STATE] = h._state
-		_st[o + H_STATE_TICK] = h._state_tick
-		_st[o + H_TICKS_IN] = h._ticks_in
-		_st[o + H_HEALING] = 1.0 if h._healing else 0.0
-		_st[o + H_RISE] = h._rise
-		_st[o + H_WIND] = h._wind
-		_st[o + H_STRIKE] = h._strike
-		_st[o + H_WALK] = h._walk
-		_st[o + H_WALK_T] = h._walk_t
-		_st[o + H_LAST_AT] = h._last_at.x
-		_st[o + H_LAST_AT + 1] = h._last_at.y
-		_st[o + H_LAST_AT + 2] = h._last_at.z
-		_st[o + H_DIE] = h._die_t
-		_st[o + H_LIFT] = h._vat_lift
-		_put_xf(o + H_BODY, h._vat_body)
-		for q in 4:
-			_st[o + H_D + q] = h._vat_d[q]
-		_st[o + H_IS_MODEL] = 1.0 if h._is_model else 0.0
-		_st[o + H_MODEL_SCALE] = h._model_scale
-		_st[o + H_HEIGHT] = h.height
-		return
-	var c := a as ChargerAvatar
-	_st[o + C_VISOR] = c._visor_e
-	_st[o + C_TELL] = c._tell_p
-	_st[o + C_STATE] = c._state
-	_st[o + C_SPEED] = c._speed
-	_st[o + C_WALK] = c._walk
-	_st[o + C_PHASE] = c._phase
-	_st[o + C_WIND] = c._wind
-	_st[o + C_LUNGE] = c._lunge
-	_st[o + C_DAZE] = c._daze
-	_st[o + C_RISE] = c._rise
-	_st[o + C_RISE_NOW] = c._rise_now
-	_st[o + C_LUNGE_NOW] = c._lunge_now
-	_st[o + C_CROUCH_NOW] = c._crouch_now
-	_st[o + C_Y_NOW] = c._y_now
-	_st[o + C_LIFT] = c._vat_lift
-
-
-## Slot `k`'s row into its avatar's fields (then the object is as new as the row).
-func _import(k: int) -> void:
-	_pulled[k] = serial
-	var a := _avatars[k]
-	var o := k * STRIDE
-	a._t = _st[o + T]
-	a._flinch_t = _st[o + FLINCH_T]
-	a._flinch_s = _st[o + FLINCH_S]
-	a._flinch_dir = Vector2(_st[o + FLINCH_D], _st[o + FLINCH_D + 1])
-	a._flinch_knock = _st[o + FLINCH_KNOCK]
-	a._hold = _st[o + HOLD]
-	a._strike_s = _st[o + STRIKE_S]
-	a._strike_end_s = _st[o + STRIKE_END]
-	a._fresh = _st[o + FRESH] != 0.0
-	a._last_tick = int(_st[o + LAST_TICK])
-	a._last_pos = Vector2(_st[o + LAST_POS], _st[o + LAST_POS + 1])
-	a._vel = Vector2(_st[o + VEL], _st[o + VEL + 1])
-	a._hit = Vector4(_st[o + HIT], _st[o + HIT + 1], _st[o + HIT + 2], _st[o + HIT + 3])
-	a._rest_xf = _get_xf(o + REST_XF)
-	a.transform = _get_xf(o + XF)
-	var h := a as HordeAvatar
-	if h != null:
-		h._glow_e = _st[o + H_GLOW]
-		h._muzzle_e = _st[o + H_MUZZLE]
-		h._tell_p = _st[o + H_TELL]
-		h._state = int(_st[o + H_STATE])
-		h._state_tick = int(_st[o + H_STATE_TICK])
-		h._ticks_in = int(_st[o + H_TICKS_IN])
-		h._healing = _st[o + H_HEALING] != 0.0
-		h._rise = _st[o + H_RISE]
-		h._wind = _st[o + H_WIND]
-		h._strike = _st[o + H_STRIKE]
-		h._walk = _st[o + H_WALK]
-		h._walk_t = _st[o + H_WALK_T]
-		h._last_at = Vector3(_st[o + H_LAST_AT], _st[o + H_LAST_AT + 1], _st[o + H_LAST_AT + 2])
-		h._die_t = _st[o + H_DIE]
-		h._vat_lift = _st[o + H_LIFT]
-		h._vat_body = _get_xf(o + H_BODY)
-		h._vat_d = Vector4(_st[o + H_D], _st[o + H_D + 1], _st[o + H_D + 2], _st[o + H_D + 3])
-		return
-	var c := a as ChargerAvatar
-	c._visor_e = _st[o + C_VISOR]
-	c._tell_p = _st[o + C_TELL]
-	c._state = int(_st[o + C_STATE])
-	c._speed = _st[o + C_SPEED]
-	c._walk = _st[o + C_WALK]
-	c._phase = _st[o + C_PHASE]
-	c._wind = _st[o + C_WIND]
-	c._lunge = _st[o + C_LUNGE]
-	c._daze = _st[o + C_DAZE]
-	c._rise = _st[o + C_RISE]
-	c._rise_now = _st[o + C_RISE_NOW]
-	c._lunge_now = _st[o + C_LUNGE_NOW]
-	c._crouch_now = _st[o + C_CROUCH_NOW]
-	c._y_now = _st[o + C_Y_NOW]
-	c._vat_lift = _st[o + C_LIFT]
-
-
-func _put_xf(o: int, xf: Transform3D) -> void:
-	var b := xf.basis
-	_st[o] = b.x.x
-	_st[o + 1] = b.y.x
-	_st[o + 2] = b.z.x
-	_st[o + 3] = xf.origin.x
-	_st[o + 4] = b.x.y
-	_st[o + 5] = b.y.y
-	_st[o + 6] = b.z.y
-	_st[o + 7] = xf.origin.y
-	_st[o + 8] = b.x.z
-	_st[o + 9] = b.y.z
-	_st[o + 10] = b.z.z
-	_st[o + 11] = xf.origin.z
-
-
-func _get_xf(o: int) -> Transform3D:
-	return Transform3D(
-		Vector3(_st[o], _st[o + 4], _st[o + 8]),
-		Vector3(_st[o + 1], _st[o + 5], _st[o + 9]),
-		Vector3(_st[o + 2], _st[o + 6], _st[o + 10]),
-		Vector3(_st[o + 3], _st[o + 7], _st[o + 11])
-	)
-
-
 func _put_fx(o: int, xf: Transform3D) -> void:
 	var b := xf.basis
 	var v := [
@@ -645,3 +571,14 @@ func _put_fx(o: int, xf: Transform3D) -> void:
 	]
 	for q in 12:
 		_fx[o + q] = v[q]
+
+
+## Slot `k`'s avatar's fields into its row.
+func _export(k: int) -> void:
+	_rows.from_avatar(k, _avatars[k])
+
+
+## Slot `k`'s row into its avatar's fields (then the object is as new as the row).
+func _import(k: int) -> void:
+	_pulled[k] = serial
+	_rows.to_avatar(k, _avatars[k])

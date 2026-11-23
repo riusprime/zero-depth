@@ -6,6 +6,8 @@ extends RefCounted
 ##   (`crack`), a hot centre that falls off to the look's dark edge colour at the rim (fresnel: a bright core and a
 ##   dark edge, the readability rule), and the body's own turn (`spin` about the flight, `tumble` across it) and
 ##   wobble. `motion` 0 (reduced motion) stills the swirl, the turn and the wobble.
+##   The body is matte like the game's own models (EnemyLooks.body: roughness 1, no metal, low specular), lit by the
+##   room; only its emission (the bright core and veins) glows.
 ## - edge: the dark shell drawn from the inside behind the core (the outline), turning with it.
 ## - trail: a tapered strip that faces the camera about its own length (one instance per ball), noise scrolled down
 ##   it; `drips` breaks it into falling drops. Additive for fire, mixed for smoke and acid.
@@ -73,8 +75,9 @@ void fragment() {
 	vec3 glow = mix(hot, edge_color.rgb, smoothstep(0.3, 0.95, fres));
 	ALBEDO = mix(core_color.rgb * 0.25, body_color.rgb, crack);
 	EMISSION = glow * energy * mask * flick;
-	ROUGHNESS = mix(0.3, 0.9, crack);
-	SPECULAR = 0.45;
+	ROUGHNESS = 1.0;
+	METALLIC = 0.0;
+	SPECULAR = 0.4;
 	%s
 }
 """

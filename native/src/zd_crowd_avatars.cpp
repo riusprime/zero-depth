@@ -82,23 +82,26 @@ bool load_ctx(const PackedFloat64Array &consts, av::Ctx &c) {
 PackedFloat64Array ZdCrowd::apply_sync(const PackedFloat64Array &state, const PackedInt32Array &cls,
 		const Array &frame, const PackedByteArray &pending, int64_t tick, const PackedInt32Array &in_state,
 		const PackedByteArray &in_heal, const PackedFloat64Array &in_windup, const PackedFloat32Array &in_x,
-		const PackedFloat32Array &in_y, const PackedByteArray &warm, const PackedFloat64Array &consts) const {
+		const PackedFloat32Array &in_y, const PackedFloat64Array &in_more, const PackedByteArray &warm,
+		const PackedFloat64Array &consts) const {
 	const int64_t n = cls.size();
 	FrameCols fc;
 	av::Ctx cx;
 	if (state.size() != n * av::STRIDE || !fc.load(frame, n) || !load_ctx(consts, cx) || pending.size() != n ||
 			in_state.size() != n || in_heal.size() != n || in_windup.size() != n || in_x.size() != n ||
-			in_y.size() != n || warm.size() != n) {
+			in_y.size() != n || in_more.size() != n * av::MORE || warm.size() != n) {
 		ERR_PRINT("ZdCrowd.apply_sync: wrong columns");
 		return state;
 	}
 	PackedFloat64Array out = state;
 	double *S = out.ptrw();
 	const int32_t *C = cls.ptr();
+	const double *M = in_more.ptr();
 	for (int64_t k = 0; k < n; k++) {
 		double *s = S + k * av::STRIDE;
 		if (pending[k] != 0) {
-			av::apply(s, C[k], tick, in_state[k], in_heal[k] != 0, in_windup[k], in_x[k], in_y[k], cx);
+			av::apply(s, C[k], tick, in_state[k], in_heal[k] != 0, in_windup[k], in_x[k], in_y[k], M + k * av::MORE,
+					cx);
 		}
 		if (warm[k] != 0) {
 			const av::Frame f = fc.at(k);
@@ -162,7 +165,7 @@ Array ZdCrowd::write_bodies(const PackedFloat64Array &state, const PackedInt32Ar
 	std::sort(order.begin(), order.end(), [Q](int64_t a, int64_t b) { return Q[a] < Q[b]; });
 	std::vector<int64_t> pick;
 	pick.reserve(size_t(n));
-	float d[12];
+	float d[av::MAX_DRIVES];
 	for (int64_t j = 0; j < sets; j++) {
 		const bool is_body = body[j] != 0;
 		const int32_t want = set_index[j];

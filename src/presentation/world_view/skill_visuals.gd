@@ -205,7 +205,9 @@ func _show_forecast(s: Dictionary, reader: WorldReader) -> void:
 func _hide_sweep() -> void:
 	_release_ribbon()
 	_sweep_state = [0.0, 0.0, 0, 0.0]
-	_sweep_mesh.clear_surfaces()
+	# An empty mesh is left alone: clearing it still has the renderer update every instance of it
+	if _sweep_mesh.get_surface_count() > 0:
+		_sweep_mesh.clear_surfaces()
 	_edge.visible = false
 
 
@@ -221,7 +223,8 @@ func _show_sweep(s: Dictionary, reader: WorldReader, tick: int) -> void:
 	var r_in := reader.player_radius()
 	var r_out := r_in + float(s["reach_m"])
 	_sweep_state = [p, strength, half_arc, r_out]
-	_sweep_mesh.clear_surfaces()
+	if _sweep_mesh.get_surface_count() > 0:
+		_sweep_mesh.clear_surfaces()
 	if p <= 0.0 or strength <= 0.0:
 		_edge.visible = false
 		_release_ribbon()

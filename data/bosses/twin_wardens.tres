@@ -69,7 +69,6 @@ max_range_m = 99.0
 weight = 3
 cooldown_seconds = 0.9
 cause_key = &"CAUSE_TWIN_SWEEP"
-late_cause_key = &"CAUSE_TWIN_CHAIN"
 lock_seconds = 0.8
 
 [sub_resource type="Resource" id="A_chain_sweep_fast"]
@@ -91,74 +90,121 @@ max_range_m = 99.0
 weight = 3
 cooldown_seconds = 0.8
 cause_key = &"CAUSE_TWIN_SWEEP"
-late_cause_key = &"CAUSE_TWIN_CHAIN"
 lock_seconds = 0.8
 
-[sub_resource type="Resource" id="A_shield_bash"]
+[sub_resource type="Resource" id="A_sword_combo"]
 script = ExtResource("1_atk")
-id = &"shield_bash"
-shape = 3
+id = &"sword_combo"
+shape = 1
 shape_params = {
-"inner_radius_m": 0.0,
-"radius_m": 2.6
+"arc_degrees": 120.0,
+"count": 3,
+"gap_seconds": 0.35,
+"reach_m": 2.6,
+"step_m": 1.5
 }
-telegraph_seconds = 0.7
+telegraph_seconds = 0.5
 active_seconds = 0.0167
-recovery_seconds = 1.3
-damage = 50
-hit_class = &"big"
-move = &"slam_ring"
+recovery_seconds = 0.9
+damage = 20
+hit_class = &"small"
+move = &"sword_combo"
 min_range_m = 0.0
-max_range_m = 3.0
-weight = 3
+max_range_m = 5.0
+weight = 4
 cooldown_seconds = 0.7
-cause_key = &"CAUSE_TWIN_BASH"
-opens_weak_point = true
+cause_key = &"CAUSE_TWIN_COMBO"
 
 [sub_resource type="Resource" id="A_warden_charge"]
 script = ExtResource("1_atk")
 id = &"warden_charge"
 shape = 2
 shape_params = {
+"burst_radius_m": 3.5,
+"burst_seconds": 0.25,
 "length_m": 12.0,
-"speed_mps": 18.0
+"speed_mps": 26.0
 }
-telegraph_seconds = 1.0
+telegraph_seconds = 0.4
 active_seconds = 0.0167
 recovery_seconds = 1.3
 damage = 50
 hit_class = &"big"
 move = &"charge"
-min_range_m = 4.0
-max_range_m = 14.0
-weight = 2
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
 cooldown_seconds = 0.9
 cause_key = &"CAUSE_TWIN_CHARGE"
 opens_weak_point = true
-lock_seconds = 0.8
 
-[sub_resource type="Resource" id="A_ground_slam"]
+[sub_resource type="Resource" id="A_warden_charge_long"]
 script = ExtResource("1_atk")
-id = &"ground_slam"
-shape = 0
+id = &"warden_charge_long"
+shape = 2
 shape_params = {
-"count": 1,
-"radius_m": 2.0,
-"stagger_seconds": 0.5
+"burst_radius_m": 3.5,
+"burst_seconds": 0.25,
+"length_m": 12.0,
+"speed_mps": 26.0
 }
-telegraph_seconds = 1.1
+telegraph_seconds = 2.4
 active_seconds = 0.0167
 recovery_seconds = 1.3
 damage = 50
 hit_class = &"big"
-move = &"marks"
+move = &"charge"
 min_range_m = 0.0
 max_range_m = 99.0
+weight = 4
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_TWIN_CHARGE"
+opens_weak_point = true
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="A_rift_charge"]
+script = ExtResource("1_atk")
+id = &"rift_charge"
+shape = 2
+shape_params = {
+"burst_radius_m": 3.5,
+"burst_seconds": 0.25,
+"length_m": 12.0,
+"speed_mps": 26.0
+}
+telegraph_seconds = 0.5
+active_seconds = 0.0167
+recovery_seconds = 1.3
+damage = 40
+hit_class = &"medium"
+move = &"charge"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_TWIN_RIFT_CHARGE"
+lock_seconds = 0.4
+
+[sub_resource type="Resource" id="A_overhead"]
+script = ExtResource("1_atk")
+id = &"overhead"
+shape = 1
+shape_params = {
+"arc_degrees": 170.0,
+"reach_m": 3.4
+}
+telegraph_seconds = 1.3
+active_seconds = 0.0167
+recovery_seconds = 1.3
+damage = 50
+hit_class = &"big"
+move = &"sweep"
+min_range_m = 0.0
+max_range_m = 5.0
 weight = 3
 cooldown_seconds = 0.8
-cause_key = &"CAUSE_TWIN_SLAM"
+cause_key = &"CAUSE_TWIN_OVERHEAD"
 opens_weak_point = true
-lock_seconds = 0.8
 
 [sub_resource type="Resource" id="A_orb_volley"]
 script = ExtResource("1_atk")
@@ -243,10 +289,57 @@ weight = 1
 cooldown_seconds = 0.5
 cause_key = &"CAUSE_TWIN_BOLT"
 
+[sub_resource type="Resource" id="A_mirror_ward"]
+script = ExtResource("1_atk")
+id = &"mirror_ward"
+shape = 3
+shape_params = {}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 0.4
+damage = 0
+move = &"mirror_ward"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.6
+
+[sub_resource type="Resource" id="A_whole_ward"]
+script = ExtResource("1_atk")
+id = &"whole_ward"
+shape = 3
+shape_params = {}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 0.4
+damage = 0
+move = &"mirror_ward"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.6
+
+[sub_resource type="Resource" id="A_shadow_swords"]
+script = ExtResource("1_atk")
+id = &"shadow_swords"
+shape = 2
+shape_params = {}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 30
+hit_class = &"medium"
+move = &"shadow_swords"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_TWIN_SWORDS"
+
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 1000
-attack_ids = PackedStringArray("shield_bash", "chain_sweep", "warden_charge", "ground_slam")
+attack_ids = PackedStringArray("sword_combo", "chain_sweep", "warden_charge", "overhead")
 entry_attack = &""
 speed_permille = 1000
 cooldown_permille = 1000
@@ -254,7 +347,7 @@ cooldown_permille = 1000
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 667
-attack_ids = PackedStringArray("crossfire", "orb_volley", "rune_ring", "blink")
+attack_ids = PackedStringArray("crossfire", "orb_volley", "rune_ring", "blink", "mirror_ward", "shadow_swords")
 entry_attack = &"crossfire"
 speed_permille = 1000
 cooldown_permille = 650
@@ -262,7 +355,7 @@ cooldown_permille = 650
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 333
-attack_ids = PackedStringArray("shield_bash", "chain_sweep_fast", "warden_charge", "ground_slam", "crossfire_3", "orb_volley", "rune_ring", "blink")
+attack_ids = PackedStringArray("sword_combo", "chain_sweep_fast", "warden_charge_long", "overhead", "crossfire_3", "orb_volley", "rune_ring", "blink", "shadow_swords")
 entry_attack = &"crossfire_3"
 speed_permille = 1000
 cooldown_permille = 600
@@ -283,7 +376,7 @@ rear_mult_permille = 1000
 stagger_size = 200
 stagger_decay_per_second = 15.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_crossfire"), SubResource("A_crossfire_3"), SubResource("A_chain_sweep"), SubResource("A_chain_sweep_fast"), SubResource("A_shield_bash"), SubResource("A_warden_charge"), SubResource("A_ground_slam"), SubResource("A_orb_volley"), SubResource("A_rune_ring"), SubResource("A_blink"), SubResource("A_warden_bolt")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_crossfire"), SubResource("A_crossfire_3"), SubResource("A_chain_sweep"), SubResource("A_chain_sweep_fast"), SubResource("A_sword_combo"), SubResource("A_warden_charge"), SubResource("A_warden_charge_long"), SubResource("A_rift_charge"), SubResource("A_overhead"), SubResource("A_orb_volley"), SubResource("A_rune_ring"), SubResource("A_blink"), SubResource("A_warden_bolt"), SubResource("A_mirror_ward"), SubResource("A_shadow_swords"), SubResource("A_whole_ward")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
 arena_template = 0
@@ -309,18 +402,68 @@ gap_close_seconds = 2.0
 save_order = 2
 twin_kind_id = &"twin_warden_violet"
 twin_distance_m = 5.0
-chain_min_m = 3.0
-chain_max_m = 9.0
-chain_burn = 12
-chain_burn_seconds = 0.5
-chain_width_m = 0.5
 flank_m = 4.5
 anger_speed_permille = 1400
 anger_seconds = 3.0
-twin_attack_ids = PackedStringArray("crossfire", "crossfire_3", "orb_volley", "rune_ring", "blink")
+twin_attack_ids = PackedStringArray("crossfire", "crossfire_3", "orb_volley", "rune_ring", "blink", "mirror_ward", "shadow_swords", "whole_ward")
 twin_bolt_attack = &"warden_bolt"
 twin_bolt_seconds = 4.0
-twin_expose_seconds = 10.0
-twin_expose_permille = 1500
-twin_guard_permille = 500
+hazard = {
+"attack_ids": ["shadow_swords"],
+"burn_seconds": 0.5,
+"damage": 8,
+"kind": "damage",
+"life_seconds": 8.0,
+"look": "venom",
+"max_count": 5,
+"max_cover_permille": 250,
+"radius_m": 1.5,
+"warn_seconds": 0.5
+}
+hazard_cause_key = &"CAUSE_TWIN_RIFT"
+wardens = {
+"amber_warded_permille": 250,
+"charge_attack": "warden_charge",
+"charge_max_seconds": 15.0,
+"charge_min_seconds": 10.0,
+"combo_light_permille": 750,
+"dash_every_seconds": 3.0,
+"dash_m": 4.0,
+"dash_seconds": 0.25,
+"mirror_arc_degrees": 160.0,
+"mirror_cap_permille": 200,
+"mirror_cause_key": "CAUSE_TWIN_MIRROR",
+"mirror_damage_permille": 500,
+"mirror_look": "warden_violet_ember",
+"mirror_push_m": 2.0,
+"mirror_range_m": 16.0,
+"mirror_seconds": 4.0,
+"ranged_beyond_m": 7.0,
+"rift_attack": "rift_charge",
+"rift_gap_m": 8.0,
+"rift_hp_permille": 500,
+"rift_inside_seconds": 1.5,
+"rift_mark_seconds": 0.5,
+"rift_open_seconds": 1.0,
+"rift_radius_m": 1.2,
+"shelter_attack": "crossfire",
+"shelter_m": 3.0,
+"sword_count": 5,
+"sword_fan_degrees": 200.0,
+"sword_gap_seconds": 0.2,
+"sword_lane_max_m": 9.0,
+"sword_length_m": 8.0,
+"sword_ring_m": 5.0,
+"ward_attack": "whole_ward",
+"ward_charge_attack": "warden_charge_long",
+"ward_charge_max_seconds": 12.0,
+"ward_charge_min_seconds": 10.0,
+"ward_first_seconds": 4.0,
+"sword_width_m": 0.9,
+"ward_phase": 2,
+"ward_return_seconds": 12.0,
+"ward_stagger_seconds": 2.0,
+"ward_stun_seconds": 5.0,
+"ward_stun_permille": 1500
+}
 id = &"twin_wardens"

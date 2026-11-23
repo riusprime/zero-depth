@@ -64,6 +64,12 @@ static func on_phase(w: World, i: int, t: BossTable, phase: int) -> int:
 	var q := t.quake
 	if q == null or phase < q.from_phase:
 		return 0
+	return raise(w, i, q, phase, _area(w, i), 0.0)
+
+
+## Boss i's break count starts again (counted for `phase`) and pillars rise inside `area` until `count` stand, each
+## also hero_m from the hero's edge (on_phase; The Fallen's remembered quake). Returns how many rose.
+static func raise(w: World, i: int, q: QuakeTable, phase: int, area: Rect2, hero_m: float) -> int:
 	var bs := w.bosses
 	var id := w.actors.ids[i]
 	var e := bs.quake_of(id)
@@ -76,7 +82,7 @@ static func on_phase(w: World, i: int, t: BossTable, phase: int) -> int:
 		bs.quake_stuns[e] = 0
 	var n := 0
 	for k in q.count - pillars_of(w, id).size():
-		if _raise(w, i, q):
+		if _raise(w, i, q, area, hero_m):
 			n += 1
 	if n > 0:
 		BossSignatures.set_nav_extra(w)
@@ -84,8 +90,7 @@ static func on_phase(w: World, i: int, t: BossTable, phase: int) -> int:
 	return n
 
 
-static func _raise(w: World, i: int, q: QuakeTable) -> bool:
-	var area := _area(w, i)
+static func _raise(w: World, i: int, q: QuakeTable, area: Rect2, hero_m: float) -> bool:
 	var inset := q.half_m + q.wall_m
 	var span := area.size - Vector2(inset, inset) * 2.0
 	if span.x < 0.0 or span.y < 0.0:
@@ -98,7 +103,7 @@ static func _raise(w: World, i: int, q: QuakeTable) -> bool:
 			+ Vector2(inset, inset)
 			+ Vector2(w.rng_ai.range_int(0, sx), w.rng_ai.range_int(0, sy)) * 0.01
 		)
-		if _open(w, i, q, p):
+		if _open(w, i, q, p, hero_m):
 			BossSignatures.add_pillar(w, w.actors.ids[i], p, q.half_m, UNTIL - w.tick)
 			return true
 	return false
@@ -115,9 +120,11 @@ static func _area(w: World, i: int) -> Rect2:
 
 
 ## True when a quake pillar fits at p: as an S1 pillar, with wall_m of clear floor round it, gap_m from the other
-## quake pillars and boss_m from the boss's edge.
-static func _open(w: World, i: int, q: QuakeTable, p: Vector2) -> bool:
+## quake pillars, boss_m from the boss's edge and hero_m from the hero's.
+static func _open(w: World, i: int, q: QuakeTable, p: Vector2, hero_m: float) -> bool:
 	if Kin.length(p - w.actors.pos(i)) < w.actors.radius[i] + q.boss_m + q.half_m:
+		return false
+	if hero_m > 0.0 and Kin.length(p - w.player_pos()) < w.player.radius_m + hero_m + q.half_m:
 		return false
 	var bs := w.bosses
 	for k in bs.pillar_x.size():
@@ -207,8 +214,8 @@ static func view(w: World) -> Array:
 # --- the shatter (BossDodge.resolve_marks) -----------------------------------------------------------------------
 
 
-## Tick phase 6, the strike tick of marker k of boss i's row_lanes attack: every quake pillar of the boss its four
-## lanes run into shatters (each lane stops at the first wall along it, as row_lanes_of draws and hits it). Returns
+## Tick phase 6, the last strike tick of marker k of boss i's row_lanes attack: every quake pillar of the boss its lanes
+## run into shatters (each lane stops at the first wall along it, as row_lanes_of draws and hits it). Returns
 ## how many shattered.
 static func lanes_strike(w: World, i: int, k: int, atk: BossAttackTable) -> int:
 	var bs := w.bosses
@@ -216,20 +223,31 @@ static func lanes_strike(w: World, i: int, k: int, atk: BossAttackTable) -> int:
 	var mine := pillars_of(w, id)
 	if mine.is_empty():
 		return 0
-	var c := BossDodge.mark_of(w, i, k)
-	var reach := atk.length_m * 0.5
+	var reach := atk.length_m
 	var hit := PackedInt32Array()
-	for way in [0, 1024, 2048, 3072]:
-		var run := EnemyAi.clear_run(w, c, way, reach, atk.half_width_m)
-		var to := c + Kin.dir(way) * reach
+	for lane in BossDodge.row_lanes_of(w, i, k, atk):
+		var run := lane.half.x * 2.0
+		var from := lane.center - lane.axis_u * lane.half.x
+		var to := from + lane.axis_u * reach
 		for p in mine:
 			if hit.has(p):
 				continue
-			var f := Collide.sweep_vs_obb(c, to, atk.half_width_m, BossSignatures.pillar_obb(bs, p))
+			var f := Collide.sweep_vs_obb(
+				from, to, atk.half_width_m, BossSignatures.pillar_obb(bs, p)
+			)
 			if f >= 0.0 and f * reach <= run + REACH_SLACK_M:
 				hit.append(p)
 	if hit.is_empty():
 		return 0
+	shatter(w, i, hit)
+	return hit.size()
+
+
+## Boss i's quake pillars `hit` (indices into the pillar lists) shatter: each break is counted, the first
+## stuns_per_phase of a phase stun the boss.
+static func shatter(w: World, i: int, hit: PackedInt32Array) -> void:
+	var bs := w.bosses
+	var id := w.actors.ids[i]
 	hit.sort()
 	var stun := false
 	var gone: Array[Obb] = []
@@ -248,7 +266,6 @@ static func lanes_strike(w: World, i: int, k: int, atk: BossAttackTable) -> int:
 	_point(w, id)
 	if stun:
 		_stun(w, i)
-	return hit.size()
 
 
 ## A break of boss i's: true when it stuns (fewer than stuns_per_phase stuns yet this phase), counted.
@@ -306,6 +323,20 @@ static func _point(w: World, boss_id: int) -> void:
 	w.objectives.clear(ObjectiveMarkers.GATEKEEPER_PILLAR)
 	for k in pillars_of(w, boss_id):
 		w.objectives.point(ObjectiveMarkers.GATEKEEPER_PILLAR, center(w.bosses, k))
+
+
+## Every quake pillar of boss `boss_id` sinks now, walls and all (The Fallen's remembered quake ends).
+static func drop(w: World, boss_id: int) -> void:
+	var bs := w.bosses
+	var gone: Array[Obb] = []
+	for k in range(bs.pillar_x.size() - 1, -1, -1):
+		if is_quake(bs, k) and bs.pillar_boss[k] == boss_id:
+			gone.append(BossSignatures.pillar_obb(bs, k))
+			bs.remove_pillar(k)
+	if not gone.is_empty():
+		w.remove_barriers(gone)
+		BossSignatures.set_nav_extra(w)
+	w.objectives.clear(ObjectiveMarkers.GATEKEEPER_PILLAR)
 
 
 ## BossSignatures.on_boss_gone (its pillars already sunk): its entry goes and the hint clears.
