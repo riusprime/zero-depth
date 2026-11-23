@@ -14,18 +14,37 @@ enum Mode { ONCE, STEP }
 
 
 ## A room cut into `count` parallel strips that run along its longer side (x when it is square), from its low side
-## up.
+## up. They tile the room, no point in two strips and none of it in none: a Rect2 holds single-precision numbers and
+## its end is its position plus its size in them, so each edge is rounded to one first (_stored) and each strip's
+## size is set until its end lands on the next edge; with `w * k` alone a point on a shared edge could lie in both.
 static func strips(room: Rect2, count: int) -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var n := maxi(1, count)
 	var along_x := runs_along_x(room)
-	var w := (room.size.y if along_x else room.size.x) / n
+	var low := room.position.y if along_x else room.position.x
+	var high := room.end.y if along_x else room.end.x
+	var w := (high - low) / n
+	var edges: Array[float] = []
+	for k in n + 1:
+		edges.append(_stored(high if k == n else low + w * k))
 	for k in n:
+		var a := edges[k]
+		var size := _stored(edges[k + 1] - a)
+		for t in 3:  # One rounding step off at most: the size moves by what the end misses
+			var miss := edges[k + 1] - _stored(a + size)
+			if miss == 0.0:
+				break
+			size = _stored(size + miss)
 		if along_x:
-			out.append(Rect2(room.position.x, room.position.y + w * k, room.size.x, w))
+			out.append(Rect2(room.position.x, a, room.size.x, size))
 		else:
-			out.append(Rect2(room.position.x + w * k, room.position.y, w, room.size.y))
+			out.append(Rect2(a, room.position.y, size, room.size.y))
 	return out
+
+
+## v as a Rect2 or a Vector2 stores it (single precision).
+static func _stored(v: float) -> float:
+	return Vector2(v, 0.0).x
 
 
 ## True when the room's strips run along x (its longer side, or a square's).

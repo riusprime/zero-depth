@@ -104,9 +104,12 @@ static func fight(b: Array, seed_value: int = 21) -> Array:
 ## the pace's three minutes plus the rise and the shatter, in every fight; and a stronger build's body no slower than
 ## the base build's on the mean of PACE_SEEDS fights. One fight is not enough for that last rule: the Fallen's time
 ## moves with the seed by more than the builds differ in one fight (base blade 127.0 to 145.8 s over six seeds, strong
-## blade 107.3 to 130.8 s; the means 133.6 and 117.4 s).
+## blade 107.3 to 130.8 s; the means 133.6 and 117.4 s). The three-minute ceiling and the stronger build's mean are
+## targets the owner judges by playing (owner: "Make it pending"): a miss prints its numbers as a pending line, as the
+## bosses' bot targets do; the fight won, its three bodies and the minute's floor still fail the test.
 func test_each_body_lasts_a_minute_or_more_whatever_the_build() -> void:
 	var base := []
+	var unmet := PackedStringArray()
 	for b: Array in BUILDS:
 		var mean := [0.0, 0.0, 0.0]
 		for seed_value: int in PACE_SEEDS:
@@ -140,28 +143,31 @@ func test_each_body_lasts_a_minute_or_more_whatever_the_build() -> void:
 						% [b[0], seed_value, k, floor_s, s]
 					)
 				)
-				assert_lte(
-					s,
-					185.0,
-					(
-						"%s, seed %d, body %d: never past three minutes (%.1f s)"
-						% [b[0], seed_value, k, s]
+				if s > 185.0:
+					unmet.append(
+						(
+							"%s, seed %d, body %d: %.1f s, past three minutes"
+							% [b[0], seed_value, k, s]
+						)
 					)
-				)
 				mean[k] += s / PACE_SEEDS.size()
 		gut.p("N2 pace %s: mean bodies over %d fights (s) %s" % [b[0], PACE_SEEDS.size(), mean])
 		if base.is_empty():
 			base = mean
 			continue
 		for k in 3:
-			assert_gte(
-				base[k],
-				mean[k] - 1.0,
+			if base[k] < mean[k] - 1.0:
 				(
-					"%s body %d: no slower than the base build on the mean of %d fights"
-					% [b[0], k, PACE_SEEDS.size()]
+					unmet
+					. append(
+						(
+							"%s body %d: %.1f s on the mean of %d fights, slower than the base build's %.1f s"
+							% [b[0], k, mean[k], PACE_SEEDS.size(), base[k]]
+						)
+					)
 				)
-			)
+	if not unmet.is_empty():
+		pending("NOT MET, the Fallen's pace: " + "; ".join(unmet))
 
 
 # --- the pace's formula and its cap ---------------------------------------------------------------------------------
